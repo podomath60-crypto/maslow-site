@@ -1,0 +1,2508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maslow Korea</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --bg-soft:#f8fbff;
+      --bg-soft-2:#f3f8fd;
+      --white:#ffffff;
+      --text:#111318;
+      --muted:#67707b;
+      --line:#e6ebf1;
+      --blue:#0f7cff;
+      --blue-2:#2790ff;
+      --blue-soft:#dcebff;
+      --sky:#8fd3ff;
+      --sky-strong:#5fc2ff;
+      --gold:#c7a26a;
+      --gold-soft:#e7d3b4;
+      --shadow:0 14px 36px rgba(15,23,42,.05);
+      --shadow-soft:0 8px 20px rgba(15,23,42,.035);
+      --radius:28px;
+      --pad-x:48px;
+    }
+
+    *{box-sizing:border-box}
+    html, body, button, input, textarea, select{
+      margin:0;
+      padding:0;
+      width:100%;
+      overflow-x:hidden;
+      background:#fff;
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif !important;
+      letter-spacing:-0.02em;
+    }
+    a{text-decoration:none;color:inherit}
+    img{display:block;max-width:100%}
+    button{
+      font:inherit;
+      border:none;
+      background:none;
+      padding:0;
+      margin:0;
+      cursor:pointer;
+    }
+
+    #mk-home{
+      position:relative;
+      width:100vw;
+      margin-left:calc(50% - 50vw);
+      margin-right:calc(50% - 50vw);
+      background:#fff;
+      overflow:hidden;
+    }
+
+    /* ===== HEADER ===== */
+    .header{
+      position:fixed;
+      top:0; left:0; right:0;
+      z-index:1000;
+      height:82px;
+      background:rgba(255,255,255,.94);
+      border-bottom:1px solid var(--line);
+      backdrop-filter:blur(12px);
+      transition:transform .35s ease, background .25s ease;
+    }
+    .header.hidden{ transform:translateY(-100%); }
+
+    .header-inner{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+      padding:0 28px;
+    }
+
+    .header-left{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      min-width:0;
+    }
+
+    .menu-trigger{
+      width:44px;
+      height:44px;
+      border-radius:50%;
+      border:1px solid var(--line);
+      background:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 44px;
+      box-shadow:var(--shadow-soft);
+      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .menu-trigger:hover{
+      transform:translateY(-1px);
+      box-shadow:var(--shadow);
+      border-color:#d9e4f0;
+    }
+    .menu-trigger span{
+      display:block;
+      width:18px;
+      height:2px;
+      background:#111318;
+      border-radius:999px;
+      position:relative;
+    }
+    .menu-trigger span::before,
+    .menu-trigger span::after{
+      content:"";
+      position:absolute;
+      left:0;
+      width:18px;
+      height:2px;
+      background:#111318;
+      border-radius:999px;
+    }
+    .menu-trigger span::before{ top:-6px; }
+    .menu-trigger span::after{ top:6px; }
+
+    .logo-text{
+      min-width:0;
+    }
+    .logo-text small{
+      display:block;
+      font-size:12px;
+      color:#9aa2ac;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      margin-bottom:4px;
+    }
+    .logo-text strong{
+      display:block;
+      font-size:18px;
+      font-weight:800;
+      color:#111;
+      line-height:1.1;
+    }
+
+    .nav{
+      display:flex;
+      align-items:center;
+      gap:28px;
+      font-size:15px;
+      color:#2f3640;
+    }
+    .nav a{
+      position:relative;
+      padding:8px 0;
+    }
+    .nav a::after{
+      content:"";
+      position:absolute;
+      left:0;
+      bottom:0;
+      width:0;
+      height:1px;
+      background:#111;
+      transition:.25s;
+    }
+    .nav a:hover::after{ width:100%; }
+
+    .header-right{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .lang{
+      font-size:14px;
+      color:#8e97a1;
+    }
+
+    /* ===== BUTTON ===== */
+    .btn{
+      position:relative;
+      overflow:hidden;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:54px;
+      padding:0 24px;
+      border-radius:999px;
+      font-size:17px;
+      font-weight:800;
+      border:1px solid transparent;
+      white-space:nowrap;
+      line-height:1;
+      transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+      will-change:transform;
+    }
+    .btn:hover{ transform:translateY(-2px); }
+    .btn::before{
+      content:"";
+      position:absolute;
+      top:0;
+      left:-120%;
+      width:70%;
+      height:100%;
+      transform:skewX(-20deg);
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent);
+      transition:left .7s ease;
+    }
+    .btn:hover::before{ left:140%; }
+
+    .btn-primary{
+      background:var(--blue);
+      color:#fff;
+      box-shadow:0 10px 24px rgba(15,124,255,.18);
+    }
+    .btn-primary:hover{
+      background:var(--blue-2);
+      box-shadow:0 14px 28px rgba(15,124,255,.2);
+    }
+    .btn-secondary{
+      background:#fff;
+      color:#111 !important;
+      border:1px solid var(--line);
+    }
+    .btn-secondary:link,
+    .btn-secondary:visited,
+    .btn-secondary:hover,
+    .btn-secondary:active,
+    .btn-secondary *{
+      color:#111 !important;
+    }
+
+    /* ===== TYPO ===== */
+    .opening-eng,
+    .opening-kor,
+    .hero-title,
+    .section-title,
+    .intro-card .copy h3,
+    .hero-side-copy h3,
+    .lifecycle h2,
+    .step h4,
+    .news-main-copy h3,
+    .news-item h4,
+    .cta-box h2{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif !important;
+      letter-spacing:-0.04em;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      font-size:13px;
+      font-weight:800;
+      color:#9aa2ac;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+    }
+    .eyebrow::before{
+      content:"";
+      width:36px;
+      height:1px;
+      background:#d7dde5;
+      transform-origin:left center;
+      animation:lineGrow 1s ease both;
+    }
+    @keyframes lineGrow{
+      from{transform:scaleX(0)}
+      to{transform:scaleX(1)}
+    }
+
+    /* ===== OPENING ===== */
+    .opening{
+      position:relative;
+      width:100%;
+      min-height:46vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(15,124,255,.10), transparent 30%),
+        linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      overflow:hidden;
+      padding-top:82px;
+      padding-bottom:18px;
+    }
+    .opening::before,
+    .opening::after{
+      content:"";
+      position:absolute;
+      background:rgba(15,124,255,.13);
+      clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+      pointer-events:none;
+    }
+    .opening::before{
+      width:360px;
+      height:360px;
+      left:12%;
+      top:6%;
+      animation:float1 8s ease-in-out infinite;
+    }
+    .opening::after{
+      width:520px;
+      height:520px;
+      right:6%;
+      bottom:-10%;
+      animation:float2 10s ease-in-out infinite;
+    }
+
+    .opening-inner{
+      position:relative;
+      z-index:1;
+      padding:34px 24px 18px;
+    }
+    .opening-eng{
+      margin:0 0 10px;
+      font-size:clamp(34px,6vw,72px);
+      line-height:1;
+      color:#0f7cff;
+      font-weight:900;
+      letter-spacing:.08em;
+      animation:fadeUp .8s ease both;
+    }
+    .opening-kor{
+      margin:0;
+      font-size:clamp(58px,9vw,140px);
+      line-height:.92;
+      font-weight:900;
+      letter-spacing:-0.08em;
+      color:#111;
+      animation:fadeUp .95s ease .08s both;
+    }
+    .opening-sub{
+      margin:14px 0 0;
+      font-size:clamp(15px,2vw,24px);
+      line-height:1.4;
+      color:#6f7c8b;
+      font-weight:700;
+      letter-spacing:-0.02em;
+      animation:fadeUp 1.05s ease .14s both;
+    }
+    .opening-line{
+      margin:22px auto 0;
+      width:160px;
+      height:3px;
+      border-radius:999px;
+      background:linear-gradient(90deg, transparent, rgba(15,124,255,.45), transparent);
+      animation:fadeUp 1.05s ease .15s both;
+    }
+
+    /* ===== HERO ===== */
+    .hero{
+      position:relative;
+      width:100%;
+      min-height:auto;
+      padding-top:18px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.94));
+      opacity:1;
+      z-index:0;
+    }
+
+    .hero-shape-1,
+    .hero-shape-2,
+    .hero-shape-3{
+      position:absolute;
+      background:var(--blue-soft);
+      clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+      pointer-events:none;
+      z-index:0;
+      will-change:transform;
+    }
+    .hero-shape-1{
+      width:42vw;
+      height:42vw;
+      right:-10vw;
+      top:22vh;
+      opacity:.95;
+      animation:float1 8s ease-in-out infinite;
+    }
+    .hero-shape-2{
+      width:22vw;
+      height:22vw;
+      right:18vw;
+      top:13vh;
+      opacity:.72;
+      animation:float2 11s ease-in-out infinite;
+    }
+    .hero-shape-3{
+      width:20vw;
+      height:20vw;
+      right:-4vw;
+      bottom:5vh;
+      opacity:.58;
+      animation:float3 10s ease-in-out infinite;
+    }
+    @keyframes float1{
+      0%,100%{transform:translateY(0) rotate(0deg)}
+      50%{transform:translateY(-18px) rotate(3deg)}
+    }
+    @keyframes float2{
+      0%,100%{transform:translateY(0) rotate(0deg)}
+      50%{transform:translateY(14px) rotate(-4deg)}
+    }
+    @keyframes float3{
+      0%,100%{transform:translateY(0) rotate(0deg)}
+      50%{transform:translateY(-12px) rotate(2deg)}
+    }
+
+    .hero-inner{
+      position:relative;
+      z-index:1;
+      width:100%;
+      min-height:auto;
+      display:grid;
+      grid-template-columns:1.18fr .82fr;
+      gap:52px;
+      align-items:center;
+      padding:26px var(--pad-x) 86px;
+    }
+    .hero-title{
+      margin:18px 0 22px;
+      font-size:clamp(58px,7vw,116px);
+      line-height:.95;
+      font-weight:800;
+      max-width:980px;
+      color:#111;
+    }
+    .hero-desc{
+      margin:0;
+      font-size:22px;
+      line-height:1.85;
+      color:var(--muted);
+      max-width:900px;
+    }
+    .hero-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      margin-top:34px;
+    }
+
+    .hero-side{
+      align-self:stretch;
+      min-height:620px;
+      border-radius:34px;
+      overflow:hidden;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.95);
+      box-shadow:var(--shadow);
+      display:flex;
+      flex-direction:column;
+      transform:translateZ(0);
+    }
+    .hero-side-image{
+      flex:1 1 auto;
+      min-height:340px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.08)),
+        url("https://cdn.imweb.me/thumbnail/20260404/cc7830f0b48cc.jpg") center/cover no-repeat;
+      transition:transform 1.1s ease;
+    }
+    .hero-side:hover .hero-side-image{
+      transform:scale(1.04);
+    }
+    .hero-side-copy{
+      padding:32px;
+      background:#fff;
+    }
+    .hero-side-copy span{
+      display:block;
+      font-size:13px;
+      font-weight:800;
+      color:#9aa2ac;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      margin-bottom:12px;
+    }
+    .hero-side-copy h3{
+      margin:0 0 14px;
+      font-size:36px;
+      line-height:1.2;
+      color:#111;
+    }
+    .hero-side-copy p{
+      margin:0;
+      color:var(--muted);
+      font-size:17px;
+      line-height:1.8;
+    }
+
+    /* ===== BAND ===== */
+    .quick-band{
+      width:100%;
+      background:#fff;
+      border-top:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+    }
+    .quick-grid{
+      width:100%;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+    }
+    .quick-item{
+      min-height:154px;
+      padding:28px 24px;
+      border-left:1px solid var(--line);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      background:#fff;
+      transition:background .25s ease, transform .25s ease;
+    }
+    .quick-item:first-child{border-left:none}
+    .quick-item:hover{
+      background:#fbfdff;
+      transform:translateY(-2px);
+    }
+    .quick-item strong{
+      display:block;
+      margin-bottom:8px;
+      font-size:19px;
+      color:#111;
+    }
+    .quick-item p{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.7;
+    }
+
+    /* ===== SECTION ===== */
+    .section{
+      width:100%;
+      padding:140px var(--pad-x);
+      background:#fff;
+    }
+    .section.alt{ background:var(--bg-soft); }
+
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:28px;
+      margin-bottom:54px;
+    }
+    .section-title{
+      margin:16px 0 0;
+      font-size:clamp(38px,4.2vw,68px);
+      line-height:1.04;
+      font-weight:800;
+      color:#111;
+    }
+    .section-text{
+      max-width:780px;
+      color:var(--muted);
+      font-size:19px;
+      line-height:1.85;
+    }
+
+    /* ===== SERVICES / ONE STOP ===== */
+    .service-intro{
+      width:100%;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:24px;
+      margin-bottom:32px;
+    }
+    .intro-card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:30px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+      min-height:540px;
+      display:flex;
+      flex-direction:column;
+      transition:transform .3s ease, box-shadow .3s ease;
+    }
+    .intro-card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 18px 36px rgba(15,23,42,.06);
+    }
+    .intro-card .media{
+      height:340px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.04)),
+        url("https://cdn.imweb.me/thumbnail/20260404/06122f528dc36.jpg") center/cover no-repeat;
+      transition:transform 1.1s ease;
+    }
+    .intro-card:hover .media{
+      transform:scale(1.04);
+    }
+    .intro-card .copy{
+      padding:32px;
+      flex:1 1 auto;
+    }
+    .intro-card .copy h3{
+      margin:0 0 14px;
+      font-size:36px;
+      line-height:1.2;
+      color:#111;
+    }
+    .intro-card .copy p{
+      margin:0;
+      color:var(--muted);
+      font-size:17px;
+      line-height:1.8;
+    }
+
+    .service-grid{
+      width:100%;
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:16px;
+    }
+    .service-box{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:24px 20px;
+      min-height:226px;
+      display:flex;
+      cursor:pointer;
+      flex-direction:column;
+      justify-content:space-between;
+      box-shadow:var(--shadow-soft);
+      transition:transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+    }
+    .service-box:hover{
+      transform:translateY(-4px);
+      box-shadow:0 18px 32px rgba(15,23,42,.06);
+    }
+    .service-num{
+      font-size:12px;
+      font-weight:800;
+      color:#9aa1aa;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+    }
+    .service-box h4{
+      margin:16px 0 10px;
+      font-size:24px;
+      line-height:1.2;
+      color:#111;
+    }
+    .service-box p{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.7;
+    }
+    .service-link{
+      margin-top:16px;
+      font-size:15px;
+      font-weight:800;
+      color:var(--blue);
+      cursor:pointer;
+    }
+
+    .one-stop-grid{
+      grid-template-columns:repeat(5, 1fr);
+      gap:16px;
+    }
+    .one-stop-card{
+      border:1px solid var(--sky) !important;
+      box-shadow:0 6px 16px rgba(15,124,255,.04);
+    }
+    .one-stop-card:hover{
+      border-color:var(--sky-strong) !important;
+      box-shadow:0 14px 28px rgba(15,124,255,.08);
+    }
+    .one-stop-card .service-num{
+      color:#56b8ff;
+    }
+    .one-stop-card .service-link{
+      color:#1692ff;
+    }
+
+    /* ===== LIFECYCLE ===== */
+    .lifecycle{
+      width:100%;
+      background:var(--bg-soft);
+      border-top:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+    }
+    .lifecycle-grid{
+      width:100%;
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:40px;
+      align-items:center;
+      padding:100px var(--pad-x);
+    }
+    .lifecycle h2{
+      margin:16px 0 18px;
+      font-size:clamp(40px,4.5vw,70px);
+      line-height:1.05;
+      color:#111;
+    }
+    .lifecycle p{
+      margin:0;
+      color:var(--muted);
+      font-size:19px;
+      line-height:1.8;
+      max-width:760px;
+    }
+    .life-list{
+      display:grid;
+      gap:12px;
+      padding:0;
+      margin:28px 0 0;
+      list-style:none;
+    }
+    .life-list li{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      font-size:17px;
+      color:#27303b;
+      line-height:1.7;
+    }
+    .dot{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:var(--blue);
+      flex:0 0 8px;
+      margin-top:10px;
+    }
+    .lifecycle-visual{
+      min-height:560px;
+      border-radius:34px;
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.06)),
+        url("https://cdn.imweb.me/thumbnail/20260404/0f373381a4d55.jpg") center/cover no-repeat;
+      transition:transform 1.1s ease;
+    }
+    .lifecycle-visual:hover{
+      transform:scale(1.02);
+    }
+
+    /* ===== SWIPE HINT ===== */
+    .swipe-hint{
+      display:none;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      margin:14px 0 0;
+      color:#7c8794;
+      font-size:14px;
+      font-weight:800;
+      animation:swipePulse 1.6s ease-in-out infinite;
+    }
+    .swipe-hint span{
+      color:var(--blue);
+      font-size:18px;
+      line-height:1;
+    }
+    @keyframes swipePulse{
+      0%,100%{opacity:.55; transform:translateX(0)}
+      50%{opacity:1; transform:translateX(2px)}
+    }
+
+    /* ===== PROCESS ===== */
+    .process-wrap{
+      width:100%;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:18px;
+    }
+    .step{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:22px 18px;
+      min-height:188px;
+      box-shadow:var(--shadow-soft);
+      transition:transform .25s ease, box-shadow .25s ease;
+    }
+    .step:hover{
+      transform:translateY(-4px);
+      box-shadow:0 16px 28px rgba(15,23,42,.06);
+    }
+    .step span{
+      display:block;
+      font-size:12px;
+      font-weight:800;
+      color:#9aa1aa;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      margin-bottom:12px;
+    }
+    .step h4{
+      margin:0 0 10px;
+      font-size:22px;
+      line-height:1.2;
+      color:#111;
+    }
+    .step p{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.65;
+    }
+
+    /* ===== MEDIA ===== */
+    .media-room{
+      width:100%;
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:24px;
+    }
+    .media-side-wrap{
+      display:block;
+    }
+    .news-main,
+    .news-side{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:30px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+    }
+    .news-main-image{
+      height:340px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.03)),
+        url("https://cdn.imweb.me/thumbnail/20260404/301cd402557ff.jpg") center/cover no-repeat;
+      transition:transform 1.1s ease;
+    }
+    .news-main:hover .news-main-image{
+      transform:scale(1.04);
+    }
+    .news-main-copy{
+      padding:30px;
+    }
+    .news-label{
+      display:inline-block;
+      font-size:12px;
+      font-weight:800;
+      color:#9aa1aa;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      margin-bottom:12px;
+    }
+    .news-main-copy h3{
+      margin:0 0 14px;
+      font-size:34px;
+      line-height:1.2;
+      color:#111;
+    }
+    .news-main-copy p{
+      margin:0;
+      color:var(--muted);
+      font-size:17px;
+      line-height:1.8;
+    }
+    .news-side{
+      display:grid;
+      grid-template-rows:1fr 1fr 1fr;
+    }
+    .news-item{
+      padding:26px 24px;
+      border-top:1px solid var(--line);
+      transition:background .2s ease;
+    }
+    .news-item:first-child{border-top:none}
+    .news-item:hover{background:#fbfdff}
+    .news-item h4{
+      margin:10px 0 8px;
+      font-size:22px;
+      line-height:1.3;
+      color:#111;
+    }
+    .news-item p{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.7;
+    }
+
+    /* ===== CTA ===== */
+    .cta-section{
+      width:100%;
+      padding:140px var(--pad-x);
+      background:#fff;
+    }
+    .cta-box{
+      width:100%;
+      background:linear-gradient(135deg, #eef5fc 0%, #f8fbff 100%);
+      color:#111;
+      border-radius:36px;
+      padding:42px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:28px;
+      align-items:center;
+      border:1px solid #dfeaf7;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .cta-box::after{
+      content:"";
+      position:absolute;
+      width:240px;
+      height:240px;
+      right:-70px;
+      top:-70px;
+      background:rgba(15,124,255,.08);
+      border-radius:50%;
+      filter:blur(6px);
+    }
+    .cta-box h2{
+      margin:16px 0 16px;
+      font-size:clamp(36px,4.5vw,64px);
+      line-height:1.06;
+      color:#111;
+      position:relative;
+      z-index:1;
+    }
+    .cta-box p{
+      margin:0;
+      font-size:19px;
+      line-height:1.8;
+      color:var(--muted);
+      max-width:940px;
+      position:relative;
+      z-index:1;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer{
+      width:100%;
+      background:#fff;
+      border-top:1px solid var(--line);
+      padding:34px var(--pad-x) 42px;
+    }
+    .footer-inner{
+      width:100%;
+      display:flex;
+      justify-content:space-between;
+      gap:24px;
+      align-items:flex-start;
+    }
+    .footer-left strong{
+      display:block;
+      font-size:18px;
+      margin-bottom:8px;
+      color:#111;
+    }
+    .footer-left p,
+    .footer-right{
+      margin:0;
+      color:#8a9098;
+      font-size:15px;
+      line-height:1.75;
+    }
+
+    /* ===== REVEAL ===== */
+    .reveal{
+      opacity:0;
+      transform:translateY(36px) scale(.985);
+      filter:blur(8px);
+      transition:
+        opacity .8s ease,
+        transform .8s cubic-bezier(.2,.7,.2,1),
+        filter .8s ease;
+      will-change:transform, opacity, filter;
+    }
+    .reveal.in{
+      opacity:1;
+      transform:translateY(0) scale(1);
+      filter:blur(0);
+    }
+    .delay-1{transition-delay:.08s}
+    .delay-2{transition-delay:.16s}
+    .delay-3{transition-delay:.24s}
+    .delay-4{transition-delay:.32s}
+    .delay-5{transition-delay:.4s}
+    .delay-6{transition-delay:.48s}
+    .delay-7{transition-delay:.56s}
+    .delay-8{transition-delay:.64s}
+
+    @keyframes fadeUp{
+      from{
+        opacity:0;
+        transform:translateY(24px);
+      }
+      to{
+        opacity:1;
+        transform:translateY(0);
+      }
+    }
+
+    /* ===== MODAL ===== */
+    .mk-modal{
+      position:fixed;
+      inset:0;
+      background:rgba(8,17,28,.72);
+      backdrop-filter:blur(8px);
+      z-index:9999;
+      display:none;
+      align-items:flex-start;
+      justify-content:center;
+      overflow:hidden;
+    }
+    .mk-modal.active{ display:flex; }
+
+    .mk-modal-inner{
+      width:100%;
+      max-width:860px;
+      height:100vh;
+      background:#fff;
+      border-radius:0;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      animation:mkModalUp .24s ease;
+      box-shadow:none;
+    }
+    @keyframes mkModalUp{
+      from{ transform:translateY(24px); opacity:.96; }
+      to{ transform:translateY(0); opacity:1; }
+    }
+
+    .mk-modal-head{
+      position:sticky;
+      top:0;
+      z-index:20;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:18px 20px;
+      border-bottom:1px solid #eef2f6;
+      background:#fff;
+      flex:0 0 auto;
+    }
+    .mk-modal-head h3{
+      margin:0;
+      font-size:24px;
+      font-weight:800;
+      color:#111;
+      line-height:1.2;
+      width:auto;
+      background:transparent;
+    }
+    .mk-modal-close{
+      width:40px;
+      height:40px;
+      border-radius:50%;
+      border:1px solid #e5eaf0;
+      background:#fff;
+      color:#111;
+      font-size:20px;
+      line-height:1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 40px;
+    }
+
+    .mk-modal-body{
+      flex:1 1 auto;
+      overflow:auto;
+      padding:20px 20px 120px;
+      background:#fff;
+      overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;
+    }
+    .mk-modal-hero{
+      width:100%;
+      height:260px;
+      object-fit:cover;
+      border-radius:18px;
+      margin-bottom:18px;
+      background:#eef3f8;
+    }
+    .mk-modal-intro{
+      font-size:17px;
+      line-height:1.8;
+      color:#475467;
+      margin:0 0 18px;
+    }
+    .mk-points{
+      display:grid;
+      gap:10px;
+      margin:0 0 18px;
+      padding:0;
+      list-style:none;
+    }
+    .mk-points li{
+      position:relative;
+      padding-left:16px;
+      font-size:16px;
+      line-height:1.75;
+      color:#25313d;
+    }
+    .mk-points li::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:11px;
+      width:7px;
+      height:7px;
+      border-radius:50%;
+      background:var(--blue);
+    }
+    .mk-section-card{
+      border:1px solid #e7eef5;
+      background:#fbfdff;
+      border-radius:18px;
+      padding:18px 16px;
+      margin-bottom:16px;
+    }
+    .mk-section-card h4{
+      margin:0 0 10px;
+      font-size:18px;
+      font-weight:800;
+      color:#111;
+      background:transparent;
+      width:auto;
+    }
+    .mk-section-card p{
+      margin:0;
+      font-size:15px;
+      line-height:1.8;
+      color:#576272;
+    }
+    .mk-modal-cta{
+  display:grid;
+  gap:10px;
+  margin-top:18px;
+  margin-bottom:24px;
+}
+    .mk-call-btn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:54px;
+      padding:0 18px;
+      background:#0f7cff;
+      color:#fff !important;
+      border-radius:14px;
+      font-weight:800;
+      font-size:16px;
+      text-align:center;
+    }
+    .mk-contact-btn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:52px;
+      padding:0 18px;
+      border:1px solid #dce6f1;
+      color:#111;
+      background:#fff;
+      border-radius:14px;
+      font-weight:800;
+      font-size:16px;
+      text-align:center;
+      cursor:pointer;
+    }
+    .mk-phone-box{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:54px;
+      padding:0 18px;
+      background:#eef5ff;
+      color:#0f7cff;
+      border-radius:14px;
+      font-weight:800;
+      font-size:17px;
+      text-align:center;
+      border:1px solid #d8e6ff;
+    }
+
+    /* contact modal */
+    .mk-contact-card{
+      border:1px solid #e7eef5;
+      background:#fbfdff;
+      border-radius:18px;
+      padding:18px 16px;
+      margin-bottom:16px;
+    }
+    .mk-contact-card p{
+      margin:0;
+      font-size:15px;
+      line-height:1.8;
+      color:#576272;
+    }
+    .mk-form-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .mk-input,
+    .mk-textarea{
+      width:100%;
+      border:1px solid #d9e4ef;
+      background:#fff;
+      border-radius:12px;
+      padding:14px 14px;
+      font-size:15px;
+      color:#111;
+      outline:none;
+    }
+    .mk-textarea{
+      min-height:120px;
+      resize:vertical;
+      margin-bottom:10px;
+    }
+    .mk-input::placeholder,
+    .mk-textarea::placeholder{
+      color:#9aa4b2;
+    }
+    .mk-check{
+      display:flex;
+      gap:8px;
+      align-items:flex-start;
+      margin:0 0 14px;
+      font-size:13px;
+      color:#667085;
+      line-height:1.6;
+    }
+    .mk-check input{
+      width:auto;
+      margin-top:3px;
+      flex:0 0 auto;
+    }
+    .mk-submit{
+      width:100%;
+      min-height:54px;
+      border-radius:14px;
+      background:#0f7cff;
+      color:#fff;
+      font-size:16px;
+      font-weight:800;
+      margin-bottom:10px;
+    }
+
+
+    /* ===== HAMBURGER PANEL ===== */
+    .menu-panel{
+      position:fixed;
+      inset:0;
+      z-index:1001;
+      display:none;
+      background:rgba(8,17,28,.5);
+      backdrop-filter:blur(6px);
+    }
+    .menu-panel.active{ display:block; }
+    .menu-drawer{
+      position:absolute;
+      top:0; left:0;
+      width:min(420px, 88vw);
+      height:100vh;
+      background:#fff;
+      box-shadow:0 20px 50px rgba(15,23,42,.16);
+      padding:22px 20px 28px;
+      overflow:auto;
+    }
+    .menu-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+    .menu-head strong{ font-size:18px; font-weight:800; color:#111; }
+    .menu-close{
+      width:40px; height:40px; border-radius:50%; border:1px solid #e5eaf0;
+      display:inline-flex; align-items:center; justify-content:center; background:#fff; font-size:18px; color:#111;
+    }
+    .menu-list{ display:grid; gap:10px; }
+    .menu-link{
+      display:flex; align-items:center; min-height:56px; padding:0 16px; border:1px solid #e7eef5; border-radius:16px;
+      background:#fff; font-size:16px; font-weight:800; color:#111 !important; line-height:1.4;
+    }
+    .menu-link.primary{ background:#f5f9ff; border-color:#cfe2ff; color:#0f7cff !important; }
+
+    /* ===== FLOAT PHONE ===== */
+    .desktop-float-phone{
+      position:fixed;
+      right:28px;
+      bottom:104px;
+      z-index:1000;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-height:74px;
+      padding:0 24px;
+      border-radius:999px;
+      background:#0f7cff;
+      color:#fff !important;
+      box-shadow:0 18px 36px rgba(15,124,255,.30);
+      font-size:19px;
+      font-weight:900;
+      letter-spacing:-0.01em;
+      width:auto;
+      max-width:calc(100vw - 56px);
+    }
+    .desktop-float-phone .icon{
+      width:30px; height:30px; border-radius:50%; background:rgba(255,255,255,.18);
+      display:inline-flex; align-items:center; justify-content:center; flex:0 0 30px; font-size:15px;
+    }
+    .mobile-float-call{
+      position:fixed;
+      right:16px;
+      bottom:16px;
+      z-index:1000;
+      width:58px; height:58px;
+      border-radius:50%;
+      background:#0f7cff;
+      color:#fff !important;
+      box-shadow:0 16px 28px rgba(15,124,255,.28);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      font-size:24px;
+    }
+    .mobile-only{ display:none !important; }
+
+    /* ===== TABLET ===== */
+    @media (max-width:1180px){
+      .hero-inner,
+      .lifecycle-grid,
+      .media-room,
+      .service-intro{
+        grid-template-columns:1fr;
+      }
+      .service-grid,
+      .one-stop-grid{
+        grid-template-columns:repeat(2,1fr);
+      }
+      .process-wrap{
+        grid-template-columns:repeat(2,1fr);
+      }
+      .quick-grid{
+        grid-template-columns:repeat(2,1fr);
+      }
+      .quick-item:nth-child(3){border-left:none}
+      .hero-side{min-height:auto}
+    }
+
+    /* ===== MOBILE ===== */
+    @media (max-width:860px){
+
+      .header-right .btn.btn-primary{
+        display:inline-flex !important;
+        min-height:auto;
+        padding:0;
+        font-size:16px;
+        font-weight:900;
+        letter-spacing:-0.02em;
+        white-space:nowrap;
+        background:transparent !important;
+        box-shadow:none !important;
+        border:none !important;
+        border-radius:0 !important;
+        color:#111 !important;
+      }
+      .header-right .btn.btn-primary::before{
+        display:none !important;
+      }
+
+      :root{ --pad-x:22px; }
+
+      .header{ height:72px; }
+      .header-inner{
+        padding-left:18px;
+        padding-right:18px;
+      }
+      .nav,.lang{display:none}
+
+      .menu-trigger{
+        width:40px;
+        height:40px;
+        flex-basis:40px;
+      }
+      .menu-trigger span,
+      .menu-trigger span::before,
+      .menu-trigger span::after{
+        width:16px;
+      }
+
+      .logo-text small{ font-size:11px; }
+      .logo-text strong{ font-size:16px; }
+
+      .opening{
+        min-height:34vh;
+        padding-top:72px;
+        padding-bottom:4px;
+      }
+      .opening-inner{
+        padding:22px 18px 8px;
+      }
+      .opening-eng{
+        font-size:28px;
+        margin-bottom:6px;
+        letter-spacing:.12em;
+      }
+      .opening-kor{
+        font-size:52px;
+        line-height:.95;
+      }
+      .opening-sub{
+        margin-top:10px;
+        font-size:14px;
+        line-height:1.45;
+      }
+      .opening-line{
+        margin-top:16px;
+        width:110px;
+        height:2px;
+      }
+
+      .hero{ padding-top:4px; }
+      .hero-inner{
+        min-height:auto;
+        grid-template-columns:1fr;
+        gap:22px;
+        padding:14px var(--pad-x) 52px;
+      }
+      .hero-title{
+        font-size:44px;
+        line-height:1.04;
+        margin-bottom:16px;
+      }
+      .hero-desc{
+        font-size:18px;
+        line-height:1.8;
+      }
+      .hero-actions{
+        margin-top:24px;
+        gap:10px;
+      }
+      .btn{
+        min-height:50px;
+        font-size:16px;
+        padding:0 20px;
+      }
+      .hero-side{ border-radius:24px; }
+      .hero-side-image{ min-height:220px; }
+      .hero-side-copy{ padding:22px; }
+      .hero-side-copy h3{ font-size:26px; }
+      .hero-side-copy p{ font-size:16px; }
+
+      .hero-shape-1{
+        width:72vw;
+        height:72vw;
+        right:-20vw;
+        top:8vh;
+      }
+      .hero-shape-2{
+        width:34vw;
+        height:34vw;
+        right:18vw;
+        top:8vh;
+      }
+      .hero-shape-3{
+        width:38vw;
+        height:38vw;
+        right:-8vw;
+        bottom:10vh;
+      }
+
+      .quick-grid{ grid-template-columns:1fr 1fr; }
+      .quick-item{
+        min-height:120px;
+        padding:18px 16px;
+      }
+      .quick-item strong{
+        font-size:16px;
+        margin-bottom:6px;
+      }
+      .quick-item p{
+        font-size:13px;
+        line-height:1.6;
+      }
+
+      .section,
+      .cta-section{
+        padding:88px var(--pad-x);
+      }
+      .section-head{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:12px;
+        margin-bottom:28px;
+      }
+      .section-title{ font-size:34px; }
+      .section-text{
+        font-size:16px;
+        line-height:1.75;
+      }
+
+      .service-intro{
+        gap:16px;
+        margin-bottom:18px;
+      }
+      .intro-card{
+        min-height:auto;
+        border-radius:22px;
+      }
+      .intro-card .media{ height:200px; }
+      .intro-card .copy{ padding:20px; }
+      .intro-card .copy h3{
+        font-size:26px;
+        margin-bottom:10px;
+      }
+      .intro-card .copy p{
+        font-size:16px;
+        line-height:1.7;
+      }
+
+      .service-grid,
+      .one-stop-grid{
+        grid-template-columns:1fr 1fr;
+        gap:12px;
+      }
+      .service-box{
+        min-height:170px;
+        padding:18px 16px;
+        border-radius:18px;
+      }
+      .service-box h4{
+        font-size:18px;
+        margin:10px 0 8px;
+      }
+      .service-box p{
+        font-size:13px;
+        line-height:1.6;
+      }
+      .service-link{
+        margin-top:10px;
+        font-size:13px;
+      }
+
+      .lifecycle-grid{
+        padding:90px var(--pad-x);
+        gap:24px;
+      }
+      .lifecycle h2{ font-size:34px; }
+      .lifecycle p{
+        font-size:16px;
+        line-height:1.75;
+      }
+      .life-list{
+        gap:10px;
+        margin-top:18px;
+      }
+      .life-list li{
+        font-size:15px;
+        line-height:1.65;
+      }
+      .lifecycle-visual{
+        min-height:240px;
+        border-radius:24px;
+      }
+
+      /* STEP swipe */
+      .process-wrap{
+        display:flex;
+        gap:12px;
+        overflow-x:auto;
+        padding-bottom:4px;
+        scroll-snap-type:x mandatory;
+        -webkit-overflow-scrolling:touch;
+      }
+      .process-wrap::-webkit-scrollbar{display:none}
+      .process-wrap::after{
+        content:"";
+        flex:0 0 8px;
+      }
+      .step{
+        flex:0 0 78%;
+        min-height:158px;
+        padding:18px 16px;
+        border-radius:18px;
+        scroll-snap-align:start;
+      }
+      .step span{
+        font-size:11px;
+        margin-bottom:10px;
+      }
+      .step h4{
+        font-size:18px;
+        margin-bottom:8px;
+      }
+      .step p{
+        font-size:14px;
+        line-height:1.6;
+      }
+
+      /* Guide swipe */
+      .media-room{
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+      }
+      .news-main,
+      .news-side{
+        border-radius:22px;
+      }
+      .news-main-image{ height:200px; }
+      .news-main-copy{ padding:20px; }
+      .news-main-copy h3{
+        font-size:26px;
+        margin-bottom:10px;
+      }
+      .news-main-copy p{
+        font-size:16px;
+        line-height:1.7;
+      }
+
+      .news-side{
+        display:flex;
+        gap:12px;
+        overflow-x:auto;
+        padding:0;
+        background:transparent;
+        border:none;
+        box-shadow:none;
+      }
+      .news-side::-webkit-scrollbar{display:none}
+      .news-side::after{
+        content:"";
+        flex:0 0 8px;
+      }
+      .news-item{
+        flex:0 0 82%;
+        background:#fff;
+        border:1px solid var(--line);
+        border-radius:18px;
+        padding:18px 16px;
+        box-shadow:var(--shadow-soft);
+        scroll-snap-align:start;
+      }
+      .news-item h4{
+        font-size:18px;
+        margin:8px 0 8px;
+      }
+      .news-item p{
+        font-size:14px;
+        line-height:1.6;
+      }
+
+      .swipe-hint{
+        display:flex;
+        justify-content:center;
+        margin-top:10px;
+      }
+
+
+      .menu-drawer{ width:100vw; max-width:none; padding:18px 16px 24px; }
+      .desktop-float-phone{ display:none !important; }
+      .mobile-float-call{ display:flex !important; }
+      .mobile-only{ display:inline-flex !important; }
+
+      .cta-box{
+        padding:24px;
+        border-radius:24px;
+      }
+      .cta-box h2{ font-size:32px; }
+      .cta-box p{
+        font-size:17px;
+        line-height:1.75;
+      }
+
+      .footer{
+        padding:28px var(--pad-x) 36px;
+      }
+      .footer-inner{
+        flex-direction:column;
+        gap:12px;
+      }
+      .footer-left strong{ font-size:16px; }
+      .footer-left p,
+      .footer-right{ font-size:14px; }
+
+      .mk-modal-inner{
+        max-width:none;
+        height:100vh;
+        border-radius:0;
+      }
+      .mk-modal-head{
+        padding:16px 16px;
+      }
+      .mk-modal-head h3{
+        font-size:20px;
+      }
+      .mk-modal-body{
+        padding:16px 16px 24px;
+      }
+      .mk-modal-hero{
+        height:210px;
+        border-radius:14px;
+      }
+      .mk-modal-intro{
+        font-size:15px;
+      }
+      .mk-points li{
+        font-size:14px;
+      }
+      .mk-section-card h4{
+        font-size:16px;
+      }
+      .mk-section-card p{
+        font-size:14px;
+      }
+      .mk-form-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (min-width:861px){
+      .mobile-only{ display:none !important; }
+      .desktop-float-phone{ display:flex !important; }
+    }
+
+    @media (max-width:520px){
+      .opening-kor{ font-size:42px; }
+      .opening-eng{ font-size:20px; }
+      .hero-title{ font-size:38px; }
+      .hero-desc{ font-size:17px; }
+      .quick-item{ min-height:112px; }
+      .news-item,
+      .step{
+        flex-basis:84%;
+      }
+      .service-grid,
+      .one-stop-grid{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="mk-home">
+
+  <header class="header" id="siteHeader">
+    <div class="header-inner">
+      <div class="header-left">
+        <button class="menu-trigger" aria-label="menu">
+          <span></span>
+        </button>
+        <div class="logo-text">
+         
+          <strong>Maslow Korea</strong>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#services">One-stop</a>
+        <a href="#lifecycle">Life Cycle</a>
+        <a href="#process">Process</a>
+        <a href="#media">Guide</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <div class="header-right">
+        <div class="lang">KR / EN</div>
+        <a href="javascript:void(0)" onclick="topAction()" class="btn btn-primary" id="topActionBtn">문의하기</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="opening">
+    <div class="opening-inner">
+      <p class="opening-eng">MASLOW</p>
+      <h1 class="opening-kor">매슬로우</h1>
+      <p class="opening-sub">산업용 부동산 종합서비스</p>
+      <div class="opening-line"></div>
+    </div>
+  </section>
+
+  <section class="hero">
+    <div class="hero-shape-1"></div>
+    <div class="hero-shape-2"></div>
+    <div class="hero-shape-3"></div>
+
+    <div class="hero-inner">
+      <div class="reveal in">
+        <div class="eyebrow">Factory Total Management</div>
+        <h1 class="hero-title">
+          조건에 맞는 공장을<br>
+          가장 빠르게 찾아드립니다
+        </h1>
+        <p class="hero-desc">
+          특정 지역에 원하시는 평수와 공장 스펙 등을 알려주시면 가능한 최적합한 매물을 빠르게 찾아드립니다.
+          공장을 구하기 위한 정책자금부터 공장등록, 공장리모델링, 설비이사 및 설비배치, 사업개시까지
+          원스톱으로 도와드립니다.
+        </p>
+        <div class="hero-actions">
+          <a href="javascript:void(0)" onclick="openModal('contactModal')" class="btn btn-primary">조건 보내기</a>
+          <a href="#services" class="btn btn-secondary">서비스 보기</a>
+        </div>
+      </div>
+
+      <div class="hero-side reveal delay-2 in">
+        <div class="hero-side-image"></div>
+        <div class="hero-side-copy">
+          <span>Commercial Factory Service</span>
+          <h3>공장 매물 탐색부터 운영 준비까지</h3>
+          <p>
+            단순히 공장을 보여드리는 데서 끝나지 않습니다.
+            대표님의 니즈를 기준으로 맞는 공장을 찾고, 실제 사업을 시작할 수 있도록
+            필요한 단계까지 이어서 지원합니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="quick-band">
+    <div class="quick-grid">
+      <div class="quick-item reveal delay-1">
+        <strong>조건 맞춤 탐색</strong>
+        <p>희망 지역, 평수, 전력, 층고, 진입동선 등 실제 필요한 조건을 기준으로 공장을 찾습니다.</p>
+      </div>
+      <div class="quick-item reveal delay-2">
+        <strong>원스톱 지원</strong>
+        <p>정책자금, 공장등록, 리모델링, 설비이사와 배치까지 한 흐름으로 연결합니다.</p>
+      </div>
+      <div class="quick-item reveal delay-3">
+        <strong>사업 준비 중심</strong>
+        <p>다양한 매물 정보를 검토하고, 실제 운영 가능성까지 함께 살펴봅니다.</p>
+      </div>
+      <div class="quick-item reveal delay-4">
+        <strong>Total Management</strong>
+        <p>공장 구하기의 전 과정을 하나의 서비스처럼 경험할 수 있도록 돕습니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="services">
+    <div class="section-head">
+      <div class="reveal">
+        <div class="eyebrow">One-stop Solution</div>
+        <h2 class="section-title">공장을 찾은 이후에도 필요한 과정을 계속 연결합니다</h2>
+      </div>
+      <div class="section-text reveal delay-2">
+        원스탑 솔루션은 공장 매물을 찾는 것에서 끝나지 않습니다.
+        공장을 확보한 이후 필요한 행정·자금, 건축·공사, 설비·인프라, 철거·이사,
+        입주·운영개시까지 실제 사업이 시작될 수 있도록 전 과정을 연결해드립니다.
+      </div>
+    </div>
+
+    <div class="service-intro">
+      <div class="intro-card reveal delay-1">
+        <div class="media"></div>
+        <div class="copy">
+          <h3>공장을 구한 뒤부터가 더 중요합니다</h3>
+          <p>
+            공장을 찾은 이후에는 자금, 행정, 공사, 설비, 이전, 입주 준비까지 수많은 과정이 이어집니다.
+            Maslow Korea는 매물 탐색 이후 필요한 단계들을 따로따로 분리하지 않고,
+            실제 운영 시작까지 하나의 흐름으로 이어서 지원합니다.
+          </p>
+        </div>
+      </div>
+
+      <div class="intro-card reveal delay-2">
+        <div class="copy" style="padding-top:34px; padding-bottom:34px;">
+          <div class="eyebrow">Total Management</div>
+          <h3 style="margin-top:16px;">매입 이후 실행 단계까지 하나의 서비스처럼</h3>
+          <p>
+            정책자금과 대출, 공장등록, 신축·증축·리모델링, 설비 이전과 배치,
+            철거와 원상복구, 입주 및 운영 개시까지 이어지는 실제 실행 과정을
+            한 번에 연결하는 것이 Maslow Korea 원스탑 솔루션의 핵심입니다.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-grid one-stop-grid">
+      <article class="service-box one-stop-card reveal delay-1" onclick="openModal('modalFund')">
+        <div>
+          <div class="service-num">01</div>
+          <h4>행정 · 자금</h4>
+          <p>
+            정책자금, 대출, 공장등록, 인허가 등
+            공장 확보 이후 필요한 행정과 자금 절차를 지원합니다.
+          </p>
+        </div>
+        <div class="service-link" onclick="event.stopPropagation(); openModal('modalFund')">Read more</div>
+      </article>
+
+      <article class="service-box one-stop-card reveal delay-2" onclick="openModal('modalBuild')">
+        <div>
+          <div class="service-num">02</div>
+          <h4>건축 · 공사</h4>
+          <p>
+            신축, 증축, 리모델링, 구조 변경 등
+            업종과 운영 방식에 맞는 공간 구축을 돕습니다.
+          </p>
+        </div>
+        <div class="service-link" onclick="event.stopPropagation(); openModal('modalBuild')">Read more</div>
+      </article>
+
+      <article class="service-box one-stop-card reveal delay-3" onclick="openModal('modalInfra')">
+        <div>
+          <div class="service-num">03</div>
+          <h4>설비 · 인프라</h4>
+          <p>
+            설비이전, 기계 반입·반출, 설비배치,
+            전기·환기 등 실제 가동을 위한 기반을 정비합니다.
+          </p>
+        </div>
+        <div class="service-link" onclick="event.stopPropagation(); openModal('modalInfra')">Read more</div>
+      </article>
+
+      <article class="service-box one-stop-card reveal delay-4" onclick="openModal('modalMove')">
+        <div>
+          <div class="service-num">04</div>
+          <h4>철거 · 이사</h4>
+          <p>
+            기존 공장 철거, 원상복구, 공장이전, 운반 등
+            이전 과정 전반을 실행 중심으로 지원합니다.
+          </p>
+        </div>
+        <div class="service-link" onclick="event.stopPropagation(); openModal('modalMove')">Read more</div>
+      </article>
+
+      <article class="service-box one-stop-card reveal delay-5" onclick="openModal('modalStart')">
+        <div>
+          <div class="service-num">05</div>
+          <h4>입주 · 운영개시</h4>
+          <p>
+            입주 준비, 일정 관리, 최종 점검, 사업개시까지
+            실제 운영 시작 단계까지 이어서 함께합니다.
+          </p>
+        </div>
+        <div class="service-link" onclick="event.stopPropagation(); openModal('modalStart')">Read more</div>
+      </article>
+    </div>
+  </section>
+
+  <section class="lifecycle" id="lifecycle">
+    <div class="lifecycle-grid">
+      <div class="reveal">
+        <div class="eyebrow">Life Cycle</div>
+        <h2>공장 매물 탐색부터 사업개시까지</h2>
+        <p>
+          공장을 찾는 순간부터 실제 가동을 시작하는 순간까지 이어지는 전체 흐름을 한 화면에서 자연스럽게 보여줍니다.
+          다양한 매물 정보를 폭넓게 확보하고, 그 안에서 대표님의 조건에 맞는 공장을 빠르게 찾아 실제 준비까지 연결합니다.
+        </p>
+
+        <ul class="life-list">
+          <li class="reveal delay-1"><span class="dot"></span><span>희망 조건 상담 및 니즈 정리</span></li>
+          <li class="reveal delay-2"><span class="dot"></span><span>맞춤형 공장 매물 탐색 및 검토</span></li>
+          <li class="reveal delay-3"><span class="dot"></span><span>정책자금 / 공장등록 / 리모델링 연계</span></li>
+          <li class="reveal delay-4"><span class="dot"></span><span>설비이사 및 설비배치 검토</span></li>
+          <li class="reveal delay-5"><span class="dot"></span><span>사업개시까지 이어지는 부동산 토탈관리</span></li>
+        </ul>
+      </div>
+
+      <div class="lifecycle-visual reveal delay-2"></div>
+    </div>
+  </section>
+
+  <section class="section" id="process">
+    <div class="section-head">
+      <div class="reveal">
+        <div class="eyebrow">Process</div>
+        <h2 class="section-title">실제 진행 흐름</h2>
+      </div>
+      <div class="section-text reveal delay-2">
+       
+      </div>
+    </div>
+
+    <div class="process-wrap">
+      <div class="step reveal delay-1">
+        <span>Step 01</span>
+        <h4>조건 상담</h4>
+        <p>희망 지역, 평수, 업종, 전력, 층고, 동선, 입주 시기 등을 먼저 파악합니다.</p>
+      </div>
+      <div class="step reveal delay-2">
+        <span>Step 02</span>
+        <h4>매물 탐색</h4>
+        <p>조건에 맞는 공장을 선별하고, 가능한 최적합 후보를 빠르게 제안합니다.</p>
+      </div>
+      <div class="step reveal delay-3">
+        <span>Step 03</span>
+        <h4>현장 검토</h4>
+        <p>실제 사용성과 운영 적합성을 중심으로 현장 상태와 스펙을 검토합니다.</p>
+      </div>
+      <div class="step reveal delay-4">
+        <span>Step 04</span>
+        <h4>계약 진행</h4>
+        <p>조건 협의와 계약 절차가 자연스럽게 이어질 수 있도록 실무를 지원합니다.</p>
+      </div>
+      <div class="step reveal delay-5">
+        <span>Step 05</span>
+        <h4>정책자금</h4>
+        <p>필요한 정책자금과 준비 방향을 검토해 다음 단계와 연계합니다.</p>
+      </div>
+      <div class="step reveal delay-6">
+        <span>Step 06</span>
+        <h4>공장등록</h4>
+        <p>행정 실무가 사업 일정에 맞게 이어질 수 있도록 지원합니다.</p>
+      </div>
+      <div class="step reveal delay-7">
+        <span>Step 07</span>
+        <h4>리모델링·설비이사</h4>
+        <p>공장 리모델링과 설비 이동, 배치까지 실제 운영 준비를 이어갑니다.</p>
+      </div>
+      <div class="step reveal delay-8">
+        <span>Step 08</span>
+        <h4>사업개시</h4>
+        <p>입주 후 실제 사업을 시작할 수 있는 상태까지 전체 흐름을 관리합니다.</p>
+      </div>
+    </div>
+
+    <div class="swipe-hint">
+      <span>←</span>
+      <em>좌우로 넘겨보세요</em>
+      <span>→</span>
+    </div>
+  </section>
+
+  <section class="section alt" id="media">
+    <div class="section-head">
+      <div class="reveal">
+        <div class="eyebrow">Guide</div>
+        <h2 class="section-title">홈에서 신뢰를 만드는 영역</h2>
+      </div>
+      <div class="section-text reveal delay-2">
+        진행 사례, 서비스 소개, 공장 이전 가이드 같은 성격의 블록을 통해 기업형 신뢰감을 주는 영역입니다.
+      </div>
+    </div>
+
+    <div class="media-room">
+      <article class="news-main reveal delay-1">
+        <div class="news-main-image"></div>
+        <div class="news-main-copy">
+          <span class="news-label">Featured</span>
+          <h3>조건에 맞는 공장을 찾는 방식은 달라야 합니다</h3>
+          <p>
+            공장 매물은 숫자만으로 비교하기 어렵습니다. 업종, 설비, 운영 동선, 전력, 입주 일정까지 함께 고려해야
+            대표님에게 실질적으로 맞는 공장을 찾을 수 있습니다.
+          </p>
+        </div>
+      </article>
+
+      <div class="media-side-wrap">
+        <div class="news-side">
+          <article class="news-item reveal delay-2">
+            <span class="news-label">Guide</span>
+            <h4>정책자금부터 공장등록까지</h4>
+            <p>매물 선정 이후에도 이어지는 실제 준비 과정을 한 흐름으로 설계합니다.</p>
+          </article>
+          <article class="news-item reveal delay-3">
+            <span class="news-label">Case</span>
+            <h4>리모델링과 설비배치 연계</h4>
+            <p>공간 활용과 설비 동선까지 고려한 운영 준비가 가능하도록 돕습니다.</p>
+          </article>
+          <article class="news-item reveal delay-4">
+            <span class="news-label">Support</span>
+            <h4>사업개시까지 이어지는 지원</h4>
+            <p>단순한 부동산 중개가 아니라 실제 시작까지 함께 가는 구조를 보여줍니다.</p>
+          </article>
+        </div>
+
+        <div class="swipe-hint">
+          <span>←</span>
+          <em>좌우로 넘겨보세요</em>
+          <span>→</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section" id="contact">
+    <div class="cta-box reveal">
+      <div>
+        <div class="eyebrow">Contact Us</div>
+        <h2>원하시는 조건을 알려주시면 바로 찾아드립니다</h2>
+        <p>
+          특정 지역, 원하시는 평수, 공장 스펙 등을 알려주시면 가능한 최적합한 매물을 빠르게 찾아드립니다.
+          정책자금부터 공장등록, 공장리모델링, 설비이사 및 배치, 사업개시까지
+          원스톱으로 도와드립니다.
+        </p>
+        <div class="hero-actions">
+          <a href="javascript:void(0)" onclick="openModal('contactModal')" class="btn btn-primary">문의하기</a>
+          <a href="javascript:void(0)" onclick="handlePhoneAction()" class="btn btn-secondary">전화 상담</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <strong>매슬로우코리아 / 매슬로우공인중개사사무소</strong>
+        <p>
+          대표 박성연<br>
+          전화번호 010-5407-0444<br>
+          주소 전북 군산시 대학로 342 26빌딩<br>
+          등록번호 52130-025-0005
+        </p>
+      </div>
+      <div class="footer-right">
+        © 2026 Maslow Korea. All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== MODALS ===== -->
+
+  <div id="menuPanel" class="menu-panel">
+    <div class="menu-drawer">
+      <div class="menu-head">
+        <strong>바로가기</strong>
+        <button class="menu-close" onclick="closeMenu()">✕</button>
+      </div>
+      <div class="menu-list">
+        <a class="menu-link primary" href="https://maslowkorea.net/" target="_blank" rel="noopener">🔺️매물보기</a>
+        <a class="menu-link" href="https://youtube.com/channel/UCyrcwTip7AWhMd3Kzg77PKA?si=Fu3pBerL9sa5g23q" target="_blank" rel="noopener">▪️유튜브</a>
+        <a class="menu-link" href="https://m.blog.naver.com/maslow_love" target="_blank" rel="noopener">▪️블로그</a>
+        <a class="menu-link" href="javascript:void(0)" onclick="closeMenu(); openModal('modalGreeting');">▪️대표인사말</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="desktop-float-phone">
+    <span class="icon">☎</span>
+    <span>010-5407-0444</span>
+  </div>
+
+  <a href="javascript:void(0)" class="mobile-float-call" onclick="handlePhoneAction()" aria-label="전화하기">☎</a>
+
+  <div id="modalGreeting" class="mk-modal">
+    <div class="mk-modal-inner">
+      <div class="mk-modal-head">
+        <h3>대표 인사말</h3>
+        <button class="mk-modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="mk-modal-body">
+        <img class="mk-modal-hero" src="https://cdn.imweb.me/thumbnail/20260404/f561d9b4291be.jpg" alt="대표 인사말">
+        <p class="mk-modal-intro">안녕하세요. 매슬로우코리아 / 매슬로우공인중개사사무소 대표 박성연입니다. 저희는 단순히 매물을 보여드리는 데서 끝나지 않고, 공장을 구한 이후 실제 사업이 시작될 수 있도록 필요한 과정을 함께 연결하는 데 집중하고 있습니다.</p>
+        <ul class="mk-points">
+          <li>조건에 맞는 매물을 빠르게 선별하고 제안합니다.</li>
+          <li>정책자금, 공장등록, 리모델링, 설비 이전까지 연결합니다.</li>
+          <li>대표님이 판단과 실행에 집중할 수 있도록 흐름을 정리합니다.</li>
+        </ul>
+        <div class="mk-section-card">
+          <h4>저희가 중요하게 생각하는 것</h4>
+          <p>매물 수를 많이 보여주는 것보다, 실제로 사업에 맞는 공간을 찾고 이후 단계까지 안정적으로 이어지는 결과를 만드는 것입니다.</p>
+        </div>
+        <div class="mk-modal-cta">
+          <button class="mk-contact-btn" onclick="switchToContact()">상담 요청하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalFund" class="mk-modal">
+    <div class="mk-modal-inner">
+      <div class="mk-modal-head">
+        <h3>행정 · 자금</h3>
+        <button class="mk-modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="mk-modal-body">
+        <img class="mk-modal-hero" src="https://cdn.imweb.me/thumbnail/20260404/963ea66f5cd24.jpg" alt="행정 자금">
+        <p class="mk-modal-intro">
+          공장을 구할 때 가장 먼저 막히는 부분은 자금과 행정입니다.
+          정책자금, 금융대출, 공장등록, 인허가를 각각 따로 처리하면 일정이 길어지고 실수가 생기기 쉽습니다.
+          Maslow Korea는 매입 직후 필요한 자금 계획과 행정 절차를 한 흐름으로 정리합니다.
+        </p>
+        <ul class="mk-points">
+          <li>정책자금 가능 여부 사전 검토 및 진행 방향 정리</li>
+          <li>대출 구조 설계와 실행 일정 조율</li>
+          <li>공장등록, 인허가, 필요 서류 준비 실무 지원</li>
+          <li>매입 이후 바로 이어지는 일정 관리와 체크포인트 정리</li>
+        </ul>
+        <div class="mk-section-card">
+          <h4>이런 분께 적합합니다</h4>
+          <p>매입은 진행되었지만 자금 구조와 행정 절차가 복잡하게 얽혀 있는 경우, 직접 처리하기보다 실행 가능한 흐름으로 정리하고 싶은 경우에 적합합니다.</p>
+        </div>
+        <div class="mk-section-card">
+          <h4>Maslow Korea 방식</h4>
+          <p>대표님이 절차를 하나씩 따로 찾지 않아도 되도록, 실제 실행 순서에 맞춰 자금과 행정을 동시에 정리합니다.</p>
+        </div>
+        <div class="mk-modal-cta">
+<button class="mk-contact-btn" onclick="switchToContact()">상담 요청하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalBuild" class="mk-modal">
+    <div class="mk-modal-inner">
+      <div class="mk-modal-head">
+        <h3>건축 · 공사</h3>
+        <button class="mk-modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="mk-modal-body">
+        <img class="mk-modal-hero" src="https://cdn.imweb.me/thumbnail/20260404/1e83f5d6b423c.jpg" alt="건축 공사">
+        <p class="mk-modal-intro">
+          공장은 단순한 공간이 아니라 생산성과 직결되는 구조입니다.
+          잘못된 설계는 이후 동선 비효율, 공정 지연, 추가 비용으로 이어집니다.
+          Maslow Korea는 실제 운영 기준으로 공간을 설계하고 정비합니다.
+        </p>
+        <ul class="mk-points">
+          <li>신축, 증축, 리모델링 방향 검토</li>
+          <li>생산 동선과 작업 흐름 기준 공간 구성</li>
+          <li>업종 특성에 맞는 구조 변경 및 정비 방향 제안</li>
+          <li>시공 단계까지 이어질 수 있는 실행 중심 검토</li>
+        </ul>
+        <div class="mk-section-card">
+          <h4>핵심 포인트</h4>
+          <p>보기 좋은 공장이 아니라 실제로 잘 돌아가는 공장을 만드는 것이 핵심입니다. 공간 효율과 작업 흐름을 먼저 봅니다.</p>
+        </div>
+        <div class="mk-section-card">
+          <h4>추천 상황</h4>
+          <p>기존 공장을 그대로 쓰기 어렵거나, 업종에 맞춰 구조 변경과 정비가 필요한 경우 적합합니다.</p>
+        </div>
+        <div class="mk-modal-cta">
+<button class="mk-contact-btn" onclick="switchToContact()">상담 요청하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalInfra" class="mk-modal">
+    <div class="mk-modal-inner">
+      <div class="mk-modal-head">
+        <h3>설비 · 인프라</h3>
+        <button class="mk-modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="mk-modal-body">
+        <img class="mk-modal-hero" src="https://cdn.imweb.me/thumbnail/20260404/36d2b78b0f250.jpg" alt="설비 인프라">
+        <p class="mk-modal-intro">
+          공장은 설비가 들어와야 비로소 완성됩니다.
+          기계 반입, 배치, 전기, 환기, 바닥하중, 집진 등 하나라도 맞지 않으면 실제 운영이 어렵습니다.
+          Maslow Korea는 가동 기준으로 설비 환경을 맞춥니다.
+        </p>
+        <ul class="mk-points">
+          <li>설비 이전 및 반입 계획 수립</li>
+          <li>설비 배치와 작업 동선 정리</li>
+          <li>전기, 환기, 기반 인프라 검토 및 정비</li>
+          <li>실제 생산이 가능한 상태까지 환경 구성</li>
+        </ul>
+        <div class="mk-section-card">
+          <h4>이 서비스가 필요한 이유</h4>
+          <p>공간이 있다고 바로 운영이 되는 것은 아닙니다. 설비와 인프라가 맞아야 공장이 실제로 돌아갑니다.</p>
+        </div>
+        <div class="mk-section-card">
+          <h4>운영 기준으로 봅니다</h4>
+          <p>들어가는 공장이 아니라, 실제로 가동되는 공장을 목표로 설비와 환경을 함께 검토합니다.</p>
+        </div>
+        <div class="mk-modal-cta">
+<button class="mk-contact-btn" onclick="switchToContact()">상담 요청하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalMove" class="mk-modal">
+    <div class="mk-modal-inner">
+      <div class="mk-modal-head">
+        <h3>철거 · 이사</h3>
+        <button class="mk-modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="mk-modal-body">
+        <img class="mk-modal-hero" src="https://cdn.imweb.me/thumbnail/20260404/8a4ec22156c72.jpg" alt="철거 이사">
+        <p class="mk-modal-intro">
+          공장이전은 단순한 이사가 아닙니다.
+          기존 설비 철거, 원상복구, 운반, 신규 공장 재설치까지 전 과정이 연결되어야 문제 없이 진행됩니다.
+          Maslow Korea는 이전 과정을 통합적으로 관리합니다.
+        </p>
+        <ul class="mk-points">
+          <li>기존 공장 철거와 정리 방향 검토</li>
+          <li>원상복구 범위와 일정 조율</li>
+          <li>설비 운반 및 이동 계획 수립</li>
+          <li>신규 공간 재배치와 이전 완료까지 단계별 관리</li>
+        </ul>
+        <div class="mk-section-card">
+          <h4>리스크를 줄입니다</h4>
+          <p>이전 과정이 길어질수록 비용과 일정 부담이 커집니다. 한 번에 끝날 수 있도록 전체 흐름을 설계합니다.</p>
+        </div>
+        <div class="mk-section-card">
+          <h4>대표님이 얻는 효과</h4>
+          <p>여러 업체를 따로 조율하기보다, 한 흐름 안에서 일정과 작업을 정리해 사업 차질을 줄일 수 있습니다.</p>
+        </div>
+        <div class="mk-modal-cta">
+<button class="mk-contact-btn" onclick="switchToContact()">상담 요청하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalStart" class="mk-modal">
+    <div class="mk-modal-inner">
+      <div class="mk-modal-head">
+        <h3>입주 · 운영개시</h3>
+        <button class="mk-modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="mk-modal-body">
+        <img class="mk-modal-hero" src="https://cdn.imweb.me/thumbnail/20260404/dc16fbf6ab147.jpg" alt="입주 운영">
+        <p class="mk-modal-intro">
+          공장을 구하는 것이 끝이 아니라 시작입니다.
+          실제 사업이 돌아가기 위해서는 입주 준비, 최종 점검, 세팅이 마무리되어야 합니다.
+          Maslow Korea는 마지막 단계까지 책임 있게 연결합니다.
+        </p>
+        <ul class="mk-points">
+          <li>입주 일정 정리와 단계별 체크</li>
+          <li>설비 및 공간 최종 점검</li>
+          <li>운영 시작 전 필요한 준비 사항 정리</li>
+          <li>사업개시까지 이어지는 실행 단계 지원</li>
+        </ul>
+        <div class="mk-section-card">
+          <h4>마지막 단계가 중요합니다</h4>
+          <p>입주 직전과 운영 시작 직후에 가장 많은 문제가 생깁니다. 이 구간을 안정적으로 마무리하는 것이 핵심입니다.</p>
+        </div>
+        <div class="mk-section-card">
+          <h4>실행 중심 지원</h4>
+          <p>대표님은 사업에 집중하고, 나머지 준비는 체크리스트와 일정 중심으로 정리해드리는 방식입니다.</p>
+        </div>
+        <div class="mk-modal-cta">
+<button class="mk-contact-btn" onclick="switchToContact()">상담 요청하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="contactModal" class="mk-modal">
+    <div class="mk-modal-inner">
+      <div class="mk-modal-head">
+        <h3>간편 상담 문의</h3>
+        <button class="mk-modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="mk-modal-body">
+        <img class="mk-modal-hero" src="https://cdn.imweb.me/thumbnail/20260404/06122f528dc36.jpg" alt="상담 문의">
+        <div class="mk-contact-card">
+          <p>
+            공장 매물을 찾는 것부터 실제 사업을 시작하는 순간까지 필요한 과정을 한 번에 연결해드립니다.<br><br>
+            지역, 평수, 업종, 설비 조건을 알려주시면 가능한 최적의 방향으로 빠르게 상담해드립니다.
+          </p>
+        </div>
+        <div class="mk-form-grid">
+          <input class="mk-input" placeholder="이름">
+          <input class="mk-input" placeholder="연락처">
+        </div>
+        <textarea class="mk-textarea" placeholder="희망 지역, 평수, 업종, 설비 조건, 문의 내용을 간단히 적어주세요."></textarea>
+        <label class="mk-check">
+          <input type="checkbox">
+          <span>개인정보 수집·이용에 동의합니다.</span>
+        </label>
+        <button class="mk-submit">상담문의 남기기</button>
+        <div class="mk-modal-cta">
+</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const PHONE_NUMBER = '010-5407-0444';
+
+  const reveals = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('in');
+      }
+    });
+  }, { threshold: 0.14 });
+  reveals.forEach(el => io.observe(el));
+
+  const header = document.getElementById('siteHeader');
+  let lastY = window.scrollY;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    if (y > 120 && y > lastY) header.classList.add('hidden');
+    else header.classList.remove('hidden');
+    lastY = y;
+  }, { passive:true });
+
+  const s1 = document.querySelector('.hero-shape-1');
+  const s2 = document.querySelector('.hero-shape-2');
+  const s3 = document.querySelector('.hero-shape-3');
+
+  window.addEventListener('mousemove', (e) => {
+    const x = (e.clientX / window.innerWidth - 0.5);
+    const y = (e.clientY / window.innerHeight - 0.5);
+
+    if(s1) s1.style.transform = `translate(${x * -18}px, ${y * -18}px)`;
+    if(s2) s2.style.transform = `translate(${x * 12}px, ${y * 12}px)`;
+    if(s3) s3.style.transform = `translate(${x * -10}px, ${y * 10}px)`;
+  });
+
+  function openModal(id){
+    document.getElementById(id).classList.add('active');
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    document.body.style.height = '100vh';
+  }
+
+  function closeModal(){
+    document.querySelectorAll('.mk-modal').forEach(m => m.classList.remove('active'));
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+    document.body.style.height = '';
+  }
+
+  function switchToContact(){
+    closeModal();
+    openModal('contactModal');
+  }
+
+  function isMobileDevice(){
+    return /Android|iPhone|iPad|iPod|Mobile|Windows Phone|webOS/i.test(navigator.userAgent || '') || window.innerWidth <= 860;
+  }
+
+  function handlePhoneAction(){
+    const phoneBox = document.getElementById('desktopPhoneBox');
+    if (isMobileDevice()) {
+      window.location.href = 'tel:' + PHONE_NUMBER.replace(/-/g, '');
+      return;
+    }
+    if (phoneBox) {
+      phoneBox.textContent = PHONE_NUMBER;
+      phoneBox.style.display = 'flex';
+      try {
+        navigator.clipboard.writeText(PHONE_NUMBER);
+      } catch(e) {}
+    } else {
+      alert(PHONE_NUMBER);
+    }
+  }
+
+
+  function openMenu(){
+    document.getElementById('menuPanel').classList.add('active');
+  }
+
+  function closeMenu(){
+    document.getElementById('menuPanel').classList.remove('active');
+  }
+
+  function updateTopActionButton(){
+    const btn = document.getElementById('topActionBtn');
+    if(!btn) return;
+    btn.textContent = window.innerWidth <= 860 ? '010-5407-0444' : '문의하기';
+  }
+
+  function topAction(){
+    if (window.innerWidth <= 860) {
+      handlePhoneAction();
+    } else {
+      openModal('contactModal');
+    }
+  }
+
+  document.querySelector('.menu-trigger')?.addEventListener('click', function(e){
+    e.preventDefault();
+    openMenu();
+  });
+
+  document.getElementById('menuPanel')?.addEventListener('click', function(e){
+    if (e.target === this) closeMenu();
+  });
+
+  window.addEventListener('resize', updateTopActionButton);
+  updateTopActionButton();
+
+  document.querySelectorAll('.mk-modal').forEach(modal=>{
+    modal.addEventListener('click', function(e){
+      if(e.target === modal) closeModal();
+    });
+  });
+
+  window.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeModal();
+  });
+
+window.__savedScrollY = 0;
+function openModal(id){
+  window.__savedScrollY = window.scrollY || window.pageYOffset || 0;
+  document.getElementById(id).classList.add('active');
+  document.documentElement.style.overflow = 'hidden';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(){
+  document.querySelectorAll('.mk-modal').forEach(m => m.classList.remove('active'));
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+  const y = window.__savedScrollY || 0;
+  requestAnimationFrame(() => window.scrollTo(0, y));
+}
+
+</script>
+</body>
+</html>

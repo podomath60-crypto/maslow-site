@@ -1241,19 +1241,33 @@
       color:#9aa4b2;
     }
     .mk-check{
-      display:flex;
-      gap:8px;
-      align-items:flex-start;
-      margin:0 0 14px;
-      font-size:13px;
-      color:#667085;
-      line-height:1.6;
-    }
-    .mk-check input{
-      width:auto;
-      margin-top:3px;
-      flex:0 0 auto;
-    }
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:0 0 14px;
+  font-size:13px;
+  color:#667085;
+  line-height:1.5;
+  background:transparent;
+}
+.mk-check input{
+  width:20px !important;
+  height:20px !important;
+  margin:0;
+  flex:0 0 20px;
+}
+.mk-check span{
+  display:inline-block !important;
+  width:auto !important;
+  flex:0 1 auto;
+  font-size:13px;
+  line-height:1.5;
+  color:#667085 !important;
+  background:transparent !important;
+  word-break:keep-all;
+  white-space:nowrap;
+}
+
     .mk-submit{
       width:100%;
       min-height:54px;
@@ -1264,6 +1278,32 @@
       font-weight:800;
       margin-bottom:10px;
     }
+    .mk-toast{
+  position:fixed;
+  left:50%;
+  top:50%;
+  bottom:auto;
+  transform:translate(-50%, -50%) scale(.96);
+  width:auto;
+  max-width:280px;
+  padding:12px 14px;
+  border-radius:16px;
+  background:rgba(17,24,39,.82);
+  color:#fff;
+  font-size:14px;
+  font-weight:700;
+  line-height:1.6;
+  text-align:center;
+  box-shadow:0 18px 36px rgba(15,23,42,.18);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .22s ease, transform .22s ease;
+  z-index:12000;
+}
+.mk-toast.show{
+  opacity:1;
+  transform:translate(-50%, -50%) scale(1);
+}
 
 
     /* ===== HAMBURGER PANEL ===== */
@@ -1327,7 +1367,7 @@
     .mobile-float-call{
       position:fixed;
       right:16px;
-      bottom:16px;
+      bottom:88px;
       z-index:1000;
       width:58px; height:58px;
       border-radius:50%;
@@ -1338,6 +1378,9 @@
       align-items:center;
       justify-content:center;
       font-size:24px;
+    }
+    .mobile-float-kakao{
+      display:none;
     }
     .mobile-only{ display:none !important; }
 
@@ -1675,7 +1718,30 @@
 
       .menu-drawer{ width:100vw; max-width:none; padding:18px 16px 24px; }
       .desktop-float-phone{ display:none !important; }
-      .mobile-float-call{ display:flex !important; }
+      .mobile-float-call{
+        display:flex !important;
+        width:50px !important;
+        height:50px !important;
+        font-size:20px !important;
+        box-shadow:0 12px 22px rgba(15,124,255,.22) !important;
+      }
+      .mobile-float-kakao{
+        position:fixed;
+        right:16px;
+        bottom:33px;
+        z-index:1000;
+        width:50px;
+        height:50px;
+        border-radius:50%;
+        background:#FEE500;
+        color:#191919 !important;
+        box-shadow:0 12px 22px rgba(0,0,0,.14);
+        display:flex !important;
+        align-items:center;
+        justify-content:center;
+        font-size:18px;
+        font-weight:900;
+      }
       .mobile-only{ display:inline-flex !important; }
 
       .cta-box{
@@ -1754,6 +1820,11 @@
         grid-template-columns:1fr;
       }
     }
+
+    #contactModal .mk-modal-body{
+  padding-top:10px;
+  padding-bottom:50px;
+}  
   </style>
 </head>
 <body>
@@ -2044,10 +2115,10 @@
     <div class="section-head">
       <div class="reveal">
         <div class="eyebrow">Guide</div>
-        <h2 class="section-title">홈에서 신뢰를 만드는 영역</h2>
+        <h2 class="section-title">현장 이해가<br>신뢰를 만듭니다.</h2>
       </div>
       <div class="section-text reveal delay-2">
-        진행 사례, 서비스 소개, 공장 이전 가이드 같은 성격의 블록을 통해 기업형 신뢰감을 주는 영역입니다.
+       보여지는 매물보다 실제로 맞는 공간을 찾는 데 집중합니다
       </div>
     </div>
 
@@ -2115,8 +2186,7 @@
       <div class="footer-left">
         <strong>매슬로우코리아 / 매슬로우공인중개사사무소</strong>
         <p>
-          대표 박성연<br>
-          전화번호 010-5407-0444<br>
+          대표 박성연  전화번호 010-5407-0444<br>
           주소 전북 군산시 대학로 342 26빌딩<br>
           등록번호 52130-025-0005
         </p>
@@ -2150,6 +2220,7 @@
   </div>
 
   <a href="javascript:void(0)" class="mobile-float-call" onclick="handlePhoneAction()" aria-label="전화하기">☎</a>
+  <a href="http://pf.kakao.com/_mNURX/chat" class="mobile-float-kakao" target="_blank" rel="noopener" aria-label="카카오 채널 채팅">talk</a>
 
   <div id="modalGreeting" class="mk-modal">
     <div class="mk-modal-inner">
@@ -2353,7 +2424,7 @@
         <button class="mk-modal-close" onclick="closeModal()">✕</button>
       </div>
       <div class="mk-modal-body">
-        <img class="mk-modal-hero" src="https://cdn.imweb.me/thumbnail/20260404/06122f528dc36.jpg" alt="상담 문의">
+        <img class="mk-modal-hero" src="https://cdn.imweb.me/thumbnail/20260405/6385344b8e837.jpg" alt="상담 문의">
         <div class="mk-contact-card">
           <p>
             공장 매물을 찾는 것부터 실제 사업을 시작하는 순간까지 필요한 과정을 한 번에 연결해드립니다.<br><br>
@@ -2361,15 +2432,16 @@
           </p>
         </div>
         <div class="mk-form-grid">
-          <input class="mk-input" placeholder="이름">
-          <input class="mk-input" placeholder="연락처">
+          <input id="contactName" class="mk-input" placeholder="이름">
+          <input id="contactPhone" class="mk-input" type="tel" inputmode="numeric" autocomplete="tel" maxlength="13" placeholder="연락처">
         </div>
-        <textarea class="mk-textarea" placeholder="희망 지역, 평수, 업종, 설비 조건, 문의 내용을 간단히 적어주세요."></textarea>
+        <textarea id="contactNote" class="mk-textarea" placeholder="희망 지역, 평수, 업종, 설비 조건, 문의 내용을 간단히 적어주세요."></textarea>
         <label class="mk-check">
-          <input type="checkbox">
+          <input id="contactAgree" type="checkbox">
           <span>개인정보 수집·이용에 동의합니다.</span>
         </label>
-        <button class="mk-submit">상담문의 남기기</button>
+        <button id="contactSubmitBtn" class="mk-submit" type="button">상담문의 남기기</button>
+        <div id="contactSubmitMsg" style="display:none; margin-top:10px; font-size:14px; font-weight:700; color:#0f7cff;">접수되었습니다.</div>
         <div class="mk-modal-cta">
 </div>
       </div>
@@ -2499,21 +2571,185 @@
   });
 
 window.__savedScrollY = 0;
+window.__modalHistoryOpen = false;
+window.__activeModalId = null;
+window.__ignoreNextPopstate = false;
+
 function openModal(id){
+  const modal = document.getElementById(id);
+  if (!modal) return;
+
+  const alreadyOpen = !!document.querySelector('.mk-modal.active');
   window.__savedScrollY = window.scrollY || window.pageYOffset || 0;
-  document.getElementById(id).classList.add('active');
+
+  document.querySelectorAll('.mk-modal').forEach(m => m.classList.remove('active'));
+  modal.classList.add('active');
+
   document.documentElement.style.overflow = 'hidden';
   document.body.style.overflow = 'hidden';
+
+  window.__activeModalId = id;
+
+  if (!alreadyOpen) {
+    history.pushState({ mkModal: true }, '');
+    window.__modalHistoryOpen = true;
+  }
 }
 
-function closeModal(){
+function closeModal(fromPopstate){
+  const hadOpenModal = !!document.querySelector('.mk-modal.active');
+
   document.querySelectorAll('.mk-modal').forEach(m => m.classList.remove('active'));
   document.documentElement.style.overflow = '';
   document.body.style.overflow = '';
+
   const y = window.__savedScrollY || 0;
   requestAnimationFrame(() => window.scrollTo(0, y));
+
+  window.__activeModalId = null;
+
+  if (!hadOpenModal) return;
+
+  if (window.__modalHistoryOpen) {
+    if (fromPopstate) {
+      window.__modalHistoryOpen = false;
+    } else {
+      window.__ignoreNextPopstate = true;
+      history.back();
+    }
+  }
 }
 
+window.addEventListener('popstate', function(){
+  if (window.__ignoreNextPopstate) {
+    window.__ignoreNextPopstate = false;
+    window.__modalHistoryOpen = false;
+    return;
+  }
+
+  const activeModal = document.querySelector('.mk-modal.active');
+  if (activeModal) {
+    closeModal(true);
+  }
+});
+
+
+  const GAS_CONTACT_URL = "https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec";
+
+  function getValue(id){
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  }
+
+  function formatPhoneNumber(value){
+    const only = String(value || '').replace(/\D/g, '').slice(0, 11);
+    if(only.length < 4) return only;
+    if(only.length < 8) return only.slice(0, 3) + '-' + only.slice(3);
+    return only.slice(0, 3) + '-' + only.slice(3, 7) + '-' + only.slice(7);
+  }
+
+  function showToast(message){
+    const toast = document.getElementById('mkToast');
+    if(!toast) return;
+    toast.innerHTML = String(message || '').replace(/\n/g, '<br>');
+    toast.classList.add('show');
+    clearTimeout(window.__mkToastTimer);
+    window.__mkToastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2200);
+  }
+
+  async function submitContactForm(){
+    const name = getValue("contactName");
+    const phone = getValue("contactPhone");
+    const note = getValue("contactNote");
+    const agree = document.getElementById("contactAgree")?.checked;
+    const btn = document.getElementById("contactSubmitBtn");
+    const msg = document.getElementById("contactSubmitMsg");
+
+    if(!name){ alert("이름을 입력해주세요."); return; }
+    if(!phone){ alert("연락처를 입력해주세요."); return; }
+    if(!agree){ alert("개인정보 수집·이용에 동의해주세요."); return; }
+
+    const payload = {
+      type: "maslow_contact",
+      name: name,
+      phone: phone,
+      note: note,
+      pageUrl: location.href,
+      userAgent: navigator.userAgent,
+      createdAt: new Date().toISOString()
+    };
+
+    try{
+      if(btn){
+        btn.disabled = true;
+        btn.textContent = "접수중...";
+      }
+
+      await fetch(GAS_CONTACT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+
+      if(msg) msg.style.display = "block";
+      showToast("문의가 접수되었습니다.\n조속히 안내드리겠습니다.");
+
+      const nameEl = document.getElementById("contactName");
+      const phoneEl = document.getElementById("contactPhone");
+      const noteEl = document.getElementById("contactNote");
+      const agreeEl = document.getElementById("contactAgree");
+
+      if(nameEl) nameEl.value = "";
+      if(phoneEl) phoneEl.value = "";
+      if(noteEl) noteEl.value = "";
+      if(agreeEl) agreeEl.checked = false;
+
+      setTimeout(() => {
+        if(msg) msg.style.display = "none";
+        closeModal();
+      }, 700);
+
+    }catch(err){
+      alert("접수 중 문제가 발생했습니다.");
+      console.error(err);
+    }finally{
+      if(btn){
+        btn.disabled = false;
+        btn.textContent = "상담문의 남기기";
+      }
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    const submitBtn = document.getElementById("contactSubmitBtn");
+    if(submitBtn){
+      submitBtn.addEventListener("click", submitContactForm);
+    }
+
+    const phoneInput = document.getElementById("contactPhone");
+    if(phoneInput){
+      phoneInput.addEventListener("input", function(e){
+        e.target.value = formatPhoneNumber(e.target.value);
+      });
+      phoneInput.addEventListener("keypress", function(e){
+        const ch = e.key || '';
+        if(!/[0-9]/.test(ch) && ch !== 'Backspace' && ch !== 'Delete' && ch !== 'ArrowLeft' && ch !== 'ArrowRight' && ch !== 'Tab'){
+          e.preventDefault();
+        }
+      });
+      phoneInput.addEventListener("paste", function(e){
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        phoneInput.value = formatPhoneNumber(text);
+      });
+    }
+  });
+
+
 </script>
+  <div id="mkToast" class="mk-toast">문의가 접수되었습니다.<br>조속히 안내드리겠습니다.</div>
 </body>
 </html>

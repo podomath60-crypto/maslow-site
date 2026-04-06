@@ -222,13 +222,14 @@
     .btn:hover::before{ left:140%; }
 
     .btn-primary{
-      background:var(--blue);
-      color:#fff;
-      box-shadow:0 10px 24px rgba(15,124,255,.18);
+      background:#ffffff;
+      color:var(--blue) !important;
+      border:1px solid #cfe8fb;
+      box-shadow:none;
     }
     .btn-primary:hover{
-      background:var(--blue-2);
-      box-shadow:0 14px 28px rgba(15,124,255,.2);
+      background:#f7fbff;
+      box-shadow:none;
     }
     .btn-secondary{
       background:#fff;
@@ -690,11 +691,606 @@
       border-color:var(--sky-strong) !important;
       box-shadow:0 14px 28px rgba(15,124,255,.08);
     }
+    .one-stop-card{
+      position:relative;
+      overflow:hidden;
+    }
     .one-stop-card .service-num{
       color:#56b8ff;
     }
     .one-stop-card .service-link{
       color:#1692ff;
+    }
+    .one-stop-main{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      width:100%;
+    }
+    .one-stop-copy{
+      flex:1 1 auto;
+      min-width:0;
+      max-width:66%;
+    }
+    .one-stop-thumb{
+      flex:0 0 96px;
+      width:96px;
+      height:96px;
+      border-radius:18px;
+      background-size:cover;
+      background-position:center;
+      background-repeat:no-repeat;
+      box-shadow:0 8px 18px rgba(15,124,255,.12);
+      opacity:.96;
+      pointer-events:none;
+      margin-top:34px;
+    }
+
+
+    /* ===== PROPERTY SECTION ===== */
+    .property-section{
+      width:100%;
+      padding:144px var(--pad-x) 96px;
+      background:#fff;
+    }
+    .property-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:28px;
+      margin-bottom:34px;
+    }
+    .property-grid{
+      width:100%;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:9px;
+    }
+    .property-card{
+      display:block;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:24px;
+      overflow:hidden;
+      box-shadow:var(--shadow-soft);
+      transition:transform .25s ease, box-shadow .25s ease;
+    }
+    .property-card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 16px 28px rgba(15,23,42,.06);
+    }
+    .property-media{
+      position:relative;
+      aspect-ratio:1 / 1;
+      background:#eef3f8 center/cover no-repeat;
+    }
+    .property-chip-wrap{
+      position:absolute;
+      top:12px;
+      right:12px;
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      max-width:calc(100% - 24px);
+    }
+    .property-chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:20px;
+      padding:0 6px;
+      border-radius:999px;
+      background:rgba(234,246,255,.92);
+      color:#67addf;
+      font-size:10px;
+      font-weight:800;
+      line-height:1;
+      box-shadow:0 4px 10px rgba(95,194,255,.08);
+      white-space:nowrap;
+    }
+    .property-body{
+      padding:24px 20px 24px;
+    }
+    .property-body h3{
+      margin:0 0 14px;
+      font-size:31px;
+      line-height:1.22;
+      font-weight:700;
+      color:#111;
+      letter-spacing:-0.05em;
+    }
+    .property-price{
+      margin:0 0 18px;
+      font-size:24px;
+      line-height:1;
+      font-weight:800;
+      color:var(--blue);
+      letter-spacing:-0.04em;
+    }
+    .property-meta{
+      margin:0;
+      color:#4f5863;
+      font-size:20px;
+      line-height:1.45;
+      font-weight:500;
+      letter-spacing:-0.04em;
+    }
+    .property-cta{
+      display:flex;
+      justify-content:center;
+      margin-top:30px;
+    }
+    .property-more-btn{
+      min-width:188px;
+      min-height:40px;
+      padding:0 16px;
+      gap:8px;
+      background:#ffffff !important;
+      color:#67addf !important;
+      border:1.5px solid #bfe3fb !important;
+      border-radius:999px !important;
+      box-shadow:none !important;
+      font-weight:700 !important;
+      font-size:15px !important;
+    }
+
+
+    .property-detail-modal.active ~ .mobile-float-call,
+    .property-detail-modal.active ~ .mobile-float-kakao{
+      z-index:10020 !important;
+      display:flex !important;
+    }
+
+
+    body.mk-any-modal-open .mobile-float-call,
+    body.mk-any-modal-open .mobile-float-kakao{
+      z-index:10020 !important;
+      display:flex !important;
+      opacity:1 !important;
+      visibility:visible !important;
+    }
+
+
+    
+
+
+.property-detail-modal.active .property-modal-float-call,
+    .property-detail-modal.active 
+@media (min-width:861px){
+      
+}
+
+
+    @media (min-width:861px){
+      .property-more-btn{
+        color:#3f97d4 !important;
+        border:1.8px solid #8ecbf5 !important;
+        background:#ffffff !important;
+      }
+    }
+
+
+    @media (max-width:860px){
+      .desktop-float-phone{ display:none; }
+    }
+
+    @media (max-width:1180px){
+      .property-grid{
+        grid-template-columns:repeat(2,1fr);
+      }
+    }
+
+    @media (max-width:860px){
+      .property-section{
+        padding:88px var(--pad-x) 72px;
+      }
+      .property-head{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:12px;
+        margin-bottom:22px;
+      }
+      .property-grid{
+        grid-template-columns:repeat(2,1fr);
+        gap:14px;
+      }
+      .property-body{
+        padding:18px 16px 18px;
+      }
+      .property-body h3{
+        font-size:22px;
+        line-height:1.24;
+        margin-bottom:10px;
+        font-weight:700;
+      }
+      .property-price{
+        font-size:19px;
+        margin-bottom:12px;
+        font-weight:800;
+      }
+      .property-meta{
+        font-size:16px;
+        line-height:1.42;
+        font-weight:500;
+      }
+      .property-chip-wrap{
+        top:10px;
+        right:10px;
+        gap:5px;
+      }
+      .property-chip{
+        min-height:18px;
+        padding:0 5px;
+        font-size:10px;
+      }
+      .property-more-btn{
+        min-width:168px;
+        min-height:36px;
+      }
+    }
+
+    @media (max-width:520px){
+      .property-grid{
+        grid-template-columns:repeat(2,1fr);
+        gap:6px;
+      }
+      .property-media{
+        aspect-ratio:1 / 1.28;
+      }
+      .property-card{
+        border-radius:18px;
+      }
+      .property-body h3{
+        font-size:21px;
+        font-weight:700;
+      }
+      .property-price{
+        font-size:18px;
+        font-weight:800;
+      }
+      .property-meta{
+        font-size:15px;
+        font-weight:500;
+      }
+    }
+
+
+    /* ===== PROPERTY DETAIL MODAL ===== */
+    .property-detail-modal .mk-modal-inner{
+      max-width:760px;
+      background:#ffffff;
+      height:100dvh;
+      max-height:100dvh;
+    }
+    .property-detail-modal .mk-modal-head{
+      background:#ffffff;
+      border-bottom:none;
+      padding:14px 16px 6px;
+    }
+    .property-detail-modal .mk-modal-body{
+      background:#ffffff;
+      padding:0 20px calc(56px + env(safe-area-inset-bottom, 0px));
+    }
+    .property-detail-hero{
+      width:100%;
+      aspect-ratio:1 / 1.25;
+      object-fit:cover;
+      border-radius:28px;
+      background:#e9edf2;
+      margin-bottom:18px;
+    }
+    .property-detail-note{
+      margin:0 0 26px;
+      font-size:14px;
+      color:#6c727a;
+      line-height:1.7;
+    }
+    .property-detail-chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:40px;
+      padding:0 22px;
+      border-radius:999px;
+      background:#1f96ff;
+      color:#fff;
+      font-size:22px;
+      font-weight:800;
+      line-height:1;
+      box-shadow:0 8px 20px rgba(31,150,255,.20);
+      margin-bottom:18px;
+    }
+    .property-detail-title{
+      margin:0 0 14px;
+      font-size:56px;
+      line-height:1.08;
+      font-weight:900;
+      color:#202227;
+      letter-spacing:-0.05em;
+    }
+    .property-detail-address{
+      margin:0 0 28px;
+      font-size:24px;
+      line-height:1.5;
+      color:#43484e;
+      letter-spacing:-0.03em;
+    }
+    .property-detail-divider{
+      height:1px;
+      background:#dfdfdf;
+      margin:0 0 30px;
+    }
+    .property-detail-price{
+      margin:0 0 30px;
+      text-align:center;
+      color:#333;
+      font-size:24px;
+      line-height:1.4;
+      letter-spacing:-0.03em;
+    }
+    .property-detail-price strong{
+      font-size:66px;
+      color:#ff3c3c;
+      font-weight:900;
+      letter-spacing:-0.06em;
+      margin:0 10px;
+      vertical-align:baseline;
+    }
+    .property-summary-box{
+      background:#dfeef9;
+      border-radius:28px;
+      padding:28px 26px;
+      margin-bottom:26px;
+    }
+    .property-summary-box h4{
+      margin:0 0 14px;
+      font-size:30px;
+      line-height:1.2;
+      font-weight:900;
+      color:#202227;
+      letter-spacing:-0.04em;
+    }
+    .property-summary-box ul{
+      margin:0;
+      padding:0;
+      list-style:none;
+      display:grid;
+      gap:10px;
+    }
+    .property-summary-box li{
+      font-size:19px;
+      line-height:1.7;
+      color:#2f3338;
+      letter-spacing:-0.03em;
+    }
+    .property-office-box{
+      background:#eceaea;
+      border-radius:28px;
+      overflow:hidden;
+      margin-top:36px;
+      margin-bottom:18px;
+    }
+    .property-office-head{
+      background:#e1dfdf;
+      padding:16px 20px;
+      text-align:center;
+      font-size:26px;
+      line-height:1.2;
+      font-weight:900;
+      color:#2b2d31;
+      letter-spacing:-0.04em;
+    }
+    .property-office-body{
+      padding:18px 22px 20px;
+    }
+    .property-office-body p{
+      margin:0;
+      font-size:17px;
+      line-height:1.8;
+      color:#34383d;
+      letter-spacing:-0.03em;
+    }
+    .property-specs{
+      border-top:1px solid #dedede;
+      margin-bottom:34px;
+    }
+
+
+
+    .desktop-only-inline{ display:none; }
+    .mobile-only-inline{ display:inline; }
+
+    @media (min-width:861px){
+      .desktop-only-inline{ display:inline; }
+      .mobile-only-inline{ display:none; }
+      .desktop-float-phone{ display:flex !important; }
+    }
+
+    .property-inquiry-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin:18px 0 26px;
+    }
+    .property-inquiry-btn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:54px;
+      padding:0 14px;
+      border:1.5px solid #f5b7c8;
+      border-radius:16px;
+      background:#fff;
+      color:#d85c86 !important;
+      font-size:17px;
+      font-weight:800;
+      letter-spacing:-0.03em;
+      box-shadow:none;
+    }
+    .property-inquiry-btn:visited,
+    .property-inquiry-btn:hover,
+    .property-inquiry-btn:active{
+      color:#d85c86 !important;
+      background:#fff7fa;
+    }
+
+    .property-spec-sector-title{
+      padding:20px 12px 10px;
+      font-size:22px;
+      line-height:1.3;
+      font-weight:900;
+      color:#2b2d31;
+      letter-spacing:-0.04em;
+      border-top:1px solid #dedede;
+      background:transparent;
+    }
+    .property-specs .property-spec-sector-title:first-child{
+      border-top:none;
+      padding-top:8px;
+    }
+
+    .property-spec-row{
+      display:grid;
+      grid-template-columns:170px 1fr;
+      gap:16px;
+      padding:24px 12px;
+      border-bottom:1px solid #dedede;
+      align-items:start;
+    }
+    .property-spec-label{
+      font-size:18px;
+      line-height:1.6;
+      color:#6a6e74;
+      font-weight:500;
+      letter-spacing:-0.03em;
+    }
+    .property-spec-value{
+      font-size:18px;
+      line-height:1.6;
+      color:#23262b;
+      font-weight:500;
+      letter-spacing:-0.03em;
+      word-break:keep-all;
+    }
+    .property-detail-cta{
+      display:flex;
+      justify-content:center;
+      padding:6px 0 2px;
+      margin-top:8px;
+      margin-bottom:12px;
+    }
+    .property-detail-cta::after{
+      content:"";
+      display:block;
+      width:1px;
+      height:1px;
+    }
+    .property-detail-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:68px;
+      min-width:320px;
+      padding:0 30px;
+      border-radius:999px;
+      background:#ff0050;
+      color:#fff !important;
+      font-size:24px;
+      font-weight:900;
+      line-height:1;
+      letter-spacing:-0.04em;
+      box-shadow:0 12px 24px rgba(255,0,80,.18);
+    }
+
+    @media (max-width:860px){
+      .property-detail-modal .mk-modal-inner{
+        max-width:none;
+      }
+      .property-detail-modal .mk-modal-head{
+        padding:12px 14px 4px;
+      }
+      .property-detail-modal .mk-modal-body{
+        padding:0 18px calc(52px + env(safe-area-inset-bottom, 0px));
+      }
+      .property-detail-hero{
+        border-radius:24px;
+        margin-bottom:14px;
+      }
+      .property-detail-note{
+        font-size:12px;
+        margin-bottom:18px;
+      }
+      .property-detail-chip{
+        min-height:34px;
+        padding:0 18px;
+        font-size:18px;
+        margin-bottom:14px;
+      }
+      .property-detail-title{
+        font-size:34px;
+        margin-bottom:10px;
+      }
+      .property-detail-address{
+        font-size:18px;
+        margin-bottom:20px;
+      }
+      .property-detail-divider{
+        margin-bottom:22px;
+      }
+      .property-detail-price{
+        font-size:16px;
+        margin-bottom:22px;
+      }
+      .property-detail-price strong{
+        font-size:42px;
+        margin:0 6px;
+      }
+      .property-summary-box{
+        border-radius:22px;
+        padding:22px 18px;
+        margin-bottom:20px;
+      }
+      .property-summary-box h4{
+        font-size:22px;
+        margin-bottom:12px;
+      }
+      .property-summary-box li{
+        font-size:16px;
+        line-height:1.65;
+      }
+      .property-office-box{
+        border-radius:22px;
+        margin-bottom:22px;
+      }
+      .property-office-head{
+        font-size:18px;
+        padding:14px 16px;
+      }
+      .property-office-body{
+        padding:14px 16px 16px;
+      }
+      .property-office-body p{
+        font-size:14px;
+        line-height:1.75;
+      }
+      .property-spec-row{
+        grid-template-columns:110px 1fr;
+        gap:10px;
+        padding:18px 6px;
+      }
+      .property-spec-label,
+      .property-spec-value{
+        font-size:14px;
+        line-height:1.65;
+      }
+      .property-detail-btn{
+        min-height:58px;
+        min-width:260px;
+        padding:0 22px;
+        font-size:18px;
+      }
     }
 
     /* ===== LIFECYCLE ===== */
@@ -950,6 +1546,19 @@
       max-width:940px;
       position:relative;
       z-index:1;
+    }
+
+
+    .cta-box .btn.btn-primary{
+      background:var(--blue) !important;
+      color:#fff !important;
+      border:1px solid transparent !important;
+      box-shadow:0 12px 28px rgba(15,124,255,.20) !important;
+    }
+    .cta-box .btn.btn-primary:hover{
+      background:var(--blue-2) !important;
+      color:#fff !important;
+      box-shadow:0 14px 30px rgba(15,124,255,.22) !important;
     }
 
     /* ===== FOOTER ===== */
@@ -1306,6 +1915,25 @@
 }
 
 
+
+    /* ===== ONE-STOP MODAL SAFE BOTTOM ===== */
+    .one-stop-modal .mk-modal-body{
+      padding-bottom:calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+    .one-stop-modal .mk-modal-cta{
+      margin-top:14px;
+      padding-bottom:calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+
+    @media (max-width:860px){
+      .one-stop-modal .mk-modal-body{
+        padding-bottom:calc(128px + env(safe-area-inset-bottom, 0px)) !important;
+      }
+      .one-stop-modal .mk-modal-cta{
+        padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px));
+      }
+    }
+
     /* ===== HAMBURGER PANEL ===== */
     .menu-panel{
       position:fixed;
@@ -1345,7 +1973,7 @@
       right:28px;
       bottom:104px;
       z-index:1000;
-      display:flex;
+      display:none;
       align-items:center;
       gap:12px;
       min-height:74px;
@@ -1359,6 +1987,8 @@
       letter-spacing:-0.01em;
       width:auto;
       max-width:calc(100vw - 56px);
+      border:none;
+      cursor:pointer;
     }
     .desktop-float-phone .icon{
       width:30px; height:30px; border-radius:50%; background:rgba(255,255,255,.18);
@@ -1371,13 +2001,14 @@
       z-index:1000;
       width:58px; height:58px;
       border-radius:50%;
-      background:#0f7cff;
-      color:#fff !important;
-      box-shadow:0 16px 28px rgba(15,124,255,.28);
+      background:#7fc9ff;
+      color:#ffffff !important;
+      box-shadow:0 12px 22px rgba(127,201,255,.24);
       display:none;
       align-items:center;
       justify-content:center;
       font-size:24px;
+      text-shadow:0 1px 2px rgba(0,0,0,.12);
     }
     .mobile-float-kakao{
       display:none;
@@ -1587,6 +2218,16 @@
         padding:18px 16px;
         border-radius:18px;
       }
+      .one-stop-copy{
+        max-width:64%;
+      }
+      .one-stop-thumb{
+        flex:0 0 84px;
+        width:84px;
+        height:84px;
+        border-radius:16px;
+        margin-top:30px;
+      }
       .service-box h4{
         font-size:18px;
         margin:10px 0 8px;
@@ -1723,7 +2364,10 @@
         width:50px !important;
         height:50px !important;
         font-size:20px !important;
-        box-shadow:0 12px 22px rgba(15,124,255,.22) !important;
+        background:#8fd3ff !important;
+        color:#ffffff !important;
+        box-shadow:0 10px 18px rgba(143,211,255,.22) !important;
+        text-shadow:0 1px 2px rgba(0,0,0,.14) !important;
       }
       .mobile-float-kakao{
         position:fixed;
@@ -1825,6 +2469,19 @@
   padding-top:10px;
   padding-bottom:50px;
 }  
+
+    @media (max-width:860px){
+      .desktop-float-phone,
+      body.mk-any-modal-open .desktop-float-phone,
+      .property-detail-modal.active ~ .desktop-float-phone{
+        display:none !important;
+        opacity:0 !important;
+        visibility:hidden !important;
+        pointer-events:none !important;
+      }
+    }
+
+
   </style>
 </head>
 <body>
@@ -1885,7 +2542,7 @@
         </p>
         <div class="hero-actions">
           <a href="javascript:void(0)" onclick="openModal('contactModal')" class="btn btn-primary">조건 보내기</a>
-          <a href="#services" class="btn btn-secondary">서비스 보기</a>
+          <a href="#properties" class="btn btn-secondary">서비스 보기</a>
         </div>
       </div>
 
@@ -1925,6 +2582,133 @@
     </div>
   </section>
 
+  
+  <section class="property-section" id="properties">
+    <div class="property-head">
+      <div class="reveal">
+        <div class="eyebrow">Property Line-up</div>
+        <h2 class="section-title"># 공장 매매 임대</h2>
+      </div>
+      <div class="section-text reveal delay-2">
+        현장을 직접 발로 뛰어 확인한 공장 매물 중심으로, 원하는 조건에 맞는 공장을 빠르게 만나보실 수 있도록 추천해드립니다.<br>
+        더 큰 시작과 성장의 발판이 되어드리겠습니다.
+      </div>
+    </div>
+
+    <div class="property-grid">
+      <a class="property-card reveal delay-1" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
+        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=900&q=80');">
+          <div class="property-chip-wrap">
+            <span class="property-chip">매매</span>
+          </div>
+        </div>
+        <div class="property-body">
+          <h3>군산 국가산단 제조공장</h3>
+          <p class="property-price">78억</p>
+          <p class="property-meta"># 대형차 진입 가능</p>
+        </div>
+      </a>
+
+      <a class="property-card reveal delay-2" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
+        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=900&q=80');">
+          <div class="property-chip-wrap">
+            <span class="property-chip">임대</span>
+          </div>
+        </div>
+        <div class="property-body">
+          <h3>김포 물류형 창고시설</h3>
+          <p class="property-price">보 3억 / 월 2,700</p>
+          <p class="property-meta"># 상하차 동선 우수</p>
+        </div>
+      </a>
+
+      <a class="property-card reveal delay-3" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
+        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80');">
+          <div class="property-chip-wrap">
+            <span class="property-chip">매매</span>
+            <span class="property-chip">임대</span>
+          </div>
+        </div>
+        <div class="property-body">
+          <h3>화성 일반공업지역 공장</h3>
+          <p class="property-price">132억 / 임대 협의</p>
+          <p class="property-meta"># 야드 넓음</p>
+        </div>
+      </a>
+
+      <a class="property-card reveal delay-4" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
+        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1565793298595-6a879b1d9492?auto=format&fit=crop&w=900&q=80');">
+          <div class="property-chip-wrap">
+            <span class="property-chip">임대</span>
+          </div>
+        </div>
+        <div class="property-body">
+          <h3>평택 제조사무 복합동</h3>
+          <p class="property-price">월 1,450</p>
+          <p class="property-meta"># 사무동 포함</p>
+        </div>
+      </a>
+
+      <a class="property-card reveal delay-1" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
+        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=900&q=80');">
+          <div class="property-chip-wrap">
+            <span class="property-chip">매매</span>
+          </div>
+        </div>
+        <div class="property-body">
+          <h3>익산 신축 가능 부지형 공장</h3>
+          <p class="property-price">54억</p>
+          <p class="property-meta"># 분할 검토 가능</p>
+        </div>
+      </a>
+
+      <a class="property-card reveal delay-2" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
+        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=900&q=80');">
+          <div class="property-chip-wrap">
+            <span class="property-chip">매매</span>
+            <span class="property-chip">임대</span>
+          </div>
+        </div>
+        <div class="property-body">
+          <h3>천안 전자부품 공장동</h3>
+          <p class="property-price">96억 / 임대 협의</p>
+          <p class="property-meta"># 설비 반입 용이</p>
+        </div>
+      </a>
+
+      <a class="property-card reveal delay-3" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
+        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=900&q=80');">
+          <div class="property-chip-wrap">
+            <span class="property-chip">임대</span>
+          </div>
+        </div>
+        <div class="property-body">
+          <h3>시화 물류창고 단독동</h3>
+          <p class="property-price">보 2억 / 월 1,900</p>
+          <p class="property-meta"># 도크 확보</p>
+        </div>
+      </a>
+
+      <a class="property-card reveal delay-4" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
+        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=900&q=80');">
+          <div class="property-chip-wrap">
+            <span class="property-chip">매매</span>
+          </div>
+        </div>
+        <div class="property-body">
+          <h3>부산 항만 접근형 창고</h3>
+          <p class="property-price">115억</p>
+          <p class="property-meta"># 항만 접근성 우수</p>
+        </div>
+      </a>
+    </div>
+
+    <div class="property-cta reveal">
+      <a href="https://maslowkorea.net/" class="btn btn-primary property-more-btn">➜ 추천 매물 더보기</a>
+    </div>
+  </section>
+
+
   <section class="section" id="services">
     <div class="section-head">
       <div class="reveal">
@@ -1942,7 +2726,7 @@
       <div class="intro-card reveal delay-1">
         <div class="media"></div>
         <div class="copy">
-          <h3>공장을 구한 뒤부터가 더 중요합니다</h3>
+          <h3>공장을 구한 뒤에도 중요한 과정이 이어집니다</h3>
           <p>
             공장을 찾은 이후에는 자금, 행정, 공사, 설비, 이전, 입주 준비까지 수많은 과정이 이어집니다.
             Maslow Korea는 매물 탐색 이후 필요한 단계들을 따로따로 분리하지 않고,
@@ -1966,61 +2750,76 @@
 
     <div class="service-grid one-stop-grid">
       <article class="service-box one-stop-card reveal delay-1" onclick="openModal('modalFund')">
-        <div>
-          <div class="service-num">01</div>
-          <h4>행정 · 자금</h4>
-          <p>
-            정책자금, 대출, 공장등록, 인허가 등
-            공장 확보 이후 필요한 행정과 자금 절차를 지원합니다.
-          </p>
+        <div class="one-stop-main">
+          <div class="one-stop-copy">
+            <div class="service-num">01</div>
+            <h4>행정 · 자금</h4>
+            <p>
+              정책자금, 대출, 공장등록, 인허가 등
+              공장 확보 이후 필요한 행정과 자금 절차를 지원합니다.
+            </p>
+          </div>
+          <div class="one-stop-thumb" style="background-image:url('https://cdn.imweb.me/thumbnail/20260404/963ea66f5cd24.jpg')"></div>
         </div>
         <div class="service-link" onclick="event.stopPropagation(); openModal('modalFund')">Read more</div>
       </article>
 
       <article class="service-box one-stop-card reveal delay-2" onclick="openModal('modalBuild')">
-        <div>
-          <div class="service-num">02</div>
-          <h4>건축 · 공사</h4>
-          <p>
-            신축, 증축, 리모델링, 구조 변경 등
-            업종과 운영 방식에 맞는 공간 구축을 돕습니다.
-          </p>
+        <div class="one-stop-main">
+          <div class="one-stop-copy">
+            <div class="service-num">02</div>
+            <h4>건축 · 공사</h4>
+            <p>
+              신축, 증축, 리모델링, 구조 변경 등
+              업종과 운영 방식에 맞는 공간 구축을 돕습니다.
+            </p>
+          </div>
+          <div class="one-stop-thumb" style="background-image:url('https://cdn.imweb.me/thumbnail/20260404/1e83f5d6b423c.jpg')"></div>
         </div>
         <div class="service-link" onclick="event.stopPropagation(); openModal('modalBuild')">Read more</div>
       </article>
 
       <article class="service-box one-stop-card reveal delay-3" onclick="openModal('modalInfra')">
-        <div>
-          <div class="service-num">03</div>
-          <h4>설비 · 인프라</h4>
-          <p>
-            설비이전, 기계 반입·반출, 설비배치,
-            전기·환기 등 실제 가동을 위한 기반을 정비합니다.
-          </p>
+        <div class="one-stop-main">
+          <div class="one-stop-copy">
+            <div class="service-num">03</div>
+            <h4>설비 · 인프라</h4>
+            <p>
+              설비이전, 기계 반입·반출, 설비배치,
+              전기·환기 등 실제 가동을 위한 기반을 정비합니다.
+            </p>
+          </div>
+          <div class="one-stop-thumb" style="background-image:url('https://cdn.imweb.me/thumbnail/20260404/36d2b78b0f250.jpg')"></div>
         </div>
         <div class="service-link" onclick="event.stopPropagation(); openModal('modalInfra')">Read more</div>
       </article>
 
       <article class="service-box one-stop-card reveal delay-4" onclick="openModal('modalMove')">
-        <div>
-          <div class="service-num">04</div>
-          <h4>철거 · 이사</h4>
-          <p>
-            기존 공장 철거, 원상복구, 공장이전, 운반 등
-            이전 과정 전반을 실행 중심으로 지원합니다.
-          </p>
+        <div class="one-stop-main">
+          <div class="one-stop-copy">
+            <div class="service-num">04</div>
+            <h4>철거 · 이사</h4>
+            <p>
+              기존 공장 철거, 원상복구, 공장이전, 운반 등
+              이전 과정 전반을 실행 중심으로 지원합니다.
+            </p>
+          </div>
+          <div class="one-stop-thumb" style="background-image:url('https://cdn.imweb.me/thumbnail/20260404/8a4ec22156c72.jpg')"></div>
         </div>
         <div class="service-link" onclick="event.stopPropagation(); openModal('modalMove')">Read more</div>
       </article>
 
       <article class="service-box one-stop-card reveal delay-5" onclick="openModal('modalStart')">
-        <div>
-          <div class="service-num">05</div>
-          <h4>입주 · 운영개시</h4>
-          <p>
-            입주 준비, 일정 관리, 최종 점검, 사업개시까지
-            실제 운영 시작 단계까지 이어서 함께합니다.
-          </p>
+        <div class="one-stop-main">
+          <div class="one-stop-copy">
+            <div class="service-num">05</div>
+            <h4>입주 · 운영개시</h4>
+            <p>
+              입주 준비, 일정 관리, 최종 점검, 사업개시까지
+              실제 운영 시작 단계까지 이어서 함께합니다.
+            </p>
+          </div>
+          <div class="one-stop-thumb" style="background-image:url('https://cdn.imweb.me/thumbnail/20260404/dc16fbf6ab147.jpg')"></div>
         </div>
         <div class="service-link" onclick="event.stopPropagation(); openModal('modalStart')">Read more</div>
       </article>
@@ -2214,13 +3013,134 @@
     </div>
   </div>
 
-  <div class="desktop-float-phone">
-    <span class="icon">☎</span>
-    <span>010-5407-0444</span>
-  </div>
+  <button type="button" class="desktop-float-phone" onclick="handleDesktopFloatPhone(this)" data-phone="010-5407-0444" data-default-label="010-5407-0444" aria-label="전화번호 복사">
+    <span class="icon">📞</span>
+    <span class="desktop-float-phone-label">010-5407-0444</span>
+  </button>
 
-  <a href="javascript:void(0)" class="mobile-float-call" onclick="handlePhoneAction()" aria-label="전화하기">☎</a>
+  <a href="javascript:void(0)" class="mobile-float-call" onclick="handlePhoneAction()" aria-label="전화하기">📞</a>
   <a href="http://pf.kakao.com/_mNURX/chat" class="mobile-float-kakao" target="_blank" rel="noopener" aria-label="카카오 채널 채팅">talk</a>
+
+
+  <div id="propertyDetailModal" class="mk-modal property-detail-modal">
+<div class="mk-modal-inner">
+      <div class="mk-modal-head">
+        <div></div>
+        <button class="mk-modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="mk-modal-body">
+        <img class="property-detail-hero" src="https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png" alt="추천 공장 매물">
+        <p class="property-detail-note">ⓘ 보안상의 이유로 실제 매물 사진과 다를 수 있습니다</p>
+
+        <div class="property-detail-chip">매매</div>
+        <h3 class="property-detail-title">군산 국가산단 인근<br>제조형 공장 매매</h3>
+        <p class="property-detail-address">전라북도 군산시 오식도동</p>
+
+        <div class="property-detail-divider"></div>
+
+        <p class="property-detail-price">매매가 <strong>78억원</strong> / 평당 260만원</p>
+
+        <div class="property-summary-box">
+          <h4>추천 매물 3줄 요약</h4>
+          <ul>
+            <li>✔ 산업단지 접근성이 좋아 물류 이동이 편리합니다</li>
+            <li>✔ 마당 활용과 대형차 진입이 가능한 제조형 공장입니다</li>
+            <li>✔ 즉시 운영 검토가 가능한 실사용 중심 매물입니다</li>
+          </ul>
+        </div>
+
+        <div class="property-inquiry-row">
+          <a href="http://pf.kakao.com/_mNURX/chat" class="property-inquiry-btn" target="_blank" rel="noopener" onclick="return handleModalInquiryDesktopMobile(event, this)">
+            <span class="mobile-only-inline">톡문의</span>
+            <span class="desktop-only-inline">문의하기</span>
+          </a>
+          <button type="button" class="property-inquiry-btn property-phone-btn" data-phone="010-5407-0444" data-default-label="전화문의" onclick="handlePropertyPhone(this)">전화문의</button>
+        </div>
+
+        <div class="property-specs">
+          <div class="property-spec-sector-title">기본 정보</div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">소재지</div>
+            <div class="property-spec-value">전라북도 군산시 오식도동</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">거래형태</div>
+            <div class="property-spec-value">매매</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">가격</div>
+            <div class="property-spec-value">매매가 78억</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">사용승인일</div>
+            <div class="property-spec-value">2018-06-12</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">대지면적</div>
+            <div class="property-spec-value">3,120㎡(944평)</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">연면적</div>
+            <div class="property-spec-value">1,480㎡(447평)</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">전용면적</div>
+            <div class="property-spec-value">1,320㎡(399평)</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">용도지역</div>
+            <div class="property-spec-value">일반공업지역</div>
+          </div>
+
+          <div class="property-spec-sector-title">추가 정보</div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">매물번호</div>
+            <div class="property-spec-value">MK-FACTORY-078</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">중개대상물 종류</div>
+            <div class="property-spec-value">공장</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">총 주차대수</div>
+            <div class="property-spec-value">12대</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">주된 출입구 방향</div>
+            <div class="property-spec-value">남동향</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">입주가능일</div>
+            <div class="property-spec-value">협의 후 입주 가능</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">총 층수</div>
+            <div class="property-spec-value">지상 2층 / 총 2층</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">화장실 수</div>
+            <div class="property-spec-value">사무동 및 공장동 내부 구분 사용</div>
+          </div>
+        </div>
+
+        <div class="property-detail-cta">
+          <a href="https://maslowkorea.net/" class="btn btn-primary property-more-btn">➜ 추천 매물 더보기</a>
+        </div>
+
+        <div class="property-office-box">
+          <div class="property-office-head">중개사무소 정보</div>
+          <div class="property-office-body">
+            <p>명칭 : 매슬로우코리아 / 매슬로우공인중개사사무소<br>
+            소재지 : 전북 군산시 대학로 342 26빌딩<br>
+            등록번호 : 52130-025-0005<br>
+            연락처 : 010-5407-0444<br>
+            성명 : 박성연</p>
+          </div>
+        </div>
+</div>
+          </div>
+        </div></div>
+  </div>
 
   <div id="modalGreeting" class="mk-modal">
     <div class="mk-modal-inner">
@@ -2247,7 +3167,7 @@
     </div>
   </div>
 
-  <div id="modalFund" class="mk-modal">
+  <div id="modalFund" class="mk-modal one-stop-modal">
     <div class="mk-modal-inner">
       <div class="mk-modal-head">
         <h3>행정 · 자금</h3>
@@ -2281,7 +3201,7 @@
     </div>
   </div>
 
-  <div id="modalBuild" class="mk-modal">
+  <div id="modalBuild" class="mk-modal one-stop-modal">
     <div class="mk-modal-inner">
       <div class="mk-modal-head">
         <h3>건축 · 공사</h3>
@@ -2315,7 +3235,7 @@
     </div>
   </div>
 
-  <div id="modalInfra" class="mk-modal">
+  <div id="modalInfra" class="mk-modal one-stop-modal">
     <div class="mk-modal-inner">
       <div class="mk-modal-head">
         <h3>설비 · 인프라</h3>
@@ -2349,7 +3269,7 @@
     </div>
   </div>
 
-  <div id="modalMove" class="mk-modal">
+  <div id="modalMove" class="mk-modal one-stop-modal">
     <div class="mk-modal-inner">
       <div class="mk-modal-head">
         <h3>철거 · 이사</h3>
@@ -2383,7 +3303,7 @@
     </div>
   </div>
 
-  <div id="modalStart" class="mk-modal">
+  <div id="modalStart" class="mk-modal one-stop-modal">
     <div class="mk-modal-inner">
       <div class="mk-modal-head">
         <h3>입주 · 운영개시</h3>
@@ -2486,6 +3406,7 @@
   });
 
   function openModal(id){
+      document.body.classList.add('mk-any-modal-open');
     document.getElementById(id).classList.add('active');
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
@@ -2493,6 +3414,7 @@
   }
 
   function closeModal(){
+      document.body.classList.remove('mk-any-modal-open');
     document.querySelectorAll('.mk-modal').forEach(m => m.classList.remove('active'));
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
@@ -2574,19 +3496,28 @@ window.__savedScrollY = 0;
 window.__modalHistoryOpen = false;
 window.__activeModalId = null;
 window.__ignoreNextPopstate = false;
+window.__returnModalId = '';
 
 function openModal(id){
   const modal = document.getElementById(id);
   if (!modal) return;
 
-  const alreadyOpen = !!document.querySelector('.mk-modal.active');
+  const currentActive = document.querySelector('.mk-modal.active');
+  const alreadyOpen = !!currentActive;
+
   window.__savedScrollY = window.scrollY || window.pageYOffset || 0;
+
+  if (id === 'contactModal' && currentActive && currentActive.id === 'propertyDetailModal') {
+    window.__returnModalId = 'propertyDetailModal';
+  }
 
   document.querySelectorAll('.mk-modal').forEach(m => m.classList.remove('active'));
   modal.classList.add('active');
 
+  document.body.classList.add('mk-any-modal-open');
   document.documentElement.style.overflow = 'hidden';
   document.body.style.overflow = 'hidden';
+  document.body.style.height = '100vh';
 
   window.__activeModalId = id;
 
@@ -2597,16 +3528,37 @@ function openModal(id){
 }
 
 function closeModal(fromPopstate){
-  const hadOpenModal = !!document.querySelector('.mk-modal.active');
+  const activeModal = document.querySelector('.mk-modal.active');
+  const activeId = activeModal ? activeModal.id : '';
+
+  if (activeId === 'contactModal' && window.__returnModalId === 'propertyDetailModal') {
+    const propertyModal = document.getElementById('propertyDetailModal');
+    if (activeModal) activeModal.classList.remove('active');
+    if (propertyModal) propertyModal.classList.add('active');
+
+    document.body.classList.add('mk-any-modal-open');
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    document.body.style.height = '100vh';
+
+    window.__activeModalId = 'propertyDetailModal';
+    window.__returnModalId = '';
+    return;
+  }
+
+  const hadOpenModal = !!activeModal;
 
   document.querySelectorAll('.mk-modal').forEach(m => m.classList.remove('active'));
+  document.body.classList.remove('mk-any-modal-open');
   document.documentElement.style.overflow = '';
   document.body.style.overflow = '';
+  document.body.style.height = '';
 
   const y = window.__savedScrollY || 0;
   requestAnimationFrame(() => window.scrollTo(0, y));
 
   window.__activeModalId = null;
+  window.__returnModalId = '';
 
   if (!hadOpenModal) return;
 
@@ -2751,5 +3703,141 @@ window.addEventListener('popstate', function(){
 
 </script>
   <div id="mkToast" class="mk-toast">문의가 접수되었습니다.<br>조속히 안내드리겠습니다.</div>
+
+
+<script>
+(function(){
+  let propertyPhoneTimer = null;
+
+
+  window.handleDesktopFloatPhone = async function(el){
+    const phone = el.getAttribute('data-phone') || '010-5407-0444';
+    const defaultLabel = el.getAttribute('data-default-label') || '010-5407-0444';
+    const label = el.querySelector('.desktop-float-phone-label');
+
+    const isDesktop = window.matchMedia('(min-width: 861px)').matches;
+    if (!isDesktop) {
+      window.location.href = 'tel:' + phone.replace(/[^0-9]/g, '');
+      return;
+    }
+
+    function showDesktopCopyToast(message){
+      if (typeof showToast === 'function') {
+        try {
+          showToast(message);
+          return;
+        } catch(e) {}
+      }
+
+      let toast = document.getElementById('desktopFloatCopyToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'desktopFloatCopyToast';
+        toast.className = 'mk-toast';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(window.__desktopFloatToastTimer);
+      window.__desktopFloatToastTimer = setTimeout(function(){
+        toast.classList.remove('show');
+      }, 1800);
+    }
+
+    try{
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(phone);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = phone;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      showDesktopCopyToast('전화번호가 복사되었습니다');
+    }catch(err){
+      console.error(err);
+      showDesktopCopyToast('전화번호를 복사해 사용해 주세요');
+    }
+
+    if (label) label.textContent = phone;
+    clearTimeout(window.__desktopFloatPhoneTimer);
+    window.__desktopFloatPhoneTimer = setTimeout(function(){
+      if (label) label.textContent = defaultLabel;
+    }, 4000);
+  };
+
+  window.handlePropertyPhone = async function(btn){
+    const phone = btn.getAttribute('data-phone') || '010-5407-0444';
+    const defaultLabel = btn.getAttribute('data-default-label') || '전화하기';
+    const isDesktop = window.matchMedia('(min-width: 861px)').matches;
+
+    if (!isDesktop) {
+      window.location.href = 'tel:' + phone.replace(/[^0-9]/g, '');
+      return;
+    }
+
+    try{
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(phone);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = phone;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      if (typeof showToast === 'function') {
+        showToast('전화번호가 복사되었습니다');
+      }
+    }catch(err){
+      console.error(err);
+      if (typeof showToast === 'function') {
+        showToast('전화번호를 길게 눌러 복사해 주세요');
+      }
+    }
+
+    if (propertyPhoneTimer) clearTimeout(propertyPhoneTimer);
+    btn.textContent = phone;
+    propertyPhoneTimer = setTimeout(function(){
+      btn.textContent = defaultLabel;
+    }, 4000);
+  };
+})();
+</script>
+
+
+
+<script>
+(function(){
+  window.handleModalInquiryDesktopMobile = function(event, el){
+    const isDesktop = window.matchMedia('(min-width: 861px)').matches;
+
+    if (!isDesktop) {
+      return true;
+    }
+
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    try{
+      const propertyModal = document.getElementById('propertyDetailModal');
+      if (propertyModal && propertyModal.classList.contains('active')) {
+        window.__returnModalId = 'propertyDetailModal';
+      } else {
+        window.__returnModalId = '';
+      }
+      openModal('contactModal');
+    }catch(e){
+      console.error(e);
+    }
+    return false;
+  };
+})();
+</script>
+
 </body>
 </html>

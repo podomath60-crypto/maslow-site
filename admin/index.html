@@ -113,6 +113,35 @@
       user-select:none;
       -webkit-user-drag:none;
     }
+    .hero-empty-state{
+      width:100%;
+      aspect-ratio:1 / 1.25;
+      border-radius:28px;
+      background:#f7fafc;
+      border:1px dashed #dbe5ee;
+      margin-bottom:12px;
+      display:none;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      padding:24px;
+    }
+    .hero-empty-icon{
+      width:72px;
+      height:72px;
+      object-fit:cover;
+      border-radius:18px;
+      opacity:.95;
+    }
+    .hero-empty-text{
+      margin:0;
+      font-size:16px;
+      line-height:1.5;
+      color:#7b8794;
+      font-weight:800;
+      letter-spacing:-0.03em;
+    }
     .property-photo-controls{
       display:flex;
       align-items:center;
@@ -847,6 +876,18 @@
       .property-detail-hero{
         border-radius:24px;
         margin-bottom:12px;
+      }
+      .hero-empty-state{
+        border-radius:24px;
+        gap:10px;
+      }
+      .hero-empty-icon{
+        width:60px;
+        height:60px;
+        border-radius:16px;
+      }
+      .hero-empty-text{
+        font-size:14px;
       }
       .property-detail-note{
         font-size:12px;
@@ -1585,7 +1626,11 @@
       <div class="editor-body">
         <div class="property-detail-hero-wrap">
           <button type="button" id="deleteCurrentPhotoBtn" class="photo-delete-current">✕</button>
-          <img id="heroImage" class="property-detail-hero" src="https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png" alt="대표 사진">
+          <img id="heroImage" class="property-detail-hero" src="" alt="대표 사진">
+          <div id="heroEmptyState" class="hero-empty-state">
+            <img class="hero-empty-icon" src="https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg" alt="빈 사진 안내">
+            <p class="hero-empty-text">사진을 올려주세요</p>
+          </div>
           <div class="property-photo-controls">
             <button type="button" class="photo-add-btn" id="heroAddBtn">사진 추가</button>
             <div class="photo-nav">
@@ -1741,6 +1786,7 @@
       var PERSIST_MS = 180;
 
       var heroImage = document.getElementById('heroImage');
+      var heroEmptyState = document.getElementById('heroEmptyState');
       var photoInput = document.getElementById('photoInput');
       var heroAddBtn = document.getElementById('heroAddBtn');
       var deleteCurrentPhotoBtn = document.getElementById('deleteCurrentPhotoBtn');
@@ -2748,7 +2794,17 @@
       function renderHero(){
         if(currentPhotoIndex < 0) currentPhotoIndex = 0;
         if(currentPhotoIndex >= photoList.length) currentPhotoIndex = Math.max(0, photoList.length - 1);
-        heroImage.src = photoList[currentPhotoIndex] ? photoList[currentPhotoIndex].url : DEFAULT_HERO;
+
+        if(photoList[currentPhotoIndex] && photoList[currentPhotoIndex].url){
+          heroImage.src = photoList[currentPhotoIndex].url;
+          heroImage.style.display = 'block';
+          if(heroEmptyState) heroEmptyState.style.display = 'none';
+        }else{
+          heroImage.removeAttribute('src');
+          heroImage.style.display = 'none';
+          if(heroEmptyState) heroEmptyState.style.display = 'flex';
+        }
+
         syncPhotoUiVisibility();
         renderPhotoThumbs();
       }

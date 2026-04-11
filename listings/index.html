@@ -534,6 +534,9 @@
   let adminPinchCardKey = '';
   let adminPinchActive = false;
   let adminPinchStartDistance = 0;
+  let autoOpenHandled = false;
+  let heroTitleTapCount = 0;
+  let heroTitleTapTimer = null;
 
   const header = document.getElementById('siteHeader');
   let lastY = window.scrollY;
@@ -677,6 +680,22 @@
 
   function text(v){
     return String(v == null ? '' : v).trim();
+  }
+
+  function getQueryParam_(key){
+    try{
+      return new URLSearchParams(window.location.search).get(key) || '';
+    }catch(e){
+      return '';
+    }
+  }
+
+  function shouldAutoOpenProperty_(){
+    return text(getQueryParam_('open')) === '1' && !!text(getQueryParam_('listingNumber'));
+  }
+
+  function getAutoOpenListingNumber_(){
+    return text(getQueryParam_('listingNumber'));
   }
 
   function firstNonEmpty(){
@@ -1195,6 +1214,57 @@
     });
   }
 
+  function openPropertyByListingNumber_(listingNumber){
+    var target = text(listingNumber);
+    if(!target) return false;
+
+    var idx = propertyItems.findIndex(function(item){
+      return text(item && item.listingNumber) === target;
+    });
+
+    if(idx === -1) return false;
+
+    openProperty(idx);
+    openModal('propertyDetailModal');
+    return true;
+  }
+
+  function tryAutoOpenPropertyFromUrl_(){
+    if(autoOpenHandled) return;
+    if(!shouldAutoOpenProperty_()) return;
+
+    var listingNumber = getAutoOpenListingNumber_();
+    if(!listingNumber) return;
+
+    if(openPropertyByListingNumber_(listingNumber)){
+      autoOpenHandled = true;
+    }
+  }
+
+  function bindHeroTitleFiveTapDashboard_(){
+    var heroTitle = document.querySelector('.hero-lite h1');
+    if(!heroTitle) return;
+
+    function onTap_(){
+      var titleText = text(heroTitle.textContent);
+      if(titleText.indexOf('공장') === -1) return;
+
+      heroTitleTapCount += 1;
+      clearTimeout(heroTitleTapTimer);
+      heroTitleTapTimer = setTimeout(function(){
+        heroTitleTapCount = 0;
+      }, 1600);
+
+      if(heroTitleTapCount >= 5){
+        heroTitleTapCount = 0;
+        clearTimeout(heroTitleTapTimer);
+        window.location.href = '/dashboard';
+      }
+    }
+
+    heroTitle.addEventListener('pointerup', onTap_, { passive:true });
+  }
+
   function loadPublicProperties(){
     startLoadingOverlay();
     fetch(GAS_PUBLIC_URL, { method: 'GET', cache: 'no-store' })
@@ -1210,6 +1280,7 @@
           });
         filteredPropertyItems = propertyItems.slice();
         applyPropertySearch();
+        tryAutoOpenPropertyFromUrl_();
       })
       .catch(function(err){
         console.error(err);
@@ -1224,7 +1295,9 @@
   }
 
   document.addEventListener('DOMContentLoaded', function(){
+    bindHeroTitleFiveTapDashboard_();
     loadPublicProperties();
+    tryAutoOpenPropertyFromUrl_();
     var searchInput = document.getElementById('propertySearchInput');
     searchInput?.addEventListener('input', applyPropertySearch);
     searchInput?.addEventListener('keydown', function(e){

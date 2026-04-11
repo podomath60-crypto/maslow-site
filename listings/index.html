@@ -824,7 +824,7 @@
       photos: Array.isArray(raw.photos) ? raw.photos.filter(Boolean) : (Array.isArray(raw.photoUrls) ? raw.photoUrls.filter(Boolean) : []),
       pricePlain: pricePlain,
       priceHtml: buildDetailPriceHtml_(raw, basic),
-      updatedAt: firstNonEmpty(raw.updatedAt, raw.basic && raw.basic.updatedAt),
+      updatedAt: firstNonEmpty(raw.updatedAt),
       summary: summary,
       point: buildCardMeta_(raw),
       approval: firstNonEmpty(raw.approvalDate, raw.approval, basic.approvalDate),
@@ -1132,7 +1132,6 @@
             var bTime = new Date(b.updatedAt || 0).getTime();
             return bTime - aTime;
           });
-
         filteredPropertyItems = propertyItems.slice();
         applyPropertySearch();
       })

@@ -2436,7 +2436,7 @@
         if(!targetListingNumber) return Promise.resolve();
 
         return fetchJsonFromGas_({
-          action: 'getPropertyByListingNumber',
+          action: 'getPropertyEditorByListingNumber',
           listingNumber: targetListingNumber
         })
         .then(function(data){

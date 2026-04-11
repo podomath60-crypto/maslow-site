@@ -3850,26 +3850,27 @@ window.addEventListener('popstate', function(){
     }
   }
 
-  function autoOpenPropertyModalFromUrl_(){
+  function autoOpenPreviewModalFromUrl_(){
     var shouldOpen = String(getQueryParam_('open') || '').trim() === '1';
     var listingNumber = String(getQueryParam_('listingNumber') || '').trim();
     if(!shouldOpen || !listingNumber) return;
 
-    function runOpen_(){
+    function tryOpen_(){
       try{
         openModal('propertyDetailModal');
-      }catch(e){
-        console.error(e);
+      }catch(err){
+        console.error(err);
       }
     }
 
-    setTimeout(runOpen_, 80);
-    setTimeout(runOpen_, 240);
+    setTimeout(tryOpen_, 80);
+    setTimeout(tryOpen_, 220);
+    setTimeout(tryOpen_, 420);
   }
 
-  function bindDashboardTapOnPropertyTitle_(){
-    var titleEl = document.querySelector('.property-detail-title');
-    if(!titleEl) return;
+  function bindHeroTitleDashboardTap_(){
+    var heroTitle = document.querySelector('h1.hero-title');
+    if(!heroTitle) return;
 
     var tapCount = 0;
     var tapTimer = null;
@@ -3877,7 +3878,7 @@ window.addEventListener('popstate', function(){
     var TAP_RESET_MS = 1600;
 
     function handleTap_(){
-      var titleText = String(titleEl.textContent || '').trim();
+      var titleText = String(heroTitle.textContent || '').trim();
       if(titleText.indexOf('공장') === -1) return;
 
       tapCount += 1;
@@ -3893,17 +3894,17 @@ window.addEventListener('popstate', function(){
       }
     }
 
-    titleEl.addEventListener('pointerup', handleTap_, { passive:true });
+    heroTitle.addEventListener('pointerup', handleTap_, { passive:true });
   }
 
   if(document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', function(){
-      autoOpenPropertyModalFromUrl_();
-      bindDashboardTapOnPropertyTitle_();
+      autoOpenPreviewModalFromUrl_();
+      bindHeroTitleDashboardTap_();
     });
   }else{
-    autoOpenPropertyModalFromUrl_();
-    bindDashboardTapOnPropertyTitle_();
+    autoOpenPreviewModalFromUrl_();
+    bindHeroTitleDashboardTap_();
   }
 })();
 </script>

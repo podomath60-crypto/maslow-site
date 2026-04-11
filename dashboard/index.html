@@ -472,7 +472,7 @@
     let currentKeyword = '';
     let unlockedUserName = '';
 
-    const LOADING_BASE_TEXT = '자료를 가져오고 있어요!';
+    let currentLoadingText = '자료를 가져오고 있어요!';
     let loadingTypingTimer = null;
     let loadingHapticTimer = null;
 
@@ -557,11 +557,12 @@
       overlay.setAttribute('aria-hidden','false');
       textEl.textContent = '';
       let i = 0;
+      const loadingText = String(currentLoadingText || '자료를 가져오고 있어요!');
       window.clearInterval(loadingTypingTimer);
       loadingTypingTimer = window.setInterval(function(){
         i += 1;
-        textEl.textContent = LOADING_BASE_TEXT.slice(0, i);
-        if(i >= LOADING_BASE_TEXT.length){
+        textEl.textContent = loadingText.slice(0, i);
+        if(i >= loadingText.length){
           window.clearInterval(loadingTypingTimer);
         }
       }, 85);
@@ -584,9 +585,12 @@
       overlay.setAttribute('aria-hidden','true');
       window.clearInterval(loadingTypingTimer);
       window.clearInterval(loadingHapticTimer);
+      currentLoadingText = '자료를 가져오고 있어요!';
     }
 
     function setPropertyStatus(listingNumber, status){
+      currentLoadingText = '상태 변경중이에요.';
+      startLoadingOverlay();
       return fetch(CONFIG.adminListUrl, {
         method: 'POST',
         mode: 'cors',
@@ -612,6 +616,9 @@
       .catch(function(err){
         console.error(err);
         alert((err && err.message) ? err.message : '상태 변경 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopLoadingOverlay();
       });
     }
 

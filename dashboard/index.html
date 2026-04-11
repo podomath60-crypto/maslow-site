@@ -159,18 +159,53 @@
 
     .channel-row{display:grid;grid-template-columns:repeat(8, minmax(0, 1fr));gap:6px}
     .channel-icon{
-      min-height:36px;border-radius:12px;border:1px solid #e4eaf1;background:#fafcff;
-      display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden
+      position:relative;
+      aspect-ratio:1 / 1;
+      width:100%;
+      min-height:auto;
+      height:auto;
+      border-radius:12px;
+      border:1px solid #e4eaf1;
+      background:#fafcff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+      overflow:hidden
     }
     .channel-favicon{
-      width:100%;height:100%;object-fit:cover;border-radius:0;flex:1 1 auto
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      border-radius:0;
+      flex:none
     }
     .site-chip{
-      min-height:36px;min-width:36px;border-radius:12px;border:1px solid #e4eaf1;background:#fff;
-      display:inline-flex;align-items:center;justify-content:center;padding:0;overflow:hidden;width:auto
+      position:relative;
+      aspect-ratio:1 / 1;
+      width:36px;
+      min-width:36px;
+      min-height:auto;
+      height:auto;
+      border-radius:12px;
+      border:1px solid #e4eaf1;
+      background:#fff;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+      overflow:hidden
     }
     .site-favicon{
-      width:100%;height:100%;object-fit:cover;border-radius:0;flex:1 1 auto
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      border-radius:0;
+      flex:none
     }
     .empty{border:1px dashed #d9e3ed;border-radius:24px;background:#fff;padding:30px 18px;text-align:center;color:#7b8794;font-size:15px;font-weight:800}
 
@@ -204,10 +239,10 @@
       .card-title{font-size:20px}
       .card-address{font-size:14px}
       .channel-row{grid-template-columns:repeat(8, minmax(0, 1fr));gap:4px}
-      .channel-icon{min-height:32px;border-radius:10px;padding:0}
-      .channel-favicon{width:100%;height:100%;flex-basis:auto}
-      .site-chip{min-height:32px;min-width:32px;padding:0}
-      .site-favicon{width:100%;height:100%;flex-basis:auto}
+      .channel-icon{aspect-ratio:1 / 1;min-height:auto;border-radius:10px;padding:0}
+      .channel-favicon{position:absolute;inset:0;width:100%;height:100%;flex-basis:auto}
+      .site-chip{width:32px;min-width:32px;aspect-ratio:1 / 1;min-height:auto;padding:0}
+      .site-favicon{position:absolute;inset:0;width:100%;height:100%;flex-basis:auto}
     }
   </style>
 </head>
@@ -300,7 +335,7 @@
       { name:'카카오채널', icon:'https://www.google.com/s2/favicons?domain=pf.kakao.com&sz=64' }
     ];
 
-    const SELF_SITE_ICON = 'https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg';
+    const SELF_SITE_ICON = 'https://www.google.com/s2/favicons?domain=maslowkorea.site&sz=64';
 
     let rawItems = [];
     let currentFilter = 'default';

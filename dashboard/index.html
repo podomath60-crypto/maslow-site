@@ -161,9 +161,10 @@
     .channel-icon{
       position:relative;
       aspect-ratio:1 / 1;
-      width:100%;
+      width:90%;
       min-height:auto;
       height:auto;
+      margin:0 auto;
       border-radius:12px;
       border:1px solid #e4eaf1;
       background:#fafcff;
@@ -187,12 +188,12 @@
     .site-chip{
       position:relative;
       aspect-ratio:1 / 1;
-      width:36px;
-      min-width:36px;
-      max-width:36px;
-      min-height:36px;
-      max-height:36px;
-      height:36px;
+      width:32px;
+      min-width:32px;
+      max-width:32px;
+      min-height:32px;
+      max-height:32px;
+      height:32px;
       border-radius:12px;
       border:1px solid #e4eaf1;
       background:#fff;
@@ -201,7 +202,7 @@
       justify-content:center;
       padding:0;
       overflow:hidden;
-      flex:0 0 36px
+      flex:0 0 32px
     }
     .site-favicon{
       position:absolute;
@@ -342,7 +343,7 @@
       { name:'카카오채널', icon:'https://www.google.com/s2/favicons?domain=pf.kakao.com&sz=64' }
     ];
 
-    const SELF_SITE_ICON = 'https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg';
+    const SELF_SITE_ICON = 'https://cdn.imweb.me/thumbnail/20260411/9b31c965062e2.png';
 
     let rawItems = [];
     let currentFilter = 'default';
@@ -467,10 +468,10 @@
       const ts = parseDateValue(item.updatedAt);
       if(!ts) return '수정 -';
       const d = new Date(ts);
-      const stamp = d.getFullYear() + '.' + (d.getMonth()+1) + '.' + d.getDate() + '<br>' +
+      const stamp = d.getFullYear() + '.' + (d.getMonth()+1) + '.' + d.getDate() + ' ' +
         String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
       const editor = text(item.lastEditor);
-      return '수정 ' + stamp + (editor ? '<br>(' + escapeHtml(editor) + ')' : '');
+      return '수정 ' + stamp + (editor ? ' (' + escapeHtml(editor) + ')' : '');
     }
 
     function matchesKeyword(item){
@@ -546,7 +547,7 @@
         +         buildStatusChip(item)
         +       '</div>'
         +       '<div class="card-address">' + escapeHtml(item.address || '-') + '</div>'
-        +       '<div class="card-meta"><strong>' + escapeHtml(item.listingNumber || '-') + '</strong> · ' + escapeHtml(formatUpdatedMeta(item)) + '</div>'
+        +       '<div class="card-meta"><strong>' + escapeHtml(item.listingNumber || '-') + '</strong><br>' + formatUpdatedMeta(item) + '</div>'
         +     '</div>'
         +   '</div>'
         +   '<div class="card-bottom">'

@@ -295,6 +295,23 @@
     .lock-btn{width:100%;min-height:52px;border-radius:18px;background:#0f7cff;color:#fff;font-size:16px;font-weight:900;letter-spacing:-0.02em}
     .lock-error{margin-top:10px;font-size:13px;color:#d64545;font-weight:800;min-height:18px;text-align:center}
 
+    .more-wrap{
+      display:flex;
+      justify-content:center;
+      margin:8px 0 28px;
+    }
+    .more-btn{
+      min-height:42px;
+      padding:0 18px;
+      border-radius:999px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-0.02em;
+    }
+
     @media (max-width:860px){
       .shell{padding:0 16px 40px}
       .panel-grid{grid-template-columns:1fr 1fr;gap:10px}
@@ -365,6 +382,11 @@
       }
       .loading-text{
         font-size:16px;
+      }
+      .more-btn{
+        min-height:38px;
+        padding:0 16px;
+        font-size:13px;
       }
     }
   </style>
@@ -471,6 +493,8 @@
     let currentFilter = 'default';
     let currentKeyword = '';
     let unlockedUserName = '';
+    let visibleCount = 50;
+    const PAGE_SIZE = 50;
 
     let currentLoadingText = '자료를 가져오고 있어요!';
     let loadingTypingTimer = null;
@@ -495,6 +519,7 @@
 
     searchInput.addEventListener('input', function(e){
       currentKeyword = String(e.target.value || '').trim().toLowerCase();
+      visibleCount = PAGE_SIZE;
       renderDashboard();
     });
 
@@ -505,6 +530,7 @@
         });
         btn.classList.add('active');
         currentFilter = btn.getAttribute('data-filter') || 'default';
+        visibleCount = PAGE_SIZE;
         renderDashboard();
       });
     });
@@ -536,7 +562,52 @@
         createdAt: text(raw.createdAt),
         updatedAt: text(raw.updatedAt),
         lastEditor: text(raw.lastEditedBy || raw.updatedBy || raw.editorName || ''),
-        heroUrl: hero
+        heroUrl: hero,
+
+        summary1: text(raw.summary1),
+        summary2: text(raw.summary2),
+        summary3: text(raw.summary3),
+
+        propertyType: text(raw.propertyType),
+        zoning: text(raw.zoning),
+        approvalDate: text(raw.approvalDate),
+
+        landAreaM2: text(raw.landAreaM2),
+        landAreaPy: text(raw.landAreaPy),
+        totalFloorAreaM2: text(raw.totalFloorAreaM2),
+        totalFloorAreaPy: text(raw.totalFloorAreaPy),
+        exclusiveAreaM2: text(raw.exclusiveAreaM2),
+        exclusiveAreaPy: text(raw.exclusiveAreaPy),
+
+        buildingComposition: text(raw.buildingComposition),
+        parkingCount: text(raw.parkingCount),
+        entranceDirection: text(raw.entranceDirection),
+        moveInDate: text(raw.moveInDate),
+        floorInfo: text(raw.floorInfo),
+        restroomInfo: text(raw.restroomInfo),
+        maintenanceFee: text(raw.maintenanceFee),
+
+        ceilingHeight: text(raw.ceilingHeight),
+        crane: text(raw.crane),
+        hoist: text(raw.hoist),
+        powerCapacity: text(raw.powerCapacity),
+        mainFacilities: text(raw.mainFacilities),
+        recommendedUse: text(raw.recommendedUse),
+        restrictedUse: text(raw.restrictedUse),
+        roadWidth: text(raw.roadWidth),
+        doorWidth: text(raw.doorWidth),
+        truckAccess: text(raw.truckAccess),
+        loadingAvailable: text(raw.loadingAvailable),
+        officeIncluded: text(raw.officeIncluded),
+        yardSize: text(raw.yardSize),
+        readyToOperate: text(raw.readyToOperate),
+
+        requesterName: text(raw.requesterName),
+        requesterPhone: text(raw.requesterPhone),
+        requesterType: text(raw.requesterType),
+        requesterNote: text(raw.requesterNote),
+
+        memo: text(raw.memo)
       };
     }
 
@@ -690,7 +761,60 @@
 
     function matchesKeyword(item){
       if(!currentKeyword) return true;
-      const haystack = [item.title, item.address, item.listingNumber].join(' ').toLowerCase();
+      const haystack = [
+        item.title,
+        item.address,
+        item.listingNumber,
+        item.dealType,
+        item.price,
+
+        item.summary1,
+        item.summary2,
+        item.summary3,
+
+        item.propertyType,
+        item.zoning,
+        item.approvalDate,
+
+        item.landAreaM2,
+        item.landAreaPy,
+        item.totalFloorAreaM2,
+        item.totalFloorAreaPy,
+        item.exclusiveAreaM2,
+        item.exclusiveAreaPy,
+
+        item.buildingComposition,
+        item.parkingCount,
+        item.entranceDirection,
+        item.moveInDate,
+        item.floorInfo,
+        item.restroomInfo,
+        item.maintenanceFee,
+
+        item.ceilingHeight,
+        item.crane,
+        item.hoist,
+        item.powerCapacity,
+        item.mainFacilities,
+        item.recommendedUse,
+        item.restrictedUse,
+        item.roadWidth,
+        item.doorWidth,
+        item.truckAccess,
+        item.loadingAvailable,
+        item.officeIncluded,
+        item.yardSize,
+        item.readyToOperate,
+
+        item.requesterName,
+        item.requesterPhone,
+        item.requesterType,
+        item.requesterNote,
+        item.memo
+      ]
+      .map(function(v){ return String(v == null ? '' : v).toLowerCase(); })
+      .join(' ');
+
       return haystack.indexOf(currentKeyword) > -1;
     }
 
@@ -781,25 +905,39 @@
 
     function renderDashboard(){
       const filtered = applyFilter(rawItems);
-      toolbarMeta.textContent = '전체 ' + filtered.length + '건';
+      const totalCount = filtered.length;
+      const visibleItems = filtered.slice(0, visibleCount);
 
-      if(!filtered.length){
+      toolbarMeta.textContent = '전체 ' + totalCount + '건';
+
+      if(!totalCount){
         dashboardRoot.innerHTML = '<div class="empty">표시할 매물이 없습니다.</div>';
         return;
       }
 
-      const groups = groupItems(filtered);
-      dashboardRoot.innerHTML = groups.map(function(group){
-        return ''
-          + '<section class="group">'
-          +   '<div class="group-head">'
-          +     '<div class="group-title">' + escapeHtml(group.title) + '</div>'
-          +     '<div class="group-count">' + group.items.length + '건</div>'
-          +   '</div>'
-          +   '<div class="card-list">' + group.items.map(buildCard).join('') + '</div>'
-          + '</section>';
-      }).join('');
+      const groups = groupItems(visibleItems);
+      const hasMore = totalCount > visibleCount;
+
+      dashboardRoot.innerHTML =
+        groups.map(function(group){
+          return ''
+            + '<section class="group">'
+            +   '<div class="group-head">'
+            +     '<div class="group-title">' + escapeHtml(group.title) + '</div>'
+            +     '<div class="group-count">' + group.items.length + '건</div>'
+            +   '</div>'
+            +   '<div class="card-list">' + group.items.map(buildCard).join('') + '</div>'
+            + '</section>';
+        }).join('')
+        + (hasMore
+            ? '<div class="more-wrap"><button class="more-btn" type="button" onclick="loadMoreItems()">더보기</button></div>'
+            : '');
     }
+
+    window.loadMoreItems = function(){
+      visibleCount += PAGE_SIZE;
+      renderDashboard();
+    };
 
     function unlockWithPassword(){
       const pw = String(lockInput.value || '').trim();

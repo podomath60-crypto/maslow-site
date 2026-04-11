@@ -3842,35 +3842,9 @@ window.addEventListener('popstate', function(){
 
 <script>
 (function(){
-  function getQueryParam_(key){
-    try{
-      return new URLSearchParams(window.location.search).get(key) || '';
-    }catch(e){
-      return '';
-    }
-  }
-
-  function autoOpenPreviewModalFromUrl_(){
-    var shouldOpen = String(getQueryParam_('open') || '').trim() === '1';
-    var listingNumber = String(getQueryParam_('listingNumber') || '').trim();
-    if(!shouldOpen || !listingNumber) return;
-
-    function tryOpen_(){
-      try{
-        openModal('propertyDetailModal');
-      }catch(err){
-        console.error(err);
-      }
-    }
-
-    setTimeout(tryOpen_, 80);
-    setTimeout(tryOpen_, 220);
-    setTimeout(tryOpen_, 420);
-  }
-
-  function bindHeroTitleDashboardTap_(){
-    var heroTitle = document.querySelector('h1.hero-title');
-    if(!heroTitle) return;
+  function bindMaslowDashboardTap_(){
+    var logoKorTitle = document.querySelector('h1.opening-kor');
+    if(!logoKorTitle) return;
 
     var tapCount = 0;
     var tapTimer = null;
@@ -3878,8 +3852,8 @@ window.addEventListener('popstate', function(){
     var TAP_RESET_MS = 1600;
 
     function handleTap_(){
-      var titleText = String(heroTitle.textContent || '').trim();
-      if(titleText.indexOf('공장') === -1) return;
+      var titleText = String(logoKorTitle.textContent || '').trim();
+      if(titleText.indexOf('매슬로우') === -1) return;
 
       tapCount += 1;
       clearTimeout(tapTimer);
@@ -3894,21 +3868,16 @@ window.addEventListener('popstate', function(){
       }
     }
 
-    heroTitle.addEventListener('click', handleTap_, { passive:true });
+    logoKorTitle.addEventListener('click', handleTap_, { passive:true });
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){
-      autoOpenPreviewModalFromUrl_();
-      bindHeroTitleDashboardTap_();
-    });
+    document.addEventListener('DOMContentLoaded', bindMaslowDashboardTap_);
   }else{
-    autoOpenPreviewModalFromUrl_();
-    bindHeroTitleDashboardTap_();
+    bindMaslowDashboardTap_();
   }
 })();
 </script>
 
 </body>
 </html>
-

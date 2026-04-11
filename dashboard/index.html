@@ -314,7 +314,8 @@
 
     .channel-icon.is-not-yet .channel-favicon,
     .site-chip.is-not-yet .site-favicon{
-      filter:opacity(.24) saturate(.78) brightness(1.08);
+      opacity:.26;
+      filter:none;
     }
 
     .channel-modal{
@@ -719,7 +720,7 @@
       naverBlog: '네이버블로그',
       hanbang: '한방',
       kakaoChannel: '카카오채널',
-      ownSite: '자사사이트'
+      ownSite: '매슬로우코리아.net'
     };
 
     const CHANNEL_ICON_MAP = {
@@ -1035,7 +1036,20 @@
         text(document.getElementById('channelLink3').value)
       ];
 
+      const item = getItemByListingNumber(listingNumber);
+      const prevState = item ? getChannelStateByItem(item, channelKey) : { done:false, links:['','',''] };
+      const isSame =
+        !!prevState.done === !!done &&
+        text(prevState.links[0]) === text(links[0]) &&
+        text(prevState.links[1]) === text(links[1]) &&
+        text(prevState.links[2]) === text(links[2]);
+
       closeChannelModal();
+
+      if(isSame){
+        return;
+      }
+
       updatePropertyChannel(listingNumber, channelKey, done, links);
     }
 
@@ -1358,7 +1372,6 @@
     };
 
     window.editItem = function(listingNumber){
-      startLoadingOverlay();
       location.href = CONFIG.adminEditUrl + '?listingNumber=' + encodeURIComponent(listingNumber);
     };
 

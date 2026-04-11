@@ -3839,5 +3839,35 @@ window.addEventListener('popstate', function(){
 })();
 </script>
 
+
+<script>
+(function(){
+  var detailTitleEl = document.getElementById('detailTitle');
+  if(!detailTitleEl) return;
+
+  var dashboardTapCount = 0;
+  var dashboardTapTimer = null;
+  var DASHBOARD_TAP_LIMIT = 5;
+  var DASHBOARD_TAP_RESET_MS = 1600;
+
+  detailTitleEl.addEventListener('click', function(){
+    var titleText = String(detailTitleEl.textContent || '').trim();
+    if(titleText.indexOf('공장') === -1) return;
+
+    dashboardTapCount += 1;
+    clearTimeout(dashboardTapTimer);
+    dashboardTapTimer = setTimeout(function(){
+      dashboardTapCount = 0;
+    }, DASHBOARD_TAP_RESET_MS);
+
+    if(dashboardTapCount >= DASHBOARD_TAP_LIMIT){
+      dashboardTapCount = 0;
+      clearTimeout(dashboardTapTimer);
+      window.location.href = '/dashboard';
+    }
+  });
+})();
+</script>
+
 </body>
 </html>

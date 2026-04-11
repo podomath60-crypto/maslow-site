@@ -586,6 +586,39 @@
       window.clearInterval(loadingHapticTimer);
     }
 
+    function setPropertyStatus(listingNumber, status){
+      startLoadingOverlay();
+      return fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=UTF-8'
+        },
+        body: JSON.stringify({
+          action: 'updatePropertyStatus',
+          listingNumber: listingNumber,
+          status: status
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('상태 변경 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '상태 변경 실패');
+        }
+        return fetchAdminItems();
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '상태 변경 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+    }
+
     function fetchAdminItems(){
       startLoadingOverlay();
       return fetch(CONFIG.adminListUrl, {
@@ -804,11 +837,11 @@
     };
 
     window.markVisible = function(listingNumber){
-      alert('보이기 연결 예정: ' + listingNumber);
+      setPropertyStatus(listingNumber, 'visible');
     };
 
     window.markHidden = function(listingNumber){
-      alert('숨기기 연결 예정: ' + listingNumber);
+      setPropertyStatus(listingNumber, 'hidden');
     };
 
     updateGreeting();

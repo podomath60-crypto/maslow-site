@@ -802,6 +802,9 @@
     const teamToggleDesc = document.getElementById('teamToggleDesc');
 
     document.getElementById('goAdminBtn').addEventListener('click', function(){
+      try{
+        localStorage.setItem('MK_FORCE_TEAM_MODAL', '1');
+      }catch(e){}
       location.href = CONFIG.adminEditUrl;
     });
 

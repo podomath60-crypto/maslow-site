@@ -2088,6 +2088,7 @@
       var selectedListingPrefix = '';
       var pendingTeamSelectionCallback = null;
       var ENTRY_SESSION_KEY = 'PROPERTY_EDITOR_ENTERED_V1';
+      var FORCE_TEAM_MODAL_KEY = 'MK_FORCE_TEAM_MODAL';
       var listingStatus = 'hidden';
       var saveTimer = null;
       var tempSessionKey = '';
@@ -4464,6 +4465,17 @@
         try{
           sessionStorage.removeItem(ENTRY_SESSION_KEY);
         }catch(e){}
+      }
+
+      function consumeForceTeamModalFlag_(){
+        try{
+          var flag = localStorage.getItem(FORCE_TEAM_MODAL_KEY);
+          if(flag === '1'){
+            localStorage.setItem(FORCE_TEAM_MODAL_KEY, '0');
+            return true;
+          }
+        }catch(e){}
+        return false;
       }
 
       function startNewEntryWithTeamSelection_(){

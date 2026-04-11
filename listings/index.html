@@ -231,7 +231,7 @@
     <div class="header-inner">
       <div class="header-left">
         <button class="menu-trigger" aria-label="menu" onclick="openMenu()"><span></span></button>
-        <div class="logo-text"><strong>Maslow Korea</strong></div>
+        <a href="/" class="logo-text"><strong>Maslow Korea</strong></a>
       </div>
 
       <nav class="nav">
@@ -1124,7 +1124,17 @@
       .then(function(r){ return r.json(); })
       .then(function(data){
         var items = Array.isArray(data && data.items) ? data.items : [];
-        propertyItems = items.map(normalizeItem_);
+        propertyItems = items
+          .map(normalizeItem_)
+          .sort(function(a, b){
+            function pickTime(v){
+              var t = new Date(v || 0).getTime();
+              return isNaN(t) ? 0 : t;
+            }
+            var aTime = pickTime(a.updatedAt || a.createdAt || a.crtnDay || a.listedAt || a.createdDate);
+            var bTime = pickTime(b.updatedAt || b.createdAt || b.crtnDay || b.listedAt || b.createdDate);
+            return bTime - aTime;
+          });
         filteredPropertyItems = propertyItems.slice();
         applyPropertySearch();
       })

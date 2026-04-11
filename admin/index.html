@@ -247,6 +247,13 @@
       line-height:1.82;
       padding:0 4px;
     }
+    .property-detail-chip-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:18px;
+    }
     .property-detail-chip{
       display:inline-flex;
       align-items:center;
@@ -261,7 +268,8 @@
       font-weight:800;
       line-height:1;
       box-shadow:0 8px 20px rgba(31,150,255,.20);
-      margin-bottom:18px;
+      margin-bottom:0;
+      flex:0 0 auto;
     }
     .property-detail-title{
       margin:0 0 14px;
@@ -344,22 +352,7 @@
       border-top:1px solid #dedede;
       background:transparent;
     }
-    .property-spec-sector-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding:20px 12px 10px;
-      border-top:1px solid #dedede;
-      background:transparent;
-    }
-    .property-spec-sector-head .property-spec-sector-title{
-      padding:0;
-      border-top:none;
-      min-width:0;
-      flex:1 1 auto;
-    }
-    .inline-reset-btn{
+        .inline-reset-btn{
       width:auto;
       min-height:28px;
       padding:0 8px;
@@ -924,11 +917,20 @@
         font-size:12px;
         margin-bottom:18px;
       }
+      .property-detail-chip-row{
+        margin-bottom:14px;
+        gap:10px;
+      }
       .property-detail-chip{
         min-height:34px;
         padding:0 18px;
         font-size:18px;
-        margin-bottom:14px;
+        margin-bottom:0;
+      }
+      .inline-reset-btn{
+        min-height:28px;
+        padding:0 4px;
+        font-size:12px;
       }
       .property-detail-title{
         font-size:34px;
@@ -1849,7 +1851,10 @@
 
         <p class="property-detail-note editable" contenteditable="true" data-placeholder=""></p>
 
-        <div id="topDealChip" class="property-detail-chip is-placeholder" data-placeholder="거래형태"></div>
+        <div class="property-detail-chip-row">
+          <div id="topDealChip" class="property-detail-chip is-placeholder" data-placeholder="거래형태"></div>
+          <button type="button" id="inlineResetBtn" class="inline-reset-btn">🧹초기화</button>
+        </div>
         <h3 class="property-detail-title editable" contenteditable="true" data-placeholder="매물 제목 입력"></h3>
         <p id="topAddress" class="property-detail-address display-mirror" data-placeholder=""></p>
 
@@ -1871,10 +1876,7 @@
         </div>
 
         <div class="property-specs">
-          <div class="property-spec-sector-head">
-            <div class="property-spec-sector-title">기본정보</div>
-            <button type="button" id="inlineResetBtn" class="inline-reset-btn">🧹초기화</button>
-          </div>
+          <div class="property-spec-sector-title">기본정보</div>
 
           <div class="property-spec-row"><div class="property-spec-label">* 소재지</div><div class="property-spec-value"><div class="address-inline-row"><div id="addressField" class="property-spec-value editable address-input-wrap" contenteditable="true" data-placeholder="입력"></div><button type="button" id="addressSearchBtn" class="address-mini-btn search">검색</button><button type="button" id="addressLookupBtn" class="address-mini-btn lookup">조회</button></div></div></div>
           <div class="property-spec-row"><div class="property-spec-label">* 거래형태</div><div class="property-spec-value"><div id="dealTypeRow" class="type-chip-row"><button type="button" class="type-chip" data-deal="매매">매매</button><button type="button" class="type-chip" data-deal="임대">임대</button><span id="dealTypePlaceholder" class="type-chip-placeholder">선택</span></div></div></div>

@@ -4467,15 +4467,33 @@
         }catch(e){}
       }
 
-      function consumeForceTeamModalFlag_(){
+      function shouldForceFreshStartByFlag_(){
         try{
-          var flag = localStorage.getItem(FORCE_TEAM_MODAL_KEY);
-          if(flag === '1'){
-            localStorage.setItem(FORCE_TEAM_MODAL_KEY, '0');
-            return true;
-          }
+          return localStorage.getItem(FORCE_TEAM_MODAL_KEY) === '1';
+        }catch(e){
+          return false;
+        }
+      }
+
+      function clearForceTeamModalFlag_(){
+        try{
+          localStorage.setItem(FORCE_TEAM_MODAL_KEY, '0');
         }catch(e){}
-        return false;
+      }
+
+      function clearDraftAndEntryStateForFreshStart_(){
+        try{
+          localStorage.removeItem(STORAGE_KEY);
+        }catch(e){}
+        listingNumber = '';
+        selectedListingPrefix = '';
+        tempSessionKey = '';
+        propertyDataTempFiles = [];
+        ledgerFiles = [];
+        photoItems = [];
+        currentPhotoIndex = 0;
+        resetEditorEnteredSession_();
+        if(listingNumberField) listingNumberField.textContent = '';
       }
 
       function startNewEntryWithTeamSelection_(){
@@ -4689,6 +4707,7 @@
           listingStatus = 'hidden';
           listingNumber = '';
           selectedListingPrefix = '';
+          clearForceTeamModalFlag_();
           tempSessionKey = '';
           tempUploadSeq = 0;
           photoList = [];
@@ -4773,13 +4792,24 @@
             hideQueryLoadingOverlay_();
           });
       }else{
-        restoreDraftState();
-        assignListingNumber();
-        setDealType(selectedDealType);
-        updateStatusButton();
-        updateTopFields();
-        renderHero();
-        renderLedgerStatus();
+        if(shouldForceFreshStartByFlag_()){
+          clearDraftAndEntryStateForFreshStart_();
+          clearForceTeamModalFlag_();
+          setDealType('');
+          updateStatusButton();
+          updateTopFields();
+          renderHero();
+          renderLedgerStatus();
+          startNewEntryWithTeamSelection_();
+        }else{
+          restoreDraftState();
+          assignListingNumber();
+          setDealType(selectedDealType);
+          updateStatusButton();
+          updateTopFields();
+          renderHero();
+          renderLedgerStatus();
+        }
       }
 
       if (draftSaveBtn) {

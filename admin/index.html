@@ -1610,6 +1610,67 @@
     }
 
 
+
+    .query-loading-overlay{
+      position:fixed;
+      inset:0;
+      z-index:121;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background:rgba(255,255,255,.72);
+      backdrop-filter:blur(3px);
+      -webkit-backdrop-filter:blur(3px);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .22s ease;
+    }
+    .query-loading-overlay.show{
+      opacity:1;
+      pointer-events:auto;
+    }
+    .query-loading-panel{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      text-align:center;
+    }
+    .query-loading-buddy{
+      width:74px;
+      height:74px;
+      object-fit:cover;
+      border-radius:18px;
+      animation:queryBuddyBounce 1.15s ease-in-out infinite;
+      box-shadow:0 10px 22px rgba(15,124,255,.16);
+    }
+    .query-loading-text{
+      min-height:24px;
+      font-size:18px;
+      font-weight:800;
+      line-height:1.4;
+      color:#2b8fe8;
+      letter-spacing:-0.03em;
+    }
+    @keyframes queryBuddyBounce{
+      0%,100%{transform:translateY(0) scale(1)}
+      20%{transform:translateY(-3px) scale(1.01)}
+      50%{transform:translateY(-10px) scale(1.04)}
+      75%{transform:translateY(-4px) scale(1.01)}
+    }
+    @media (max-width:860px){
+      .query-loading-buddy{
+        width:64px;
+        height:64px;
+        border-radius:16px;
+      }
+      .query-loading-text{
+        font-size:16px;
+      }
+    }
+
   </style>
   <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
@@ -1778,6 +1839,13 @@
     </div>
   </div>
 
+  <div id="queryLoadingOverlay" class="query-loading-overlay" aria-hidden="true">
+    <div class="query-loading-panel">
+      <img class="query-loading-buddy" src="https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg" alt="로딩">
+      <div id="queryLoadingText" class="query-loading-text"></div>
+    </div>
+  </div>
+
   <div id="saveToast"  style="position:fixed; left:50%; bottom:30vh; transform:translateX(-50%); background:rgba(17,24,39,.82); color:#fff; padding:10px 14px; border-radius:999px; font-size:13px; font-weight:700; opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:99;">저장됨</div>
 
   <script>
@@ -1832,6 +1900,48 @@
       var aiLoadingOverlay = document.getElementById('aiLoadingOverlay');
       var aiLoadingPanel = document.querySelector('.ai-loading-panel');
       var aiLoadingText = document.getElementById('aiLoadingText');
+      var queryLoadingOverlay = document.getElementById('queryLoadingOverlay');
+      var queryLoadingText = document.getElementById('queryLoadingText');
+
+      var QUERY_LOADING_BASE_TEXT = '자료를 가져오고 있어요!';
+      var queryLoadingTypingTimer = null;
+      var queryLoadingHapticTimer = null;
+
+      function showQueryLoadingOverlay_(){
+        if(!queryLoadingOverlay || !queryLoadingText) return;
+        queryLoadingOverlay.classList.add('show');
+        queryLoadingOverlay.setAttribute('aria-hidden', 'false');
+        queryLoadingText.textContent = '';
+        var i = 0;
+        window.clearInterval(queryLoadingTypingTimer);
+        queryLoadingTypingTimer = window.setInterval(function(){
+          i += 1;
+          queryLoadingText.textContent = QUERY_LOADING_BASE_TEXT.slice(0, i);
+          if(i >= QUERY_LOADING_BASE_TEXT.length){
+            window.clearInterval(queryLoadingTypingTimer);
+          }
+        }, 85);
+        if(navigator.vibrate){
+          navigator.vibrate(12);
+          var vibCount = 0;
+          window.clearInterval(queryLoadingHapticTimer);
+          queryLoadingHapticTimer = window.setInterval(function(){
+            vibCount += 1;
+            try{ navigator.vibrate(8); }catch(e){}
+            if(vibCount >= 5){
+              window.clearInterval(queryLoadingHapticTimer);
+            }
+          }, 520);
+        }
+      }
+
+      function hideQueryLoadingOverlay_(){
+        if(!queryLoadingOverlay) return;
+        queryLoadingOverlay.classList.remove('show');
+        queryLoadingOverlay.setAttribute('aria-hidden', 'true');
+        window.clearInterval(queryLoadingTypingTimer);
+        window.clearInterval(queryLoadingHapticTimer);
+      }
 
       var photoList = [];
       var currentPhotoIndex = 0;
@@ -4431,10 +4541,7 @@
 
       if(queryListingNumber){
         listingNumber = queryListingNumber;
-        if(aiLoadingText){
-          aiLoadingText.textContent = '자료를 가져오고 있어요!';
-        }
-        showAiLoadingOverlay_();
+        showQueryLoadingOverlay_();
         loadPropertyByListingNumber_(queryListingNumber)
           .then(function(){
             saveDraftState(false);
@@ -4444,10 +4551,7 @@
             showToast('해당 매물을 불러오지 못했습니다.');
           })
           .finally(function(){
-            hideAiLoadingOverlay_();
-            if(aiLoadingText){
-              aiLoadingText.textContent = '작업중이에요';
-            }
+            hideQueryLoadingOverlay_();
           });
       }else{
         restoreDraftState();

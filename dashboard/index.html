@@ -622,7 +622,7 @@
           <div class="panel-desc">위치와 건축물정보를 제공합니다.</div>
         </button>
 
-        <button class="panel-card" id="commercialTeamBtn" type="button">
+        <button class="panel-card" id="teamToggleBtn" type="button">
           <div>
             <div class="panel-eyebrow">Team</div>
             <div class="panel-icon-wrap">
@@ -632,10 +632,10 @@
                 <path d="M9 21v-5.2c0-.44.36-.8.8-.8h4.4c.44 0 .8.36.8.8V21" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
                 <path d="M9 10h.01M15 10h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
               </svg>
-              <div class="panel-title">상가 TEAM</div>
+              <div class="panel-title" id="teamToggleTitle">상가팀</div>
             </div>
           </div>
-          <div class="panel-desc">추후 연결</div>
+          <div class="panel-desc" id="teamToggleDesc">SK 매물을 봅니다.</div>
         </button>
       </section>
 
@@ -786,6 +786,9 @@
     let loadingTypingTimer = null;
     let loadingHapticTimer = null;
 
+    let currentTeamFilter = '';
+    let nextTeamToggleTarget = 'shopping';
+
     const dashboardRoot = document.getElementById('dashboardRoot');
     const toolbarMeta = document.getElementById('toolbarMeta');
     const searchInput = document.getElementById('searchInput');
@@ -794,6 +797,9 @@
     const lockInput = document.getElementById('lockInput');
     const lockBtn = document.getElementById('lockBtn');
     const lockError = document.getElementById('lockError');
+    const teamToggleBtn = document.getElementById('teamToggleBtn');
+    const teamToggleTitle = document.getElementById('teamToggleTitle');
+    const teamToggleDesc = document.getElementById('teamToggleDesc');
 
     document.getElementById('goAdminBtn').addEventListener('click', function(){
       location.href = CONFIG.adminEditUrl;
@@ -807,9 +813,56 @@
       window.open(CONFIG.listingLookupUrl, '_blank', 'noopener');
     });
 
-    document.getElementById('commercialTeamBtn').addEventListener('click', function(){
-      alert('상가 TEAM은 추후 연결 예정입니다.');
+    teamToggleBtn.addEventListener('click', function(){
+      if(nextTeamToggleTarget === 'shopping'){
+        currentTeamFilter = 'shopping';
+        nextTeamToggleTarget = 'factory';
+      }else{
+        currentTeamFilter = 'factory';
+        nextTeamToggleTarget = 'shopping';
+      }
+      visibleCount = PAGE_SIZE;
+      updateTeamTogglePanel();
+      renderDashboard();
     });
+
+    function detectTeamByListingNumber(listingNumber){
+      const code = text(listingNumber).toUpperCase();
+      if(code.indexOf('SK') === 0) return 'shopping';
+      if(code.indexOf('MK') === 0) return 'factory';
+      return '';
+    }
+
+    function getTeamMeta(teamKey){
+      if(teamKey === 'shopping'){
+        return {
+          key: 'shopping',
+          title: '상가팀',
+          desc: 'SK 매물을 봅니다.',
+          empty: '상가팀 매물이 없습니다.'
+        };
+      }
+      if(teamKey === 'factory'){
+        return {
+          key: 'factory',
+          title: '공장팀',
+          desc: 'MK 매물을 봅니다.',
+          empty: '공장팀 매물이 없습니다.'
+        };
+      }
+      return {
+        key: '',
+        title: '상가팀',
+        desc: 'SK 매물을 봅니다.',
+        empty: '표시할 매물이 없습니다.'
+      };
+    }
+
+    function updateTeamTogglePanel(){
+      const nextMeta = getTeamMeta(nextTeamToggleTarget);
+      if(teamToggleTitle) teamToggleTitle.textContent = nextMeta.title;
+      if(teamToggleDesc) teamToggleDesc.textContent = nextMeta.desc;
+    }
 
     searchInput.addEventListener('input', function(e){
       currentKeyword = String(e.target.value || '').trim().toLowerCase();
@@ -1261,6 +1314,12 @@
     function applyFilter(items){
       let result = items.filter(matchesKeyword);
 
+      if(currentTeamFilter){
+        result = result.filter(function(item){
+          return detectTeamByListingNumber(item.listingNumber) === currentTeamFilter;
+        });
+      }
+
       if(currentFilter === 'visible'){
         result = result.filter(function(item){ return item.status === 'visible' || item.status === 'show' || item.status === '공개'; });
       }else if(currentFilter === 'hidden'){
@@ -1356,7 +1415,8 @@
       toolbarMeta.textContent = '전체 ' + totalCount + '건';
 
       if(!totalCount){
-        dashboardRoot.innerHTML = '<div class="empty">표시할 매물이 없습니다.</div>';
+        const emptyMeta = getTeamMeta(currentTeamFilter);
+        dashboardRoot.innerHTML = '<div class="empty">' + escapeHtml(emptyMeta.empty) + '</div>';
         return;
       }
 
@@ -1392,7 +1452,7 @@
         return;
       }
       unlockedUserName = matched;
-      sessionStorage.setItem(CONFIG.authStorageKey, matched);
+      localStorage.setItem(CONFIG.authStorageKey, matched);
       updateGreeting();
       lockOverlay.style.display = 'none';
       fetchAdminItems();
@@ -1403,8 +1463,8 @@
       if(e.key === 'Enter') unlockWithPassword();
     });
 
-    if(sessionStorage.getItem(CONFIG.authStorageKey)){
-      unlockedUserName = sessionStorage.getItem(CONFIG.authStorageKey) || '';
+    if(localStorage.getItem(CONFIG.authStorageKey)){
+      unlockedUserName = localStorage.getItem(CONFIG.authStorageKey) || '';
       updateGreeting();
       lockOverlay.style.display = 'none';
       fetchAdminItems();
@@ -1440,6 +1500,7 @@
     });
 
     updateGreeting();
+    updateTeamTogglePanel();
   </script>
 </body>
 </html>

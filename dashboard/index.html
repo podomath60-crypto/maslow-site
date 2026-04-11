@@ -35,8 +35,35 @@
       min-height:76px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
       border-bottom:1px solid rgba(230,235,241,.9)
     }
-    .topbar-left{display:flex;align-items:center;justify-content:flex-start;flex:1 1 auto}
-    .topbar-right{width:120px;min-height:1px}
+    .topbar-left{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      flex:1 1 auto;
+      min-width:0;
+    }
+    .topbar-right{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      width:auto;
+      min-width:120px;
+      flex:0 0 auto;
+    }
+    .topbar-greeting{
+      display:inline-flex;
+      align-items:center;
+      min-height:44px;
+      padding:0 4px;
+      font-size:15px;
+      font-weight:800;
+      color:#5f6873;
+      letter-spacing:-0.03em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
     .brand-link{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;font-size:18px;font-weight:900;color:#111}
 
     .hero-spacer{height:18px}
@@ -54,14 +81,34 @@
 
     .search-wrap{margin:0 0 14px}
     .search-box{
-      display:flex;align-items:center;gap:12px;min-height:60px;padding:0 18px;border:1.5px solid #d9e4ef;
-      border-radius:999px;background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.03)
+      display:flex;
+      align-items:center;
+      gap:12px;
+      width:min(230px,100%);
+      min-height:60px;
+      padding:0 18px;
+      border:1.5px solid #d9e4ef;
+      border-radius:999px;
+      background:#fff;
+      box-shadow:0 8px 20px rgba(15,23,42,.03);
+      transition:width .24s ease, box-shadow .24s ease, border-color .24s ease;
     }
-    .search-box:focus-within{border-color:#bfdcff;box-shadow:0 12px 24px rgba(15,124,255,.08)}
+    .search-box:focus-within{
+      width:min(100%, 720px);
+      border-color:#bfdcff;
+      box-shadow:0 12px 24px rgba(15,124,255,.08)
+    }
     .search-icon{flex:0 0 auto;font-size:18px;color:#7b8794;width:auto}
     .search-input{
-      flex:1 1 auto;width:100%;border:none;outline:none;background:transparent;color:#111318;
-      font-size:17px;font-weight:800;letter-spacing:-0.03em
+      flex:1 1 auto;
+      width:100%;
+      border:none;
+      outline:none;
+      background:transparent;
+      color:#111318;
+      font-size:17px;
+      font-weight:800;
+      letter-spacing:-0.03em
     }
     .search-input::placeholder{color:rgba(123,135,148,.55);font-weight:600}
 
@@ -116,14 +163,14 @@
       display:flex;align-items:center;justify-content:center;padding:4px;overflow:hidden
     }
     .channel-favicon{
-      width:18px;height:18px;object-fit:contain;border-radius:4px;flex:0 0 18px
+      width:20px;height:20px;object-fit:cover;border-radius:4px;flex:0 0 20px
     }
     .site-chip{
       min-height:36px;border-radius:12px;border:1px solid #e4eaf1;background:#fff;
       display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;width:auto
     }
     .site-favicon{
-      width:18px;height:18px;object-fit:cover;border-radius:5px;flex:0 0 18px
+      width:20px;height:20px;object-fit:cover;border-radius:5px;flex:0 0 20px
     }
     .empty{border:1px dashed #d9e3ed;border-radius:24px;background:#fff;padding:30px 18px;text-align:center;color:#7b8794;font-size:15px;font-weight:800}
 
@@ -149,16 +196,18 @@
       .panel-grid{grid-template-columns:1fr 1fr;gap:10px}
       .panel-card{min-height:114px;padding:18px 16px 16px;border-radius:22px}
       .panel-title{font-size:24px}
-      .search-box{min-height:54px;padding:0 16px}
+      .topbar-greeting{font-size:13px}
+      .search-box{width:min(220px,100%);min-height:54px;padding:0 16px}
+      .search-box:focus-within{width:min(100%, 420px)}
       .property-main{grid-template-columns:90px 1fr;gap:12px;padding:12px}
       .thumb{width:90px;height:90px;border-radius:16px}
       .card-title{font-size:20px}
       .card-address{font-size:14px}
       .channel-row{grid-template-columns:repeat(8, minmax(0, 1fr));gap:4px}
       .channel-icon{min-height:32px;border-radius:10px;padding:3px}
-      .channel-favicon{width:16px;height:16px;flex-basis:16px}
+      .channel-favicon{width:18px;height:18px;flex-basis:18px}
       .site-chip{min-height:32px;padding:3px 8px}
-      .site-favicon{width:16px;height:16px;flex-basis:16px}
+      .site-favicon{width:18px;height:18px;flex-basis:18px}
     }
   </style>
 </head>
@@ -167,9 +216,11 @@
     <div class="shell">
       <div class="topbar">
         <div class="topbar-left">
+          <div id="topbarGreeting" class="topbar-greeting"></div>
+        </div>
+        <div class="topbar-right">
           <a href="/" class="brand-link">Maslow Korea</a>
         </div>
-        <div class="topbar-right"></div>
       </div>
 
       <div class="hero-spacer"></div>
@@ -243,9 +294,9 @@
       { name:'인스타', icon:'https://www.google.com/s2/favicons?domain=instagram.com&sz=64' },
       { name:'쓰레드', icon:'https://www.google.com/s2/favicons?domain=threads.net&sz=64' },
       { name:'페이스북', icon:'https://www.google.com/s2/favicons?domain=facebook.com&sz=64' },
-      { name:'네이버부동산', icon:'https://www.google.com/s2/favicons?domain=land.naver.com&sz=64' },
-      { name:'네이버블로그', icon:'https://www.google.com/s2/favicons?domain=blog.naver.com&sz=64' },
-      { name:'한방', icon:'https://www.google.com/s2/favicons?domain=hanbang.com&sz=64' },
+      { name:'네이버부동산', icon:'https://cdn.imweb.me/thumbnail/20260411/f28474e4f459d.png' },
+      { name:'네이버블로그', icon:'https://cdn.imweb.me/thumbnail/20260411/abbd3cfe64dfa.png' },
+      { name:'한방', icon:'https://cdn.imweb.me/thumbnail/20260411/5bc692a19c1a1.png' },
       { name:'카카오채널', icon:'https://www.google.com/s2/favicons?domain=pf.kakao.com&sz=64' }
     ];
 
@@ -254,10 +305,12 @@
     let rawItems = [];
     let currentFilter = 'default';
     let currentKeyword = '';
+    let unlockedUserName = '';
 
     const dashboardRoot = document.getElementById('dashboardRoot');
     const toolbarMeta = document.getElementById('toolbarMeta');
     const searchInput = document.getElementById('searchInput');
+    const topbarGreeting = document.getElementById('topbarGreeting');
     const lockOverlay = document.getElementById('lockOverlay');
     const lockInput = document.getElementById('lockInput');
     const lockBtn = document.getElementById('lockBtn');
@@ -314,6 +367,15 @@
         lastEditor: text(raw.lastEditedBy || raw.updatedBy || raw.editorName || ''),
         heroUrl: hero
       };
+    }
+
+    function updateGreeting(){
+      if(!topbarGreeting) return;
+      if(!unlockedUserName){
+        topbarGreeting.textContent = '';
+        return;
+      }
+      topbarGreeting.textContent = unlockedUserName + '님, 반갑습니다.';
     }
 
     function fetchAdminItems(){
@@ -488,7 +550,9 @@
         lockError.textContent = '비밀번호가 올바르지 않습니다.';
         return;
       }
+      unlockedUserName = matched;
       sessionStorage.setItem(CONFIG.authStorageKey, matched);
+      updateGreeting();
       lockOverlay.style.display = 'none';
       fetchAdminItems();
     }
@@ -499,6 +563,8 @@
     });
 
     if(sessionStorage.getItem(CONFIG.authStorageKey)){
+      unlockedUserName = sessionStorage.getItem(CONFIG.authStorageKey) || '';
+      updateGreeting();
       lockOverlay.style.display = 'none';
       fetchAdminItems();
     }
@@ -519,6 +585,8 @@
     window.markHidden = function(listingNumber){
       alert('숨기기 연결 예정: ' + listingNumber);
     };
+
+    updateGreeting();
   </script>
 </body>
 </html>

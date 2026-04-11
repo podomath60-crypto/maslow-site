@@ -314,7 +314,7 @@
 
     .channel-icon.is-not-yet .channel-favicon,
     .site-chip.is-not-yet .site-favicon{
-      filter:grayscale(1) opacity(.38);
+      filter:opacity(.24) saturate(.78) brightness(1.08);
     }
 
     .channel-modal{
@@ -1024,6 +1024,9 @@
 
     function saveChannelModal(){
       if(!channelModalListingNumber || !channelModalChannelKey) return;
+
+      const listingNumber = channelModalListingNumber;
+      const channelKey = channelModalChannelKey;
       const doneRadio = document.querySelector('input[name="channelDoneState"]:checked');
       const done = !!(doneRadio && doneRadio.value === 'done');
       const links = [
@@ -1031,7 +1034,9 @@
         text(document.getElementById('channelLink2').value),
         text(document.getElementById('channelLink3').value)
       ];
-      updatePropertyChannel(channelModalListingNumber, channelModalChannelKey, done, links);
+
+      closeChannelModal();
+      updatePropertyChannel(listingNumber, channelKey, done, links);
     }
 
     function setPropertyStatus(listingNumber, status){

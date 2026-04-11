@@ -525,6 +525,7 @@
   let propertyPhoneTimer = null;
 
   const GAS_PUBLIC_URL = "https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec?action=listPublicProperties";
+  const GAS_EXEC_URL = "https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec";
   let propertyItems = [];
   let filteredPropertyItems = [];
   let currentDetailPhotos = [];
@@ -1156,10 +1157,9 @@
     setTimeout(checkSummaryInView_, 320);
   }
 
-  function openProperty(idx){
+  function openPropertyItem_(item){
     clearSummaryTyping_();
-    var item = filteredPropertyItems[idx] || propertyItems[idx];
-    if(!item) return;
+    if(!item) return false;
     currentDetailPhotos = Array.isArray(item.photos) && item.photos.length ? item.photos.slice() : [item.image || 'https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png'];
     currentDetailPhotoIndex = 0;
     renderDetailPhotoCarousel();
@@ -1212,33 +1212,71 @@
         bindSummaryTypingOnView_(lines);
       });
     });
+    return true;
+  }
+
+  function openProperty(idx){
+    var item = filteredPropertyItems[idx] || propertyItems[idx];
+    return openPropertyItem_(item);
+  }
+
+  function fetchPreviewPropertyByListingNumber_(listingNumber){
+    return fetch(GAS_EXEC_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'text/plain;charset=UTF-8'
+      },
+      body: JSON.stringify({
+        action: 'getPropertyByListingNumber',
+        listingNumber: listingNumber
+      })
+    })
+    .then(function(r){
+      if(!r.ok) throw new Error('preview fetch failed: ' + r.status);
+      return r.json();
+    })
+    .then(function(data){
+      var item = data && data.item ? normalizeItem_(data.item) : null;
+      return item || null;
+    })
+    .catch(function(err){
+      console.error(err);
+      return null;
+    });
   }
 
   function openPropertyByListingNumber_(listingNumber){
     var target = text(listingNumber);
-    if(!target) return false;
+    if(!target) return Promise.resolve(false);
 
     var idx = propertyItems.findIndex(function(item){
       return text(item && item.listingNumber) === target;
     });
 
-    if(idx === -1) return false;
+    if(idx > -1){
+      openProperty(idx);
+      return Promise.resolve(true);
+    }
 
-    openProperty(idx);
-    openModal('propertyDetailModal');
-    return true;
+    return fetchPreviewPropertyByListingNumber_(target).then(function(item){
+      if(!item) return false;
+      openPropertyItem_(item);
+      return true;
+    });
   }
 
   function tryAutoOpenPropertyFromUrl_(){
-    if(autoOpenHandled) return;
-    if(!shouldAutoOpenProperty_()) return;
+    if(autoOpenHandled) return Promise.resolve(false);
+    if(!shouldAutoOpenProperty_()) return Promise.resolve(false);
 
     var listingNumber = getAutoOpenListingNumber_();
-    if(!listingNumber) return;
+    if(!listingNumber) return Promise.resolve(false);
 
-    if(openPropertyByListingNumber_(listingNumber)){
-      autoOpenHandled = true;
-    }
+    return openPropertyByListingNumber_(listingNumber).then(function(opened){
+      if(opened) autoOpenHandled = true;
+      return opened;
+    });
   }
 
   function bindHeroTitleFiveTapDashboard_(){

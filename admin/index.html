@@ -273,7 +273,7 @@
     }
     .property-detail-address{
       margin:0 0 16px;
-      font-size:24px;
+      font-size:34px;
       line-height:1.5;
       color:#43484e;
       letter-spacing:-0.03em;
@@ -1636,13 +1636,7 @@
       padding:24px 22px 22px;
     }
     .team-select-title{
-      margin:0 0 8px;
-      font-size:28px;
-      line-height:1.18;
-      font-weight:900;
-      color:#17191d;
-      letter-spacing:-0.05em;
-      text-align:center;
+      display:none;
     }
     .team-select-desc{
       margin:0 0 18px;
@@ -1655,6 +1649,7 @@
     }
     .team-select-list{
       display:grid;
+      grid-template-columns:1fr 1fr;
       gap:12px;
     }
     .team-select-btn{
@@ -1673,11 +1668,11 @@
     }
     .team-select-btn.factory{
       border-color:#cfe2ff;
-      background:#f7fbff;
+      background:#fff;
     }
     .team-select-btn.shopping{
       border-color:#f3d9c8;
-      background:#fffaf7;
+      background:#fff;
     }
     .team-select-name{
       display:block;
@@ -1708,18 +1703,21 @@
         padding:22px 18px 18px;
       }
       .team-select-title{
-        font-size:24px;
+        display:none;
       }
       .team-select-desc{
         font-size:13px;
         margin-bottom:16px;
       }
+      .team-select-list{
+        gap:10px;
+      }
       .team-select-btn{
         border-radius:20px;
-        padding:16px 16px 14px;
+        padding:16px 14px 14px;
       }
       .team-select-name{
-        font-size:21px;
+        font-size:28px;
       }
       .team-select-sub{
         font-size:13px;
@@ -1964,7 +1962,7 @@
   <div id="saveToast"  style="position:fixed; left:50%; bottom:30vh; transform:translateX(-50%); background:rgba(17,24,39,.82); color:#fff; padding:10px 14px; border-radius:999px; font-size:13px; font-weight:700; opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:99;">저장됨</div>
   <div id="teamSelectOverlay" class="team-select-overlay">
     <div class="team-select-card" role="dialog" aria-modal="true" aria-labelledby="teamSelectTitle">
-      <h3 id="teamSelectTitle" class="team-select-title">상가 / 공장 선택</h3>
+      <h3 id="teamSelectTitle" class="team-select-title"></h3>
       <p class="team-select-desc">처음 들어오거나 초기화한 경우에만 선택합니다.</p>
       <div class="team-select-list">
         <button type="button" class="team-select-btn shopping" id="teamSelectShoppingBtn">
@@ -2089,6 +2087,7 @@
       var listingNumber = '';
       var selectedListingPrefix = '';
       var pendingTeamSelectionCallback = null;
+      var ENTRY_SESSION_KEY = 'PROPERTY_EDITOR_ENTERED_V1';
       var listingStatus = 'hidden';
       var saveTimer = null;
       var tempSessionKey = '';
@@ -4447,6 +4446,38 @@
         if(typeof callback === 'function') callback();
       }
 
+      function markEditorEnteredSession_(){
+        try{
+          sessionStorage.setItem(ENTRY_SESSION_KEY, '1');
+        }catch(e){}
+      }
+
+      function hasEditorEnteredSession_(){
+        try{
+          return sessionStorage.getItem(ENTRY_SESSION_KEY) === '1';
+        }catch(e){
+          return false;
+        }
+      }
+
+      function resetEditorEnteredSession_(){
+        try{
+          sessionStorage.removeItem(ENTRY_SESSION_KEY);
+        }catch(e){}
+      }
+
+      function startNewEntryWithTeamSelection_(){
+        resetEditorEnteredSession_();
+        selectedListingPrefix = '';
+        listingNumber = '';
+        if(listingNumberField) listingNumberField.textContent = '';
+        openTeamSelectModal(function(){
+          assignListingNumber();
+          markEditorEnteredSession_();
+          saveDraftState(false);
+        });
+      }
+
       function assignListingNumber(){
         if(listingNumber) {
           listingNumberField.textContent = listingNumber;
@@ -4658,7 +4689,7 @@
             group.querySelector('[data-unit="pyeong"]').value = '';
           });
           setDealType('');
-          assignListingNumber();
+          startNewEntryWithTeamSelection_();
           updateStatusButton();
           updateTopFields();
           renderHero();

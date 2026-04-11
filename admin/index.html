@@ -2197,14 +2197,20 @@
       }
 
       function fetchJsonFromGas_(payload){
-        return fetch(GAS_URL, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'text/plain;charset=UTF-8'
-          },
-          body: JSON.stringify(payload)
+        var params = new URLSearchParams();
+        Object.keys(payload || {}).forEach(function(key){
+          var value = payload[key];
+          if(value == null) value = '';
+          params.set(key, String(value));
+        });
+
+        var url = GAS_URL + '?' + params.toString() + '&_ts=' + Date.now();
+
+        return fetch(url, {
+          method: 'GET',
+          cache: 'no-store'
         }).then(function(res){
+          if(!res.ok) throw new Error('조회 실패: ' + res.status);
           return res.json();
         });
       }
@@ -2245,8 +2251,8 @@
       function applyLoadedPropertyToEditor_(item){
         if(!item) return;
 
-        listingNumber = plainText(item.listingNumber || '');
-        listingStatus = plainText(item.status || 'hidden');
+        listingNumber = String(item.listingNumber || '').trim();
+        listingStatus = String(item.status || 'hidden').trim();
 
         var titleEl = document.querySelector('.property-detail-title.editable');
         var noteEl = document.querySelector('.property-detail-note.editable');
@@ -2263,7 +2269,7 @@
         setDealType(item.dealType || '');
 
         if ((item.dealType || '').indexOf('임대') > -1) {
-          var priceText = plainText(item.price || '');
+          var priceText = String(item.price || '').trim();
           var parts = priceText.split('/').map(function(v){ return plainText(v); }).filter(Boolean);
           rentPriceState = {
             deposit: parts[0] || '',
@@ -4426,7 +4432,7 @@
       }
 
 
-      var queryListingNumber = plainText(getQueryParam_('listingNumber'));
+      var queryListingNumber = String(getQueryParam_('listingNumber') || '').trim();
 
       if(queryListingNumber){
         listingNumber = queryListingNumber;

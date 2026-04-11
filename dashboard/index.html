@@ -144,6 +144,14 @@
     .status-chip.visible{background:#eef5ff;color:#0f7cff;border:1px solid #cfe2ff}
     .status-chip.hidden{background:#f3f5f8;color:#7f8792;border:1px solid #dde3ea}
     .card-address{font-size:15px;line-height:1.55;color:#505862;font-weight:700;word-break:keep-all}
+    .card-deal-price{
+      font-size:15px;
+      line-height:1.5;
+      font-weight:900;
+      color:#ff3c3c;
+      letter-spacing:-0.03em;
+      word-break:keep-all;
+    }
     .card-meta{font-size:13px;line-height:1.5;color:#7b8794;font-weight:800;letter-spacing:-0.02em}
     .card-meta strong{color:#4f5863;font-weight:900}
 
@@ -255,6 +263,7 @@
       .thumb{width:90px;height:90px;border-radius:16px}
       .card-title{font-size:20px}
       .card-address{font-size:14px}
+      .card-deal-price{font-size:14px}
       .channel-row{grid-template-columns:repeat(8, minmax(0, 1fr));gap:4px}
       .channel-icon{aspect-ratio:1 / 1;min-height:auto;border-radius:10px;padding:0}
       .channel-favicon{position:absolute;left:50%;top:50%;width:90%;height:90%;transform:translate(-50%, -50%);flex-basis:auto}
@@ -413,6 +422,8 @@
         listingNumber: text(raw.listingNumber),
         title: text(raw.title),
         address: text(raw.address),
+        dealType: text(raw.dealType),
+        price: text(raw.price),
         status: text(raw.status || 'hidden').toLowerCase(),
         createdAt: text(raw.createdAt),
         updatedAt: text(raw.updatedAt),
@@ -481,6 +492,15 @@
         String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
       const editor = text(item.lastEditor);
       return '수정 ' + stamp + (editor ? ' (' + escapeHtml(editor) + ')' : '');
+    }
+
+    function formatDealPrice(item){
+      var dealType = text(item.dealType);
+      var price = text(item.price);
+      if(dealType && price) return escapeHtml(dealType + ' / ' + price);
+      if(dealType) return escapeHtml(dealType);
+      if(price) return escapeHtml(price);
+      return '-';
     }
 
     function matchesKeyword(item){
@@ -556,6 +576,7 @@
         +         buildStatusChip(item)
         +       '</div>'
         +       '<div class="card-address">' + escapeHtml(item.address || '-') + '</div>'
+        +       '<div class="card-deal-price">' + formatDealPrice(item) + '</div>'
         +       '<div class="card-meta"><strong>' + escapeHtml(item.listingNumber || '-') + '</strong><br>' + formatUpdatedMeta(item) + '</div>'
         +     '</div>'
         +   '</div>'

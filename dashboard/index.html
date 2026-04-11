@@ -127,7 +127,7 @@
     .group-count{font-size:13px;color:#7b8794;font-weight:900}
 
     .card-list{display:grid;grid-template-columns:1fr;gap:12px}
-    .property-card{border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
+    .property-card{position:relative;border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
     .property-main{
       display:grid;grid-template-columns:112px 1fr;gap:14px;padding:14px;align-items:start;cursor:pointer
     }
@@ -264,11 +264,70 @@
       .card-title{font-size:20px}
       .card-address{font-size:14px}
       .card-deal-price{font-size:14px}
-      .channel-row{grid-template-columns:repeat(8, minmax(0, 1fr));gap:4px}
-      .channel-icon{aspect-ratio:1 / 1;min-height:auto;border-radius:10px;padding:0}
-      .channel-favicon{position:absolute;left:50%;top:50%;width:90%;height:90%;transform:translate(-50%, -50%);flex-basis:auto}
-      .site-chip{width:32px;min-width:32px;max-width:32px;height:32px;min-height:32px;max-height:32px;aspect-ratio:1 / 1;padding:0;flex:0 0 32px}
-      .site-favicon{position:absolute;left:50%;top:50%;width:90%;height:90%;transform:translate(-50%, -50%);flex-basis:auto}
+      .channel-row{
+        grid-template-columns:repeat(8, minmax(0, 1fr));
+        gap:4px;
+      }
+      .channel-icon{
+        position:relative;
+        aspect-ratio:1 / 1;
+        width:90%;
+        min-width:0;
+        max-width:none;
+        height:auto;
+        min-height:auto;
+        max-height:none;
+        margin:0 auto;
+        border-radius:10px;
+        padding:0;
+        flex:none;
+      }
+      .channel-favicon{
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        object-fit:cover;
+        transform:none;
+        flex-basis:auto;
+      }
+      .site-chip{
+        position:relative;
+        aspect-ratio:1 / 1;
+        width:90%;
+        min-width:0;
+        max-width:none;
+        height:auto;
+        min-height:auto;
+        max-height:none;
+        margin:0 auto;
+        border-radius:10px;
+        padding:0;
+        flex:none;
+      }
+      .site-favicon{
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        object-fit:cover;
+        transform:none;
+        flex-basis:auto;
+      }
+      .site-chip-absolute{
+        display:inline-flex;
+        width:28px;
+        min-width:28px;
+        max-width:28px;
+        height:28px;
+        min-height:28px;
+        max-height:28px;
+        top:10px;
+        right:10px;
+      }
+      .channel-row .site-chip{
+        display:none;
+      }
     }
   </style>
 </head>
@@ -568,6 +627,7 @@
 
       return ''
         + '<article class="property-card">'
+        +   '<button class="site-chip-absolute" type="button" title="자사사이트"><img class="site-favicon" src="' + escapeHtml(SELF_SITE_ICON) + '" alt="자사사이트"></button>'
         +   '<div class="property-main" onclick="openPreview(\'' + encodeURIComponent(item.listingNumber) + '\')">'
         +     '<div class="thumb" style="' + thumb + '"></div>'
         +     '<div class="card-content">'

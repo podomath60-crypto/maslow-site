@@ -182,7 +182,9 @@
     .header-right{
       display:flex;
       align-items:center;
-      gap:12px;
+      gap:10px;
+      width:auto;
+      flex-wrap:nowrap;
     }
     .lang{
       font-size:14px;
@@ -245,8 +247,8 @@
     }
 
     .btn-top-listings{
-      min-height:48px;
-      padding:0 20px;
+      min-height:42px;
+      padding:0 18px;
       border-radius:14px;
       background:#fff !important;
       color:#67addf !important;
@@ -262,6 +264,14 @@
       border-color:#7fc4f3 !important;
       box-shadow:none !important;
       transform:translateY(-1px);
+    }
+
+    .header-right .btn.btn-primary{
+      width:auto;
+      min-height:42px;
+      padding:0 18px;
+      border-radius:14px;
+      white-space:nowrap;
     }
 
     /* ===== TYPO ===== */
@@ -894,6 +904,26 @@
 
     @media (max-width:860px){
       .desktop-float-phone{ display:none; }
+      .header-right{
+        gap:0;
+      }
+      .header-right .btn-top-listings{
+        display:inline-flex !important;
+        width:auto !important;
+        min-height:32px;
+        padding:0 12px;
+        border-radius:10px !important;
+        background:#fff !important;
+        color:#67addf !important;
+        border:1.4px solid #8ecbf5 !important;
+        box-shadow:none !important;
+        font-size:13px;
+        font-weight:800;
+        white-space:nowrap;
+      }
+      .header-right .btn.btn-primary{
+        display:none !important;
+      }
     }
 
     @media (max-width:1180px){
@@ -2529,7 +2559,8 @@
 
       <div class="header-right">
         <div class="lang">KR / EN</div>
-        <a href="/listings" class="btn btn-top-listings" id="topActionBtn">매물보기</a>
+        <a href="/listings" class="btn btn-top-listings" id="topListingsBtn">매물보기</a>
+        <a href="javascript:void(0)" onclick="topAction()" class="btn btn-primary" id="topActionBtn">문의하기</a>
       </div>
     </div>
   </header>

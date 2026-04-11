@@ -338,7 +338,7 @@
       border:1px solid #e6ebf1;
       border-radius:26px;
       box-shadow:0 24px 48px rgba(15,23,42,.14);
-      padding:20px 18px 18px;
+      padding:22px 24px 20px;
     }
     .channel-modal-head{
       display:flex;
@@ -348,11 +348,23 @@
       margin:0 0 14px;
     }
     .channel-modal-title{
+      display:flex;
+      align-items:center;
+      gap:10px;
       font-size:24px;
       line-height:1.15;
       font-weight:900;
       color:#17191d;
       letter-spacing:-0.04em;
+    }
+    .channel-modal-favicon{
+      width:28px;
+      height:28px;
+      border-radius:8px;
+      object-fit:cover;
+      flex:0 0 28px;
+      border:1px solid #e5ebf2;
+      background:#fff;
     }
     .channel-modal-close{
       width:36px;
@@ -393,6 +405,12 @@
       gap:10px;
       margin:0 0 18px;
     }
+    .channel-link-row{
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) auto;
+      gap:8px;
+      align-items:center;
+    }
     .channel-link-input{
       width:100%;
       min-height:46px;
@@ -405,6 +423,18 @@
       font-size:14px;
       font-weight:700;
       letter-spacing:-0.02em;
+    }
+    .channel-go-btn{
+      min-height:46px;
+      padding:0 14px;
+      border-radius:14px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:-0.02em;
+      white-space:nowrap;
     }
     .channel-actions{
       display:flex;
@@ -511,7 +541,7 @@
         width:min(520px, calc(100vw - 20px));
         max-height:min(78vh, 640px);
         border-radius:22px;
-        padding:18px 16px 16px;
+        padding:20px 18px 18px;
       }
       .channel-modal-title{
         font-size:20px;
@@ -525,6 +555,11 @@
       .channel-link-input{
         min-height:42px;
         font-size:13px;
+      }
+      .channel-go-btn{
+        min-height:42px;
+        padding:0 12px;
+        font-size:12px;
       }
       .channel-action-btn{
         min-height:40px;
@@ -590,7 +625,7 @@
   <div id="channelModal" class="channel-modal">
     <div class="channel-modal-card" onclick="event.stopPropagation()">
       <div class="channel-modal-head">
-        <div id="channelModalTitle" class="channel-modal-title">채널</div>
+        <div id="channelModalTitle" class="channel-modal-title"><img id="channelModalFavicon" class="channel-modal-favicon" src="" alt=""><span id="channelModalTitleText">채널</span></div>
         <button type="button" class="channel-modal-close" onclick="closeChannelModal()">✕</button>
       </div>
       <div class="channel-status-row">
@@ -598,9 +633,18 @@
         <label class="channel-radio"><input type="radio" name="channelDoneState" value="notYet"> <span>Not yet</span></label>
       </div>
       <div class="channel-links">
-        <input id="channelLink1" class="channel-link-input" type="text" placeholder="링크1">
-        <input id="channelLink2" class="channel-link-input" type="text" placeholder="링크2">
-        <input id="channelLink3" class="channel-link-input" type="text" placeholder="링크3">
+        <div class="channel-link-row">
+          <input id="channelLink1" class="channel-link-input" type="text" placeholder="링크1">
+          <button type="button" class="channel-go-btn" onclick="openChannelLink(1)">Go</button>
+        </div>
+        <div class="channel-link-row">
+          <input id="channelLink2" class="channel-link-input" type="text" placeholder="링크2">
+          <button type="button" class="channel-go-btn" onclick="openChannelLink(2)">Go</button>
+        </div>
+        <div class="channel-link-row">
+          <input id="channelLink3" class="channel-link-input" type="text" placeholder="링크3">
+          <button type="button" class="channel-go-btn" onclick="openChannelLink(3)">Go</button>
+        </div>
       </div>
       <div class="channel-actions">
         <button type="button" class="channel-action-btn" onclick="closeChannelModal()">닫기</button>
@@ -676,6 +720,18 @@
       hanbang: '한방',
       kakaoChannel: '카카오채널',
       ownSite: '자사사이트'
+    };
+
+    const CHANNEL_ICON_MAP = {
+      youtube: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=64',
+      instagram: 'https://www.google.com/s2/favicons?domain=instagram.com&sz=64',
+      threads: 'https://www.google.com/s2/favicons?domain=threads.net&sz=64',
+      facebook: 'https://www.google.com/s2/favicons?domain=facebook.com&sz=64',
+      naverRealEstate: 'https://cdn.imweb.me/thumbnail/20260411/f28474e4f459d.png',
+      naverBlog: 'https://cdn.imweb.me/thumbnail/20260411/abbd3cfe64dfa.png',
+      hanbang: 'https://cdn.imweb.me/thumbnail/20260411/5bc692a19c1a1.png',
+      kakaoChannel: 'https://www.google.com/s2/favicons?domain=pf.kakao.com&sz=64',
+      ownSite: 'https://cdn.imweb.me/thumbnail/20260411/9b31c965062e2.png'
     };
 
     let rawItems = [];
@@ -889,7 +945,8 @@
 
     function openChannelModal(listingNumber, channelKey){
       const modal = document.getElementById('channelModal');
-      const titleEl = document.getElementById('channelModalTitle');
+      const titleTextEl = document.getElementById('channelModalTitleText');
+      const faviconEl = document.getElementById('channelModalFavicon');
       const link1 = document.getElementById('channelLink1');
       const link2 = document.getElementById('channelLink2');
       const link3 = document.getElementById('channelLink3');
@@ -900,7 +957,11 @@
       channelModalListingNumber = listingNumber;
       channelModalChannelKey = channelKey;
 
-      if(titleEl) titleEl.textContent = CHANNEL_LABEL_MAP[channelKey] || '채널';
+      if(titleTextEl) titleTextEl.textContent = CHANNEL_LABEL_MAP[channelKey] || '채널';
+      if(faviconEl){
+        faviconEl.src = CHANNEL_ICON_MAP[channelKey] || '';
+        faviconEl.alt = CHANNEL_LABEL_MAP[channelKey] || '채널';
+      }
       if(link1) link1.value = state.links[0] || '';
       if(link2) link2.value = state.links[1] || '';
       if(link3) link3.value = state.links[2] || '';
@@ -952,6 +1013,13 @@
       .finally(function(){
         stopLoadingOverlay();
       });
+    }
+
+    function openChannelLink(index){
+      const input = document.getElementById('channelLink' + index);
+      const url = text(input && input.value);
+      if(!url) return;
+      window.open(url, '_blank', 'noopener');
     }
 
     function saveChannelModal(){

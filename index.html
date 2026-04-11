@@ -3842,32 +3842,72 @@ window.addEventListener('popstate', function(){
 
 <script>
 (function(){
-  var detailTitleEl = document.getElementById('detailTitle');
-  if(!detailTitleEl) return;
-
-  var dashboardTapCount = 0;
-  var dashboardTapTimer = null;
-  var DASHBOARD_TAP_LIMIT = 5;
-  var DASHBOARD_TAP_RESET_MS = 1600;
-
-  detailTitleEl.addEventListener('click', function(){
-    var titleText = String(detailTitleEl.textContent || '').trim();
-    if(titleText.indexOf('공장') === -1) return;
-
-    dashboardTapCount += 1;
-    clearTimeout(dashboardTapTimer);
-    dashboardTapTimer = setTimeout(function(){
-      dashboardTapCount = 0;
-    }, DASHBOARD_TAP_RESET_MS);
-
-    if(dashboardTapCount >= DASHBOARD_TAP_LIMIT){
-      dashboardTapCount = 0;
-      clearTimeout(dashboardTapTimer);
-      window.location.href = '/dashboard';
+  function getQueryParam_(key){
+    try{
+      return new URLSearchParams(window.location.search).get(key) || '';
+    }catch(e){
+      return '';
     }
-  });
+  }
+
+  function autoOpenPropertyModalFromUrl_(){
+    var shouldOpen = String(getQueryParam_('open') || '').trim() === '1';
+    var listingNumber = String(getQueryParam_('listingNumber') || '').trim();
+    if(!shouldOpen || !listingNumber) return;
+
+    function runOpen_(){
+      try{
+        openModal('propertyDetailModal');
+      }catch(e){
+        console.error(e);
+      }
+    }
+
+    setTimeout(runOpen_, 80);
+    setTimeout(runOpen_, 240);
+  }
+
+  function bindDashboardTapOnPropertyTitle_(){
+    var titleEl = document.querySelector('.property-detail-title');
+    if(!titleEl) return;
+
+    var tapCount = 0;
+    var tapTimer = null;
+    var TAP_LIMIT = 5;
+    var TAP_RESET_MS = 1600;
+
+    function handleTap_(){
+      var titleText = String(titleEl.textContent || '').trim();
+      if(titleText.indexOf('공장') === -1) return;
+
+      tapCount += 1;
+      clearTimeout(tapTimer);
+      tapTimer = setTimeout(function(){
+        tapCount = 0;
+      }, TAP_RESET_MS);
+
+      if(tapCount >= TAP_LIMIT){
+        tapCount = 0;
+        clearTimeout(tapTimer);
+        window.location.href = '/dashboard';
+      }
+    }
+
+    titleEl.addEventListener('pointerup', handleTap_, { passive:true });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      autoOpenPropertyModalFromUrl_();
+      bindDashboardTapOnPropertyTitle_();
+    });
+  }else{
+    autoOpenPropertyModalFromUrl_();
+    bindDashboardTapOnPropertyTitle_();
+  }
 })();
 </script>
 
 </body>
 </html>
+

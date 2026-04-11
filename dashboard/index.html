@@ -587,7 +587,6 @@
     }
 
     function setPropertyStatus(listingNumber, status){
-      startLoadingOverlay();
       return fetch(CONFIG.adminListUrl, {
         method: 'POST',
         mode: 'cors',
@@ -613,9 +612,6 @@
       .catch(function(err){
         console.error(err);
         alert((err && err.message) ? err.message : '상태 변경 중 문제가 발생했습니다.');
-      })
-      .finally(function(){
-        stopLoadingOverlay();
       });
     }
 

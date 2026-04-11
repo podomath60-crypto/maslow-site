@@ -344,6 +344,36 @@
       border-top:1px solid #dedede;
       background:transparent;
     }
+    .property-spec-sector-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:20px 12px 10px;
+      border-top:1px solid #dedede;
+      background:transparent;
+    }
+    .property-spec-sector-head .property-spec-sector-title{
+      padding:0;
+      border-top:none;
+      min-width:0;
+      flex:1 1 auto;
+    }
+    .inline-reset-btn{
+      width:auto;
+      min-height:28px;
+      padding:0 8px;
+      border:none;
+      background:transparent;
+      color:#7f8792;
+      font-size:12px;
+      line-height:1.4;
+      font-weight:600;
+      text-decoration:underline;
+      text-underline-offset:2px;
+      flex:0 0 auto;
+      white-space:nowrap;
+    }
     .property-specs .property-spec-sector-title:first-child{
       border-top:none;
       padding-top:8px;
@@ -1841,7 +1871,10 @@
         </div>
 
         <div class="property-specs">
-          <div class="property-spec-sector-title">기본정보</div>
+          <div class="property-spec-sector-head">
+            <div class="property-spec-sector-title">기본정보</div>
+            <button type="button" id="inlineResetBtn" class="inline-reset-btn">🧹초기화</button>
+          </div>
 
           <div class="property-spec-row"><div class="property-spec-label">* 소재지</div><div class="property-spec-value"><div class="address-inline-row"><div id="addressField" class="property-spec-value editable address-input-wrap" contenteditable="true" data-placeholder="입력"></div><button type="button" id="addressSearchBtn" class="address-mini-btn search">검색</button><button type="button" id="addressLookupBtn" class="address-mini-btn lookup">조회</button></div></div></div>
           <div class="property-spec-row"><div class="property-spec-label">* 거래형태</div><div class="property-spec-value"><div id="dealTypeRow" class="type-chip-row"><button type="button" class="type-chip" data-deal="매매">매매</button><button type="button" class="type-chip" data-deal="임대">임대</button><span id="dealTypePlaceholder" class="type-chip-placeholder">선택</span></div></div></div>
@@ -2014,6 +2047,7 @@
       var teamSelectOverlay = document.getElementById('teamSelectOverlay');
       var teamSelectShoppingBtn = document.getElementById('teamSelectShoppingBtn');
       var teamSelectFactoryBtn = document.getElementById('teamSelectFactoryBtn');
+      var inlineResetBtn = document.getElementById('inlineResetBtn');
       var draftSaveBtn = document.getElementById('draftSaveBtn');
       var draftCleanBtn = document.getElementById('draftCleanBtn');
       var statusToggleBtn = document.getElementById('statusToggleBtn');
@@ -4757,6 +4791,33 @@
       if(addressLookupBtn){
         addressLookupBtn.addEventListener('click', function(){
           runAddressLookup_();
+        });
+      }
+
+
+      function runDraftCleanupAndRestart_(){
+        try{
+          localStorage.removeItem(STORAGE_KEY);
+        }catch(e){}
+        listingNumber = '';
+        selectedListingPrefix = '';
+        clearForceTeamModalFlag_();
+        tempSessionKey = '';
+        propertyDataTempFiles = [];
+        ledgerFiles = [];
+        photoItems = [];
+        currentPhotoIndex = 0;
+        setDealType('');
+        updateStatusButton();
+        updateTopFields();
+        renderHero();
+        renderLedgerStatus();
+        startNewEntryWithTeamSelection_();
+      }
+
+      if(inlineResetBtn){
+        inlineResetBtn.addEventListener('click', function(){
+          runDraftCleanupAndRestart_();
         });
       }
 

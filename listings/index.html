@@ -529,6 +529,11 @@
   let filteredPropertyItems = [];
   let currentDetailPhotos = [];
   let currentDetailPhotoIndex = 0;
+  let adminPinchCount = 0;
+  let adminPinchLastAt = 0;
+  let adminPinchCardKey = '';
+  let adminPinchActive = false;
+  let adminPinchStartDistance = 0;
 
   const header = document.getElementById('siteHeader');
   let lastY = window.scrollY;
@@ -871,8 +876,9 @@
       var chipHtml = chips.map(function(ch){
         return '<span class="property-chip">' + escapeHtml(ch) + '</span>';
       }).join('');
+      var listingNo = escapeHtml(item.listingNo || '');
       return ''
-        + '<a class="property-card" href="javascript:void(0)" onclick="openProperty(' + idx + ')">'
+        + '<a class="property-card" data-card-idx="' + idx + '" data-listing-no="' + listingNo + '" href="javascript:void(0)" onclick="openProperty(' + idx + ')">'
         +   '<div class="property-media" style="background-image:url(\'' + escapeHtml(item.image) + '\')">'
         +     '<div class="property-chip-wrap">' + chipHtml + '</div>'
         +   '</div>'
@@ -883,9 +889,78 @@
         +   '</div>'
         + '</a>';
     }).join('');
+    bindAdminPinchGesture_();
   }
 
 
+
+  function getPinchDistance_(touches){
+    if(!touches || touches.length < 2) return 0;
+    var dx = (touches[0].clientX || 0) - (touches[1].clientX || 0);
+    var dy = (touches[0].clientY || 0) - (touches[1].clientY || 0);
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function resetAdminPinchState_(){
+    adminPinchActive = false;
+    adminPinchStartDistance = 0;
+  }
+
+  function goAdminFromCard_(card){
+    if(!card) return;
+    var listingNo = String(card.getAttribute('data-listing-no') || '').trim();
+    var adminUrl = '/admin' + (listingNo ? ('?listingNumber=' + encodeURIComponent(listingNo)) : '');
+    window.location.href = adminUrl;
+  }
+
+  function handleAdminPinchStart_(e){
+    if(!e.touches || e.touches.length !== 2) return;
+    adminPinchActive = true;
+    adminPinchStartDistance = getPinchDistance_(e.touches);
+  }
+
+  function handleAdminPinchMove_(e){
+    if(!adminPinchActive || !e.touches || e.touches.length !== 2) return;
+    var currentDistance = getPinchDistance_(e.touches);
+    var pinchDelta = adminPinchStartDistance - currentDistance;
+    if(pinchDelta < 26) return;
+
+    var card = e.currentTarget;
+    var cardKey = String(card.getAttribute('data-listing-no') || card.getAttribute('data-card-idx') || '');
+    var now = Date.now();
+
+    if(cardKey !== adminPinchCardKey || (now - adminPinchLastAt) > 2600){
+      adminPinchCount = 0;
+    }
+
+    adminPinchCardKey = cardKey;
+    adminPinchLastAt = now;
+    adminPinchCount += 1;
+    adminPinchActive = false;
+
+    if(adminPinchCount >= 5){
+      adminPinchCount = 0;
+      adminPinchLastAt = 0;
+      adminPinchCardKey = '';
+      goAdminFromCard_(card);
+    }
+  }
+
+  function handleAdminPinchEnd_(){
+    resetAdminPinchState_();
+  }
+
+  function bindAdminPinchGesture_(){
+    var cards = document.querySelectorAll('.property-card');
+    cards.forEach(function(card){
+      if(card.dataset.adminPinchBound === 'y') return;
+      card.dataset.adminPinchBound = 'y';
+      card.addEventListener('touchstart', handleAdminPinchStart_, { passive: true });
+      card.addEventListener('touchmove', handleAdminPinchMove_, { passive: true });
+      card.addEventListener('touchend', handleAdminPinchEnd_, { passive: true });
+      card.addEventListener('touchcancel', handleAdminPinchEnd_, { passive: true });
+    });
+  }
 
   function buildSearchText_(item){
     return [

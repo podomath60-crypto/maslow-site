@@ -2197,18 +2197,13 @@
       }
 
       function fetchJsonFromGas_(payload){
-        var params = new URLSearchParams();
-        Object.keys(payload || {}).forEach(function(key){
-          var value = payload[key];
-          if(value == null) value = '';
-          params.set(key, String(value));
-        });
-
-        var url = GAS_URL + '?' + params.toString() + '&_ts=' + Date.now();
-
-        return fetch(url, {
-          method: 'GET',
-          cache: 'no-store'
+        return fetch(GAS_URL, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=UTF-8'
+          },
+          body: JSON.stringify(payload || {})
         }).then(function(res){
           if(!res.ok) throw new Error('조회 실패: ' + res.status);
           return res.json();

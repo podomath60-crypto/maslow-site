@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maslow Korea</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --line:#e6ebf1;
+      --text:#111318;
+      --muted:#67707b;
+      --blue:#0f7cff;
+      --shadow:0 14px 30px rgba(15,23,42,.05);
+    }
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;
+      padding:0;
+      background:#fff;
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif !important;
+      letter-spacing:-0.02em;
+    }
+    a{text-decoration:none;color:inherit}
+    button,input{font:inherit}
+    button{border:none;background:none;cursor:pointer}
+    img{display:block;max-width:100%}
+
+    .page{min-height:100vh;background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%)}
+    .shell{width:100%;max-width:980px;margin:0 auto;padding:0 20px 48px}
+
+    .topbar{
+      position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
+      min-height:76px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
+      border-bottom:1px solid rgba(230,235,241,.9)
+    }
+    .topbar-left{display:flex;align-items:center;justify-content:flex-start;flex:1 1 auto}
+    .topbar-right{width:120px;min-height:1px}
+    .brand-link{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;font-size:18px;font-weight:900;color:#111}
+
+    .hero-spacer{height:18px}
+    .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0 18px}
+    .panel-card{
+      position:relative;display:flex;flex-direction:column;justify-content:space-between;
+      min-height:132px;padding:22px 22px 20px;border:1px solid var(--line);border-radius:28px;
+      background:#fff;box-shadow:var(--shadow);text-align:left;transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease
+    }
+    .panel-card:hover{transform:translateY(-2px);box-shadow:0 18px 34px rgba(15,23,42,.08)}
+    .panel-card.primary{background:linear-gradient(180deg,#f7fbff 0%,#eef6ff 100%);border-color:#cfe2ff}
+    .panel-eyebrow{font-size:12px;font-weight:900;color:#7d8792;letter-spacing:.08em;text-transform:uppercase}
+    .panel-title{margin-top:10px;font-size:30px;line-height:1.08;font-weight:900;color:#111318;letter-spacing:-0.05em}
+    .panel-desc{margin-top:10px;font-size:14px;line-height:1.65;color:#66707a;font-weight:700}
+
+    .search-wrap{margin:0 0 14px}
+    .search-box{
+      display:flex;align-items:center;gap:12px;min-height:60px;padding:0 18px;border:1.5px solid #d9e4ef;
+      border-radius:999px;background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.03)
+    }
+    .search-box:focus-within{border-color:#bfdcff;box-shadow:0 12px 24px rgba(15,124,255,.08)}
+    .search-icon{flex:0 0 auto;font-size:18px;color:#7b8794;width:auto}
+    .search-input{
+      flex:1 1 auto;width:100%;border:none;outline:none;background:transparent;color:#111318;
+      font-size:17px;font-weight:800;letter-spacing:-0.03em
+    }
+    .search-input::placeholder{color:rgba(123,135,148,.55);font-weight:600}
+
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 18px}
+    .chip-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .filter-chip{
+      min-height:36px;padding:0 14px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;
+      color:#5d6670;font-size:14px;font-weight:900;letter-spacing:-0.02em;transition:.18s ease
+    }
+    .filter-chip.active{background:#0f7cff;border-color:#0f7cff;color:#fff;box-shadow:0 10px 20px rgba(15,124,255,.16)}
+    .toolbar-meta{font-size:13px;color:#7b8794;font-weight:800;letter-spacing:-0.02em}
+
+    .group{margin:0 0 26px}
+    .group-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:0 2px}
+    .group-title{font-size:22px;line-height:1.2;font-weight:900;color:#202227;letter-spacing:-0.04em}
+    .group-count{font-size:13px;color:#7b8794;font-weight:900}
+
+    .card-list{display:grid;grid-template-columns:1fr;gap:12px}
+    .property-card{border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
+    .property-main{
+      display:grid;grid-template-columns:112px 1fr;gap:14px;padding:14px;align-items:start;cursor:pointer
+    }
+    .thumb{width:112px;height:112px;border-radius:18px;background:#edf2f7 center/cover no-repeat;overflow:hidden;flex:0 0 112px}
+    .card-content{min-width:0;display:grid;gap:8px}
+    .title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+    .card-title{
+      margin:0;font-size:24px;line-height:1.16;font-weight:900;color:#17191d;letter-spacing:-0.05em;word-break:keep-all
+    }
+    .status-chip{
+      flex:0 0 auto;min-height:24px;padding:0 8px;border-radius:999px;font-size:11px;font-weight:900;
+      display:inline-flex;align-items:center;justify-content:center;white-space:nowrap
+    }
+    .status-chip.visible{background:#eef5ff;color:#0f7cff;border:1px solid #cfe2ff}
+    .status-chip.hidden{background:#f3f5f8;color:#7f8792;border:1px solid #dde3ea}
+    .card-address{font-size:15px;line-height:1.55;color:#505862;font-weight:700;word-break:keep-all}
+    .card-meta{font-size:13px;line-height:1.5;color:#7b8794;font-weight:800;letter-spacing:-0.02em}
+    .card-meta strong{color:#4f5863;font-weight:900}
+
+    .card-bottom{border-top:1px solid #eef2f6;padding:10px 14px 12px;display:grid;gap:10px}
+    .action-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .action-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .mini-btn{
+      min-height:34px;padding:0 12px;border-radius:999px;border:1px solid #dce6f1;background:#fff;
+      color:#111318;font-size:13px;font-weight:900;letter-spacing:-0.02em
+    }
+    .mini-btn.blue{border-color:#cfe2ff;background:#eef5ff;color:#0f7cff}
+    .mini-btn.gray{border-color:#dde3ea;background:#f4f6f8;color:#6e7782}
+
+    .channel-row{display:grid;grid-template-columns:repeat(8, minmax(0, 1fr));gap:6px}
+    .channel-icon{
+      min-height:36px;border-radius:12px;border:1px solid #e4eaf1;background:#fafcff;
+      display:flex;align-items:center;justify-content:center;padding:4px;overflow:hidden
+    }
+    .channel-favicon{
+      width:18px;height:18px;object-fit:contain;border-radius:4px;flex:0 0 18px
+    }
+    .site-chip{
+      min-height:36px;border-radius:12px;border:1px solid #e4eaf1;background:#fff;
+      display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;width:auto
+    }
+    .site-favicon{
+      width:18px;height:18px;object-fit:cover;border-radius:5px;flex:0 0 18px
+    }
+    .empty{border:1px dashed #d9e3ed;border-radius:24px;background:#fff;padding:30px 18px;text-align:center;color:#7b8794;font-size:15px;font-weight:800}
+
+    .lock-overlay{
+      position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;
+      background:rgba(255,255,255,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)
+    }
+    .lock-card{
+      width:min(420px,100%);border:1px solid #e6ebf1;border-radius:30px;background:#fff;
+      box-shadow:0 24px 48px rgba(15,23,42,.12);padding:24px 22px 22px
+    }
+    .lock-title{font-size:26px;line-height:1.1;font-weight:900;color:#17191d;letter-spacing:-0.05em;margin:0 0 12px}
+    .lock-desc{font-size:14px;line-height:1.65;color:#66707a;font-weight:700;margin:0 0 16px}
+    .lock-input{
+      width:100%;min-height:56px;border:1.5px solid #dbe5ee;border-radius:18px;padding:0 16px;outline:none;
+      font-size:20px;font-weight:900;letter-spacing:.08em;text-align:center;background:#fff;margin:0 0 12px
+    }
+    .lock-btn{width:100%;min-height:52px;border-radius:18px;background:#0f7cff;color:#fff;font-size:16px;font-weight:900;letter-spacing:-0.02em}
+    .lock-error{margin-top:10px;font-size:13px;color:#d64545;font-weight:800;min-height:18px;text-align:center}
+
+    @media (max-width:860px){
+      .shell{padding:0 16px 40px}
+      .panel-grid{grid-template-columns:1fr 1fr;gap:10px}
+      .panel-card{min-height:114px;padding:18px 16px 16px;border-radius:22px}
+      .panel-title{font-size:24px}
+      .search-box{min-height:54px;padding:0 16px}
+      .property-main{grid-template-columns:90px 1fr;gap:12px;padding:12px}
+      .thumb{width:90px;height:90px;border-radius:16px}
+      .card-title{font-size:20px}
+      .card-address{font-size:14px}
+      .channel-row{grid-template-columns:repeat(8, minmax(0, 1fr));gap:4px}
+      .channel-icon{min-height:32px;border-radius:10px;padding:3px}
+      .channel-favicon{width:16px;height:16px;flex-basis:16px}
+      .site-chip{min-height:32px;padding:3px 8px}
+      .site-favicon{width:16px;height:16px;flex-basis:16px}
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="shell">
+      <div class="topbar">
+        <div class="topbar-left">
+          <a href="/" class="brand-link">Maslow Korea</a>
+        </div>
+        <div class="topbar-right"></div>
+      </div>
+
+      <div class="hero-spacer"></div>
+
+      <section class="panel-grid">
+        <button class="panel-card primary" id="goAdminBtn" type="button">
+          <div>
+            <div class="panel-eyebrow">Create</div>
+            <div class="panel-title">매물등록</div>
+          </div>
+          <div class="panel-desc">입력기로 이동해서 새 매물을 등록합니다.</div>
+        </button>
+
+        <button class="panel-card" id="calendarBtn" type="button">
+          <div>
+            <div class="panel-eyebrow">Schedule</div>
+            <div class="panel-title">캘린더</div>
+          </div>
+          <div class="panel-desc">일정 관리 영역. 추후 연결 예정입니다.</div>
+        </button>
+      </section>
+
+      <section class="search-wrap">
+        <div class="search-box">
+          <span class="search-icon">🔎</span>
+          <input id="searchInput" class="search-input" type="text" placeholder="제목, 주소, 매물번호 검색" autocomplete="off" />
+        </div>
+      </section>
+
+      <section class="toolbar">
+        <div class="chip-row">
+          <button class="filter-chip active" data-filter="default" type="button">기본정렬</button>
+          <button class="filter-chip" data-filter="updated" type="button">수정순</button>
+          <button class="filter-chip" data-filter="visible" type="button">공개중</button>
+          <button class="filter-chip" data-filter="hidden" type="button">비공개</button>
+        </div>
+        <div id="toolbarMeta" class="toolbar-meta">전체 0건</div>
+      </section>
+
+      <main id="dashboardRoot"></main>
+    </div>
+  </div>
+
+  <div id="lockOverlay" class="lock-overlay">
+    <div class="lock-card">
+      <h1 class="lock-title">Maslow Korea</h1>
+      <p class="lock-desc">비밀번호를 입력해야 접근할 수 있습니다.</p>
+      <input id="lockInput" class="lock-input" type="password" inputmode="numeric" maxlength="4" placeholder="비밀번호" />
+      <button id="lockBtn" class="lock-btn" type="button">확인</button>
+      <div id="lockError" class="lock-error"></div>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec',
+      adminEditUrl: '/admin',
+      listingsUrl: '/listings',
+      authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
+    };
+
+    const PASSWORD_MAP = {
+      '6857': '한정인 이사',
+      '0444': '박성연 대표',
+      '1053': '나득균 팀장',
+      '8198': '이유나 팀장'
+    };
+
+    const CHANNELS = [
+      { name:'유튜브', icon:'https://www.google.com/s2/favicons?domain=youtube.com&sz=64' },
+      { name:'인스타', icon:'https://www.google.com/s2/favicons?domain=instagram.com&sz=64' },
+      { name:'쓰레드', icon:'https://www.google.com/s2/favicons?domain=threads.net&sz=64' },
+      { name:'페이스북', icon:'https://www.google.com/s2/favicons?domain=facebook.com&sz=64' },
+      { name:'네이버부동산', icon:'https://www.google.com/s2/favicons?domain=land.naver.com&sz=64' },
+      { name:'네이버블로그', icon:'https://www.google.com/s2/favicons?domain=blog.naver.com&sz=64' },
+      { name:'한방', icon:'https://www.google.com/s2/favicons?domain=hanbang.com&sz=64' },
+      { name:'카카오채널', icon:'https://www.google.com/s2/favicons?domain=pf.kakao.com&sz=64' }
+    ];
+
+    const SELF_SITE_ICON = 'https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg';
+
+    let rawItems = [];
+    let currentFilter = 'default';
+    let currentKeyword = '';
+
+    const dashboardRoot = document.getElementById('dashboardRoot');
+    const toolbarMeta = document.getElementById('toolbarMeta');
+    const searchInput = document.getElementById('searchInput');
+    const lockOverlay = document.getElementById('lockOverlay');
+    const lockInput = document.getElementById('lockInput');
+    const lockBtn = document.getElementById('lockBtn');
+    const lockError = document.getElementById('lockError');
+
+    document.getElementById('goAdminBtn').addEventListener('click', function(){
+      location.href = CONFIG.adminEditUrl;
+    });
+
+    document.getElementById('calendarBtn').addEventListener('click', function(){
+      alert('캘린더는 추후 연결 예정입니다.');
+    });
+
+    searchInput.addEventListener('input', function(e){
+      currentKeyword = String(e.target.value || '').trim().toLowerCase();
+      renderDashboard();
+    });
+
+    document.querySelectorAll('.filter-chip').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.filter-chip').forEach(function(x){
+          x.classList.remove('active');
+        });
+        btn.classList.add('active');
+        currentFilter = btn.getAttribute('data-filter') || 'default';
+        renderDashboard();
+      });
+    });
+
+    function text(v){
+      return String(v == null ? '' : v).trim();
+    }
+
+    function parseJsonArraySafe(value){
+      try{
+        const parsed = typeof value === 'string' ? JSON.parse(value || '[]') : value;
+        return Array.isArray(parsed) ? parsed : [];
+      }catch(e){
+        return [];
+      }
+    }
+
+    function normalizeItem(raw){
+      raw = raw || {};
+      const photos = parseJsonArraySafe(raw.photoUrlsJson);
+      const hero = photos[0] && photos[0].url ? String(photos[0].url).trim() : '';
+      return {
+        listingNumber: text(raw.listingNumber),
+        title: text(raw.title),
+        address: text(raw.address),
+        status: text(raw.status || 'hidden').toLowerCase(),
+        createdAt: text(raw.createdAt),
+        updatedAt: text(raw.updatedAt),
+        lastEditor: text(raw.lastEditedBy || raw.updatedBy || raw.editorName || ''),
+        heroUrl: hero
+      };
+    }
+
+    function fetchAdminItems(){
+      return fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=UTF-8'
+        },
+        body: JSON.stringify({
+          action: 'listAdminProperties'
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('불러오기 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        const items = Array.isArray(data && data.items) ? data.items : [];
+        rawItems = items.map(normalizeItem);
+        renderDashboard();
+      })
+      .catch(function(err){
+        console.error(err);
+        dashboardRoot.innerHTML = '<div class="empty">매물 데이터를 불러오지 못했습니다.</div>';
+        toolbarMeta.textContent = '불러오기 실패';
+      });
+    }
+
+    function parseDateValue(value){
+      const s = text(value);
+      if(!s) return null;
+      const t = new Date(s).getTime();
+      return Number.isNaN(t) ? null : t;
+    }
+
+    function formatDateGroup(value){
+      const ts = parseDateValue(value);
+      if(!ts) return '날짜 미확인';
+      const d = new Date(ts);
+      const days = ['일','월','화','수','목','금','토'];
+      return d.getFullYear() + '.' + (d.getMonth()+1) + '.' + d.getDate() + ' (' + days[d.getDay()] + ')';
+    }
+
+    function formatUpdatedMeta(item){
+      if(!text(item.updatedAt)) return '수정 -';
+      const ts = parseDateValue(item.updatedAt);
+      if(!ts) return '수정 -';
+      const d = new Date(ts);
+      const stamp = d.getFullYear() + '.' + (d.getMonth()+1) + '.' + d.getDate() + ' ' +
+        String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+      const editor = text(item.lastEditor);
+      return '수정 ' + stamp + (editor ? ' (' + editor + ')' : '');
+    }
+
+    function matchesKeyword(item){
+      if(!currentKeyword) return true;
+      const haystack = [item.title, item.address, item.listingNumber].join(' ').toLowerCase();
+      return haystack.indexOf(currentKeyword) > -1;
+    }
+
+    function applyFilter(items){
+      let result = items.filter(matchesKeyword);
+
+      if(currentFilter === 'visible'){
+        result = result.filter(function(item){ return item.status === 'visible' || item.status === 'show' || item.status === '공개'; });
+      }else if(currentFilter === 'hidden'){
+        result = result.filter(function(item){ return !(item.status === 'visible' || item.status === 'show' || item.status === '공개'); });
+      }
+
+      if(currentFilter === 'updated'){
+        result = result.slice().sort(function(a,b){
+          return (parseDateValue(b.updatedAt) || 0) - (parseDateValue(a.updatedAt) || 0);
+        });
+      }else{
+        result = result.slice().sort(function(a,b){
+          return (parseDateValue(b.createdAt) || 0) - (parseDateValue(a.createdAt) || 0);
+        });
+      }
+
+      return result;
+    }
+
+    function groupItems(items){
+      const groups = new Map();
+      items.forEach(function(item){
+        const key = currentFilter === 'updated'
+          ? formatDateGroup(item.updatedAt || item.createdAt)
+          : formatDateGroup(item.createdAt);
+
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(item);
+      });
+      return Array.from(groups.entries()).map(function(entry){
+        return { title: entry[0], items: entry[1] };
+      });
+    }
+
+    function escapeHtml(value){
+      return String(value == null ? '' : value)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
+    }
+
+    function buildStatusChip(item){
+      const visible = item.status === 'visible' || item.status === 'show' || item.status === '공개';
+      return '<span class="status-chip ' + (visible ? 'visible' : 'hidden') + '">' + (visible ? '공개중' : '비공개') + '</span>';
+    }
+
+    function buildCard(item){
+      const thumb = item.heroUrl ? "background-image:url('" + escapeHtml(item.heroUrl) + "')" : '';
+      const channelHtml = CHANNELS.map(function(channel){
+        return '<button class="channel-icon" type="button" title="' + escapeHtml(channel.name) + '"><img class="channel-favicon" src="' + escapeHtml(channel.icon) + '" alt="' + escapeHtml(channel.name) + '"></button>';
+      }).join('');
+
+      return ''
+        + '<article class="property-card">'
+        +   '<div class="property-main" onclick="openPreview(\'' + encodeURIComponent(item.listingNumber) + '\')">'
+        +     '<div class="thumb" style="' + thumb + '"></div>'
+        +     '<div class="card-content">'
+        +       '<div class="title-row">'
+        +         '<h3 class="card-title">' + escapeHtml(item.title || '제목 없음') + '</h3>'
+        +         buildStatusChip(item)
+        +       '</div>'
+        +       '<div class="card-address">' + escapeHtml(item.address || '-') + '</div>'
+        +       '<div class="card-meta"><strong>' + escapeHtml(item.listingNumber || '-') + '</strong> · ' + escapeHtml(formatUpdatedMeta(item)) + '</div>'
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="card-bottom">'
+        +     '<div class="action-row">'
+        +       '<div class="action-left">'
+        +         '<button class="mini-btn blue" type="button" onclick="event.stopPropagation(); editItem(\'' + encodeURIComponent(item.listingNumber) + '\')">수정</button>'
+        +         '<button class="mini-btn" type="button" onclick="event.stopPropagation(); markVisible(\'' + encodeURIComponent(item.listingNumber) + '\')">보이기</button>'
+        +         '<button class="mini-btn gray" type="button" onclick="event.stopPropagation(); markHidden(\'' + encodeURIComponent(item.listingNumber) + '\')">숨기기</button>'
+        +       '</div>'
+        +       '<button class="site-chip" type="button" title="자사사이트"><img class="site-favicon" src="' + escapeHtml(SELF_SITE_ICON) + '" alt="자사사이트"></button>'
+        +     '</div>'
+        +     '<div class="channel-row">' + channelHtml + '</div>'
+        +   '</div>'
+        + '</article>';
+    }
+
+    function renderDashboard(){
+      const filtered = applyFilter(rawItems);
+      toolbarMeta.textContent = '전체 ' + filtered.length + '건';
+
+      if(!filtered.length){
+        dashboardRoot.innerHTML = '<div class="empty">표시할 매물이 없습니다.</div>';
+        return;
+      }
+
+      const groups = groupItems(filtered);
+      dashboardRoot.innerHTML = groups.map(function(group){
+        return ''
+          + '<section class="group">'
+          +   '<div class="group-head">'
+          +     '<div class="group-title">' + escapeHtml(group.title) + '</div>'
+          +     '<div class="group-count">' + group.items.length + '건</div>'
+          +   '</div>'
+          +   '<div class="card-list">' + group.items.map(buildCard).join('') + '</div>'
+          + '</section>';
+      }).join('');
+    }
+
+    function unlockWithPassword(){
+      const pw = String(lockInput.value || '').trim();
+      const matched = PASSWORD_MAP[pw];
+      if(!matched){
+        lockError.textContent = '비밀번호가 올바르지 않습니다.';
+        return;
+      }
+      sessionStorage.setItem(CONFIG.authStorageKey, matched);
+      lockOverlay.style.display = 'none';
+      fetchAdminItems();
+    }
+
+    lockBtn.addEventListener('click', unlockWithPassword);
+    lockInput.addEventListener('keydown', function(e){
+      if(e.key === 'Enter') unlockWithPassword();
+    });
+
+    if(sessionStorage.getItem(CONFIG.authStorageKey)){
+      lockOverlay.style.display = 'none';
+      fetchAdminItems();
+    }
+
+    window.openPreview = function(listingNumber){
+      const url = CONFIG.listingsUrl + '?listingNumber=' + encodeURIComponent(listingNumber) + '&open=1';
+      window.open(url, '_blank');
+    };
+
+    window.editItem = function(listingNumber){
+      location.href = CONFIG.adminEditUrl + '?listingNumber=' + encodeURIComponent(listingNumber);
+    };
+
+    window.markVisible = function(listingNumber){
+      alert('보이기 연결 예정: ' + listingNumber);
+    };
+
+    window.markHidden = function(listingNumber){
+      alert('숨기기 연결 예정: ' + listingNumber);
+    };
+  </script>
+</body>
+</html>

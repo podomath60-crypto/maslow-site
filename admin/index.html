@@ -4737,34 +4737,7 @@
 
 
       if(draftCleanBtn) draftCleanBtn.addEventListener('click', function(){
-        try{
-          localStorage.removeItem(STORAGE_KEY);
-          selectedDealType = '';
-          listingStatus = 'hidden';
-          listingNumber = '';
-          selectedListingPrefix = '';
-          clearForceTeamModalFlag_();
-          tempSessionKey = '';
-          tempUploadSeq = 0;
-          photoList = [];
-          ledgerList = [];
-          clearRentPriceState_();
-          currentPhotoIndex = 0;
-          document.querySelectorAll('[contenteditable="true"]').forEach(function(el){ el.innerHTML = ''; });
-          document.querySelectorAll('.measure-field').forEach(function(group){
-            group.querySelector('[data-unit="m2"]').value = '';
-            group.querySelector('[data-unit="pyeong"]').value = '';
-          });
-          setDealType('');
-          startNewEntryWithTeamSelection_();
-          updateStatusButton();
-          updateTopFields();
-          renderHero();
-          renderLedgerStatus();
-          showToast('임시저장 청소됨');
-        }catch(e){
-          showToast('청소 실패');
-        }
+        runDraftCleanupAndRestart_();
       });
 
       draftSaveBtn.addEventListener('click', function(){
@@ -4800,21 +4773,34 @@
       function runDraftCleanupAndRestart_(){
         try{
           localStorage.removeItem(STORAGE_KEY);
-        }catch(e){}
-        listingNumber = '';
-        selectedListingPrefix = '';
-        clearForceTeamModalFlag_();
-        tempSessionKey = '';
-        propertyDataTempFiles = [];
-        ledgerFiles = [];
-        photoItems = [];
-        currentPhotoIndex = 0;
-        setDealType('');
-        updateStatusButton();
-        updateTopFields();
-        renderHero();
-        renderLedgerStatus();
-        startNewEntryWithTeamSelection_();
+          selectedDealType = '';
+          listingStatus = 'hidden';
+          listingNumber = '';
+          selectedListingPrefix = '';
+          clearForceTeamModalFlag_();
+          tempSessionKey = '';
+          tempUploadSeq = 0;
+          photoList = [];
+          ledgerList = [];
+          clearRentPriceState_();
+          currentPhotoIndex = 0;
+          document.querySelectorAll('[contenteditable="true"]').forEach(function(el){ el.innerHTML = ''; });
+          document.querySelectorAll('.measure-field').forEach(function(group){
+            var m2 = group.querySelector('[data-unit="m2"]');
+            var py = group.querySelector('[data-unit="pyeong"]');
+            if(m2) m2.value = '';
+            if(py) py.value = '';
+          });
+          setDealType('');
+          startNewEntryWithTeamSelection_();
+          updateStatusButton();
+          updateTopFields();
+          renderHero();
+          renderLedgerStatus();
+          showToast('임시저장 청소됨');
+        }catch(e){
+          showToast('청소 실패');
+        }
       }
 
       if(inlineResetBtn){

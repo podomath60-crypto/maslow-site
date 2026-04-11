@@ -4431,6 +4431,10 @@
 
       if(queryListingNumber){
         listingNumber = queryListingNumber;
+        if(aiLoadingText){
+          aiLoadingText.textContent = '자료를 가져오고 있어요!';
+        }
+        showAiLoadingOverlay_();
         loadPropertyByListingNumber_(queryListingNumber)
           .then(function(){
             saveDraftState(false);
@@ -4438,6 +4442,12 @@
           .catch(function(err){
             console.error(err);
             showToast('해당 매물을 불러오지 못했습니다.');
+          })
+          .finally(function(){
+            hideAiLoadingOverlay_();
+            if(aiLoadingText){
+              aiLoadingText.textContent = '작업중이에요';
+            }
           });
       }else{
         restoreDraftState();

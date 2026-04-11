@@ -822,6 +822,7 @@
       : [raw.summary1, raw.summary2, raw.summary3].filter(Boolean);
     var pricePlain = buildPricePlain_(raw, basic);
     return {
+      listingNumber: firstNonEmpty(raw.listingNumber, raw.basic && raw.basic.listingNumber),
       image: buildHeroImage_(raw),
       chip: firstNonEmpty(raw.chip, raw.dealType, basic.dealType),
       title: buildCardTitle_(raw),
@@ -876,9 +877,9 @@
       var chipHtml = chips.map(function(ch){
         return '<span class="property-chip">' + escapeHtml(ch) + '</span>';
       }).join('');
-      var listingNo = escapeHtml(item.listingNo || '');
+      var listingNumber = escapeHtml(item.listingNumber || '');
       return ''
-        + '<a class="property-card" data-card-idx="' + idx + '" data-listing-no="' + listingNo + '" href="javascript:void(0)" onclick="openProperty(' + idx + ')">'
+        + '<a class="property-card" data-card-idx="' + idx + '" data-listing-number="' + listingNumber + '" href="javascript:void(0)" onclick="openProperty(' + idx + ')">'
         +   '<div class="property-media" style="background-image:url(\'' + escapeHtml(item.image) + '\')">'
         +     '<div class="property-chip-wrap">' + chipHtml + '</div>'
         +   '</div>'
@@ -908,8 +909,8 @@
 
   function goAdminFromCard_(card){
     if(!card) return;
-    var listingNo = String(card.getAttribute('data-listing-no') || '').trim();
-    var adminUrl = '/admin' + (listingNo ? ('?listingNumber=' + encodeURIComponent(listingNo)) : '');
+    var listingNumber = String(card.getAttribute('data-listing-number') || '').trim();
+    var adminUrl = '/admin' + (listingNumber ? ('?listingNumber=' + encodeURIComponent(listingNumber)) : '');
     window.location.href = adminUrl;
   }
 
@@ -926,7 +927,7 @@
     if(pinchDelta < 26) return;
 
     var card = e.currentTarget;
-    var cardKey = String(card.getAttribute('data-listing-no') || card.getAttribute('data-card-idx') || '');
+    var cardKey = String(card.getAttribute('data-listing-number') || card.getAttribute('data-card-idx') || '');
     var now = Date.now();
 
     if(cardKey !== adminPinchCardKey || (now - adminPinchLastAt) > 2600){

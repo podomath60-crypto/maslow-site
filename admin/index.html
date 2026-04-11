@@ -1611,6 +1611,121 @@
 
 
 
+
+    .team-select-overlay{
+      position:fixed;
+      inset:0;
+      z-index:260;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(6px);
+      -webkit-backdrop-filter:blur(6px);
+    }
+    .team-select-overlay.show{
+      display:flex;
+    }
+    .team-select-card{
+      width:min(460px, 100%);
+      border:1px solid #e6ebf1;
+      border-radius:28px;
+      background:#fff;
+      box-shadow:0 24px 48px rgba(15,23,42,.12);
+      padding:24px 22px 22px;
+    }
+    .team-select-title{
+      margin:0 0 8px;
+      font-size:28px;
+      line-height:1.18;
+      font-weight:900;
+      color:#17191d;
+      letter-spacing:-0.05em;
+      text-align:center;
+    }
+    .team-select-desc{
+      margin:0 0 18px;
+      font-size:14px;
+      line-height:1.7;
+      color:#66707a;
+      font-weight:700;
+      text-align:center;
+      letter-spacing:-0.02em;
+    }
+    .team-select-list{
+      display:grid;
+      gap:12px;
+    }
+    .team-select-btn{
+      width:100%;
+      display:block;
+      text-align:left;
+      border:1px solid #dce6f1;
+      border-radius:22px;
+      background:#fff;
+      padding:18px 18px 16px;
+      box-shadow:0 8px 18px rgba(15,23,42,.04);
+      transition:.18s ease;
+    }
+    .team-select-btn:active{
+      transform:scale(.995);
+    }
+    .team-select-btn.factory{
+      border-color:#cfe2ff;
+      background:#f7fbff;
+    }
+    .team-select-btn.shopping{
+      border-color:#f3d9c8;
+      background:#fffaf7;
+    }
+    .team-select-name{
+      display:block;
+      font-size:24px;
+      line-height:1.15;
+      font-weight:900;
+      color:#202227;
+      letter-spacing:-0.04em;
+      margin-bottom:8px;
+    }
+    .team-select-sub{
+      display:block;
+      font-size:14px;
+      line-height:1.6;
+      font-weight:800;
+      color:#6a7380;
+      letter-spacing:-0.02em;
+    }
+    .team-select-btn.factory .team-select-sub{
+      color:#0f7cff;
+    }
+    .team-select-btn.shopping .team-select-sub{
+      color:#c26b2f;
+    }
+    @media (max-width:860px){
+      .team-select-card{
+        border-radius:24px;
+        padding:22px 18px 18px;
+      }
+      .team-select-title{
+        font-size:24px;
+      }
+      .team-select-desc{
+        font-size:13px;
+        margin-bottom:16px;
+      }
+      .team-select-btn{
+        border-radius:20px;
+        padding:16px 16px 14px;
+      }
+      .team-select-name{
+        font-size:21px;
+      }
+      .team-select-sub{
+        font-size:13px;
+      }
+    }
+
     .query-loading-overlay{
       position:fixed;
       inset:0;
@@ -1847,6 +1962,22 @@
   </div>
 
   <div id="saveToast"  style="position:fixed; left:50%; bottom:30vh; transform:translateX(-50%); background:rgba(17,24,39,.82); color:#fff; padding:10px 14px; border-radius:999px; font-size:13px; font-weight:700; opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:99;">저장됨</div>
+  <div id="teamSelectOverlay" class="team-select-overlay">
+    <div class="team-select-card" role="dialog" aria-modal="true" aria-labelledby="teamSelectTitle">
+      <h3 id="teamSelectTitle" class="team-select-title">상가 / 공장 선택</h3>
+      <p class="team-select-desc">처음 들어오거나 초기화한 경우에만 선택합니다.</p>
+      <div class="team-select-list">
+        <button type="button" class="team-select-btn shopping" id="teamSelectShoppingBtn">
+          <span class="team-select-name">상가</span>
+          <span class="team-select-sub">매물번호 SK로 시작</span>
+        </button>
+        <button type="button" class="team-select-btn factory" id="teamSelectFactoryBtn">
+          <span class="team-select-name">공장</span>
+          <span class="team-select-sub">매물번호 MK로 시작</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script>
     (function(){
@@ -1882,6 +2013,9 @@
       var dealTypePlaceholder = document.getElementById('dealTypePlaceholder');
       var maintenanceFeeField = document.getElementById('maintenanceFeeField');
       var listingNumberField = document.getElementById('listingNumberField');
+      var teamSelectOverlay = document.getElementById('teamSelectOverlay');
+      var teamSelectShoppingBtn = document.getElementById('teamSelectShoppingBtn');
+      var teamSelectFactoryBtn = document.getElementById('teamSelectFactoryBtn');
       var draftSaveBtn = document.getElementById('draftSaveBtn');
       var draftCleanBtn = document.getElementById('draftCleanBtn');
       var statusToggleBtn = document.getElementById('statusToggleBtn');
@@ -1953,6 +2087,8 @@
       var touchGhostEl = null;
       var touchAutoScrollTimer = null;
       var listingNumber = '';
+      var selectedListingPrefix = '';
+      var pendingTeamSelectionCallback = null;
       var listingStatus = 'hidden';
       var saveTimer = null;
       var tempSessionKey = '';
@@ -4294,9 +4430,32 @@
         });
       });
 
+      function openTeamSelectModal(callback){
+        pendingTeamSelectionCallback = typeof callback === 'function' ? callback : null;
+        if(teamSelectOverlay) teamSelectOverlay.classList.add('show');
+      }
+
+      function closeTeamSelectModal(){
+        if(teamSelectOverlay) teamSelectOverlay.classList.remove('show');
+      }
+
+      function chooseListingTeam(prefix){
+        selectedListingPrefix = String(prefix || '').trim().toUpperCase();
+        closeTeamSelectModal();
+        var callback = pendingTeamSelectionCallback;
+        pendingTeamSelectionCallback = null;
+        if(typeof callback === 'function') callback();
+      }
+
       function assignListingNumber(){
         if(listingNumber) {
           listingNumberField.textContent = listingNumber;
+          return;
+        }
+        if(!selectedListingPrefix){
+          openTeamSelectModal(function(){
+            assignListingNumber();
+          });
           return;
         }
         var d = new Date();
@@ -4304,7 +4463,7 @@
         var m = String(d.getMonth()+1).padStart(2,'0');
         var day = String(d.getDate()).padStart(2,'0');
         var rand = Math.floor(1000 + Math.random() * 9000);
-        listingNumber = 'MK-' + y + m + day + '-' + rand;
+        listingNumber = selectedListingPrefix + '-' + y + m + day + '-' + rand;
         listingNumberField.textContent = listingNumber;
       }
 
@@ -4466,6 +4625,8 @@
             selectedDealType = data.selectedDealType || '';
             listingStatus = data.listingStatus || 'hidden';
             listingNumber = data.listingNumber || '';
+            selectedListingPrefix = String(listingNumber || '').trim().toUpperCase().indexOf('SK-') === 0 ? 'SK'
+              : (String(listingNumber || '').trim().toUpperCase().indexOf('MK-') === 0 ? 'MK' : '');
             tempSessionKey = data.tempSessionKey || tempSessionKey || '';
             photoList = getRealPhotoList(data.photoList);
             ledgerList = Array.isArray(data.ledgerList) ? data.ledgerList : [];
@@ -4484,6 +4645,7 @@
           selectedDealType = '';
           listingStatus = 'hidden';
           listingNumber = '';
+          selectedListingPrefix = '';
           tempSessionKey = '';
           tempUploadSeq = 0;
           photoList = [];
@@ -4536,11 +4698,25 @@
         });
       }
 
+      if(teamSelectShoppingBtn){
+        teamSelectShoppingBtn.addEventListener('click', function(){
+          chooseListingTeam('SK');
+        });
+      }
+
+      if(teamSelectFactoryBtn){
+        teamSelectFactoryBtn.addEventListener('click', function(){
+          chooseListingTeam('MK');
+        });
+      }
+
 
       var queryListingNumber = String(getQueryParam_('listingNumber') || '').trim();
 
       if(queryListingNumber){
         listingNumber = queryListingNumber;
+        selectedListingPrefix = String(listingNumber || '').trim().toUpperCase().indexOf('SK-') === 0 ? 'SK'
+          : (String(listingNumber || '').trim().toUpperCase().indexOf('MK-') === 0 ? 'MK' : '');
         showQueryLoadingOverlay_();
         loadPropertyByListingNumber_(queryListingNumber)
           .then(function(){

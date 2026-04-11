@@ -234,6 +234,50 @@
     }
     .empty{border:1px dashed #d9e3ed;border-radius:24px;background:#fff;padding:30px 18px;text-align:center;color:#7b8794;font-size:15px;font-weight:800}
 
+    .loading-overlay{
+      position:fixed;
+      inset:0;
+      z-index:12050;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background:rgba(255,255,255,.72);
+      backdrop-filter:blur(3px);
+      -webkit-backdrop-filter:blur(3px);
+    }
+    .loading-overlay.show{display:flex}
+    .loading-panel{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      text-align:center;
+    }
+    .loading-buddy{
+      width:74px;
+      height:74px;
+      object-fit:cover;
+      border-radius:18px;
+      animation:buddyBounce 1.15s ease-in-out infinite;
+      box-shadow:0 10px 22px rgba(15,124,255,.16);
+    }
+    .loading-text{
+      min-height:24px;
+      font-size:18px;
+      font-weight:800;
+      line-height:1.4;
+      color:#2b8fe8;
+      letter-spacing:-0.03em;
+    }
+    @keyframes buddyBounce{
+      0%,100%{transform:translateY(0) scale(1)}
+      20%{transform:translateY(-3px) scale(1.01)}
+      50%{transform:translateY(-10px) scale(1.04)}
+      75%{transform:translateY(-4px) scale(1.01)}
+    }
+
     .lock-overlay{
       position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;
       background:rgba(255,255,255,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)
@@ -314,6 +358,14 @@
         transform:none;
         flex-basis:auto;
       }
+      .loading-buddy{
+        width:64px;
+        height:64px;
+        border-radius:16px;
+      }
+      .loading-text{
+        font-size:16px;
+      }
     }
   </style>
 </head>
@@ -370,6 +422,13 @@
     </div>
   </div>
 
+  <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-panel">
+      <img class="loading-buddy" src="https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg" alt="로딩">
+      <div id="loadingTypingText" class="loading-text"></div>
+    </div>
+  </div>
+
   <div id="lockOverlay" class="lock-overlay">
     <div class="lock-card">
       <h1 class="lock-title">Maslow Korea</h1>
@@ -412,6 +471,10 @@
     let currentFilter = 'default';
     let currentKeyword = '';
     let unlockedUserName = '';
+
+    const LOADING_BASE_TEXT = '자료를 가져오고 있어요!';
+    let loadingTypingTimer = null;
+    let loadingHapticTimer = null;
 
     const dashboardRoot = document.getElementById('dashboardRoot');
     const toolbarMeta = document.getElementById('toolbarMeta');
@@ -486,7 +549,45 @@
       topbarGreeting.textContent = unlockedUserName + '님, 반갑습니다.';
     }
 
+    function startLoadingOverlay(){
+      const overlay = document.getElementById('loadingOverlay');
+      const textEl = document.getElementById('loadingTypingText');
+      if(!overlay || !textEl) return;
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden','false');
+      textEl.textContent = '';
+      let i = 0;
+      window.clearInterval(loadingTypingTimer);
+      loadingTypingTimer = window.setInterval(function(){
+        i += 1;
+        textEl.textContent = LOADING_BASE_TEXT.slice(0, i);
+        if(i >= LOADING_BASE_TEXT.length){
+          window.clearInterval(loadingTypingTimer);
+        }
+      }, 85);
+      if(navigator.vibrate){
+        navigator.vibrate(12);
+        let vibCount = 0;
+        window.clearInterval(loadingHapticTimer);
+        loadingHapticTimer = window.setInterval(function(){
+          vibCount += 1;
+          try{ navigator.vibrate(8); }catch(e){}
+          if(vibCount >= 5){ window.clearInterval(loadingHapticTimer); }
+        }, 520);
+      }
+    }
+
+    function stopLoadingOverlay(){
+      const overlay = document.getElementById('loadingOverlay');
+      if(!overlay) return;
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden','true');
+      window.clearInterval(loadingTypingTimer);
+      window.clearInterval(loadingHapticTimer);
+    }
+
     function fetchAdminItems(){
+      startLoadingOverlay();
       return fetch(CONFIG.adminListUrl, {
         method: 'POST',
         mode: 'cors',
@@ -510,6 +611,9 @@
         console.error(err);
         dashboardRoot.innerHTML = '<div class="empty">매물 데이터를 불러오지 못했습니다.</div>';
         toolbarMeta.textContent = '불러오기 실패';
+      })
+      .finally(function(){
+        stopLoadingOverlay();
       });
     }
 
@@ -688,11 +792,14 @@
     }
 
     window.openPreview = function(listingNumber){
+      startLoadingOverlay();
       const url = CONFIG.listingsUrl + '?listingNumber=' + encodeURIComponent(listingNumber) + '&open=1';
       window.open(url, '_blank');
+      window.setTimeout(stopLoadingOverlay, 900);
     };
 
     window.editItem = function(listingNumber){
+      startLoadingOverlay();
       location.href = CONFIG.adminEditUrl + '?listingNumber=' + encodeURIComponent(listingNumber);
     };
 

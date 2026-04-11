@@ -312,6 +312,122 @@
       letter-spacing:-0.02em;
     }
 
+    .channel-icon.is-not-yet .channel-favicon,
+    .site-chip.is-not-yet .site-favicon{
+      filter:grayscale(1) opacity(.38);
+    }
+
+    .channel-modal{
+      position:fixed;
+      inset:0;
+      z-index:12120;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(17,24,39,.38);
+      backdrop-filter:blur(4px);
+      -webkit-backdrop-filter:blur(4px);
+    }
+    .channel-modal.show{display:flex}
+    .channel-modal-card{
+      width:min(520px, calc(100vw - 32px));
+      max-height:min(80vh, 680px);
+      overflow:auto;
+      background:#fff;
+      border:1px solid #e6ebf1;
+      border-radius:26px;
+      box-shadow:0 24px 48px rgba(15,23,42,.14);
+      padding:20px 18px 18px;
+    }
+    .channel-modal-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin:0 0 14px;
+    }
+    .channel-modal-title{
+      font-size:24px;
+      line-height:1.15;
+      font-weight:900;
+      color:#17191d;
+      letter-spacing:-0.04em;
+    }
+    .channel-modal-close{
+      width:36px;
+      height:36px;
+      border-radius:999px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:18px;
+      font-weight:900;
+      flex:0 0 36px;
+    }
+    .channel-status-row{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      flex-wrap:wrap;
+      margin:0 0 16px;
+      padding:4px 2px;
+    }
+    .channel-radio{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      width:auto;
+      font-size:15px;
+      font-weight:900;
+      color:#23262b;
+    }
+    .channel-radio input{
+      width:18px;
+      height:18px;
+      margin:0;
+      accent-color:#0f7cff;
+    }
+    .channel-links{
+      display:grid;
+      gap:10px;
+      margin:0 0 18px;
+    }
+    .channel-link-input{
+      width:100%;
+      min-height:46px;
+      border:1.5px solid #dbe5ee;
+      border-radius:14px;
+      padding:0 14px;
+      outline:none;
+      background:#fff;
+      color:#111318;
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:-0.02em;
+    }
+    .channel-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+    }
+    .channel-action-btn{
+      min-height:42px;
+      padding:0 16px;
+      border-radius:999px;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-0.02em;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+    }
+    .channel-action-btn.primary{
+      border-color:#0f7cff;
+      background:#0f7cff;
+      color:#fff;
+    }
+
     @media (max-width:860px){
       .shell{padding:0 16px 40px}
       .panel-grid{grid-template-columns:1fr 1fr;gap:10px}
@@ -388,6 +504,33 @@
         padding:0 16px;
         font-size:13px;
       }
+      .channel-modal{
+        padding:16px;
+      }
+      .channel-modal-card{
+        width:min(520px, calc(100vw - 20px));
+        max-height:min(78vh, 640px);
+        border-radius:22px;
+        padding:18px 16px 16px;
+      }
+      .channel-modal-title{
+        font-size:20px;
+      }
+      .channel-status-row{
+        gap:14px;
+      }
+      .channel-radio{
+        font-size:14px;
+      }
+      .channel-link-input{
+        min-height:42px;
+        font-size:13px;
+      }
+      .channel-action-btn{
+        min-height:40px;
+        padding:0 14px;
+        font-size:13px;
+      }
     }
   </style>
 </head>
@@ -444,6 +587,28 @@
     </div>
   </div>
 
+  <div id="channelModal" class="channel-modal">
+    <div class="channel-modal-card" onclick="event.stopPropagation()">
+      <div class="channel-modal-head">
+        <div id="channelModalTitle" class="channel-modal-title">채널</div>
+        <button type="button" class="channel-modal-close" onclick="closeChannelModal()">✕</button>
+      </div>
+      <div class="channel-status-row">
+        <label class="channel-radio"><input type="radio" name="channelDoneState" value="done"> <span>Done</span></label>
+        <label class="channel-radio"><input type="radio" name="channelDoneState" value="notYet"> <span>Not yet</span></label>
+      </div>
+      <div class="channel-links">
+        <input id="channelLink1" class="channel-link-input" type="text" placeholder="링크1">
+        <input id="channelLink2" class="channel-link-input" type="text" placeholder="링크2">
+        <input id="channelLink3" class="channel-link-input" type="text" placeholder="링크3">
+      </div>
+      <div class="channel-actions">
+        <button type="button" class="channel-action-btn" onclick="closeChannelModal()">닫기</button>
+        <button type="button" class="channel-action-btn primary" onclick="saveChannelModal()">저장</button>
+      </div>
+    </div>
+  </div>
+
   <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-panel">
       <img class="loading-buddy" src="https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg" alt="로딩">
@@ -477,17 +642,41 @@
     };
 
     const CHANNELS = [
-      { name:'유튜브', icon:'https://www.google.com/s2/favicons?domain=youtube.com&sz=64' },
-      { name:'인스타', icon:'https://www.google.com/s2/favicons?domain=instagram.com&sz=64' },
-      { name:'쓰레드', icon:'https://www.google.com/s2/favicons?domain=threads.net&sz=64' },
-      { name:'페이스북', icon:'https://www.google.com/s2/favicons?domain=facebook.com&sz=64' },
-      { name:'네이버부동산', icon:'https://cdn.imweb.me/thumbnail/20260411/f28474e4f459d.png' },
-      { name:'네이버블로그', icon:'https://cdn.imweb.me/thumbnail/20260411/abbd3cfe64dfa.png' },
-      { name:'한방', icon:'https://cdn.imweb.me/thumbnail/20260411/5bc692a19c1a1.png' },
-      { name:'카카오채널', icon:'https://www.google.com/s2/favicons?domain=pf.kakao.com&sz=64' }
+      { key:'youtube', name:'유튜브', icon:'https://www.google.com/s2/favicons?domain=youtube.com&sz=64' },
+      { key:'instagram', name:'인스타', icon:'https://www.google.com/s2/favicons?domain=instagram.com&sz=64' },
+      { key:'threads', name:'쓰레드', icon:'https://www.google.com/s2/favicons?domain=threads.net&sz=64' },
+      { key:'facebook', name:'페이스북', icon:'https://www.google.com/s2/favicons?domain=facebook.com&sz=64' },
+      { key:'naverRealEstate', name:'네이버부동산', icon:'https://cdn.imweb.me/thumbnail/20260411/f28474e4f459d.png' },
+      { key:'naverBlog', name:'네이버블로그', icon:'https://cdn.imweb.me/thumbnail/20260411/abbd3cfe64dfa.png' },
+      { key:'hanbang', name:'한방', icon:'https://cdn.imweb.me/thumbnail/20260411/5bc692a19c1a1.png' },
+      { key:'kakaoChannel', name:'카카오채널', icon:'https://www.google.com/s2/favicons?domain=pf.kakao.com&sz=64' }
     ];
 
     const SELF_SITE_ICON = 'https://cdn.imweb.me/thumbnail/20260411/9b31c965062e2.png';
+
+    const CHANNEL_FIELD_MAP = {
+      youtube: 'channelYoutube',
+      instagram: 'channelInstagram',
+      threads: 'channelThreads',
+      facebook: 'channelFacebook',
+      naverRealEstate: 'channelNaverRealEstate',
+      naverBlog: 'channelNaverBlog',
+      hanbang: 'channelHanbang',
+      kakaoChannel: 'channelKakaoChannel',
+      ownSite: 'channelOwnSite'
+    };
+
+    const CHANNEL_LABEL_MAP = {
+      youtube: '유튜브',
+      instagram: '인스타',
+      threads: '쓰레드',
+      facebook: '페이스북',
+      naverRealEstate: '네이버부동산',
+      naverBlog: '네이버블로그',
+      hanbang: '한방',
+      kakaoChannel: '카카오채널',
+      ownSite: '자사사이트'
+    };
 
     let rawItems = [];
     let currentFilter = 'default';
@@ -495,6 +684,8 @@
     let unlockedUserName = '';
     let visibleCount = 50;
     const PAGE_SIZE = 50;
+    let channelModalListingNumber = '';
+    let channelModalChannelKey = '';
 
     let currentLoadingText = '자료를 가져오고 있어요!';
     let loadingTypingTimer = null;
@@ -607,7 +798,17 @@
         requesterType: text(raw.requesterType),
         requesterNote: text(raw.requesterNote),
 
-        memo: text(raw.memo)
+        memo: text(raw.memo),
+
+        channelYoutube: text(raw.channelYoutube),
+        channelInstagram: text(raw.channelInstagram),
+        channelThreads: text(raw.channelThreads),
+        channelFacebook: text(raw.channelFacebook),
+        channelNaverRealEstate: text(raw.channelNaverRealEstate),
+        channelNaverBlog: text(raw.channelNaverBlog),
+        channelHanbang: text(raw.channelHanbang),
+        channelKakaoChannel: text(raw.channelKakaoChannel),
+        channelOwnSite: text(raw.channelOwnSite)
       };
     }
 
@@ -657,6 +858,112 @@
       window.clearInterval(loadingTypingTimer);
       window.clearInterval(loadingHapticTimer);
       currentLoadingText = '자료를 가져오고 있어요!';
+    }
+
+    function parseChannelState(value){
+      try{
+        const parsed = typeof value === 'string' ? JSON.parse(value || '{}') : value;
+        return {
+          done: !!(parsed && parsed.done === true),
+          links: [
+            text(parsed && parsed.links && parsed.links[0]),
+            text(parsed && parsed.links && parsed.links[1]),
+            text(parsed && parsed.links && parsed.links[2])
+          ]
+        };
+      }catch(e){
+        return { done:false, links:['','',''] };
+      }
+    }
+
+    function getChannelStateByItem(item, channelKey){
+      const fieldName = CHANNEL_FIELD_MAP[channelKey];
+      return parseChannelState(fieldName ? item[fieldName] : '');
+    }
+
+    function getItemByListingNumber(listingNumber){
+      return rawItems.find(function(item){
+        return text(item && item.listingNumber) === text(listingNumber);
+      }) || null;
+    }
+
+    function openChannelModal(listingNumber, channelKey){
+      const modal = document.getElementById('channelModal');
+      const titleEl = document.getElementById('channelModalTitle');
+      const link1 = document.getElementById('channelLink1');
+      const link2 = document.getElementById('channelLink2');
+      const link3 = document.getElementById('channelLink3');
+      const radios = document.querySelectorAll('input[name="channelDoneState"]');
+      const item = getItemByListingNumber(listingNumber);
+      const state = item ? getChannelStateByItem(item, channelKey) : { done:false, links:['','',''] };
+
+      channelModalListingNumber = listingNumber;
+      channelModalChannelKey = channelKey;
+
+      if(titleEl) titleEl.textContent = CHANNEL_LABEL_MAP[channelKey] || '채널';
+      if(link1) link1.value = state.links[0] || '';
+      if(link2) link2.value = state.links[1] || '';
+      if(link3) link3.value = state.links[2] || '';
+      radios.forEach(function(radio){
+        radio.checked = (state.done && radio.value === 'done') || (!state.done && radio.value === 'notYet');
+      });
+      if(modal) modal.classList.add('show');
+    }
+
+    function closeChannelModal(){
+      const modal = document.getElementById('channelModal');
+      if(modal) modal.classList.remove('show');
+      channelModalListingNumber = '';
+      channelModalChannelKey = '';
+    }
+
+    function updatePropertyChannel(listingNumber, channelKey, done, links){
+      currentLoadingText = '상태 변경중이에요.';
+      startLoadingOverlay();
+      return fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=UTF-8'
+        },
+        body: JSON.stringify({
+          action: 'updatePropertyChannel',
+          listingNumber: listingNumber,
+          channelKey: channelKey,
+          done: done,
+          links: links
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('채널 저장 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '채널 저장 실패');
+        }
+        closeChannelModal();
+        return fetchAdminItems();
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '채널 저장 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+    }
+
+    function saveChannelModal(){
+      if(!channelModalListingNumber || !channelModalChannelKey) return;
+      const doneRadio = document.querySelector('input[name="channelDoneState"]:checked');
+      const done = !!(doneRadio && doneRadio.value === 'done');
+      const links = [
+        text(document.getElementById('channelLink1').value),
+        text(document.getElementById('channelLink2').value),
+        text(document.getElementById('channelLink3').value)
+      ];
+      updatePropertyChannel(channelModalListingNumber, channelModalChannelKey, done, links);
     }
 
     function setPropertyStatus(listingNumber, status){
@@ -872,8 +1179,13 @@
     function buildCard(item){
       const thumb = item.heroUrl ? "background-image:url('" + escapeHtml(item.heroUrl) + "')" : '';
       const channelHtml = CHANNELS.map(function(channel){
-        return '<button class="channel-icon" type="button" title="' + escapeHtml(channel.name) + '"><img class="channel-favicon" src="' + escapeHtml(channel.icon) + '" alt="' + escapeHtml(channel.name) + '"></button>';
+        const state = getChannelStateByItem(item, channel.key);
+        const stateClass = state.done ? '' : ' is-not-yet';
+        return '<button class="channel-icon' + stateClass + '" type="button" title="' + escapeHtml(channel.name) + '" onclick="event.stopPropagation(); openChannelModal(\'' + encodeURIComponent(item.listingNumber) + '\', \''
+          + channel.key + '\')"><img class="channel-favicon" src="' + escapeHtml(channel.icon) + '" alt="' + escapeHtml(channel.name) + '"></button>';
       }).join('');
+      const ownSiteState = getChannelStateByItem(item, 'ownSite');
+      const ownSiteClass = ownSiteState.done ? '' : ' is-not-yet';
 
       return ''
         + '<article class="property-card">'
@@ -898,7 +1210,7 @@
         +       '</div>'
         +       ''
         +     '</div>'
-        +     '<div class="channel-row">' + channelHtml + '<button class="site-chip" type="button" title="자사사이트"><img class="site-favicon" src="' + escapeHtml(SELF_SITE_ICON) + '" alt="자사사이트"></button></div>'
+        +     '<div class="channel-row">' + channelHtml + '<button class="site-chip' + ownSiteClass + '" type="button" title="자사사이트" onclick="event.stopPropagation(); openChannelModal(\'' + encodeURIComponent(item.listingNumber) + '\', \'ownSite\')"><img class="site-favicon" src="' + escapeHtml(SELF_SITE_ICON) + '" alt="자사사이트"></button></div>'
         +   '</div>'
         + '</article>';
     }
@@ -984,6 +1296,16 @@
     window.markHidden = function(listingNumber){
       setPropertyStatus(listingNumber, 'hidden');
     };
+
+    document.getElementById('channelModal').addEventListener('click', function(e){
+      if(e.target === this) closeChannelModal();
+    });
+
+    window.addEventListener('keydown', function(e){
+      if(e.key === 'Escape'){
+        closeChannelModal();
+      }
+    });
 
     updateGreeting();
   </script>

@@ -2188,6 +2188,156 @@
       }
 
 
+      function getQueryParam_(key){
+        try{
+          return new URLSearchParams(location.search).get(key) || '';
+        }catch(e){
+          return '';
+        }
+      }
+
+      function fetchJsonFromGas_(payload){
+        return fetch(GAS_URL, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=UTF-8'
+          },
+          body: JSON.stringify(payload)
+        }).then(function(res){
+          return res.json();
+        });
+      }
+
+      function setEditableText_(el, value){
+        if(!el) return;
+        el.textContent = value || '';
+      }
+
+      function setMeasureField_(measureKey, m2, py){
+        var group = document.querySelector('.measure-field[data-measure="' + measureKey + '"]');
+        if(!group) return;
+        var m2El = group.querySelector('[data-unit="m2"]');
+        var pyEl = group.querySelector('[data-unit="pyeong"]');
+        if(m2El) m2El.value = m2 || '';
+        if(pyEl) pyEl.value = py || '';
+      }
+
+      function restoreLedgerList_(jsonText){
+        try{
+          var parsed = typeof jsonText === 'string' ? JSON.parse(jsonText || '[]') : jsonText;
+          ledgerList = Array.isArray(parsed) ? parsed : [];
+        }catch(e){
+          ledgerList = [];
+        }
+      }
+
+      function restorePhotoList_(jsonText){
+        try{
+          var parsed = typeof jsonText === 'string' ? JSON.parse(jsonText || '[]') : jsonText;
+          photoList = Array.isArray(parsed) ? parsed : [];
+        }catch(e){
+          photoList = [];
+        }
+        currentPhotoIndex = photoList.length ? 0 : 0;
+      }
+
+      function applyLoadedPropertyToEditor_(item){
+        if(!item) return;
+
+        listingNumber = plainText(item.listingNumber || '');
+        listingStatus = plainText(item.status || 'hidden');
+
+        var titleEl = document.querySelector('.property-detail-title.editable');
+        var noteEl = document.querySelector('.property-detail-note.editable');
+        var summaryEls = getSummaryEditableTargets_();
+
+        setEditableText_(titleEl, item.title || '');
+        setEditableText_(noteEl, '');
+
+        setEditableText_(summaryEls[0], item.summary1 || '');
+        setEditableText_(summaryEls[1], item.summary2 || '');
+        setEditableText_(summaryEls[2], item.summary3 || '');
+
+        setEditableText_(addressField, item.address || '');
+        setDealType(item.dealType || '');
+
+        if ((item.dealType || '').indexOf('임대') > -1) {
+          var priceText = plainText(item.price || '');
+          var parts = priceText.split('/').map(function(v){ return plainText(v); }).filter(Boolean);
+          rentPriceState = {
+            deposit: parts[0] || '',
+            monthly: parts[1] || ''
+          };
+          priceField.textContent = priceText;
+        } else {
+          clearRentPriceState_();
+          priceField.textContent = item.price || '';
+        }
+
+        setEditableText_(findSpecValueByLabel_('* 사용승인일'), item.approvalDate || '');
+        setMeasureField_('landArea', item.landAreaM2 || '', item.landAreaPy || '');
+        setMeasureField_('totalFloorArea', item.totalFloorAreaM2 || '', item.totalFloorAreaPy || '');
+        setMeasureField_('exclusiveArea', item.exclusiveAreaM2 || '', item.exclusiveAreaPy || '');
+        setEditableText_(findSpecValueByLabel_('용도지역'), item.zoning || '');
+        setEditableText_(findSpecValueByLabel_('* 매물종류'), item.propertyType || '');
+        setEditableText_(findSpecValueByLabel_('건축물 구성'), item.buildingComposition || '');
+        setEditableText_(findSpecValueByLabel_('* 주차대수'), item.parkingCount || '');
+        setEditableText_(findSpecValueByLabel_('* 출입구 방향'), item.entranceDirection || '');
+        setEditableText_(findSpecValueByLabel_('* 입주가능일'), item.moveInDate || '');
+        setEditableText_(findSpecValueByLabel_('* 건물 층수'), item.floorInfo || '');
+        setEditableText_(findSpecValueByLabel_('* 화장실'), item.restroomInfo || '');
+        setEditableText_(maintenanceFeeField, item.maintenanceFee || '');
+
+        setEditableText_(findSpecValueByLabel_('층고'), item.ceilingHeight || '');
+        setEditableText_(findSpecValueByLabel_('크레인'), item.crane || '');
+        setEditableText_(findSpecValueByLabel_('호이스트'), item.hoist || '');
+        setEditableText_(findSpecValueByLabel_('전력'), item.powerCapacity || '');
+        setEditableText_(findSpecValueByLabel_('주요 설비'), item.mainFacilities || '');
+        setEditableText_(findSpecValueByLabel_('추천 업종'), item.recommendedUse || '');
+        setEditableText_(findSpecValueByLabel_('업종 제한'), item.restrictedUse || '');
+        setEditableText_(findSpecValueByLabel_('진입로 폭'), item.roadWidth || '');
+        setEditableText_(findSpecValueByLabel_('도어폭'), item.doorWidth || '');
+        setEditableText_(findSpecValueByLabel_('대형차 진입'), item.truckAccess || '');
+        setEditableText_(findSpecValueByLabel_('상하차 가능'), item.loadingAvailable || '');
+        setEditableText_(findSpecValueByLabel_('사무동 포함'), item.officeIncluded || '');
+        setEditableText_(findSpecValueByLabel_('야드 크기'), item.yardSize || '');
+        setEditableText_(findSpecValueByLabel_('즉시 가동'), item.readyToOperate || '');
+
+        setRequesterFieldValue_('의뢰인명', item.requesterName || '');
+        setRequesterFieldValue_('연락처', item.requesterPhone || '');
+        setRequesterFieldValue_('의뢰 구분', item.requesterType || '');
+        setRequesterFieldValue_('비고', item.requesterNote || '');
+
+        var memoEl = document.querySelector('.memo-body');
+        if (memoEl) memoEl.textContent = item.memo || '';
+
+        restorePhotoList_(item.photoUrlsJson || '[]');
+        restoreLedgerList_(item.ledgerFilesJson || '[]');
+
+        updateStatusButton();
+        updateTopFields();
+        renderHero();
+        renderLedgerStatus();
+      }
+
+      function loadPropertyByListingNumber_(targetListingNumber){
+        if(!targetListingNumber) return Promise.resolve();
+
+        return fetchJsonFromGas_({
+          action: 'getPropertyByListingNumber',
+          listingNumber: targetListingNumber
+        })
+        .then(function(data){
+          if(!data || data.ok === false || !data.item){
+            throw new Error((data && data.message) || '매물 조회 실패');
+          }
+          applyLoadedPropertyToEditor_(data.item);
+          return data.item;
+        });
+      }
+
+
 
 
       function getSummaryEditableTargets_(){
@@ -4276,13 +4426,27 @@
       }
 
 
-      restoreDraftState();
-      assignListingNumber();
-      setDealType(selectedDealType);
-      updateStatusButton();
-      updateTopFields();
-      renderHero();
-      renderLedgerStatus();
+      var queryListingNumber = plainText(getQueryParam_('listingNumber'));
+
+      if(queryListingNumber){
+        listingNumber = queryListingNumber;
+        loadPropertyByListingNumber_(queryListingNumber)
+          .then(function(){
+            saveDraftState(false);
+          })
+          .catch(function(err){
+            console.error(err);
+            showToast('해당 매물을 불러오지 못했습니다.');
+          });
+      }else{
+        restoreDraftState();
+        assignListingNumber();
+        setDealType(selectedDealType);
+        updateStatusButton();
+        updateTopFields();
+        renderHero();
+        renderLedgerStatus();
+      }
 
       if (draftSaveBtn) {
         draftSaveBtn.addEventListener('click', function(e){

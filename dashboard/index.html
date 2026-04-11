@@ -157,22 +157,31 @@
     .mini-btn.blue{border-color:#cfe2ff;background:#eef5ff;color:#0f7cff}
     .mini-btn.gray{border-color:#dde3ea;background:#f4f6f8;color:#6e7782}
 
-    .channel-row{display:grid;grid-template-columns:repeat(8, minmax(0, 1fr));gap:6px}
+    .channel-row{
+      display:grid;
+      grid-template-columns:repeat(8, 28px);
+      justify-content:flex-start;
+      gap:6px;
+    }
     .channel-icon{
       position:relative;
       aspect-ratio:1 / 1;
-      width:90%;
-      min-height:auto;
-      height:auto;
-      margin:0 auto;
-      border-radius:12px;
+      width:28px;
+      min-width:28px;
+      max-width:28px;
+      min-height:28px;
+      max-height:28px;
+      height:28px;
+      margin:0;
+      border-radius:10px;
       border:1px solid #e4eaf1;
       background:#fafcff;
       display:flex;
       align-items:center;
       justify-content:center;
       padding:0;
-      overflow:hidden
+      overflow:hidden;
+      flex:0 0 28px;
     }
     .channel-favicon{
       position:absolute;
@@ -188,13 +197,13 @@
     .site-chip{
       position:relative;
       aspect-ratio:1 / 1;
-      width:32px;
-      min-width:32px;
-      max-width:32px;
-      min-height:32px;
-      max-height:32px;
-      height:32px;
-      border-radius:12px;
+      width:28px;
+      min-width:28px;
+      max-width:28px;
+      min-height:28px;
+      max-height:28px;
+      height:28px;
+      border-radius:10px;
       border:1px solid #e4eaf1;
       background:#fff;
       display:inline-flex;
@@ -202,7 +211,7 @@
       justify-content:center;
       padding:0;
       overflow:hidden;
-      flex:0 0 32px
+      flex:0 0 28px
     }
     .site-favicon{
       position:absolute;
@@ -557,9 +566,9 @@
         +         '<button class="mini-btn" type="button" onclick="event.stopPropagation(); markVisible(\'' + encodeURIComponent(item.listingNumber) + '\')">보이기</button>'
         +         '<button class="mini-btn gray" type="button" onclick="event.stopPropagation(); markHidden(\'' + encodeURIComponent(item.listingNumber) + '\')">숨기기</button>'
         +       '</div>'
-        +       '<button class="site-chip" type="button" title="자사사이트"><img class="site-favicon" src="' + escapeHtml(SELF_SITE_ICON) + '" alt="자사사이트"></button>'
+        +       ''
         +     '</div>'
-        +     '<div class="channel-row">' + channelHtml + '</div>'
+        +     '<div class="channel-row">' + channelHtml + '<button class="site-chip" type="button" title="자사사이트"><img class="site-favicon" src="' + escapeHtml(SELF_SITE_ICON) + '" alt="자사사이트"></button></div>'
         +   '</div>'
         + '</article>';
     }

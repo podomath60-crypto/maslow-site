@@ -4570,6 +4570,13 @@
         });
       }
 
+      if (queryListingNumber) {
+        history.pushState({ adminGuard: true }, '', location.href);
+        window.addEventListener('popstate', function(){
+          location.href = '/listings';
+        }, { once: true });
+      }
+
     })();
   </script>
 </body>

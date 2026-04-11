@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maslow Korea | 공개 매물</title>
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Maslow Korea | 공개 매물" />
+  <meta property="og:description" content="Maslow Korea가 선별한 공개 매물을 먼저 확인하고, 필요한 조건은 상담으로 더 정확하게 좁혀드립니다." />
+  <meta property="og:image" content="https://cdn.imweb.me/thumbnail/20260404/cc7830f0b48cc.jpg" />
+  <style>
+    :root{
+      --bg:#ffffff; --bg-soft:#f8fbff; --white:#ffffff; --text:#111318; --muted:#67707b;
+      --line:#e6ebf1; --blue:#0f7cff; --blue-2:#2790ff; --blue-soft:#dcebff; --sky:#8fd3ff;
+      --shadow:0 14px 36px rgba(15,23,42,.05); --shadow-soft:0 8px 20px rgba(15,23,42,.035); --pad-x:48px;
+    }
+    *{box-sizing:border-box}
+    html, body, button, input, textarea, select{
+      margin:0; padding:0; width:100%; overflow-x:hidden; background:#fff; color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif !important;
+      letter-spacing:-0.02em;
+    }
+    a{text-decoration:none;color:inherit} img{display:block;max-width:100%}
+    button{font:inherit;border:none;background:none;padding:0;margin:0;cursor:pointer}
+
+    #mk-market{position:relative;width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);background:#fff;overflow:hidden}
+
+    .header{position:fixed;top:0;left:0;right:0;z-index:1000;height:82px;background:rgba(255,255,255,.94);border-bottom:1px solid var(--line);backdrop-filter:blur(12px);transition:transform .35s ease, background .25s ease}
+    .header.hidden{transform:translateY(-100%)}
+    .header-inner{width:100%;height:100%;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:0 28px}
+    .header-left{display:flex;align-items:center;gap:14px;min-width:0;width:auto}
+    .menu-trigger{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 44px;box-shadow:var(--shadow-soft)}
+    .menu-trigger span{display:block;width:18px;height:2px;background:#111318;border-radius:999px;position:relative}
+    .menu-trigger span::before,.menu-trigger span::after{content:"";position:absolute;left:0;width:18px;height:2px;background:#111318;border-radius:999px}
+    .menu-trigger span::before{top:-6px}.menu-trigger span::after{top:6px}
+    .logo-text strong{display:block;font-size:18px;font-weight:800;color:#111;line-height:1.1}
+    .nav{display:flex;align-items:center;gap:28px;font-size:15px;color:#2f3640;width:auto}
+    .nav a{position:relative;padding:8px 0;width:auto}
+    .nav a::after{content:"";position:absolute;left:0;bottom:0;width:0;height:1px;background:#111;transition:.25s}
+    .nav a:hover::after{width:100%}
+    .header-right{display:flex;align-items:center;gap:12px;width:auto}
+    .lang{font-size:14px;color:#8e97a1;width:auto}
+    .btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;min-height:54px;padding:0 24px;border-radius:999px;font-size:17px;font-weight:800;border:1px solid transparent;white-space:nowrap;line-height:1;width:auto}
+    .btn-primary{background:#ffffff;color:var(--blue) !important;border:1px solid #cfe8fb;box-shadow:none}
+    .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:13px;font-weight:800;color:#9aa2ac;letter-spacing:.18em;text-transform:uppercase;width:auto}
+    .eyebrow::before{content:"";width:36px;height:1px;background:#d7dde5}
+    .hero-lite{padding:132px var(--pad-x) 28px;background:radial-gradient(circle at 50% 12%, rgba(15,124,255,.10), transparent 32%),linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);border-bottom:1px solid var(--line)}
+    .hero-lite h1{margin:18px 0 16px;font-size:clamp(42px,6vw,74px);line-height:1.02;font-weight:800;color:#111;letter-spacing:-0.05em;max-width:980px}
+    .hero-lite p{margin:0;max-width:860px;color:var(--muted);font-size:21px;line-height:1.8}
+
+    .property-search-wrap{width:100%;padding:18px var(--pad-x) 0;background:#fff}
+    .property-search-box{width:min(300px,100%);margin:0 auto;display:flex;align-items:center;gap:12px;padding:0 18px;min-height:62px;border:1.5px solid #d9e4ef;border-radius:999px;background:#fff;box-shadow:var(--shadow-soft);transition:width .24s ease, box-shadow .24s ease, border-color .24s ease}
+    .property-search-box:focus-within{width:min(65%,720px);border-color:#bfdcff;box-shadow:0 10px 24px rgba(15,124,255,.08)}
+    .property-search-icon{flex:0 0 auto;font-size:18px;color:#7b8794;width:auto}
+    .property-search-input{flex:1 1 auto;width:100%;border:none;outline:none;background:transparent;color:#111318;font-size:18px;font-weight:700;letter-spacing:-0.03em}
+    .property-search-input::placeholder{color:rgba(154,162,172,.45);font-weight:500}
+    .property-search-clear{display:none !important}
+    .property-search-meta{max-width:720px;margin:10px auto 0;padding:0 8px;color:#7b8794;font-size:14px;font-weight:700;letter-spacing:-0.02em}
+
+    .property-section{width:100%;padding:44px var(--pad-x) 96px;background:#fff}
+    .property-grid{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+    .property-card{display:block;background:#fff;border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:var(--shadow-soft);transition:transform .25s ease, box-shadow .25s ease}
+    .property-card:hover{transform:translateY(-4px);box-shadow:0 16px 28px rgba(15,23,42,.06)}
+    .property-media{position:relative;aspect-ratio:1 / 1;background:#eef3f8 center/cover no-repeat}
+    .property-chip-wrap{position:absolute;top:12px;right:12px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 24px);width:auto}
+    .property-chip{display:inline-flex;align-items:center;justify-content:center;min-height:20px;padding:0 6px;border-radius:999px;background:rgba(234,246,255,.92);color:#67addf;font-size:10px;font-weight:800;line-height:1;box-shadow:0 4px 10px rgba(95,194,255,.08);white-space:nowrap;width:auto}
+    .property-body{padding:24px 20px 24px}
+    .property-body h3{margin:0 0 14px;font-size:31px;line-height:1.22;font-weight:700;color:#111;letter-spacing:-0.05em}
+    .property-price{margin:0 0 18px;font-size:24px;line-height:1;font-weight:800;color:var(--blue);letter-spacing:-0.04em}
+    .property-meta{margin:0;color:#4f5863;font-size:20px;line-height:1.45;font-weight:500;letter-spacing:-0.04em}
+
+    .desktop-float-phone{position:fixed;right:22px;bottom:92px;z-index:1000;display:none;align-items:center;gap:9px;min-height:56px;padding:0 18px;border-radius:999px;background:#0f7cff;color:#fff !important;box-shadow:0 16px 30px rgba(15,124,255,.24);font-size:16px;font-weight:900;letter-spacing:-0.01em;width:auto;max-width:calc(100vw - 44px);border:none;cursor:pointer}
+    .desktop-float-phone .icon{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;font-size:12px}
+    .desktop-float-phone-label{width:auto}
+    .mobile-float-call{position:fixed;right:14px;bottom:80px;z-index:1000;width:50px;height:50px;border-radius:50%;background:#7fc9ff;color:#ffffff !important;box-shadow:0 10px 20px rgba(127,201,255,.24);display:none;align-items:center;justify-content:center;font-size:20px;text-shadow:0 1px 2px rgba(0,0,0,.12)}
+    .mobile-float-kakao{position:fixed;right:14px;bottom:20px;z-index:1000;width:50px;height:50px;border-radius:50%;background:#ffea00;color:#111 !important;box-shadow:0 10px 20px rgba(255,234,0,.28);display:none;align-items:center;justify-content:center;font-size:18px;font-weight:900}
+
+    .menu-panel{position:fixed;inset:0;z-index:1001;display:none;background:rgba(8,17,28,.5);backdrop-filter:blur(6px)}
+    .menu-panel.active{display:block}
+    .menu-drawer{position:absolute;top:0;left:0;width:min(420px, 88vw);height:100vh;background:#fff;box-shadow:0 20px 50px rgba(15,23,42,.16);padding:22px 20px 28px;overflow:auto}
+    .menu-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .menu-head strong{font-size:18px;font-weight:800;color:#111;width:auto}
+    .menu-close{width:40px;height:40px;border-radius:50%;border:1px solid #e5eaf0;display:inline-flex;align-items:center;justify-content:center;background:#fff;font-size:18px;color:#111}
+    .menu-list{display:grid;gap:10px}
+    .menu-link{display:flex;align-items:center;min-height:56px;padding:0 16px;border:1px solid #e7eef5;border-radius:16px;background:#fff;font-size:16px;font-weight:800;color:#111 !important;line-height:1.4}
+    .menu-link.primary{background:#f5f9ff;border-color:#cfe2ff;color:#0f7cff !important}
+
+    .mk-modal{position:fixed;inset:0;background:rgba(8,17,28,.72);backdrop-filter:blur(8px);z-index:9999;display:none;align-items:flex-start;justify-content:center;overflow:hidden}
+    .mk-modal.active{display:flex}
+    .mk-modal-inner{width:100%;max-width:860px;height:100vh;background:#fff;border-radius:0;overflow:hidden;display:flex;flex-direction:column;animation:mkModalUp .24s ease;box-shadow:none}
+    @keyframes mkModalUp{from{transform:translateY(24px);opacity:.96}to{transform:translateY(0);opacity:1}}
+    .mk-modal-head{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;border-bottom:1px solid #eef2f6;background:#fff;flex:0 0 auto}
+    .mk-modal-head h3{margin:0;font-size:24px;font-weight:800;color:#111;line-height:1.2;width:auto;background:transparent}
+    .mk-modal-close{width:40px;height:40px;border-radius:50%;border:1px solid #e5eaf0;background:#fff;color:#111;font-size:20px;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex:0 0 40px}
+    .mk-modal-body{flex:1 1 auto;overflow:auto;padding:20px 20px 120px;background:#fff;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+
+    .property-detail-modal .mk-modal-inner{max-width:760px;background:#ffffff;height:100dvh;max-height:100dvh}
+    .property-detail-modal .mk-modal-head{background:#ffffff;border-bottom:none;padding:14px 16px 6px}
+    .property-detail-modal .mk-modal-body{background:#ffffff;padding:0 20px calc(56px + env(safe-area-inset-bottom, 0px))}
+    .property-detail-hero-wrap{position:relative;margin-bottom:18px}
+    .property-detail-carousel{position:relative;overflow:hidden;border-radius:28px;background:#e9edf2}
+    .property-detail-carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    .property-detail-carousel-track::-webkit-scrollbar{display:none}
+    .property-detail-carousel-slide{flex:0 0 100%;width:100%;scroll-snap-align:start}
+    .property-detail-hero{width:100%;aspect-ratio:1 / 1.25;object-fit:cover;border-radius:0;background:#e9edf2;margin-bottom:0}
+    .property-detail-photo-dots{display:flex;justify-content:center;align-items:center;gap:8px;margin:12px 0 0}
+    .property-detail-photo-dots.is-hidden{display:none}
+    .property-detail-photo-dot{width:8px;height:8px;border-radius:999px;background:#c9d7e5;transition:transform .18s ease, background .18s ease}
+    .property-detail-photo-dot.active{background:#0f7cff;transform:scale(1.22)}
+    .property-detail-note{display:none}
+    .property-detail-chip{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 22px;border-radius:999px;background:#1f96ff;color:#fff;font-size:22px;font-weight:800;line-height:1;box-shadow:0 8px 20px rgba(31,150,255,.20);margin-bottom:18px;width:auto}
+    .property-detail-title{margin:0 0 14px;font-size:56px;line-height:1.08;font-weight:900;color:#202227;letter-spacing:-0.05em}
+    .property-detail-address{margin:0 0 28px;font-size:24px;line-height:1.5;color:#43484e;letter-spacing:-0.03em}
+    .property-detail-divider{height:1px;background:#dfdfdf;margin:0 0 30px}
+    .property-detail-price{margin:0 0 30px;text-align:center;color:#333;font-size:24px;line-height:1.4;letter-spacing:-0.03em}
+    .property-detail-price .price-main-line{display:block}
+    .property-detail-price .price-sub-line{display:block;margin-top:10px;font-size:70%;line-height:1.2}
+    .property-detail-price strong{font-size:66px;color:#ff3c3c;font-weight:900;letter-spacing:-0.06em;margin:0 10px;vertical-align:baseline}
+    .property-summary-box{background:#dfeef9;border-radius:28px;padding:28px 26px;margin-bottom:26px}
+    .property-summary-box h4{margin:0 0 14px;font-size:30px;line-height:1.2;font-weight:900;color:#202227;letter-spacing:-0.04em;text-align:center}
+    .property-summary-box ul{margin:0;padding:0;list-style:none;display:grid;gap:10px;text-align:center}
+    .property-summary-box li{font-size:19px;line-height:1.7;color:#2f3338;letter-spacing:-0.03em;text-align:center}
+    
+    .property-detail-cta{display:flex;justify-content:center;align-items:center;margin:18px 0 8px}
+    .property-more-btn{margin:0 auto !important}
+    .property-office-box{background:#eceaea;border-radius:28px;overflow:hidden;margin-top:36px;margin-bottom:18px}
+    .property-office-head{background:#e1dfdf;padding:16px 20px;text-align:center;font-size:26px;line-height:1.2;font-weight:900;color:#2b2d31;letter-spacing:-0.04em}
+    .property-office-body{padding:18px 22px 20px}
+    .property-office-body p{margin:0;font-size:13px;line-height:1.65;color:#34383d;letter-spacing:-0.03em}
+    .property-specs{border-top:1px solid #dedede;margin-bottom:34px}
+    .desktop-only-inline{display:none}.mobile-only-inline{display:inline}
+    .property-inquiry-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 26px}
+    .property-inquiry-btn{display:flex;align-items:center;justify-content:center;min-height:54px;padding:0 14px;border:1.5px solid #f5b7c8;border-radius:16px;background:#fff;color:#d85c86 !important;font-size:17px;font-weight:800;letter-spacing:-0.03em;box-shadow:none}
+    .property-inquiry-btn:visited,.property-inquiry-btn:hover,.property-inquiry-btn:active{color:#d85c86 !important;background:#fff7fa}
+    .property-spec-sector-title{padding:20px 12px 10px;font-size:29px;line-height:1.3;font-weight:900;color:#2b2d31;letter-spacing:-0.04em;border-top:1px solid #dedede;background:transparent}
+    .property-specs .property-spec-sector-title:first-child{border-top:none;padding-top:8px}
+    .property-spec-row{display:grid;grid-template-columns:170px 1fr;gap:16px;padding:24px 12px;border-bottom:1px solid #dedede;align-items:start}
+    .property-spec-label{font-size:23px;line-height:1.6;color:#6a6e74;font-weight:500;letter-spacing:-0.03em}
+    .property-spec-value{font-size:23px;line-height:1.6;color:#23262b;font-weight:500;letter-spacing:-0.03em;word-break:keep-all}
+    .property-spec-value .spec-price-line{display:block}
+    .property-spec-value .spec-price-line + .spec-price-line{margin-top:6px}
+
+    .mk-contact-card{border:1px solid #e7eef5;background:#fbfdff;border-radius:18px;padding:18px 16px;margin-bottom:16px}
+    .mk-contact-card p{margin:0;font-size:15px;line-height:1.8;color:#576272}
+    .mk-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+    .mk-input,.mk-textarea{width:100%;border:1px solid #d9e4ef;background:#fff;border-radius:12px;padding:14px 14px;font-size:15px;color:#111;outline:none}
+    .mk-textarea{min-height:120px;resize:vertical;margin-bottom:10px}
+    .mk-check{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:13px;color:#667085;line-height:1.5;background:transparent}
+    .mk-check input{width:20px !important;height:20px !important;margin:0;flex:0 0 20px}
+    .mk-check span{display:inline-block !important;width:auto !important;flex:0 1 auto;font-size:13px;line-height:1.5;color:#667085 !important;background:transparent !important;word-break:keep-all;white-space:nowrap}
+    .mk-submit{width:100%;min-height:54px;border-radius:14px;background:#0f7cff;color:#fff;font-size:16px;font-weight:800;margin-bottom:10px}
+    .mk-toast{position:fixed;left:50%;top:50%;bottom:auto;transform:translate(-50%, -50%) scale(.96);width:auto;max-width:280px;padding:12px 14px;border-radius:16px;background:rgba(17,24,39,.82);color:#fff;font-size:14px;font-weight:700;line-height:1.6;text-align:center;box-shadow:0 18px 36px rgba(15,23,42,.18);opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease;z-index:12000}
+    .mk-toast.show{opacity:1;transform:translate(-50%, -50%) scale(1)}
+
+    .loading-overlay{position:fixed;inset:0;z-index:12050;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(255,255,255,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+    .loading-overlay.show{display:flex}
+    .loading-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
+    .loading-buddy{width:74px;height:74px;object-fit:cover;border-radius:18px;animation:buddyBounce 1.15s ease-in-out infinite;box-shadow:0 10px 22px rgba(15,124,255,.16)}
+    .loading-text{min-height:24px;font-size:18px;font-weight:800;line-height:1.4;color:#2b8fe8;letter-spacing:-0.03em}
+    @keyframes buddyBounce{0%,100%{transform:translateY(0) scale(1)}20%{transform:translateY(-3px) scale(1.01)}50%{transform:translateY(-10px) scale(1.04)}75%{transform:translateY(-4px) scale(1.01)}}
+
+    @media (max-width:1180px){ .property-grid{grid-template-columns:repeat(2,1fr)} }
+    @media (min-width:861px){ .desktop-only-inline{display:inline}.mobile-only-inline{display:none}.desktop-float-phone{display:flex !important} }
+    @media (max-width:860px){
+      :root{--pad-x:22px}
+      .header{height:72px}.header-inner{padding-left:18px;padding-right:18px}.nav,.lang{display:none}
+      .menu-trigger{width:40px;height:40px;flex-basis:40px}
+      .menu-trigger span,.menu-trigger span::before,.menu-trigger span::after{width:16px}
+      .logo-text strong{font-size:16px}
+      .header-right .btn.btn-primary{display:inline-flex !important;min-height:auto;padding:0;font-size:16px;font-weight:900;white-space:nowrap;background:transparent !important;box-shadow:none !important;border:none !important;border-radius:0 !important;color:#111 !important}
+      .hero-lite{padding:106px var(--pad-x) 20px}
+      .hero-lite h1{font-size:38px;line-height:1.06;margin:14px 0 12px}
+      .hero-lite p{font-size:16px;line-height:1.75}
+
+      .property-search-wrap{padding:14px var(--pad-x) 0}
+      .property-search-box{width:min(240px,100%);min-height:54px;padding:0 16px;gap:10px}
+      .property-search-box:focus-within{width:min(82%, 420px)}
+      .property-search-icon{font-size:16px}
+      .property-search-input{font-size:16px}
+      .property-search-meta{font-size:13px;margin-top:8px}
+      .property-section{padding:22px var(--pad-x) 72px}
+      .property-grid{grid-template-columns:repeat(2,1fr);gap:14px}
+      .property-body{padding:18px 16px 18px}
+      .property-body h3{font-size:22px;line-height:1.24;margin-bottom:10px;font-weight:700}
+      .property-price{font-size:19px;margin-bottom:12px;font-weight:800}
+      .property-meta{font-size:16px;line-height:1.42;font-weight:500}
+      .property-chip-wrap{top:10px;right:10px;gap:5px}
+      .property-chip{min-height:18px;padding:0 5px;font-size:10px}
+      .desktop-float-phone{display:none !important}
+      .mobile-float-call,.mobile-float-kakao{display:flex !important}
+      .property-detail-modal .mk-modal-inner{max-width:none}
+      .property-detail-modal .mk-modal-head{padding:12px 14px 4px}
+      .property-detail-modal .mk-modal-body{padding:0 18px calc(52px + env(safe-area-inset-bottom, 0px))}
+      .property-detail-hero-wrap{margin-bottom:14px}
+      .property-detail-hero{border-radius:24px;margin-bottom:0}
+      .property-detail-photo-btn{width:38px;height:38px;font-size:22px}
+      .property-detail-photo-btn.prev{left:8px}
+      .property-detail-photo-btn.next{right:8px}
+      .property-detail-note{font-size:12px;margin-bottom:18px}
+      .property-detail-chip{min-height:34px;padding:0 18px;font-size:18px;margin-bottom:14px}
+      .property-detail-title{font-size:34px;margin-bottom:10px}
+      .property-detail-address{font-size:18px;margin-bottom:20px}
+      .property-detail-divider{margin-bottom:22px}
+      .property-detail-price{font-size:16px;margin-bottom:22px}
+      .property-detail-price .price-sub-line{margin-top:8px;font-size:70%}
+      .property-detail-price strong{font-size:42px;margin:0 6px}
+      .property-summary-box{border-radius:22px;padding:22px 18px;margin-bottom:20px}
+      .property-summary-box h4{font-size:22px;margin-bottom:12px;text-align:center}
+      .property-summary-box li{font-size:16px;line-height:1.65;text-align:center}
+      .property-office-box{border-radius:22px;margin-bottom:22px}
+      .property-office-head{font-size:23px;padding:14px 16px}
+      .property-office-body{padding:14px 16px 16px}
+      .property-office-body p{font-size:12px;line-height:1.6}
+      .property-spec-row{grid-template-columns:110px 1fr;gap:10px;padding:18px 6px}
+      .property-spec-label,.property-spec-value{font-size:18px;line-height:1.65}
+      .mk-form-grid{grid-template-columns:1fr}
+      .loading-buddy{width:64px;height:64px;border-radius:16px}
+      .loading-text{font-size:16px}
+    }
+    @media (max-width:520px){
+      .property-grid{grid-template-columns:repeat(2,1fr);gap:6px}
+      .property-media{aspect-ratio:1 / 1.28}
+      .property-card{border-radius:18px}
+      .property-body h3{font-size:21px}.property-price{font-size:18px}.property-meta{font-size:15px}
+    }
+  </style>
+</head>
+<body>
+<div id="mk-market">
+  <header class="header" id="siteHeader">
+    <div class="header-inner">
+      <div class="header-left">
+        <button class="menu-trigger" aria-label="menu" onclick="openMenu()"><span></span></button>
+        <div class="logo-text"><strong>Maslow Korea</strong></div>
+      </div>
+
+      <nav class="nav">
+        <a href="index-5.html#services">One-stop</a>
+        <a href="index-5.html#lifecycle">Life Cycle</a>
+        <a href="index-5.html#process">Process</a>
+        <a href="index-5.html#media">Guide</a>
+        <a href="index-5.html#contact">Contact</a>
+      </nav>
+
+      <div class="header-right">
+        <div class="lang">KR / EN</div>
+        <a href="javascript:void(0)" onclick="topAction()" class="btn btn-primary" id="topActionBtn">문의하기</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero-lite">
+    <div class="eyebrow">Property Line-up</div>
+    <h1>조건에 맞는 공장을 한눈에</h1>
+    <p>Maslow Korea가 선별한 공개 매물을 먼저 확인하고, 필요한 조건은 상담으로 더 정확하게 좁혀드립니다.</p>
+  </section>
+
+
+  <section class="property-search-wrap">
+    <div class="property-search-box">
+      <span class="property-search-icon">🔎</span>
+      <input id="propertySearchInput" class="property-search-input" type="text" placeholder="지역, 거래형태, 매물종류, 요약으로 검색" autocomplete="off">
+    </div>
+    <div id="propertySearchMeta" class="property-search-meta">전체 매물 보기</div>
+  </section>
+
+  <section class="property-section">
+    <div class="property-grid" id="propertyGrid"></div>
+  </section>
+
+  <a class="desktop-float-phone" href="javascript:void(0)" onclick="handleDesktopFloatPhone(this)">
+    <span class="icon">☎</span>
+    <span class="desktop-float-phone-label">010-5407-0444</span>
+  </a>
+
+  <a class="mobile-float-call" href="javascript:void(0)" onclick="window.location.href='tel:01054070444'">📞</a>
+  <a class="mobile-float-kakao" href="http://pf.kakao.com/_mNURX/chat" target="_blank" rel="noopener">talk</a>
+
+  <div id="menuPanel" class="menu-panel" onclick="closeMenu(event)">
+    <div class="menu-drawer" onclick="event.stopPropagation()">
+      <div class="menu-head"><strong>Maslow Korea</strong><button class="menu-close" onclick="forceCloseMenu()">✕</button></div>
+      <div class="menu-list">
+        <a class="menu-link primary" href="index-5.html">홈으로</a>
+        <a class="menu-link" href="index-5.html#services">One-stop</a>
+        <a class="menu-link" href="index-5.html#lifecycle">Life Cycle</a>
+        <a class="menu-link" href="index-5.html#process">Process</a>
+        <a class="menu-link" href="index-5.html#media">Guide</a>
+        <a class="menu-link" href="index-5.html#contact">Contact</a>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="propertyDetailModal" class="mk-modal property-detail-modal">
+    <div class="mk-modal-inner">
+      <div class="mk-modal-head">
+        <div></div>
+        <button class="mk-modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="mk-modal-body">
+        <div class="property-detail-hero-wrap">
+          <div class="property-detail-carousel">
+            <div id="detailPhotoTrack" class="property-detail-carousel-track">
+              <div class="property-detail-carousel-slide"><img id="detailHero" class="property-detail-hero" src="https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png" alt="추천 공장 매물"></div>
+            </div>
+          </div>
+          <div id="detailPhotoDots" class="property-detail-photo-dots is-hidden"></div>
+        </div>
+        <p class="property-detail-note"></p>
+
+        <div id="detailChip" class="property-detail-chip">매매</div>
+        <h3 id="detailTitle" class="property-detail-title">군산 국가산단 인근 제조형 공장 매매</h3>
+        <p id="detailAddress" class="property-detail-address">전라북도 군산시 오식도동</p>
+
+        <div class="property-detail-divider"></div>
+
+        <p id="detailPrice" class="property-detail-price">매매가 <strong>78억원</strong> / 평당 260만원</p>
+
+        <div class="property-summary-box" id="detailSummaryBox">
+          <h4>추천 매물 3줄 요약</h4>
+          <ul id="detailSummary">
+            <li>✔ 산업단지 접근성이 좋아 물류 이동이 편리합니다</li>
+            <li>✔ 마당 활용과 대형차 진입이 가능한 제조형 공장입니다</li>
+            <li>✔ 즉시 운영 검토가 가능한 실사용 중심 매물입니다</li>
+          </ul>
+        </div>
+
+        <div class="property-inquiry-row">
+          <a href="http://pf.kakao.com/_mNURX/chat" class="property-inquiry-btn" target="_blank" rel="noopener" onclick="return handleModalInquiryDesktopMobile(event, this)">
+            <span class="mobile-only-inline">톡문의</span>
+            <span class="desktop-only-inline">문의하기</span>
+          </a>
+          <button type="button" class="property-inquiry-btn property-phone-btn" data-phone="010-5407-0444" data-default-label="전화문의" onclick="handlePropertyPhone(this)">전화문의</button>
+        </div>
+
+        <div class="property-specs">
+          <div class="property-spec-sector-title">기본정보</div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">소재지</div>
+            <div id="detailSpecAddress" class="property-spec-value">전라북도 군산시 오식도동</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">거래형태</div>
+            <div id="detailSpecDeal" class="property-spec-value">매매</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">가격</div>
+            <div id="detailSpecPrice" class="property-spec-value">매매가 78억</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">사용승인일</div>
+            <div id="detailSpecApproval" class="property-spec-value">2018-06-12</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">대지면적</div>
+            <div id="detailSpecLand" class="property-spec-value">3,120㎡(944평)</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">연면적</div>
+            <div id="detailSpecTotalFloor" class="property-spec-value">1,480㎡(447평)</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">전용면적</div>
+            <div id="detailSpecExclusive" class="property-spec-value">1,320㎡(399평)</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">용도지역</div>
+            <div id="detailSpecZoning" class="property-spec-value">일반공업지역</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">건축물 구성</div>
+            <div id="detailSpecBuildingComposition" class="property-spec-value"></div>
+          </div>
+
+          <div class="property-spec-sector-title">추가 정보</div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">매물번호</div>
+            <div id="detailSpecListingNo" class="property-spec-value">MK-FACTORY-078</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">중개대상물 종류</div>
+            <div id="detailSpecPropertyType" class="property-spec-value">공장</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">총 주차대수</div>
+            <div id="detailSpecParking" class="property-spec-value">12대</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">주출입구방향</div>
+            <div id="detailSpecDirection" class="property-spec-value">남동향</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">입주가능일</div>
+            <div id="detailSpecMoveIn" class="property-spec-value">협의 후 입주 가능</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">총 층수</div>
+            <div id="detailSpecFloorInfo" class="property-spec-value">지상 2층 / 총 2층</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">화장실 수</div>
+            <div id="detailSpecRestroom" class="property-spec-value">사무동 및 공장동 내부 구분 사용</div>
+          </div>
+          <div class="property-spec-row">
+            <div class="property-spec-label">관리비</div>
+            <div id="detailSpecMaintenanceFee" class="property-spec-value"></div>
+          </div>
+
+          <div id="factorySpecialSectionTitle" class="property-spec-sector-title">공장특화정보</div>
+          <div id="factoryRowCeiling" class="property-spec-row">
+            <div class="property-spec-label">층고</div>
+            <div id="detailFactoryCeiling" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowCrane" class="property-spec-row">
+            <div class="property-spec-label">크레인</div>
+            <div id="detailFactoryCrane" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowHoist" class="property-spec-row">
+            <div class="property-spec-label">호이스트</div>
+            <div id="detailFactoryHoist" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowPower" class="property-spec-row">
+            <div class="property-spec-label">전력</div>
+            <div id="detailFactoryPower" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowMainEquipment" class="property-spec-row">
+            <div class="property-spec-label">주요 설비</div>
+            <div id="detailFactoryMainEquipment" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowRecommendedIndustry" class="property-spec-row">
+            <div class="property-spec-label">추천 업종</div>
+            <div id="detailFactoryRecommendedIndustry" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowIndustryRestriction" class="property-spec-row">
+            <div class="property-spec-label">업종 제한</div>
+            <div id="detailFactoryIndustryRestriction" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowRoadWidth" class="property-spec-row">
+            <div class="property-spec-label">진입로 폭</div>
+            <div id="detailFactoryRoadWidth" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowDoorWidth" class="property-spec-row">
+            <div class="property-spec-label">도어폭</div>
+            <div id="detailFactoryDoorWidth" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowLargeTruckAccess" class="property-spec-row">
+            <div class="property-spec-label">대형차 진입</div>
+            <div id="detailFactoryLargeTruckAccess" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowLoadingAvailable" class="property-spec-row">
+            <div class="property-spec-label">상하차 가능</div>
+            <div id="detailFactoryLoadingAvailable" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowOfficeIncluded" class="property-spec-row">
+            <div class="property-spec-label">사무동 포함</div>
+            <div id="detailFactoryOfficeIncluded" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowYardSize" class="property-spec-row">
+            <div class="property-spec-label">야드 크기</div>
+            <div id="detailFactoryYardSize" class="property-spec-value"></div>
+          </div>
+          <div id="factoryRowReadyToOperate" class="property-spec-row">
+            <div class="property-spec-label">즉시 가동</div>
+            <div id="detailFactoryReadyToOperate" class="property-spec-value"></div>
+          </div>
+        </div>
+
+        <div class="property-detail-cta">
+          <a href="javascript:void(0)" class="btn btn-primary property-more-btn" onclick="closeModal(); return false;">➜ 추천 매물 더보기</a>
+        </div>
+
+        <div class="property-office-box">
+          <div class="property-office-head">중개사무소 정보</div>
+          <div class="property-office-body">
+            <p>명칭 : 매슬로우코리아 / 매슬로우공인중개사사무소<br>
+            소재지 : 전북 군산시 대학로 342 26빌딩<br>
+            등록번호 : 52130-025-0005<br>
+            연락처 : 010-5407-0444<br>
+            성명 : 박성연</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="contactModal" class="mk-modal">
+    <div class="mk-modal-inner">
+      <div class="mk-modal-head">
+        <h3>간편 상담 문의</h3>
+        <button class="mk-modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="mk-modal-body">
+        <div class="mk-contact-card">
+          <p>조건에 맞는 공장을 빠르게 안내받고 싶으시면 아래 내용을 남겨주세요.</p>
+        </div>
+        <div class="mk-form-grid">
+          <input id="contactName" class="mk-input" type="text" placeholder="이름">
+          <input id="contactPhone" class="mk-input" type="tel" placeholder="연락처">
+        </div>
+        <textarea id="contactNote" class="mk-textarea" placeholder="희망 지역 / 예산 / 면적 / 업종 / 입주 시기 등을 남겨주세요"></textarea>
+        <label class="mk-check">
+          <input id="contactAgree" type="checkbox">
+          <span>개인정보 수집 및 이용에 동의합니다.</span>
+        </label>
+        <button id="contactSubmitBtn" class="mk-submit" type="button">상담문의 남기기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+  <div class="loading-panel">
+    <img class="loading-buddy" src="https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg" alt="로딩">
+    <div id="loadingTypingText" class="loading-text"></div>
+  </div>
+</div>
+
+<div id="mkToast" class="mk-toast">문의가 접수되었습니다.<br>조속히 안내드리겠습니다.</div>
+
+<script>
+  const PHONE_NUMBER = '010-5407-0444';
+  const GAS_CONTACT_URL = "https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec";
+  let propertyPhoneTimer = null;
+
+  const GAS_PUBLIC_URL = "https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec?action=listPublicProperties";
+  let propertyItems = [];
+  let filteredPropertyItems = [];
+  let currentDetailPhotos = [];
+  let currentDetailPhotoIndex = 0;
+
+  const header = document.getElementById('siteHeader');
+  let lastY = window.scrollY;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    if (y > 120 && y > lastY) header.classList.add('hidden');
+    else header.classList.remove('hidden');
+    lastY = y;
+  }, { passive:true });
+
+  function openMenu(){ document.getElementById('menuPanel').classList.add('active'); }
+  function closeMenu(e){ if(e && e.target !== document.getElementById('menuPanel')) return; document.getElementById('menuPanel').classList.remove('active'); }
+  function forceCloseMenu(){ document.getElementById('menuPanel').classList.remove('active'); }
+
+  window.__savedScrollY = 0;
+  window.__modalHistoryOpen = false;
+  window.__activeModalId = null;
+  window.__ignoreNextPopstate = false;
+  window.__returnModalId = '';
+
+  function openModal(id){
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    const currentActive = document.querySelector('.mk-modal.active');
+    const alreadyOpen = !!currentActive;
+    window.__savedScrollY = window.scrollY || window.pageYOffset || 0;
+    if (id === 'contactModal' && currentActive && currentActive.id === 'propertyDetailModal') {
+      window.__returnModalId = 'propertyDetailModal';
+    }
+    document.querySelectorAll('.mk-modal').forEach(m => m.classList.remove('active'));
+    clearSummaryTyping_();
+    modal.classList.add('active');
+
+    const modalBody = modal.querySelector('.mk-modal-body');
+    if (modalBody) modalBody.scrollTop = 0;
+
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    document.body.style.height = '100vh';
+    window.__activeModalId = id;
+    if (!alreadyOpen) {
+      history.pushState({ mkModal: true }, '');
+      window.__modalHistoryOpen = true;
+    }
+  }
+
+  function closeModal(fromPopstate){
+    const activeModal = document.querySelector('.mk-modal.active');
+    const activeId = activeModal ? activeModal.id : '';
+    if (activeId === 'contactModal' && window.__returnModalId === 'propertyDetailModal') {
+      const propertyModal = document.getElementById('propertyDetailModal');
+      if (activeModal) activeModal.classList.remove('active');
+      if (propertyModal) propertyModal.classList.add('active');
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      document.body.style.height = '100vh';
+      window.__activeModalId = 'propertyDetailModal';
+      window.__returnModalId = '';
+      return;
+    }
+    const hadOpenModal = !!activeModal;
+    document.querySelectorAll('.mk-modal').forEach(m => m.classList.remove('active'));
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+    document.body.style.height = '';
+    const y = window.__savedScrollY || 0;
+    requestAnimationFrame(() => window.scrollTo(0, y));
+    window.__activeModalId = null;
+    window.__returnModalId = '';
+    if (!hadOpenModal) return;
+    if (window.__modalHistoryOpen) {
+      if (fromPopstate) window.__modalHistoryOpen = false;
+      else { window.__ignoreNextPopstate = true; history.back(); }
+    }
+  }
+
+  document.querySelectorAll('.mk-modal').forEach(modal=>{
+    modal.addEventListener('click', function(e){ if(e.target === modal) closeModal(); });
+  });
+  window.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeModal(); });
+  window.addEventListener('popstate', function(){
+    if (window.__ignoreNextPopstate) { window.__ignoreNextPopstate = false; window.__modalHistoryOpen = false; return; }
+    if (document.querySelector('.mk-modal.active')) closeModal(true);
+  });
+
+  function topAction(){ openModal('contactModal'); }
+
+  const LOADING_BASE_TEXT = '자료를 가져오고 있어요!';
+  let loadingTypingTimer = null;
+  let loadingHapticTimer = null;
+
+  function startLoadingOverlay(){
+    const overlay = document.getElementById('loadingOverlay');
+    const textEl = document.getElementById('loadingTypingText');
+    if(!overlay || !textEl) return;
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden','false');
+    textEl.textContent = '';
+    let i = 0;
+    window.clearInterval(loadingTypingTimer);
+    loadingTypingTimer = window.setInterval(function(){
+      i += 1;
+      textEl.textContent = LOADING_BASE_TEXT.slice(0, i);
+      if(i >= LOADING_BASE_TEXT.length){
+        window.clearInterval(loadingTypingTimer);
+      }
+    }, 85);
+    if(navigator.vibrate){
+      navigator.vibrate(12);
+      let vibCount = 0;
+      window.clearInterval(loadingHapticTimer);
+      loadingHapticTimer = window.setInterval(function(){
+        vibCount += 1;
+        try{ navigator.vibrate(8); }catch(e){}
+        if(vibCount >= 5){ window.clearInterval(loadingHapticTimer); }
+      }, 520);
+    }
+  }
+
+  function stopLoadingOverlay(){
+    const overlay = document.getElementById('loadingOverlay');
+    if(!overlay) return;
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden','true');
+    window.clearInterval(loadingTypingTimer);
+    window.clearInterval(loadingHapticTimer);
+  }
+
+  function escapeHtml(value){
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function nl2br(value){
+    return escapeHtml(value).replace(/\n/g, '<br>');
+  }
+
+  function text(v){
+    return String(v == null ? '' : v).trim();
+  }
+
+  function firstNonEmpty(){
+    for (var i = 0; i < arguments.length; i++) {
+      var v = text(arguments[i]);
+      if (v) return v;
+    }
+    return '';
+  }
+
+
+  function maskAddress_(value){
+    var s = text(value);
+    if (!s) return '';
+    s = s.replace(/\s*\([^)]*\)/g, '');
+    var parts = s.split(/\s+/).filter(Boolean);
+    while (parts.length && /\d/.test(parts[parts.length - 1])) parts.pop();
+    return parts.join(' ');
+  }
+
+  function buildDetailPriceHtml_(raw, basic){
+    var explicit = text(raw.priceHtml);
+    if (explicit && explicit.indexOf('임대가') === -1) return explicit;
+    var dealType = firstNonEmpty(raw.dealType, raw.chip, basic.dealType);
+    var pricePlain = firstNonEmpty(raw.priceDisplay, raw.price, raw.basicPrice, basic.price);
+    if (!pricePlain) return '';
+    if (dealType.indexOf('임대') > -1) {
+      var parts = pricePlain.split('/').map(function(v){ return text(v); }).filter(Boolean);
+      if (parts.length >= 2) {
+        return ''
+          + '<span class="price-main-line">임대가 <strong>' + escapeHtml(parts[0]) + '</strong></span>'
+          + '<span class="price-sub-line"><strong>' + escapeHtml(parts[1]) + '</strong></span>';
+      }
+      return '임대가 <strong>' + escapeHtml(pricePlain) + '</strong>';
+    }
+    return '매매가 <strong>' + escapeHtml(pricePlain) + '</strong>';
+  }
+
+
+  function buildSpecPriceHtml_(raw, basic){
+    var dealType = firstNonEmpty(raw.dealType, raw.chip, basic.dealType);
+    var pricePlain = firstNonEmpty(raw.priceDisplay, raw.price, raw.basicPrice, basic.price);
+    if (!pricePlain) return '';
+    if (dealType.indexOf('임대') > -1) {
+      var parts = pricePlain.split('/').map(function(v){ return text(v); }).filter(Boolean);
+      if (parts.length >= 2) {
+        return '<span class="spec-price-line">' + escapeHtml(parts[0]) + '</span>'
+          + '<span class="spec-price-line">' + escapeHtml(parts[1]) + '</span>';
+      }
+    }
+    return escapeHtml(pricePlain);
+  }
+
+  function renderDetailPhotoCarousel(){
+    var track = document.getElementById('detailPhotoTrack');
+    var dots = document.getElementById('detailPhotoDots');
+    var photos = currentDetailPhotos.length ? currentDetailPhotos : ['https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png'];
+    if (!track) return;
+    track.innerHTML = photos.map(function(src, idx){
+      return '<div class="property-detail-carousel-slide" data-photo-index="' + idx + '"><img class="property-detail-hero" src="' + escapeHtml(src) + '" alt="추천 공장 매물 ' + (idx + 1) + '"></div>';
+    }).join('');
+    if (dots) {
+      dots.innerHTML = photos.map(function(_, idx){
+        return '<span class="property-detail-photo-dot' + (idx === currentDetailPhotoIndex ? ' active' : '') + '" data-photo-dot="' + idx + '"></span>';
+      }).join('');
+      dots.classList.toggle('is-hidden', photos.length <= 1);
+    }
+    requestAnimationFrame(function(){
+      var slide = track.querySelector('.property-detail-carousel-slide[data-photo-index="' + currentDetailPhotoIndex + '"]');
+      if (slide) track.scrollLeft = slide.offsetLeft;
+    });
+  }
+
+  function syncDetailPhotoIndexFromScroll(){
+    var track = document.getElementById('detailPhotoTrack');
+    var dots = document.getElementById('detailPhotoDots');
+    if (!track) return;
+    var width = track.clientWidth || 1;
+    currentDetailPhotoIndex = Math.round(track.scrollLeft / width);
+    if (dots) {
+      Array.prototype.forEach.call(dots.querySelectorAll('.property-detail-photo-dot'), function(dot, idx){
+        dot.classList.toggle('active', idx === currentDetailPhotoIndex);
+      });
+    }
+  }
+
+  function buildCardTitle_(item){
+    return firstNonEmpty(
+      item.title,
+      item.propertyTitle,
+      item.basic && item.basic.title,
+      item.basic && item.basic.titleHint,
+      item.basic && item.basic.propertyType,
+      '매물 정보'
+    );
+  }
+
+  function buildCardMeta_(item){
+    return firstNonEmpty(
+      item.cardMeta,
+      item.point,
+      item.summary && item.summary[0],
+      item.factory && item.factory.mainEquipment,
+      item.factory && item.factory.recommendedIndustry,
+      item.basic && item.basic.titleHint
+    );
+  }
+
+  function buildCardChipList_(item){
+    var chip = firstNonEmpty(item.dealType, item.chip, item.basic && item.basic.dealType);
+    if (!chip) return [];
+    return chip.split('/').map(function(v){ return text(v); }).filter(Boolean);
+  }
+
+  function buildHeroImage_(item){
+    if (Array.isArray(item.photos) && item.photos.length) return item.photos[0];
+    return firstNonEmpty(item.image, item.heroUrl, item.heroImageUrl, 'https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png');
+  }
+
+  function buildPricePlain_(raw, basic){
+    return firstNonEmpty(raw.priceDisplay, raw.price, raw.basicPrice, basic.price, basic.salePrice, basic.deposit && basic.monthlyRent ? ('보 ' + basic.deposit + ' / 월 ' + basic.monthlyRent) : '', basic.deposit, basic.monthlyRent);
+  }
+
+  function buildPriceHtml_(raw, basic, pricePlain){
+    if (text(raw.priceHtml)) return raw.priceHtml;
+    if (!pricePlain) return '';
+    var dealType = firstNonEmpty(raw.dealType, raw.chip, basic.dealType);
+    if (dealType.indexOf('임대') > -1 && pricePlain.indexOf('보 ') === 0) {
+      return '임대가 <strong>' + escapeHtml(pricePlain) + '</strong>';
+    }
+    if (dealType.indexOf('임대') > -1) {
+      return '임대가 <strong>' + escapeHtml(pricePlain) + '</strong>';
+    }
+    return '매매가 <strong>' + escapeHtml(pricePlain) + '</strong>';
+  }
+
+  function normalizeItem_(raw){
+    raw = raw || {};
+    var basic = raw.basic || {};
+    var factory = raw.factory || {};
+    var summary = Array.isArray(raw.summary)
+      ? raw.summary.filter(Boolean)
+      : [raw.summary1, raw.summary2, raw.summary3].filter(Boolean);
+    var pricePlain = buildPricePlain_(raw, basic);
+    return {
+      image: buildHeroImage_(raw),
+      chip: firstNonEmpty(raw.chip, raw.dealType, basic.dealType),
+      title: buildCardTitle_(raw),
+      address: maskAddress_(firstNonEmpty(raw.address, basic.address)),
+      photos: Array.isArray(raw.photos) ? raw.photos.filter(Boolean) : (Array.isArray(raw.photoUrls) ? raw.photoUrls.filter(Boolean) : []),
+      pricePlain: pricePlain,
+      priceHtml: buildDetailPriceHtml_(raw, basic),
+      summary: summary,
+      point: buildCardMeta_(raw),
+      approval: firstNonEmpty(raw.approvalDate, raw.approval, basic.approvalDate),
+      land: firstNonEmpty(raw.landArea, raw.land, basic.landArea),
+      totalFloor: firstNonEmpty(raw.totalFloorArea, raw.totalFloor, basic.totalFloorArea),
+      exclusive: firstNonEmpty(raw.exclusiveArea, raw.exclusive, basic.exclusiveArea),
+      zoning: firstNonEmpty(raw.zoning, basic.zoning),
+      listingNo: firstNonEmpty(raw.listingNumber, raw.listingNo, basic.listingNumber),
+      propertyType: firstNonEmpty(raw.propertyType, basic.propertyType),
+      buildingComposition: firstNonEmpty(raw.buildingComposition, basic.buildingComposition),
+      parking: firstNonEmpty(raw.parkingCount, raw.parking, basic.parkingCount),
+      direction: firstNonEmpty(raw.entranceDirection, raw.direction, basic.entranceDirection),
+      moveIn: firstNonEmpty(raw.moveInDate, raw.moveIn, basic.moveInDate),
+      floorInfo: firstNonEmpty(raw.floorInfo, basic.floorInfo),
+      restroom: firstNonEmpty(raw.restroomInfo, raw.restroom, basic.restroomInfo),
+      maintenanceFee: firstNonEmpty(raw.maintenanceFee, basic.maintenanceFee),
+      ceilingHeight: firstNonEmpty(raw.ceilingHeight, factory.ceilingHeight),
+      crane: firstNonEmpty(raw.crane, factory.crane),
+      hoist: firstNonEmpty(raw.hoist, factory.hoist),
+      powerCapacity: firstNonEmpty(raw.powerCapacity, factory.powerCapacity),
+      mainEquipment: firstNonEmpty(raw.mainEquipment, raw.mainFacilities, factory.mainEquipment, factory.mainFacilities),
+      recommendedIndustry: firstNonEmpty(raw.recommendedIndustry, raw.recommendedUse, factory.recommendedIndustry, factory.recommendedUse),
+      industryRestriction: firstNonEmpty(raw.industryRestriction, raw.restrictedUse, factory.industryRestriction, factory.restrictedUse),
+      roadWidth: firstNonEmpty(raw.roadWidth, factory.roadWidth),
+      doorWidth: firstNonEmpty(raw.doorWidth, factory.doorWidth),
+      largeTruckAccess: firstNonEmpty(raw.largeTruckAccess, raw.truckAccess, factory.largeTruckAccess, factory.truckAccess),
+      loadingAvailable: firstNonEmpty(raw.loadingAvailable, factory.loadingAvailable),
+      officeIncluded: firstNonEmpty(raw.officeIncluded, factory.officeIncluded),
+      yardSize: firstNonEmpty(raw.yardSize, factory.yardSize),
+      readyToOperate: firstNonEmpty(raw.readyToOperate, factory.readyToOperate),
+      basic: basic
+    };
+  }
+
+  function renderPropertyCards(items){
+    var grid = document.getElementById('propertyGrid');
+    if(!grid) return;
+    if(!items || !items.length){
+      grid.innerHTML = '<div style="grid-column:1/-1;padding:40px 20px;text-align:center;color:#67707b;">현재 공개된 매물이 없습니다.</div>';
+      return;
+    }
+    grid.innerHTML = items.map(function(item, idx){
+      var chips = buildCardChipList_(item);
+      var chipHtml = chips.map(function(ch){
+        return '<span class="property-chip">' + escapeHtml(ch) + '</span>';
+      }).join('');
+      return ''
+        + '<a class="property-card" href="javascript:void(0)" onclick="openProperty(' + idx + ')">'
+        +   '<div class="property-media" style="background-image:url(\'' + escapeHtml(item.image) + '\')">'
+        +     '<div class="property-chip-wrap">' + chipHtml + '</div>'
+        +   '</div>'
+        +   '<div class="property-body">'
+        +     '<h3>' + escapeHtml(item.title) + '</h3>'
+        +     '<p class="property-price">' + escapeHtml(item.pricePlain) + '</p>'
+        +     '<p class="property-meta">' + escapeHtml(item.point) + '</p>'
+        +   '</div>'
+        + '</a>';
+    }).join('');
+  }
+
+
+
+  function buildSearchText_(item){
+    return [
+      item.title,
+      item.address,
+      item.chip,
+      item.pricePlain,
+      item.point,
+      item.propertyType,
+      item.buildingComposition,
+      item.zoning,
+      item.parking,
+      item.direction,
+      item.moveIn,
+      item.floorInfo,
+      item.restroom,
+      item.maintenanceFee,
+      item.ceilingHeight,
+      item.crane,
+      item.hoist,
+      item.powerCapacity,
+      item.mainEquipment,
+      item.recommendedIndustry,
+      item.industryRestriction,
+      item.roadWidth,
+      item.doorWidth,
+      item.largeTruckAccess,
+      item.loadingAvailable,
+      item.officeIncluded,
+      item.yardSize,
+      item.readyToOperate
+    ].concat(Array.isArray(item.summary) ? item.summary : []).join(' ').toLowerCase();
+  }
+
+  function updateSearchMeta_(total, shown, q){
+    var meta = document.getElementById('propertySearchMeta');
+    if(!meta) return;
+    if(!q){
+      meta.textContent = '전체 ' + total + '개 매물';
+      return;
+    }
+    meta.textContent = '검색 결과 ' + shown + '개 / 전체 ' + total + '개';
+  }
+
+  function applyPropertySearch(){
+    var input = document.getElementById('propertySearchInput');
+    var q = text(input && input.value).toLowerCase();
+    if(!q){
+      filteredPropertyItems = propertyItems.slice();
+    } else {
+      filteredPropertyItems = propertyItems.filter(function(item){
+        return buildSearchText_(item).indexOf(q) > -1;
+      });
+    }
+    updateSearchMeta_(propertyItems.length, filteredPropertyItems.length, q);
+    renderPropertyCards(filteredPropertyItems);
+  }
+
+  function setText(id, value){
+    var el = document.getElementById(id);
+    if (el) el.textContent = value || '';
+  }
+
+  function setHtml(id, value){
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = value || '';
+  }
+
+  function toggleFactoryRow(rowId, valueId, value){
+    var row = document.getElementById(rowId);
+    var valueEl = document.getElementById(valueId);
+    var hasValue = !!text(value);
+    if (valueEl) valueEl.innerHTML = hasValue ? nl2br(value) : '';
+    if (row) row.style.display = hasValue ? 'grid' : 'none';
+    return hasValue;
+  }
+
+
+  var summaryTypingTimer = null;
+  var pendingSummaryLines = [];
+  var summaryTypedOnce = false;
+  var summaryScrollHandler = null;
+
+  function clearSummaryTyping_(){
+    if (summaryTypingTimer) {
+      clearTimeout(summaryTypingTimer);
+      summaryTypingTimer = null;
+    }
+    var modalBody = document.querySelector('#propertyDetailModal .mk-modal-body');
+    if (modalBody && summaryScrollHandler) {
+      try { modalBody.removeEventListener('scroll', summaryScrollHandler); } catch(e) {}
+    }
+    summaryScrollHandler = null;
+  }
+
+  function startSummaryTyping_(lines){
+    var summaryEl = document.getElementById('detailSummary');
+    if(!summaryEl) return;
+    if (summaryScrollHandler) {
+      var modalBody = document.querySelector('#propertyDetailModal .mk-modal-body');
+      if (modalBody) {
+        try { modalBody.removeEventListener('scroll', summaryScrollHandler); } catch(e) {}
+      }
+      summaryScrollHandler = null;
+    }
+    if (summaryTypingTimer) {
+      clearTimeout(summaryTypingTimer);
+      summaryTypingTimer = null;
+    }
+    summaryEl.innerHTML = '';
+    var items = (Array.isArray(lines) && lines.length)
+      ? lines.slice()
+      : ['상담을 통해 더 정확한 조건으로 안내드립니다.'];
+    var lineIndex = 0;
+    summaryTypedOnce = true;
+
+    function typeLine(){
+      if(lineIndex >= items.length){
+        return;
+      }
+      var full = '✔ ' + items[lineIndex];
+      var li = document.createElement('li');
+      li.style.opacity = '1';
+      summaryEl.appendChild(li);
+      var charIndex = 0;
+
+      function typeChar(){
+        li.textContent = full.slice(0, charIndex);
+        charIndex += 1;
+        if(charIndex <= full.length){
+          summaryTypingTimer = setTimeout(typeChar, 52);
+        } else {
+          lineIndex += 1;
+          summaryTypingTimer = setTimeout(typeLine, 260);
+        }
+      }
+      typeChar();
+    }
+
+    typeLine();
+  }
+
+  function bindSummaryTypingOnView_(lines){
+    var summaryBox = document.getElementById('detailSummaryBox');
+    var modalBody = document.querySelector('#propertyDetailModal .mk-modal-body');
+    var summaryEl = document.getElementById('detailSummary');
+    if(!summaryBox || !modalBody || !summaryEl) return;
+
+    clearSummaryTyping_();
+    pendingSummaryLines = Array.isArray(lines) ? lines.slice() : [];
+    summaryTypedOnce = false;
+    summaryEl.innerHTML = '';
+
+    function checkSummaryInView_(){
+      if (summaryTypedOnce) return;
+      var boxRect = summaryBox.getBoundingClientRect();
+      var bodyRect = modalBody.getBoundingClientRect();
+      var visibleTop = Math.max(boxRect.top, bodyRect.top);
+      var visibleBottom = Math.min(boxRect.bottom, bodyRect.bottom);
+      var visibleHeight = Math.max(0, visibleBottom - visibleTop);
+      if (visibleHeight >= Math.min(80, boxRect.height * 0.22)) {
+        startSummaryTyping_(pendingSummaryLines);
+      }
+    }
+
+    summaryScrollHandler = function(){
+      checkSummaryInView_();
+    };
+
+    modalBody.addEventListener('scroll', summaryScrollHandler, { passive:true });
+    setTimeout(checkSummaryInView_, 60);
+    setTimeout(checkSummaryInView_, 180);
+    setTimeout(checkSummaryInView_, 320);
+  }
+
+  function openProperty(idx){
+    clearSummaryTyping_();
+    var item = filteredPropertyItems[idx] || propertyItems[idx];
+    if(!item) return;
+    currentDetailPhotos = Array.isArray(item.photos) && item.photos.length ? item.photos.slice() : [item.image || 'https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png'];
+    currentDetailPhotoIndex = 0;
+    renderDetailPhotoCarousel();
+    setText('detailChip', item.chip);
+    setText('detailTitle', item.title);
+    setText('detailAddress', item.address);
+    setHtml('detailPrice', item.priceHtml || '');
+    var lines = Array.isArray(item.summary) ? item.summary : [];
+    summaryTypedOnce = false;
+    pendingSummaryLines = lines.slice ? lines.slice() : [];
+    var detailSummaryEl = document.getElementById('detailSummary');
+    if (detailSummaryEl) detailSummaryEl.innerHTML = '';
+    setText('detailSpecAddress', item.address);
+    setText('detailSpecDeal', item.chip);
+    setHtml('detailSpecPrice', buildSpecPriceHtml_(item, item.basic || {}));
+    setText('detailSpecApproval', item.approval);
+    setText('detailSpecLand', item.land);
+    setText('detailSpecTotalFloor', item.totalFloor);
+    setText('detailSpecExclusive', item.exclusive);
+    setText('detailSpecZoning', item.zoning);
+    setText('detailSpecListingNo', item.listingNo);
+    setText('detailSpecPropertyType', item.propertyType);
+    setText('detailSpecBuildingComposition', item.buildingComposition);
+    setText('detailSpecParking', item.parking);
+    setText('detailSpecDirection', item.direction);
+    setText('detailSpecMoveIn', item.moveIn);
+    setText('detailSpecFloorInfo', item.floorInfo);
+    setText('detailSpecRestroom', item.restroom);
+    setText('detailSpecMaintenanceFee', item.maintenanceFee);
+    var specialVisible = false;
+    specialVisible = toggleFactoryRow('factoryRowCeiling', 'detailFactoryCeiling', item.ceilingHeight) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowCrane', 'detailFactoryCrane', item.crane) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowHoist', 'detailFactoryHoist', item.hoist) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowPower', 'detailFactoryPower', item.powerCapacity) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowMainEquipment', 'detailFactoryMainEquipment', item.mainEquipment) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowRecommendedIndustry', 'detailFactoryRecommendedIndustry', item.recommendedIndustry) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowIndustryRestriction', 'detailFactoryIndustryRestriction', item.industryRestriction) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowRoadWidth', 'detailFactoryRoadWidth', item.roadWidth) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowDoorWidth', 'detailFactoryDoorWidth', item.doorWidth) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowLargeTruckAccess', 'detailFactoryLargeTruckAccess', item.largeTruckAccess) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowLoadingAvailable', 'detailFactoryLoadingAvailable', item.loadingAvailable) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowOfficeIncluded', 'detailFactoryOfficeIncluded', item.officeIncluded) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowYardSize', 'detailFactoryYardSize', item.yardSize) || specialVisible;
+    specialVisible = toggleFactoryRow('factoryRowReadyToOperate', 'detailFactoryReadyToOperate', item.readyToOperate) || specialVisible;
+    var specialTitle = document.getElementById('factorySpecialSectionTitle');
+    if(specialTitle) specialTitle.style.display = specialVisible ? 'block' : 'none';
+    openModal('propertyDetailModal');
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        bindSummaryTypingOnView_(lines);
+      });
+    });
+  }
+
+  function loadPublicProperties(){
+    startLoadingOverlay();
+    fetch(GAS_PUBLIC_URL, { method: 'GET', cache: 'no-store' })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var items = Array.isArray(data && data.items) ? data.items : [];
+        propertyItems = items.map(normalizeItem_);
+        filteredPropertyItems = propertyItems.slice();
+        applyPropertySearch();
+      })
+      .catch(function(err){
+        console.error(err);
+        var grid = document.getElementById('propertyGrid');
+        if(grid){
+          grid.innerHTML = '<div style="grid-column:1/-1;padding:40px 20px;text-align:center;color:#67707b;">매물 정보를 불러오지 못했습니다.</div>';
+        }
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    loadPublicProperties();
+    var searchInput = document.getElementById('propertySearchInput');
+    searchInput?.addEventListener('input', applyPropertySearch);
+    searchInput?.addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        applyPropertySearch();
+        searchInput.blur();
+      }
+    });
+    var track = document.getElementById('detailPhotoTrack');
+    var dots = document.getElementById('detailPhotoDots');
+    track?.addEventListener('scroll', function(){
+      window.clearTimeout(window.__detailPhotoScrollTimer);
+      window.__detailPhotoScrollTimer = window.setTimeout(syncDetailPhotoIndexFromScroll, 60);
+    }, { passive: true });
+    dots?.addEventListener('click', function(e){
+      var dot = e.target.closest('[data-photo-dot]');
+      if (!dot) return;
+      var idx = Number(dot.getAttribute('data-photo-dot') || 0);
+      currentDetailPhotoIndex = idx;
+      renderDetailPhotoCarousel();
+    });
+  });
+
+  function getValue(id){
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  }
+
+  function formatPhoneNumber(value){
+    const only = String(value || '').replace(/\D/g, '').slice(0, 11);
+    if(only.length < 4) return only;
+    if(only.length < 8) return only.slice(0, 3) + '-' + only.slice(3);
+    return only.slice(0, 3) + '-' + only.slice(3, 7) + '-' + only.slice(7);
+  }
+
+  function showToast(message){
+    const toast = document.getElementById('mkToast');
+    if(!toast) return;
+    toast.innerHTML = String(message || '').replace(/\n/g, '<br>');
+    toast.classList.add('show');
+    clearTimeout(window.__mkToastTimer);
+    window.__mkToastTimer = setTimeout(() => { toast.classList.remove('show'); }, 2200);
+  }
+
+  function submitContactForm(){
+    const name = getValue("contactName");
+    const phone = getValue("contactPhone");
+    const note = getValue("contactNote");
+    const agree = document.getElementById("contactAgree")?.checked;
+    const btn = document.getElementById("contactSubmitBtn");
+
+    if(!name){ showToast("이름을 입력해 주세요."); return; }
+    if(!phone){ showToast("연락처를 입력해 주세요."); return; }
+    if(!agree){ showToast("개인정보 수집 및 이용에 동의해 주세요."); return; }
+
+    if(btn){ btn.disabled = true; btn.textContent = "접수 중..."; }
+
+    fetch(GAS_CONTACT_URL, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ type: "maslow_contact", name, phone, note, page: location.href })
+    })
+    .then(r => r.text())
+    .then(() => {
+      showToast("문의가 접수되었습니다.\n조속히 안내드리겠습니다.");
+      const form = document.getElementById("contactModal");
+      if(form){
+        form.querySelectorAll("input, textarea").forEach(el => { if(el.type !== "checkbox") el.value = ""; });
+        const agreeEl = document.getElementById("contactAgree"); if(agreeEl) agreeEl.checked = false;
+      }
+      setTimeout(() => closeModal(), 700);
+    })
+    .catch(() => {
+      showToast("접수 중 문제가 발생했습니다.");
+    })
+    .finally(() => {
+      if(btn){ btn.disabled = false; btn.textContent = "상담문의 남기기"; }
+    });
+  }
+
+  document.getElementById("contactSubmitBtn")?.addEventListener("click", submitContactForm);
+  document.getElementById("contactPhone")?.addEventListener("input", function(e){ e.target.value = formatPhoneNumber(e.target.value); });
+  document.getElementById("contactPhone")?.addEventListener("paste", function(e){
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    e.target.value = formatPhoneNumber(text);
+  });
+
+  async function copyText(text){
+    if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
+    else {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+  }
+
+  window.handleDesktopFloatPhone = async function(el){
+    try{
+      await copyText(PHONE_NUMBER);
+      showToast("전화번호가 복사되었습니다.");
+    }catch(e){
+      showToast("전화번호를 복사해 사용해 주세요.");
+    }
+  };
+
+  window.handlePropertyPhone = async function(btn){
+    const isDesktop = window.matchMedia('(min-width: 861px)').matches;
+    const phone = btn.getAttribute('data-phone') || PHONE_NUMBER;
+    const defaultLabel = btn.getAttribute('data-default-label') || '전화문의';
+
+    if(!isDesktop){
+      window.location.href = 'tel:' + phone.replace(/[^0-9]/g, '');
+      return;
+    }
+    try{
+      await copyText(phone);
+      showToast("전화번호가 복사되었습니다.");
+    }catch(e){
+      showToast("전화번호를 복사해 사용해 주세요.");
+    }
+    if(propertyPhoneTimer) clearTimeout(propertyPhoneTimer);
+    btn.textContent = phone;
+    propertyPhoneTimer = setTimeout(() => { btn.textContent = defaultLabel; }, 4000);
+  };
+
+  window.handleModalInquiryDesktopMobile = function(event, el){
+    const isDesktop = window.matchMedia('(min-width: 861px)').matches;
+    if (!isDesktop) return true;
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    const propertyModal = document.getElementById('propertyDetailModal');
+    if (propertyModal && propertyModal.classList.contains('active')) window.__returnModalId = 'propertyDetailModal';
+    else window.__returnModalId = '';
+    openModal('contactModal');
+    return false;
+  };
+</script>
+</body>
+</html>

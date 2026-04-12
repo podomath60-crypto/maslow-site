@@ -1389,7 +1389,7 @@
     let calendarCurrentNotice = null;
     let calendarCurrentDetail = null;
     let calendarThreadMap = {};
-    let calendarEditingThreadId = '';
+    let calendarEditingThreadIndex = -1;
     let calendarHistoryArmed = false;
 
     const calendarModal = document.getElementById('calendarModal');
@@ -1500,43 +1500,19 @@
     }
 
     function resetCalendarThreadEditor(){
-      calendarEditingThreadId = '';
+      calendarEditingThreadIndex = -1;
       if(calendarThreadInput) calendarThreadInput.value = '';
       if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '등록';
       if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.add('is-hidden');
     }
 
-    function getCalendarThreadIdentity(item){
-      if(!item || typeof item !== 'object') return '';
-      return text(item.rowId || item.threadId || item.id || item.threadRowId || item.thread_id || item.row_id);
-    }
-
-    function normalizeCalendarThreadItem(item, fallbackDateKey, index){
-      const normalized = Object.assign({}, item || {});
-      const identity = getCalendarThreadIdentity(normalized) || ('LOCAL_' + text(fallbackDateKey) + '_' + index + '_' + Date.now());
-      normalized.rowId = identity;
-      normalized.threadId = text(normalized.threadId || identity);
-      normalized.id = text(normalized.id || identity);
-      normalized.writerCode = text(normalized.writerCode || normalized.authorCode || normalized.writer_id || normalized.userCode);
-      normalized.writerName = text(normalized.writerName || normalized.authorName || normalized.userName || normalized.name || '작성자');
-      normalized.writerEmoji = text(normalized.writerEmoji || normalized.emoji || '📝');
-      normalized.content = text(normalized.content || normalized.text || normalized.body || normalized.message);
-      normalized.createdAt = text(normalized.createdAt || normalized.created_at || normalized.updatedAt || '');
-      normalized.updatedAt = text(normalized.updatedAt || normalized.updated_at || normalized.createdAt || '');
-      return normalized;
-    }
-
-    function getCalendarThreadById(dateKey, rowId){
-      const items = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
-      return items.find(function(item){ return getCalendarThreadIdentity(item) === text(rowId); }) || null;
-    }
-
-    function openCalendarThreadEditor(rowId){
-      const writerCode = getUnlockedWriterCode();
-      const item = getCalendarThreadById(calendarSelectedDateKey, rowId);
+    function openCalendarThreadEditor(threadIndex){
+      const items = Array.isArray(calendarThreadMap[calendarSelectedDateKey]) ? calendarThreadMap[calendarSelectedDateKey] : [];
+      const indexNum = Number(threadIndex);
+      if(!Number.isInteger(indexNum) || indexNum < 0 || indexNum >= items.length) return;
+      const item = items[indexNum];
       if(!item) return;
-      if(text(item.writerCode) !== text(writerCode)) return;
-      calendarEditingThreadId = getCalendarThreadIdentity(item);
+      calendarEditingThreadIndex = indexNum;
       if(calendarThreadInput) calendarThreadInput.value = text(item.content);
       if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '수정등록';
       if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.remove('is-hidden');
@@ -1546,25 +1522,15 @@
       }, 60);
     }
 
-    function deleteCalendarThread(rowId){
-      const writerCode = getUnlockedWriterCode();
+    function deleteCurrentCalendarThread(){
       const items = Array.isArray(calendarThreadMap[calendarSelectedDateKey]) ? calendarThreadMap[calendarSelectedDateKey] : [];
-      const target = items.find(function(item){ return getCalendarThreadIdentity(item) === text(rowId); });
-      if(!target) return;
-      if(text(target.writerCode) !== text(writerCode)) return;
-      calendarThreadMap[calendarSelectedDateKey] = items.filter(function(item){
-        return getCalendarThreadIdentity(item) !== text(rowId);
-      });
+      if(!Number.isInteger(calendarEditingThreadIndex) || calendarEditingThreadIndex < 0 || calendarEditingThreadIndex >= items.length) return;
+      items.splice(calendarEditingThreadIndex, 1);
+      calendarThreadMap[calendarSelectedDateKey] = items;
       calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
-      if(text(calendarEditingThreadId) === text(rowId)) resetCalendarThreadEditor();
+      setCalendarThreadWriteOpen(false);
       renderCalendarGrid();
       loadCalendarDateDetail(calendarSelectedDateKey);
-    }
-
-    function deleteCurrentCalendarThread(){
-      if(!calendarEditingThreadId) return;
-      deleteCalendarThread(calendarEditingThreadId);
-      setCalendarThreadWriteOpen(false);
     }
 
     function setCalendarThreadWriteOpen(isOpen){
@@ -1701,10 +1667,8 @@
 
         Object.keys(rawThreadMap).forEach(function(dateKey){
           calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
-            ? rawThreadMap[dateKey].map(function(item, index){
-                return normalizeCalendarThreadItem(item, dateKey, index);
-              }).sort(function(a, b){
-                return (parseDateValue(b && (b.updatedAt || b.createdAt)) || 0) - (parseDateValue(a && (a.updatedAt || a.createdAt)) || 0);
+            ? rawThreadMap[dateKey].slice().sort(function(a, b){
+                return (parseDateValue(b && b.createdAt) || 0) - (parseDateValue(a && a.createdAt) || 0);
               })
             : [];
         });
@@ -1736,10 +1700,8 @@
 
     function getLocalThreadItemsByDate(dateKey){
       const items = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey].slice() : [];
-      return items.map(function(item, index){
-        return normalizeCalendarThreadItem(item, dateKey, index);
-      }).sort(function(a,b){
-        return (parseDateValue(b.updatedAt || b.createdAt) || 0) - (parseDateValue(a.updatedAt || a.createdAt) || 0);
+      return items.sort(function(a,b){
+        return (parseDateValue(b.createdAt) || 0) - (parseDateValue(a.createdAt) || 0);
       });
     }
 
@@ -1927,18 +1889,16 @@
       }else{
         const myWriterCode = getUnlockedWriterCode();
         calendarThreadList.innerHTML = threads.map(function(item, index){
-          const normalized = normalizeCalendarThreadItem(item, calendarSelectedDateKey, index);
-          const isOwn = text(normalized.writerCode) === text(myWriterCode);
+          const isOwn = text(item.writerCode) === text(myWriterCode);
           const itemClass = 'calendar-thread-item' + (isOwn ? ' is-own' : '');
-          const rowIdAttr = isOwn ? ' data-row-id="' + escapeAttr(getCalendarThreadIdentity(normalized)) + '"' : '';
-          const openAttr = isOwn ? ' onclick="openCalendarThreadEditor(\'' + encodeURIComponent(getCalendarThreadIdentity(normalized)) + '\')"' : '';
+          const threadIndexAttr = isOwn ? ' data-thread-index="' + escapeAttr(index) + '"' : '';
           return ''
-            + '<div class="' + itemClass + '"' + rowIdAttr + openAttr + '>'
+            + '<div class="' + itemClass + '"' + threadIndexAttr + '>'
             +   '<div class="calendar-thread-head">'
-            +     '<div class="calendar-thread-writer">' + escapeHtml((normalized.writerEmoji || '📝') + ' ' + (normalized.writerName || '작성자')) + '</div>'
-            +     '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(normalized.updatedAt || normalized.createdAt)) + '</div>'
+            +     '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
+            +     '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
             +   '</div>'
-            +   '<div class="calendar-thread-content">' + escapeHtml(normalized.content || '') + '</div>'
+            +   '<div class="calendar-thread-content">' + escapeHtml(item.content || '') + '</div>'
             + '</div>';
         }).join('');
       }
@@ -2008,10 +1968,10 @@
         return;
       }
 
-      if(calendarEditingThreadId){
-        const item = getCalendarThreadById(calendarSelectedDateKey, calendarEditingThreadId);
+      if(Number.isInteger(calendarEditingThreadIndex) && calendarEditingThreadIndex >= 0){
+        const items = Array.isArray(calendarThreadMap[calendarSelectedDateKey]) ? calendarThreadMap[calendarSelectedDateKey] : [];
+        const item = items[calendarEditingThreadIndex];
         if(!item) return;
-        if(text(item.writerCode) !== text(writerCode)) return;
         item.content = content;
         item.updatedAt = new Date().toISOString();
         calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
@@ -2043,16 +2003,14 @@
           throw new Error((data && data.message) || '기록 저장 실패');
         }
         const meta = getWriterMetaByCode(writerCode);
-        const newThread = normalizeCalendarThreadItem({
-          rowId: text(data && (data.rowId || data.threadId || data.id)) || ('LOCAL_' + Date.now()),
-          threadId: text(data && (data.threadId || data.rowId || data.id)) || '',
+        const newThread = {
           writerCode: writerCode,
           writerName: meta.name,
           writerEmoji: meta.emoji,
           content: content,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
-        }, calendarSelectedDateKey, 0);
+        };
         if(!Array.isArray(calendarThreadMap[calendarSelectedDateKey])){
           calendarThreadMap[calendarSelectedDateKey] = [];
         }
@@ -2077,9 +2035,9 @@
       calendarThreadList.addEventListener('click', function(e){
         const card = e.target.closest('.calendar-thread-item.is-own');
         if(!card || !calendarThreadList.contains(card)) return;
-        const rowId = text(card.getAttribute('data-row-id'));
-        if(!rowId) return;
-        openCalendarThreadEditor(rowId);
+        const threadIndex = Number(card.getAttribute('data-thread-index'));
+        if(!Number.isInteger(threadIndex)) return;
+        openCalendarThreadEditor(threadIndex);
       });
     }
     calendarNoticeCancelBtn.addEventListener('click', closeCalendarNoticeEdit);
@@ -2094,8 +2052,7 @@
     window.moveCalendarMonth = moveCalendarMonth;
     window.selectCalendarDate = selectCalendarDate;
     window.submitCalendarThread = submitCalendarThread;
-    window.openCalendarThreadEditor = function(rowId){ openCalendarThreadEditor(decodeURIComponent(rowId)); };
-    window.deleteCalendarThread = function(rowId){ deleteCalendarThread(decodeURIComponent(rowId)); };
+    window.openCalendarThreadEditor = function(threadIndex){ openCalendarThreadEditor(Number(threadIndex)); };
     window.deleteCurrentCalendarThread = deleteCurrentCalendarThread;
 
 

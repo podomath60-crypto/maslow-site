@@ -1507,15 +1507,22 @@
     }
 
     function getCalendarThreadIdentity(item){
-      return text(item && (item.rowId || item.threadId || item.id));
+      if(!item || typeof item !== 'object') return '';
+      return text(item.rowId || item.threadId || item.id || item.threadRowId || item.thread_id || item.row_id);
     }
 
-    function normalizeCalendarThreadItem(item){
-      const normalized = item && typeof item === 'object' ? Object.assign({}, item) : {};
-      const identity = getCalendarThreadIdentity(normalized);
-      if(identity){
-        normalized.rowId = identity;
-      }
+    function normalizeCalendarThreadItem(item, fallbackDateKey, index){
+      const normalized = Object.assign({}, item || {});
+      const identity = getCalendarThreadIdentity(normalized) || ('LOCAL_' + text(fallbackDateKey) + '_' + index + '_' + Date.now());
+      normalized.rowId = identity;
+      normalized.threadId = text(normalized.threadId || identity);
+      normalized.id = text(normalized.id || identity);
+      normalized.writerCode = text(normalized.writerCode || normalized.authorCode || normalized.writer_id || normalized.userCode);
+      normalized.writerName = text(normalized.writerName || normalized.authorName || normalized.userName || normalized.name || '작성자');
+      normalized.writerEmoji = text(normalized.writerEmoji || normalized.emoji || '📝');
+      normalized.content = text(normalized.content || normalized.text || normalized.body || normalized.message);
+      normalized.createdAt = text(normalized.createdAt || normalized.created_at || normalized.updatedAt || '');
+      normalized.updatedAt = text(normalized.updatedAt || normalized.updated_at || normalized.createdAt || '');
       return normalized;
     }
 
@@ -1529,7 +1536,7 @@
       const item = getCalendarThreadById(calendarSelectedDateKey, rowId);
       if(!item) return;
       if(text(item.writerCode) !== text(writerCode)) return;
-      calendarEditingThreadId = getCalendarThreadIdentity(item) || text(rowId);
+      calendarEditingThreadId = getCalendarThreadIdentity(item);
       if(calendarThreadInput) calendarThreadInput.value = text(item.content);
       if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '수정등록';
       if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.remove('is-hidden');
@@ -1694,8 +1701,10 @@
 
         Object.keys(rawThreadMap).forEach(function(dateKey){
           calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
-            ? rawThreadMap[dateKey].map(normalizeCalendarThreadItem).sort(function(a, b){
-                return (parseDateValue(b && b.createdAt) || 0) - (parseDateValue(a && a.createdAt) || 0);
+            ? rawThreadMap[dateKey].map(function(item, index){
+                return normalizeCalendarThreadItem(item, dateKey, index);
+              }).sort(function(a, b){
+                return (parseDateValue(b && (b.updatedAt || b.createdAt)) || 0) - (parseDateValue(a && (a.updatedAt || a.createdAt)) || 0);
               })
             : [];
         });
@@ -1727,8 +1736,10 @@
 
     function getLocalThreadItemsByDate(dateKey){
       const items = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey].slice() : [];
-      return items.sort(function(a,b){
-        return (parseDateValue(b.createdAt) || 0) - (parseDateValue(a.createdAt) || 0);
+      return items.map(function(item, index){
+        return normalizeCalendarThreadItem(item, dateKey, index);
+      }).sort(function(a,b){
+        return (parseDateValue(b.updatedAt || b.createdAt) || 0) - (parseDateValue(a.updatedAt || a.createdAt) || 0);
       });
     }
 
@@ -1915,17 +1926,19 @@
         calendarThreadList.innerHTML = '<div class="calendar-empty">기록이 없습니다.</div>';
       }else{
         const myWriterCode = getUnlockedWriterCode();
-        calendarThreadList.innerHTML = threads.map(function(item){
-          const isOwn = text(item.writerCode) === text(myWriterCode);
+        calendarThreadList.innerHTML = threads.map(function(item, index){
+          const normalized = normalizeCalendarThreadItem(item, calendarSelectedDateKey, index);
+          const isOwn = text(normalized.writerCode) === text(myWriterCode);
           const itemClass = 'calendar-thread-item' + (isOwn ? ' is-own' : '');
-          const rowIdAttr = isOwn ? ' data-row-id="' + escapeAttr(getCalendarThreadIdentity(item)) + '"' : '';
+          const rowIdAttr = isOwn ? ' data-row-id="' + escapeAttr(getCalendarThreadIdentity(normalized)) + '"' : '';
+          const openAttr = isOwn ? ' onclick="openCalendarThreadEditor(\'' + encodeURIComponent(getCalendarThreadIdentity(normalized)) + '\')"' : '';
           return ''
-            + '<div class="' + itemClass + '"' + rowIdAttr + '>'
+            + '<div class="' + itemClass + '"' + rowIdAttr + openAttr + '>'
             +   '<div class="calendar-thread-head">'
-            +     '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
-            +     '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
+            +     '<div class="calendar-thread-writer">' + escapeHtml((normalized.writerEmoji || '📝') + ' ' + (normalized.writerName || '작성자')) + '</div>'
+            +     '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(normalized.updatedAt || normalized.createdAt)) + '</div>'
             +   '</div>'
-            +   '<div class="calendar-thread-content">' + escapeHtml(item.content || '') + '</div>'
+            +   '<div class="calendar-thread-content">' + escapeHtml(normalized.content || '') + '</div>'
             + '</div>';
         }).join('');
       }
@@ -2030,15 +2043,16 @@
           throw new Error((data && data.message) || '기록 저장 실패');
         }
         const meta = getWriterMetaByCode(writerCode);
-        const newThread = {
-          rowId: text(data && (data.rowId || data.threadId)) || ('LOCAL_' + Date.now()),
+        const newThread = normalizeCalendarThreadItem({
+          rowId: text(data && (data.rowId || data.threadId || data.id)) || ('LOCAL_' + Date.now()),
+          threadId: text(data && (data.threadId || data.rowId || data.id)) || '',
           writerCode: writerCode,
           writerName: meta.name,
           writerEmoji: meta.emoji,
           content: content,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
-        };
+        }, calendarSelectedDateKey, 0);
         if(!Array.isArray(calendarThreadMap[calendarSelectedDateKey])){
           calendarThreadMap[calendarSelectedDateKey] = [];
         }
@@ -2516,7 +2530,7 @@
 
         Object.keys(rawThreadMap).forEach(function(dateKey){
           calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
-            ? rawThreadMap[dateKey].map(normalizeCalendarThreadItem).sort(function(a, b){
+            ? rawThreadMap[dateKey].slice().sort(function(a, b){
                 return (parseDateValue((b && (b.updatedAt || b.createdAt)) || '') || 0) - (parseDateValue((a && (a.updatedAt || a.createdAt)) || '') || 0);
               })
             : [];

@@ -265,20 +265,52 @@
       flex-direction:column;
       align-items:center;
       justify-content:center;
-      gap:0;
+      gap:12px;
       text-align:center;
     }
-    .loading-buddy,
-    .loading-text{display:none !important;}
-    .loading-spinner{
-      width:28px;
-      height:28px;
+    .loading-buddy{
+      width:74px;
+      height:74px;
+      object-fit:cover;
+      border-radius:18px;
+      animation:buddyBounce 1.15s ease-in-out infinite;
+      box-shadow:0 10px 22px rgba(15,124,255,.16);
+    }
+    .loading-text{
+      min-height:24px;
+      font-size:18px;
+      font-weight:800;
+      line-height:1.4;
+      color:#2b8fe8;
+      letter-spacing:-0.03em;
+    }
+    @keyframes buddyBounce{
+      0%,100%{transform:translateY(0) scale(1)}
+      20%{transform:translateY(-3px) scale(1.01)}
+      50%{transform:translateY(-10px) scale(1.04)}
+      75%{transform:translateY(-4px) scale(1.01)}
+    }
+
+    .calendar-inline-loading{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(255,255,255,.42);
+      pointer-events:none;
+      z-index:4;
+    }
+    .calendar-inline-loading.show{display:flex}
+    .calendar-inline-spinner{
+      width:24px;
+      height:24px;
       border-radius:999px;
       border:2.5px solid rgba(15,124,255,.18);
       border-top-color:#0f7cff;
-      animation:loadingSpin .7s linear infinite;
+      animation:calendarSpin .7s linear infinite;
     }
-    @keyframes loadingSpin{
+    @keyframes calendarSpin{
       from{transform:rotate(0deg)}
       to{transform:rotate(360deg)}
     }
@@ -1091,6 +1123,9 @@
       </div>
 
       <div class="calendar-modal-inner">
+        <div id="calendarInlineLoading" class="calendar-inline-loading" aria-hidden="true">
+          <div class="calendar-inline-spinner" aria-hidden="true"></div>
+        </div>
         <section class="calendar-notice-wrap">
           <div class="calendar-notice-main">
             <div class="calendar-notice-label">Notice</div>
@@ -1155,7 +1190,6 @@
 
   <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-panel">
-      <div class="loading-spinner" aria-hidden="true"></div>
       <img class="loading-buddy" src="https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg" alt="로딩">
       <div id="loadingTypingText" class="loading-text"></div>
     </div>
@@ -1296,9 +1330,22 @@
     const calendarThreadList = document.getElementById('calendarThreadList');
     const calendarThreadInput = document.getElementById('calendarThreadInput');
     const calendarWriterChip = document.getElementById('calendarWriterChip');
+    const calendarInlineLoading = document.getElementById('calendarInlineLoading');
 
     function isCalendarModalOpen(){
       return !!(calendarModal && calendarModal.classList.contains('show'));
+    }
+
+    function startCalendarInlineLoading(){
+      if(!calendarInlineLoading) return;
+      calendarInlineLoading.classList.add('show');
+      calendarInlineLoading.setAttribute('aria-hidden', 'false');
+    }
+
+    function stopCalendarInlineLoading(){
+      if(!calendarInlineLoading) return;
+      calendarInlineLoading.classList.remove('show');
+      calendarInlineLoading.setAttribute('aria-hidden', 'true');
     }
 
     function getUnlockedWriterCode(){
@@ -1431,8 +1478,7 @@
     }
 
     function loadCalendarOverview(monthKey){
-      currentLoadingText = '캘린더를 불러오고 있어요.';
-      startLoadingOverlay();
+      startCalendarInlineLoading();
 
       return fetch(CONFIG.adminListUrl, {
         method: 'POST',
@@ -1472,7 +1518,7 @@
         alert((err && err.message) ? err.message : '캘린더 데이터를 불러오지 못했습니다.');
       })
       .finally(function(){
-        stopLoadingOverlay();
+        stopCalendarInlineLoading();
       });
     }
 
@@ -1554,8 +1600,7 @@
     }
 
     function loadCalendarDateDetail(dateKey){
-      currentLoadingText = '날짜 내용을 불러오고 있어요.';
-      startLoadingOverlay();
+      startCalendarInlineLoading();
 
       return fetch(CONFIG.adminListUrl, {
         method: 'POST',
@@ -1582,7 +1627,7 @@
         alert((err && err.message) ? err.message : '날짜 상세를 불러오지 못했습니다.');
       })
       .finally(function(){
-        stopLoadingOverlay();
+        stopCalendarInlineLoading();
       });
     }
 
@@ -1639,8 +1684,7 @@
         return;
       }
 
-      currentLoadingText = '공지 저장중이에요.';
-      startLoadingOverlay();
+      startCalendarInlineLoading();
 
       fetch(CONFIG.adminListUrl, {
         method: 'POST',
@@ -1672,7 +1716,7 @@
         alert((err && err.message) ? err.message : '공지 저장 중 문제가 발생했습니다.');
       })
       .finally(function(){
-        stopLoadingOverlay();
+        stopCalendarInlineLoading();
       });
     }
 
@@ -1693,8 +1737,7 @@
         return;
       }
 
-      currentLoadingText = '기록을 저장하고 있어요.';
-      startLoadingOverlay();
+      startCalendarInlineLoading();
 
       fetch(CONFIG.adminListUrl, {
         method: 'POST',
@@ -1727,7 +1770,7 @@
         alert((err && err.message) ? err.message : '기록 저장 중 문제가 발생했습니다.');
       })
       .finally(function(){
-        stopLoadingOverlay();
+        stopCalendarInlineLoading();
       });
     }
 

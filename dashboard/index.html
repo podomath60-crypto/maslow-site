@@ -801,8 +801,8 @@
     gap:0;
   }
   .calendar-cell{
-    min-height:104px;
-    padding:8px 7px 8px;
+    min-height:88px;
+    padding:6px 6px 6px;
     border-right:1px solid #eef2f6;
     border-bottom:1px solid #eef2f6;
     background:transparent;
@@ -830,10 +830,10 @@
     color:#0f7cff;
   }
   .calendar-lines{
-    margin-top:3px;
+    margin-top:2px;
     display:grid;
     gap:0;
-    line-height:1.1;
+    line-height:1.02;
   }
   .calendar-line{
     font-size:11px;
@@ -953,6 +953,39 @@
     font-size:13px;
     font-weight:800;
   }
+  .calendar-thread-write{
+    display:none;
+  }
+  .calendar-thread-write.show{
+    display:grid;
+  }
+  .calendar-thread-fab{
+    position:fixed;
+    right:18px;
+    bottom:20dvh;
+    z-index:8;
+    width:54px;
+    height:54px;
+    border-radius:999px;
+    border:1px solid #d8e2ec;
+    background:#0f7cff;
+    color:#fff;
+    box-shadow:0 14px 30px rgba(15,124,255,.22);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    font-size:30px;
+    font-weight:500;
+    line-height:1;
+  }
+  .calendar-modal.show .calendar-thread-fab{
+    display:flex;
+  }
+  .calendar-thread-fab.is-open{
+    background:#fff;
+    color:#0f7cff;
+  }
+
   .calendar-thread-item{
     padding:12px 14px;
     border:1px solid #e9edf2;
@@ -1173,8 +1206,7 @@
           <div class="calendar-subtitle">업로드 매물</div>
           <div id="calendarPropertyList" class="calendar-property-list"></div>
 
-          <div class="calendar-subtitle">기록 작성</div>
-          <div class="calendar-thread-write">
+          <div id="calendarThreadWrite" class="calendar-thread-write">
             <div id="calendarWriterChip" class="calendar-writer-chip">📝 작성자</div>
             <textarea id="calendarThreadInput" class="calendar-thread-textarea" placeholder="업무 기록을 남겨주세요"></textarea>
             <button type="button" class="calendar-thread-submit" onclick="submitCalendarThread()">등록</button>
@@ -1183,6 +1215,8 @@
           <div class="calendar-subtitle">기록</div>
           <div id="calendarThreadList" class="calendar-thread-list"></div>
         </section>
+
+        <button type="button" id="calendarThreadFab" class="calendar-thread-fab" aria-label="기록 추가">+</button>
       </div>
     </div>
   </div>
@@ -1330,6 +1364,8 @@
     const calendarThreadList = document.getElementById('calendarThreadList');
     const calendarThreadInput = document.getElementById('calendarThreadInput');
     const calendarWriterChip = document.getElementById('calendarWriterChip');
+    const calendarThreadWrite = document.getElementById('calendarThreadWrite');
+    const calendarThreadFab = document.getElementById('calendarThreadFab');
     const calendarInlineLoading = document.getElementById('calendarInlineLoading');
 
     function isCalendarModalOpen(){
@@ -1407,6 +1443,25 @@
       calendarWriterChip.textContent = meta.emoji + ' ' + meta.name;
     }
 
+    function setCalendarThreadWriteOpen(isOpen){
+      if(!calendarThreadWrite || !calendarThreadFab) return;
+      if(isOpen){
+        calendarThreadWrite.classList.add('show');
+        calendarThreadFab.classList.add('is-open');
+        calendarThreadFab.textContent = '×';
+      }else{
+        calendarThreadWrite.classList.remove('show');
+        calendarThreadFab.classList.remove('is-open');
+        calendarThreadFab.textContent = '+';
+      }
+    }
+
+    function toggleCalendarThreadWrite(){
+      if(!calendarThreadWrite) return;
+      const nextOpen = !calendarThreadWrite.classList.contains('show');
+      setCalendarThreadWriteOpen(nextOpen);
+    }
+
     function openCalendarNoticeEdit(){
       const notice = calendarCurrentNotice || {};
       calendarNoticeInput.value = text(notice.noticeText || '매슬로우 화이팅');
@@ -1425,6 +1480,7 @@
       }
 
       renderCalendarWriterChip();
+      setCalendarThreadWriteOpen(false);
       calendarModal.classList.add('show');
       calendarModal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -1451,6 +1507,7 @@
       calendarModal.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
       closeCalendarNoticeEdit();
+      setCalendarThreadWriteOpen(false);
 
       if(calendarHistoryArmed){
         calendarHistoryArmed = false;
@@ -1759,6 +1816,7 @@
           throw new Error((data && data.message) || '기록 저장 실패');
         }
         calendarThreadInput.value = '';
+        setCalendarThreadWriteOpen(false);
         return loadCalendarOverview(calendarCurrentMonth);
       })
       .then(function(){
@@ -1776,6 +1834,7 @@
 
     calendarNoticeEditBtn.addEventListener('click', openCalendarNoticeEdit);
     calendarNoticeCancelBtn.addEventListener('click', closeCalendarNoticeEdit);
+    if(calendarThreadFab){ calendarThreadFab.addEventListener('click', toggleCalendarThreadWrite); }
     calendarNoticeSaveBtn.addEventListener('click', saveCalendarNotice);
 
     document.getElementById('calendarBtn').addEventListener('click', function(){

@@ -1512,8 +1512,10 @@
     }
 
     function openCalendarThreadEditor(rowId){
+      const writerCode = getUnlockedWriterCode();
       const item = getCalendarThreadById(calendarSelectedDateKey, rowId);
       if(!item) return;
+      if(text(item.writerCode) !== text(writerCode)) return;
       calendarEditingThreadId = text(rowId);
       if(calendarThreadInput) calendarThreadInput.value = text(item.content);
       if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '수정등록';
@@ -1903,15 +1905,9 @@
         calendarThreadList.innerHTML = threads.map(function(item){
           const isOwn = text(item.writerCode) === text(myWriterCode);
           const itemClass = 'calendar-thread-item' + (isOwn ? ' is-own' : '');
-          const openAttr = isOwn ? ' onclick="openCalendarThreadEditor(\'' + encodeURIComponent(item.rowId || '') + '\')"' : '';
-          const actionsHtml = isOwn
-            ? '<div class="calendar-thread-actions">'
-              + '<button type="button" class="calendar-thread-action" onclick="event.stopPropagation(); openCalendarThreadEditor(\'' + encodeURIComponent(item.rowId || '') + '\')">수정</button>'
-              + '<button type="button" class="calendar-thread-action delete" onclick="event.stopPropagation(); deleteCalendarThread(\'' + encodeURIComponent(item.rowId || '') + '\')">삭제</button>'
-              + '</div>'
-            : '';
+          const rowIdAttr = isOwn ? ' data-row-id="' + escapeAttr(item.rowId || '') + '"' : '';
           return ''
-            + '<div class="' + itemClass + '"' + openAttr + '>'
+            + '<div class="' + itemClass + '"' + rowIdAttr + '>'
             +   '<div class="calendar-thread-head">'
             +     '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
             +     '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
@@ -2050,6 +2046,15 @@
     }
 
     calendarNoticeEditBtn.addEventListener('click', openCalendarNoticeEdit);
+    if(calendarThreadList){
+      calendarThreadList.addEventListener('click', function(e){
+        const card = e.target.closest('.calendar-thread-item.is-own');
+        if(!card || !calendarThreadList.contains(card)) return;
+        const rowId = text(card.getAttribute('data-row-id'));
+        if(!rowId) return;
+        openCalendarThreadEditor(rowId);
+      });
+    }
     calendarNoticeCancelBtn.addEventListener('click', closeCalendarNoticeEdit);
     if(calendarThreadFab){ calendarThreadFab.addEventListener('click', toggleCalendarThreadWrite); }
     calendarNoticeSaveBtn.addEventListener('click', saveCalendarNotice);

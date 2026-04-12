@@ -4894,7 +4894,8 @@
       }
 
       if(addressField){
-        addressField.addEventListener('focus', function(){
+        addressField.addEventListener('click', function(e){
+          e.preventDefault();
           openAddressSearch_();
         });
       }

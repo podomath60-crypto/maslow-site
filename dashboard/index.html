@@ -962,7 +962,7 @@
   .calendar-thread-fab{
     position:fixed;
     right:18px;
-    bottom:148px;
+    bottom:70px;
     z-index:8;
     width:54px;
     height:54px;
@@ -1205,17 +1205,16 @@
             <div id="calendarDetailMeta" class="calendar-detail-meta"></div>
           </div>
 
-          <div class="calendar-subtitle">업로드 매물</div>
-          <div id="calendarPropertyList" class="calendar-property-list"></div>
-
+          <div class="calendar-subtitle">Thread</div>
           <div id="calendarThreadWrite" class="calendar-thread-write">
             <div id="calendarWriterChip" class="calendar-writer-chip">📝 작성자</div>
             <textarea id="calendarThreadInput" class="calendar-thread-textarea" placeholder="업무 기록을 남겨주세요"></textarea>
             <button type="button" class="calendar-thread-submit" onclick="submitCalendarThread()">등록</button>
           </div>
-
-          <div class="calendar-subtitle">기록</div>
           <div id="calendarThreadList" class="calendar-thread-list"></div>
+
+          <div class="calendar-subtitle">신규 등록 매물</div>
+          <div id="calendarPropertyList" class="calendar-property-list"></div>
         </section>
 
         <button type="button" id="calendarThreadFab" class="calendar-thread-fab" aria-label="기록 추가">+</button>

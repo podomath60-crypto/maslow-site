@@ -1389,7 +1389,7 @@
     let calendarCurrentNotice = null;
     let calendarCurrentDetail = null;
     let calendarThreadMap = {};
-    let calendarEditingThreadIndex = -1;
+    let calendarEditingThreadItem = null;
     let calendarHistoryArmed = false;
 
     const calendarModal = document.getElementById('calendarModal');
@@ -1500,20 +1500,16 @@
     }
 
     function resetCalendarThreadEditor(){
-      calendarEditingThreadIndex = -1;
+      calendarEditingThreadItem = null;
       if(calendarThreadInput) calendarThreadInput.value = '';
       if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '등록';
       if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.add('is-hidden');
     }
 
-    function openCalendarThreadEditor(threadIndex){
-      const items = Array.isArray(calendarThreadMap[calendarSelectedDateKey]) ? calendarThreadMap[calendarSelectedDateKey] : [];
-      const indexNum = Number(threadIndex);
-      if(!Number.isInteger(indexNum) || indexNum < 0 || indexNum >= items.length) return;
-      const item = items[indexNum];
-      if(!item) return;
-      calendarEditingThreadIndex = indexNum;
-      if(calendarThreadInput) calendarThreadInput.value = text(item.content);
+    function openCalendarThreadEditor(threadItem){
+      if(!threadItem) return;
+      calendarEditingThreadItem = threadItem;
+      if(calendarThreadInput) calendarThreadInput.value = text(threadItem.content);
       if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '수정등록';
       if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.remove('is-hidden');
       setCalendarThreadWriteOpen(true);
@@ -1523,10 +1519,11 @@
     }
 
     function deleteCurrentCalendarThread(){
+      if(!calendarEditingThreadItem) return;
       const items = Array.isArray(calendarThreadMap[calendarSelectedDateKey]) ? calendarThreadMap[calendarSelectedDateKey] : [];
-      if(!Number.isInteger(calendarEditingThreadIndex) || calendarEditingThreadIndex < 0 || calendarEditingThreadIndex >= items.length) return;
-      items.splice(calendarEditingThreadIndex, 1);
-      calendarThreadMap[calendarSelectedDateKey] = items;
+      calendarThreadMap[calendarSelectedDateKey] = items.filter(function(item){
+        return item !== calendarEditingThreadItem;
+      });
       calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
       setCalendarThreadWriteOpen(false);
       renderCalendarGrid();
@@ -1888,19 +1885,24 @@
         calendarThreadList.innerHTML = '<div class="calendar-empty">기록이 없습니다.</div>';
       }else{
         const myWriterCode = getUnlockedWriterCode();
-        calendarThreadList.innerHTML = threads.map(function(item, index){
+        calendarThreadList.innerHTML = '';
+        threads.forEach(function(item){
           const isOwn = text(item.writerCode) === text(myWriterCode);
-          const itemClass = 'calendar-thread-item' + (isOwn ? ' is-own' : '');
-          const threadIndexAttr = isOwn ? ' data-thread-index="' + escapeAttr(index) + '"' : '';
-          return ''
-            + '<div class="' + itemClass + '"' + threadIndexAttr + '>'
-            +   '<div class="calendar-thread-head">'
-            +     '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
-            +     '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
-            +   '</div>'
-            +   '<div class="calendar-thread-content">' + escapeHtml(item.content || '') + '</div>'
-            + '</div>';
-        }).join('');
+          const card = document.createElement('div');
+          card.className = 'calendar-thread-item' + (isOwn ? ' is-own' : '');
+          card.innerHTML = ''
+            + '<div class="calendar-thread-head">'
+            +   '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
+            +   '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
+            + '</div>'
+            + '<div class="calendar-thread-content">' + escapeHtml(item.content || '') + '</div>';
+          if(isOwn){
+            card.addEventListener('click', function(){
+              openCalendarThreadEditor(item);
+            });
+          }
+          calendarThreadList.appendChild(card);
+        });
       }
     }
 
@@ -1968,12 +1970,9 @@
         return;
       }
 
-      if(Number.isInteger(calendarEditingThreadIndex) && calendarEditingThreadIndex >= 0){
-        const items = Array.isArray(calendarThreadMap[calendarSelectedDateKey]) ? calendarThreadMap[calendarSelectedDateKey] : [];
-        const item = items[calendarEditingThreadIndex];
-        if(!item) return;
-        item.content = content;
-        item.updatedAt = new Date().toISOString();
+      if(calendarEditingThreadItem){
+        calendarEditingThreadItem.content = content;
+        calendarEditingThreadItem.updatedAt = new Date().toISOString();
         calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
         setCalendarThreadWriteOpen(false);
         renderCalendarGrid();
@@ -2035,9 +2034,6 @@
       calendarThreadList.addEventListener('click', function(e){
         const card = e.target.closest('.calendar-thread-item.is-own');
         if(!card || !calendarThreadList.contains(card)) return;
-        const threadIndex = Number(card.getAttribute('data-thread-index'));
-        if(!Number.isInteger(threadIndex)) return;
-        openCalendarThreadEditor(threadIndex);
       });
     }
     calendarNoticeCancelBtn.addEventListener('click', closeCalendarNoticeEdit);
@@ -2052,7 +2048,7 @@
     window.moveCalendarMonth = moveCalendarMonth;
     window.selectCalendarDate = selectCalendarDate;
     window.submitCalendarThread = submitCalendarThread;
-    window.openCalendarThreadEditor = function(threadIndex){ openCalendarThreadEditor(Number(threadIndex)); };
+    window.openCalendarThreadEditor = function(threadItem){ openCalendarThreadEditor(threadItem); };
     window.deleteCurrentCalendarThread = deleteCurrentCalendarThread;
 
 

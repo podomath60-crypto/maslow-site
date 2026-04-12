@@ -2429,6 +2429,45 @@
         return null;
       }
 
+      function toggleFactorySectionByListingNumber_(){
+        var upperListingNumber = String(listingNumber || '').trim().toUpperCase();
+        var prefix = String(selectedListingPrefix || '').trim().toUpperCase();
+        var isShopping = prefix === 'SK' || upperListingNumber.indexOf('SK-') === 0;
+
+        var factoryTitle = Array.prototype.slice.call(document.querySelectorAll('.property-spec-sector-title')).find(function(el){
+          return plainText(el) === '공장특화정보';
+        });
+
+        var factoryLabels = [
+          '층고',
+          '크레인',
+          '호이스트',
+          '전력',
+          '주요 설비',
+          '추천 업종',
+          '업종 제한',
+          '진입로 폭',
+          '도어폭',
+          '대형차 진입',
+          '상하차 가능',
+          '사무동 포함',
+          '야드 크기',
+          '즉시 가동'
+        ];
+
+        if(factoryTitle){
+          factoryTitle.style.display = isShopping ? 'none' : '';
+        }
+
+        factoryLabels.forEach(function(label){
+          var valueEl = findSpecValueByLabel_(label);
+          var row = valueEl ? valueEl.closest('.property-spec-row') : null;
+          if(row){
+            row.style.display = isShopping ? 'none' : '';
+          }
+        });
+      }
+
       function findRequesterValueByLabel_(labelText){
         var rows = getRequesterRows_();
         for (var i = 0; i < rows.length; i++) {
@@ -4639,6 +4678,7 @@
 
       function chooseListingTeam(prefix){
         selectedListingPrefix = String(prefix || '').trim().toUpperCase();
+        toggleFactorySectionByListingNumber_();
         closeTeamSelectModal();
         var callback = pendingTeamSelectionCallback;
         pendingTeamSelectionCallback = null;
@@ -4692,6 +4732,7 @@
         currentPhotoIndex = 0;
         resetEditorEnteredSession_();
         if(listingNumberField) listingNumberField.textContent = '';
+        toggleFactorySectionByListingNumber_();
       }
 
       function startNewEntryWithTeamSelection_(){
@@ -4709,6 +4750,7 @@
       function assignListingNumber(){
         if(listingNumber) {
           listingNumberField.textContent = listingNumber;
+          toggleFactorySectionByListingNumber_();
           return;
         }
         if(!selectedListingPrefix){
@@ -4725,6 +4767,7 @@
         var creatorSuffix = getCreatorInitialSuffix_();
         listingNumber = selectedListingPrefix + '-' + y + m + day + '-' + rand + creatorSuffix;
         listingNumberField.textContent = listingNumber;
+        toggleFactorySectionByListingNumber_();
       }
 
       function serializeEditables(){
@@ -4894,6 +4937,7 @@
             restoreMeasures(data.measures || {});
             restoreEditables(data.editables || {});
             rentPriceState = data.rentPriceState || { deposit: '', monthly: '' };
+            toggleFactorySectionByListingNumber_();
           }
         }catch(e){}
       }
@@ -4973,6 +5017,7 @@
           updateTopFields();
           renderHero();
           renderLedgerStatus();
+          toggleFactorySectionByListingNumber_();
           showToast('임시저장 청소됨');
         }catch(e){
           showToast('청소 실패');
@@ -5096,6 +5141,7 @@
           updateTopFields();
           renderHero();
           renderLedgerStatus();
+          toggleFactorySectionByListingNumber_();
           startNewEntryWithTeamSelection_();
         }else{
           restoreDraftState();
@@ -5105,6 +5151,7 @@
           updateTopFields();
           renderHero();
           renderLedgerStatus();
+          toggleFactorySectionByListingNumber_();
         }
       }
 

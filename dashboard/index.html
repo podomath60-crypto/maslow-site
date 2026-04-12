@@ -265,30 +265,22 @@
       flex-direction:column;
       align-items:center;
       justify-content:center;
-      gap:12px;
+      gap:0;
       text-align:center;
     }
-    .loading-buddy{
-      width:74px;
-      height:74px;
-      object-fit:cover;
-      border-radius:18px;
-      animation:buddyBounce 1.15s ease-in-out infinite;
-      box-shadow:0 10px 22px rgba(15,124,255,.16);
+    .loading-buddy,
+    .loading-text{display:none !important;}
+    .loading-spinner{
+      width:28px;
+      height:28px;
+      border-radius:999px;
+      border:2.5px solid rgba(15,124,255,.18);
+      border-top-color:#0f7cff;
+      animation:loadingSpin .7s linear infinite;
     }
-    .loading-text{
-      min-height:24px;
-      font-size:18px;
-      font-weight:800;
-      line-height:1.4;
-      color:#2b8fe8;
-      letter-spacing:-0.03em;
-    }
-    @keyframes buddyBounce{
-      0%,100%{transform:translateY(0) scale(1)}
-      20%{transform:translateY(-3px) scale(1.01)}
-      50%{transform:translateY(-10px) scale(1.04)}
-      75%{transform:translateY(-4px) scale(1.01)}
+    @keyframes loadingSpin{
+      from{transform:rotate(0deg)}
+      to{transform:rotate(360deg)}
     }
 
     .lock-overlay{
@@ -649,7 +641,7 @@
     align-items:flex-start;
     justify-content:space-between;
     gap:12px;
-    padding:4px 0 14px;
+    padding:4px 0 14px 14px;
   }
   .calendar-notice-main{min-width:0}
   .calendar-notice-label{
@@ -791,10 +783,9 @@
   .calendar-cell:nth-child(7n){border-right:none}
   .calendar-cell.is-empty{background:transparent}
   .calendar-cell.is-selected{
-    outline:2px solid #b9c1cb;
-    outline-offset:-6px;
-    border-radius:18px;
-    background:#fff;
+    outline:none;
+    border-radius:0;
+    background:#eef5ff;
   }
   .calendar-day-number{
     font-size:14px;
@@ -807,20 +798,20 @@
     color:#0f7cff;
   }
   .calendar-lines{
-    margin-top:2px;
+    margin-top:3px;
     display:grid;
-    gap:1px;
-    line-height:1.2;
+    gap:0;
+    line-height:1.1;
   }
   .calendar-line{
     font-size:11px;
-    font-weight:500;
+    font-weight:400;
     color:#5f6873;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
   }
-  .calendar-line.zero{color:#c1c8d0}
+  .calendar-line.zero{display:none}
   .calendar-detail-card{
     margin-top:14px;
     border:1px solid #e5e9ef;
@@ -971,7 +962,7 @@
     .calendar-weekdays{padding:0 2px 6px}
     .calendar-weekday{font-size:11px}
     .calendar-cell{min-height:86px;padding:7px 5px 7px}
-    .calendar-cell.is-selected{outline-offset:-5px;border-radius:14px}
+    .calendar-cell.is-selected{outline:none;border-radius:0;background:#eef5ff}
     .calendar-day-number{font-size:13px}
     .calendar-line{font-size:10px}
     .calendar-detail-card{padding:14px;border-radius:20px}
@@ -1147,14 +1138,14 @@
           <div class="calendar-subtitle">업로드 매물</div>
           <div id="calendarPropertyList" class="calendar-property-list"></div>
 
-          <div class="calendar-subtitle">스레드 작성</div>
+          <div class="calendar-subtitle">기록 작성</div>
           <div class="calendar-thread-write">
             <div id="calendarWriterChip" class="calendar-writer-chip">📝 작성자</div>
             <textarea id="calendarThreadInput" class="calendar-thread-textarea" placeholder="업무 기록을 남겨주세요"></textarea>
             <button type="button" class="calendar-thread-submit" onclick="submitCalendarThread()">등록</button>
           </div>
 
-          <div class="calendar-subtitle">스레드</div>
+          <div class="calendar-subtitle">기록</div>
           <div id="calendarThreadList" class="calendar-thread-list"></div>
         </section>
       </div>
@@ -1164,6 +1155,7 @@
 
   <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-panel">
+      <div class="loading-spinner" aria-hidden="true"></div>
       <img class="loading-buddy" src="https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg" alt="로딩">
       <div id="loadingTypingText" class="loading-text"></div>
     </div>
@@ -1519,7 +1511,7 @@
           +   '<div class="calendar-lines">'
           +     '<div class="calendar-line' + (stat.shoppingCount ? '' : ' zero') + '">상가 ' + stat.shoppingCount + '</div>'
           +     '<div class="calendar-line' + (stat.factoryCount ? '' : ' zero') + '">공장 ' + stat.factoryCount + '</div>'
-          +     '<div class="calendar-line' + (stat.threadCount ? '' : ' zero') + '">스레드 ' + stat.threadCount + '</div>'
+          +     '<div class="calendar-line' + (stat.threadCount ? '' : ' zero') + '">기록 ' + stat.threadCount + '</div>'
           +   '</div>'
           + '</button>';
       }
@@ -1603,7 +1595,7 @@
       calendarDetailMeta.textContent =
         '상가 ' + properties.filter(function(x){ return x.teamType === 'shopping'; }).length
         + ' · 공장 ' + properties.filter(function(x){ return x.teamType === 'factory'; }).length
-        + ' · 스레드 ' + threads.length;
+        + ' · 기록 ' + threads.length;
 
       if(!properties.length){
         calendarPropertyList.innerHTML = '<div class="calendar-empty">등록된 매물이 없습니다.</div>';
@@ -1625,7 +1617,7 @@
       }
 
       if(!threads.length){
-        calendarThreadList.innerHTML = '<div class="calendar-empty">스레드가 없습니다.</div>';
+        calendarThreadList.innerHTML = '<div class="calendar-empty">기록이 없습니다.</div>';
       }else{
         calendarThreadList.innerHTML = threads.map(function(item){
           return ''
@@ -1701,7 +1693,7 @@
         return;
       }
 
-      currentLoadingText = '스레드를 저장하고 있어요.';
+      currentLoadingText = '기록을 저장하고 있어요.';
       startLoadingOverlay();
 
       fetch(CONFIG.adminListUrl, {
@@ -1716,12 +1708,12 @@
         })
       })
       .then(function(res){
-        if(!res.ok) throw new Error('스레드 저장 실패: ' + res.status);
+        if(!res.ok) throw new Error('기록 저장 실패: ' + res.status);
         return res.json();
       })
       .then(function(data){
         if(!data || data.ok !== true){
-          throw new Error((data && data.message) || '스레드 저장 실패');
+          throw new Error((data && data.message) || '기록 저장 실패');
         }
         calendarThreadInput.value = '';
         return loadCalendarOverview(calendarCurrentMonth);
@@ -1732,7 +1724,7 @@
       })
       .catch(function(err){
         console.error(err);
-        alert((err && err.message) ? err.message : '스레드 저장 중 문제가 발생했습니다.');
+        alert((err && err.message) ? err.message : '기록 저장 중 문제가 발생했습니다.');
       })
       .finally(function(){
         stopLoadingOverlay();

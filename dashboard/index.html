@@ -1095,6 +1095,7 @@
   }
   .calendar-thread-inline-btn.save{color:#0f7cff;}
   .calendar-thread-inline-btn.delete{color:#7b8794;}
+  .calendar-thread-inline-btn.close{color:#7b8794;}
 
   @media (max-width:860px){
     .calendar-modal-topbar-inner{padding:0 16px}
@@ -1593,6 +1594,7 @@
         + '<div class="calendar-thread-inline-editor">'
         +   '<textarea class="calendar-thread-inline-textarea">' + escapeHtml(item.content || '') + '</textarea>'
         +   '<div class="calendar-thread-inline-actions">'
+        +     '<button type="button" class="calendar-thread-inline-btn close">닫기</button>'
         +     '<button type="button" class="calendar-thread-inline-btn delete">삭제</button>'
         +     '<button type="button" class="calendar-thread-inline-btn save">수정등록</button>'
         +   '</div>'
@@ -1628,12 +1630,8 @@
 
       const payload = {
         action: 'deleteCalendarThread',
-        dateKey: calendarSelectedDateKey,
-        writerCode: writerCode,
         rowId: serverId,
-        threadId: serverId,
-        id: serverId,
-        content: text(targetItem && targetItem.content)
+        writerCode: writerCode
       };
 
       fetch(CONFIG.adminListUrl, {
@@ -2134,11 +2132,8 @@
           headers: { 'Content-Type':'text/plain;charset=UTF-8' },
           body: JSON.stringify({
             action: 'updateCalendarThread',
-            dateKey: calendarSelectedDateKey,
-            writerCode: writerCode,
             rowId: serverId,
-            threadId: serverId,
-            id: serverId,
+            writerCode: writerCode,
             content: nextContent
           })
         })
@@ -2150,11 +2145,26 @@
           if(!data || data.ok !== true){
             throw new Error((data && data.message) || '기록 수정 실패');
           }
-          calendarEditingThreadItem.rowId = text(data && (data.rowId || data.threadId || data.id)) || calendarEditingThreadItem.rowId;
-          calendarEditingThreadItem.threadId = text(data && (data.threadId || data.rowId || data.id)) || calendarEditingThreadItem.threadId;
-          calendarEditingThreadItem.id = text(data && (data.id || data.rowId || data.threadId)) || calendarEditingThreadItem.id;
-          calendarEditingThreadItem.content = nextContent;
-          calendarEditingThreadItem.updatedAt = text(data && (data.updatedAt || data.modifiedAt)) || new Date().toISOString();
+          const updatedThread = data && data.thread ? data.thread : null;
+          calendarEditingThreadItem.rowId =
+            text(updatedThread && updatedThread.rowId) ||
+            text(data && data.rowId) ||
+            calendarEditingThreadItem.rowId;
+          calendarEditingThreadItem.content =
+            text(updatedThread && updatedThread.content) ||
+            nextContent;
+          calendarEditingThreadItem.updatedAt =
+            text(updatedThread && updatedThread.updatedAt) ||
+            new Date().toISOString();
+          calendarEditingThreadItem.createdAt =
+            text(updatedThread && updatedThread.createdAt) ||
+            calendarEditingThreadItem.createdAt;
+          calendarEditingThreadItem.writerName =
+            text(updatedThread && updatedThread.writerName) ||
+            calendarEditingThreadItem.writerName;
+          calendarEditingThreadItem.writerEmoji =
+            text(updatedThread && updatedThread.writerEmoji) ||
+            calendarEditingThreadItem.writerEmoji;
           calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
           closeCalendarInlineEditor();
           renderCalendarGrid();
@@ -2192,16 +2202,30 @@
           throw new Error((data && data.message) || '기록 저장 실패');
         }
         const meta = getWriterMetaByCode(writerCode);
+        const serverThread = data && data.thread ? data.thread : null;
         const newThread = {
-          rowId: text(data && (data.rowId || data.threadId || data.id)) || ('LOCAL_' + Date.now()),
-          threadId: text(data && (data.threadId || data.rowId || data.id)) || '',
-          id: text(data && (data.id || data.rowId || data.threadId)) || '',
-          writerCode: writerCode,
-          writerName: meta.name,
-          writerEmoji: meta.emoji,
-          content: content,
-          createdAt: text(data && (data.createdAt || data.updatedAt)) || new Date().toISOString(),
-          updatedAt: text(data && data.updatedAt) || new Date().toISOString()
+          rowId:
+            text(serverThread && serverThread.rowId) ||
+            text(data && data.rowId) ||
+            ('LOCAL_' + Date.now()),
+          writerCode:
+            text(serverThread && serverThread.writerCode) ||
+            writerCode,
+          writerName:
+            text(serverThread && serverThread.writerName) ||
+            meta.name,
+          writerEmoji:
+            text(serverThread && serverThread.writerEmoji) ||
+            meta.emoji,
+          content:
+            text(serverThread && serverThread.content) ||
+            content,
+          createdAt:
+            text(serverThread && serverThread.createdAt) ||
+            new Date().toISOString(),
+          updatedAt:
+            text(serverThread && serverThread.updatedAt) ||
+            new Date().toISOString()
         };
         if(!Array.isArray(calendarThreadMap[calendarSelectedDateKey])){
           calendarThreadMap[calendarSelectedDateKey] = [];
@@ -2225,6 +2249,12 @@
     calendarNoticeEditBtn.addEventListener('click', openCalendarNoticeEdit);
     if(calendarThreadList){
       calendarThreadList.addEventListener('click', function(e){
+        const closeBtn = e.target.closest('.calendar-thread-inline-btn.close');
+        if(closeBtn && calendarActiveEditCard && calendarActiveEditCard.contains(closeBtn)){
+          e.stopPropagation();
+          closeCalendarInlineEditor();
+          return;
+        }
         const deleteBtn = e.target.closest('.calendar-thread-inline-btn.delete');
         if(deleteBtn && calendarActiveEditCard && calendarActiveEditCard.contains(deleteBtn)){
           e.stopPropagation();

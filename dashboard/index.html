@@ -1585,6 +1585,12 @@
         calendarCurrentMonth = getCurrentMonthKeyFromDate(calendarSelectedDateKey);
       }
 
+      if(!calendarSelectedDateKey || getCurrentMonthKeyFromDate(calendarSelectedDateKey) !== calendarCurrentMonth){
+        calendarSelectedDateKey = getTodayDateKey().slice(0, 7) === calendarCurrentMonth
+          ? getTodayDateKey()
+          : calendarCurrentMonth + '-01';
+      }
+
       renderCalendarWriterChip();
       setCalendarThreadWriteOpen(false);
       calendarModal.classList.add('show');
@@ -1596,22 +1602,11 @@
         calendarHistoryArmed = true;
       }
 
-      if(!calendarCurrentNotice){
-        loadCalendarOverview(calendarCurrentMonth).then(function(){
-          if(!calendarSelectedDateKey || getCurrentMonthKeyFromDate(calendarSelectedDateKey) !== calendarCurrentMonth){
-            calendarSelectedDateKey = getTodayDateKey().slice(0, 7) === calendarCurrentMonth
-              ? getTodayDateKey()
-              : calendarCurrentMonth + '-01';
-          }
-          renderCalendarGrid();
-          loadCalendarDateDetail(calendarSelectedDateKey);
-        });
-        return;
-      }
-
+      renderCalendarNotice();
+      calendarMonthLabel.textContent = formatMonthLabel(calendarCurrentMonth);
       calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
       renderCalendarGrid();
-      loadCalendarDateDetail(calendarSelectedDateKey || (calendarCurrentMonth + '-01'));
+      loadCalendarDateDetail(calendarSelectedDateKey);
     }
 
     function closeCalendarModal(fromPopstate){
@@ -1671,27 +1666,31 @@
         calendarCurrentMonth = monthKey;
         calendarCurrentNotice = data.notice || null;
         calendarOverviewMap = {};
+        calendarThreadMap = {};
 
-        calendarThreadMap = (data && data.threadsByDate && typeof data.threadsByDate === 'object')
+        const rawThreadMap = (data && data.threadsByDate && typeof data.threadsByDate === 'object')
           ? data.threadsByDate
           : {};
 
-        Object.keys(calendarThreadMap).forEach(function(dateKey){
-          const items = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
-          calendarThreadMap[dateKey] = items.slice().sort(function(a, b){
-            return (parseDateValue(b && b.createdAt) || 0) - (parseDateValue(a && a.createdAt) || 0);
-          });
+        Object.keys(rawThreadMap).forEach(function(dateKey){
+          calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
+            ? rawThreadMap[dateKey].slice().sort(function(a, b){
+                return (parseDateValue(b && b.createdAt) || 0) - (parseDateValue(a && a.createdAt) || 0);
+              })
+            : [];
         });
 
         (Array.isArray(data.days) ? data.days : []).forEach(function(day){
           const dateKey = text(day.dateKey);
           const localThreads = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
-
           calendarOverviewMap[dateKey] = {
             shoppingCount: Number(day.shoppingCount || 0),
             factoryCount: Number(day.factoryCount || 0),
-            threadCount: localThreads.length
+            threadCount: localThreads.length || Number(day.threadCount || 0)
           };
+          if(!calendarThreadMap[dateKey]){
+            calendarThreadMap[dateKey] = [];
+          }
         });
 
         renderCalendarNotice();
@@ -2442,23 +2441,67 @@
 
     function fetchAdminItems(){
       startLoadingOverlay();
-      return fetch(CONFIG.adminListUrl, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'text/plain;charset=UTF-8'
-        },
-        body: JSON.stringify({
-          action: 'listAdminProperties'
+
+      const initialDateKey = getTodayDateKey();
+      const initialMonthKey = getCurrentMonthKeyFromDate(initialDateKey);
+
+      return Promise.all([
+        fetch(CONFIG.adminListUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=UTF-8'
+          },
+          body: JSON.stringify({
+            action: 'listAdminProperties'
+          })
+        }).then(function(res){
+          if(!res.ok) throw new Error('매물 불러오기 실패: ' + res.status);
+          return res.json();
+        }),
+        fetch(CONFIG.adminListUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=UTF-8'
+          },
+          body: JSON.stringify({
+            action: 'getCalendarOverview',
+            month: initialMonthKey
+          })
+        }).then(function(res){
+          if(!res.ok) throw new Error('캘린더 불러오기 실패: ' + res.status);
+          return res.json();
         })
-      })
-      .then(function(res){
-        if(!res.ok) throw new Error('불러오기 실패: ' + res.status);
-        return res.json();
-      })
-      .then(function(data){
-        const items = Array.isArray(data && data.items) ? data.items : [];
+      ])
+      .then(function(results){
+        const propertyData = results[0] || {};
+        const calendarData = results[1] || {};
+
+        const items = Array.isArray(propertyData && propertyData.items) ? propertyData.items : [];
         rawItems = items.map(normalizeItem);
+
+        calendarCurrentMonth = initialMonthKey;
+        calendarSelectedDateKey = initialDateKey;
+        calendarCurrentNotice = calendarData.notice || {
+          noticeText: '매슬로우 화이팅',
+          noticeLink: ''
+        };
+
+        calendarThreadMap = {};
+        const rawThreadMap = (calendarData && calendarData.threadsByDate && typeof calendarData.threadsByDate === 'object')
+          ? calendarData.threadsByDate
+          : {};
+
+        Object.keys(rawThreadMap).forEach(function(dateKey){
+          calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
+            ? rawThreadMap[dateKey].slice().sort(function(a, b){
+                return (parseDateValue(b && b.createdAt) || 0) - (parseDateValue(a && a.createdAt) || 0);
+              })
+            : [];
+        });
+
+        calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
         renderDashboard();
       })
       .catch(function(err){

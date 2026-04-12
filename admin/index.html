@@ -31,7 +31,6 @@
       background:#fff;
     }
     .editor-inner{
-      position:relative;
       width:100%;
       max-width:760px;
       margin:0 auto;
@@ -107,7 +106,7 @@
     }
 
     .floating-server-save{
-      position:absolute;
+      position:fixed;
       left:50%;
       bottom:calc(56px + env(safe-area-inset-bottom, 0px));
       transform:translateX(-50%);
@@ -2134,9 +2133,6 @@
       var aiLoadingText = document.getElementById('aiLoadingText');
       var queryLoadingOverlay = document.getElementById('queryLoadingOverlay');
       var queryLoadingText = document.getElementById('queryLoadingText');
-        var keyboardOffset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-        setDraftSaveKeyboardLock_(keyboardOffset);
-      }
 
       var QUERY_LOADING_BASE_TEXT = '자료를 가져오고 있어요!';
       var queryLoadingTypingTimer = null;
@@ -4907,16 +4903,6 @@
         adminHomeBtn.addEventListener('click', function(){
           location.href = '/dashboard';
         });
-      }
-
-      updateDraftSaveKeyboardLock_();
-      window.addEventListener('resize', updateDraftSaveKeyboardLock_);
-      window.addEventListener('orientationchange', function(){
-        setTimeout(updateDraftSaveKeyboardLock_, 80);
-      });
-      if(window.visualViewport){
-        window.visualViewport.addEventListener('resize', updateDraftSaveKeyboardLock_);
-        window.visualViewport.addEventListener('scroll', updateDraftSaveKeyboardLock_);
       }
 
       draftSaveBtn.addEventListener('click', function(){

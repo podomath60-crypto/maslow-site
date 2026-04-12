@@ -803,196 +803,6 @@
   }
 
   </style>
-
-<style>
-  .calendar-section:first-of-type{margin-top:10px}
-  .calendar-card.calendar-notice{
-    border:none !important;
-    background:transparent !important;
-    box-shadow:none !important;
-    border-radius:0 !important;
-    padding:0 0 6px !important;
-    overflow:visible !important;
-  }
-  .calendar-notice{padding:0 !important}
-  .calendar-notice-label{display:none !important}
-  .calendar-notice-top{
-    min-height:34px;
-    gap:10px;
-    align-items:flex-start;
-  }
-  .calendar-notice-text{
-    font-size:15px !important;
-    line-height:1.45 !important;
-    font-weight:700 !important;
-    color:#2f3a45 !important;
-    letter-spacing:-0.02em !important;
-  }
-  .calendar-notice-link{
-    font-size:12px !important;
-    font-weight:700 !important;
-    line-height:1.35 !important;
-  }
-  .calendar-notice-edit-btn{
-    min-height:auto !important;
-    padding:2px 4px !important;
-    border:none !important;
-    background:transparent !important;
-    color:#6b7280 !important;
-    font-size:18px !important;
-    font-weight:700 !important;
-    line-height:1 !important;
-    border-radius:0 !important;
-  }
-  .calendar-notice-edit-btn:hover{color:#111318 !important}
-  .calendar-notice-edit{
-    margin-top:8px !important;
-    gap:8px !important;
-  }
-  .calendar-notice-input{
-    min-height:42px !important;
-    border-radius:14px !important;
-    font-size:13px !important;
-    font-weight:700 !important;
-  }
-
-  .calendar-card.calendar-month{
-    border-radius:28px !important;
-    border:1px solid #e8edf3 !important;
-    box-shadow:0 8px 24px rgba(15,23,42,.04) !important;
-    overflow:hidden !important;
-  }
-  .calendar-month{
-    margin-top:6px !important;
-    padding:16px 16px 12px !important;
-  }
-  .calendar-month-head{
-    margin-bottom:10px !important;
-  }
-  .calendar-month-nav{
-    width:34px !important;
-    height:34px !important;
-    border:none !important;
-    background:transparent !important;
-    box-shadow:none !important;
-    font-size:28px !important;
-    font-weight:400 !important;
-    color:#111318 !important;
-  }
-  .calendar-month-label{
-    font-size:18px !important;
-    font-weight:700 !important;
-    letter-spacing:-0.02em !important;
-  }
-  .calendar-weekdays,
-  .calendar-grid{
-    gap:0 !important;
-  }
-  .calendar-weekdays{
-    border-top:1px solid #edf2f6;
-    border-bottom:1px solid #edf2f6;
-    padding:8px 0;
-    margin-bottom:0;
-  }
-  .calendar-weekday{
-    text-align:left !important;
-    padding:0 8px 0 10px !important;
-    font-size:11px !important;
-    font-weight:600 !important;
-    color:#7c8794 !important;
-  }
-  .calendar-grid{
-    border-bottom:1px solid #edf2f6;
-  }
-  .calendar-day{
-    min-height:84px !important;
-    padding:7px 8px 7px 10px !important;
-    border:none !important;
-    border-right:1px solid #edf2f6 !important;
-    border-bottom:1px solid #edf2f6 !important;
-    border-radius:0 !important;
-    background:#fff !important;
-    box-shadow:none !important;
-    gap:4px !important;
-    align-items:stretch !important;
-  }
-  .calendar-grid > *:nth-child(7n){
-    border-right:none !important;
-  }
-  .calendar-day:hover{
-    transform:none !important;
-    box-shadow:none !important;
-  }
-  .calendar-day.is-empty{
-    border-right:1px solid #edf2f6 !important;
-    border-bottom:1px solid #edf2f6 !important;
-    background:#fff !important;
-  }
-  .calendar-day.is-selected{
-    background:#f7fbff !important;
-    outline:1px solid #d8e8fb;
-    outline-offset:-1px;
-  }
-  .calendar-day.is-today .calendar-day-num{
-    color:#0f7cff !important;
-  }
-  .calendar-day-num{
-    font-size:13px !important;
-    line-height:1 !important;
-    font-weight:600 !important;
-    color:#17191d !important;
-    letter-spacing:0 !important;
-  }
-  .calendar-day-stats{
-    display:grid !important;
-    grid-template-rows:repeat(3, 1fr) !important;
-    gap:1px !important;
-    margin-top:0 !important;
-    min-height:42px !important;
-  }
-  .calendar-day-stat{
-    display:block !important;
-    min-height:13px !important;
-    padding:0 !important;
-    border:none !important;
-    border-radius:0 !important;
-    background:transparent !important;
-    color:#6b7280 !important;
-    font-size:10px !important;
-    line-height:1.15 !important;
-    font-weight:400 !important;
-    letter-spacing:0 !important;
-    width:100% !important;
-    max-width:none !important;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .calendar-day-stat.shopping,
-  .calendar-day-stat.factory,
-  .calendar-day-stat.thread{
-    color:#6b7280 !important;
-    border:none !important;
-    background:transparent !important;
-  }
-
-  .calendar-card.calendar-detail{
-    border-radius:24px !important;
-    box-shadow:0 8px 24px rgba(15,23,42,.04) !important;
-  }
-
-  @media (max-width:860px){
-    .calendar-month{padding:14px 14px 10px !important}
-    .calendar-month-label{font-size:17px !important}
-    .calendar-month-nav{width:30px !important;height:30px !important;font-size:24px !important}
-    .calendar-weekday{padding:0 4px 0 7px !important;font-size:10px !important}
-    .calendar-day{min-height:72px !important;padding:6px 5px 6px 7px !important}
-    .calendar-day-num{font-size:12px !important}
-    .calendar-day-stats{min-height:34px !important}
-    .calendar-day-stat{font-size:9px !important;line-height:1.05 !important}
-    .calendar-notice-text{font-size:14px !important}
-  }
-</style>
 </head>
 <body>
   <div class="page">
@@ -1124,7 +934,7 @@
                 <div id="calendarNoticeText" class="calendar-notice-text">매슬로우 화이팅</div>
                 <a id="calendarNoticeLink" class="calendar-notice-link" href="#" target="_blank" rel="noopener" style="display:none;"></a>
               </div>
-              <button type="button" id="calendarNoticeEditBtn" class="calendar-notice-edit-btn" aria-label="공지 수정">✎</button>
+              <button type="button" id="calendarNoticeEditBtn" class="calendar-notice-edit-btn">수정</button>
             </div>
 
             <div id="calendarNoticeEdit" class="calendar-notice-edit">
@@ -2310,18 +2120,19 @@
           dateKey === calendarSelectedDateKey ? 'is-selected' : ''
         ].filter(Boolean).join(' ');
 
-        const statLines = [
-          stat.shoppingCount > 0 ? '상가 ' + stat.shoppingCount : '',
-          stat.factoryCount > 0 ? '공장 ' + stat.factoryCount : '',
-          stat.threadCount > 0 ? '스레드 ' + stat.threadCount : ''
-        ];
-
-        const statsHtml = statLines.map(function(line){
-          return '<div class="calendar-day-stat">' + (line ? escapeHtml(line) : '&nbsp;') + '</div>';
-        }).join('');
+        let statsHtml = '';
+        if(stat.shoppingCount > 0){
+          statsHtml += '<div class="calendar-day-stat shopping">상가 ' + stat.shoppingCount + '</div>';
+        }
+        if(stat.factoryCount > 0){
+          statsHtml += '<div class="calendar-day-stat factory">공장 ' + stat.factoryCount + '</div>';
+        }
+        if(stat.threadCount > 0){
+          statsHtml += '<div class="calendar-day-stat thread">스레드 ' + stat.threadCount + '</div>';
+        }
 
         html += ''
-          + '<button type="button" class="' + classes + '" onclick="selectCalendarDate('' + dateKey + '')">'
+          + '<button type="button" class="' + classes + '" onclick="selectCalendarDate(\'' + dateKey + '\')">'
           +   '<div class="calendar-day-num">' + day + '</div>'
           +   '<div class="calendar-day-stats">' + statsHtml + '</div>'
           + '</button>';

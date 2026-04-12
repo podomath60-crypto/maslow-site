@@ -50,16 +50,33 @@
       padding:14px 16px 10px;
       background:#fff;
     }
+    .editor-head-left,
+    .editor-head-right{
+      position:relative;
+      z-index:1;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+      flex:1 1 0;
+    }
     .editor-head-left{
+      justify-content:flex-start;
+    }
+    .editor-head-right{
+      justify-content:flex-end;
+    }
+    .editor-head-center{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%, -50%);
       font-size:18px;
       font-weight:800;
       color:#111;
-      width:auto;
-    }
-    .editor-head-right{
-      display:flex;
-      gap:8px;
-      width:auto;
+      text-align:center;
+      pointer-events:none;
+      white-space:nowrap;
     }
     .head-btn{
       width:auto;
@@ -73,14 +90,41 @@
       font-size:14px;
       font-weight:800;
     }
+    .head-btn.admin-home-btn{
+      min-width:auto;
+      padding:0 12px;
+    }
     .head-btn.primary{
       background:#0f7cff;
       color:#fff;
       border-color:#0f7cff;
     }
     .status-toggle{
-      min-width:120px;
+      min-width:auto;
+      padding:0 10px;
       transition:.18s ease;
+    }
+
+    .floating-server-save{
+      position:fixed;
+      left:50%;
+      bottom:calc(18px + env(safe-area-inset-bottom, 0px));
+      transform:translateX(-50%);
+      z-index:90;
+      width:auto;
+      min-width:132px;
+      min-height:48px;
+      padding:0 22px;
+      border-radius:14px;
+      border:2px solid #16a34a;
+      background:#fff;
+      color:#166534;
+      font-size:15px;
+      font-weight:900;
+      box-shadow:0 10px 24px rgba(22,163,74,.14);
+    }
+    .floating-server-save:disabled{
+      opacity:.7;
     }
     .status-toggle.hidden{
       background:#f3f5f8;
@@ -894,6 +938,9 @@
       .editor-head{
         padding:12px 14px 8px;
       }
+      .editor-head-center{
+        font-size:17px;
+      }
       .editor-body{
         padding:0 18px calc(88px + env(safe-area-inset-bottom, 0px));
       }
@@ -931,6 +978,17 @@
         min-height:28px;
         padding:0 4px;
         font-size:12px;
+      }
+      .status-toggle{
+        padding:0 8px;
+        font-size:12px;
+      }
+      .floating-server-save{
+        min-width:120px;
+        min-height:44px;
+        padding:0 18px;
+        font-size:14px;
+        bottom:calc(14px + env(safe-area-inset-bottom, 0px));
       }
       .property-detail-title{
         font-size:34px;
@@ -1823,9 +1881,11 @@
   <div class="editor-page">
     <div class="editor-inner">
       <div class="editor-head">
-        <div class="editor-head-left">매물입력기</div>
+        <div class="editor-head-left">
+          <button type="button" class="head-btn admin-home-btn" id="adminHomeBtn">관리자홈</button>
+        </div>
+        <div class="editor-head-center">매물입력기</div>
         <div class="editor-head-right">
-          <button type="button" class="head-btn" id="draftSaveBtn">서버저장</button>
           <button type="button" class="head-btn status-toggle hidden" id="statusToggleBtn" aria-pressed="false">매물숨김중</button>
         </div>
       </div>
@@ -1952,6 +2012,7 @@
         <div class="bottom-safe-space"></div>
 
       </div>
+      <button type="button" class="floating-server-save" id="draftSaveBtn">서버저장</button>
     </div>
   </div>
 
@@ -2152,6 +2213,61 @@
       var ledgerUploadIndicatorTimer = null;
       var rentPriceState = { deposit: '', monthly: '' };
       var selectedAddressSearchData = null;
+      var CREATOR_CACHE_KEY = 'MK_CREATOR_INITIAL_V1';
+      var CREATOR_NAME_CACHE_KEY = 'MK_CREATOR_NAME_V1';
+
+      function getCreatorMap_(){
+        return [
+          { name:'한정인', initial:'hji' },
+          { name:'이유나', initial:'lyn' },
+          { name:'박성연', initial:'psy' },
+          { name:'나득균', initial:'Nak' }
+        ];
+      }
+
+      function persistCreatorInfo_(item){
+        if(!item) return;
+        try{ localStorage.setItem(CREATOR_CACHE_KEY, item.initial || ''); }catch(e){}
+        try{ localStorage.setItem(CREATOR_NAME_CACHE_KEY, item.name || ''); }catch(e){}
+      }
+
+      function readPersistedCreatorInfo_(){
+        try{
+          var initial = (localStorage.getItem(CREATOR_CACHE_KEY) || '').trim();
+          var name = (localStorage.getItem(CREATOR_NAME_CACHE_KEY) || '').trim();
+          if(initial) return { name:name, initial:initial };
+        }catch(e){}
+        return null;
+      }
+
+      function findCreatorInfoInStorage_(storage){
+        if(!storage) return null;
+        var map = getCreatorMap_();
+        try{
+          for(var i = 0; i < storage.length; i += 1){
+            var key = storage.key(i);
+            var value = '';
+            try{ value = String(storage.getItem(key) || ''); }catch(e){ value = ''; }
+            if(!value) continue;
+            for(var j = 0; j < map.length; j += 1){
+              if(value.indexOf(map[j].name) !== -1 || String(key || '').indexOf(map[j].name) !== -1){
+                persistCreatorInfo_(map[j]);
+                return map[j];
+              }
+            }
+          }
+        }catch(e){}
+        return null;
+      }
+
+      function getCreatorInfoFromCache_(){
+        return findCreatorInfoInStorage_(sessionStorage) || findCreatorInfoInStorage_(localStorage) || readPersistedCreatorInfo_();
+      }
+
+      function getCreatorInitialSuffix_(){
+        var info = getCreatorInfoFromCache_();
+        return info && info.initial ? '-' + info.initial : '';
+      }
 
       var GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
 
@@ -4560,7 +4676,8 @@
         var m = String(d.getMonth()+1).padStart(2,'0');
         var day = String(d.getDate()).padStart(2,'0');
         var rand = Math.floor(1000 + Math.random() * 9000);
-        listingNumber = selectedListingPrefix + '-' + y + m + day + '-' + rand;
+        var creatorSuffix = getCreatorInitialSuffix_();
+        listingNumber = selectedListingPrefix + '-' + y + m + day + '-' + rand + creatorSuffix;
         listingNumberField.textContent = listingNumber;
       }
 
@@ -4739,6 +4856,12 @@
       if(draftCleanBtn) draftCleanBtn.addEventListener('click', function(){
         runDraftCleanupAndRestart_();
       });
+
+      if(adminHomeBtn){
+        adminHomeBtn.addEventListener('click', function(){
+          location.href = '/dashboard';
+        });
+      }
 
       draftSaveBtn.addEventListener('click', function(){
         saveDraftState(true);

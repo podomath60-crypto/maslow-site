@@ -127,7 +127,7 @@
       opacity:.7;
     }
     .floating-server-save.is-hidden-by-keyboard{
-      opacity:0;
+      visibility:hidden;
       pointer-events:none;
     }
     .status-toggle.hidden{
@@ -4998,14 +4998,6 @@
       }
 
 
-      function isMobileEditTarget_(el){
-        if(!el) return false;
-        var tag = String(el.tagName || '').toUpperCase();
-        if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
-        if(el.isContentEditable) return true;
-        return false;
-      }
-
       function hideDraftSaveBtnByKeyboard_(){
         if(!draftSaveBtn) return;
         draftSaveBtn.classList.add('is-hidden-by-keyboard');
@@ -5016,19 +5008,66 @@
         draftSaveBtn.classList.remove('is-hidden-by-keyboard');
       }
 
-      document.addEventListener('focusin', function(e){
-        if(window.innerWidth > 860) return;
-        if(isMobileEditTarget_(e.target)) hideDraftSaveBtnByKeyboard_();
+      var keyboardBaseViewportHeight = 0;
+
+      function getKeyboardViewportHeight_(){
+        if(window.visualViewport && typeof window.visualViewport.height === 'number'){
+          return window.visualViewport.height;
+        }
+        return window.innerHeight || 0;
+      }
+
+      function resetKeyboardViewportBase_(){
+        if(window.innerWidth > 860){
+          showDraftSaveBtnByKeyboard_();
+          keyboardBaseViewportHeight = 0;
+          return;
+        }
+        keyboardBaseViewportHeight = Math.max(keyboardBaseViewportHeight || 0, getKeyboardViewportHeight_());
+      }
+
+      function updateDraftSaveBtnByKeyboardState_(){
+        if(window.innerWidth > 860){
+          showDraftSaveBtnByKeyboard_();
+          keyboardBaseViewportHeight = 0;
+          return;
+        }
+
+        var currentHeight = getKeyboardViewportHeight_();
+        if(!keyboardBaseViewportHeight || currentHeight > keyboardBaseViewportHeight){
+          keyboardBaseViewportHeight = currentHeight;
+        }
+
+        var diff = keyboardBaseViewportHeight - currentHeight;
+        if(diff > 160){
+          hideDraftSaveBtnByKeyboard_();
+        }else{
+          showDraftSaveBtnByKeyboard_();
+        }
+      }
+
+      window.addEventListener('resize', function(){
+        updateDraftSaveBtnByKeyboardState_();
       });
 
-      document.addEventListener('focusout', function(){
-        if(window.innerWidth > 860) return;
+      window.addEventListener('orientationchange', function(){
         window.setTimeout(function(){
-          var active = document.activeElement;
-          if(isMobileEditTarget_(active)) return;
-          showDraftSaveBtnByKeyboard_();
-        }, 120);
+          keyboardBaseViewportHeight = 0;
+          resetKeyboardViewportBase_();
+          updateDraftSaveBtnByKeyboardState_();
+        }, 250);
       });
+
+      if(window.visualViewport){
+        window.visualViewport.addEventListener('resize', function(){
+          updateDraftSaveBtnByKeyboardState_();
+        });
+      }
+
+      window.setTimeout(function(){
+        resetKeyboardViewportBase_();
+        updateDraftSaveBtnByKeyboardState_();
+      }, 250);
 
       var queryListingNumber = String(getQueryParam_('listingNumber') || '').trim();
 

@@ -1016,6 +1016,13 @@
     ].concat(Array.isArray(item.summary) ? item.summary : []).join(' ').toLowerCase();
   }
 
+  function filterFactoryListingItems_(items){
+    return (items || []).filter(function(item){
+      var listingNumber = text(item && item.listingNumber).toUpperCase();
+      return listingNumber.indexOf('MK-') === 0;
+    });
+  }
+
   function updateSearchMeta_(total, shown, q){
     var meta = document.getElementById('propertySearchMeta');
     if(!meta) return;
@@ -1029,14 +1036,15 @@
   function applyPropertySearch(){
     var input = document.getElementById('propertySearchInput');
     var q = text(input && input.value).toLowerCase();
+    var baseItems = filterFactoryListingItems_(propertyItems);
     if(!q){
-      filteredPropertyItems = propertyItems.slice();
+      filteredPropertyItems = baseItems.slice();
     } else {
-      filteredPropertyItems = propertyItems.filter(function(item){
+      filteredPropertyItems = baseItems.filter(function(item){
         return buildSearchText_(item).indexOf(q) > -1;
       });
     }
-    updateSearchMeta_(propertyItems.length, filteredPropertyItems.length, q);
+    updateSearchMeta_(baseItems.length, filteredPropertyItems.length, q);
     renderPropertyCards(filteredPropertyItems);
   }
 
@@ -1316,7 +1324,7 @@
             var bTime = new Date(b.updatedAt || 0).getTime();
             return bTime - aTime;
           });
-        filteredPropertyItems = propertyItems.slice();
+        filteredPropertyItems = filterFactoryListingItems_(propertyItems);
         applyPropertySearch();
         tryAutoOpenPropertyFromUrl_();
       })

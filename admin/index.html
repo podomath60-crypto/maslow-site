@@ -108,48 +108,23 @@
     .floating-server-save{
       position:fixed;
       left:50%;
-      bottom:56px;
+      bottom:calc(18px + env(safe-area-inset-bottom, 0px));
       transform:translateX(-50%);
       z-index:90;
       width:auto;
-      min-width:148px;
-      min-height:50px;
-      padding:0 24px;
+      min-width:132px;
+      min-height:48px;
+      padding:0 22px;
       border-radius:14px;
-      border:2px solid #39ff6a;
-      background:rgba(7,18,10,.9);
-      color:#d8ffe5;
+      border:2px solid #16a34a;
+      background:#fff;
+      color:#166534;
       font-size:15px;
       font-weight:900;
-      box-shadow:0 0 12px rgba(57,255,106,.55), 0 0 24px rgba(57,255,106,.28), 0 12px 28px rgba(0,0,0,.24);
-      overflow:hidden;
-      isolation:isolate;
-    }
-    .floating-server-save::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      background:linear-gradient(115deg, rgba(57,255,106,.16) 0%, rgba(57,255,106,.78) 18%, rgba(198,255,214,.98) 34%, rgba(57,255,106,.16) 48%, rgba(57,255,106,.78) 64%, rgba(198,255,214,.95) 78%, rgba(57,255,106,.16) 100%);
-      background-size:220% 100%;
-      animation:saveBtnGlowMove 2.4s linear infinite;
-      opacity:.95;
-      z-index:0;
-    }
-    .floating-server-save span{
-      position:relative;
-      z-index:1;
-      display:inline-block;
-      text-shadow:0 0 10px rgba(57,255,106,.18);
+      box-shadow:0 10px 24px rgba(22,163,74,.14);
     }
     .floating-server-save:disabled{
-      opacity:1;
-    }
-    .floating-server-save.is-sending{
-      pointer-events:none;
-    }
-    @keyframes saveBtnGlowMove{
-      0%{ background-position:0% 50%; }
-      100%{ background-position:220% 50%; }
+      opacity:.7;
     }
     .status-toggle.hidden{
       background:#f3f5f8;
@@ -1009,11 +984,11 @@
         font-size:12px;
       }
       .floating-server-save{
-        min-width:136px;
-        min-height:46px;
-        padding:0 20px;
+        min-width:120px;
+        min-height:44px;
+        padding:0 18px;
         font-size:14px;
-        bottom:48px;
+        bottom:calc(14px + env(safe-area-inset-bottom, 0px));
       }
       .property-detail-title{
         font-size:34px;
@@ -1981,7 +1956,7 @@
           <div class="property-spec-row"><div class="property-spec-label">* 관리비</div><div id="maintenanceFeeField" class="property-spec-value editable" contenteditable="true" data-placeholder="임대인 경우"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">매물번호</div><div id="listingNumberField" class="property-spec-value"></div></div>
 
-        <div id="factoryInfoUploadBox" class="property-office-box">
+        <div class="property-office-box">
           <div class="property-office-head">
             <button type="button" class="property-office-head-title ledger-upload-trigger" id="ledgerUploadBtn"><span class="ledger-camera">📷</span><span>자료입력</span></button>
             <div class="property-office-head-actions">
@@ -1998,7 +1973,7 @@
           </div>
         </div>
 
-          <div id="factoryInfoTitle" class="property-spec-sector-title">공장특화정보</div>
+          <div class="property-spec-sector-title">공장특화정보</div>
           <div class="property-spec-row"><div class="property-spec-label">층고</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">크레인</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">호이스트</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
@@ -2037,7 +2012,7 @@
         <div class="bottom-safe-space"></div>
 
       </div>
-      <button type="button" class="floating-server-save" id="draftSaveBtn"><span>서버저장</span></button>
+      <button type="button" class="floating-server-save" id="draftSaveBtn">서버저장</button>
     </div>
   </div>
 
@@ -2143,8 +2118,6 @@
       var requesterContactSearchBtn = document.getElementById('requesterContactSearchBtn');
       var summaryHelperBtn = document.getElementById('summaryHelperBtn');
       var summaryHelperModal = document.getElementById('summaryHelperModal');
-      var factoryInfoTitle = document.getElementById('factoryInfoTitle');
-      var factoryInfoUploadBox = document.getElementById('factoryInfoUploadBox');
       var summaryHelperCloseBtn = document.getElementById('summaryHelperCloseBtn');
       var summaryHelperCancelBtn = document.getElementById('summaryHelperCancelBtn');
       var summaryHelperApplyBtn = document.getElementById('summaryHelperApplyBtn');
@@ -2565,83 +2538,6 @@
         };
       }
 
-      function isShoppingListing_(){
-        var prefix = String(selectedListingPrefix || '').trim().toUpperCase();
-        var number = String(listingNumber || plainText(listingNumberField) || '').trim().toUpperCase();
-        return prefix === 'SK' || number.indexOf('SK-') === 0;
-      }
-
-      function updateFactorySectionsVisibility_(){
-        var hideFactory = isShoppingListing_();
-        if(factoryInfoUploadBox){
-          factoryInfoUploadBox.style.display = hideFactory ? 'none' : '';
-        }
-        if(factoryInfoTitle){
-          factoryInfoTitle.style.display = hideFactory ? 'none' : '';
-          var walker = factoryInfoTitle.nextElementSibling;
-          while(walker && !walker.classList.contains('requester-card')){
-            walker.style.display = hideFactory ? 'none' : '';
-            walker = walker.nextElementSibling;
-          }
-        }
-      }
-
-      function setServerSaveButtonLabel_(label){
-        if(!draftSaveBtn) return;
-        var textEl = draftSaveBtn.querySelector('span');
-        if(textEl) textEl.textContent = label || '';
-        else draftSaveBtn.textContent = label || '';
-      }
-
-      function startServerSaveLoadingText_(){
-        var frames = ['전송중', '전송중.', '전송중..', '전송중...'];
-        var idx = 0;
-        stopServerSaveLoadingText_();
-        draftSaveBtn.classList.add('is-sending');
-        draftSaveBtn.disabled = true;
-        setServerSaveButtonLabel_(frames[0]);
-        serverSaveTextTimer = setInterval(function(){
-          idx = (idx + 1) % frames.length;
-          setServerSaveButtonLabel_(frames[idx]);
-        }, 360);
-      }
-
-      function stopServerSaveLoadingText_(){
-        if(serverSaveTextTimer){
-          clearInterval(serverSaveTextTimer);
-          serverSaveTextTimer = null;
-        }
-        if(draftSaveBtn){
-          draftSaveBtn.classList.remove('is-sending');
-          draftSaveBtn.disabled = false;
-        }
-        setServerSaveButtonLabel_('서버저장');
-      }
-
-      function tryOpenAddressSearchFromField_(evt){
-        if(addressSearchLock) {
-          if(evt){ evt.preventDefault(); evt.stopPropagation(); }
-          return;
-        }
-        addressSearchLock = true;
-        if(evt){
-          evt.preventDefault();
-          evt.stopPropagation();
-        }
-        openAddressSearch_();
-        setTimeout(function(){
-          addressSearchLock = false;
-        }, 500);
-      }
-
-      function requestCloseSummaryHelper_(){
-        if(summaryHelperHistoryArmed){
-          history.back();
-          return;
-        }
-        closeSummaryHelperModal_();
-      }
-
       function buildPropertyPayload_(){
         var currentListingNumber = listingNumber || plainText(listingNumberField) || '';
         if (!currentListingNumber) {
@@ -2668,7 +2564,9 @@
 
       function serverSave_(){
         queueSave();
-        startServerSaveLoadingText_();
+        var originalText = draftSaveBtn.textContent;
+        draftSaveBtn.disabled = true;
+        draftSaveBtn.textContent = '전송중...';
 
         return waitForPendingTempUploads_()
           .then(function(){
@@ -2682,7 +2580,8 @@
             showToast('전송 실패');
           })
           .finally(function(){
-            stopServerSaveLoadingText_();
+            draftSaveBtn.disabled = false;
+            draftSaveBtn.textContent = originalText;
           });
       }
 
@@ -2803,10 +2702,6 @@
         setEditableText_(findSpecValueByLabel_('사무동 포함'), item.officeIncluded || '');
         setEditableText_(findSpecValueByLabel_('야드 크기'), item.yardSize || '');
         setEditableText_(findSpecValueByLabel_('즉시 가동'), item.readyToOperate || '');
-
-        selectedListingPrefix = String(listingNumber || '').trim().toUpperCase().indexOf('SK-') === 0 ? 'SK'
-          : (String(listingNumber || '').trim().toUpperCase().indexOf('MK-') === 0 ? 'MK' : selectedListingPrefix);
-        updateFactorySectionsVisibility_();
 
         setRequesterFieldValue_('의뢰인명', item.requesterName || '');
         setRequesterFieldValue_('연락처', item.requesterPhone || '');
@@ -3079,10 +2974,6 @@
 
       function openSummaryHelperModal_(){
         if(!summaryHelperModal) return;
-        if(!summaryHelperHistoryArmed){
-          history.pushState({ summaryHelperModal: true }, '', location.href);
-          summaryHelperHistoryArmed = true;
-        }
         summaryHelperModal.classList.add('show');
         summaryHelperModal.setAttribute('aria-hidden', 'false');
         summaryHelperActiveCategory = '전체';
@@ -3141,7 +3032,6 @@
         if(!summaryHelperModal) return;
         summaryHelperModal.classList.remove('show');
         summaryHelperModal.setAttribute('aria-hidden', 'true');
-        summaryHelperHistoryArmed = false;
       }
 
       function showToast(msg){
@@ -3397,7 +3287,6 @@
         maintenanceFeeField.setAttribute('data-placeholder', '임대인 경우');
         renderPriceFieldForDealType_();
         updateTopFields();
-        updateFactorySectionsVisibility_();
         queueSave();
       }
 
@@ -3724,17 +3613,6 @@
       }
 
       heroAddBtn.addEventListener('click', function(){ photoInput.click(); });
-      if(heroEmptyState){
-        heroEmptyState.style.cursor = 'pointer';
-        heroEmptyState.addEventListener('click', function(){
-          if(!photoList.length && photoInput) photoInput.click();
-        });
-      }
-      if(heroImage){
-        heroImage.addEventListener('click', function(){
-          if(!photoList.length && photoInput) photoInput.click();
-        });
-      }
       ledgerUploadBtn.addEventListener('click', function(){ ledgerInput.click(); });
 
       deleteCurrentPhotoBtn.addEventListener('click', function(){
@@ -4068,15 +3946,9 @@
               updateTopFields();
               queueSave();
               showToast('주소 선택 완료');
-            },
-            onclose:function(){
-              setTimeout(function(){
-                addressSearchLock = false;
-              }, 120);
             }
           }).open();
         }catch(e){
-          addressSearchLock = false;
           showToast('주소검색 오류');
         }
       }
@@ -4655,12 +4527,12 @@
       }
       if(summaryHelperCloseBtn){
         summaryHelperCloseBtn.addEventListener('click', function(){
-          requestCloseSummaryHelper_();
+          closeSummaryHelperModal_();
         });
       }
       if(summaryHelperCancelBtn){
         summaryHelperCancelBtn.addEventListener('click', function(){
-          requestCloseSummaryHelper_();
+          closeSummaryHelperModal_();
         });
       }
       if(summaryHelperApplyBtn){
@@ -4676,7 +4548,7 @@
       if(summaryHelperModal){
         summaryHelperModal.addEventListener('click', function(e){
           if(e.target === summaryHelperModal){
-            requestCloseSummaryHelper_();
+            closeSummaryHelperModal_();
           }
         });
       }
@@ -4721,7 +4593,6 @@
 
       function chooseListingTeam(prefix){
         selectedListingPrefix = String(prefix || '').trim().toUpperCase();
-        updateFactorySectionsVisibility_();
         closeTeamSelectModal();
         var callback = pendingTeamSelectionCallback;
         pendingTeamSelectionCallback = null;
@@ -4792,7 +4663,6 @@
       function assignListingNumber(){
         if(listingNumber) {
           listingNumberField.textContent = listingNumber;
-          updateFactorySectionsVisibility_();
           return;
         }
         if(!selectedListingPrefix){
@@ -4809,7 +4679,6 @@
         var creatorSuffix = getCreatorInitialSuffix_();
         listingNumber = selectedListingPrefix + '-' + y + m + day + '-' + rand + creatorSuffix;
         listingNumberField.textContent = listingNumber;
-        updateFactorySectionsVisibility_();
       }
 
       function serializeEditables(){
@@ -5012,18 +4881,9 @@
 
 
       if(addressSearchBtn){
-        addressSearchBtn.addEventListener('click', function(e){
-          tryOpenAddressSearchFromField_(e);
+        addressSearchBtn.addEventListener('click', function(){
+          openAddressSearch_();
         });
-      }
-
-      if(addressField){
-        addressField.addEventListener('click', function(e){
-          tryOpenAddressSearchFromField_(e);
-        });
-        addressField.addEventListener('touchend', function(e){
-          tryOpenAddressSearchFromField_(e);
-        }, { passive:false });
       }
 
       if(addressLookupBtn){
@@ -5112,7 +4972,6 @@
           updateTopFields();
           renderHero();
           renderLedgerStatus();
-          updateFactorySectionsVisibility_();
           startNewEntryWithTeamSelection_();
         }else{
           restoreDraftState();
@@ -5122,7 +4981,6 @@
           updateTopFields();
           renderHero();
           renderLedgerStatus();
-          updateFactorySectionsVisibility_();
         }
       }
 
@@ -5133,17 +4991,9 @@
         });
       }
 
-      window.addEventListener('popstate', function(){
-        if(summaryHelperModal && summaryHelperModal.classList.contains('show')){
-          closeSummaryHelperModal_();
-          return;
-        }
-      });
-
       if (queryListingNumber) {
         history.pushState({ adminGuard: true }, '', location.href);
         window.addEventListener('popstate', function(){
-          if(summaryHelperModal && summaryHelperModal.classList.contains('show')) return;
           location.href = '/listings';
         }, { once: true });
       }

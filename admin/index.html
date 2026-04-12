@@ -3615,6 +3615,11 @@
       }
 
       heroAddBtn.addEventListener('click', function(){ photoInput.click(); });
+      if(heroEmptyState){
+        heroEmptyState.addEventListener('click', function(){
+          heroAddBtn.click();
+        });
+      }
       ledgerUploadBtn.addEventListener('click', function(){ ledgerInput.click(); });
 
       deleteCurrentPhotoBtn.addEventListener('click', function(){

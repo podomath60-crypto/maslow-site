@@ -1547,7 +1547,6 @@
     }
 
     function resetCalendarThreadEditor(){
-      calendarEditingThreadItem = null;
       if(calendarThreadInput) calendarThreadInput.value = '';
       if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '등록';
       if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.add('is-hidden');
@@ -1604,7 +1603,7 @@
           try{ textarea.focus(); textarea.setSelectionRange(textarea.value.length, textarea.value.length); }catch(e){}
         }, 40);
       }
-      setCalendarThreadWriteOpen(false);
+      setCalendarThreadWriteOpen(false, true);
       setTimeout(function(){ scrollCalendarElementToTopOffset(card); }, 20);
     }
 
@@ -1667,7 +1666,7 @@
       });
     }
 
-    function setCalendarThreadWriteOpen(isOpen){
+    function setCalendarThreadWriteOpen(isOpen, preserveInlineState){
       if(!calendarThreadWrite || !calendarThreadFab) return;
       if(isOpen){
         closeCalendarInlineEditor();
@@ -1680,6 +1679,9 @@
         calendarThreadFab.classList.remove('is-open');
         calendarThreadFab.textContent = '+';
         resetCalendarThreadEditor();
+        if(!preserveInlineState && !calendarThreadWrite.classList.contains('show') && !calendarActiveEditCard){
+          calendarEditingThreadItem = null;
+        }
       }
     }
 

@@ -108,20 +108,20 @@
     .floating-server-save{
       position:fixed;
       left:50%;
-      bottom:calc(34px + env(safe-area-inset-bottom, 0px));
+      bottom:calc(56px + env(safe-area-inset-bottom, 0px));
       transform:translateX(-50%);
       z-index:90;
       width:auto;
-      min-width:132px;
+      min-width:136px;
       min-height:48px;
       padding:0 22px;
       border-radius:14px;
-      border:2px solid #0f7cff;
+      border:1px solid #0f7cff;
       background:#0f7cff;
       color:#fff;
       font-size:15px;
       font-weight:900;
-      box-shadow:0 12px 28px rgba(15,124,255,.24);
+      box-shadow:0 12px 28px rgba(15,124,255,.28);
     }
     .floating-server-save:disabled{
       opacity:.7;
@@ -171,6 +171,7 @@
       justify-content:center;
       gap:12px;
       padding:24px;
+      cursor:pointer;
     }
     .hero-empty-icon{
       width:72px;
@@ -984,11 +985,11 @@
         font-size:12px;
       }
       .floating-server-save{
-        min-width:120px;
+        min-width:124px;
         min-height:44px;
         padding:0 18px;
         font-size:14px;
-        bottom:calc(28px + env(safe-area-inset-bottom, 0px));
+        bottom:calc(48px + env(safe-area-inset-bottom, 0px));
       }
       .property-detail-title{
         font-size:34px;
@@ -2081,6 +2082,7 @@
 
       var heroImage = document.getElementById('heroImage');
       var heroEmptyState = document.getElementById('heroEmptyState');
+      var heroEmptyState = document.getElementById('heroEmptyState');
       var photoInput = document.getElementById('photoInput');
       var heroAddBtn = document.getElementById('heroAddBtn');
       var deleteCurrentPhotoBtn = document.getElementById('deleteCurrentPhotoBtn');
@@ -2116,8 +2118,6 @@
       var statusToggleBtn = document.getElementById('statusToggleBtn');
       var saveToast = document.getElementById('saveToast');
       var requesterContactSearchBtn = document.getElementById('requesterContactSearchBtn');
-      var serverSaveLoadingTimer = null;
-      var serverSaveLoadingBaseText = '';
       var summaryHelperBtn = document.getElementById('summaryHelperBtn');
       var summaryHelperModal = document.getElementById('summaryHelperModal');
       var summaryHelperCloseBtn = document.getElementById('summaryHelperCloseBtn');
@@ -2564,40 +2564,11 @@
         };
       }
 
-      function startServerSaveLoading_(){
-        if(!draftSaveBtn) return;
-        serverSaveLoadingBaseText = '전송중';
-        var frames = ['전송중   ', '전송중.  ', '전송중.. ', '전송중...'];
-        var idx = 0;
-        draftSaveBtn.textContent = frames[0];
-        if(serverSaveLoadingTimer) clearInterval(serverSaveLoadingTimer);
-        serverSaveLoadingTimer = setInterval(function(){
-          idx = (idx + 1) % frames.length;
-          draftSaveBtn.textContent = frames[idx];
-        }, 360);
-      }
-
-      function stopServerSaveLoading_(restoreText){
-        if(serverSaveLoadingTimer){
-          clearInterval(serverSaveLoadingTimer);
-          serverSaveLoadingTimer = null;
-        }
-        if(draftSaveBtn) draftSaveBtn.textContent = restoreText || serverSaveLoadingBaseText || '서버저장';
-      }
-
-      function openAddressSearchFromField_(e){
-        if(e){
-          if(typeof e.preventDefault === 'function') e.preventDefault();
-          if(typeof e.stopPropagation === 'function') e.stopPropagation();
-        }
-        openAddressSearch_();
-      }
-
       function serverSave_(){
         queueSave();
         var originalText = draftSaveBtn.textContent;
         draftSaveBtn.disabled = true;
-        startServerSaveLoading_();
+        draftSaveBtn.textContent = '전송중...';
 
         return waitForPendingTempUploads_()
           .then(function(){
@@ -2612,7 +2583,7 @@
           })
           .finally(function(){
             draftSaveBtn.disabled = false;
-            stopServerSaveLoading_(originalText);
+            draftSaveBtn.textContent = originalText;
           });
       }
 
@@ -3644,6 +3615,11 @@
       }
 
       heroAddBtn.addEventListener('click', function(){ photoInput.click(); });
+      if(heroEmptyState){
+        heroEmptyState.addEventListener('click', function(){
+          heroAddBtn.click();
+        });
+      }
       ledgerUploadBtn.addEventListener('click', function(){ ledgerInput.click(); });
 
       deleteCurrentPhotoBtn.addEventListener('click', function(){
@@ -4918,9 +4894,9 @@
       }
 
       if(addressField){
-        addressField.addEventListener('click', openAddressSearchFromField_);
-        addressField.addEventListener('focus', openAddressSearchFromField_);
-        addressField.addEventListener('touchend', openAddressSearchFromField_);
+        addressField.addEventListener('focus', function(){
+          openAddressSearch_();
+        });
       }
 
       if(addressLookupBtn){

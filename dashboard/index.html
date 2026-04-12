@@ -1053,6 +1053,49 @@
     text-align:center;
   }
 
+
+  .calendar-thread-item.is-editing{
+    border-color:#bfdcff;
+    background:#f7fbff;
+    box-shadow:0 10px 24px rgba(15,124,255,.08);
+  }
+  .calendar-thread-inline-editor{
+    display:grid;
+    gap:8px;
+    margin-top:2px;
+  }
+  .calendar-thread-inline-textarea{
+    width:100%;
+    min-height:96px;
+    resize:vertical;
+    border:1.5px solid #bfdcff;
+    border-radius:14px;
+    padding:12px 14px;
+    outline:none;
+    background:#fff;
+    color:#111318;
+    font-size:14px;
+    font-weight:700;
+    line-height:1.5;
+    font-family:inherit;
+  }
+  .calendar-thread-inline-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:16px;
+  }
+  .calendar-thread-inline-btn{
+    min-height:32px;
+    padding:0 4px;
+    border:none;
+    background:transparent;
+    font-size:15px;
+    font-weight:700;
+  }
+  .calendar-thread-inline-btn.save{color:#0f7cff;}
+  .calendar-thread-inline-btn.delete{color:#7b8794;}
+
   @media (max-width:860px){
     .calendar-modal-topbar-inner{padding:0 16px}
     .calendar-modal-inner{padding:14px 16px 28px}
@@ -1390,6 +1433,7 @@
     let calendarCurrentDetail = null;
     let calendarThreadMap = {};
     let calendarEditingThreadItem = null;
+    let calendarActiveEditCard = null;
     let calendarHistoryArmed = false;
 
     const calendarModal = document.getElementById('calendarModal');
@@ -1490,12 +1534,15 @@
       calendarWriterChip.textContent = meta.emoji + ' ' + meta.name;
     }
 
-    function scrollCalendarWritePanelToCenter(){
-      if(!calendarThreadWrite) return;
+    function scrollCalendarElementToTopOffset(el){
+      if(!el) return;
+      const rect = el.getBoundingClientRect();
+      const absoluteTop = rect.top + window.pageYOffset;
+      const targetTop = Math.max(0, absoluteTop - (window.innerHeight * 0.15));
       try{
-        calendarThreadWrite.scrollIntoView({ behavior:'smooth', block:'center' });
+        window.scrollTo({ top: targetTop, behavior:'smooth' });
       }catch(e){
-        calendarThreadWrite.scrollIntoView();
+        window.scrollTo(0, targetTop);
       }
     }
 
@@ -1506,16 +1553,54 @@
       if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.add('is-hidden');
     }
 
-    function openCalendarThreadEditor(item){
-      if(!item) return;
+    function closeCalendarInlineEditor(){
+      if(!calendarActiveEditCard) {
+        calendarEditingThreadItem = null;
+        return;
+      }
+      const card = calendarActiveEditCard;
+      const item = card.__threadItem || null;
+      card.classList.remove('is-editing');
+      if(item){
+        card.innerHTML = ''
+          + '<div class="calendar-thread-head">'
+          +   '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
+          +   '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
+          + '</div>'
+          + '<div class="calendar-thread-content">' + escapeHtml(item.content || '') + '</div>';
+      }
+      calendarActiveEditCard = null;
+      calendarEditingThreadItem = null;
+    }
+
+    function openCalendarThreadEditor(card, item){
+      if(!card || !item) return;
+      if(calendarActiveEditCard && calendarActiveEditCard !== card){
+        closeCalendarInlineEditor();
+      }
       calendarEditingThreadItem = item;
-      if(calendarThreadInput) calendarThreadInput.value = text(item.content);
-      if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '수정등록';
-      if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.remove('is-hidden');
-      setCalendarThreadWriteOpen(true);
-      setTimeout(function(){
-        try{ calendarThreadInput.focus(); }catch(e){}
-      }, 60);
+      calendarActiveEditCard = card;
+      card.classList.add('is-editing');
+      card.innerHTML = ''
+        + '<div class="calendar-thread-head">'
+        +   '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
+        +   '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
+        + '</div>'
+        + '<div class="calendar-thread-inline-editor">'
+        +   '<textarea class="calendar-thread-inline-textarea">' + escapeHtml(item.content || '') + '</textarea>'
+        +   '<div class="calendar-thread-inline-actions">'
+        +     '<button type="button" class="calendar-thread-inline-btn delete">삭제</button>'
+        +     '<button type="button" class="calendar-thread-inline-btn save">수정등록</button>'
+        +   '</div>'
+        + '</div>';
+      const textarea = card.querySelector('.calendar-thread-inline-textarea');
+      if(textarea){
+        setTimeout(function(){
+          try{ textarea.focus(); textarea.setSelectionRange(textarea.value.length, textarea.value.length); }catch(e){}
+        }, 40);
+      }
+      setCalendarThreadWriteOpen(false);
+      setTimeout(function(){ scrollCalendarElementToTopOffset(card); }, 20);
     }
 
     function deleteCurrentCalendarThread(){
@@ -1526,7 +1611,7 @@
       items.splice(targetIndex, 1);
       calendarThreadMap[calendarSelectedDateKey] = items;
       calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
-      setCalendarThreadWriteOpen(false);
+      closeCalendarInlineEditor();
       renderCalendarGrid();
       loadCalendarDateDetail(calendarSelectedDateKey);
     }
@@ -1534,10 +1619,11 @@
     function setCalendarThreadWriteOpen(isOpen){
       if(!calendarThreadWrite || !calendarThreadFab) return;
       if(isOpen){
+        closeCalendarInlineEditor();
         calendarThreadWrite.classList.add('show');
         calendarThreadFab.classList.add('is-open');
         calendarThreadFab.textContent = '×';
-        setTimeout(scrollCalendarWritePanelToCenter, 40);
+        setTimeout(function(){ scrollCalendarElementToTopOffset(calendarThreadWrite); }, 40);
       }else{
         calendarThreadWrite.classList.remove('show');
         calendarThreadFab.classList.remove('is-open');
@@ -1853,6 +1939,7 @@
     }
 
     function renderCalendarDetail(){
+      closeCalendarInlineEditor();
       const detail = calendarCurrentDetail || {};
       const properties = Array.isArray(detail.properties) ? detail.properties : [];
       const threads = Array.isArray(detail.threads) ? detail.threads : [];
@@ -1959,7 +2046,9 @@
 
     function submitCalendarThread(){
       const writerCode = getUnlockedWriterCode();
-      const content = text(calendarThreadInput.value);
+      const isInlineEditing = !!(calendarEditingThreadItem && calendarActiveEditCard);
+      const inlineTextarea = isInlineEditing ? calendarActiveEditCard.querySelector('.calendar-thread-inline-textarea') : null;
+      const content = isInlineEditing ? text(inlineTextarea ? inlineTextarea.value : '') : text(calendarThreadInput.value);
 
       if(!calendarSelectedDateKey){
         alert('날짜를 먼저 선택하세요.');
@@ -1974,11 +2063,17 @@
         return;
       }
 
-      if(calendarEditingThreadItem){
-        calendarEditingThreadItem.content = content;
+      if(calendarEditingThreadItem && calendarActiveEditCard){
+        const textarea = calendarActiveEditCard.querySelector('.calendar-thread-inline-textarea');
+        const nextContent = text(textarea ? textarea.value : '');
+        if(!nextContent){
+          alert('내용을 입력하세요.');
+          return;
+        }
+        calendarEditingThreadItem.content = nextContent;
         calendarEditingThreadItem.updatedAt = new Date().toISOString();
         calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
-        setCalendarThreadWriteOpen(false);
+        closeCalendarInlineEditor();
         renderCalendarGrid();
         loadCalendarDateDetail(calendarSelectedDateKey);
         return;
@@ -2036,13 +2131,31 @@
     calendarNoticeEditBtn.addEventListener('click', openCalendarNoticeEdit);
     if(calendarThreadList){
       calendarThreadList.addEventListener('click', function(e){
+        const deleteBtn = e.target.closest('.calendar-thread-inline-btn.delete');
+        if(deleteBtn && calendarActiveEditCard && calendarActiveEditCard.contains(deleteBtn)){
+          e.stopPropagation();
+          deleteCurrentCalendarThread();
+          return;
+        }
+        const saveBtn = e.target.closest('.calendar-thread-inline-btn.save');
+        if(saveBtn && calendarActiveEditCard && calendarActiveEditCard.contains(saveBtn)){
+          e.stopPropagation();
+          submitCalendarThread();
+          return;
+        }
         const card = e.target.closest('.calendar-thread-item.is-own');
         if(!card || !calendarThreadList.contains(card)) return;
         const item = card.__threadItem || null;
         if(!item) return;
-        openCalendarThreadEditor(item);
+        if(card === calendarActiveEditCard) return;
+        openCalendarThreadEditor(card, item);
       });
     }
+    document.addEventListener('click', function(e){
+      if(!calendarActiveEditCard) return;
+      if(calendarActiveEditCard.contains(e.target)) return;
+      closeCalendarInlineEditor();
+    }, true);
     calendarNoticeCancelBtn.addEventListener('click', closeCalendarNoticeEdit);
     if(calendarThreadFab){ calendarThreadFab.addEventListener('click', toggleCalendarThreadWrite); }
     calendarNoticeSaveBtn.addEventListener('click', saveCalendarNotice);

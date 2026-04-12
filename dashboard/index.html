@@ -184,7 +184,7 @@
     }
     .mini-btn.blue{border-color:#cfe2ff;background:#eef5ff;color:#0f7cff}
     .mini-btn.gray{border-color:#dde3ea;background:#f4f6f8;color:#6e7782}
-    .mini-btn.square{border-radius:10px;padding:0 12px;min-height:34px}
+    .mini-btn.square{border-radius:10px;padding:0 8px;min-height:34px;font-size:16px;font-weight:800;letter-spacing:-0.03em;display:inline-flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap}
     .mini-btn.edit-square{border-color:#b9dcff;background:#ecf6ff;color:#3a8fe6}
     .mini-btn.memo-square{border-color:#e8dc7e;background:#fff4a8;color:#7a6500}
     .mini-btn.share-square{border-color:#cde8b0;background:#e9f8d7;color:#5e8d1b}
@@ -585,25 +585,29 @@
         align-items:stretch;
       }
       .mini-btn.square{
-        min-height:31px;
-        padding:4px 8px 3px;
+        min-height:34px;
+        padding:0 8px;
         display:inline-flex;
-        flex-direction:column;
+        flex-direction:row;
         align-items:center;
         justify-content:center;
-        gap:1px;
-        line-height:1.02;
+        gap:2px;
+        line-height:1;
+        font-size:16px;
+        font-weight:800;
+        letter-spacing:-0.03em;
+        white-space:nowrap;
       }
       .mini-btn.square .btn-emoji{
-        display:block;
-        font-size:12px;
+        display:inline;
+        font-size:1em;
         line-height:1;
       }
       .mini-btn.square .btn-text{
-        display:block;
-        font-size:11px;
-        line-height:1.02;
-        letter-spacing:-0.04em;
+        display:inline;
+        font-size:1em;
+        line-height:1;
+        letter-spacing:inherit;
       }
       .mini-btn.visibility-btn{
         min-height:29px;

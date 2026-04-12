@@ -581,6 +581,227 @@
         font-size:13px;
       }
     }
+  
+
+  .calendar-modal{
+    position:fixed;
+    inset:0;
+    z-index:12100;
+    display:none;
+    background:#f7fbff;
+  }
+  .calendar-modal.show{display:block}
+  .calendar-modal-sheet{
+    width:100vw;
+    height:100dvh;
+    min-height:100dvh;
+    background:linear-gradient(180deg,#ffffff 0%,#f5f9ff 100%);
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .calendar-modal-inner{
+    width:100%;
+    max-width:980px;
+    margin:0 auto;
+    padding:0 20px 40px;
+  }
+  .calendar-modal-topbar{
+    position:sticky;
+    top:0;
+    z-index:5;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    min-height:76px;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid rgba(230,235,241,.9);
+  }
+  .calendar-modal-topbar-inner{
+    width:100%;
+    max-width:980px;
+    margin:0 auto;
+    padding:0 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .calendar-modal-back{
+    min-height:42px;
+    padding:0 14px;
+    border-radius:999px;
+    border:1px solid #dce6f1;
+    background:#fff;
+    color:#111318;
+    font-size:14px;
+    font-weight:900;
+    letter-spacing:-0.02em;
+  }
+  .calendar-modal-title{
+    flex:1 1 auto;
+    min-width:0;
+    text-align:center;
+    font-size:20px;
+    font-weight:900;
+    letter-spacing:-0.04em;
+    color:#17191d;
+  }
+  .calendar-modal-spacer{width:72px;flex:0 0 72px}
+  .calendar-section{margin:18px 0 0}
+  .calendar-card{
+    border:1px solid #e6ebf1;
+    border-radius:28px;
+    background:#fff;
+    box-shadow:0 14px 30px rgba(15,23,42,.05);
+    overflow:hidden;
+  }
+  .calendar-notice{padding:18px 18px 16px}
+  .calendar-notice-top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .calendar-notice-label{
+    font-size:12px;
+    font-weight:900;
+    color:#7d8792;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .calendar-notice-view{display:grid;gap:8px}
+  .calendar-notice-text{
+    font-size:22px;
+    line-height:1.34;
+    font-weight:900;
+    color:#14171b;
+    letter-spacing:-0.04em;
+    word-break:keep-all;
+  }
+  .calendar-notice-link{
+    font-size:13px;
+    line-height:1.5;
+    color:#0f7cff;
+    font-weight:800;
+    word-break:break-all;
+  }
+  .calendar-notice-edit-btn,
+  .calendar-notice-save-btn,
+  .calendar-notice-cancel-btn{
+    min-height:34px;
+    padding:0 12px;
+    border-radius:999px;
+    border:1px solid #dce6f1;
+    background:#fff;
+    color:#111318;
+    font-size:13px;
+    font-weight:900;
+    letter-spacing:-0.02em;
+    white-space:nowrap;
+  }
+  .calendar-notice-save-btn{border-color:#0f7cff;background:#0f7cff;color:#fff}
+  .calendar-notice-edit{display:none;margin-top:14px;gap:10px}
+  .calendar-notice-edit.show{display:grid}
+  .calendar-notice-input{
+    width:100%;
+    min-height:48px;
+    border:1.5px solid #dbe5ee;
+    border-radius:16px;
+    padding:0 14px;
+    outline:none;
+    background:#fff;
+    color:#111318;
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:-0.02em;
+  }
+  .calendar-notice-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+  .calendar-month{margin-top:14px;padding:18px}
+  .calendar-month-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+  .calendar-month-nav{
+    width:42px;
+    height:42px;
+    border-radius:999px;
+    border:1px solid #dce6f1;
+    background:#fff;
+    color:#111318;
+    font-size:18px;
+    font-weight:900;
+  }
+  .calendar-month-label{font-size:24px;font-weight:900;letter-spacing:-0.04em;color:#17191d}
+  .calendar-weekdays,.calendar-grid{display:grid;grid-template-columns:repeat(7, minmax(0, 1fr));gap:8px}
+  .calendar-weekday{text-align:center;font-size:12px;font-weight:900;color:#7d8792;padding:6px 0 2px}
+  .calendar-day{
+    min-height:122px;
+    padding:10px 10px 12px;
+    border-radius:22px;
+    border:1px solid #e6ebf1;
+    background:#fbfdff;
+    text-align:left;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    transition:.18s ease;
+  }
+  .calendar-day:hover{transform:translateY(-1px);box-shadow:0 12px 24px rgba(15,23,42,.06)}
+  .calendar-day.is-empty{background:transparent;border:1px dashed #edf2f7}
+  .calendar-day.is-selected{border-color:#bfdcff;background:linear-gradient(180deg,#f7fbff 0%,#edf6ff 100%);box-shadow:0 12px 24px rgba(15,124,255,.08)}
+  .calendar-day.is-today .calendar-day-num{color:#0f7cff}
+  .calendar-day-num{font-size:16px;font-weight:900;line-height:1;color:#17191d;letter-spacing:-0.03em}
+  .calendar-day-stats{display:grid;gap:4px;margin-top:auto}
+  .calendar-day-stat{display:inline-flex;align-items:center;justify-content:flex-start;min-height:22px;padding:0 8px;border-radius:999px;background:#fff;border:1px solid #e7edf4;color:#51606f;font-size:11px;font-weight:900;letter-spacing:-0.02em;width:max-content;max-width:100%}
+  .calendar-day-stat.shopping{color:#0f7cff;border-color:#d6e7ff;background:#f3f8ff}
+  .calendar-day-stat.factory{color:#166534;border-color:#d7f0dd;background:#f3fcf5}
+  .calendar-day-stat.thread{color:#7c3aed;border-color:#eadcff;background:#faf5ff}
+  .calendar-detail{margin-top:14px;padding:18px;display:grid;gap:14px}
+  .calendar-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .calendar-detail-date{font-size:24px;line-height:1.2;font-weight:900;color:#17191d;letter-spacing:-0.04em}
+  .calendar-detail-meta{font-size:13px;color:#7b8794;font-weight:900}
+  .calendar-subsection{display:grid;gap:10px}
+  .calendar-subtitle{font-size:17px;line-height:1.3;font-weight:900;color:#202227;letter-spacing:-0.03em}
+  .calendar-property-list,.calendar-thread-list{display:grid;gap:10px}
+  .calendar-property-item{display:grid;grid-template-columns:82px 1fr;gap:12px;padding:12px;border:1px solid #e7edf4;border-radius:20px;background:#fbfdff}
+  .calendar-property-thumb{width:82px;height:82px;border-radius:16px;background:#edf2f7 center/cover no-repeat}
+  .calendar-property-body{min-width:0;display:grid;gap:6px}
+  .calendar-property-title{font-size:18px;line-height:1.2;font-weight:900;color:#17191d;letter-spacing:-0.03em;word-break:keep-all}
+  .calendar-property-address{font-size:14px;line-height:1.5;font-weight:700;color:#5a6570;word-break:keep-all}
+  .calendar-property-price{font-size:14px;line-height:1.5;font-weight:900;color:#ff3c3c}
+  .calendar-property-meta{font-size:12px;line-height:1.5;font-weight:800;color:#7b8794}
+  .calendar-thread-write{display:grid;gap:10px;padding:14px;border:1px solid #e7edf4;border-radius:20px;background:#fbfdff}
+  .calendar-thread-write-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .calendar-writer-chip{display:inline-flex;align-items:center;min-height:30px;padding:0 10px;border-radius:999px;background:#fff;border:1px solid #e1e8f0;color:#4c5b69;font-size:12px;font-weight:900}
+  .calendar-thread-textarea{width:100%;min-height:96px;resize:vertical;border:1.5px solid #dbe5ee;border-radius:16px;padding:12px 14px;outline:none;background:#fff;color:#111318;font-size:14px;font-weight:700;letter-spacing:-0.02em;font-family:inherit}
+  .calendar-thread-submit{justify-self:end;min-height:40px;padding:0 16px;border-radius:999px;border:1px solid #0f7cff;background:#0f7cff;color:#fff;font-size:14px;font-weight:900;letter-spacing:-0.02em}
+  .calendar-thread-item{padding:14px;border:1px solid #e7edf4;border-radius:20px;background:#fff;display:grid;gap:8px}
+  .calendar-thread-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .calendar-thread-writer{font-size:14px;font-weight:900;color:#17191d;letter-spacing:-0.02em}
+  .calendar-thread-time{font-size:12px;font-weight:800;color:#7b8794}
+  .calendar-thread-content{font-size:14px;line-height:1.6;font-weight:700;color:#4f5863;white-space:pre-wrap;word-break:break-word}
+  .calendar-empty{padding:18px 16px;border:1px dashed #d9e3ed;border-radius:18px;background:#fff;color:#7b8794;font-size:14px;font-weight:800;text-align:center}
+
+  @media (max-width:860px){
+    .calendar-modal-inner{padding:0 16px 32px}
+    .calendar-modal-topbar-inner{padding:0 16px}
+    .calendar-modal-title{font-size:18px}
+    .calendar-modal-spacer{width:62px;flex:0 0 62px}
+    .calendar-card{border-radius:22px}
+    .calendar-notice,.calendar-month,.calendar-detail{padding:16px}
+    .calendar-notice-text{font-size:19px}
+    .calendar-month-label{font-size:21px}
+    .calendar-weekdays,.calendar-grid{gap:6px}
+    .calendar-day{min-height:98px;padding:8px 8px 10px;border-radius:18px}
+    .calendar-day-num{font-size:15px}
+    .calendar-day-stat{font-size:10px;min-height:20px;padding:0 7px}
+    .calendar-detail-date{font-size:21px}
+    .calendar-property-item{grid-template-columns:72px 1fr;gap:10px;padding:10px;border-radius:18px}
+    .calendar-property-thumb{width:72px;height:72px;border-radius:14px}
+    .calendar-property-title{font-size:16px}
+    .calendar-thread-item,.calendar-thread-write{border-radius:18px;padding:12px}
+  }
+
   </style>
 </head>
 <body>
@@ -691,6 +912,98 @@
     </div>
   </div>
 
+
+
+  <div id="calendarModal" class="calendar-modal" aria-hidden="true">
+    <div class="calendar-modal-sheet">
+      <div class="calendar-modal-topbar">
+        <div class="calendar-modal-topbar-inner">
+          <button type="button" class="calendar-modal-back" onclick="closeCalendarModal()">← 뒤로</button>
+          <div class="calendar-modal-title">캘린더</div>
+          <div class="calendar-modal-spacer"></div>
+        </div>
+      </div>
+
+      <div class="calendar-modal-inner">
+        <section class="calendar-section">
+          <div class="calendar-card calendar-notice">
+            <div class="calendar-notice-label">Notice</div>
+
+            <div class="calendar-notice-top">
+              <div class="calendar-notice-view">
+                <div id="calendarNoticeText" class="calendar-notice-text">매슬로우 화이팅</div>
+                <a id="calendarNoticeLink" class="calendar-notice-link" href="#" target="_blank" rel="noopener" style="display:none;"></a>
+              </div>
+              <button type="button" id="calendarNoticeEditBtn" class="calendar-notice-edit-btn">수정</button>
+            </div>
+
+            <div id="calendarNoticeEdit" class="calendar-notice-edit">
+              <input id="calendarNoticeInput" class="calendar-notice-input" type="text" placeholder="공지 문구">
+              <input id="calendarNoticeLinkInput" class="calendar-notice-input" type="text" placeholder="링크">
+              <div class="calendar-notice-actions">
+                <button type="button" id="calendarNoticeCancelBtn" class="calendar-notice-cancel-btn">취소</button>
+                <button type="button" id="calendarNoticeSaveBtn" class="calendar-notice-save-btn">저장</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="calendar-section">
+          <div class="calendar-card calendar-month">
+            <div class="calendar-month-head">
+              <button type="button" class="calendar-month-nav" onclick="moveCalendarMonth(-1)">‹</button>
+              <div id="calendarMonthLabel" class="calendar-month-label">2026.04</div>
+              <button type="button" class="calendar-month-nav" onclick="moveCalendarMonth(1)">›</button>
+            </div>
+
+            <div class="calendar-weekdays">
+              <div class="calendar-weekday">일</div>
+              <div class="calendar-weekday">월</div>
+              <div class="calendar-weekday">화</div>
+              <div class="calendar-weekday">수</div>
+              <div class="calendar-weekday">목</div>
+              <div class="calendar-weekday">금</div>
+              <div class="calendar-weekday">토</div>
+            </div>
+
+            <div id="calendarGrid" class="calendar-grid"></div>
+          </div>
+        </section>
+
+        <section class="calendar-section">
+          <div class="calendar-card calendar-detail">
+            <div class="calendar-detail-head">
+              <div id="calendarDetailDate" class="calendar-detail-date">날짜 선택</div>
+              <div id="calendarDetailMeta" class="calendar-detail-meta"></div>
+            </div>
+
+            <div class="calendar-subsection">
+              <div class="calendar-subtitle">업로드 매물</div>
+              <div id="calendarPropertyList" class="calendar-property-list"></div>
+            </div>
+
+            <div class="calendar-subsection">
+              <div class="calendar-subtitle">스레드 작성</div>
+              <div class="calendar-thread-write">
+                <div class="calendar-thread-write-top">
+                  <div id="calendarWriterChip" class="calendar-writer-chip">📝 작성자</div>
+                </div>
+                <textarea id="calendarThreadInput" class="calendar-thread-textarea" placeholder="업무 기록을 남겨주세요"></textarea>
+                <button type="button" class="calendar-thread-submit" onclick="submitCalendarThread()">등록</button>
+              </div>
+            </div>
+
+            <div class="calendar-subsection">
+              <div class="calendar-subtitle">스레드</div>
+              <div id="calendarThreadList" class="calendar-thread-list"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+
   <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-panel">
       <img class="loading-buddy" src="https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg" alt="로딩">
@@ -789,6 +1102,15 @@
     let currentTeamFilter = '';
     let nextTeamToggleTarget = 'shopping';
 
+
+    let calendarCurrentMonth = '';
+    let calendarSelectedDateKey = '';
+    let calendarOverviewMap = {};
+    let calendarCurrentNotice = null;
+    let calendarCurrentDetail = null;
+    let calendarHistoryOpen = false;
+
+
     const dashboardRoot = document.getElementById('dashboardRoot');
     const toolbarMeta = document.getElementById('toolbarMeta');
     const searchInput = document.getElementById('searchInput');
@@ -801,6 +1123,24 @@
     const teamToggleTitle = document.getElementById('teamToggleTitle');
     const teamToggleDesc = document.getElementById('teamToggleDesc');
 
+    const calendarModal = document.getElementById('calendarModal');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const calendarMonthLabel = document.getElementById('calendarMonthLabel');
+    const calendarNoticeText = document.getElementById('calendarNoticeText');
+    const calendarNoticeLink = document.getElementById('calendarNoticeLink');
+    const calendarNoticeEdit = document.getElementById('calendarNoticeEdit');
+    const calendarNoticeInput = document.getElementById('calendarNoticeInput');
+    const calendarNoticeLinkInput = document.getElementById('calendarNoticeLinkInput');
+    const calendarNoticeEditBtn = document.getElementById('calendarNoticeEditBtn');
+    const calendarNoticeCancelBtn = document.getElementById('calendarNoticeCancelBtn');
+    const calendarNoticeSaveBtn = document.getElementById('calendarNoticeSaveBtn');
+    const calendarDetailDate = document.getElementById('calendarDetailDate');
+    const calendarDetailMeta = document.getElementById('calendarDetailMeta');
+    const calendarPropertyList = document.getElementById('calendarPropertyList');
+    const calendarThreadList = document.getElementById('calendarThreadList');
+    const calendarThreadInput = document.getElementById('calendarThreadInput');
+    const calendarWriterChip = document.getElementById('calendarWriterChip');
+
     document.getElementById('goAdminBtn').addEventListener('click', function(){
       try{
         localStorage.setItem('MK_FORCE_TEAM_MODAL', '1');
@@ -809,7 +1149,7 @@
     });
 
     document.getElementById('calendarBtn').addEventListener('click', function(){
-      alert('캘린더는 추후 연결 예정입니다.');
+      openCalendarModal();
     });
 
     document.getElementById('goListingLookupBtn').addEventListener('click', function(){
@@ -1498,7 +1838,490 @@
 
     window.addEventListener('keydown', function(e){
       if(e.key === 'Escape'){
+        if(calendarModal.classList.contains('show')){
+          closeCalendarModal();
+          return;
+        }
         closeChannelModal();
+      }
+    });
+
+
+
+    function getUnlockedWriterCode(){
+      const storedName = text(localStorage.getItem(CONFIG.authStorageKey) || unlockedUserName);
+      const match = Object.keys(PASSWORD_MAP).find(function(code){
+        return text(PASSWORD_MAP[code]) === storedName;
+      });
+      return match || '';
+    }
+
+    function getWriterMetaByCode(code){
+      const key = text(code);
+      const map = {
+        '0444': { name:'대표님', emoji:'👨‍⚖️' },
+        '6857': { name:'한이사', emoji:'👩‍🚒' },
+        '8198': { name:'이팀장', emoji:'👩‍🦰' },
+        '1053': { name:'나팀장', emoji:'👦' }
+      };
+      return map[key] || { name:'작성자', emoji:'📝' };
+    }
+
+    function getTodayDateKey(){
+      const now = new Date();
+      return [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2,'0'),
+        String(now.getDate()).padStart(2,'0')
+      ].join('-');
+    }
+
+    function getCurrentMonthKeyFromDate(dateKey){
+      const s = text(dateKey);
+      return s ? s.slice(0, 7) : '';
+    }
+
+    function formatMonthLabel(monthKey){
+      const parts = String(monthKey || '').split('-');
+      if(parts.length !== 2) return '';
+      return parts[0] + '.' + parts[1];
+    }
+
+    function formatDetailDate(dateKey){
+      if(!dateKey) return '날짜 선택';
+      const d = new Date(dateKey + 'T00:00:00');
+      if(Number.isNaN(d.getTime())) return dateKey;
+      const days = ['일','월','화','수','목','금','토'];
+      return d.getFullYear() + '.' + (d.getMonth()+1) + '.' + d.getDate() + ' (' + days[d.getDay()] + ')';
+    }
+
+    function escapeAttr(value){
+      return String(value == null ? '' : value)
+        .replace(/&/g,'&amp;')
+        .replace(/"/g,'&quot;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;');
+    }
+
+    function openCalendarModal(){
+      if(!calendarCurrentMonth){
+        calendarSelectedDateKey = getTodayDateKey();
+        calendarCurrentMonth = getCurrentMonthKeyFromDate(calendarSelectedDateKey);
+      }
+
+      renderCalendarWriterChip();
+      calendarModal.classList.add('show');
+      calendarModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+
+      if(!calendarHistoryOpen){
+        try{
+          history.pushState({ modal: 'calendar' }, '');
+          calendarHistoryOpen = true;
+        }catch(e){}
+      }
+
+      loadCalendarOverview(calendarCurrentMonth).then(function(){
+        if(!calendarSelectedDateKey || getCurrentMonthKeyFromDate(calendarSelectedDateKey) !== calendarCurrentMonth){
+          calendarSelectedDateKey = getTodayDateKey().slice(0, 7) === calendarCurrentMonth
+            ? getTodayDateKey()
+            : calendarCurrentMonth + '-01';
+        }
+        renderCalendarGrid();
+        return loadCalendarDateDetail(calendarSelectedDateKey);
+      });
+    }
+
+    function closeCalendarModal(fromPopState){
+      calendarModal.classList.remove('show');
+      calendarModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      closeCalendarNoticeEdit();
+
+      if(calendarHistoryOpen){
+        calendarHistoryOpen = false;
+        if(!fromPopState){
+          try{ history.back(); }catch(e){}
+        }
+      }
+    }
+
+    function renderCalendarWriterChip(){
+      const writerCode = getUnlockedWriterCode();
+      const meta = getWriterMetaByCode(writerCode);
+      calendarWriterChip.textContent = meta.emoji + ' ' + meta.name;
+    }
+
+    function openCalendarNoticeEdit(){
+      const notice = calendarCurrentNotice || {};
+      calendarNoticeInput.value = text(notice.noticeText || '매슬로우 화이팅');
+      calendarNoticeLinkInput.value = text(notice.noticeLink || '');
+      calendarNoticeEdit.classList.add('show');
+    }
+
+    function closeCalendarNoticeEdit(){
+      calendarNoticeEdit.classList.remove('show');
+    }
+
+    calendarNoticeEditBtn.addEventListener('click', function(){
+      openCalendarNoticeEdit();
+    });
+
+    calendarNoticeCancelBtn.addEventListener('click', function(){
+      closeCalendarNoticeEdit();
+    });
+
+    calendarNoticeSaveBtn.addEventListener('click', function(){
+      saveCalendarNotice();
+    });
+
+    function saveCalendarNotice(){
+      const writerCode = getUnlockedWriterCode();
+      if(!writerCode){
+        alert('작성자 코드가 없습니다.');
+        return;
+      }
+
+      currentLoadingText = '공지 저장중이에요.';
+      startLoadingOverlay();
+
+      fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type':'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          action: 'updateCalendarNotice',
+          noticeText: text(calendarNoticeInput.value) || '매슬로우 화이팅',
+          noticeLink: text(calendarNoticeLinkInput.value),
+          writerCode: writerCode
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('공지 저장 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '공지 저장 실패');
+        }
+        closeCalendarNoticeEdit();
+        return loadCalendarOverview(calendarCurrentMonth);
+      })
+      .then(function(){
+        renderCalendarGrid();
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '공지 저장 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+    }
+
+    function loadCalendarOverview(monthKey){
+      currentLoadingText = '캘린더를 불러오고 있어요.';
+      startLoadingOverlay();
+
+      return fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type':'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          action: 'getCalendarOverview',
+          month: monthKey
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('캘린더 불러오기 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '캘린더 불러오기 실패');
+        }
+
+        calendarCurrentMonth = monthKey;
+        calendarCurrentNotice = data.notice || null;
+        calendarOverviewMap = {};
+
+        (Array.isArray(data.days) ? data.days : []).forEach(function(day){
+          calendarOverviewMap[text(day.dateKey)] = {
+            shoppingCount: Number(day.shoppingCount || 0),
+            factoryCount: Number(day.factoryCount || 0),
+            threadCount: Number(day.threadCount || 0)
+          };
+        });
+
+        renderCalendarNotice();
+        calendarMonthLabel.textContent = formatMonthLabel(monthKey);
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '캘린더 데이터를 불러오지 못했습니다.');
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+    }
+
+    function renderCalendarNotice(){
+      const notice = calendarCurrentNotice || {};
+      const textValue = text(notice.noticeText || '매슬로우 화이팅');
+      const linkValue = text(notice.noticeLink);
+
+      calendarNoticeText.textContent = textValue;
+
+      if(linkValue){
+        calendarNoticeLink.style.display = '';
+        calendarNoticeLink.href = linkValue;
+        calendarNoticeLink.textContent = linkValue;
+      }else{
+        calendarNoticeLink.style.display = 'none';
+        calendarNoticeLink.href = '#';
+        calendarNoticeLink.textContent = '';
+      }
+    }
+
+    function renderCalendarGrid(){
+      const monthKey = calendarCurrentMonth;
+      const parts = monthKey.split('-');
+      const year = Number(parts[0]);
+      const monthIndex = Number(parts[1]) - 1;
+
+      const firstDate = new Date(year, monthIndex, 1);
+      const lastDate = new Date(year, monthIndex + 1, 0);
+      const firstWeekday = firstDate.getDay();
+      const totalDays = lastDate.getDate();
+      const todayKey = getTodayDateKey();
+
+      let html = '';
+
+      for(let i = 0; i < firstWeekday; i += 1){
+        html += '<div class="calendar-day is-empty" aria-hidden="true"></div>';
+      }
+
+      for(let day = 1; day <= totalDays; day += 1){
+        const dateKey = [
+          year,
+          String(monthIndex + 1).padStart(2,'0'),
+          String(day).padStart(2,'0')
+        ].join('-');
+
+        const stat = calendarOverviewMap[dateKey] || {
+          shoppingCount: 0,
+          factoryCount: 0,
+          threadCount: 0
+        };
+
+        const classes = [
+          'calendar-day',
+          dateKey === todayKey ? 'is-today' : '',
+          dateKey === calendarSelectedDateKey ? 'is-selected' : ''
+        ].filter(Boolean).join(' ');
+
+        let statsHtml = '';
+        if(stat.shoppingCount > 0){
+          statsHtml += '<div class="calendar-day-stat shopping">상가 ' + stat.shoppingCount + '</div>';
+        }
+        if(stat.factoryCount > 0){
+          statsHtml += '<div class="calendar-day-stat factory">공장 ' + stat.factoryCount + '</div>';
+        }
+        if(stat.threadCount > 0){
+          statsHtml += '<div class="calendar-day-stat thread">스레드 ' + stat.threadCount + '</div>';
+        }
+
+        html += ''
+          + '<button type="button" class="' + classes + '" onclick="selectCalendarDate(\'' + dateKey + '\')">'
+          +   '<div class="calendar-day-num">' + day + '</div>'
+          +   '<div class="calendar-day-stats">' + statsHtml + '</div>'
+          + '</button>';
+      }
+
+      calendarGrid.innerHTML = html;
+    }
+
+    function moveCalendarMonth(diff){
+      const parts = calendarCurrentMonth.split('-');
+      const base = new Date(Number(parts[0]), Number(parts[1]) - 1 + diff, 1);
+      const nextMonthKey = [
+        base.getFullYear(),
+        String(base.getMonth() + 1).padStart(2,'0')
+      ].join('-');
+
+      calendarCurrentMonth = nextMonthKey;
+      calendarSelectedDateKey = nextMonthKey + '-01';
+
+      loadCalendarOverview(nextMonthKey).then(function(){
+        renderCalendarGrid();
+        return loadCalendarDateDetail(calendarSelectedDateKey);
+      });
+    }
+
+    function selectCalendarDate(dateKey){
+      calendarSelectedDateKey = dateKey;
+      renderCalendarGrid();
+      loadCalendarDateDetail(dateKey);
+    }
+
+    function loadCalendarDateDetail(dateKey){
+      currentLoadingText = '날짜 내용을 불러오고 있어요.';
+      startLoadingOverlay();
+
+      return fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type':'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          action: 'getCalendarDateDetail',
+          dateKey: dateKey
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('날짜 상세 불러오기 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '날짜 상세 불러오기 실패');
+        }
+        calendarCurrentDetail = data;
+        renderCalendarDetail();
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '날짜 상세를 불러오지 못했습니다.');
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+    }
+
+    function renderCalendarDetail(){
+      const detail = calendarCurrentDetail || {};
+      const properties = Array.isArray(detail.properties) ? detail.properties : [];
+      const threads = Array.isArray(detail.threads) ? detail.threads : [];
+
+      calendarDetailDate.textContent = formatDetailDate(calendarSelectedDateKey);
+      calendarDetailMeta.textContent =
+        '상가 ' + properties.filter(function(x){ return x.teamType === 'shopping'; }).length
+        + ' · 공장 ' + properties.filter(function(x){ return x.teamType === 'factory'; }).length
+        + ' · 스레드 ' + threads.length;
+
+      if(!properties.length){
+        calendarPropertyList.innerHTML = '<div class="calendar-empty">등록된 매물이 없습니다.</div>';
+      }else{
+        calendarPropertyList.innerHTML = properties.map(function(item){
+          const thumb = item.heroUrl ? "background-image:url('" + escapeAttr(item.heroUrl) + "')" : '';
+          return ''
+            + '<div class="calendar-property-item">'
+            +   '<div class="calendar-property-thumb" style="' + thumb + '"></div>'
+            +   '<div class="calendar-property-body">'
+            +     '<div class="calendar-property-title">' + escapeHtml(item.title || '제목 없음') + '</div>'
+            +     '<div class="calendar-property-address">' + escapeHtml(item.address || '-') + '</div>'
+            +     '<div class="calendar-property-price">' + escapeHtml((item.dealType || '-') + ' / ' + (item.price || '-')) + '</div>'
+            +     '<div class="calendar-property-meta">'
+            +       + escapeHtml(item.listingNumber || '-')
+            +       + ' · '
+            +       + escapeHtml(item.teamType === 'shopping' ? '상가' : item.teamType === 'factory' ? '공장' : '-')
+            +     '</div>'
+            +   '</div>'
+            + '</div>';
+        }).join('');
+      }
+
+      if(!threads.length){
+        calendarThreadList.innerHTML = '<div class="calendar-empty">스레드가 없습니다.</div>';
+      }else{
+        calendarThreadList.innerHTML = threads.map(function(item){
+          return ''
+            + '<div class="calendar-thread-item">'
+            +   '<div class="calendar-thread-head">'
+            +     '<div class="calendar-thread-writer">'
+            +       + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자'))
+            +     '</div>'
+            +     '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.createdAt)) + '</div>'
+            +   '</div>'
+            +   '<div class="calendar-thread-content">' + escapeHtml(item.content || '') + '</div>'
+            + '</div>';
+        }).join('');
+      }
+    }
+
+    function formatThreadTime(value){
+      const ts = parseDateValue(value);
+      if(!ts) return '-';
+      const d = new Date(ts);
+      return d.getFullYear() + '.'
+        + (d.getMonth()+1) + '.'
+        + d.getDate() + ' '
+        + String(d.getHours()).padStart(2,'0') + ':'
+        + String(d.getMinutes()).padStart(2,'0');
+    }
+
+    function submitCalendarThread(){
+      const writerCode = getUnlockedWriterCode();
+      const content = text(calendarThreadInput.value);
+
+      if(!calendarSelectedDateKey){
+        alert('날짜를 먼저 선택하세요.');
+        return;
+      }
+      if(!writerCode){
+        alert('작성자 코드가 없습니다.');
+        return;
+      }
+      if(!content){
+        alert('내용을 입력하세요.');
+        return;
+      }
+
+      currentLoadingText = '스레드를 저장하고 있어요.';
+      startLoadingOverlay();
+
+      fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type':'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          action: 'saveCalendarThread',
+          dateKey: calendarSelectedDateKey,
+          writerCode: writerCode,
+          content: content
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('스레드 저장 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '스레드 저장 실패');
+        }
+        calendarThreadInput.value = '';
+        return loadCalendarOverview(calendarCurrentMonth);
+      })
+      .then(function(){
+        renderCalendarGrid();
+        return loadCalendarDateDetail(calendarSelectedDateKey);
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '스레드 저장 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+    }
+
+    window.closeCalendarModal = closeCalendarModal;
+    window.moveCalendarMonth = moveCalendarMonth;
+    window.selectCalendarDate = selectCalendarDate;
+    window.submitCalendarThread = submitCalendarThread;
+
+    window.addEventListener('popstate', function(){
+      if(calendarModal.classList.contains('show')){
+        closeCalendarModal(true);
       }
     });
 

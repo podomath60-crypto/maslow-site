@@ -1602,9 +1602,9 @@
         calendarHistoryArmed = true;
       }
 
-      renderCalendarNotice();
-      calendarMonthLabel.textContent = formatMonthLabel(calendarCurrentMonth);
       calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
+      calendarMonthLabel.textContent = formatMonthLabel(calendarCurrentMonth);
+      renderCalendarNotice();
       renderCalendarGrid();
       loadCalendarDateDetail(calendarSelectedDateKey);
     }
@@ -2444,6 +2444,10 @@
 
       const initialDateKey = getTodayDateKey();
       const initialMonthKey = getCurrentMonthKeyFromDate(initialDateKey);
+      calendarCurrentMonth = initialMonthKey;
+      if(!calendarSelectedDateKey){
+        calendarSelectedDateKey = initialDateKey;
+      }
 
       return Promise.all([
         fetch(CONFIG.adminListUrl, {
@@ -2478,17 +2482,13 @@
         const propertyData = results[0] || {};
         const calendarData = results[1] || {};
 
-        const items = Array.isArray(propertyData && propertyData.items) ? propertyData.items : [];
+        const items = Array.isArray(propertyData.items) ? propertyData.items : [];
         rawItems = items.map(normalizeItem);
 
-        calendarCurrentMonth = initialMonthKey;
-        calendarSelectedDateKey = initialDateKey;
-        calendarCurrentNotice = calendarData.notice || {
-          noticeText: '매슬로우 화이팅',
-          noticeLink: ''
-        };
-
+        calendarCurrentNotice = calendarData.notice || null;
         calendarThreadMap = {};
+        calendarOverviewMap = {};
+
         const rawThreadMap = (calendarData && calendarData.threadsByDate && typeof calendarData.threadsByDate === 'object')
           ? calendarData.threadsByDate
           : {};
@@ -2501,7 +2501,19 @@
             : [];
         });
 
-        calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
+        (Array.isArray(calendarData.days) ? calendarData.days : []).forEach(function(day){
+          const dateKey = text(day.dateKey);
+          const localThreads = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
+          calendarOverviewMap[dateKey] = {
+            shoppingCount: Number(day.shoppingCount || 0),
+            factoryCount: Number(day.factoryCount || 0),
+            threadCount: localThreads.length || Number(day.threadCount || 0)
+          };
+          if(!calendarThreadMap[dateKey]){
+            calendarThreadMap[dateKey] = [];
+          }
+        });
+
         renderDashboard();
       })
       .catch(function(err){

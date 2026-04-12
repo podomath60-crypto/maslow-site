@@ -109,7 +109,7 @@
       position:fixed;
       left:50%;
       bottom:calc(56px + env(safe-area-inset-bottom, 0px));
-      transform:translateX(-50%);
+      transform:translateX(-50%) translateY(var(--draft-save-keyboard-offset, 0px));
       z-index:90;
       width:auto;
       min-width:136px;
@@ -5038,6 +5038,14 @@
           e.preventDefault();
           serverSave_();
         });
+      }
+
+      updateDraftSaveKeyboardLock_();
+      window.addEventListener('resize', updateDraftSaveKeyboardLock_);
+      window.addEventListener('orientationchange', updateDraftSaveKeyboardLock_);
+      if(window.visualViewport){
+        window.visualViewport.addEventListener('resize', updateDraftSaveKeyboardLock_);
+        window.visualViewport.addEventListener('scroll', updateDraftSaveKeyboardLock_);
       }
 
       if (queryListingNumber) {

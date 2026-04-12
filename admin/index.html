@@ -2137,6 +2137,35 @@
       var QUERY_LOADING_BASE_TEXT = '자료를 가져오고 있어요!';
       var queryLoadingTypingTimer = null;
       var queryLoadingHapticTimer = null;
+      var addressLookupDotsTimer = null;
+      var serverSaveDotsTimer = null;
+
+      function startDotsTextAnimation_(el, baseText, timerKey){
+        if(!el) return null;
+        stopDotsTextAnimation_(timerKey);
+        var step = 0;
+        el.textContent = baseText;
+        var timer = window.setInterval(function(){
+          step = (step + 1) % 4;
+          el.textContent = baseText + '.'.repeat(step);
+        }, 420);
+        if(timerKey === 'addressLookup'){
+          addressLookupDotsTimer = timer;
+        }else if(timerKey === 'serverSave'){
+          serverSaveDotsTimer = timer;
+        }
+        return timer;
+      }
+
+      function stopDotsTextAnimation_(timerKey){
+        if(timerKey === 'addressLookup' && addressLookupDotsTimer){
+          window.clearInterval(addressLookupDotsTimer);
+          addressLookupDotsTimer = null;
+        }else if(timerKey === 'serverSave' && serverSaveDotsTimer){
+          window.clearInterval(serverSaveDotsTimer);
+          serverSaveDotsTimer = null;
+        }
+      }
 
       function showQueryLoadingOverlay_(){
         if(!queryLoadingOverlay || !queryLoadingText) return;
@@ -2568,7 +2597,7 @@
         queueSave();
         var originalText = draftSaveBtn.textContent;
         draftSaveBtn.disabled = true;
-        draftSaveBtn.textContent = '전송중...';
+        startDotsTextAnimation_(draftSaveBtn, '전송중', 'serverSave');
 
         return waitForPendingTempUploads_()
           .then(function(){
@@ -2582,6 +2611,7 @@
             showToast('전송 실패');
           })
           .finally(function(){
+            stopDotsTextAnimation_('serverSave');
             draftSaveBtn.disabled = false;
             draftSaveBtn.textContent = originalText;
           });
@@ -3845,7 +3875,12 @@
         if(!addressLookupBtn) return;
         addressLookupBtn.disabled = !!isLoading;
         addressLookupBtn.classList.toggle('is-loading', !!isLoading);
-        addressLookupBtn.textContent = isLoading ? '조회중' : '조회';
+        if(isLoading){
+          startDotsTextAnimation_(addressLookupBtn, '조회중', 'addressLookup');
+        }else{
+          stopDotsTextAnimation_('addressLookup');
+          addressLookupBtn.textContent = '조회';
+        }
       }
 
       function markLookupFilled_(el){

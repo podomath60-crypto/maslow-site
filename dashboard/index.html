@@ -177,6 +177,19 @@
     }
     .mini-btn.blue{border-color:#cfe2ff;background:#eef5ff;color:#0f7cff}
     .mini-btn.gray{border-color:#dde3ea;background:#f4f6f8;color:#6e7782}
+    .mini-btn.memo{border-color:#f1d86a;background:#ffe56f;color:#5c4b00;border-radius:12px;min-width:78px}
+
+    .memo-modal{position:fixed;inset:0;z-index:12150;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(17,24,39,.26);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+    .memo-modal.show{display:flex}
+    .memo-modal-card{width:min(460px,calc(100vw - 24px));background:#ffe97d;border:1px solid #e2c95d;border-radius:18px;box-shadow:0 24px 48px rgba(15,23,42,.18);padding:18px 18px 16px;position:relative;transform:rotate(-1deg)}
+    .memo-modal-card:before{content:'';position:absolute;top:10px;right:18px;width:64px;height:18px;background:rgba(255,255,255,.35);border-radius:4px;transform:rotate(8deg)}
+    .memo-modal-title{font-size:24px;font-weight:900;color:#5c4b00;letter-spacing:-0.04em;margin:0 0 10px}
+    .memo-modal-sub{font-size:12px;font-weight:800;color:#8b7420;margin:0 0 10px}
+    .memo-modal-textarea{width:100%;min-height:220px;resize:vertical;border:1.5px solid rgba(92,75,0,.18);border-radius:14px;padding:14px 15px;background:rgba(255,255,255,.28);outline:none;color:#3e3300;font-size:18px;font-weight:600;line-height:1.55;font-family:inherit}
+    .memo-modal-textarea::placeholder{color:rgba(92,75,0,.28);font-weight:500}
+    .memo-modal-actions{display:flex;justify-content:flex-end;gap:16px;margin-top:10px}
+    .memo-modal-btn{min-height:34px;padding:0 4px;border:none;background:transparent;font-size:16px;font-weight:800;color:#6b5a12}
+    .memo-modal-btn.save{color:#0f7cff}
 
     .channel-row{
       display:grid;
@@ -604,6 +617,9 @@
         padding:0 14px;
         font-size:13px;
       }
+      .memo-modal-card{width:min(460px,calc(100vw - 18px));padding:16px 14px 14px}
+      .memo-modal-title{font-size:22px}
+      .memo-modal-textarea{min-height:200px;font-size:17px}
     }
   
   .calendar-modal{
@@ -1247,6 +1263,18 @@
     </div>
   </div>
 
+  <div id="memoModal" class="memo-modal" onclick="closeMemoModal()">
+    <div class="memo-modal-card" onclick="event.stopPropagation()">
+      <h3 class="memo-modal-title">📌 메모</h3>
+      <div id="memoModalListingNumber" class="memo-modal-sub"></div>
+      <textarea id="memoModalTextarea" class="memo-modal-textarea" placeholder="메모를 입력하세요"></textarea>
+      <div class="memo-modal-actions">
+        <button type="button" class="memo-modal-btn save" onclick="saveMemoModal()">수정저장</button>
+        <button type="button" class="memo-modal-btn" onclick="closeMemoModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+
 
   <div id="calendarModal" class="calendar-modal" aria-hidden="true">
     <div class="calendar-modal-sheet">
@@ -1418,6 +1446,7 @@
     const PAGE_SIZE = 50;
     let channelModalListingNumber = '';
     let channelModalChannelKey = '';
+    let memoModalListingNumber = '';
 
     let currentLoadingText = '자료를 가져오고 있어요!';
     let loadingTypingTimer = null;
@@ -1437,6 +1466,9 @@
     const teamToggleBtn = document.getElementById('teamToggleBtn');
     const teamToggleTitle = document.getElementById('teamToggleTitle');
     const teamToggleDesc = document.getElementById('teamToggleDesc');
+    const memoModal = document.getElementById('memoModal');
+    const memoModalListingNumberEl = document.getElementById('memoModalListingNumber');
+    const memoModalTextarea = document.getElementById('memoModalTextarea');
 
     document.getElementById('goAdminBtn').addEventListener('click', function(){
       try{
@@ -2565,6 +2597,89 @@
       return rawItems.find(function(item){
         return text(item && item.listingNumber) === text(listingNumber);
       }) || null;
+    }
+
+    function openMemoModal(listingNumber){
+      const item = getItemByListingNumber(listingNumber);
+      if(!item) return;
+      memoModalListingNumber = text(item.listingNumber);
+      if(memoModalListingNumberEl) memoModalListingNumberEl.textContent = memoModalListingNumber;
+      if(memoModalTextarea){
+        memoModalTextarea.value = text(item.memo);
+      }
+      if(memoModal){
+        memoModal.classList.add('show');
+      }
+      window.setTimeout(function(){
+        try{ memoModalTextarea && memoModalTextarea.focus(); }catch(e){}
+      }, 30);
+    }
+
+    function closeMemoModal(){
+      memoModalListingNumber = '';
+      if(memoModal){
+        memoModal.classList.remove('show');
+      }
+    }
+
+    function updatePropertyMemo(listingNumber, memo, writerCode){
+      currentLoadingText = '메모 저장중이에요.';
+      startLoadingOverlay();
+      return fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=UTF-8'
+        },
+        body: JSON.stringify({
+          action: 'updatePropertyMemo',
+          listingNumber: listingNumber,
+          memo: memo,
+          writerCode: writerCode
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('메모 저장 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && (data.message || data.error)) || '메모 저장 실패');
+        }
+        const item = getItemByListingNumber(listingNumber);
+        if(item){
+          item.memo = memo;
+          item.updatedAt = text(data.updatedAt) || new Date().toISOString();
+        }
+        closeMemoModal();
+        renderDashboard();
+        return data;
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '메모 저장 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+    }
+
+    function saveMemoModal(){
+      const listingNumber = text(memoModalListingNumber);
+      if(!listingNumber) return;
+      const item = getItemByListingNumber(listingNumber);
+      if(!item) return;
+      const nextMemo = text(memoModalTextarea && memoModalTextarea.value);
+      const writerCode = getUnlockedWriterCode();
+      if(!writerCode){
+        alert('작성자 정보를 찾지 못했습니다. 다시 로그인해주세요.');
+        return;
+      }
+      if(nextMemo === text(item.memo)){
+        closeMemoModal();
+        return;
+      }
+      updatePropertyMemo(listingNumber, nextMemo, writerCode);
     }
 
     function openChannelModal(listingNumber, channelKey){

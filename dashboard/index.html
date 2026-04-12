@@ -1585,12 +1585,6 @@
         calendarCurrentMonth = getCurrentMonthKeyFromDate(calendarSelectedDateKey);
       }
 
-      if(!calendarSelectedDateKey || getCurrentMonthKeyFromDate(calendarSelectedDateKey) !== calendarCurrentMonth){
-        calendarSelectedDateKey = getTodayDateKey().slice(0, 7) === calendarCurrentMonth
-          ? getTodayDateKey()
-          : calendarCurrentMonth + '-01';
-      }
-
       renderCalendarWriterChip();
       setCalendarThreadWriteOpen(false);
       calendarModal.classList.add('show');
@@ -1602,9 +1596,22 @@
         calendarHistoryArmed = true;
       }
 
-      calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
-      calendarMonthLabel.textContent = formatMonthLabel(calendarCurrentMonth);
+      const hasNotice = !!calendarCurrentNotice;
+      const hasThreadCache = Object.keys(calendarThreadMap || {}).length > 0;
+
+      if(!hasNotice || !hasThreadCache){
+        alert('캘린더 초기 데이터가 아직 없습니다. 대시보드를 새로고침해 주세요.');
+        return;
+      }
+
+      if(!calendarSelectedDateKey || getCurrentMonthKeyFromDate(calendarSelectedDateKey) !== calendarCurrentMonth){
+        calendarSelectedDateKey = getTodayDateKey().slice(0, 7) === calendarCurrentMonth
+          ? getTodayDateKey()
+          : calendarCurrentMonth + '-01';
+      }
+
       renderCalendarNotice();
+      calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
       renderCalendarGrid();
       loadCalendarDateDetail(calendarSelectedDateKey);
     }
@@ -2442,12 +2449,8 @@
     function fetchAdminItems(){
       startLoadingOverlay();
 
-      const initialDateKey = getTodayDateKey();
-      const initialMonthKey = getCurrentMonthKeyFromDate(initialDateKey);
-      calendarCurrentMonth = initialMonthKey;
-      if(!calendarSelectedDateKey){
-        calendarSelectedDateKey = initialDateKey;
-      }
+      const today = getTodayDateKey();
+      const monthKey = getCurrentMonthKeyFromDate(today);
 
       return Promise.all([
         fetch(CONFIG.adminListUrl, {
@@ -2463,6 +2466,7 @@
           if(!res.ok) throw new Error('매물 불러오기 실패: ' + res.status);
           return res.json();
         }),
+
         fetch(CONFIG.adminListUrl, {
           method: 'POST',
           mode: 'cors',
@@ -2471,7 +2475,7 @@
           },
           body: JSON.stringify({
             action: 'getCalendarOverview',
-            month: initialMonthKey
+            month: monthKey
           })
         }).then(function(res){
           if(!res.ok) throw new Error('캘린더 불러오기 실패: ' + res.status);
@@ -2482,9 +2486,10 @@
         const propertyData = results[0] || {};
         const calendarData = results[1] || {};
 
-        const items = Array.isArray(propertyData.items) ? propertyData.items : [];
+        const items = Array.isArray(propertyData && propertyData.items) ? propertyData.items : [];
         rawItems = items.map(normalizeItem);
 
+        calendarCurrentMonth = monthKey;
         calendarCurrentNotice = calendarData.notice || null;
         calendarThreadMap = {};
         calendarOverviewMap = {};
@@ -2496,19 +2501,21 @@
         Object.keys(rawThreadMap).forEach(function(dateKey){
           calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
             ? rawThreadMap[dateKey].slice().sort(function(a, b){
-                return (parseDateValue(b && b.createdAt) || 0) - (parseDateValue(a && a.createdAt) || 0);
+                return (parseDateValue((b && (b.updatedAt || b.createdAt)) || '') || 0) - (parseDateValue((a && (a.updatedAt || a.createdAt)) || '') || 0);
               })
             : [];
         });
 
-        (Array.isArray(calendarData.days) ? calendarData.days : []).forEach(function(day){
-          const dateKey = text(day.dateKey);
+        (Array.isArray(calendarData && calendarData.days) ? calendarData.days : []).forEach(function(day){
+          const dateKey = text(day && day.dateKey);
           const localThreads = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
+
           calendarOverviewMap[dateKey] = {
-            shoppingCount: Number(day.shoppingCount || 0),
-            factoryCount: Number(day.factoryCount || 0),
-            threadCount: localThreads.length || Number(day.threadCount || 0)
+            shoppingCount: Number(day && day.shoppingCount || 0),
+            factoryCount: Number(day && day.factoryCount || 0),
+            threadCount: localThreads.length
           };
+
           if(!calendarThreadMap[dateKey]){
             calendarThreadMap[dateKey] = [];
           }

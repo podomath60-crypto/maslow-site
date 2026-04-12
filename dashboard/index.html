@@ -1074,6 +1074,68 @@
     .calendar-detail-date{font-size:18px}
   }
 
+
+  .debug-log-panel{
+    position:fixed;
+    left:12px;
+    right:12px;
+    bottom:12px;
+    z-index:13050;
+    display:none;
+    border:1px solid #d8e2ec;
+    border-radius:18px;
+    background:rgba(17,24,39,.94);
+    color:#fff;
+    box-shadow:0 18px 40px rgba(15,23,42,.28);
+    overflow:hidden;
+  }
+  .debug-log-panel.show{display:block}
+  .debug-log-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 12px;
+    background:rgba(255,255,255,.06);
+  }
+  .debug-log-title{font-size:13px;font-weight:900;letter-spacing:-0.02em}
+  .debug-log-actions{display:flex;align-items:center;gap:8px}
+  .debug-log-btn{
+    min-height:30px;
+    padding:0 10px;
+    border:1px solid rgba(255,255,255,.18);
+    border-radius:999px;
+    background:transparent;
+    color:#fff;
+    font-size:12px;
+    font-weight:800;
+  }
+  .debug-log-body{
+    max-height:38vh;
+    overflow:auto;
+    padding:8px 12px 12px;
+    font-size:12px;
+    line-height:1.45;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+  .debug-log-toggle{
+    position:fixed;
+    right:18px;
+    bottom:132px;
+    z-index:13051;
+    min-height:38px;
+    padding:0 12px;
+    border:1px solid #d8e2ec;
+    border-radius:999px;
+    background:rgba(17,24,39,.92);
+    color:#fff;
+    font-size:12px;
+    font-weight:900;
+    box-shadow:0 10px 24px rgba(15,23,42,.22);
+  }
+
   </style>
 </head>
 <body>
@@ -1282,6 +1344,19 @@
     </div>
   </div>
 
+
+  <button id="debugLogToggle" class="debug-log-toggle" type="button">로그 보기</button>
+  <div id="debugLogPanel" class="debug-log-panel">
+    <div class="debug-log-head">
+      <div class="debug-log-title">Thread click debug</div>
+      <div class="debug-log-actions">
+        <button id="debugLogClearBtn" class="debug-log-btn" type="button">지우기</button>
+        <button id="debugLogCloseBtn" class="debug-log-btn" type="button">닫기</button>
+      </div>
+    </div>
+    <div id="debugLogBody" class="debug-log-body"></div>
+  </div>
+
   <script>
     const CONFIG = {
       adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec',
@@ -1389,7 +1464,7 @@
     let calendarCurrentNotice = null;
     let calendarCurrentDetail = null;
     let calendarThreadMap = {};
-    let calendarEditingThreadItem = null;
+    let calendarEditingThreadIndex = -1;
     let calendarHistoryArmed = false;
 
     const calendarModal = document.getElementById('calendarModal');
@@ -1414,6 +1489,37 @@
     const calendarThreadWrite = document.getElementById('calendarThreadWrite');
     const calendarThreadFab = document.getElementById('calendarThreadFab');
     const calendarInlineLoading = document.getElementById('calendarInlineLoading');
+    const debugLogPanel = document.getElementById('debugLogPanel');
+    const debugLogBody = document.getElementById('debugLogBody');
+    const debugLogToggle = document.getElementById('debugLogToggle');
+    const debugLogClearBtn = document.getElementById('debugLogClearBtn');
+    const debugLogCloseBtn = document.getElementById('debugLogCloseBtn');
+
+    function debugLog(label, payload){
+      try{
+        const now = new Date();
+        const time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0') + '.' + String(now.getMilliseconds()).padStart(3,'0');
+        let extra = '';
+        if(payload !== undefined){
+          try{
+            extra = ' ' + JSON.stringify(payload);
+          }catch(jsonErr){
+            extra = ' ' + String(payload);
+          }
+        }
+        if(debugLogBody){
+          debugLogBody.textContent = '[' + time + '] ' + label + extra + '\n' + debugLogBody.textContent;
+        }
+        console.log('[THREAD_DEBUG]', label, payload);
+      }catch(e){}
+    }
+
+    function setDebugPanelOpen(isOpen){
+      if(!debugLogPanel || !debugLogToggle) return;
+      debugLogPanel.classList.toggle('show', !!isOpen);
+      debugLogToggle.textContent = isOpen ? '로그 숨기기' : '로그 보기';
+    }
+
 
     function isCalendarModalOpen(){
       return !!(calendarModal && calendarModal.classList.contains('show'));
@@ -1500,30 +1606,72 @@
     }
 
     function resetCalendarThreadEditor(){
-      calendarEditingThreadItem = null;
+      debugLog('resetCalendarThreadEditor:start', {
+        oldIndex: calendarEditingThreadIndex,
+        hadValue: !!(calendarThreadInput && calendarThreadInput.value),
+        hadShow: !!(calendarThreadWrite && calendarThreadWrite.classList.contains('show'))
+      });
+      calendarEditingThreadIndex = -1;
       if(calendarThreadInput) calendarThreadInput.value = '';
       if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '등록';
       if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.add('is-hidden');
+      debugLog('resetCalendarThreadEditor:end', {
+        newIndex: calendarEditingThreadIndex,
+        valueLength: calendarThreadInput ? calendarThreadInput.value.length : -1
+      });
     }
 
-    function openCalendarThreadEditor(threadItem){
-      if(!threadItem) return;
-      calendarEditingThreadItem = threadItem;
-      if(calendarThreadInput) calendarThreadInput.value = text(threadItem.content);
+    function openCalendarThreadEditor(threadIndex){
+      const items = Array.isArray(calendarThreadMap[calendarSelectedDateKey]) ? calendarThreadMap[calendarSelectedDateKey] : [];
+      const indexNum = Number(threadIndex);
+      debugLog('openCalendarThreadEditor:start', {
+        threadIndex: threadIndex,
+        indexNum: indexNum,
+        selectedDateKey: calendarSelectedDateKey,
+        itemsLength: items.length
+      });
+      if(!Number.isInteger(indexNum) || indexNum < 0 || indexNum >= items.length){
+        debugLog('openCalendarThreadEditor:return:bad-index', {
+          threadIndex: threadIndex,
+          indexNum: indexNum,
+          itemsLength: items.length
+        });
+        return;
+      }
+      const item = items[indexNum];
+      if(!item){
+        debugLog('openCalendarThreadEditor:return:no-item', { indexNum: indexNum });
+        return;
+      }
+      calendarEditingThreadIndex = indexNum;
+      if(calendarThreadInput) calendarThreadInput.value = text(item.content);
       if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '수정등록';
       if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.remove('is-hidden');
+      debugLog('openCalendarThreadEditor:before-open', {
+        editingIndex: calendarEditingThreadIndex,
+        valueLength: calendarThreadInput ? calendarThreadInput.value.length : -1,
+        submitText: calendarThreadSubmitBtn ? calendarThreadSubmitBtn.textContent : '',
+        deleteHidden: calendarThreadDeleteBtn ? calendarThreadDeleteBtn.classList.contains('is-hidden') : null
+      });
       setCalendarThreadWriteOpen(true);
+      debugLog('openCalendarThreadEditor:after-open', {
+        hasShow: !!(calendarThreadWrite && calendarThreadWrite.classList.contains('show')),
+        valueLength: calendarThreadInput ? calendarThreadInput.value.length : -1
+      });
       setTimeout(function(){
         try{ calendarThreadInput.focus(); }catch(e){}
+        debugLog('openCalendarThreadEditor:focus-timeout', {
+          activeElementId: document.activeElement ? document.activeElement.id : '',
+          hasShow: !!(calendarThreadWrite && calendarThreadWrite.classList.contains('show'))
+        });
       }, 60);
     }
 
     function deleteCurrentCalendarThread(){
-      if(!calendarEditingThreadItem) return;
       const items = Array.isArray(calendarThreadMap[calendarSelectedDateKey]) ? calendarThreadMap[calendarSelectedDateKey] : [];
-      calendarThreadMap[calendarSelectedDateKey] = items.filter(function(item){
-        return item !== calendarEditingThreadItem;
-      });
+      if(!Number.isInteger(calendarEditingThreadIndex) || calendarEditingThreadIndex < 0 || calendarEditingThreadIndex >= items.length) return;
+      items.splice(calendarEditingThreadIndex, 1);
+      calendarThreadMap[calendarSelectedDateKey] = items;
       calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
       setCalendarThreadWriteOpen(false);
       renderCalendarGrid();
@@ -1531,16 +1679,36 @@
     }
 
     function setCalendarThreadWriteOpen(isOpen){
-      if(!calendarThreadWrite || !calendarThreadFab) return;
+      debugLog('setCalendarThreadWriteOpen:start', {
+        isOpen: !!isOpen,
+        hadShow: !!(calendarThreadWrite && calendarThreadWrite.classList.contains('show')),
+        fabOpen: !!(calendarThreadFab && calendarThreadFab.classList.contains('is-open'))
+      });
+      if(!calendarThreadWrite || !calendarThreadFab){
+        debugLog('setCalendarThreadWriteOpen:return:missing-dom', {
+          hasWrite: !!calendarThreadWrite,
+          hasFab: !!calendarThreadFab
+        });
+        return;
+      }
       if(isOpen){
         calendarThreadWrite.classList.add('show');
         calendarThreadFab.classList.add('is-open');
         calendarThreadFab.textContent = '×';
+        debugLog('setCalendarThreadWriteOpen:opened', {
+          hasShow: calendarThreadWrite.classList.contains('show'),
+          fabOpen: calendarThreadFab.classList.contains('is-open'),
+          textareaValueLength: calendarThreadInput ? calendarThreadInput.value.length : -1
+        });
         setTimeout(scrollCalendarWritePanelToCenter, 40);
       }else{
         calendarThreadWrite.classList.remove('show');
         calendarThreadFab.classList.remove('is-open');
         calendarThreadFab.textContent = '+';
+        debugLog('setCalendarThreadWriteOpen:closed-before-reset', {
+          hasShow: calendarThreadWrite.classList.contains('show'),
+          fabOpen: calendarThreadFab.classList.contains('is-open')
+        });
         resetCalendarThreadEditor();
       }
     }
@@ -1883,25 +2051,26 @@
 
       if(!threads.length){
         calendarThreadList.innerHTML = '<div class="calendar-empty">기록이 없습니다.</div>';
+        debugLog('renderCalendarDetail:threads-empty', { selectedDateKey: calendarSelectedDateKey });
       }else{
         const myWriterCode = getUnlockedWriterCode();
-        calendarThreadList.innerHTML = '';
-        threads.forEach(function(item){
+        calendarThreadList.innerHTML = threads.map(function(item, index){
           const isOwn = text(item.writerCode) === text(myWriterCode);
-          const card = document.createElement('div');
-          card.className = 'calendar-thread-item' + (isOwn ? ' is-own' : '');
-          card.innerHTML = ''
-            + '<div class="calendar-thread-head">'
-            +   '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
-            +   '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
-            + '</div>'
-            + '<div class="calendar-thread-content">' + escapeHtml(item.content || '') + '</div>';
-          if(isOwn){
-            card.addEventListener('click', function(){
-              openCalendarThreadEditor(item);
-            });
-          }
-          calendarThreadList.appendChild(card);
+          const itemClass = 'calendar-thread-item' + (isOwn ? ' is-own' : '');
+          const threadIndexAttr = isOwn ? ' data-thread-index="' + escapeAttr(index) + '"' : '';
+          return ''
+            + '<div class="' + itemClass + '"' + threadIndexAttr + '>'
+            +   '<div class="calendar-thread-head">'
+            +     '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
+            +     '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
+            +   '</div>'
+            +   '<div class="calendar-thread-content">' + escapeHtml(item.content || '') + '</div>'
+            + '</div>';
+        }).join('');
+        debugLog('renderCalendarDetail:threads-rendered', {
+          selectedDateKey: calendarSelectedDateKey,
+          threadsLength: threads.length,
+          ownCards: threads.filter(function(item){ return text(item.writerCode) === text(myWriterCode); }).length
         });
       }
     }
@@ -1954,6 +2123,7 @@
     }
 
     function submitCalendarThread(){
+      debugLog('submitCalendarThread:start', { editingIndex: calendarEditingThreadIndex, valueLength: calendarThreadInput ? text(calendarThreadInput.value).length : -1 });
       const writerCode = getUnlockedWriterCode();
       const content = text(calendarThreadInput.value);
 
@@ -1970,9 +2140,12 @@
         return;
       }
 
-      if(calendarEditingThreadItem){
-        calendarEditingThreadItem.content = content;
-        calendarEditingThreadItem.updatedAt = new Date().toISOString();
+      if(Number.isInteger(calendarEditingThreadIndex) && calendarEditingThreadIndex >= 0){
+        const items = Array.isArray(calendarThreadMap[calendarSelectedDateKey]) ? calendarThreadMap[calendarSelectedDateKey] : [];
+        const item = items[calendarEditingThreadIndex];
+        if(!item) return;
+        item.content = content;
+        item.updatedAt = new Date().toISOString();
         calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
         setCalendarThreadWriteOpen(false);
         renderCalendarGrid();
@@ -2032,13 +2205,48 @@
     calendarNoticeEditBtn.addEventListener('click', openCalendarNoticeEdit);
     if(calendarThreadList){
       calendarThreadList.addEventListener('click', function(e){
-        const card = e.target.closest('.calendar-thread-item.is-own');
-        if(!card || !calendarThreadList.contains(card)) return;
+        const target = e.target;
+        const card = target && target.closest ? target.closest('.calendar-thread-item.is-own') : null;
+        debugLog('thread-click:received', {
+          targetTag: target && target.tagName ? target.tagName : '',
+          targetClass: target && target.className ? String(target.className) : '',
+          foundOwnCard: !!card,
+          listContainsCard: !!(card && calendarThreadList.contains(card))
+        });
+        if(!card || !calendarThreadList.contains(card)){
+          debugLog('thread-click:return:no-own-card');
+          return;
+        }
+        const rawIndex = card.getAttribute('data-thread-index');
+        const threadIndex = Number(rawIndex);
+        debugLog('thread-click:card-found', {
+          rawIndex: rawIndex,
+          threadIndex: threadIndex,
+          cardText: text(card.innerText).slice(0, 120)
+        });
+        if(!Number.isInteger(threadIndex)){
+          debugLog('thread-click:return:bad-index', { rawIndex: rawIndex, threadIndex: threadIndex });
+          return;
+        }
+        openCalendarThreadEditor(threadIndex);
       });
     }
     calendarNoticeCancelBtn.addEventListener('click', closeCalendarNoticeEdit);
     if(calendarThreadFab){ calendarThreadFab.addEventListener('click', toggleCalendarThreadWrite); }
     calendarNoticeSaveBtn.addEventListener('click', saveCalendarNotice);
+    if(debugLogToggle){
+      debugLogToggle.addEventListener('click', function(){
+        setDebugPanelOpen(!(debugLogPanel && debugLogPanel.classList.contains('show')));
+      });
+    }
+    if(debugLogCloseBtn){
+      debugLogCloseBtn.addEventListener('click', function(){ setDebugPanelOpen(false); });
+    }
+    if(debugLogClearBtn){
+      debugLogClearBtn.addEventListener('click', function(){ if(debugLogBody) debugLogBody.textContent = ''; });
+    }
+    setDebugPanelOpen(true);
+    debugLog('debug-panel:ready', { file: 'thread-editor-click-open-clean-diagnostic.html' });
 
     document.getElementById('calendarBtn').addEventListener('click', function(){
       openCalendarModal();
@@ -2048,7 +2256,7 @@
     window.moveCalendarMonth = moveCalendarMonth;
     window.selectCalendarDate = selectCalendarDate;
     window.submitCalendarThread = submitCalendarThread;
-    window.openCalendarThreadEditor = function(threadItem){ openCalendarThreadEditor(threadItem); };
+    window.openCalendarThreadEditor = function(threadIndex){ openCalendarThreadEditor(Number(threadIndex)); };
     window.deleteCurrentCalendarThread = deleteCurrentCalendarThread;
 
 

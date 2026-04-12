@@ -942,15 +942,30 @@
     line-height:1.5;
     font-family:inherit;
   }
-  .calendar-thread-submit{
-    justify-self:end;
+  .calendar-thread-editor-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:16px;
+    margin-top:2px;
+  }
+  .calendar-thread-submit,
+  .calendar-thread-delete{
     min-height:32px;
     padding:0 4px;
     border:none;
     background:transparent;
-    color:#0f7cff;
     font-size:15px;
     font-weight:700;
+  }
+  .calendar-thread-submit{
+    color:#0f7cff;
+  }
+  .calendar-thread-delete{
+    color:#7b8794;
+  }
+  .calendar-thread-delete.is-hidden{
+    display:none;
   }
   .calendar-thread-write{
     display:none;
@@ -1232,7 +1247,10 @@
           <div id="calendarThreadWrite" class="calendar-thread-write">
             <div id="calendarWriterChip" class="calendar-writer-chip">📝 작성자</div>
             <textarea id="calendarThreadInput" class="calendar-thread-textarea" placeholder="업무 기록을 남겨주세요"></textarea>
-            <button type="button" id="calendarThreadSubmitBtn" class="calendar-thread-submit" onclick="submitCalendarThread()">등록</button>
+            <div class="calendar-thread-editor-actions">
+              <button type="button" id="calendarThreadDeleteBtn" class="calendar-thread-delete is-hidden" onclick="deleteCurrentCalendarThread()">삭제</button>
+              <button type="button" id="calendarThreadSubmitBtn" class="calendar-thread-submit" onclick="submitCalendarThread()">등록</button>
+            </div>
           </div>
           <div id="calendarThreadList" class="calendar-thread-list"></div>
 
@@ -1391,6 +1409,7 @@
     const calendarThreadList = document.getElementById('calendarThreadList');
     const calendarThreadInput = document.getElementById('calendarThreadInput');
     const calendarThreadSubmitBtn = document.getElementById('calendarThreadSubmitBtn');
+    const calendarThreadDeleteBtn = document.getElementById('calendarThreadDeleteBtn');
     const calendarWriterChip = document.getElementById('calendarWriterChip');
     const calendarThreadWrite = document.getElementById('calendarThreadWrite');
     const calendarThreadFab = document.getElementById('calendarThreadFab');
@@ -1484,6 +1503,7 @@
       calendarEditingThreadId = '';
       if(calendarThreadInput) calendarThreadInput.value = '';
       if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '등록';
+      if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.add('is-hidden');
     }
 
     function getCalendarThreadById(dateKey, rowId){
@@ -1498,7 +1518,8 @@
       if(text(item.writerCode) !== text(writerCode)) return;
       calendarEditingThreadId = text(rowId);
       if(calendarThreadInput) calendarThreadInput.value = text(item.content);
-      if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '저장';
+      if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '수정등록';
+      if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.remove('is-hidden');
       setCalendarThreadWriteOpen(true);
       setTimeout(function(){
         try{ calendarThreadInput.focus(); }catch(e){}
@@ -1518,6 +1539,12 @@
       if(text(calendarEditingThreadId) === text(rowId)) resetCalendarThreadEditor();
       renderCalendarGrid();
       loadCalendarDateDetail(calendarSelectedDateKey);
+    }
+
+    function deleteCurrentCalendarThread(){
+      if(!calendarEditingThreadId) return;
+      deleteCalendarThread(calendarEditingThreadId);
+      setCalendarThreadWriteOpen(false);
     }
 
     function setCalendarThreadWriteOpen(isOpen){
@@ -1877,7 +1904,6 @@
             +     '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
             +   '</div>'
             +   '<div class="calendar-thread-content">' + escapeHtml(item.content || '') + '</div>'
-            +   actionsHtml
             + '</div>';
         }).join('');
       }
@@ -2025,6 +2051,7 @@
     window.submitCalendarThread = submitCalendarThread;
     window.openCalendarThreadEditor = function(rowId){ openCalendarThreadEditor(decodeURIComponent(rowId)); };
     window.deleteCalendarThread = function(rowId){ deleteCalendarThread(decodeURIComponent(rowId)); };
+    window.deleteCurrentCalendarThread = deleteCurrentCalendarThread;
 
 
     document.getElementById('goListingLookupBtn').addEventListener('click', function(){

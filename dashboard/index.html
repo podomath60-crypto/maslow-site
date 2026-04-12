@@ -1225,13 +1225,13 @@
           </div>
 
           <div class="calendar-weekdays">
+            <div class="calendar-weekday">일</div>
             <div class="calendar-weekday">월</div>
             <div class="calendar-weekday">화</div>
             <div class="calendar-weekday">수</div>
             <div class="calendar-weekday">목</div>
             <div class="calendar-weekday">금</div>
             <div class="calendar-weekday">토</div>
-            <div class="calendar-weekday">일</div>
           </div>
 
           <div id="calendarGrid" class="calendar-grid"></div>
@@ -1512,10 +1512,8 @@
     }
 
     function openCalendarThreadEditor(rowId){
-      const writerCode = getUnlockedWriterCode();
       const item = getCalendarThreadById(calendarSelectedDateKey, rowId);
       if(!item) return;
-      if(text(item.writerCode) !== text(writerCode)) return;
       calendarEditingThreadId = text(rowId);
       if(calendarThreadInput) calendarThreadInput.value = text(item.content);
       if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '수정등록';
@@ -1757,7 +1755,7 @@
       const monthIndex = Number(parts[1]) - 1;
       const firstDate = new Date(year, monthIndex, 1);
       const lastDate = new Date(year, monthIndex + 1, 0);
-      const firstWeekday = (firstDate.getDay() + 6) % 7;
+      const firstWeekday = firstDate.getDay();
       const totalDays = lastDate.getDate();
       const todayKey = getTodayDateKey();
       let html = '';

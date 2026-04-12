@@ -1671,31 +1671,27 @@
         calendarCurrentMonth = monthKey;
         calendarCurrentNotice = data.notice || null;
         calendarOverviewMap = {};
-        calendarThreadMap = {};
 
-        const rawThreadMap = (data && data.threadsByDate && typeof data.threadsByDate === 'object')
+        calendarThreadMap = (data && data.threadsByDate && typeof data.threadsByDate === 'object')
           ? data.threadsByDate
           : {};
 
-        Object.keys(rawThreadMap).forEach(function(dateKey){
-          calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
-            ? rawThreadMap[dateKey].slice().sort(function(a, b){
-                return (parseDateValue(b && b.createdAt) || 0) - (parseDateValue(a && a.createdAt) || 0);
-              })
-            : [];
+        Object.keys(calendarThreadMap).forEach(function(dateKey){
+          const items = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
+          calendarThreadMap[dateKey] = items.slice().sort(function(a, b){
+            return (parseDateValue(b && b.createdAt) || 0) - (parseDateValue(a && a.createdAt) || 0);
+          });
         });
 
         (Array.isArray(data.days) ? data.days : []).forEach(function(day){
           const dateKey = text(day.dateKey);
           const localThreads = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
+
           calendarOverviewMap[dateKey] = {
             shoppingCount: Number(day.shoppingCount || 0),
             factoryCount: Number(day.factoryCount || 0),
-            threadCount: localThreads.length || Number(day.threadCount || 0)
+            threadCount: localThreads.length
           };
-          if(!calendarThreadMap[dateKey]){
-            calendarThreadMap[dateKey] = [];
-          }
         });
 
         renderCalendarNotice();

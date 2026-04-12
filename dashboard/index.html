@@ -175,6 +175,13 @@
       min-height:34px;padding:0 12px;border-radius:999px;border:1px solid #dce6f1;background:#fff;
       color:#111318;font-size:13px;font-weight:900;letter-spacing:-0.02em
     }
+    .mini-btn.visibility-btn{
+      min-height:30px;
+      padding:0 7px;
+      font-size:12px;
+      border-radius:999px;
+      flex:0 0 auto;
+    }
     .mini-btn.blue{border-color:#cfe2ff;background:#eef5ff;color:#0f7cff}
     .mini-btn.gray{border-color:#dde3ea;background:#f4f6f8;color:#6e7782}
     .mini-btn.square{border-radius:10px;padding:0 12px;min-height:34px}
@@ -3031,8 +3038,8 @@
         +   '<div class="card-bottom">'
         +     '<div class="action-row">'
         +       '<div class="action-left">'
-        +         '<button class="mini-btn" type="button" onclick="event.stopPropagation(); markVisible(\'' + encodeURIComponent(item.listingNumber) + '\')">보이기</button>'
-        +         '<button class="mini-btn gray" type="button" onclick="event.stopPropagation(); markHidden(\'' + encodeURIComponent(item.listingNumber) + '\')">숨기기</button>'
+        +         '<button class="mini-btn" type="button" onclick="event.stopPropagation(); markVisible(\'' + encodeURIComponent(item.listingNumber) + '\')">보임</button>'
+        +         '<button class="mini-btn gray" type="button" onclick="event.stopPropagation(); markHidden(\'' + encodeURIComponent(item.listingNumber) + '\')">숨김</button>'
         +         '<button class="mini-btn square memo-square" type="button" onclick="event.stopPropagation(); openPropertyMemoModal(\'' + encodeURIComponent(item.listingNumber) + '\')">📌메모</button>'
         +         '<button class="mini-btn square share-square" type="button" onclick="event.stopPropagation(); sharePreview(\'' + encodeURIComponent(item.listingNumber) + '\')">💫공유</button>'
         +         '<button class="mini-btn square edit-square" type="button" onclick="event.stopPropagation(); editItem(\'' + encodeURIComponent(item.listingNumber) + '\')">✍️수정</button>'

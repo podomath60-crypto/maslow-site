@@ -189,6 +189,22 @@
     .mini-btn.memo-square{border-color:#e8dc7e;background:#fff4a8;color:#7a6500}
     .mini-btn.share-square{border-color:#cde8b0;background:#e9f8d7;color:#5e8d1b}
     .mini-btn.compact{min-height:30px;padding:0 10px;font-size:12px;border-radius:999px;flex:0 0 auto}
+    .mini-btn.visibility-text-btn{
+      min-height:34px;
+      padding:0 4px;
+      border:none;
+      background:transparent;
+      border-radius:0;
+      color:#5f6873;
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:-0.03em;
+      flex:0 0 auto;
+      white-space:nowrap;
+    }
+    .mini-btn.visibility-text-btn.active-show{
+      color:#0f7cff;
+    }
     .mini-btn .btn-emoji,
     .mini-btn .btn-text{
       display:inline;
@@ -3076,8 +3092,8 @@
         +   '<div class="card-bottom">'
         +     '<div class="action-row">'
         +       '<div class="action-left">'
-        +         '<button class="mini-btn" type="button" onclick="event.stopPropagation(); markVisible(\'' + encodeURIComponent(item.listingNumber) + '\')">보임</button>'
-        +         '<button class="mini-btn gray" type="button" onclick="event.stopPropagation(); markHidden(\'' + encodeURIComponent(item.listingNumber) + '\')">숨김</button>'
+        +         '<button class="mini-btn visibility-text-btn active-show" type="button" onclick="event.stopPropagation(); markVisible(\'' + encodeURIComponent(item.listingNumber) + '\')">보임</button>'
+        +         '<button class="mini-btn visibility-text-btn" type="button" onclick="event.stopPropagation(); markHidden(\'' + encodeURIComponent(item.listingNumber) + '\')">숨김</button>'
         +         '<button class="mini-btn square memo-square" type="button" onclick="event.stopPropagation(); openPropertyMemoModal(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">📌</span><span class="btn-text">메모</span></button>'
         +         '<button class="mini-btn square share-square" type="button" onclick="event.stopPropagation(); sharePreview(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">💫</span><span class="btn-text">공유</span></button>'
         +         '<button class="mini-btn square edit-square" type="button" onclick="event.stopPropagation(); editItem(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">✍️</span><span class="btn-text">수정</span></button>'

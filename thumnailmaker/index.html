@@ -808,6 +808,95 @@ function exportComposite(){
   canvas.height=state.image.naturalHeight;
   const ctx=canvas.getContext('2d');
 
+  const imageRect=getImageRect();
+  const scaleX=canvas.width/imageRect.width;
+  const scaleY=canvas.height/imageRect.height;
+
+  function mapRect(domRect){
+    return {
+      x:(domRect.left-imageRect.left)*scaleX,
+      y:(domRect.top-imageRect.top)*scaleY,
+      w:domRect.width*scaleX,
+      h:domRect.height*scaleY
+    };
+  }
+
+  function parsePx(v, fallback=0){
+    const n=parseFloat(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function isVisibleNode(node){
+    if(!node) return false;
+    const style=getComputedStyle(node);
+    return style.display!=='none' && style.visibility!=='hidden' && parseFloat(style.opacity||'1')>0;
+  }
+
+  function drawNodeText(node, opts={}){
+    if(!node || !isVisibleNode(node)) return;
+    const domRect=node.getBoundingClientRect();
+    if(domRect.width<=0 || domRect.height<=0) return;
+
+    const r=mapRect(domRect);
+    const style=getComputedStyle(node);
+    const fontSize=parsePx(style.fontSize,16)*scaleY;
+    const lineHeightCss=style.lineHeight;
+    const lineHeight=(lineHeightCss && lineHeightCss!=='normal') ? parsePx(lineHeightCss,fontSize)*scaleY : fontSize*1.1;
+    const fontWeight=style.fontWeight || '900';
+    const fontFamily=style.fontFamily || 'Arial, sans-serif';
+    const align=style.textAlign || opts.align || 'left';
+    const color=style.color || '#ffffff';
+    const strokeWidth=parsePx(style.webkitTextStrokeWidth || '0',0)*scaleX;
+    const strokeColor=style.webkitTextStrokeColor || opts.strokeColor || '#111111';
+    const shadowText=style.textShadow || 'none';
+
+    ctx.save();
+    ctx.font=`${fontWeight} ${fontSize}px ${fontFamily}`;
+    ctx.textBaseline='top';
+    ctx.textAlign=align;
+    ctx.fillStyle=color;
+    ctx.lineJoin='round';
+    ctx.miterLimit=2;
+
+    if(strokeWidth>0){
+      ctx.lineWidth=strokeWidth;
+      ctx.strokeStyle=strokeColor;
+    } else {
+      ctx.lineWidth=0;
+    }
+
+    if(shadowText && shadowText!=='none'){
+      const m=shadowText.match(/(-?\d+\.?\d*)px\s+(-?\d+\.?\d*)px\s+(\d+\.?\d*)px\s+(rgba?\([^)]+\))/);
+      if(m){
+        ctx.shadowOffsetX=parseFloat(m[1])*scaleX;
+        ctx.shadowOffsetY=parseFloat(m[2])*scaleY;
+        ctx.shadowBlur=parseFloat(m[3])*scaleX;
+        ctx.shadowColor=m[4];
+      }
+    }
+
+    const text=String(node.textContent ?? '');
+    const maxWidth=r.w;
+    const lines=wrapCanvasText(ctx,text,maxWidth);
+
+    let x=r.x;
+    if(align==='center') x=r.x + r.w/2;
+    if(align==='right' || align==='end') x=r.x + r.w;
+
+    let startY=r.y;
+    if(opts.vAlign==='middle'){
+      const totalHeight=lines.length*lineHeight;
+      startY=r.y + Math.max(0,(r.h-totalHeight)/2);
+    }
+
+    for(let i=0;i<lines.length;i++){
+      const ly=startY+(i*lineHeight);
+      if(strokeWidth>0) ctx.strokeText(lines[i],x,ly);
+      ctx.fillText(lines[i],x,ly);
+    }
+    ctx.restore();
+  }
+
   if(state.exportFormat==='jpg'){
     ctx.fillStyle='#fff';
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -820,99 +909,31 @@ function exportComposite(){
     });
   }
 
-  const d=getDesign();
-  const palette=getPalette();
-  const x=state.mainBox.x*canvas.width, y=state.mainBox.y*canvas.height, w=state.mainBox.w*canvas.width, h=state.mainBox.h*canvas.height;
-
-  if(!d.hidden){
-    if(d.bg){
-      const pad=Math.max(8,Math.min(w,h)*d.bg.pad);
-      const bx=x-pad, by=y-pad, bw=w+pad*2, bh=h+pad*2;
-      let fill;
-      if(d.bg.type==='gradient'){
-        const grad=ctx.createLinearGradient(bx,by,bx+bw,by+bh);
-        grad.addColorStop(0,hexToRgba(palette[0],d.bg.opacity));
-        grad.addColorStop(1,hexToRgba(palette[1],d.bg.opacity));
-        fill=grad;
-      } else {
-        fill=hexToRgba(palette[d.bg.colorIndex||0], d.bg.opacity);
-      }
-      drawRoundRect(ctx,bx,by,bw,bh,d.bg.radius,fill);
-    }
-
-    ctx.textBaseline='top';
-    getActiveMainSpecs().forEach(item=>{
-      const spec=item.spec;
-      const text=item.text;
-      const fontSize=Math.max(12,h*spec.size*state.mainBox.scale);
-      ctx.font=`${spec.weight} ${fontSize}px ${spec.serif?'Georgia, serif':'Arial, sans-serif'}`;
-      ctx.fillStyle=palette[spec.colorIndex ?? 0];
-      ctx.lineJoin='round';
-      ctx.miterLimit=2;
-
-      if(d.shadow>0){
-        ctx.shadowColor='rgba(0,0,0,.45)';
-        ctx.shadowBlur=Math.max(2,18*(d.shadow||0)*state.mainBox.scale);
-        ctx.shadowOffsetY=Math.max(1,7*(d.shadow||0)*state.mainBox.scale);
-        ctx.shadowOffsetX=0;
-      } else {
-        ctx.shadowColor='transparent';
-        ctx.shadowBlur=0;
-        ctx.shadowOffsetX=0;
-        ctx.shadowOffsetY=0;
-      }
-
-      let textX=x;
-      if(state.align==='center') textX=x+w/2;
-      if(state.align==='right') textX=x+w;
-      ctx.textAlign=state.align;
-
-      const lineY=y+(h*spec.y);
-
-      if(spec.chip){
-        const tw=ctx.measureText(text).width;
-        const padX=fontSize*.38, padY=fontSize*.16;
-        let chipX=textX;
-        if(state.align==='center') chipX=textX-(tw/2)-padX;
-        if(state.align==='right') chipX=textX-tw-padX*2;
-        const chipW=tw+padX*2, chipH=fontSize+padY*2;
-        drawRoundRect(ctx,chipX,lineY,chipW,chipH,chipH/2,hexToRgba(palette[2],.88));
-        ctx.shadowColor='transparent';
-        ctx.shadowBlur=0;
-        ctx.fillStyle=palette[1];
-        const tx = state.align==='left' ? chipX+padX : state.align==='center' ? chipX+chipW/2 : chipX+chipW-padX;
-        ctx.fillText(text,tx,lineY+padY);
-        return;
-      }
-
-      const lineHeight=Math.max(fontSize*0.95*state.mainBox.lineGap, fontSize*0.95);
-      if(d.stroke>0){
-        ctx.lineWidth=Math.max(1,h*(d.stroke||0)*.18*state.mainBox.scale);
-        ctx.strokeStyle=palette[2];
-      } else {
-        ctx.lineWidth=0;
-      }
-      drawWrappedCanvasText(ctx,text,textX,lineY,w,state.align,lineHeight);
-    });
+  const mainBg=el.mainTextGroup.querySelector('.main-bg');
+  if(mainBg && isVisibleNode(mainBg)){
+    const bgRect=mapRect(mainBg.getBoundingClientRect());
+    const bgStyle=getComputedStyle(mainBg);
+    drawRoundRect(ctx,bgRect.x,bgRect.y,bgRect.w,bgRect.h,parsePx(bgStyle.borderRadius,14)*scaleX,bgStyle.background);
   }
 
-  const displayRect=getImageRect();
-  const scaleRatio=canvas.width/displayRect.width;
-  state.freeBlocks.forEach(block=>{
-    const bx=block.x*canvas.width, by=block.y*canvas.height, bw=block.w*canvas.width, bh=block.h*canvas.height;
-    if(block.bgAlpha>0){
-      drawRoundRect(ctx,bx,by,bw,bh,14,hexToRgba(block.bgColor,block.bgAlpha));
+  el.mainTextGroup.querySelectorAll('.main-line').forEach(line=>{
+    if(!isVisibleNode(line)) return;
+    const style=getComputedStyle(line);
+    if(style.backgroundColor && style.backgroundColor!=='rgba(0, 0, 0, 0)' && style.backgroundColor!=='transparent'){
+      const rr=mapRect(line.getBoundingClientRect());
+      drawRoundRect(ctx,rr.x,rr.y,rr.w,rr.h,parsePx(style.borderRadius,12)*scaleX,style.backgroundColor);
     }
-    ctx.font=`900 ${block.fontSize*scaleRatio}px ${block.fontKey==='serif'?'Georgia, serif':block.fontKey==='impact'?'Impact, sans-serif':block.fontKey==='condensed'?'Arial Narrow, sans-serif':'Arial, sans-serif'}`;
-    ctx.textAlign='center';
-    ctx.textBaseline='middle';
-    ctx.fillStyle=block.textColor;
-    if(block.strokeWidth>0){
-      ctx.lineWidth=block.strokeWidth*scaleRatio;
-      ctx.strokeStyle=block.strokeColor;
-      ctx.strokeText(block.text,bx+bw/2,by+bh/2);
+    drawNodeText(line);
+  });
+
+  el.freeBlocksLayer.querySelectorAll('.free-block-text').forEach(textNode=>{
+    if(!isVisibleNode(textNode)) return;
+    const style=getComputedStyle(textNode);
+    const rr=mapRect(textNode.getBoundingClientRect());
+    if(style.backgroundColor && style.backgroundColor!=='rgba(0, 0, 0, 0)' && style.backgroundColor!=='transparent'){
+      drawRoundRect(ctx,rr.x,rr.y,rr.w,rr.h,parsePx(style.borderRadius,12)*scaleX,style.backgroundColor);
     }
-    ctx.fillText(block.text,bx+bw/2,by+bh/2);
+    drawNodeText(textNode,{vAlign:'middle',align:style.textAlign || 'center'});
   });
 
   const ext=state.exportFormat==='png'?'png':'jpg';
@@ -923,7 +944,6 @@ function exportComposite(){
   a.download=`maslow-thumbnail.${ext}`;
   a.click();
 }
-
 
 function wrapCanvasText(ctx,text,maxWidth){
   const rawLines=String(text??'').split('\n');

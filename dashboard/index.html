@@ -1,1 +1,3398 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maslow Korea</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --line:#e6ebf1;
+      --text:#111318;
+      --muted:#67707b;
+      --blue:#0f7cff;
+      --shadow:0 14px 30px rgba(15,23,42,.05);
+    }
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;
+      padding:0;
+      background:#fff;
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif !important;
+      letter-spacing:-0.02em;
+    }
+    a{text-decoration:none;color:inherit}
+    button,input{font:inherit}
+    button{border:none;background:none;cursor:pointer}
+    img{display:block;max-width:100%}
 
+    .page{min-height:100vh;background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%)}
+    .shell{width:100%;max-width:980px;margin:0 auto;padding:0 20px 48px}
+
+    .topbar{
+      position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
+      min-height:76px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
+      border-bottom:1px solid rgba(230,235,241,.9)
+    }
+    .topbar-left{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      width:auto;
+      min-width:120px;
+      flex:0 0 auto;
+    }
+    .topbar-right{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      flex:1 1 auto;
+      min-width:0;
+    }
+    .topbar-greeting{
+      display:inline-flex;
+      align-items:center;
+      min-height:44px;
+      padding:0 4px;
+      font-size:15px;
+      font-weight:800;
+      color:#5f6873;
+      letter-spacing:-0.03em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
+    .brand-link{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;font-size:18px;font-weight:900;color:#111}
+
+    .brand-icons{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .brand-icon-link{
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background:#fff;
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      transition:transform .18s ease, box-shadow .18s ease;
+      flex:0 0 42px;
+    }
+    .brand-icon-link:hover{
+      transform:translateY(-1px);
+      box-shadow:0 18px 34px rgba(15,23,42,.08);
+    }
+    .brand-icon-link svg{
+      width:26px;
+      height:26px;
+      display:block;
+    }
+    .brand-icon-factory{
+      color:#3a8fe6;
+      border-color:#cfe2ff;
+      background:#eef6ff;
+    }
+    .brand-icon-building{
+      color:#b8841a;
+      border-color:#ead7aa;
+      background:#fff8e8;
+    }
+
+    .hero-spacer{height:18px}
+    .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0 18px}
+    .panel-card{
+      position:relative;display:flex;flex-direction:column;justify-content:space-between;
+      min-height:132px;padding:22px 22px 20px;border:1px solid var(--line);border-radius:28px;
+      background:#fff;box-shadow:var(--shadow);text-align:left;transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease
+    }
+    .panel-card:hover{transform:translateY(-2px);box-shadow:0 18px 34px rgba(15,23,42,.08)}
+    .panel-card.primary{background:linear-gradient(180deg,#f7fbff 0%,#eef6ff 100%);border-color:#cfe2ff}
+    .panel-eyebrow{font-size:12px;font-weight:900;color:#7d8792;letter-spacing:.08em;text-transform:uppercase}
+    .panel-title{margin-top:10px;font-size:30px;line-height:1.08;font-weight:900;color:#111318;letter-spacing:-0.05em}
+    .panel-desc{margin-top:10px;font-size:14px;line-height:1.65;color:#66707a;font-weight:700}
+
+    .panel-icon-wrap{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-top:2px;
+    }
+    .panel-icon{
+      width:28px;
+      height:28px;
+      color:#6e7883;
+      flex:0 0 28px;
+    }
+
+    .search-wrap{margin:0 0 14px}
+    .search-box{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      width:min(230px,100%);
+      min-height:60px;
+      padding:0 18px;
+      border:1.5px solid #d9e4ef;
+      border-radius:999px;
+      background:#fff;
+      box-shadow:0 8px 20px rgba(15,23,42,.03);
+      transition:width .24s ease, box-shadow .24s ease, border-color .24s ease;
+    }
+    .search-box:focus-within{
+      width:min(100%, 720px);
+      border-color:#bfdcff;
+      box-shadow:0 12px 24px rgba(15,124,255,.08)
+    }
+    .search-icon{flex:0 0 auto;font-size:18px;color:#7b8794;width:auto}
+    .search-input{
+      flex:1 1 auto;
+      width:100%;
+      border:none;
+      outline:none;
+      background:transparent;
+      color:#111318;
+      font-size:17px;
+      font-weight:800;
+      letter-spacing:-0.03em
+    }
+    .search-input::placeholder{color:rgba(123,135,148,.55);font-weight:600}
+
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 18px}
+    .chip-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .filter-chip{
+      min-height:36px;padding:0 14px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;
+      color:#5d6670;font-size:14px;font-weight:900;letter-spacing:-0.02em;transition:.18s ease
+    }
+    .filter-chip.active{background:#0f7cff;border-color:#0f7cff;color:#fff;box-shadow:0 10px 20px rgba(15,124,255,.16)}
+    .toolbar-meta{font-size:13px;color:#7b8794;font-weight:800;letter-spacing:-0.02em}
+
+    .group{margin:0 0 26px}
+    .group-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:0 2px}
+    .group-title{font-size:22px;line-height:1.2;font-weight:900;color:#202227;letter-spacing:-0.04em}
+    .group-count{font-size:13px;color:#7b8794;font-weight:900}
+
+    .card-list{display:grid;grid-template-columns:1fr;gap:12px}
+    .property-card{border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
+    .property-main{
+      display:grid;grid-template-columns:112px 1fr;gap:14px;padding:14px;align-items:start;cursor:pointer
+    }
+    .thumb{width:112px;height:112px;border-radius:18px;background:#edf2f7 center/cover no-repeat;overflow:hidden;flex:0 0 112px}
+    .card-content{min-width:0;display:grid;gap:8px}
+    .title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+    .card-title{
+      margin:0;font-size:24px;line-height:1.16;font-weight:900;color:#17191d;letter-spacing:-0.05em;word-break:keep-all
+    }
+    .status-chip{
+      flex:0 0 auto;min-height:24px;padding:0 8px;border-radius:999px;font-size:11px;font-weight:900;
+      display:inline-flex;align-items:center;justify-content:center;white-space:nowrap
+    }
+    .status-chip.visible{background:#eef5ff;color:#0f7cff;border:1px solid #cfe2ff}
+    .status-chip.hidden{background:#f3f5f8;color:#7f8792;border:1px solid #dde3ea}
+    .card-address{font-size:15px;line-height:1.55;color:#505862;font-weight:700;word-break:keep-all}
+    .card-deal-price{
+      font-size:15px;
+      line-height:1.5;
+      font-weight:900;
+      color:#ff3c3c;
+      letter-spacing:-0.03em;
+      word-break:keep-all;
+    }
+    .card-meta{font-size:13px;line-height:1.5;color:#7b8794;font-weight:800;letter-spacing:-0.02em}
+    .card-meta strong{color:#4f5863;font-weight:900}
+
+    .card-bottom{border-top:1px solid #eef2f6;padding:10px 14px 12px;display:grid;gap:10px}
+    .action-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .action-left{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .mini-btn{
+      min-height:34px;padding:0 12px;border-radius:999px;border:1px solid #dce6f1;background:#fff;
+      color:#111318;font-size:13px;font-weight:900;letter-spacing:-0.02em
+    }
+    .mini-btn.visibility-btn{
+      min-height:30px;
+      padding:0 7px;
+      font-size:12px;
+      border-radius:999px;
+      flex:0 0 auto;
+    }
+    .mini-btn.blue{border-color:#cfe2ff;background:#eef5ff;color:#0f7cff}
+    .mini-btn.gray{border-color:#dde3ea;background:#f4f6f8;color:#6e7782}
+    .mini-btn.square{border-radius:10px;padding:0 8px;min-height:34px;font-size:16px;font-weight:800;letter-spacing:-0.03em;display:inline-flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap}
+    .mini-btn.edit-square{border-color:#b9dcff;background:#ecf6ff;color:#3a8fe6}
+    .mini-btn.memo-square{border-color:#e8dc7e;background:#fff4a8;color:#7a6500}
+    .mini-btn.share-square{border-color:#cde8b0;background:#e9f8d7;color:#5e8d1b}
+    .mini-btn.compact{min-height:30px;padding:0 10px;font-size:12px;border-radius:999px;flex:0 0 auto}
+    .mini-btn.visibility-text-btn{
+      min-height:34px;
+      padding:0 4px;
+      border:none;
+      background:transparent;
+      border-radius:0;
+      color:#5f6873;
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:-0.03em;
+      flex:0 0 auto;
+      white-space:nowrap;
+    }
+    .mini-btn.visibility-text-btn.active-show{
+      color:#0f7cff;
+    }
+    .mini-btn .btn-emoji,
+    .mini-btn .btn-text{
+      display:inline;
+      line-height:1;
+    }
+
+    .memo-modal{
+      position:fixed;
+      inset:0;
+      z-index:12160;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(17,24,39,.22);
+      backdrop-filter:blur(3px);
+      -webkit-backdrop-filter:blur(3px);
+    }
+    .memo-modal.show{display:flex}
+    .memo-modal-card{
+      width:min(440px, calc(100vw - 28px));
+      min-height:320px;
+      padding:22px 20px 18px;
+      border:1px solid #f1e3a8;
+      border-radius:18px;
+      background:#fff8bf;
+      box-shadow:0 18px 40px rgba(15,23,42,.18);
+      display:grid;
+      gap:12px;
+      transform:rotate(-0.4deg);
+    }
+    .memo-modal-head{font-size:22px;font-weight:900;color:#6f5a00}
+    .memo-textarea{
+      width:100%;min-height:220px;resize:vertical;border:none;outline:none;background:transparent;
+      color:#5d4b00;font-size:17px;line-height:1.65;font-family:inherit;font-weight:600;
+    }
+    .memo-textarea::placeholder{color:rgba(93,75,0,.25)}
+    .memo-modal-actions{display:flex;justify-content:flex-end;gap:16px}
+    .memo-btn{min-height:32px;padding:0 4px;border:none;background:transparent;font-size:15px;font-weight:700;color:#7a6500}
+    .memo-btn.primary{color:#0f7cff}
+
+    .channel-row{
+      display:grid;
+      grid-template-columns:repeat(9, 56px);
+      justify-content:flex-start;
+      gap:8px;
+    }
+    .channel-icon{
+      position:relative;
+      aspect-ratio:1 / 1;
+      width:56px;
+      min-width:56px;
+      max-width:56px;
+      min-height:56px;
+      max-height:56px;
+      height:56px;
+      margin:0;
+      border-radius:14px;
+      border:1px solid #e4eaf1;
+      background:#fafcff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+      overflow:hidden;
+      flex:0 0 56px;
+    }
+    .channel-favicon{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:90%;
+      height:90%;
+      transform:translate(-50%, -50%);
+      object-fit:cover;
+      border-radius:4px;
+      flex:none
+    }
+    .site-chip{
+      position:relative;
+      aspect-ratio:1 / 1;
+      width:56px;
+      min-width:56px;
+      max-width:56px;
+      min-height:56px;
+      max-height:56px;
+      height:56px;
+      border-radius:14px;
+      border:1px solid #e4eaf1;
+      background:#fff;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+      overflow:hidden;
+      flex:0 0 56px
+    }
+    .site-favicon{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:90%;
+      height:90%;
+      transform:translate(-50%, -50%);
+      object-fit:cover;
+      border-radius:4px;
+      flex:none
+    }
+    .empty{border:1px dashed #d9e3ed;border-radius:24px;background:#fff;padding:30px 18px;text-align:center;color:#7b8794;font-size:15px;font-weight:800}
+
+    .loading-overlay{
+      position:fixed;
+      inset:0;
+      z-index:12050;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background:rgba(255,255,255,.72);
+      backdrop-filter:blur(3px);
+      -webkit-backdrop-filter:blur(3px);
+    }
+    .loading-overlay.show{display:flex}
+    .loading-panel{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      text-align:center;
+    }
+    .loading-buddy{
+      width:74px;
+      height:74px;
+      object-fit:cover;
+      border-radius:18px;
+      animation:buddyBounce 1.15s ease-in-out infinite;
+      box-shadow:0 10px 22px rgba(15,124,255,.16);
+    }
+    .loading-text{
+      min-height:24px;
+      font-size:18px;
+      font-weight:800;
+      line-height:1.4;
+      color:#2b8fe8;
+      letter-spacing:-0.03em;
+    }
+    @keyframes buddyBounce{
+      0%,100%{transform:translateY(0) scale(1)}
+      20%{transform:translateY(-3px) scale(1.01)}
+      50%{transform:translateY(-10px) scale(1.04)}
+      75%{transform:translateY(-4px) scale(1.01)}
+    }
+
+    .calendar-inline-loading{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(255,255,255,.42);
+      pointer-events:none;
+      z-index:4;
+    }
+    .calendar-inline-loading.show{display:flex}
+    .calendar-inline-spinner{
+      width:24px;
+      height:24px;
+      border-radius:999px;
+      border:2.5px solid rgba(15,124,255,.18);
+      border-top-color:#0f7cff;
+      animation:calendarSpin .7s linear infinite;
+    }
+    @keyframes calendarSpin{
+      from{transform:rotate(0deg)}
+      to{transform:rotate(360deg)}
+    }
+
+    .lock-overlay{
+      position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;
+      background:rgba(255,255,255,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)
+    }
+    .lock-card{
+      width:min(420px,100%);border:1px solid #e6ebf1;border-radius:30px;background:#fff;
+      box-shadow:0 24px 48px rgba(15,23,42,.12);padding:24px 22px 22px
+    }
+    .lock-title{font-size:26px;line-height:1.1;font-weight:900;color:#17191d;letter-spacing:-0.05em;margin:0 0 12px}
+    .lock-desc{font-size:14px;line-height:1.65;color:#66707a;font-weight:700;margin:0 0 16px}
+    .lock-input{
+      width:100%;min-height:56px;border:1.5px solid #dbe5ee;border-radius:18px;padding:0 16px;outline:none;
+      font-size:20px;font-weight:900;letter-spacing:.08em;text-align:center;background:#fff;margin:0 0 12px
+    }
+    .lock-btn{width:100%;min-height:52px;border-radius:18px;background:#0f7cff;color:#fff;font-size:16px;font-weight:900;letter-spacing:-0.02em}
+    .lock-error{margin-top:10px;font-size:13px;color:#d64545;font-weight:800;min-height:18px;text-align:center}
+
+    .more-wrap{
+      display:flex;
+      justify-content:center;
+      margin:8px 0 28px;
+    }
+    .more-btn{
+      min-height:42px;
+      padding:0 18px;
+      border-radius:999px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-0.02em;
+    }
+
+    .channel-icon.is-not-yet .channel-favicon,
+    .site-chip.is-not-yet .site-favicon{
+      opacity:.26;
+      filter:none;
+    }
+
+    .channel-modal{
+      position:fixed;
+      inset:0;
+      z-index:12120;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(17,24,39,.38);
+      backdrop-filter:blur(4px);
+      -webkit-backdrop-filter:blur(4px);
+    }
+    .channel-modal.show{display:flex}
+    .channel-modal-card{
+      width:min(520px, calc(100vw - 32px));
+      max-height:min(80vh, 680px);
+      overflow:auto;
+      background:#fff;
+      border:1px solid #e6ebf1;
+      border-radius:26px;
+      box-shadow:0 24px 48px rgba(15,23,42,.14);
+      padding:22px 24px 20px;
+    }
+    .channel-modal-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin:0 0 14px;
+    }
+    .channel-modal-title{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:24px;
+      line-height:1.15;
+      font-weight:900;
+      color:#17191d;
+      letter-spacing:-0.04em;
+    }
+    .channel-modal-favicon{
+      width:28px;
+      height:28px;
+      border-radius:8px;
+      object-fit:cover;
+      flex:0 0 28px;
+      border:1px solid #e5ebf2;
+      background:#fff;
+    }
+    .channel-modal-close{
+      width:36px;
+      height:36px;
+      border-radius:999px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:18px;
+      font-weight:900;
+      flex:0 0 36px;
+    }
+    .channel-status-row{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      flex-wrap:wrap;
+      margin:0 0 16px;
+      padding:4px 2px;
+    }
+    .channel-radio{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      width:auto;
+      font-size:15px;
+      font-weight:900;
+      color:#23262b;
+    }
+    .channel-radio input{
+      width:18px;
+      height:18px;
+      margin:0;
+      accent-color:#0f7cff;
+    }
+    .channel-links{
+      display:grid;
+      gap:10px;
+      margin:0 0 18px;
+    }
+    .channel-link-row{
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) auto;
+      gap:8px;
+      align-items:center;
+    }
+    .channel-link-input{
+      width:100%;
+      min-height:46px;
+      border:1.5px solid #dbe5ee;
+      border-radius:14px;
+      padding:0 14px;
+      outline:none;
+      background:#fff;
+      color:#111318;
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:-0.02em;
+    }
+    .channel-go-btn{
+      min-height:46px;
+      padding:0 14px;
+      border-radius:14px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:-0.02em;
+      white-space:nowrap;
+    }
+    .channel-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+    }
+    .channel-action-btn{
+      min-height:42px;
+      padding:0 16px;
+      border-radius:999px;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-0.02em;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+    }
+    .channel-action-btn.primary{
+      border-color:#0f7cff;
+      background:#0f7cff;
+      color:#fff;
+    }
+
+    @media (max-width:860px){
+      .shell{padding:0 16px 40px}
+      .panel-grid{grid-template-columns:1fr 1fr;gap:10px}
+      .panel-card{min-height:114px;padding:18px 16px 16px;border-radius:22px}
+      .panel-title{font-size:24px}
+      .topbar-greeting{font-size:13px}
+      .brand-icons{gap:8px}
+      .brand-icon-link{
+        width:38px;
+        height:38px;
+        border-radius:12px;
+        flex:0 0 38px;
+      }
+      .brand-icon-link svg{
+        width:23px;
+        height:23px;
+      }
+      .search-box{width:min(220px,100%);min-height:54px;padding:0 16px}
+      .search-box:focus-within{width:min(100%, 420px)}
+      .property-main{grid-template-columns:90px 1fr;gap:12px;padding:12px}
+      .thumb{width:90px;height:90px;border-radius:16px}
+      .card-title{font-size:20px}
+      .card-address{font-size:14px}
+      .card-deal-price{font-size:14px}
+      .action-row{
+        gap:6px;
+      }
+      .action-left{
+        gap:6px;
+        align-items:stretch;
+      }
+      .mini-btn.square{
+        min-height:34px;
+        padding:0 8px;
+        display:inline-flex;
+        flex-direction:row;
+        align-items:center;
+        justify-content:center;
+        gap:2px;
+        line-height:1;
+        font-size:16px;
+        font-weight:800;
+        letter-spacing:-0.03em;
+        white-space:nowrap;
+      }
+      .mini-btn.square .btn-emoji{
+        display:inline;
+        font-size:1em;
+        line-height:1;
+      }
+      .mini-btn.square .btn-text{
+        display:inline;
+        font-size:1em;
+        line-height:1;
+        letter-spacing:inherit;
+      }
+      .mini-btn.visibility-btn{
+        min-height:29px;
+        padding:0 6px;
+        line-height:1.05;
+      }
+      .channel-row{
+        grid-template-columns:repeat(9, minmax(0, 1fr));
+        gap:4px;
+      }
+      .channel-icon{
+        position:relative;
+        aspect-ratio:1 / 1;
+        width:100%;
+        min-width:0;
+        max-width:none;
+        height:auto;
+        min-height:auto;
+        max-height:none;
+        margin:0;
+        border-radius:10px;
+        padding:0;
+        flex:none;
+      }
+      .channel-favicon{
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        object-fit:cover;
+        transform:none;
+        flex-basis:auto;
+      }
+      .site-chip{
+        position:relative;
+        aspect-ratio:1 / 1;
+        width:100%;
+        min-width:0;
+        max-width:none;
+        height:auto;
+        min-height:auto;
+        max-height:none;
+        margin:0;
+        border-radius:10px;
+        padding:0;
+        flex:none;
+      }
+      .site-favicon{
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        object-fit:cover;
+        transform:none;
+        flex-basis:auto;
+      }
+      .loading-buddy{
+        width:64px;
+        height:64px;
+        border-radius:16px;
+      }
+      .loading-text{
+        font-size:16px;
+      }
+      .more-btn{
+        min-height:38px;
+        padding:0 16px;
+        font-size:13px;
+      }
+      .channel-modal{
+        padding:16px;
+      }
+      .channel-modal-card{
+        width:min(520px, calc(100vw - 20px));
+        max-height:min(78vh, 640px);
+        border-radius:22px;
+        padding:20px 18px 18px;
+      }
+      .channel-modal-title{
+        font-size:20px;
+      }
+      .channel-status-row{
+        gap:14px;
+      }
+      .channel-radio{
+        font-size:14px;
+      }
+      .channel-link-input{
+        min-height:42px;
+        font-size:13px;
+      }
+      .channel-go-btn{
+        min-height:42px;
+        padding:0 12px;
+        font-size:12px;
+      }
+      .channel-action-btn{
+        min-height:40px;
+        padding:0 14px;
+        font-size:13px;
+      }
+    }
+  
+  .calendar-modal{
+    position:fixed;
+    inset:0;
+    z-index:12100;
+    display:none;
+    background:#f7f8fb;
+  }
+  .calendar-modal.show{display:block}
+  .calendar-modal-sheet{
+    width:100vw;
+    height:100dvh;
+    min-height:100dvh;
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+    background:#f7f8fb;
+  }
+  .calendar-modal-topbar{
+    position:sticky;
+    top:0;
+    z-index:3;
+    min-height:72px;
+    background:rgba(247,248,251,.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid #e7ebf1;
+  }
+  .calendar-modal-topbar-inner{
+    max-width:980px;
+    margin:0 auto;
+    padding:0 20px;
+    min-height:72px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .calendar-modal-back{
+    min-height:42px;
+    padding:0 14px;
+    border-radius:999px;
+    border:1px solid #d8e0ea;
+    background:#fff;
+    color:#111318;
+    font-size:14px;
+    font-weight:800;
+    letter-spacing:-0.02em;
+  }
+  .calendar-modal-title{
+    flex:1 1 auto;
+    text-align:center;
+    font-size:18px;
+    font-weight:900;
+    color:#17191d;
+    letter-spacing:-0.04em;
+  }
+  .calendar-modal-spacer{width:72px;flex:0 0 72px}
+  .calendar-modal-inner{
+    width:100%;
+    max-width:980px;
+    margin:0 auto;
+    padding:16px 20px 32px;
+  }
+
+  .calendar-notice-wrap{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    padding:4px 0 14px 14px;
+  }
+  .calendar-notice-main{min-width:0}
+  .calendar-notice-label{
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.08em;
+    color:#8b95a1;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .calendar-notice-text{
+    font-size:18px;
+    line-height:1.35;
+    font-weight:800;
+    color:#17191d;
+    word-break:keep-all;
+  }
+  .calendar-notice-link{
+    display:none;
+    margin-top:6px;
+    font-size:13px;
+    line-height:1.45;
+    color:#0f7cff;
+    font-weight:700;
+    word-break:break-all;
+  }
+  .calendar-notice-pencil{
+    width:34px;
+    height:34px;
+    border-radius:999px;
+    border:1px solid #d8e0ea;
+    background:#fff;
+    color:#5f6873;
+    font-size:16px;
+    font-weight:800;
+    flex:0 0 34px;
+  }
+  .calendar-notice-edit{
+    display:none;
+    gap:8px;
+    padding:0 0 14px;
+  }
+  .calendar-notice-edit.show{display:grid}
+  .calendar-notice-input{
+    width:100%;
+    min-height:44px;
+    padding:0 14px;
+    border:1.5px solid #dbe5ee;
+    border-radius:14px;
+    background:#fff;
+    color:#111318;
+    font-size:14px;
+    font-weight:700;
+    outline:none;
+  }
+  .calendar-notice-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+  }
+  .calendar-notice-btn{
+    min-height:36px;
+    padding:0 14px;
+    border-radius:999px;
+    border:1px solid #dce6f1;
+    background:#fff;
+    color:#111318;
+    font-size:13px;
+    font-weight:800;
+  }
+  .calendar-notice-btn.primary{
+    border-color:#0f7cff;
+    background:#0f7cff;
+    color:#fff;
+  }
+
+  .calendar-shell{
+    border:1px solid #e5e9ef;
+    border-radius:30px;
+    background:#fdfefe;
+    box-shadow:0 14px 30px rgba(15,23,42,.04);
+    padding:18px 18px 16px;
+  }
+  .calendar-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+  }
+  .calendar-nav{
+    width:42px;
+    height:42px;
+    border-radius:999px;
+    border:1px solid #dde4ec;
+    background:#fff;
+    color:#111318;
+    font-size:24px;
+    line-height:1;
+    font-weight:500;
+  }
+  .calendar-month-label{
+    font-size:17px;
+    font-weight:800;
+    color:#17191d;
+    letter-spacing:-0.03em;
+  }
+  .calendar-weekdays{
+    display:grid;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    gap:0;
+    padding:0 2px 8px;
+    border-bottom:1px solid #edf1f5;
+  }
+  .calendar-weekday{
+    text-align:center;
+    font-size:12px;
+    font-weight:700;
+    color:#7f8792;
+    padding:0 0 6px;
+  }
+  .calendar-grid{
+    display:grid;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    gap:0;
+  }
+  .calendar-cell{
+    min-height:74px;
+    padding:4px 5px 4px;
+    border-right:1px solid #eef2f6;
+    border-bottom:1px solid #eef2f6;
+    background:transparent;
+    text-align:left;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    border-radius:0;
+  }
+  .calendar-cell:nth-child(7n){border-right:none}
+  .calendar-cell.is-empty{background:transparent}
+  .calendar-cell.is-selected{
+    outline:none;
+    border-radius:0;
+    background:#eef5ff;
+  }
+  .calendar-day-number{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:4px;
+    font-size:16px;
+    line-height:1.15;
+    font-weight:700;
+    color:#111318;
+    letter-spacing:-0.02em;
+  }
+  .calendar-day-star{
+    font-size:.9em;
+    line-height:1;
+    font-weight:900;
+    color:#0f7cff;
+    transform:translateY(-.5px);
+  }
+  .calendar-cell.is-today .calendar-day-number{
+    color:#0f7cff;
+  }
+  .calendar-lines{
+    margin-top:3px;
+    display:grid;
+    gap:2px;
+    line-height:1.22;
+  }
+  .calendar-line{
+    font-size:11.5px;
+    line-height:1.32;
+    font-weight:400;
+    color:#5f6873;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .calendar-line.zero{display:none}
+  .calendar-detail-card{
+    margin-top:14px;
+    border:1px solid #e5e9ef;
+    border-radius:24px;
+    background:#fff;
+    box-shadow:0 14px 30px rgba(15,23,42,.04);
+    padding:16px;
+    display:grid;
+    gap:12px;
+  }
+  .calendar-detail-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .calendar-detail-date{
+    font-size:21px;
+    line-height:1.28;
+    font-weight:900;
+    color:#17191d;
+    letter-spacing:-0.04em;
+  }
+  .calendar-detail-meta{
+    font-size:13px;
+    color:#7b8794;
+    font-weight:800;
+  }
+  .calendar-subtitle{
+    font-size:16px;
+    line-height:1.3;
+    font-weight:900;
+    color:#202227;
+    letter-spacing:-0.03em;
+  }
+  .calendar-property-list,
+  .calendar-thread-list{
+    display:grid;
+    gap:10px;
+  }
+  .calendar-property-item{
+    display:grid;
+    grid-template-columns:72px 1fr;
+    gap:10px;
+    padding:10px;
+    border:1px solid #e9edf2;
+    border-radius:18px;
+    background:#fbfcfe;
+  }
+  .calendar-property-thumb{
+    width:72px;
+    height:72px;
+    border-radius:14px;
+    background:#edf2f7 center/cover no-repeat;
+  }
+  .calendar-property-body{display:grid;gap:5px;min-width:0}
+  .calendar-property-title{font-size:16px;font-weight:800;color:#17191d;line-height:1.2;word-break:keep-all}
+  .calendar-property-address{font-size:13px;font-weight:600;color:#5a6570;line-height:1.45;word-break:keep-all}
+  .calendar-property-price{font-size:13px;font-weight:800;color:#ff3c3c;line-height:1.4}
+  .calendar-property-meta{font-size:12px;font-weight:700;color:#7b8794;line-height:1.4}
+
+  .calendar-thread-write{
+    display:grid;
+    gap:8px;
+    padding:12px;
+    border:1px solid #e9edf2;
+    border-radius:18px;
+    background:#fbfcfe;
+  }
+  .calendar-writer-chip{
+    display:inline-flex;
+    align-items:center;
+    min-height:28px;
+    padding:0 10px;
+    border-radius:999px;
+    border:1px solid #e1e8f0;
+    background:#fff;
+    color:#4c5b69;
+    font-size:12px;
+    font-weight:800;
+    width:max-content;
+  }
+  .calendar-thread-textarea{
+    width:100%;
+    min-height:84px;
+    resize:vertical;
+    border:1.5px solid #dbe5ee;
+    border-radius:14px;
+    padding:12px 14px;
+    outline:none;
+    background:#fff;
+    color:#111318;
+    font-size:14px;
+    font-weight:700;
+    line-height:1.5;
+    font-family:inherit;
+  }
+  .calendar-thread-textarea::placeholder{
+    color:rgba(123,135,148,.18);
+    font-weight:500;
+  }
+  .calendar-thread-editor-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:16px;
+    margin-top:2px;
+  }
+  .calendar-thread-submit,
+  .calendar-thread-delete{
+    min-height:32px;
+    padding:0 4px;
+    border:none;
+    background:transparent;
+    font-size:15px;
+    font-weight:700;
+  }
+  .calendar-thread-submit{
+    color:#0f7cff;
+  }
+  .calendar-thread-delete{
+    color:#7b8794;
+  }
+  .calendar-thread-delete.is-hidden{
+    display:none;
+  }
+  .calendar-thread-write{
+    display:none;
+  }
+  .calendar-thread-write.show{
+    display:grid;
+  }
+  .calendar-thread-fab{
+    position:fixed;
+    right:18px;
+    bottom:70px;
+    z-index:8;
+    width:54px;
+    height:54px;
+    border-radius:999px;
+    border:1px solid #d8e2ec;
+    background:#0f7cff;
+    color:#fff;
+    box-shadow:0 14px 30px rgba(15,124,255,.22);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    font-size:40px;
+    font-weight:900;
+    line-height:1;
+  }
+  .calendar-modal.show .calendar-thread-fab{
+    display:flex;
+  }
+  .calendar-thread-fab.is-open{
+    background:#fff;
+    color:#0f7cff;
+  }
+
+  .calendar-thread-item{
+    padding:12px 14px;
+    border:1px solid #e9edf2;
+    border-radius:18px;
+    background:#fff;
+    display:grid;
+    gap:7px;
+  }
+  .calendar-thread-item.is-own{
+    cursor:pointer;
+  }
+  .calendar-thread-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:12px;
+    margin-top:2px;
+  }
+  .calendar-thread-action{
+    border:none;
+    background:transparent;
+    padding:0;
+    color:#7b8794;
+    font-size:13px;
+    font-weight:700;
+  }
+  .calendar-thread-action.delete{color:#d64545}
+  .calendar-thread-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .calendar-thread-writer{font-size:14px;font-weight:800;color:#17191d}
+  .calendar-thread-time{font-size:12px;font-weight:700;color:#7b8794}
+  .calendar-thread-content{font-size:22px;line-height:1.55;font-weight:500;color:#4f5863;white-space:pre-wrap;word-break:break-word}
+  .calendar-section-divider{
+    height:1px;
+    background:#eef2f6;
+    margin:18px 0 16px;
+  }
+  .calendar-empty{
+    padding:16px;
+    border:1px dashed #d9e3ed;
+    border-radius:16px;
+    background:#fff;
+    color:#7b8794;
+    font-size:14px;
+    font-weight:700;
+    text-align:center;
+  }
+
+
+  .calendar-thread-item.is-editing{
+    border-color:#bfdcff;
+    background:#f7fbff;
+    box-shadow:0 10px 24px rgba(15,124,255,.08);
+  }
+  .calendar-thread-inline-editor{
+    display:grid;
+    gap:8px;
+    margin-top:2px;
+  }
+  .calendar-thread-inline-textarea{
+    width:100%;
+    min-height:96px;
+    resize:vertical;
+    border:1.5px solid #bfdcff;
+    border-radius:14px;
+    padding:12px 14px;
+    outline:none;
+    background:#fff;
+    color:#111318;
+    font-size:22px;
+    font-weight:500;
+    line-height:1.5;
+    font-family:inherit;
+  }
+  .calendar-thread-inline-textarea::placeholder{
+    color:rgba(123,135,148,.18);
+    font-weight:500;
+  }
+  .calendar-thread-inline-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:16px;
+  }
+  .calendar-thread-inline-btn{
+    min-height:32px;
+    padding:0 4px;
+    border:none;
+    background:transparent;
+    font-size:15px;
+    font-weight:700;
+  }
+  .calendar-thread-inline-btn.save{color:#0f7cff;}
+  .calendar-thread-inline-btn.delete{color:#7b8794;}
+  .calendar-thread-inline-btn.close{color:#7b8794;}
+
+  @media (max-width:860px){
+    .calendar-modal-topbar-inner{padding:0 16px}
+    .calendar-modal-inner{padding:14px 16px 28px}
+    .calendar-modal-spacer{width:58px;flex:0 0 58px}
+    .calendar-modal-title{font-size:17px}
+    .calendar-shell{padding:14px 12px 12px;border-radius:26px}
+    .calendar-head{margin-bottom:10px}
+    .calendar-nav{width:38px;height:38px;font-size:22px}
+    .calendar-month-label{font-size:16px}
+    .calendar-weekdays{padding:0 2px 6px}
+    .calendar-weekday{font-size:11px}
+    .calendar-cell{min-height:86px;padding:7px 5px 7px}
+    .calendar-cell.is-selected{outline:none;border-radius:0;background:#eef5ff}
+    .calendar-day-number{font-size:14px}
+    .calendar-cell{min-height:68px;padding:4px 4px 4px;gap:1px}
+    .calendar-line{font-size:11px; line-height:1.3}
+    .calendar-detail-card{padding:14px;border-radius:20px}
+    .calendar-detail-date{font-size:18px}
+  }
+
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="shell">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="brand-icons" aria-label="브랜드 바로가기">
+            <a href="/" class="brand-icon-link brand-icon-factory" aria-label="산업용 메인으로 이동">
+              <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                <path d="M8 54V26.5c0-.9.73-1.63 1.63-1.63H20.5c.9 0 1.63.73 1.63 1.63V33l11.72-6.59c1.08-.61 2.4.17 2.4 1.41V33l11.72-6.59c1.08-.61 2.4.17 2.4 1.41V54" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>
+                <path d="M6 54H58" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+                <path d="M16 31.5H24M16 39.5H24M16 47.5H24M31 39.5H39M31 47.5H39M46 39.5H54M46 47.5H54" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+                <path d="M51 10v14" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+                <path d="M47 14h8" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+              </svg>
+            </a>
+            <a href="/realty" class="brand-icon-link brand-icon-building" aria-label="리얼티 메인으로 이동">
+              <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                <path d="M12 54V18.5c0-.9.73-1.63 1.63-1.63h18.74c.9 0 1.63.73 1.63 1.63V54" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>
+                <path d="M33.5 54V10.5c0-.9.73-1.63 1.63-1.63h15.24c.9 0 1.63.73 1.63 1.63V54" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>
+                <path d="M8 54H56" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+                <path d="M18 24h5M18 32h5M18 40h5M18 48h5M41 18h5M41 26h5M41 34h5M41 42h5" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+                <path d="M27 54V43.5c0-.83.67-1.5 1.5-1.5h3c.83 0 1.5.67 1.5 1.5V54" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div id="topbarGreeting" class="topbar-greeting"></div>
+        </div>
+      </div>
+
+      <div class="hero-spacer"></div>
+
+      <section class="panel-grid">
+        <button class="panel-card primary" id="goAdminBtn" type="button">
+          <div>
+            <div class="panel-eyebrow">Create</div>
+            <div class="panel-title">매물등록</div>
+          </div>
+          <div class="panel-desc">입력기로 이동해서 새 매물을 등록합니다.</div>
+        </button>
+
+        <button class="panel-card" id="calendarBtn" type="button">
+          <div>
+            <div class="panel-eyebrow">Schedule</div>
+            <div class="panel-title">캘린더</div>
+          </div>
+          <div class="panel-desc">일정 관리 영역. 추후 연결 예정입니다.</div>
+        </button>
+
+        <button class="panel-card" id="goListingLookupBtn" type="button">
+          <div>
+            <div class="panel-eyebrow">Lookup</div>
+            <div class="panel-title">매물조회</div>
+          </div>
+          <div class="panel-desc">위치와 건축물정보를 제공합니다.</div>
+        </button>
+
+        <button class="panel-card" id="teamToggleBtn" type="button">
+          <div>
+            <div class="panel-eyebrow">Team</div>
+            <div class="panel-icon-wrap">
+              <svg class="panel-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 21h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M5 21V9.8c0-.5.24-.96.65-1.25l5.6-3.98a1.3 1.3 0 0 1 1.5 0l5.6 3.98c.41.29.65.75.65 1.25V21" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M9 21v-5.2c0-.44.36-.8.8-.8h4.4c.44 0 .8.36.8.8V21" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M9 10h.01M15 10h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              </svg>
+              <div class="panel-title" id="teamToggleTitle">상가팀</div>
+            </div>
+          </div>
+          <div class="panel-desc" id="teamToggleDesc">SK 매물을 봅니다.</div>
+        </button>
+      </section>
+
+      <section class="search-wrap">
+        <div class="search-box">
+          <span class="search-icon">🔎</span>
+          <input id="searchInput" class="search-input" type="text" placeholder="제목, 주소, 매물번호 검색" autocomplete="off" />
+        </div>
+      </section>
+
+      <section class="toolbar">
+        <div class="chip-row">
+          <button class="filter-chip active" data-filter="default" type="button">기본정렬</button>
+          <button class="filter-chip" data-filter="updated" type="button">수정순</button>
+          <button class="filter-chip" data-filter="visible" type="button">공개중</button>
+          <button class="filter-chip" data-filter="hidden" type="button">비공개</button>
+        </div>
+        <div id="toolbarMeta" class="toolbar-meta">전체 0건</div>
+      </section>
+
+      <main id="dashboardRoot"></main>
+    </div>
+  </div>
+
+  <div id="channelModal" class="channel-modal">
+    <div class="channel-modal-card" onclick="event.stopPropagation()">
+      <div class="channel-modal-head">
+        <div id="channelModalTitle" class="channel-modal-title"><img id="channelModalFavicon" class="channel-modal-favicon" src="" alt=""><span id="channelModalTitleText">채널</span></div>
+        <button type="button" class="channel-modal-close" onclick="closeChannelModal()">✕</button>
+      </div>
+      <div class="channel-status-row">
+        <label class="channel-radio"><input type="radio" name="channelDoneState" value="done"> <span>Done</span></label>
+        <label class="channel-radio"><input type="radio" name="channelDoneState" value="notYet"> <span>Not yet</span></label>
+      </div>
+      <div class="channel-links">
+        <div class="channel-link-row">
+          <input id="channelLink1" class="channel-link-input" type="text" placeholder="링크1">
+          <button type="button" class="channel-go-btn" onclick="openChannelLink(1)">Go</button>
+        </div>
+        <div class="channel-link-row">
+          <input id="channelLink2" class="channel-link-input" type="text" placeholder="링크2">
+          <button type="button" class="channel-go-btn" onclick="openChannelLink(2)">Go</button>
+        </div>
+        <div class="channel-link-row">
+          <input id="channelLink3" class="channel-link-input" type="text" placeholder="링크3">
+          <button type="button" class="channel-go-btn" onclick="openChannelLink(3)">Go</button>
+        </div>
+      </div>
+      <div class="channel-actions">
+        <button type="button" class="channel-action-btn" onclick="closeChannelModal()">닫기</button>
+        <button type="button" class="channel-action-btn primary" onclick="saveChannelModal()">저장</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="calendarModal" class="calendar-modal" aria-hidden="true">
+    <div class="calendar-modal-sheet">
+      <div class="calendar-modal-topbar">
+        <div class="calendar-modal-topbar-inner">
+          <button type="button" class="calendar-modal-back" onclick="closeCalendarModal()">← 뒤로</button>
+          <div class="calendar-modal-title">캘린더</div>
+          <div class="calendar-modal-spacer"></div>
+        </div>
+      </div>
+
+      <div class="calendar-modal-inner">
+        <div id="calendarInlineLoading" class="calendar-inline-loading" aria-hidden="true">
+          <div class="calendar-inline-spinner" aria-hidden="true"></div>
+        </div>
+        <section class="calendar-notice-wrap">
+          <div class="calendar-notice-main">
+            <div class="calendar-notice-label">Notice</div>
+            <div id="calendarNoticeText" class="calendar-notice-text">매슬로우 화이팅</div>
+            <a id="calendarNoticeLink" class="calendar-notice-link" href="#" target="_blank" rel="noopener"></a>
+          </div>
+          <button type="button" id="calendarNoticeEditBtn" class="calendar-notice-pencil" aria-label="공지 수정">✎</button>
+        </section>
+
+        <section id="calendarNoticeEdit" class="calendar-notice-edit">
+          <input id="calendarNoticeInput" class="calendar-notice-input" type="text" placeholder="공지 문구">
+          <input id="calendarNoticeLinkInput" class="calendar-notice-input" type="text" placeholder="링크">
+          <div class="calendar-notice-actions">
+            <button type="button" id="calendarNoticeCancelBtn" class="calendar-notice-btn">취소</button>
+            <button type="button" id="calendarNoticeSaveBtn" class="calendar-notice-btn primary">저장</button>
+          </div>
+        </section>
+
+        <section class="calendar-shell">
+          <div class="calendar-head">
+            <button type="button" class="calendar-nav" onclick="moveCalendarMonth(-1)">‹</button>
+            <div id="calendarMonthLabel" class="calendar-month-label">2026.04</div>
+            <button type="button" class="calendar-nav" onclick="moveCalendarMonth(1)">›</button>
+          </div>
+
+          <div class="calendar-weekdays">
+            <div class="calendar-weekday">일</div>
+            <div class="calendar-weekday">월</div>
+            <div class="calendar-weekday">화</div>
+            <div class="calendar-weekday">수</div>
+            <div class="calendar-weekday">목</div>
+            <div class="calendar-weekday">금</div>
+            <div class="calendar-weekday">토</div>
+          </div>
+
+          <div id="calendarGrid" class="calendar-grid"></div>
+        </section>
+
+        <section class="calendar-detail-card">
+          <div class="calendar-detail-head">
+            <div id="calendarDetailDate" class="calendar-detail-date">날짜 선택</div>
+            <div id="calendarDetailMeta" class="calendar-detail-meta"></div>
+          </div>
+
+          <div class="calendar-subtitle">Thread</div>
+          <div id="calendarThreadWrite" class="calendar-thread-write">
+            <div id="calendarWriterChip" class="calendar-writer-chip">📝 작성자</div>
+            <textarea id="calendarThreadInput" class="calendar-thread-textarea" placeholder="업무 기록을 남겨주세요"></textarea>
+            <div class="calendar-thread-editor-actions">
+              <button type="button" id="calendarThreadDeleteBtn" class="calendar-thread-delete is-hidden" onclick="deleteCurrentCalendarThread()">삭제</button>
+              <button type="button" id="calendarThreadSubmitBtn" class="calendar-thread-submit" onclick="submitCalendarThread()">등록</button>
+            </div>
+          </div>
+          <div id="calendarThreadList" class="calendar-thread-list"></div>
+
+          <div class="calendar-section-divider"></div>
+          <div class="calendar-subtitle">신규 등록 매물</div>
+          <div id="calendarPropertyList" class="calendar-property-list"></div>
+        </section>
+
+        <button type="button" id="calendarThreadFab" class="calendar-thread-fab" aria-label="기록 추가">+</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="propertyMemoModal" class="memo-modal" onclick="closePropertyMemoModal()">
+    <div class="memo-modal-card" onclick="event.stopPropagation()">
+      <div class="memo-modal-head">📌 메모</div>
+      <textarea id="propertyMemoTextarea" class="memo-textarea" placeholder="메모를 입력하세요"></textarea>
+      <div class="memo-modal-actions">
+        <button type="button" class="memo-btn primary" onclick="savePropertyMemo()">수정저장</button>
+        <button type="button" class="memo-btn" onclick="closePropertyMemoModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-panel">
+      <img class="loading-buddy" src="https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg" alt="로딩">
+      <div id="loadingTypingText" class="loading-text"></div>
+    </div>
+  </div>
+
+  <div id="lockOverlay" class="lock-overlay">
+    <div class="lock-card">
+      <h1 class="lock-title">Maslow Korea</h1>
+      <p class="lock-desc">비밀번호를 입력해야 접근할 수 있습니다.</p>
+      <input id="lockInput" class="lock-input" type="password" inputmode="numeric" maxlength="4" placeholder="비밀번호" />
+      <button id="lockBtn" class="lock-btn" type="button">확인</button>
+      <div id="lockError" class="lock-error"></div>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec',
+      adminEditUrl: '/admin',
+      listingsUrl: '/listings',
+      listingLookupUrl: 'https://lookout-zeta.vercel.app',
+      authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
+    };
+
+    const PASSWORD_MAP = {
+      '6857': '한정인 이사',
+      '0444': '박성연 대표',
+      '1053': '나득균 팀장',
+      '8198': '이유나 팀장'
+    };
+
+    const CHANNELS = [
+      { key:'youtube', name:'유튜브', icon:'https://www.google.com/s2/favicons?domain=youtube.com&sz=64' },
+      { key:'instagram', name:'인스타', icon:'https://www.google.com/s2/favicons?domain=instagram.com&sz=64' },
+      { key:'threads', name:'쓰레드', icon:'https://www.google.com/s2/favicons?domain=threads.net&sz=64' },
+      { key:'facebook', name:'페이스북', icon:'https://www.google.com/s2/favicons?domain=facebook.com&sz=64' },
+      { key:'naverRealEstate', name:'네이버부동산', icon:'https://cdn.imweb.me/thumbnail/20260411/f28474e4f459d.png' },
+      { key:'naverBlog', name:'네이버블로그', icon:'https://cdn.imweb.me/thumbnail/20260411/abbd3cfe64dfa.png' },
+      { key:'hanbang', name:'한방', icon:'https://cdn.imweb.me/thumbnail/20260411/5bc692a19c1a1.png' },
+      { key:'kakaoChannel', name:'카카오채널', icon:'https://www.google.com/s2/favicons?domain=pf.kakao.com&sz=64' }
+    ];
+
+    const SELF_SITE_ICON = 'https://cdn.imweb.me/thumbnail/20260411/9b31c965062e2.png';
+
+    const CHANNEL_FIELD_MAP = {
+      youtube: 'channelYoutube',
+      instagram: 'channelInstagram',
+      threads: 'channelThreads',
+      facebook: 'channelFacebook',
+      naverRealEstate: 'channelNaverRealEstate',
+      naverBlog: 'channelNaverBlog',
+      hanbang: 'channelHanbang',
+      kakaoChannel: 'channelKakaoChannel',
+      ownSite: 'channelOwnSite'
+    };
+
+    const CHANNEL_LABEL_MAP = {
+      youtube: '유튜브',
+      instagram: '인스타',
+      threads: '쓰레드',
+      facebook: '페이스북',
+      naverRealEstate: '네이버부동산',
+      naverBlog: '네이버블로그',
+      hanbang: '한방',
+      kakaoChannel: '카카오채널',
+      ownSite: '매슬로우코리아.net'
+    };
+
+    const CHANNEL_ICON_MAP = {
+      youtube: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=64',
+      instagram: 'https://www.google.com/s2/favicons?domain=instagram.com&sz=64',
+      threads: 'https://www.google.com/s2/favicons?domain=threads.net&sz=64',
+      facebook: 'https://www.google.com/s2/favicons?domain=facebook.com&sz=64',
+      naverRealEstate: 'https://cdn.imweb.me/thumbnail/20260411/f28474e4f459d.png',
+      naverBlog: 'https://cdn.imweb.me/thumbnail/20260411/abbd3cfe64dfa.png',
+      hanbang: 'https://cdn.imweb.me/thumbnail/20260411/5bc692a19c1a1.png',
+      kakaoChannel: 'https://www.google.com/s2/favicons?domain=pf.kakao.com&sz=64',
+      ownSite: 'https://cdn.imweb.me/thumbnail/20260411/9b31c965062e2.png'
+    };
+
+    let rawItems = [];
+    let currentFilter = 'default';
+    let currentKeyword = '';
+    let unlockedUserName = '';
+    let visibleCount = 50;
+    const PAGE_SIZE = 50;
+    let channelModalListingNumber = '';
+    let channelModalChannelKey = '';
+
+    let currentLoadingText = '자료를 가져오고 있어요!';
+    let loadingTypingTimer = null;
+    let loadingHapticTimer = null;
+
+    let currentTeamFilter = '';
+    let nextTeamToggleTarget = 'shopping';
+
+    const dashboardRoot = document.getElementById('dashboardRoot');
+    const toolbarMeta = document.getElementById('toolbarMeta');
+    const searchInput = document.getElementById('searchInput');
+    const topbarGreeting = document.getElementById('topbarGreeting');
+    const lockOverlay = document.getElementById('lockOverlay');
+    const lockInput = document.getElementById('lockInput');
+    const lockBtn = document.getElementById('lockBtn');
+    const lockError = document.getElementById('lockError');
+    const teamToggleBtn = document.getElementById('teamToggleBtn');
+    const teamToggleTitle = document.getElementById('teamToggleTitle');
+    const teamToggleDesc = document.getElementById('teamToggleDesc');
+
+    document.getElementById('goAdminBtn').addEventListener('click', function(){
+      try{
+        localStorage.setItem('MK_FORCE_TEAM_MODAL', '1');
+      }catch(e){}
+      location.href = CONFIG.adminEditUrl;
+    });
+
+
+    let calendarCurrentMonth = '';
+    let calendarSelectedDateKey = '';
+    let calendarOverviewMap = {};
+    let calendarCurrentNotice = null;
+    let calendarCurrentDetail = null;
+    let calendarThreadMap = {};
+    let calendarEditingThreadItem = null;
+    let calendarActiveEditCard = null;
+    let calendarHistoryArmed = false;
+
+    const calendarModal = document.getElementById('calendarModal');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const calendarMonthLabel = document.getElementById('calendarMonthLabel');
+    const calendarNoticeText = document.getElementById('calendarNoticeText');
+    const calendarNoticeLink = document.getElementById('calendarNoticeLink');
+    const calendarNoticeEdit = document.getElementById('calendarNoticeEdit');
+    const calendarNoticeInput = document.getElementById('calendarNoticeInput');
+    const calendarNoticeLinkInput = document.getElementById('calendarNoticeLinkInput');
+    const calendarNoticeEditBtn = document.getElementById('calendarNoticeEditBtn');
+    const calendarNoticeCancelBtn = document.getElementById('calendarNoticeCancelBtn');
+    const calendarNoticeSaveBtn = document.getElementById('calendarNoticeSaveBtn');
+    const calendarDetailDate = document.getElementById('calendarDetailDate');
+    const calendarDetailMeta = document.getElementById('calendarDetailMeta');
+    const calendarPropertyList = document.getElementById('calendarPropertyList');
+    const calendarThreadList = document.getElementById('calendarThreadList');
+    const calendarThreadInput = document.getElementById('calendarThreadInput');
+    const calendarThreadSubmitBtn = document.getElementById('calendarThreadSubmitBtn');
+    const calendarThreadDeleteBtn = document.getElementById('calendarThreadDeleteBtn');
+    const calendarWriterChip = document.getElementById('calendarWriterChip');
+    const calendarThreadWrite = document.getElementById('calendarThreadWrite');
+    const calendarThreadFab = document.getElementById('calendarThreadFab');
+    const calendarInlineLoading = document.getElementById('calendarInlineLoading');
+    const propertyMemoModal = document.getElementById('propertyMemoModal');
+    const propertyMemoTextarea = document.getElementById('propertyMemoTextarea');
+    let propertyMemoEditingItem = null;
+
+    function isCalendarModalOpen(){
+      return !!(calendarModal && calendarModal.classList.contains('show'));
+    }
+
+    function startCalendarInlineLoading(){
+      if(!calendarInlineLoading) return;
+      calendarInlineLoading.classList.add('show');
+      calendarInlineLoading.setAttribute('aria-hidden', 'false');
+    }
+
+    function stopCalendarInlineLoading(){
+      if(!calendarInlineLoading) return;
+      calendarInlineLoading.classList.remove('show');
+      calendarInlineLoading.setAttribute('aria-hidden', 'true');
+    }
+
+    function getUnlockedWriterCode(){
+      const saved = localStorage.getItem(CONFIG.authStorageKey) || '';
+      const entry = Object.entries(PASSWORD_MAP).find(function(pair){
+        return pair[1] === saved;
+      });
+      return entry ? entry[0] : '';
+    }
+
+    function getWriterMetaByCode(code){
+      const key = text(code);
+      const map = {
+        '0444': { name:'대표님', emoji:'👨‍⚖️' },
+        '6857': { name:'한이사', emoji:'👩‍🚒' },
+        '8198': { name:'이팀장', emoji:'👩‍🦰' },
+        '1053': { name:'나팀장', emoji:'👦' }
+      };
+      return map[key] || { name:'작성자', emoji:'📝' };
+    }
+
+    function getTodayDateKey(){
+      const now = new Date();
+      return [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2,'0'),
+        String(now.getDate()).padStart(2,'0')
+      ].join('-');
+    }
+
+    function getCurrentMonthKeyFromDate(dateKey){
+      return text(dateKey).slice(0, 7);
+    }
+
+    function formatMonthLabel(monthKey){
+      const parts = String(monthKey || '').split('-');
+      if(parts.length !== 2) return '';
+      return Number(parts[0]) + '.' + parts[1];
+    }
+
+    function formatDetailDate(dateKey){
+      if(!dateKey) return '날짜 선택';
+      const d = new Date(dateKey + 'T00:00:00');
+      if(Number.isNaN(d.getTime())) return dateKey;
+      const days = ['일','월','화','수','목','금','토'];
+      return d.getFullYear() + '.' + (d.getMonth()+1) + '.' + d.getDate() + ' (' + days[d.getDay()] + ')';
+    }
+
+    function hasRecentThreadWithin24Hours(dateKey){
+      const items = Array.isArray(calendarThreadMap && calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
+      if(!items.length) return false;
+      const now = Date.now();
+      const cutoff = now - (24 * 60 * 60 * 1000);
+      return items.some(function(item){
+        const ts = parseDateValue((item && (item.updatedAt || item.createdAt)) || '');
+        return !!ts && ts >= cutoff;
+      });
+    }
+
+
+    function escapeAttr(value){
+      return String(value == null ? '' : value)
+        .replace(/&/g,'&amp;')
+        .replace(/"/g,'&quot;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;');
+    }
+
+    function renderCalendarWriterChip(){
+      const meta = getWriterMetaByCode(getUnlockedWriterCode());
+      calendarWriterChip.textContent = meta.emoji + ' ' + meta.name;
+    }
+
+    function scrollCalendarElementToTopOffset(el){
+      if(!el) return;
+      const rect = el.getBoundingClientRect();
+      const absoluteTop = rect.top + window.pageYOffset;
+      const targetTop = Math.max(0, absoluteTop - (window.innerHeight * 0.15));
+      try{
+        window.scrollTo({ top: targetTop, behavior:'smooth' });
+      }catch(e){
+        window.scrollTo(0, targetTop);
+      }
+    }
+
+    function resetCalendarThreadEditor(){
+      if(calendarThreadInput) calendarThreadInput.value = '';
+      if(calendarThreadSubmitBtn) calendarThreadSubmitBtn.textContent = '등록';
+      if(calendarThreadDeleteBtn) calendarThreadDeleteBtn.classList.add('is-hidden');
+    }
+
+
+    function getCalendarThreadServerId(item){
+      return text(item && (item.rowId || item.threadId || item.id || item.threadRowId || item.thread_id));
+    }
+
+    function closeCalendarInlineEditor(){
+      if(!calendarActiveEditCard) {
+        calendarEditingThreadItem = null;
+        return;
+      }
+      const card = calendarActiveEditCard;
+      const item = card.__threadItem || null;
+      card.classList.remove('is-editing');
+      if(item){
+        card.innerHTML = ''
+          + '<div class="calendar-thread-head">'
+          +   '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
+          +   '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
+          + '</div>'
+          + '<div class="calendar-thread-content">' + escapeHtml(item.content || '') + '</div>';
+      }
+      calendarActiveEditCard = null;
+      calendarEditingThreadItem = null;
+    }
+
+    function openCalendarThreadEditor(card, item){
+      if(!card || !item) return;
+      if(calendarActiveEditCard && calendarActiveEditCard !== card){
+        closeCalendarInlineEditor();
+      }
+      calendarEditingThreadItem = item;
+      calendarActiveEditCard = card;
+      card.classList.add('is-editing');
+      card.innerHTML = ''
+        + '<div class="calendar-thread-head">'
+        +   '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
+        +   '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
+        + '</div>'
+        + '<div class="calendar-thread-inline-editor">'
+        +   '<textarea class="calendar-thread-inline-textarea">' + escapeHtml(item.content || '') + '</textarea>'
+        +   '<div class="calendar-thread-inline-actions">'
+        +     '<button type="button" class="calendar-thread-inline-btn close">닫기</button>'
+        +     '<button type="button" class="calendar-thread-inline-btn delete">삭제</button>'
+        +     '<button type="button" class="calendar-thread-inline-btn save">수정등록</button>'
+        +   '</div>'
+        + '</div>';
+      const textarea = card.querySelector('.calendar-thread-inline-textarea');
+      if(textarea){
+        setTimeout(function(){
+          try{ textarea.focus(); textarea.setSelectionRange(textarea.value.length, textarea.value.length); }catch(e){}
+        }, 40);
+      }
+      setCalendarThreadWriteOpen(false, true);
+      setTimeout(function(){ scrollCalendarElementToTopOffset(card); }, 20);
+    }
+
+    function deleteCurrentCalendarThread(){
+      const writerCode = getUnlockedWriterCode();
+      const items = Array.isArray(calendarThreadMap[calendarSelectedDateKey]) ? calendarThreadMap[calendarSelectedDateKey] : [];
+      if(!calendarEditingThreadItem) return;
+      if(!calendarSelectedDateKey){
+        alert('날짜를 먼저 선택하세요.');
+        return;
+      }
+      if(!writerCode){
+        alert('작성자 코드가 없습니다.');
+        return;
+      }
+      const targetIndex = items.indexOf(calendarEditingThreadItem);
+      if(targetIndex < 0) return;
+      const targetItem = items[targetIndex];
+      const serverId = getCalendarThreadServerId(targetItem);
+
+      startCalendarInlineLoading();
+
+      const payload = {
+        action: 'deleteCalendarThread',
+        rowId: serverId,
+        writerCode: writerCode
+      };
+
+      fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type':'text/plain;charset=UTF-8' },
+        body: JSON.stringify(payload)
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('기록 삭제 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '기록 삭제 실패');
+        }
+        items.splice(targetIndex, 1);
+        calendarThreadMap[calendarSelectedDateKey] = items;
+        calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
+        closeCalendarInlineEditor();
+        renderCalendarGrid();
+        loadCalendarDateDetail(calendarSelectedDateKey);
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '기록 삭제 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopCalendarInlineLoading();
+      });
+    }
+
+    function setCalendarThreadWriteOpen(isOpen, preserveInlineState){
+      if(!calendarThreadWrite || !calendarThreadFab) return;
+      if(isOpen){
+        closeCalendarInlineEditor();
+        calendarThreadWrite.classList.add('show');
+        calendarThreadFab.classList.add('is-open');
+        calendarThreadFab.textContent = '×';
+        setTimeout(function(){ scrollCalendarElementToTopOffset(calendarThreadWrite); }, 40);
+      }else{
+        calendarThreadWrite.classList.remove('show');
+        calendarThreadFab.classList.remove('is-open');
+        calendarThreadFab.textContent = '+';
+        resetCalendarThreadEditor();
+        if(!preserveInlineState && !calendarThreadWrite.classList.contains('show') && !calendarActiveEditCard){
+          calendarEditingThreadItem = null;
+        }
+      }
+    }
+
+    function toggleCalendarThreadWrite(){
+      if(!calendarThreadWrite) return;
+      const nextOpen = !calendarThreadWrite.classList.contains('show');
+      setCalendarThreadWriteOpen(nextOpen);
+      if(nextOpen){
+        setTimeout(function(){
+          scrollCalendarElementToTopOffset(calendarThreadWrite);
+          const textarea = calendarThreadWrite.querySelector('.calendar-thread-textarea');
+          if(textarea){ textarea.focus(); }
+        }, 60);
+      }
+    }
+
+    function openCalendarNoticeEdit(){
+      const notice = calendarCurrentNotice || {};
+      calendarNoticeInput.value = text(notice.noticeText || '매슬로우 화이팅');
+      calendarNoticeLinkInput.value = text(notice.noticeLink || '');
+      calendarNoticeEdit.classList.add('show');
+    }
+
+    function closeCalendarNoticeEdit(){
+      calendarNoticeEdit.classList.remove('show');
+    }
+
+    function openCalendarModal(){
+      if(!calendarCurrentMonth){
+        calendarSelectedDateKey = getTodayDateKey();
+        calendarCurrentMonth = getCurrentMonthKeyFromDate(calendarSelectedDateKey);
+      }
+
+      renderCalendarWriterChip();
+      setCalendarThreadWriteOpen(false);
+      calendarModal.classList.add('show');
+      calendarModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+
+      if(!calendarHistoryArmed){
+        history.pushState({ calendarModal: true }, '');
+        calendarHistoryArmed = true;
+      }
+
+      const hasNotice = !!calendarCurrentNotice;
+      const hasThreadCache = Object.keys(calendarThreadMap || {}).length > 0;
+
+      if(!hasNotice || !hasThreadCache){
+        alert('캘린더 초기 데이터가 아직 없습니다. 대시보드를 새로고침해 주세요.');
+        return;
+      }
+
+      if(!calendarSelectedDateKey || getCurrentMonthKeyFromDate(calendarSelectedDateKey) !== calendarCurrentMonth){
+        calendarSelectedDateKey = getTodayDateKey().slice(0, 7) === calendarCurrentMonth
+          ? getTodayDateKey()
+          : calendarCurrentMonth + '-01';
+      }
+
+      renderCalendarNotice();
+      calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
+      renderCalendarGrid();
+      loadCalendarDateDetail(calendarSelectedDateKey);
+    }
+
+    function closeCalendarModal(fromPopstate){
+      if(!isCalendarModalOpen()) return;
+      calendarModal.classList.remove('show');
+      calendarModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      closeCalendarNoticeEdit();
+      setCalendarThreadWriteOpen(false);
+
+      if(calendarHistoryArmed){
+        calendarHistoryArmed = false;
+        if(!fromPopstate){
+          history.back();
+        }
+      }
+    }
+
+    function renderCalendarNotice(){
+      const notice = calendarCurrentNotice || {};
+      const textValue = text(notice.noticeText || '매슬로우 화이팅');
+      const linkValue = text(notice.noticeLink);
+
+      calendarNoticeText.textContent = textValue;
+      if(linkValue){
+        calendarNoticeLink.style.display = 'block';
+        calendarNoticeLink.href = linkValue;
+        calendarNoticeLink.textContent = linkValue;
+      }else{
+        calendarNoticeLink.style.display = 'none';
+        calendarNoticeLink.href = '#';
+        calendarNoticeLink.textContent = '';
+      }
+    }
+
+    function loadCalendarOverview(monthKey){
+      startCalendarInlineLoading();
+
+      return fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type':'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          action: 'getCalendarOverview',
+          month: monthKey
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('캘린더 불러오기 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '캘린더 불러오기 실패');
+        }
+
+        calendarCurrentMonth = monthKey;
+        calendarCurrentNotice = data.notice || null;
+        calendarOverviewMap = {};
+        calendarThreadMap = {};
+
+        const rawThreadMap = (data && data.threadsByDate && typeof data.threadsByDate === 'object')
+          ? data.threadsByDate
+          : {};
+
+        Object.keys(rawThreadMap).forEach(function(dateKey){
+          calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
+            ? rawThreadMap[dateKey].slice().sort(function(a, b){
+                return (parseDateValue(b && b.createdAt) || 0) - (parseDateValue(a && a.createdAt) || 0);
+              })
+            : [];
+        });
+
+        (Array.isArray(data.days) ? data.days : []).forEach(function(day){
+          const dateKey = text(day.dateKey);
+          const localThreads = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
+          calendarOverviewMap[dateKey] = {
+            shoppingCount: Number(day.shoppingCount || 0),
+            factoryCount: Number(day.factoryCount || 0),
+            threadCount: localThreads.length || Number(day.threadCount || 0)
+          };
+          if(!calendarThreadMap[dateKey]){
+            calendarThreadMap[dateKey] = [];
+          }
+        });
+
+        renderCalendarNotice();
+        calendarMonthLabel.textContent = formatMonthLabel(monthKey);
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '캘린더 데이터를 불러오지 못했습니다.');
+      })
+      .finally(function(){
+        stopCalendarInlineLoading();
+      });
+    }
+
+    function getLocalThreadItemsByDate(dateKey){
+      const items = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey].slice() : [];
+      return items.sort(function(a,b){
+        return (parseDateValue(b.createdAt) || 0) - (parseDateValue(a.createdAt) || 0);
+      });
+    }
+
+    function buildLocalOverviewMapForMonth(monthKey){
+      const map = {};
+      const parts = monthKey.split('-');
+      const year = Number(parts[0]);
+      const monthIndex = Number(parts[1]) - 1;
+      const lastDate = new Date(year, monthIndex + 1, 0);
+      const totalDays = lastDate.getDate();
+
+      for(let day = 1; day <= totalDays; day += 1){
+        const dateKey = [year, String(monthIndex + 1).padStart(2,'0'), String(day).padStart(2,'0')].join('-');
+        map[dateKey] = { shoppingCount:0, factoryCount:0, threadCount:0 };
+      }
+
+      rawItems.forEach(function(item){
+        const created = parseDateValue(item && item.createdAt);
+        if(!created) return;
+        const d = new Date(created);
+        const dateKey = [d.getFullYear(), String(d.getMonth() + 1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
+        if(getCurrentMonthKeyFromDate(dateKey) !== monthKey || !map[dateKey]) return;
+        const teamType = detectTeamByListingNumber(item.listingNumber);
+        if(teamType === 'shopping') map[dateKey].shoppingCount += 1;
+        else if(teamType === 'factory') map[dateKey].factoryCount += 1;
+      });
+
+      Object.keys(calendarThreadMap).forEach(function(dateKey){
+        if(getCurrentMonthKeyFromDate(dateKey) !== monthKey || !map[dateKey]) return;
+        map[dateKey].threadCount = getLocalThreadItemsByDate(dateKey).length;
+      });
+
+      return map;
+    }
+
+    function renderCalendarGrid(){
+      const parts = calendarCurrentMonth.split('-');
+      const year = Number(parts[0]);
+      const monthIndex = Number(parts[1]) - 1;
+      const firstDate = new Date(year, monthIndex, 1);
+      const lastDate = new Date(year, monthIndex + 1, 0);
+      const firstWeekday = firstDate.getDay();
+      const totalDays = lastDate.getDate();
+      const todayKey = getTodayDateKey();
+      let html = '';
+
+      for(let i = 0; i < firstWeekday; i += 1){
+        html += '<div class="calendar-cell is-empty" aria-hidden="true"></div>';
+      }
+
+      for(let day = 1; day <= totalDays; day += 1){
+        const dateKey = [
+          year,
+          String(monthIndex + 1).padStart(2,'0'),
+          String(day).padStart(2,'0')
+        ].join('-');
+
+        const stat = calendarOverviewMap[dateKey] || { shoppingCount:0, factoryCount:0, threadCount:0 };
+        const classes = [
+          'calendar-cell',
+          dateKey === todayKey ? 'is-today' : '',
+          dateKey === calendarSelectedDateKey ? 'is-selected' : ''
+        ].filter(Boolean).join(' ');
+
+        html += ''
+          + '<button type="button" class="' + classes + '" onclick="selectCalendarDate(\'' + dateKey + '\')">'
+          +   '<div class="calendar-day-number">' + day + (hasRecentThreadWithin24Hours(dateKey) ? '<span class="calendar-day-star">★</span>' : '') + '</div>'
+          +   '<div class="calendar-lines">'
+          +     '<div class="calendar-line' + (stat.shoppingCount ? '' : ' zero') + '">상가 ' + stat.shoppingCount + '</div>'
+          +     '<div class="calendar-line' + (stat.factoryCount ? '' : ' zero') + '">공장 ' + stat.factoryCount + '</div>'
+          +     '<div class="calendar-line' + (stat.threadCount ? '' : ' zero') + '">기록 ' + stat.threadCount + '</div>'
+          +   '</div>'
+          + '</button>';
+      }
+
+      calendarGrid.innerHTML = html;
+    }
+
+    function moveCalendarMonth(diff){
+      const parts = calendarCurrentMonth.split('-');
+      const base = new Date(Number(parts[0]), Number(parts[1]) - 1 + diff, 1);
+      const nextMonthKey = [
+        base.getFullYear(),
+        String(base.getMonth() + 1).padStart(2,'0')
+      ].join('-');
+
+      calendarCurrentMonth = nextMonthKey;
+      calendarOverviewMap = buildLocalOverviewMapForMonth(nextMonthKey);
+      calendarMonthLabel.textContent = formatMonthLabel(nextMonthKey);
+      calendarSelectedDateKey = nextMonthKey + '-01';
+      renderCalendarGrid();
+      loadCalendarDateDetail(calendarSelectedDateKey);
+    }
+
+    function selectCalendarDate(dateKey){
+      calendarSelectedDateKey = dateKey;
+      renderCalendarGrid();
+      loadCalendarDateDetail(dateKey);
+    }
+
+    function getLocalCalendarPropertiesByDate(dateKey){
+      return rawItems
+        .filter(function(item){
+          const created = parseDateValue(item && item.createdAt);
+          if(!created) return false;
+          const d = new Date(created);
+          const itemDateKey = [
+            d.getFullYear(),
+            String(d.getMonth() + 1).padStart(2,'0'),
+            String(d.getDate()).padStart(2,'0')
+          ].join('-');
+          return itemDateKey === dateKey;
+        })
+        .sort(function(a,b){
+          return (parseDateValue(b.updatedAt || b.createdAt) || 0) - (parseDateValue(a.updatedAt || a.createdAt) || 0);
+        })
+        .map(function(item){
+          return {
+            listingNumber: text(item.listingNumber),
+            title: text(item.title),
+            address: text(item.address),
+            dealType: text(item.dealType),
+            price: text(item.price),
+            teamType: detectTeamByListingNumber(item.listingNumber),
+            heroUrl: text(item.heroUrl),
+            createdAt: text(item.createdAt),
+            writerName: text(item.lastEditor)
+          };
+        });
+    }
+
+    function formatThreadTime(value){
+      const ts = parseDateValue(value);
+      if(!ts) return '-';
+      const d = new Date(ts);
+      return d.getFullYear() + '.'
+        + (d.getMonth()+1) + '.'
+        + d.getDate() + ' '
+        + String(d.getHours()).padStart(2,'0') + ':'
+        + String(d.getMinutes()).padStart(2,'0');
+    }
+
+    function loadCalendarDateDetail(dateKey){
+      calendarCurrentDetail = {
+        dateKey: dateKey,
+        properties: getLocalCalendarPropertiesByDate(dateKey),
+        threads: getLocalThreadItemsByDate(dateKey)
+      };
+      renderCalendarDetail();
+      return Promise.resolve(calendarCurrentDetail);
+    }
+
+    function renderCalendarDetail(){
+      closeCalendarInlineEditor();
+      const detail = calendarCurrentDetail || {};
+      const properties = Array.isArray(detail.properties) ? detail.properties : [];
+      const threads = Array.isArray(detail.threads) ? detail.threads : [];
+
+      calendarDetailDate.textContent = formatDetailDate(calendarSelectedDateKey) + (hasRecentThreadWithin24Hours(calendarSelectedDateKey) ? ' ★' : '');
+      calendarDetailMeta.textContent =
+        '상가 ' + properties.filter(function(x){ return x.teamType === 'shopping'; }).length
+        + ' · 공장 ' + properties.filter(function(x){ return x.teamType === 'factory'; }).length
+        + ' · 기록 ' + threads.length;
+
+      if(!properties.length){
+        calendarPropertyList.innerHTML = '<div class="calendar-empty">등록된 매물이 없습니다.</div>';
+      }else{
+        calendarPropertyList.innerHTML = properties.map(function(item){
+          const thumb = item.heroUrl ? "background-image:url('" + escapeAttr(item.heroUrl) + "')" : '';
+          const teamLabel = item.teamType === 'shopping' ? '상가' : item.teamType === 'factory' ? '공장' : '-';
+          return ''
+            + '<div class="calendar-property-item">'
+            +   '<div class="calendar-property-thumb" style="' + thumb + '"></div>'
+            +   '<div class="calendar-property-body">'
+            +     '<div class="calendar-property-title">' + escapeHtml(item.title || '제목 없음') + '</div>'
+            +     '<div class="calendar-property-address">' + escapeHtml(item.address || '-') + '</div>'
+            +     '<div class="calendar-property-price">' + escapeHtml((item.dealType || '-') + ' / ' + (item.price || '-')) + '</div>'
+            +     '<div class="calendar-property-meta">' + escapeHtml(item.listingNumber || '-') + ' · ' + escapeHtml(teamLabel) + '</div>'
+            +   '</div>'
+            + '</div>';
+        }).join('');
+      }
+
+      if(!threads.length){
+        calendarThreadList.innerHTML = '<div class="calendar-empty">기록이 없습니다.</div>';
+      }else{
+        const myWriterCode = getUnlockedWriterCode();
+        calendarThreadList.innerHTML = threads.map(function(item){
+          const isOwn = text(item.writerCode) === text(myWriterCode);
+          const itemClass = 'calendar-thread-item' + (isOwn ? ' is-own' : '');
+          return ''
+            + '<div class="' + itemClass + '">'
+            +   '<div class="calendar-thread-head">'
+            +     '<div class="calendar-thread-writer">' + escapeHtml((item.writerEmoji || '📝') + ' ' + (item.writerName || '작성자')) + '</div>'
+            +     '<div class="calendar-thread-time">' + escapeHtml(formatThreadTime(item.updatedAt || item.createdAt)) + '</div>'
+            +   '</div>'
+            +   '<div class="calendar-thread-content">' + escapeHtml(item.content || '') + '</div>'
+            + '</div>';
+        }).join('');
+        Array.prototype.forEach.call(calendarThreadList.querySelectorAll('.calendar-thread-item.is-own'), function(cardEl){
+          const contentEl = cardEl.querySelector('.calendar-thread-content');
+          const contentText = text(contentEl ? contentEl.textContent : '');
+          const matchedItem = threads.find(function(threadItem){
+            return text(threadItem && threadItem.writerCode) === text(myWriterCode)
+              && text(threadItem && threadItem.content) === contentText;
+          });
+          cardEl.__threadItem = matchedItem || null;
+        });
+      }
+    }
+
+    function saveCalendarNotice(){
+      const writerCode = getUnlockedWriterCode();
+      if(!writerCode){
+        alert('작성자 코드가 없습니다.');
+        return;
+      }
+
+      startCalendarInlineLoading();
+
+      fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type':'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          action: 'updateCalendarNotice',
+          noticeText: text(calendarNoticeInput.value) || '매슬로우 화이팅',
+          noticeLink: text(calendarNoticeLinkInput.value),
+          writerCode: writerCode
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('공지 저장 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '공지 저장 실패');
+        }
+        calendarCurrentNotice = data.notice || {
+          noticeText: text(calendarNoticeInput.value) || '매슬로우 화이팅',
+          noticeLink: text(calendarNoticeLinkInput.value),
+          updatedBy: getWriterMetaByCode(writerCode).name,
+          updatedByCode: writerCode,
+          updatedAt: new Date().toISOString()
+        };
+        renderCalendarNotice();
+        closeCalendarNoticeEdit();
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '공지 저장 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopCalendarInlineLoading();
+      });
+    }
+
+    function submitCalendarThread(){
+      const writerCode = getUnlockedWriterCode();
+      const isInlineEditing = !!(calendarEditingThreadItem && calendarActiveEditCard);
+      const inlineTextarea = isInlineEditing ? calendarActiveEditCard.querySelector('.calendar-thread-inline-textarea') : null;
+      const content = isInlineEditing ? text(inlineTextarea ? inlineTextarea.value : '') : text(calendarThreadInput.value);
+
+      if(!calendarSelectedDateKey){
+        alert('날짜를 먼저 선택하세요.');
+        return;
+      }
+      if(!writerCode){
+        alert('작성자 코드가 없습니다.');
+        return;
+      }
+      if(!content){
+        alert('내용을 입력하세요.');
+        return;
+      }
+
+      if(calendarEditingThreadItem && calendarActiveEditCard){
+        const textarea = calendarActiveEditCard.querySelector('.calendar-thread-inline-textarea');
+        const nextContent = text(textarea ? textarea.value : '');
+        if(!nextContent){
+          alert('내용을 입력하세요.');
+          return;
+        }
+
+        const serverId = getCalendarThreadServerId(calendarEditingThreadItem);
+
+        startCalendarInlineLoading();
+
+        fetch(CONFIG.adminListUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Content-Type':'text/plain;charset=UTF-8' },
+          body: JSON.stringify({
+            action: 'updateCalendarThread',
+            rowId: serverId,
+            writerCode: writerCode,
+            content: nextContent
+          })
+        })
+        .then(function(res){
+          if(!res.ok) throw new Error('기록 수정 실패: ' + res.status);
+          return res.json();
+        })
+        .then(function(data){
+          if(!data || data.ok !== true){
+            throw new Error((data && data.message) || '기록 수정 실패');
+          }
+          const updatedThread = data && data.thread ? data.thread : null;
+          calendarEditingThreadItem.rowId =
+            text(updatedThread && updatedThread.rowId) ||
+            text(data && data.rowId) ||
+            calendarEditingThreadItem.rowId;
+          calendarEditingThreadItem.content =
+            text(updatedThread && updatedThread.content) ||
+            nextContent;
+          calendarEditingThreadItem.updatedAt =
+            text(updatedThread && updatedThread.updatedAt) ||
+            new Date().toISOString();
+          calendarEditingThreadItem.createdAt =
+            text(updatedThread && updatedThread.createdAt) ||
+            calendarEditingThreadItem.createdAt;
+          calendarEditingThreadItem.writerName =
+            text(updatedThread && updatedThread.writerName) ||
+            calendarEditingThreadItem.writerName;
+          calendarEditingThreadItem.writerEmoji =
+            text(updatedThread && updatedThread.writerEmoji) ||
+            calendarEditingThreadItem.writerEmoji;
+          calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
+          closeCalendarInlineEditor();
+          renderCalendarGrid();
+          loadCalendarDateDetail(calendarSelectedDateKey);
+        })
+        .catch(function(err){
+          console.error(err);
+          alert((err && err.message) ? err.message : '기록 수정 중 문제가 발생했습니다.');
+        })
+        .finally(function(){
+          stopCalendarInlineLoading();
+        });
+        return;
+      }
+
+      startCalendarInlineLoading();
+
+      fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type':'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          action: 'saveCalendarThread',
+          dateKey: calendarSelectedDateKey,
+          writerCode: writerCode,
+          content: content
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('기록 저장 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '기록 저장 실패');
+        }
+        const meta = getWriterMetaByCode(writerCode);
+        const serverThread = data && data.thread ? data.thread : null;
+        const newThread = {
+          rowId:
+            text(serverThread && serverThread.rowId) ||
+            text(data && data.rowId) ||
+            ('LOCAL_' + Date.now()),
+          writerCode:
+            text(serverThread && serverThread.writerCode) ||
+            writerCode,
+          writerName:
+            text(serverThread && serverThread.writerName) ||
+            meta.name,
+          writerEmoji:
+            text(serverThread && serverThread.writerEmoji) ||
+            meta.emoji,
+          content:
+            text(serverThread && serverThread.content) ||
+            content,
+          createdAt:
+            text(serverThread && serverThread.createdAt) ||
+            new Date().toISOString(),
+          updatedAt:
+            text(serverThread && serverThread.updatedAt) ||
+            new Date().toISOString()
+        };
+        if(!Array.isArray(calendarThreadMap[calendarSelectedDateKey])){
+          calendarThreadMap[calendarSelectedDateKey] = [];
+        }
+        calendarThreadMap[calendarSelectedDateKey].unshift(newThread);
+        calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
+        calendarThreadInput.value = '';
+        setCalendarThreadWriteOpen(false);
+        renderCalendarGrid();
+        loadCalendarDateDetail(calendarSelectedDateKey);
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '기록 저장 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopCalendarInlineLoading();
+      });
+    }
+
+    calendarNoticeEditBtn.addEventListener('click', openCalendarNoticeEdit);
+    if(calendarThreadList){
+      calendarThreadList.addEventListener('click', function(e){
+        const closeBtn = e.target.closest('.calendar-thread-inline-btn.close');
+        if(closeBtn && calendarActiveEditCard && calendarActiveEditCard.contains(closeBtn)){
+          e.stopPropagation();
+          closeCalendarInlineEditor();
+          return;
+        }
+        const deleteBtn = e.target.closest('.calendar-thread-inline-btn.delete');
+        if(deleteBtn && calendarActiveEditCard && calendarActiveEditCard.contains(deleteBtn)){
+          e.stopPropagation();
+          deleteCurrentCalendarThread();
+          return;
+        }
+        const saveBtn = e.target.closest('.calendar-thread-inline-btn.save');
+        if(saveBtn && calendarActiveEditCard && calendarActiveEditCard.contains(saveBtn)){
+          e.stopPropagation();
+          submitCalendarThread();
+          return;
+        }
+        const card = e.target.closest('.calendar-thread-item.is-own');
+        if(!card || !calendarThreadList.contains(card)) return;
+        const item = card.__threadItem || null;
+        if(!item) return;
+        if(card === calendarActiveEditCard) return;
+        openCalendarThreadEditor(card, item);
+      });
+    }
+    document.addEventListener('click', function(e){
+      if(!calendarActiveEditCard) return;
+      if(calendarActiveEditCard.contains(e.target)) return;
+      closeCalendarInlineEditor();
+    }, true);
+    calendarNoticeCancelBtn.addEventListener('click', closeCalendarNoticeEdit);
+    if(calendarThreadFab){ calendarThreadFab.addEventListener('click', toggleCalendarThreadWrite); }
+    calendarNoticeSaveBtn.addEventListener('click', saveCalendarNotice);
+
+    document.getElementById('calendarBtn').addEventListener('click', function(){
+      openCalendarModal();
+    });
+
+    window.closeCalendarModal = closeCalendarModal;
+    window.moveCalendarMonth = moveCalendarMonth;
+    window.selectCalendarDate = selectCalendarDate;
+    window.submitCalendarThread = submitCalendarThread;
+        window.deleteCurrentCalendarThread = deleteCurrentCalendarThread;
+
+
+    document.getElementById('goListingLookupBtn').addEventListener('click', function(){
+      window.open(CONFIG.listingLookupUrl, '_blank', 'noopener');
+    });
+
+    teamToggleBtn.addEventListener('click', function(){
+      if(nextTeamToggleTarget === 'shopping'){
+        currentTeamFilter = 'shopping';
+        nextTeamToggleTarget = 'factory';
+      }else{
+        currentTeamFilter = 'factory';
+        nextTeamToggleTarget = 'shopping';
+      }
+      visibleCount = PAGE_SIZE;
+      updateTeamTogglePanel();
+      renderDashboard();
+    });
+
+    function detectTeamByListingNumber(listingNumber){
+      const code = text(listingNumber).toUpperCase();
+      if(code.indexOf('SK') === 0) return 'shopping';
+      if(code.indexOf('MK') === 0) return 'factory';
+      return '';
+    }
+
+    function getTeamMeta(teamKey){
+      if(teamKey === 'shopping'){
+        return {
+          key: 'shopping',
+          title: '상가팀',
+          desc: 'SK 매물을 봅니다.',
+          empty: '상가팀 매물이 없습니다.'
+        };
+      }
+      if(teamKey === 'factory'){
+        return {
+          key: 'factory',
+          title: '공장팀',
+          desc: 'MK 매물을 봅니다.',
+          empty: '공장팀 매물이 없습니다.'
+        };
+      }
+      return {
+        key: '',
+        title: '상가팀',
+        desc: 'SK 매물을 봅니다.',
+        empty: '표시할 매물이 없습니다.'
+      };
+    }
+
+    function updateTeamTogglePanel(){
+      const nextMeta = getTeamMeta(nextTeamToggleTarget);
+      if(teamToggleTitle) teamToggleTitle.textContent = nextMeta.title;
+      if(teamToggleDesc) teamToggleDesc.textContent = nextMeta.desc;
+    }
+
+    searchInput.addEventListener('input', function(e){
+      currentKeyword = String(e.target.value || '').trim().toLowerCase();
+      visibleCount = PAGE_SIZE;
+      renderDashboard();
+    });
+
+    document.querySelectorAll('.filter-chip').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.filter-chip').forEach(function(x){
+          x.classList.remove('active');
+        });
+        btn.classList.add('active');
+        currentFilter = btn.getAttribute('data-filter') || 'default';
+        visibleCount = PAGE_SIZE;
+        renderDashboard();
+      });
+    });
+
+    function text(v){
+      return String(v == null ? '' : v).trim();
+    }
+
+    function parseJsonArraySafe(value){
+      try{
+        const parsed = typeof value === 'string' ? JSON.parse(value || '[]') : value;
+        return Array.isArray(parsed) ? parsed : [];
+      }catch(e){
+        return [];
+      }
+    }
+
+    function normalizeItem(raw){
+      raw = raw || {};
+      const photos = parseJsonArraySafe(raw.photoUrlsJson);
+      const hero = photos[0] && photos[0].url ? String(photos[0].url).trim() : '';
+      return {
+        listingNumber: text(raw.listingNumber),
+        title: text(raw.title),
+        address: text(raw.address),
+        dealType: text(raw.dealType),
+        price: text(raw.price),
+        status: text(raw.status || 'hidden').toLowerCase(),
+        createdAt: text(raw.createdAt),
+        updatedAt: text(raw.updatedAt),
+        lastEditor: text(raw.lastEditedBy || raw.updatedBy || raw.editorName || ''),
+        heroUrl: hero,
+
+        summary1: text(raw.summary1),
+        summary2: text(raw.summary2),
+        summary3: text(raw.summary3),
+
+        propertyType: text(raw.propertyType),
+        zoning: text(raw.zoning),
+        approvalDate: text(raw.approvalDate),
+
+        landAreaM2: text(raw.landAreaM2),
+        landAreaPy: text(raw.landAreaPy),
+        totalFloorAreaM2: text(raw.totalFloorAreaM2),
+        totalFloorAreaPy: text(raw.totalFloorAreaPy),
+        exclusiveAreaM2: text(raw.exclusiveAreaM2),
+        exclusiveAreaPy: text(raw.exclusiveAreaPy),
+
+        buildingComposition: text(raw.buildingComposition),
+        parkingCount: text(raw.parkingCount),
+        entranceDirection: text(raw.entranceDirection),
+        moveInDate: text(raw.moveInDate),
+        floorInfo: text(raw.floorInfo),
+        restroomInfo: text(raw.restroomInfo),
+        maintenanceFee: text(raw.maintenanceFee),
+
+        ceilingHeight: text(raw.ceilingHeight),
+        crane: text(raw.crane),
+        hoist: text(raw.hoist),
+        powerCapacity: text(raw.powerCapacity),
+        mainFacilities: text(raw.mainFacilities),
+        recommendedUse: text(raw.recommendedUse),
+        restrictedUse: text(raw.restrictedUse),
+        roadWidth: text(raw.roadWidth),
+        doorWidth: text(raw.doorWidth),
+        truckAccess: text(raw.truckAccess),
+        loadingAvailable: text(raw.loadingAvailable),
+        officeIncluded: text(raw.officeIncluded),
+        yardSize: text(raw.yardSize),
+        readyToOperate: text(raw.readyToOperate),
+
+        requesterName: text(raw.requesterName),
+        requesterPhone: text(raw.requesterPhone),
+        requesterType: text(raw.requesterType),
+        requesterNote: text(raw.requesterNote),
+
+        memo: text(raw.memo),
+
+        channelYoutube: text(raw.channelYoutube),
+        channelInstagram: text(raw.channelInstagram),
+        channelThreads: text(raw.channelThreads),
+        channelFacebook: text(raw.channelFacebook),
+        channelNaverRealEstate: text(raw.channelNaverRealEstate),
+        channelNaverBlog: text(raw.channelNaverBlog),
+        channelHanbang: text(raw.channelHanbang),
+        channelKakaoChannel: text(raw.channelKakaoChannel),
+        channelOwnSite: text(raw.channelOwnSite)
+      };
+    }
+
+    function updateGreeting(){
+      if(!topbarGreeting) return;
+      if(!unlockedUserName){
+        topbarGreeting.textContent = '';
+        return;
+      }
+      topbarGreeting.textContent = unlockedUserName + '님, 반갑습니다.';
+    }
+
+    function startLoadingOverlay(){
+      const overlay = document.getElementById('loadingOverlay');
+      const textEl = document.getElementById('loadingTypingText');
+      if(!overlay || !textEl) return;
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden','false');
+      textEl.textContent = '';
+      let i = 0;
+      const loadingText = String(currentLoadingText || '자료를 가져오고 있어요!');
+      window.clearInterval(loadingTypingTimer);
+      loadingTypingTimer = window.setInterval(function(){
+        i += 1;
+        textEl.textContent = loadingText.slice(0, i);
+        if(i >= loadingText.length){
+          window.clearInterval(loadingTypingTimer);
+        }
+      }, 85);
+      if(navigator.vibrate){
+        navigator.vibrate(12);
+        let vibCount = 0;
+        window.clearInterval(loadingHapticTimer);
+        loadingHapticTimer = window.setInterval(function(){
+          vibCount += 1;
+          try{ navigator.vibrate(8); }catch(e){}
+          if(vibCount >= 5){ window.clearInterval(loadingHapticTimer); }
+        }, 520);
+      }
+    }
+
+    function stopLoadingOverlay(){
+      const overlay = document.getElementById('loadingOverlay');
+      if(!overlay) return;
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden','true');
+      window.clearInterval(loadingTypingTimer);
+      window.clearInterval(loadingHapticTimer);
+      currentLoadingText = '자료를 가져오고 있어요!';
+    }
+
+    function parseChannelState(value){
+      try{
+        const parsed = typeof value === 'string' ? JSON.parse(value || '{}') : value;
+        return {
+          done: !!(parsed && parsed.done === true),
+          links: [
+            text(parsed && parsed.links && parsed.links[0]),
+            text(parsed && parsed.links && parsed.links[1]),
+            text(parsed && parsed.links && parsed.links[2])
+          ]
+        };
+      }catch(e){
+        return { done:false, links:['','',''] };
+      }
+    }
+
+    function getChannelStateByItem(item, channelKey){
+      const fieldName = CHANNEL_FIELD_MAP[channelKey];
+      return parseChannelState(fieldName ? item[fieldName] : '');
+    }
+
+    function getItemByListingNumber(listingNumber){
+      return rawItems.find(function(item){
+        return text(item && item.listingNumber) === text(listingNumber);
+      }) || null;
+    }
+
+    function openChannelModal(listingNumber, channelKey){
+      const modal = document.getElementById('channelModal');
+      const titleTextEl = document.getElementById('channelModalTitleText');
+      const faviconEl = document.getElementById('channelModalFavicon');
+      const link1 = document.getElementById('channelLink1');
+      const link2 = document.getElementById('channelLink2');
+      const link3 = document.getElementById('channelLink3');
+      const radios = document.querySelectorAll('input[name="channelDoneState"]');
+      const item = getItemByListingNumber(listingNumber);
+      const state = item ? getChannelStateByItem(item, channelKey) : { done:false, links:['','',''] };
+
+      channelModalListingNumber = listingNumber;
+      channelModalChannelKey = channelKey;
+
+      if(titleTextEl) titleTextEl.textContent = CHANNEL_LABEL_MAP[channelKey] || '채널';
+      if(faviconEl){
+        faviconEl.src = CHANNEL_ICON_MAP[channelKey] || '';
+        faviconEl.alt = CHANNEL_LABEL_MAP[channelKey] || '채널';
+      }
+      if(link1) link1.value = state.links[0] || '';
+      if(link2) link2.value = state.links[1] || '';
+      if(link3) link3.value = state.links[2] || '';
+      radios.forEach(function(radio){
+        radio.checked = (state.done && radio.value === 'done') || (!state.done && radio.value === 'notYet');
+      });
+      if(modal) modal.classList.add('show');
+    }
+
+    function closeChannelModal(){
+      const modal = document.getElementById('channelModal');
+      if(modal) modal.classList.remove('show');
+      channelModalListingNumber = '';
+      channelModalChannelKey = '';
+    }
+
+    function updatePropertyChannel(listingNumber, channelKey, done, links){
+      currentLoadingText = '상태 변경중이에요.';
+      startLoadingOverlay();
+      return fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=UTF-8'
+        },
+        body: JSON.stringify({
+          action: 'updatePropertyChannel',
+          listingNumber: listingNumber,
+          channelKey: channelKey,
+          done: done,
+          links: links
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('채널 저장 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '채널 저장 실패');
+        }
+        closeChannelModal();
+        return fetchAdminItems();
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '채널 저장 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+    }
+
+    function openChannelLink(index){
+      const input = document.getElementById('channelLink' + index);
+      const url = text(input && input.value);
+      if(!url) return;
+      window.open(url, '_blank', 'noopener');
+    }
+
+    function saveChannelModal(){
+      if(!channelModalListingNumber || !channelModalChannelKey) return;
+
+      const listingNumber = channelModalListingNumber;
+      const channelKey = channelModalChannelKey;
+      const doneRadio = document.querySelector('input[name="channelDoneState"]:checked');
+      const done = !!(doneRadio && doneRadio.value === 'done');
+      const links = [
+        text(document.getElementById('channelLink1').value),
+        text(document.getElementById('channelLink2').value),
+        text(document.getElementById('channelLink3').value)
+      ];
+
+      const item = getItemByListingNumber(listingNumber);
+      const prevState = item ? getChannelStateByItem(item, channelKey) : { done:false, links:['','',''] };
+      const isSame =
+        !!prevState.done === !!done &&
+        text(prevState.links[0]) === text(links[0]) &&
+        text(prevState.links[1]) === text(links[1]) &&
+        text(prevState.links[2]) === text(links[2]);
+
+      closeChannelModal();
+
+      if(isSame){
+        return;
+      }
+
+      updatePropertyChannel(listingNumber, channelKey, done, links);
+    }
+
+    function setPropertyStatus(listingNumber, status){
+      currentLoadingText = '상태 변경중이에요.';
+      startLoadingOverlay();
+      return fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=UTF-8'
+        },
+        body: JSON.stringify({
+          action: 'updatePropertyStatus',
+          listingNumber: listingNumber,
+          status: status
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('상태 변경 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && data.message) || '상태 변경 실패');
+        }
+        return fetchAdminItems();
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '상태 변경 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+    }
+
+    function fetchAdminItems(){
+      startLoadingOverlay();
+
+      const today = getTodayDateKey();
+      const monthKey = getCurrentMonthKeyFromDate(today);
+
+      return Promise.all([
+        fetch(CONFIG.adminListUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=UTF-8'
+          },
+          body: JSON.stringify({
+            action: 'listAdminProperties'
+          })
+        }).then(function(res){
+          if(!res.ok) throw new Error('매물 불러오기 실패: ' + res.status);
+          return res.json();
+        }),
+
+        fetch(CONFIG.adminListUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=UTF-8'
+          },
+          body: JSON.stringify({
+            action: 'getCalendarOverview',
+            month: monthKey
+          })
+        }).then(function(res){
+          if(!res.ok) throw new Error('캘린더 불러오기 실패: ' + res.status);
+          return res.json();
+        })
+      ])
+      .then(function(results){
+        const propertyData = results[0] || {};
+        const calendarData = results[1] || {};
+
+        const items = Array.isArray(propertyData && propertyData.items) ? propertyData.items : [];
+        rawItems = items.map(normalizeItem);
+
+        calendarCurrentMonth = monthKey;
+        calendarCurrentNotice = calendarData.notice || null;
+        calendarThreadMap = {};
+        calendarOverviewMap = {};
+
+        const rawThreadMap = (calendarData && calendarData.threadsByDate && typeof calendarData.threadsByDate === 'object')
+          ? calendarData.threadsByDate
+          : {};
+
+        Object.keys(rawThreadMap).forEach(function(dateKey){
+          calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
+            ? rawThreadMap[dateKey].slice().sort(function(a, b){
+                return (parseDateValue((b && (b.updatedAt || b.createdAt)) || '') || 0) - (parseDateValue((a && (a.updatedAt || a.createdAt)) || '') || 0);
+              })
+            : [];
+        });
+
+        (Array.isArray(calendarData && calendarData.days) ? calendarData.days : []).forEach(function(day){
+          const dateKey = text(day && day.dateKey);
+          const localThreads = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
+
+          calendarOverviewMap[dateKey] = {
+            shoppingCount: Number(day && day.shoppingCount || 0),
+            factoryCount: Number(day && day.factoryCount || 0),
+            threadCount: localThreads.length
+          };
+
+          if(!calendarThreadMap[dateKey]){
+            calendarThreadMap[dateKey] = [];
+          }
+        });
+
+        renderDashboard();
+      })
+      .catch(function(err){
+        console.error(err);
+        dashboardRoot.innerHTML = '<div class="empty">매물 데이터를 불러오지 못했습니다.</div>';
+        toolbarMeta.textContent = '불러오기 실패';
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+    }
+
+    function parseDateValue(value){
+      const s = text(value);
+      if(!s) return null;
+      const t = new Date(s).getTime();
+      return Number.isNaN(t) ? null : t;
+    }
+
+    function formatDateGroup(value){
+      const ts = parseDateValue(value);
+      if(!ts) return '날짜 미확인';
+      const d = new Date(ts);
+      const days = ['일','월','화','수','목','금','토'];
+      return d.getFullYear() + '.' + (d.getMonth()+1) + '.' + d.getDate() + ' (' + days[d.getDay()] + ')';
+    }
+
+    function formatUpdatedMeta(item){
+      if(!text(item.updatedAt)) return '수정 -';
+      const ts = parseDateValue(item.updatedAt);
+      if(!ts) return '수정 -';
+      const d = new Date(ts);
+      const stamp = d.getFullYear() + '.' + (d.getMonth()+1) + '.' + d.getDate() + ' ' +
+        String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+      const editor = text(item.lastEditor);
+      return '수정 ' + stamp + (editor ? ' (' + escapeHtml(editor) + ')' : '');
+    }
+
+    function formatDealPrice(item){
+      var dealType = text(item.dealType);
+      var price = text(item.price);
+      if(dealType && price) return escapeHtml(dealType + ' / ' + price);
+      if(dealType) return escapeHtml(dealType);
+      if(price) return escapeHtml(price);
+      return '-';
+    }
+
+    function matchesKeyword(item){
+      if(!currentKeyword) return true;
+      const haystack = [
+        item.title,
+        item.address,
+        item.listingNumber,
+        item.dealType,
+        item.price,
+
+        item.summary1,
+        item.summary2,
+        item.summary3,
+
+        item.propertyType,
+        item.zoning,
+        item.approvalDate,
+
+        item.landAreaM2,
+        item.landAreaPy,
+        item.totalFloorAreaM2,
+        item.totalFloorAreaPy,
+        item.exclusiveAreaM2,
+        item.exclusiveAreaPy,
+
+        item.buildingComposition,
+        item.parkingCount,
+        item.entranceDirection,
+        item.moveInDate,
+        item.floorInfo,
+        item.restroomInfo,
+        item.maintenanceFee,
+
+        item.ceilingHeight,
+        item.crane,
+        item.hoist,
+        item.powerCapacity,
+        item.mainFacilities,
+        item.recommendedUse,
+        item.restrictedUse,
+        item.roadWidth,
+        item.doorWidth,
+        item.truckAccess,
+        item.loadingAvailable,
+        item.officeIncluded,
+        item.yardSize,
+        item.readyToOperate,
+
+        item.requesterName,
+        item.requesterPhone,
+        item.requesterType,
+        item.requesterNote,
+        item.memo
+      ]
+      .map(function(v){ return String(v == null ? '' : v).toLowerCase(); })
+      .join(' ');
+
+      return haystack.indexOf(currentKeyword) > -1;
+    }
+
+    function applyFilter(items){
+      let result = items.filter(matchesKeyword);
+
+      if(currentTeamFilter){
+        result = result.filter(function(item){
+          return detectTeamByListingNumber(item.listingNumber) === currentTeamFilter;
+        });
+      }
+
+      if(currentFilter === 'visible'){
+        result = result.filter(function(item){ return item.status === 'visible' || item.status === 'show' || item.status === '공개'; });
+      }else if(currentFilter === 'hidden'){
+        result = result.filter(function(item){ return !(item.status === 'visible' || item.status === 'show' || item.status === '공개'); });
+      }
+
+      if(currentFilter === 'updated'){
+        result = result.slice().sort(function(a,b){
+          return (parseDateValue(b.updatedAt) || 0) - (parseDateValue(a.updatedAt) || 0);
+        });
+      }else{
+        result = result.slice().sort(function(a,b){
+          return (parseDateValue(b.createdAt) || 0) - (parseDateValue(a.createdAt) || 0);
+        });
+      }
+
+      return result;
+    }
+
+    function groupItems(items){
+      const groups = new Map();
+      items.forEach(function(item){
+        const key = currentFilter === 'updated'
+          ? formatDateGroup(item.updatedAt || item.createdAt)
+          : formatDateGroup(item.createdAt);
+
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(item);
+      });
+      return Array.from(groups.entries()).map(function(entry){
+        return { title: entry[0], items: entry[1] };
+      });
+    }
+
+    function escapeHtml(value){
+      return String(value == null ? '' : value)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
+    }
+
+    function buildStatusChip(item){
+      const visible = item.status === 'visible' || item.status === 'show' || item.status === '공개';
+      return '<span class="status-chip ' + (visible ? 'visible' : 'hidden') + '">' + (visible ? '공개중' : '비공개') + '</span>';
+    }
+
+    function buildCard(item){
+      const thumb = item.heroUrl ? "background-image:url('" + escapeHtml(item.heroUrl) + "')" : '';
+      const channelHtml = CHANNELS.map(function(channel){
+        const state = getChannelStateByItem(item, channel.key);
+        const stateClass = state.done ? '' : ' is-not-yet';
+        return '<button class="channel-icon' + stateClass + '" type="button" title="' + escapeHtml(channel.name) + '" onclick="event.stopPropagation(); openChannelModal(\'' + encodeURIComponent(item.listingNumber) + '\', \''
+          + channel.key + '\')"><img class="channel-favicon" src="' + escapeHtml(channel.icon) + '" alt="' + escapeHtml(channel.name) + '"></button>';
+      }).join('');
+      const ownSiteState = getChannelStateByItem(item, 'ownSite');
+      const ownSiteClass = ownSiteState.done ? '' : ' is-not-yet';
+
+      return ''
+        + '<article class="property-card">'
+        +   '<div class="property-main" onclick="openPreview(\'' + encodeURIComponent(item.listingNumber) + '\')">'
+        +     '<div class="thumb" style="' + thumb + '"></div>'
+        +     '<div class="card-content">'
+        +       '<div class="title-row">'
+        +         '<h3 class="card-title">' + escapeHtml(item.title || '제목 없음') + '</h3>'
+        +         buildStatusChip(item)
+        +       '</div>'
+        +       '<div class="card-address">' + escapeHtml(item.address || '-') + '</div>'
+        +       '<div class="card-deal-price">' + formatDealPrice(item) + '</div>'
+        +       '<div class="card-meta"><strong>' + escapeHtml(item.listingNumber || '-') + '</strong><br>' + formatUpdatedMeta(item) + '</div>'
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="card-bottom">'
+        +     '<div class="action-row">'
+        +       '<div class="action-left">'
+        +         '<button class="mini-btn visibility-text-btn active-show" type="button" onclick="event.stopPropagation(); markVisible(\'' + encodeURIComponent(item.listingNumber) + '\')">보임</button>'
+        +         '<button class="mini-btn visibility-text-btn" type="button" onclick="event.stopPropagation(); markHidden(\'' + encodeURIComponent(item.listingNumber) + '\')">숨김</button>'
+        +         '<button class="mini-btn square memo-square" type="button" onclick="event.stopPropagation(); openPropertyMemoModal(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">📌</span><span class="btn-text">메모</span></button>'
+        +         '<button class="mini-btn square share-square" type="button" onclick="event.stopPropagation(); sharePreview(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">💫</span><span class="btn-text">공유</span></button>'
+        +         '<button class="mini-btn square edit-square" type="button" onclick="event.stopPropagation(); editItem(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">✍️</span><span class="btn-text">수정</span></button>'
+        +       '</div>'
+        +       ''
+        +     '</div>'
+        +     '<div class="channel-row">' + channelHtml + '<button class="site-chip' + ownSiteClass + '" type="button" title="자사사이트" onclick="event.stopPropagation(); openChannelModal(\'' + encodeURIComponent(item.listingNumber) + '\', \'ownSite\')"><img class="site-favicon" src="' + escapeHtml(SELF_SITE_ICON) + '" alt="자사사이트"></button></div>'
+        +   '</div>'
+        + '</article>';
+    }
+
+    function buildPreviewUrl(listingNumber){
+      return CONFIG.listingsUrl + '?listingNumber=' + encodeURIComponent(listingNumber) + '&open=1';
+    }
+
+    function getItemByListingNumber(listingNumber){
+      const key = text(listingNumber);
+      return rawItems.find(function(x){
+        return text(x && x.listingNumber) === key;
+      }) || null;
+    }
+
+    function openPropertyMemoModal(listingNumber){
+      const item = getItemByListingNumber(decodeURIComponent(String(listingNumber || '')));
+      if(!item){
+        alert('매물을 찾지 못했습니다.');
+        return;
+      }
+      propertyMemoEditingItem = item;
+      if(propertyMemoTextarea) propertyMemoTextarea.value = text(item.memo);
+      if(propertyMemoModal) propertyMemoModal.classList.add('show');
+      setTimeout(function(){
+        try{
+          propertyMemoTextarea.focus();
+          propertyMemoTextarea.setSelectionRange(propertyMemoTextarea.value.length, propertyMemoTextarea.value.length);
+        }catch(e){}
+      }, 40);
+    }
+
+    function closePropertyMemoModal(){
+      if(propertyMemoModal) propertyMemoModal.classList.remove('show');
+      propertyMemoEditingItem = null;
+    }
+
+    async function savePropertyMemo(){
+      const item = propertyMemoEditingItem;
+      const writerCode = getUnlockedWriterCode();
+      if(!item){
+        alert('수정할 매물을 찾지 못했습니다.');
+        return;
+      }
+      if(!writerCode){
+        alert('작성자 코드가 없습니다.');
+        return;
+      }
+      const listingNumber = text(item.listingNumber);
+      const memo = text(propertyMemoTextarea ? propertyMemoTextarea.value : '');
+      currentLoadingText = '메모를 저장하고 있어요!';
+      startLoadingOverlay();
+      try{
+        const res = await fetch(CONFIG.adminListUrl, {
+          method:'POST',
+          mode:'cors',
+          headers:{ 'Content-Type':'text/plain;charset=UTF-8' },
+          body: JSON.stringify({
+            action:'updatePropertyMemo',
+            listingNumber: listingNumber,
+            memo: memo,
+            writerCode: writerCode
+          })
+        });
+        if(!res.ok) throw new Error('메모 저장 실패: ' + res.status);
+        const data = await res.json();
+        if(!data || data.ok !== true){
+          throw new Error((data && (data.message || data.error)) || '메모 저장 실패');
+        }
+        item.memo = memo;
+        item.updatedAt = text(data.updatedAt) || new Date().toISOString();
+        closePropertyMemoModal();
+        renderDashboard();
+      }catch(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '메모 저장 중 문제가 발생했습니다.');
+      }finally{
+        stopLoadingOverlay();
+      }
+    }
+
+    async function sharePreview(listingNumber){
+      const decoded = decodeURIComponent(String(listingNumber || ''));
+      const item = getItemByListingNumber(decoded);
+      const url = buildPreviewUrl(decoded);
+      const title = text(item && item.title) || '매물 공유';
+      const shareText = title + '\n' + (text(item && item.address) || '');
+      try{
+        if(navigator.share){
+          await navigator.share({
+            title: title,
+            text: shareText,
+            url: url
+          });
+          return;
+        }
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(url);
+          alert('공유 링크를 복사했습니다. 카카오톡에 붙여넣어 주세요.');
+          return;
+        }
+        window.prompt('공유 링크를 복사하세요.', url);
+      }catch(err){
+        if(err && err.name === 'AbortError') return;
+        console.error(err);
+        try{
+          window.prompt('공유 링크를 복사하세요.', url);
+        }catch(e){}
+      }
+    }
+
+
+    function renderDashboard(){
+      const filtered = applyFilter(rawItems);
+      const totalCount = filtered.length;
+      const visibleItems = filtered.slice(0, visibleCount);
+
+      toolbarMeta.textContent = '전체 ' + totalCount + '건';
+
+      if(!totalCount){
+        const emptyMeta = getTeamMeta(currentTeamFilter);
+        dashboardRoot.innerHTML = '<div class="empty">' + escapeHtml(emptyMeta.empty) + '</div>';
+        return;
+      }
+
+      const groups = groupItems(visibleItems);
+      const hasMore = totalCount > visibleCount;
+
+      dashboardRoot.innerHTML =
+        groups.map(function(group){
+          return ''
+            + '<section class="group">'
+            +   '<div class="group-head">'
+            +     '<div class="group-title">' + escapeHtml(group.title) + '</div>'
+            +     '<div class="group-count">' + group.items.length + '건</div>'
+            +   '</div>'
+            +   '<div class="card-list">' + group.items.map(buildCard).join('') + '</div>'
+            + '</section>';
+        }).join('')
+        + (hasMore
+            ? '<div class="more-wrap"><button class="more-btn" type="button" onclick="loadMoreItems()">더보기</button></div>'
+            : '');
+    }
+
+    window.loadMoreItems = function(){
+      visibleCount += PAGE_SIZE;
+      renderDashboard();
+    };
+
+    function unlockWithPassword(){
+      const pw = String(lockInput.value || '').trim();
+      const matched = PASSWORD_MAP[pw];
+      if(!matched){
+        lockError.textContent = '비밀번호가 올바르지 않습니다.';
+        return;
+      }
+      unlockedUserName = matched;
+      localStorage.setItem(CONFIG.authStorageKey, matched);
+      updateGreeting();
+      lockOverlay.style.display = 'none';
+      fetchAdminItems();
+    }
+
+    lockBtn.addEventListener('click', unlockWithPassword);
+    lockInput.addEventListener('keydown', function(e){
+      if(e.key === 'Enter') unlockWithPassword();
+    });
+
+    if(localStorage.getItem(CONFIG.authStorageKey)){
+      unlockedUserName = localStorage.getItem(CONFIG.authStorageKey) || '';
+      updateGreeting();
+      lockOverlay.style.display = 'none';
+      fetchAdminItems();
+    }
+
+    window.openPreview = function(listingNumber){
+      startLoadingOverlay();
+      const url = buildPreviewUrl(listingNumber);
+      window.open(url, '_blank');
+      window.setTimeout(stopLoadingOverlay, 900);
+    };
+
+    window.editItem = function(listingNumber){
+      location.href = CONFIG.adminEditUrl + '?listingNumber=' + encodeURIComponent(listingNumber);
+    };
+
+    window.markVisible = function(listingNumber){
+      setPropertyStatus(listingNumber, 'visible');
+    };
+
+    window.markHidden = function(listingNumber){
+      setPropertyStatus(listingNumber, 'hidden');
+    };
+    window.openPropertyMemoModal = openPropertyMemoModal;
+    window.closePropertyMemoModal = closePropertyMemoModal;
+    window.savePropertyMemo = savePropertyMemo;
+    window.sharePreview = sharePreview;
+
+    document.getElementById('channelModal').addEventListener('click', function(e){
+      if(e.target === this) closeChannelModal();
+    });
+
+    window.addEventListener('keydown', function(e){
+      if(e.key === 'Escape'){
+        if(isCalendarModalOpen()){
+          closeCalendarModal();
+          return;
+        }
+        closeChannelModal();
+      }
+    });
+
+    window.addEventListener('popstate', function(){
+      if(isCalendarModalOpen()){
+        closeCalendarModal(true);
+      }
+    });
+
+    updateGreeting();
+    updateTeamTogglePanel();
+  </script>
+</body>
+</html>

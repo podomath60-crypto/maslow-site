@@ -513,6 +513,84 @@
       background: transparent;
     }
 
+    .free-block-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .free-block-tab {
+      min-height: 36px;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      color: #374151;
+      cursor: pointer;
+    }
+    .free-block-tab.active {
+      background: #111827;
+      color: #fff;
+      border-color: #111827;
+    }
+    .free-block-edit-stage {
+      position: relative;
+      width: 100%;
+      height: 160px;
+      border-radius: 14px;
+      border: 1px dashed #cbd5e1;
+      background: linear-gradient(180deg, #f8fafc, #eef2f7);
+      overflow: hidden;
+    }
+    .free-block-edit-empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+    .free-block-panel-item {
+      position: absolute;
+      white-space: pre-wrap;
+      word-break: keep-all;
+      line-height: 1.1;
+      border-style: solid;
+      overflow: visible;
+      cursor: move;
+      user-select: none;
+      touch-action: none;
+      box-sizing: border-box;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.18);
+    }
+    .free-block-panel-item::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      right: -9px;
+      bottom: -9px;
+      border-radius: 999px;
+      border: 2px solid #1d4ed8;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .free-block-panel-resize {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      right: -12px;
+      bottom: -12px;
+      border-radius: 999px;
+      cursor: nwse-resize;
+      background: transparent;
+    }
+
     #hiddenFile { display: none; }
     @media (max-width: 920px) {
       .editor-grid { grid-template-columns: 1fr; }
@@ -582,6 +660,10 @@
               <div class="free-block-status" id="freeBlockStatus">선택된 자유블럭 없음</div>
             </div>
             <button type="button" class="action-btn soft" id="addFreeBlockBtn">자유블럭 추가</button>
+            <div class="free-block-tabs" id="freeBlockTabs"></div>
+            <div class="free-block-edit-stage" id="freeBlockEditStage">
+              <div class="free-block-edit-empty" id="freeBlockEditEmpty">자유블럭을 추가하거나 선택하세요.<br />패널 안에서도 드래그와 크기조절이 됩니다.</div>
+            </div>
             <input type="text" id="freeTextInput" class="text-input" placeholder="선택한 자유블럭 문구 입력" />
             <div class="mini-field-grid">
               <div>
@@ -756,7 +838,9 @@
       freeBlocks: [],
       selectedFreeBlockId: null,
       freeDrag: null,
-      freeResize: null
+      freeResize: null,
+      freePanelDrag: null,
+      freePanelResize: null
     };
 
     const designSlider = document.getElementById('designSlider');
@@ -771,6 +855,9 @@
     const textGroup = document.getElementById('textGroup');
     const freeBlockLayer = document.getElementById('freeBlockLayer');
     const addFreeBlockBtn = document.getElementById('addFreeBlockBtn');
+    const freeBlockTabs = document.getElementById('freeBlockTabs');
+    const freeBlockEditStage = document.getElementById('freeBlockEditStage');
+    const freeBlockEditEmpty = document.getElementById('freeBlockEditEmpty');
     const freeBlockStatus = document.getElementById('freeBlockStatus');
     const freeTextInput = document.getElementById('freeTextInput');
     const freeFontSelect = document.getElementById('freeFontSelect');
@@ -1029,6 +1116,60 @@
       return '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif';
     }
 
+    function getFreeBlockLabel(blockId) {
+      const idx = state.freeBlocks.findIndex(block => block.id === blockId);
+      return idx >= 0 ? `자유블럭 ${idx + 1}` : '자유블럭';
+    }
+
+    function renderFreeBlockTabs() {
+      if (!freeBlockTabs) return;
+      freeBlockTabs.innerHTML = '';
+      state.freeBlocks.forEach(block => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'free-block-tab' + (block.id === state.selectedFreeBlockId ? ' active' : '');
+        btn.textContent = getFreeBlockLabel(block.id);
+        btn.addEventListener('click', () => selectFreeBlock(block.id));
+        freeBlockTabs.appendChild(btn);
+      });
+    }
+
+    function renderFreeBlockEditStage() {
+      if (!freeBlockEditStage) return;
+      const fb = getSelectedFreeBlock();
+      freeBlockEditStage.querySelectorAll('.free-block-panel-item').forEach(el => el.remove());
+      if (freeBlockEditEmpty) freeBlockEditEmpty.style.display = fb ? 'none' : 'flex';
+      if (!fb) return;
+      const rect = freeBlockEditStage.getBoundingClientRect();
+      const pw = Math.max(1, rect.width);
+      const ph = Math.max(1, rect.height);
+      const el = document.createElement('div');
+      el.className = 'free-block-panel-item';
+      el.dataset.blockId = fb.id;
+      el.textContent = fb.text || getFreeBlockLabel(fb.id);
+      el.style.left = `${fb.x * pw}px`;
+      el.style.top = `${fb.y * ph}px`;
+      el.style.width = `${Math.max(80, fb.w * pw)}px`;
+      el.style.minHeight = `${Math.max(34, fb.h * ph)}px`;
+      el.style.padding = `${Math.max(6, ph * fb.h * 0.12)}px ${Math.max(8, pw * fb.w * 0.05)}px`;
+      el.style.fontSize = `${Math.max(14, ph * fb.h * 0.58)}px`;
+      el.style.fontWeight = '900';
+      el.style.fontFamily = getFreeFontFamily(fb.font);
+      el.style.textAlign = fb.align;
+      el.style.color = fb.textColor;
+      el.style.background = hexToRgba(fb.bgColor, fb.bgOpacity);
+      el.style.borderColor = fb.strokeColor;
+      el.style.borderWidth = `${fb.strokeWidth}px`;
+      el.style.borderRadius = `${Math.max(10, ph * fb.h * 0.18)}px`;
+      el.addEventListener('pointerdown', onFreeBlockPanelPointerDown);
+      const resize = document.createElement('div');
+      resize.className = 'free-block-panel-resize';
+      resize.dataset.blockId = fb.id;
+      resize.addEventListener('pointerdown', onFreeBlockPanelResizeDown);
+      el.appendChild(resize);
+      freeBlockEditStage.appendChild(el);
+    }
+
     function createDefaultFreeBlock() {
       return {
         id: `fb_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -1054,15 +1195,17 @@
     function selectFreeBlock(blockId) {
       state.selectedFreeBlockId = blockId;
       syncFreeBlockControls();
+      renderFreeBlockTabs();
       renderFreeBlocks();
+      renderFreeBlockEditStage();
     }
 
     function syncFreeBlockControls() {
       const fb = getSelectedFreeBlock();
       const disabled = !fb;
-      if (freeBlockStatus) freeBlockStatus.textContent = fb ? `선택됨 · ${fb.text || '자유블럭'}` : '선택된 자유블럭 없음';
+      if (freeBlockStatus) freeBlockStatus.textContent = fb ? `선택됨 · ${getFreeBlockLabel(fb.id)}` : '선택된 자유블럭 없음';
       [freeTextInput, freeFontSelect, freeAlignSelect, freeTextColorInput, freeBgColorInput, freeStrokeColorInput, freeBgOpacityRange, freeStrokeWidthRange].forEach(el => { if (el) el.disabled = disabled; });
-      if (!fb) { freeTextInput.value = ''; return; }
+      if (!fb) { freeTextInput.value = ''; renderFreeBlockEditStage(); return; }
       freeTextInput.value = fb.text;
       freeFontSelect.value = fb.font;
       freeAlignSelect.value = fb.align;
@@ -1073,6 +1216,7 @@
       freeStrokeWidthRange.value = String(fb.strokeWidth);
       freeBgOpacityValue.textContent = Number(fb.bgOpacity).toFixed(2);
       freeStrokeWidthValue.textContent = String(fb.strokeWidth);
+      renderFreeBlockEditStage();
     }
 
     function renderFreeBlocks() {
@@ -1133,6 +1277,53 @@
       e.currentTarget.setPointerCapture(e.pointerId);
       const fb = getSelectedFreeBlock();
       state.freeResize = { id: e.pointerId, blockId, sx: e.clientX, sy: e.clientY, bw: fb.w, bh: fb.h };
+    }
+
+    function onFreeBlockPanelPointerDown(e) {
+      if (!state.imageUrl) return;
+      if (e.target.closest('.free-block-panel-resize')) return;
+      const blockId = e.currentTarget.dataset.blockId;
+      selectFreeBlock(blockId);
+      e.stopPropagation();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      const fb = getSelectedFreeBlock();
+      state.freePanelDrag = { id: e.pointerId, blockId, sx: e.clientX, sy: e.clientY, bx: fb.x, by: fb.y };
+    }
+
+    function onFreeBlockPanelResizeDown(e) {
+      if (!state.imageUrl) return;
+      const blockId = e.currentTarget.dataset.blockId;
+      selectFreeBlock(blockId);
+      e.stopPropagation();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      const fb = getSelectedFreeBlock();
+      state.freePanelResize = { id: e.pointerId, blockId, sx: e.clientX, sy: e.clientY, bw: fb.w, bh: fb.h };
+    }
+
+    function updateSelectedFreeBlockPanelDrag(e) {
+      if (!state.freePanelDrag || state.freePanelDrag.id !== e.pointerId) return;
+      const rect = freeBlockEditStage.getBoundingClientRect();
+      const fb = getSelectedFreeBlock();
+      if (!fb || fb.id !== state.freePanelDrag.blockId) return;
+      const dx = (e.clientX - state.freePanelDrag.sx) / Math.max(1, rect.width);
+      const dy = (e.clientY - state.freePanelDrag.sy) / Math.max(1, rect.height);
+      fb.x = clamp(state.freePanelDrag.bx + dx, 0, 1 - fb.w);
+      fb.y = clamp(state.freePanelDrag.by + dy, 0, 1 - fb.h);
+      renderFreeBlocks();
+      renderFreeBlockEditStage();
+    }
+
+    function updateSelectedFreeBlockPanelResize(e) {
+      if (!state.freePanelResize || state.freePanelResize.id !== e.pointerId) return;
+      const rect = freeBlockEditStage.getBoundingClientRect();
+      const fb = getSelectedFreeBlock();
+      if (!fb || fb.id !== state.freePanelResize.blockId) return;
+      const dx = (e.clientX - state.freePanelResize.sx) / Math.max(1, rect.width);
+      const dy = (e.clientY - state.freePanelResize.sy) / Math.max(1, rect.height);
+      fb.w = clamp(state.freePanelResize.bw + dx, 0.12, 1 - fb.x);
+      fb.h = clamp(state.freePanelResize.bh + dy, 0.08, 1 - fb.y);
+      renderFreeBlocks();
+      renderFreeBlockEditStage();
     }
 
     function updateSelectedFreeBlockDrag(e) {
@@ -1391,6 +1582,7 @@
       renderInputs();
       renderImage();
       renderStyleSlots();
+      renderFreeBlockTabs();
       applyDesignDefaults(false);
       syncSegState();
       mosaicBrushRange.value = String(state.mosaicBrushSize);
@@ -1400,6 +1592,7 @@
       requestAnimationFrame(() => {
         renderTextOverlay();
         renderFreeBlocks();
+        renderFreeBlockEditStage();
         renderMosaicOverlay();
       });
     }
@@ -1514,6 +1707,8 @@
     canvasStage.addEventListener('pointermove', e => {
       updateSelectedFreeBlockDrag(e);
       updateSelectedFreeBlockResize(e);
+      updateSelectedFreeBlockPanelDrag(e);
+      updateSelectedFreeBlockPanelResize(e);
     });
     canvasStage.addEventListener('pointerup', e => clearFreePointerState(e.pointerId));
     canvasStage.addEventListener('pointercancel', e => clearFreePointerState(e.pointerId));

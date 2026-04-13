@@ -864,152 +864,190 @@ function drawWrappedLinesFromDom(ctx, text, maxWidth, align, lineHeight, drawX, 
   return lines.length;
 }
 
-async function exportComposite(){
-  if(!state.image || !state.image.complete){ alert('먼저 사진을 넣어주세요.'); return; }
+function copyComputedStylesDeep(sourceNode, targetNode){
+  const sourceNodes=[sourceNode, ...sourceNode.querySelectorAll('*')];
+  const targetNodes=[targetNode, ...targetNode.querySelectorAll('*')];
+  sourceNodes.forEach((src, index)=>{
+    const tgt=targetNodes[index];
+    if(!tgt) return;
+    const cs=getComputedStyle(src);
+    let styleText='';
+    for(const prop of cs){
+      styleText += `${prop}:${cs.getPropertyValue(prop)};`;
+    }
+    tgt.setAttribute('style', styleText);
+  });
+}
 
-  const source = el.imageWrap;
-  const sourceRect = source.getBoundingClientRect();
-  const exportWidth = state.image.naturalWidth;
-  const exportHeight = state.image.naturalHeight;
+function prepareExportClone(exportWidth, exportHeight){
+  const source=el.imageWrap;
+  const sourceRect=source.getBoundingClientRect();
+  const scale=exportWidth/sourceRect.width;
+  const clone=source.cloneNode(true);
+  copyComputedStylesDeep(source, clone);
 
+  clone.setAttribute('style', [
+    `position:relative`,
+    `display:block`,
+    `overflow:hidden`,
+    `width:${exportWidth}px`,
+    `height:${exportHeight}px`,
+    `line-height:0`,
+    `background:${state.exportFormat==='jpg' ? '#ffffff' : 'transparent'}`
+  ].join(';'));
+
+  const cloneImg=clone.querySelector('#mainImage') || clone.querySelector('.main-image');
+  if(cloneImg){
+    cloneImg.setAttribute('src', state.imageUrl);
+    cloneImg.setAttribute('style', [
+      `display:block`,
+      `width:${exportWidth}px`,
+      `height:${exportHeight}px`,
+      `position:absolute`,
+      `left:0`,
+      `top:0`
+    ].join(';'));
+  }
+
+  const cloneOverlay=clone.querySelector('#overlayRoot') || clone.querySelector('.overlay-root');
+  if(cloneOverlay){
+    cloneOverlay.style.position='absolute';
+    cloneOverlay.style.left='0px';
+    cloneOverlay.style.top='0px';
+    cloneOverlay.style.width=`${exportWidth}px`;
+    cloneOverlay.style.height=`${exportHeight}px`;
+    cloneOverlay.style.inset='0px';
+  }
+
+  clone.querySelectorAll('.main-group-box,.main-resize-handle,.free-box,.free-resize-handle,.free-close').forEach(node=>{
+    node.style.display='none';
+  });
+
+  clone.querySelectorAll('.main-text-group,.free-block').forEach(node=>{
+    const rect=node.getBoundingClientRect();
+    const left=(rect.left-sourceRect.left)*scale;
+    const top=(rect.top-sourceRect.top)*scale;
+    const width=rect.width*scale;
+    const height=rect.height*scale;
+    node.style.position='absolute';
+    node.style.left=`${left}px`;
+    node.style.top=`${top}px`;
+    node.style.width=`${width}px`;
+    node.style.height=`${height}px`;
+    node.style.minWidth='0px';
+    node.style.minHeight='0px';
+  });
+
+  source.querySelectorAll('.main-line,.main-bg,.free-block-text').forEach((srcNode,index)=>{
+    const selector = srcNode.classList.contains('main-line') ? '.main-line' : (srcNode.classList.contains('main-bg') ? '.main-bg' : '.free-block-text');
+  });
+
+  const srcMainLines=source.querySelectorAll('.main-line');
+  const cloneMainLines=clone.querySelectorAll('.main-line');
+  srcMainLines.forEach((srcNode,index)=>{
+    const node=cloneMainLines[index];
+    if(!node) return;
+    const rect=srcNode.getBoundingClientRect();
+    node.style.position='absolute';
+    node.style.left=`${(rect.left-sourceRect.left)*scale}px`;
+    node.style.top=`${(rect.top-sourceRect.top)*scale}px`;
+    node.style.width=`${rect.width*scale}px`;
+    node.style.height=`${rect.height*scale}px`;
+    node.style.fontSize=`${rect.height ? px(getComputedStyle(srcNode).fontSize)*scale : px(getComputedStyle(srcNode).fontSize)*scale}px`;
+    node.style.lineHeight=`${px(getComputedStyle(srcNode).lineHeight)*scale || px(getComputedStyle(srcNode).fontSize)*scale}px`;
+    node.style.whiteSpace='pre-wrap';
+    node.style.wordBreak='keep-all';
+  });
+
+  const srcMainBgs=source.querySelectorAll('.main-bg');
+  const cloneMainBgs=clone.querySelectorAll('.main-bg');
+  srcMainBgs.forEach((srcNode,index)=>{
+    const node=cloneMainBgs[index];
+    if(!node) return;
+    const rect=srcNode.getBoundingClientRect();
+    node.style.position='absolute';
+    node.style.left=`${(rect.left-sourceRect.left)*scale}px`;
+    node.style.top=`${(rect.top-sourceRect.top)*scale}px`;
+    node.style.width=`${rect.width*scale}px`;
+    node.style.height=`${rect.height*scale}px`;
+    node.style.borderRadius=`${px(getComputedStyle(srcNode).borderRadius)*scale}px`;
+  });
+
+  const srcFreeTexts=source.querySelectorAll('.free-block-text');
+  const cloneFreeTexts=clone.querySelectorAll('.free-block-text');
+  srcFreeTexts.forEach((srcNode,index)=>{
+    const node=cloneFreeTexts[index];
+    if(!node) return;
+    const rect=srcNode.getBoundingClientRect();
+    node.style.position='absolute';
+    node.style.left=`${(rect.left-sourceRect.left)*scale}px`;
+    node.style.top=`${(rect.top-sourceRect.top)*scale}px`;
+    node.style.width=`${rect.width*scale}px`;
+    node.style.height=`${rect.height*scale}px`;
+    node.style.fontSize=`${px(getComputedStyle(srcNode).fontSize)*scale}px`;
+    node.style.lineHeight=`${px(getComputedStyle(srcNode).lineHeight)*scale || px(getComputedStyle(srcNode).fontSize)*scale}px`;
+    node.style.borderRadius=`${px(getComputedStyle(srcNode).borderRadius)*scale}px`;
+    node.style.paddingLeft=`${px(getComputedStyle(srcNode).paddingLeft)*scale}px`;
+    node.style.paddingRight=`${px(getComputedStyle(srcNode).paddingRight)*scale}px`;
+    node.style.paddingTop=`${px(getComputedStyle(srcNode).paddingTop)*scale}px`;
+    node.style.paddingBottom=`${px(getComputedStyle(srcNode).paddingBottom)*scale}px`;
+  });
+
+  const srcCanvas=source.querySelector('#mosaicCanvas') || source.querySelector('.mosaic-canvas');
+  const cloneCanvas=clone.querySelector('#mosaicCanvas') || clone.querySelector('.mosaic-canvas');
+  if(cloneCanvas){
+    const img=document.createElement('img');
+    img.setAttribute('src', srcCanvas ? srcCanvas.toDataURL('image/png') : '');
+    img.setAttribute('style', `position:absolute;left:0;top:0;width:${exportWidth}px;height:${exportHeight}px;display:block;`);
+    cloneCanvas.replaceWith(img);
+  }
+
+  return clone;
+}
+
+function svgToImageDataUrl(svgString){
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+}
+
+async function renderCloneToCanvas(clone, exportWidth, exportHeight){
+  const xmlns='http://www.w3.org/2000/svg';
+  const svg=`<svg xmlns="${xmlns}" width="${exportWidth}" height="${exportHeight}" viewBox="0 0 ${exportWidth} ${exportHeight}"><foreignObject width="100%" height="100%">${new XMLSerializer().serializeToString(clone)}</foreignObject></svg>`;
+  const img=new Image();
+  await new Promise((resolve,reject)=>{
+    img.onload=resolve;
+    img.onerror=reject;
+    img.src=svgToImageDataUrl(svg);
+  });
   const canvas=document.createElement('canvas');
   canvas.width=exportWidth;
   canvas.height=exportHeight;
   const ctx=canvas.getContext('2d');
-
   if(state.exportFormat==='jpg'){
     ctx.fillStyle='#ffffff';
     ctx.fillRect(0,0,canvas.width,canvas.height);
   }
+  ctx.drawImage(img,0,0,exportWidth,exportHeight);
+  return canvas;
+}
 
-  ctx.drawImage(state.image,0,0,canvas.width,canvas.height);
-
-  if(state.mosaicStrokes.length){
-    state.mosaicStrokes.forEach(stroke=>{
-      drawMosaicStamp(
-        ctx,
-        state.image,
-        exportWidth,
-        exportHeight,
-        stroke.x * exportWidth,
-        stroke.y * exportHeight,
-        stroke.size * exportWidth
-      );
-    });
+async function exportComposite(){
+  if(!state.image || !state.image.complete){ alert('먼저 사진을 넣어주세요.'); return; }
+  const exportWidth=state.image.naturalWidth;
+  const exportHeight=state.image.naturalHeight;
+  try{
+    const clone=prepareExportClone(exportWidth, exportHeight);
+    const canvas=await renderCloneToCanvas(clone, exportWidth, exportHeight);
+    const ext=state.exportFormat==='png'?'png':'jpg';
+    const mime=state.exportFormat==='png'?'image/png':'image/jpeg';
+    const url=canvas.toDataURL(mime,state.exportFormat==='png'?undefined:.95);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`maslow-thumbnail.${ext}`;
+    a.click();
+  }catch(err){
+    console.error(err);
+    alert('내려받기 렌더링 중 오류가 발생했습니다. 다시 시도해주세요.');
   }
-
-  const d = getDesign();
-  if(!d.hidden){
-    source.querySelectorAll('.main-bg').forEach(bg=>{
-      const r=getRelativeCanvasRect(bg, sourceRect, exportWidth, exportHeight);
-      const cs=getComputedStyle(bg);
-      drawRoundRect(ctx, r.x, r.y, r.w, r.h, px(cs.borderRadius) * (exportWidth/sourceRect.width), cs.background || cs.backgroundColor);
-    });
-
-    source.querySelectorAll('.main-line').forEach(line=>{
-      const r=getRelativeCanvasRect(line, sourceRect, exportWidth, exportHeight);
-      const cs=getComputedStyle(line);
-      const fontSize = px(cs.fontSize) * (exportWidth/sourceRect.width);
-      const lineHeightRaw = px(cs.lineHeight);
-      const lineHeight = (lineHeightRaw > 0 ? lineHeightRaw : fontSize) * (exportWidth/sourceRect.width);
-      ctx.save();
-      ctx.font = `${cs.fontWeight} ${fontSize}px ${cs.fontFamily}`;
-      ctx.fillStyle = cs.color;
-      ctx.textBaseline = 'top';
-      ctx.lineJoin = 'round';
-      ctx.miterLimit = 2;
-      const strokeW = px(cs.webkitTextStrokeWidth || cs.textStrokeWidth);
-      if(strokeW > 0){
-        ctx.lineWidth = strokeW * (exportWidth/sourceRect.width);
-        ctx.strokeStyle = cs.webkitTextStrokeColor || cs.textStrokeColor || 'transparent';
-      } else {
-        ctx.lineWidth = 0;
-      }
-      const shadow = cs.textShadow;
-      if(shadow && shadow !== 'none'){
-        const m = shadow.match(/(-?\d+(?:\.\d+)?)px\s+(-?\d+(?:\.\d+)?)px\s+(\d+(?:\.\d+)?)px\s+(.+)/);
-        if(m){
-          ctx.shadowOffsetX = parseFloat(m[1]) * (exportWidth/sourceRect.width);
-          ctx.shadowOffsetY = parseFloat(m[2]) * (exportWidth/sourceRect.width);
-          ctx.shadowBlur = parseFloat(m[3]) * (exportWidth/sourceRect.width);
-          ctx.shadowColor = m[4];
-        }
-      }
-      const align = cs.textAlign || 'left';
-      let drawX = r.x;
-      const paddingLeft = px(cs.paddingLeft) * (exportWidth/sourceRect.width);
-      const paddingRight = px(cs.paddingRight) * (exportWidth/sourceRect.width);
-      const maxWidth = Math.max(1, r.w - paddingLeft - paddingRight);
-      if(align === 'center') drawX = r.x + r.w/2;
-      else if(align === 'right') drawX = r.x + r.w - paddingRight;
-      else drawX = r.x + paddingLeft;
-      drawWrappedLinesFromDom(ctx, line.textContent || '', maxWidth, align, lineHeight, drawX, r.y, strokeW > 0);
-      ctx.restore();
-    });
-  }
-
-  source.querySelectorAll('.free-block').forEach(block=>{
-    const textNode=block.querySelector('.free-block-text');
-    if(!textNode) return;
-    const r=getRelativeCanvasRect(textNode, sourceRect, exportWidth, exportHeight);
-    const cs=getComputedStyle(textNode);
-
-    const bgColor = cs.backgroundColor;
-    if(bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent'){
-      drawRoundRect(ctx, r.x, r.y, r.w, r.h, px(cs.borderRadius) * (exportWidth/sourceRect.width), bgColor);
-    }
-
-    ctx.save();
-    const fontSize = px(cs.fontSize) * (exportWidth/sourceRect.width);
-    const lineHeightRaw = px(cs.lineHeight);
-    const lineHeight = (lineHeightRaw > 0 ? lineHeightRaw : fontSize) * (exportWidth/sourceRect.width);
-    ctx.font = `${cs.fontWeight} ${fontSize}px ${cs.fontFamily}`;
-    ctx.fillStyle = cs.color;
-    ctx.textBaseline = 'top';
-    ctx.lineJoin = 'round';
-    ctx.miterLimit = 2;
-    const strokeW = px(cs.webkitTextStrokeWidth || cs.textStrokeWidth);
-    if(strokeW > 0){
-      ctx.lineWidth = strokeW * (exportWidth/sourceRect.width);
-      ctx.strokeStyle = cs.webkitTextStrokeColor || cs.textStrokeColor || 'transparent';
-    } else {
-      ctx.lineWidth = 0;
-    }
-
-    const justify = cs.justifyContent || 'center';
-    let align = 'center';
-    if(justify === 'flex-start') align = 'left';
-    else if(justify === 'flex-end') align = 'right';
-
-    const paddingLeft = px(cs.paddingLeft) * (exportWidth/sourceRect.width);
-    const paddingRight = px(cs.paddingRight) * (exportWidth/sourceRect.width);
-    const paddingTop = px(cs.paddingTop) * (exportWidth/sourceRect.width);
-    const maxWidth = Math.max(1, r.w - paddingLeft - paddingRight);
-    let drawX = r.x + r.w/2;
-    if(align === 'left') drawX = r.x + paddingLeft;
-    else if(align === 'right') drawX = r.x + r.w - paddingRight;
-
-    const lines = wrapCanvasText(ctx, textNode.textContent || '', maxWidth);
-    const blockTextHeight = Math.max(lineHeight, lines.length * lineHeight);
-    const startY = r.y + ((r.h - blockTextHeight) / 2);
-    const oldAlign = ctx.textAlign;
-    ctx.textAlign = align;
-    for(let i=0;i<lines.length;i++){
-      const y = startY + (i * lineHeight);
-      if(strokeW > 0){ ctx.strokeText(lines[i], drawX, y); }
-      ctx.fillText(lines[i], drawX, y);
-    }
-    ctx.textAlign = oldAlign;
-    ctx.restore();
-  });
-
-  const ext=state.exportFormat==='png'?'png':'jpg';
-  const mime=state.exportFormat==='png'?'image/png':'image/jpeg';
-  const url=canvas.toDataURL(mime,state.exportFormat==='png'?undefined:.95);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=`maslow-thumbnail.${ext}`;
-  a.click();
 }
 
 

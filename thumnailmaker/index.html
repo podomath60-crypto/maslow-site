@@ -5,651 +5,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>매슬로우 썸네일 메이커</title>
   <style>
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #f3f4f6;
-      color: #111827;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
-    }
-    body { min-height: 100vh; }
-    .app {
-      width: min(1180px, 100%);
-      margin: 0 auto;
-      padding: 0 12px 40px;
-    }
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      margin: 0 -12px;
-      padding: 16px 18px;
-      background: rgba(255,255,255,0.92);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid #e5e7eb;
-    }
-    .topbar-title {
-      text-align: center;
-      font-size: 26px;
-      line-height: 1.1;
-      font-weight: 900;
-      letter-spacing: -0.04em;
-    }
-    .panel {
-      margin-top: 14px;
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 22px;
-      padding: 14px;
-      box-shadow: 0 8px 26px rgba(17,24,39,0.05);
-    }
-    .panel-title {
-      font-size: 14px;
-      font-weight: 900;
-      color: #374151;
-      margin-bottom: 10px;
-    }
-    .slider-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .slider-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 999px;
-      border: 1px solid #d1d5db;
-      background: #fff;
-      color: #111827;
-      font-size: 18px;
-      font-weight: 900;
-      cursor: pointer;
-      flex: 0 0 auto;
-    }
-    .slider-btn:active { transform: scale(0.98); }
-    .slider {
-      overflow-x: auto;
-      scroll-behavior: smooth;
-      scrollbar-width: none;
-      display: flex;
-      gap: 10px;
-      flex: 1;
-      padding-bottom: 2px;
-    }
-    .slider::-webkit-scrollbar { display: none; }
-    .design-card {
-      min-width: 140px;
-      height: 92px;
-      flex: 0 0 auto;
-      border-radius: 18px;
-      border: 2px solid transparent;
-      background: linear-gradient(180deg, #f8fafc, #e5edf7);
-      padding: 10px;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-    }
-    .design-card.active {
-      border-color: #111827;
-      box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
-    }
-    .design-name {
-      position: absolute;
-      left: 10px;
-      top: 8px;
-      font-size: 11px;
-      font-weight: 900;
-      color: #4b5563;
-    }
-    .mini-preview {
-      position: absolute;
-      left: 10px;
-      right: 10px;
-      top: 28px;
-      bottom: 10px;
-      border-radius: 12px;
-      overflow: hidden;
-      background: linear-gradient(135deg, #dbeafe, #fde68a);
-    }
-    .mini-line {
-      position: absolute;
-      left: 8px;
-      right: 8px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-weight: 900;
-      color: #fff;
-      letter-spacing: -0.04em;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.35);
-      line-height: 1;
-    }
-    .palette-card {
-      min-width: 84px;
-      height: 64px;
-      flex: 0 0 auto;
-      border-radius: 16px;
-      border: 2px solid transparent;
-      overflow: hidden;
-      position: relative;
-      cursor: pointer;
-      background: #fff;
-    }
-    .palette-card.active {
-      border-color: #111827;
-      box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
-    }
-    .palette-stripes {
-      display: grid;
-      height: 100%;
-      grid-template-columns: repeat(3, 1fr);
-    }
-    .palette-label {
-      position: absolute;
-      left: 7px;
-      bottom: 6px;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.88);
-      font-size: 10px;
-      font-weight: 900;
-    }
-    .editor-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.42fr) minmax(330px, 0.82fr);
-      gap: 14px;
-      align-items: start;
-    }
-    .photo-panel {
-      background: #f8fafc;
-      border: 1px dashed #cbd5e1;
-      border-radius: 24px;
-      padding: 12px;
-    }
-    .upload-drop {
-      position: relative;
-      width: 100%;
-      min-height: 320px;
-      background: #e5e7eb;
-      border-radius: 20px;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-    .upload-drop img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: none;
-      pointer-events: none;
-      user-select: none;
-      -webkit-user-drag: none;
-      background: #111;
-    }
-    .upload-placeholder {
-      text-align: center;
-      color: #6b7280;
-      padding: 20px;
-      line-height: 1.6;
-    }
-    .upload-placeholder strong {
-      display: block;
-      color: #111827;
-      font-size: 22px;
-      margin-bottom: 6px;
-    }
-    .canvas-stage {
-      position: absolute;
-      inset: 0;
-      display: none;
-      touch-action: none;
-      z-index: 5;
-    }
-    .mosaic-layer {
-      position: absolute;
-      inset: 0;
-      display: none;
-      pointer-events: none;
-      touch-action: none;
-    }
-    .text-group {
-      position: absolute;
-      z-index: 10;
-      min-width: 100px;
-      min-height: 80px;
-      touch-action: none;
-      pointer-events: auto;
-    }
-    .group-box {
-      position: absolute;
-      inset: 0;
-      border: 2px dashed rgba(255,255,255,0.95);
-      border-radius: 12px;
-      pointer-events: none;
-    }
-    .drag-surface {
-      position: absolute;
-      inset: 0;
-      cursor: grab;
-      border-radius: 12px;
-      z-index: 2;
-      pointer-events: auto;
-    }
-    .drag-surface:active { cursor: grabbing; }
-    .resize-handle {
-      position: absolute;
-      z-index: 3;
-      width: 22px;
-      height: 22px;
-      right: -10px;
-      bottom: -10px;
-      border-radius: 999px;
-      border: 2px solid #111827;
-      background: #fff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      cursor: nwse-resize;
-    }
-    .overlay-bg {
-      position: absolute;
-      pointer-events: none;
-    }
-    .overlay-line {
-      position: absolute;
-      width: 100%;
-      white-space: pre-wrap;
-      word-break: keep-all;
-      line-height: 1;
-      user-select: none;
-      pointer-events: none;
-    }
-    .controls-col {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .field-label {
-      font-size: 13px;
-      font-weight: 900;
-      color: #374151;
-      margin-bottom: 6px;
-    }
-    .text-inputs {
-      display: grid;
-      gap: 8px;
-    }
-    .text-row {
-      width: 100%;
-      min-height: 52px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px solid #d1d5db;
-      resize: none;
-      outline: none;
-      font-size: 15px;
-      font-weight: 800;
-      color: #111827;
-      background: #fff;
-    }
-    .inline-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .seg {
-      display: flex;
-      border-radius: 14px;
-      border: 1px solid #d1d5db;
-      overflow: hidden;
-      background: #fff;
-    }
-    .seg button {
-      flex: 1;
-      padding: 12px 10px;
-      border: 0;
-      background: transparent;
-      font-size: 14px;
-      font-weight: 900;
-      cursor: pointer;
-      color: #111827;
-    }
-    .seg button.active {
-      background: #111827;
-      color: #fff;
-    }
-    .range-wrap {
-      display: grid;
-      gap: 6px;
-    }
-    input[type="range"] { width: 100%; }
-    .action-btn {
-      border: 0;
-      border-radius: 16px;
-      padding: 14px 16px;
-      font-size: 15px;
-      font-weight: 900;
-      cursor: pointer;
-    }
-    .action-btn.primary {
-      color: #fff;
-      background: linear-gradient(135deg, #111827, #374151);
-    }
-    .action-btn.soft {
-      background: #eef2ff;
-      color: #3730a3;
-    }
-    .action-btn.danger {
-      background: #fef2f2;
-      color: #b91c1c;
-    }
-    .note {
-      font-size: 12px;
-      line-height: 1.6;
-      color: #6b7280;
-      background: #f9fafb;
-      border-radius: 14px;
-      padding: 10px 12px;
-    }
-
-    .style-slots {
-      margin-top: 12px;
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-    }
-    .style-slot {
-      border: 1px solid #d1d5db;
-      background: #fff;
-      border-radius: 14px;
-      padding: 8px 8px 7px;
-      display: grid;
-      gap: 6px;
-    }
-    .style-slot.saved {
-      border-color: #111827;
-      box-shadow: 0 0 0 2px rgba(17,24,39,0.07);
-    }
-    .style-slot-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      min-width: 0;
-    }
-    .style-slot-name {
-      font-size: 12px;
-      font-weight: 900;
-      color: #111827;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .style-slot-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: #d1d5db;
-      flex: 0 0 auto;
-    }
-    .style-slot.saved .style-slot-dot {
-      background: #16a34a;
-    }
-    .style-slot-actions {
-      display: flex;
-      gap: 8px;
-      justify-content: space-between;
-    }
-    .style-text-btn {
-      border: 0;
-      background: transparent;
-      padding: 0;
-      font-size: 12px;
-      font-weight: 900;
-      color: #374151;
-      cursor: pointer;
-    }
-    .style-text-btn.apply {
-      color: #1d4ed8;
-    }
-    .style-text-btn:disabled {
-      color: #cbd5e1;
-      cursor: default;
-    }
-
-
-    .free-block-panel {
-      margin-top: 12px;
-      display: grid;
-      gap: 10px;
-      padding: 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 16px;
-      background: #fff;
-    }
-    .free-block-topline {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-    .free-block-status {
-      font-size: 12px;
-      font-weight: 900;
-      color: #1d4ed8;
-    }
-    .mini-field-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .text-input, .select-input {
-      width: 100%;
-      min-height: 44px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid #d1d5db;
-      outline: none;
-      font-size: 14px;
-      font-weight: 700;
-      background: #fff;
-      color: #111827;
-    }
-    .color-row {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-    .color-field {
-      display: grid;
-      gap: 6px;
-    }
-    .color-input {
-      width: 100%;
-      height: 44px;
-      padding: 4px;
-      border-radius: 12px;
-      border: 1px solid #d1d5db;
-      background: #fff;
-      cursor: pointer;
-    }
-    .free-block-layer {
-      position: absolute;
-      inset: 0;
-      pointer-events: auto;
-      z-index: 30;
-      background: transparent;
-    }
-    .free-block-item {
-      position: absolute;
-      z-index: 31;
-      pointer-events: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      white-space: pre-wrap;
-      word-break: keep-all;
-      line-height: 1.1;
-      border-style: solid;
-      overflow: visible;
-      cursor: move;
-      user-select: none;
-      touch-action: none;
-      box-sizing: border-box;
-    }
-    .free-block-item.is-selected {
-      box-shadow: 0 0 0 2px rgba(59,130,246,0.85), 0 8px 20px rgba(0,0,0,0.18);
-    }
-    .free-block-item::after {
-      content: '';
-      position: absolute;
-      width: 18px;
-      height: 18px;
-      right: -10px;
-      bottom: -10px;
-      border-radius: 999px;
-      border: 2px solid #1d4ed8;
-      background: #fff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.18);
-    }
-    .free-block-item-resize {
-      position: absolute;
-      width: 28px;
-      height: 28px;
-      right: -14px;
-      bottom: -14px;
-      border-radius: 999px;
-      cursor: nwse-resize;
-      background: transparent;
-    }
-    .free-block-delete-btn {
-      position: absolute;
-      top: -12px;
-      right: -12px;
-      width: 26px;
-      height: 26px;
-      border: 0;
-      border-radius: 999px;
-      background: #111827;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 900;
-      line-height: 1;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 6px 14px rgba(0,0,0,0.22);
-      z-index: 3;
-    }
-    .free-block-delete-btn:active { transform: scale(0.96); }
-
-    .free-block-tabs {
-      display: none;
-
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-    }
-    .free-block-tab {
-      min-height: 36px;
-      border-radius: 12px;
-      border: 1px solid #d1d5db;
-      background: #fff;
-      font-size: 13px;
-      font-weight: 900;
-      color: #374151;
-      cursor: pointer;
-    }
-    .free-block-tab.active {
-      background: #111827;
-      color: #fff;
-      border-color: #111827;
-    }
-    .free-block-edit-stage {
-      display: none;
-      position: relative;
-      width: 100%;
-      height: 160px;
-      border-radius: 14px;
-      border: 1px dashed #cbd5e1;
-      background: linear-gradient(180deg, #f8fafc, #eef2f7);
-      overflow: hidden;
-    }
-    .free-block-edit-empty {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 12px;
-      font-size: 12px;
-      font-weight: 800;
-      color: #94a3b8;
-      line-height: 1.6;
-    }
-    .free-block-panel-item {
-      position: absolute;
-      white-space: pre-wrap;
-      word-break: keep-all;
-      line-height: 1.1;
-      border-style: solid;
-      overflow: visible;
-      cursor: move;
-      user-select: none;
-      touch-action: none;
-      box-sizing: border-box;
-      box-shadow: 0 0 0 2px rgba(59,130,246,0.18);
-    }
-    .free-block-panel-item::after {
-      content: '';
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      right: -9px;
-      bottom: -9px;
-      border-radius: 999px;
-      border: 2px solid #1d4ed8;
-      background: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    }
-    .free-block-panel-resize {
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      right: -12px;
-      bottom: -12px;
-      border-radius: 999px;
-      cursor: nwse-resize;
-      background: transparent;
-    }
-    .free-block-panel-item.is-selected {
-      box-shadow: 0 0 0 2px rgba(59,130,246,0.85), 0 8px 20px rgba(0,0,0,0.12);
-    }
-
-    #hiddenFile { display: none; }
-    @media (max-width: 920px) {
-      .editor-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 640px) {
-      .app { padding: 0 10px 32px; }
-      .topbar { margin: 0 -10px; }
-      .topbar-title { font-size: 22px; }
-      .design-card { min-width: 130px; }
-      .palette-card { min-width: 78px; }
-      .inline-grid { grid-template-columns: 1fr; }
-      .style-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .mini-field-grid, .color-row { grid-template-columns: 1fr; }
-      .upload-drop { min-height: 220px; }
-    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:#f3f4f6;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif}
+    body{min-height:100vh}
+    .app{max-width:1240px;margin:0 auto;padding:0 12px 40px}
+    .topbar{position:sticky;top:0;z-index:1000;margin:0 -12px;padding:16px 18px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid #e5e7eb}
+    .topbar-title{text-align:center;font-size:27px;font-weight:900;letter-spacing:-.04em}
+    .panel{margin-top:14px;background:#fff;border:1px solid #e5e7eb;border-radius:22px;padding:14px;box-shadow:0 8px 26px rgba(17,24,39,.05)}
+    .panel-title{font-size:14px;font-weight:900;color:#374151;margin-bottom:10px}
+    .slider-wrap{display:flex;align-items:center;gap:8px}
+    .slider{display:flex;gap:10px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;flex:1;padding-bottom:2px}
+    .slider::-webkit-scrollbar{display:none}
+    .slider-btn{width:40px;height:40px;border-radius:999px;border:1px solid #d1d5db;background:#fff;font-size:18px;font-weight:900;cursor:pointer;flex:0 0 auto}
+    .design-card,.palette-card,.style-slot{border:2px solid transparent;cursor:pointer}
+    .design-card{min-width:140px;height:92px;border-radius:18px;background:linear-gradient(180deg,#f8fafc,#e5edf7);padding:10px;position:relative;overflow:hidden}
+    .design-card.active,.palette-card.active{border-color:#111827;box-shadow:0 0 0 3px rgba(17,24,39,.08)}
+    .design-name{position:absolute;left:10px;top:8px;font-size:11px;font-weight:900;color:#4b5563}
+    .mini-preview{position:absolute;left:10px;right:10px;top:28px;bottom:10px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#dbeafe,#fde68a)}
+    .mini-line{position:absolute;left:8px;right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:900;letter-spacing:-.04em;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,.35)}
+    .palette-card{min-width:84px;height:64px;border-radius:16px;overflow:hidden;position:relative;background:#fff}
+    .palette-stripes{display:grid;height:100%;grid-template-columns:repeat(3,1fr)}
+    .palette-label{position:absolute;left:7px;bottom:6px;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.9);font-size:10px;font-weight:900}
+    .editor-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(330px,.85fr);gap:14px;align-items:start}
+    .photo-panel{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:24px;padding:12px}
+    .stage-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    .stage-btn,.ghost-btn,.small-btn{border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;cursor:pointer}
+    .stage-btn{padding:11px 14px;border-radius:14px}
+    .stage-btn.active{background:#111827;color:#fff;border-color:#111827}
+    .small-btn{padding:8px 10px;border-radius:12px;font-size:12px}
+    .ghost-btn{padding:10px 12px;border-radius:14px}
+    .stage-shell{border-radius:20px;overflow:hidden;background:#111;position:relative;min-height:220px}
+    .placeholder{display:flex;align-items:center;justify-content:center;min-height:320px;padding:24px;text-align:center;background:#e5e7eb;color:#6b7280;cursor:pointer}
+    .placeholder strong{display:block;color:#111827;font-size:22px;margin-bottom:6px}
+    .image-wrap{position:relative;width:100%;display:none;line-height:0}
+    .main-image{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+    .overlay-root{position:absolute;inset:0;touch-action:none}
+    .mosaic-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+    .mosaic-canvas.active{pointer-events:auto;cursor:crosshair}
+    .main-text-group,.free-block{position:absolute;touch-action:none}
+    .main-text-group.hidden{display:none}
+    .main-group-box{position:absolute;inset:0;border:2px dashed rgba(255,255,255,.96);border-radius:14px;pointer-events:none}
+    .main-text-group.active .main-group-box,.free-block.active .free-box{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18)}
+    .main-move-surface,.free-move-surface{position:absolute;inset:0;cursor:grab}
+    .main-resize-handle,.free-resize-handle{position:absolute;width:24px;height:24px;right:-11px;bottom:-11px;border-radius:999px;background:#fff;border:2px solid #111827;box-shadow:0 4px 10px rgba(0,0,0,.25);cursor:nwse-resize}
+    .main-line,.free-block-text{position:absolute;white-space:pre-wrap;word-break:keep-all;line-height:1;letter-spacing:-.04em;pointer-events:none;user-select:none}
+    .free-box{position:absolute;inset:0;border:2px dashed rgba(255,255,255,.92);border-radius:14px;pointer-events:none}
+    .free-close{position:absolute;top:-10px;right:-10px;width:26px;height:26px;border-radius:999px;border:2px solid #fff;background:#ef4444;color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.28)}
+    .controls-col{display:flex;flex-direction:column;gap:12px}
+    .field-label{font-size:13px;font-weight:900;color:#374151;margin-bottom:6px}
+    .text-inputs{display:grid;gap:10px}
+    .text-row,.text-input,.select-input{width:100%;min-height:52px;padding:12px 14px;border-radius:14px;border:1px solid #d1d5db;outline:none;font-size:15px;font-weight:800;color:#111827;background:#fff}
+    .text-row{resize:vertical}
+    .inline-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .seg{display:flex;border-radius:14px;border:1px solid #d1d5db;overflow:hidden;background:#fff}
+    .seg button{flex:1;padding:12px 10px;border:0;background:transparent;font-size:14px;font-weight:900;cursor:pointer;color:#111827}
+    .seg button.active{background:#111827;color:#fff}
+    .range-wrap{display:grid;gap:6px}
+    input[type="range"]{width:100%}
+    .action-btn{border:0;border-radius:16px;padding:14px 16px;font-size:15px;font-weight:900;cursor:pointer}
+    .action-btn.primary{color:#fff;background:linear-gradient(135deg,#111827,#374151)}
+    .action-btn.soft{background:#eef2ff;color:#3730a3}
+    .action-btn.danger{background:#fef2f2;color:#b91c1c}
+    .color-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .color-box{padding:10px;border:1px solid #e5e7eb;border-radius:16px;background:#fff}
+    .color-box label{display:block;font-size:12px;font-weight:900;color:#4b5563;margin-bottom:6px}
+    .color-box input[type="color"]{width:100%;height:42px;border:0;background:transparent;padding:0}
+    .free-panel{margin-top:12px}
+    .free-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+    .free-status{font-size:13px;font-weight:900;color:#374151}
+    .note{font-size:12px;line-height:1.6;color:#6b7280;background:#f9fafb;border-radius:14px;padding:10px 12px}
+    .style-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+    .style-slot{border-radius:16px;background:#f8fafc;padding:10px;cursor:default}
+    .style-slot-head{font-size:12px;font-weight:900;color:#111827;margin-bottom:8px}
+    .style-slot-actions{display:flex;gap:6px}
+    .style-slot-actions button{flex:1;border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:7px 8px;font-size:12px;font-weight:900;cursor:pointer}
+    .style-slot.saved{background:#eefbf3;border-color:#86efac}
+    #fileInput{display:none}
+    @media (max-width:980px){.editor-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media (max-width:640px){.app{padding:0 10px 32px}.topbar{margin:0 -10px}.topbar-title{font-size:22px}.inline-grid,.color-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.design-card{min-width:130px}.palette-card{min-width:78px}}
   </style>
 </head>
 <body>
   <div class="app">
-    <div class="topbar">
-      <div class="topbar-title">매슬로우 썸네일 메이커</div>
-    </div>
+    <div class="topbar"><div class="topbar-title">매슬로우 썸네일 메이커</div></div>
 
     <div class="panel">
       <div class="panel-title">텍스트 디자인</div>
@@ -671,91 +109,82 @@
 
     <div class="panel">
       <div class="editor-grid">
-        <div class="photo-panel">
-          <div class="upload-drop" id="uploadDrop">
-            <img id="mainImage" alt="업로드 이미지" />
-            <canvas class="mosaic-layer" id="mosaicCanvas"></canvas>
-            <div class="upload-placeholder" id="uploadPlaceholder">
-              <strong>사진 패널</strong>
-              누르면 이미지가 입력됩니다<br />
-              가로 기준으로 맞춰서 표시됩니다
+        <div>
+          <div class="photo-panel">
+            <div class="stage-actions">
+              <button class="stage-btn" id="pickImageBtn" type="button">사진 넣기</button>
+              <button class="stage-btn active" id="modeTextBtn" type="button">텍스트 모드</button>
+              <button class="stage-btn" id="modeMosaicBtn" type="button">모자이크 모드</button>
+              <button class="ghost-btn" id="addFreeBlockBtn" type="button">자유블럭 추가</button>
+              <button class="ghost-btn" id="clearMosaicBtn" type="button">모자이크 전체 지우기</button>
             </div>
-            <div class="canvas-stage" id="canvasStage">
-              <div class="text-group" id="textGroup">
-                <div class="group-box"></div>
-                <div class="drag-surface" id="dragSurface"></div>
-                <div class="resize-handle" id="resizeHandle"></div>
-              </div>
-              <div class="free-block-layer" id="freeBlockLayer"></div>
-            </div>
-          </div>
-          <input id="hiddenFile" type="file" accept="image/*" />
 
-          <div class="free-block-panel">
-            <div class="free-block-topline">
-              <div class="field-label" style="margin-bottom:0;">자유블럭 패널</div>
-              <div class="free-block-status" id="freeBlockStatus">선택된 자유블럭 없음</div>
+            <div class="stage-shell" id="stageShell">
+              <div class="placeholder" id="placeholder">
+                <div><strong>사진 패널</strong>누르면 이미지가 입력됩니다<br>가로폭은 꽉 맞추고, 세로는 원본 비율대로 표시됩니다</div>
+              </div>
+              <div class="image-wrap" id="imageWrap">
+                <img id="mainImage" class="main-image" alt="업로드 이미지">
+                <div class="overlay-root" id="overlayRoot">
+                  <canvas class="mosaic-canvas" id="mosaicCanvas"></canvas>
+                  <div class="main-text-group" id="mainTextGroup">
+                    <div class="main-group-box"></div>
+                    <div class="main-move-surface" data-hit="main-move"></div>
+                    <div class="main-resize-handle" data-hit="main-resize"></div>
+                  </div>
+                  <div id="freeBlocksLayer"></div>
+                </div>
+              </div>
             </div>
-            <button type="button" class="action-btn soft" id="addFreeBlockBtn">자유블럭 추가</button>
-            <div class="free-block-tabs" id="freeBlockTabs"></div>
-            <div class="free-block-edit-stage" id="freeBlockEditStage">
-              <div class="free-block-edit-empty" id="freeBlockEditEmpty">자유블럭을 추가한 뒤 사진영역에서 선택하세요.</div>
+            <input id="fileInput" type="file" accept="image/*">
+          </div>
+
+          <div class="panel free-panel">
+            <div class="free-panel-head">
+              <div class="panel-title" style="margin:0">자유블럭</div>
+              <div class="free-status" id="freeStatus">선택된 자유블럭 없음</div>
             </div>
-            <input type="text" id="freeTextInput" class="text-input" placeholder="선택한 자유블럭 문구 입력" />
-            <div class="mini-field-grid">
+            <div class="inline-grid">
+              <div>
+                <div class="field-label">자유블럭 텍스트</div>
+                <textarea id="freeTextInput" class="text-row" rows="3" placeholder="선택된 자유블럭 문구"></textarea>
+              </div>
               <div>
                 <div class="field-label">글꼴</div>
                 <select id="freeFontSelect" class="select-input">
                   <option value="sans">기본 고딕</option>
-                  <option value="serif">바탕 계열</option>
+                  <option value="serif">바탕</option>
                   <option value="impact">임팩트</option>
                   <option value="condensed">압축 굵게</option>
                 </select>
               </div>
-              <div>
-                <div class="field-label">정렬</div>
-                <select id="freeAlignSelect" class="select-input">
-                  <option value="left">좌</option>
-                  <option value="center">중앙</option>
-                  <option value="right">우</option>
-                </select>
-              </div>
             </div>
-            <div class="color-row">
-              <div class="color-field">
-                <div class="field-label">글자색</div>
-                <input type="color" id="freeTextColorInput" class="color-input" value="#ffffff" />
-              </div>
-              <div class="color-field">
-                <div class="field-label">바탕색</div>
-                <input type="color" id="freeBgColorInput" class="color-input" value="#000000" />
-              </div>
-              <div class="color-field">
-                <div class="field-label">테두리색</div>
-                <input type="color" id="freeStrokeColorInput" class="color-input" value="#111111" />
-              </div>
+            <div class="color-grid" style="margin-top:10px">
+              <div class="color-box"><label>글자색</label><input id="freeTextColor" type="color" value="#ffffff"></div>
+              <div class="color-box"><label>바탕색</label><input id="freeBgColor" type="color" value="#000000"></div>
+              <div class="color-box"><label>테두리색</label><input id="freeStrokeColor" type="color" value="#111111"></div>
             </div>
-            <div class="mini-field-grid">
-              <div>
-                <div class="field-label">바탕 투명도 <span id="freeBgOpacityValue">0.45</span></div>
-                <input type="range" id="freeBgOpacityRange" min="0" max="1" step="0.01" value="0.45" />
-              </div>
-              <div>
-                <div class="field-label">테두리 두께 <span id="freeStrokeWidthValue">2</span></div>
-                <input type="range" id="freeStrokeWidthRange" min="0" max="12" step="1" value="2" />
-              </div>
+            <div class="inline-grid" style="margin-top:10px">
+              <div class="range-wrap"><div class="field-label">글자 크기 <span id="freeFontSizeValue">28</span></div><input id="freeFontSize" type="range" min="12" max="120" step="1" value="28"></div>
+              <div class="range-wrap"><div class="field-label">테두리 두께 <span id="freeStrokeWidthValue">0</span></div><input id="freeStrokeWidth" type="range" min="0" max="12" step="1" value="0"></div>
             </div>
-            <div class="note">자유블럭은 여러 개 만들 수 있습니다. 사진 위 블럭을 클릭하면 이 패널이 해당 블럭 상태로 바뀝니다. 블럭은 사진 위에서 드래그 이동, 우하단 핸들로 크기 조절됩니다.</div>
+            <div class="inline-grid" style="margin-top:10px">
+              <div class="range-wrap"><div class="field-label">배경 투명도 <span id="freeBgAlphaValue">0.00</span></div><input id="freeBgAlpha" type="range" min="0" max="1" step="0.01" value="0"></div>
+              <div class="range-wrap"><div class="field-label">줄 간격 <span id="freeLineHeightValue">1.00</span></div><input id="freeLineHeight" type="range" min="0.8" max="1.8" step="0.01" value="1"></div>
+            </div>
+            <div class="note" style="margin-top:10px">자유블럭 선택은 사진영역에서만 됩니다. 사진 위 자유블럭을 클릭하면 여기 상태가 해당 블럭으로 바뀝니다.</div>
           </div>
 
-          <div class="style-slots" id="styleSlots"></div>
-
+          <div class="panel">
+            <div class="panel-title">내스타일</div>
+            <div class="style-grid" id="styleGrid"></div>
+          </div>
         </div>
 
         <div class="controls-col">
           <div>
             <div class="field-label">문구 입력</div>
-            <div class="text-inputs" id="textInputs"></div>
+            <div class="text-inputs" id="mainTextInputs"></div>
           </div>
 
           <div class="inline-grid">
@@ -776,1309 +205,608 @@
             </div>
           </div>
 
-          <div class="inline-grid">
-            <div>
-              <div class="field-label">작업 모드</div>
-              <div class="seg" id="toolModeSeg">
-                <button type="button" data-tool="text" class="active">텍스트</button>
-                <button type="button" data-tool="mosaic">모자이크</button>
-              </div>
-            </div>
-            <div>
-              <div class="field-label">모자이크 크기 <span id="mosaicBrushValue">0.08</span></div>
-              <input type="range" id="mosaicBrushRange" min="0.03" max="0.18" step="0.01" value="0.08" />
-            </div>
-          </div>
+          <div class="range-wrap"><div class="field-label">글자 크기 배율 <span id="mainScaleValue">1.00</span></div><input id="mainScaleRange" type="range" min="0.5" max="2.5" step="0.01" value="1"></div>
+          <div class="range-wrap"><div class="field-label">줄 간격 <span id="mainLineGapValue">1.00</span></div><input id="mainLineGapRange" type="range" min="0.75" max="1.8" step="0.01" value="1"></div>
+          <div class="range-wrap"><div class="field-label">모자이크 브러시 크기 <span id="brushSizeValue">56</span></div><input id="brushSizeRange" type="range" min="10" max="180" step="1" value="56"></div>
 
-          <div class="range-wrap">
-            <div class="field-label">글자 크기 배율 <span id="scaleValue">1.00</span></div>
-            <input type="range" id="scaleRange" min="0.50" max="2.50" step="0.01" value="1" />
-          </div>
+          <button class="action-btn soft" id="resetMainBoxBtn" type="button">문구 박스 위치 리셋</button>
+          <button class="action-btn danger" id="resetDesignBtn" type="button">디자인 기본값 되돌리기</button>
+          <button class="action-btn primary" id="downloadBtn" type="button">내려받기</button>
 
-          <div class="range-wrap">
-            <div class="field-label">줄 간격 <span id="lineGapValue">1.00</span></div>
-            <input type="range" id="lineGapRange" min="0.75" max="1.80" step="0.01" value="1" />
-          </div>
-
-          <button class="action-btn soft" type="button" id="fitTextBtn">문구 박스 위치 리셋</button>
-          <button class="action-btn soft" type="button" id="clearMosaicBtn">모자이크 전체 지우기</button>
-          <button class="action-btn danger" type="button" id="resetStyleBtn">디자인 기본값 되돌리기</button>
-          <button class="action-btn primary" type="button" id="downloadBtn">내려받기</button>
-
-          <div class="note">
-            3줄 디자인은 입력칸 3개, 4줄 디자인은 입력칸 4개로 자동 전환됩니다.<br />
-            사진 위 문구 박스를 홀드해서 이동할 수 있고, 우하단 원형 핸들로 크기 조절할 수 있습니다.<br />
-            디자인과 컬러를 바꾸면 바로 반영됩니다.
-          </div>
+          <div class="note">디자인을 바꿔도 글자 크기 배율과 줄 간격은 유지됩니다. 4줄 디자인이어도 2개나 3개만 입력하면 자동으로 세로 균형을 맞춰 다시 배열합니다. 디자인이 <b>없음</b>이면 메인 텍스트 점선 박스와 핸들이 숨겨집니다.</div>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    const designs = [
-      { id:'d00', name:'없음', lineCount:0, box:{x:0.05,y:0.10,w:0.72,h:0.32}, lines:[], bg:null, stroke:0, shadow:0 },
-      { id:'d01', name:'Bold Hero', lineCount:3, box:{x:0.05,y:0.10,w:0.72,h:0.32}, lines:[{y:0.00,size:0.40,weight:900},{y:0.40,size:0.22,weight:850},{y:0.70,size:0.22,weight:850}], bg:null, stroke:0.05, shadow:0.12 },
-      { id:'d01b', name:'Bold Hero Mix', lineCount:3, box:{x:0.05,y:0.10,w:0.72,h:0.32}, lines:[{y:0.00,size:0.40,weight:900,colorMode:'primary'},{y:0.40,size:0.22,weight:850,colorMode:'secondary'},{y:0.70,size:0.22,weight:850,colorMode:'accent'}], bg:null, stroke:0.05, shadow:0.12 },
-      { id:'d02', name:'Clean Box', lineCount:3, box:{x:0.06,y:0.64,w:0.70,h:0.22}, lines:[{y:0.06,size:0.28,weight:900},{y:0.38,size:0.22,weight:800},{y:0.68,size:0.22,weight:800}], bg:{type:'solid',colorIndex:2,opacity:0.90,pad:0.06,radius:16}, stroke:0, shadow:0 },
-      { id:'d03', name:'Poster Block', lineCount:4, box:{x:0.04,y:0.08,w:0.78,h:0.46}, lines:[{y:0.00,size:0.34,weight:900},{y:0.28,size:0.20,weight:850},{y:0.50,size:0.20,weight:850},{y:0.72,size:0.20,weight:850}], bg:null, stroke:0.04, shadow:0.10 },
-      { id:'d04', name:'Right Punch', lineCount:3, box:{x:0.28,y:0.10,w:0.66,h:0.34}, lines:[{y:0.00,size:0.34,weight:900},{y:0.40,size:0.22,weight:850},{y:0.70,size:0.22,weight:850}], bg:null, stroke:0.03, shadow:0.10 },
-      { id:'d05', name:'Tag Stack', lineCount:4, box:{x:0.05,y:0.10,w:0.68,h:0.44}, lines:[{y:0.00,size:0.34,weight:900},{y:0.32,size:0.18,weight:900,chip:true},{y:0.56,size:0.18,weight:900,chip:true},{y:0.80,size:0.18,weight:900,chip:true}], bg:null, stroke:0.02, shadow:0.08 },
-      { id:'d06', name:'Bottom Banner', lineCount:3, box:{x:0.05,y:0.70,w:0.82,h:0.18}, lines:[{y:0.06,size:0.28,weight:900},{y:0.42,size:0.19,weight:800},{y:0.72,size:0.19,weight:800}], bg:{type:'solid',colorIndex:1,opacity:0.68,pad:0.06,radius:18}, stroke:0, shadow:0 },
-      { id:'d07', name:'Center Stack', lineCount:4, box:{x:0.15,y:0.18,w:0.70,h:0.48}, lines:[{y:0.00,size:0.30,weight:900},{y:0.28,size:0.20,weight:800},{y:0.54,size:0.20,weight:800},{y:0.78,size:0.20,weight:800}], bg:{type:'gradient',opacity:0.36,pad:0.08,radius:22}, stroke:0, shadow:0.06 },
-      { id:'d08', name:'Outline Max', lineCount:3, box:{x:0.04,y:0.10,w:0.78,h:0.34}, lines:[{y:0.00,size:0.36,weight:900},{y:0.40,size:0.22,weight:900},{y:0.70,size:0.22,weight:900}], bg:null, stroke:0.07, shadow:0 },
-      { id:'d09', name:'Sticker Box', lineCount:4, box:{x:0.05,y:0.54,w:0.72,h:0.34}, lines:[{y:0.02,size:0.26,weight:900},{y:0.30,size:0.18,weight:800},{y:0.56,size:0.18,weight:800},{y:0.80,size:0.18,weight:800}], bg:{type:'solid',colorIndex:2,opacity:0.84,pad:0.06,radius:20}, stroke:0.02, shadow:0.04 },
-      { id:'d10', name:'Serif Luxury', lineCount:3, box:{x:0.06,y:0.12,w:0.74,h:0.34}, lines:[{y:0.00,size:0.30,weight:800,serif:true},{y:0.40,size:0.20,weight:700,serif:true},{y:0.70,size:0.20,weight:700,serif:true}], bg:null, stroke:0.02, shadow:0.08 },
-      { id:'d11', name:'Impact Left', lineCount:3, box:{x:0.05,y:0.10,w:0.66,h:0.34}, lines:[{y:0.00,size:0.40,weight:900},{y:0.42,size:0.18,weight:900},{y:0.70,size:0.18,weight:900}], bg:null, stroke:0.05, shadow:0.08 },
-      { id:'d12', name:'Tall Ribbon', lineCount:4, box:{x:0.05,y:0.18,w:0.50,h:0.56}, lines:[{y:0.02,size:0.24,weight:900},{y:0.28,size:0.17,weight:850},{y:0.54,size:0.17,weight:850},{y:0.78,size:0.17,weight:850}], bg:{type:'solid',colorIndex:1,opacity:0.58,pad:0.08,radius:22}, stroke:0, shadow:0.04 },
-      { id:'d13', name:'Center Punch', lineCount:3, box:{x:0.16,y:0.24,w:0.68,h:0.26}, lines:[{y:0.00,size:0.32,weight:900},{y:0.42,size:0.19,weight:800},{y:0.72,size:0.19,weight:800}], bg:{type:'gradient',opacity:0.30,pad:0.08,radius:20}, stroke:0.02, shadow:0.06 },
-      { id:'d14', name:'Corner Badge', lineCount:4, box:{x:0.42,y:0.08,w:0.52,h:0.42}, lines:[{y:0.00,size:0.28,weight:900},{y:0.28,size:0.16,weight:850},{y:0.52,size:0.16,weight:850},{y:0.76,size:0.16,weight:850}], bg:{type:'solid',colorIndex:0,opacity:0.76,pad:0.06,radius:20}, stroke:0, shadow:0.05 },
-      { id:'d15', name:'Wide Headline', lineCount:3, box:{x:0.03,y:0.10,w:0.90,h:0.26}, lines:[{y:0.00,size:0.31,weight:900},{y:0.44,size:0.18,weight:800},{y:0.72,size:0.18,weight:800}], bg:null, stroke:0.03, shadow:0.10 },
-      { id:'d16', name:'Bottom Strip', lineCount:4, box:{x:0.04,y:0.63,w:0.84,h:0.24}, lines:[{y:0.04,size:0.22,weight:900},{y:0.30,size:0.15,weight:800},{y:0.55,size:0.15,weight:800},{y:0.78,size:0.15,weight:800}], bg:{type:'solid',colorIndex:2,opacity:0.92,pad:0.06,radius:16}, stroke:0, shadow:0 },
-      { id:'d17', name:'Shadow Drama', lineCount:3, box:{x:0.05,y:0.12,w:0.72,h:0.34}, lines:[{y:0.00,size:0.35,weight:900},{y:0.40,size:0.21,weight:900},{y:0.70,size:0.21,weight:900}], bg:null, stroke:0.02, shadow:0.22 },
-      { id:'d18', name:'Luxury Box', lineCount:4, box:{x:0.16,y:0.20,w:0.68,h:0.48}, lines:[{y:0.04,size:0.26,weight:800,serif:true},{y:0.32,size:0.16,weight:700,serif:true},{y:0.56,size:0.16,weight:700,serif:true},{y:0.80,size:0.16,weight:700,serif:true}], bg:{type:'solid',colorIndex:2,opacity:0.78,pad:0.09,radius:22}, stroke:0, shadow:0.03 },
-      { id:'d19', name:'Sharp Label', lineCount:3, box:{x:0.05,y:0.58,w:0.70,h:0.24}, lines:[{y:0.02,size:0.28,weight:900},{y:0.40,size:0.18,weight:850},{y:0.72,size:0.18,weight:850}], bg:{type:'solid',colorIndex:1,opacity:0.78,pad:0.05,radius:8}, stroke:0.02, shadow:0.03 },
-      { id:'d20', name:'Top Card', lineCount:4, box:{x:0.04,y:0.07,w:0.74,h:0.44}, lines:[{y:0.00,size:0.31,weight:900},{y:0.28,size:0.18,weight:800},{y:0.53,size:0.18,weight:800},{y:0.78,size:0.18,weight:800}], bg:{type:'gradient',opacity:0.42,pad:0.07,radius:18}, stroke:0.02, shadow:0.06 }
-    ];
+<script>
+const designs = [
+  { id:'none', name:'없음', lineCount:4, hidden:true, box:{x:.06,y:.12,w:.72,h:.32}, lines:[{y:0,size:.34,weight:900},{y:.26,size:.22,weight:800},{y:.52,size:.22,weight:800},{y:.78,size:.22,weight:800}] },
+  { id:'boldHero', name:'Bold Hero', lineCount:3, box:{x:.05,y:.10,w:.72,h:.32}, lines:[{y:0,size:.40,weight:900},{y:.40,size:.22,weight:850},{y:.70,size:.22,weight:850}], stroke:.05, shadow:.12 },
+  { id:'boldHeroMix', name:'Bold Hero Mix', lineCount:3, box:{x:.05,y:.10,w:.72,h:.32}, lines:[{y:0,size:.40,weight:900,colorIndex:0},{y:.40,size:.22,weight:850,colorIndex:1},{y:.70,size:.22,weight:850,colorIndex:2}], stroke:.05, shadow:.12 },
+  { id:'cleanBox', name:'Clean Box', lineCount:3, box:{x:.06,y:.64,w:.70,h:.22}, lines:[{y:.06,size:.28,weight:900},{y:.38,size:.22,weight:800},{y:.68,size:.22,weight:800}], bg:{type:'solid',colorIndex:2,opacity:.92,pad:.06,radius:16}, shadow:0, stroke:0 },
+  { id:'posterBlock', name:'Poster Block', lineCount:4, box:{x:.04,y:.08,w:.78,h:.46}, lines:[{y:0,size:.34,weight:900},{y:.28,size:.20,weight:850},{y:.50,size:.20,weight:850},{y:.72,size:.20,weight:850}], stroke:.04, shadow:.10 },
+  { id:'tagStack', name:'Tag Stack', lineCount:4, box:{x:.05,y:.10,w:.68,h:.44}, lines:[{y:0,size:.34,weight:900},{y:.32,size:.18,weight:900,chip:true},{y:.56,size:.18,weight:900,chip:true},{y:.80,size:.18,weight:900,chip:true}], stroke:.02, shadow:.08 },
+  { id:'centerStack', name:'Center Stack', lineCount:4, box:{x:.15,y:.18,w:.70,h:.48}, lines:[{y:0,size:.30,weight:900},{y:.28,size:.20,weight:800},{y:.54,size:.20,weight:800},{y:.78,size:.20,weight:800}], bg:{type:'gradient',opacity:.36,pad:.08,radius:22}, shadow:.06 },
+  { id:'outlineMax', name:'Outline Max', lineCount:3, box:{x:.04,y:.10,w:.78,h:.34}, lines:[{y:0,size:.36,weight:900},{y:.40,size:.22,weight:900},{y:.70,size:.22,weight:900}], stroke:.07, shadow:0 },
+  { id:'stickerBox', name:'Sticker Box', lineCount:4, box:{x:.05,y:.54,w:.72,h:.34}, lines:[{y:.02,size:.26,weight:900},{y:.30,size:.18,weight:800},{y:.56,size:.18,weight:800},{y:.80,size:.18,weight:800}], bg:{type:'solid',colorIndex:2,opacity:.84,pad:.06,radius:20}, stroke:.02, shadow:.04 },
+  { id:'serifLuxury', name:'Serif Luxury', lineCount:3, box:{x:.06,y:.12,w:.74,h:.34}, lines:[{y:0,size:.30,weight:800,serif:true},{y:.40,size:.20,weight:700,serif:true},{y:.70,size:.20,weight:700,serif:true}], stroke:.02, shadow:.08 },
+  { id:'bottomStrip', name:'Bottom Strip', lineCount:4, box:{x:.04,y:.63,w:.84,h:.24}, lines:[{y:.04,size:.22,weight:900},{y:.30,size:.15,weight:800},{y:.55,size:.15,weight:800},{y:.78,size:.15,weight:800}], bg:{type:'solid',colorIndex:2,opacity:.92,pad:.06,radius:16}, shadow:0 },
+  { id:'topCard', name:'Top Card', lineCount:4, box:{x:.04,y:.07,w:.74,h:.44}, lines:[{y:0,size:.31,weight:900},{y:.28,size:.18,weight:800},{y:.53,size:.18,weight:800},{y:.78,size:.18,weight:800}], bg:{type:'gradient',opacity:.42,pad:.07,radius:18}, stroke:.02, shadow:.06 }
+];
 
-    const palettes = [
-      ['#ff8a00','#ffb347','#fff4e5'],['#ef4444','#f97316','#fff1f2'],['#111827','#374151','#f9fafb'],['#facc15','#f97316','#1f2937'],['#22c55e','#84cc16','#f0fdf4'],
-      ['#3b82f6','#06b6d4','#eff6ff'],['#8b5cf6','#ec4899','#faf5ff'],['#14b8a6','#2dd4bf','#ecfeff'],['#0f172a','#38bdf8','#e0f2fe'],['#7c2d12','#fdba74','#fff7ed'],
-      ['#fde047','#eab308','#422006'],['#fb7185','#fda4af','#fff1f2'],['#10b981','#34d399','#ecfdf5'],['#2563eb','#93c5fd','#eff6ff'],['#ea580c','#fdba74','#fff7ed'],
-      ['#e11d48','#fb7185','#fff1f2'],['#1d4ed8','#60a5fa','#eff6ff'],['#7c3aed','#a78bfa','#f5f3ff'],['#047857','#6ee7b7','#ecfdf5'],['#be123c','#fda4af','#fff1f2'],
-      ['#4338ca','#818cf8','#eef2ff'],['#b45309','#fcd34d','#fffbeb'],['#155e75','#67e8f9','#ecfeff'],['#166534','#86efac','#f0fdf4'],['#9a3412','#fdba74','#fff7ed'],
-      ['#0f766e','#5eead4','#f0fdfa'],['#86198f','#e879f9','#fdf4ff'],['#ca8a04','#fde047','#fefce8'],['#7f1d1d','#fca5a5','#fef2f2'],['#1e3a8a','#93c5fd','#eff6ff'],
-      ['#4c1d95','#c4b5fd','#f5f3ff'],['#083344','#67e8f9','#ecfeff'],['#3f6212','#bef264','#f7fee7'],['#92400e','#fcd34d','#fffbeb'],['#881337','#f9a8d4','#fdf2f8'],
-      ['#27272a','#a1a1aa','#fafafa'],['#0a0a0a','#525252','#ffffff'],['#fafaf9','#fb923c','#7c2d12'],['#ffffff','#ef4444','#111827'],['#ffffff','#16a34a','#052e16'],
-      ['#ffffff','#2563eb','#172554'],['#ffffff','#7c3aed','#2e1065'],['#ffffff','#0f766e','#042f2e'],['#fef3c7','#f59e0b','#78350f'],['#ffe4e6','#e11d48','#4c0519'],
-      ['#dcfce7','#16a34a','#052e16'],['#dbeafe','#2563eb','#172554'],['#f3e8ff','#9333ea','#3b0764'],['#ccfbf1','#14b8a6','#042f2e'],['#f1f5f9','#0f172a','#020617']
-    ];
+const palettes = [
+  ['#ff8a00','#ffb347','#fff4e5'],['#ef4444','#f97316','#fff1f2'],['#111827','#374151','#f9fafb'],['#facc15','#f97316','#1f2937'],['#22c55e','#84cc16','#f0fdf4'],
+  ['#3b82f6','#06b6d4','#eff6ff'],['#8b5cf6','#ec4899','#faf5ff'],['#14b8a6','#2dd4bf','#ecfeff'],['#0f172a','#38bdf8','#e0f2fe'],['#7c2d12','#fdba74','#fff7ed'],
+  ['#fde047','#eab308','#422006'],['#fb7185','#fda4af','#fff1f2'],['#10b981','#34d399','#ecfdf5'],['#2563eb','#93c5fd','#eff6ff'],['#ea580c','#fdba74','#fff7ed'],
+  ['#e11d48','#fb7185','#fff1f2'],['#1d4ed8','#60a5fa','#eff6ff'],['#7c3aed','#a78bfa','#f5f3ff'],['#047857','#6ee7b7','#ecfdf5'],['#be123c','#fda4af','#fff1f2'],
+  ['#4338ca','#818cf8','#eef2ff'],['#b45309','#fcd34d','#fffbeb'],['#155e75','#67e8f9','#ecfeff'],['#166534','#86efac','#f0fdf4'],['#9a3412','#fdba74','#fff7ed'],
+  ['#0f766e','#5eead4','#f0fdfa'],['#86198f','#e879f9','#fdf4ff'],['#ca8a04','#fde047','#fefce8'],['#7f1d1d','#fca5a5','#fef2f2'],['#1e3a8a','#93c5fd','#eff6ff'],
+  ['#4c1d95','#c4b5fd','#f5f3ff'],['#083344','#67e8f9','#ecfeff'],['#3f6212','#bef264','#f7fee7'],['#92400e','#fcd34d','#fffbeb'],['#881337','#f9a8d4','#fdf2f8'],
+  ['#27272a','#a1a1aa','#fafafa'],['#0a0a0a','#525252','#ffffff'],['#fafaf9','#fb923c','#7c2d12'],['#ffffff','#ef4444','#111827'],['#ffffff','#16a34a','#052e16'],
+  ['#ffffff','#2563eb','#172554'],['#ffffff','#7c3aed','#2e1065'],['#ffffff','#0f766e','#042f2e'],['#fef3c7','#f59e0b','#78350f'],['#ffe4e6','#e11d48','#4c0519'],
+  ['#dcfce7','#16a34a','#052e16'],['#dbeafe','#2563eb','#172554'],['#f3e8ff','#9333ea','#3b0764'],['#ccfbf1','#14b8a6','#042f2e'],['#f1f5f9','#0f172a','#020617']
+];
 
-    const STYLE_SLOT_COUNT = 12;
-    const STYLE_STORAGE_KEY = 'maslow-thumbnail-style-slots-v1';
+const state = {
+  selectedDesignIndex: 1,
+  selectedPaletteIndex: 0,
+  exportFormat: 'jpg',
+  align: 'center',
+  mode: 'text',
+  imageUrl: '',
+  image: null,
+  mainLines: ['군산 나운동 상가매매','빌딩앞 입지조건 최고!!','많은 유동인구','일반 상업지역(다양한 업종가능)'],
+  mainBox: {x:.05,y:.10,w:.72,h:.32,scale:1,lineGap:1},
+  freeBlocks: [],
+  selectedFreeBlockId: null,
+  drag: null,
+  brushSize: 56,
+  mosaicStrokes: []
+};
 
-    const state = {
-      selectedDesignIndex: 0,
-      selectedPaletteIndex: 0,
-      exportFormat: 'jpg',
-      align: 'center',
-      imageUrl: '',
-      image: null,
-      lines: ['군산 나운동 상가매매', '빌딩앞 입지조건 최고!!', '많은 유동인구', '일반 상업지역(다양한 업종가능)'],
-      group: { x:0.05, y:0.10, w:0.72, h:0.32, scale:1, lineGap:1 },
-      drag: null,
-      resize: null,
-      toolMode: 'text',
-      mosaicBrushSize: 0.08,
-      mosaicStrokes: [],
-      mosaicPaint: null,
-      savedStyles: [],
-      freeBlocks: [],
-      selectedFreeBlockId: null,
-      freeDrag: null,
-      freeResize: null,
-      freePanelDrag: null,
-      freePanelResize: null
-    };
+const el = {
+  designSlider: document.getElementById('designSlider'),
+  paletteSlider: document.getElementById('paletteSlider'),
+  placeholder: document.getElementById('placeholder'),
+  imageWrap: document.getElementById('imageWrap'),
+  mainImage: document.getElementById('mainImage'),
+  overlayRoot: document.getElementById('overlayRoot'),
+  mainTextGroup: document.getElementById('mainTextGroup'),
+  freeBlocksLayer: document.getElementById('freeBlocksLayer'),
+  mosaicCanvas: document.getElementById('mosaicCanvas'),
+  fileInput: document.getElementById('fileInput'),
+  mainTextInputs: document.getElementById('mainTextInputs'),
+  formatSeg: document.getElementById('formatSeg'),
+  alignSeg: document.getElementById('alignSeg'),
+  mainScaleRange: document.getElementById('mainScaleRange'),
+  mainLineGapRange: document.getElementById('mainLineGapRange'),
+  mainScaleValue: document.getElementById('mainScaleValue'),
+  mainLineGapValue: document.getElementById('mainLineGapValue'),
+  brushSizeRange: document.getElementById('brushSizeRange'),
+  brushSizeValue: document.getElementById('brushSizeValue'),
+  styleGrid: document.getElementById('styleGrid'),
+  pickImageBtn: document.getElementById('pickImageBtn'),
+  modeTextBtn: document.getElementById('modeTextBtn'),
+  modeMosaicBtn: document.getElementById('modeMosaicBtn'),
+  addFreeBlockBtn: document.getElementById('addFreeBlockBtn'),
+  clearMosaicBtn: document.getElementById('clearMosaicBtn'),
+  resetMainBoxBtn: document.getElementById('resetMainBoxBtn'),
+  resetDesignBtn: document.getElementById('resetDesignBtn'),
+  downloadBtn: document.getElementById('downloadBtn'),
+  freeStatus: document.getElementById('freeStatus'),
+  freeTextInput: document.getElementById('freeTextInput'),
+  freeFontSelect: document.getElementById('freeFontSelect'),
+  freeTextColor: document.getElementById('freeTextColor'),
+  freeBgColor: document.getElementById('freeBgColor'),
+  freeStrokeColor: document.getElementById('freeStrokeColor'),
+  freeFontSize: document.getElementById('freeFontSize'),
+  freeStrokeWidth: document.getElementById('freeStrokeWidth'),
+  freeBgAlpha: document.getElementById('freeBgAlpha'),
+  freeLineHeight: document.getElementById('freeLineHeight'),
+  freeFontSizeValue: document.getElementById('freeFontSizeValue'),
+  freeStrokeWidthValue: document.getElementById('freeStrokeWidthValue'),
+  freeBgAlphaValue: document.getElementById('freeBgAlphaValue'),
+  freeLineHeightValue: document.getElementById('freeLineHeightValue')
+};
 
-    const designSlider = document.getElementById('designSlider');
-    const paletteSlider = document.getElementById('paletteSlider');
-    const uploadDrop = document.getElementById('uploadDrop');
-    const hiddenFile = document.getElementById('hiddenFile');
-    const styleSlots = document.getElementById('styleSlots');
-    const mainImage = document.getElementById('mainImage');
-    const mosaicCanvas = document.getElementById('mosaicCanvas');
-    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
-    const canvasStage = document.getElementById('canvasStage');
-    const textGroup = document.getElementById('textGroup');
-    const freeBlockLayer = document.getElementById('freeBlockLayer');
-    const addFreeBlockBtn = document.getElementById('addFreeBlockBtn');
-    const freeBlockTabs = document.getElementById('freeBlockTabs');
-    const freeBlockEditStage = document.getElementById('freeBlockEditStage');
-    const freeBlockEditEmpty = document.getElementById('freeBlockEditEmpty');
-    const freeBlockStatus = document.getElementById('freeBlockStatus');
-    const freeTextInput = document.getElementById('freeTextInput');
-    const freeFontSelect = document.getElementById('freeFontSelect');
-    const freeAlignSelect = document.getElementById('freeAlignSelect');
-    const freeTextColorInput = document.getElementById('freeTextColorInput');
-    const freeBgColorInput = document.getElementById('freeBgColorInput');
-    const freeStrokeColorInput = document.getElementById('freeStrokeColorInput');
-    const freeBgOpacityRange = document.getElementById('freeBgOpacityRange');
-    const freeStrokeWidthRange = document.getElementById('freeStrokeWidthRange');
-    const freeBgOpacityValue = document.getElementById('freeBgOpacityValue');
-    const freeStrokeWidthValue = document.getElementById('freeStrokeWidthValue');
-    const dragSurface = document.getElementById('dragSurface');
-    const resizeHandle = document.getElementById('resizeHandle');
-    const textInputs = document.getElementById('textInputs');
-    const scaleRange = document.getElementById('scaleRange');
-    const lineGapRange = document.getElementById('lineGapRange');
-    const scaleValue = document.getElementById('scaleValue');
-    const lineGapValue = document.getElementById('lineGapValue');
-    const fitTextBtn = document.getElementById('fitTextBtn');
-    const resetStyleBtn = document.getElementById('resetStyleBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const formatSeg = document.getElementById('formatSeg');
-    const alignSeg = document.getElementById('alignSeg');
-    const toolModeSeg = document.getElementById('toolModeSeg');
-    const mosaicBrushRange = document.getElementById('mosaicBrushRange');
-    const mosaicBrushValue = document.getElementById('mosaicBrushValue');
-    const clearMosaicBtn = document.getElementById('clearMosaicBtn');
+function clamp(v,min,max){return Math.min(max,Math.max(min,v));}
+function uid(){return 'fb_'+Math.random().toString(36).slice(2,10);}
+function getDesign(){return designs[state.selectedDesignIndex];}
+function getPalette(){return palettes[state.selectedPaletteIndex];}
+function hexToRgba(hex,alpha){const c=hex.replace('#','');const n=parseInt(c,16);return `rgba(${(n>>16)&255}, ${(n>>8)&255}, ${n&255}, ${alpha})`;}
+function getImageRect(){return el.mainImage.getBoundingClientRect();}
+function getSelectedFreeBlock(){return state.freeBlocks.find(b=>b.id===state.selectedFreeBlockId) || null;}
+function getFontFamily(key){if(key==='serif') return 'Georgia, Cambria, "Times New Roman", serif'; if(key==='impact') return 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif'; if(key==='condensed') return 'Arial Narrow, "Noto Sans KR", sans-serif'; return '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif';}
 
-    state.savedStyles = loadSavedStyles();
+function applyDesignDefaults(resetBox){
+  const d = getDesign();
+  while(state.mainLines.length < d.lineCount) state.mainLines.push('');
+  if(state.mainLines.length > d.lineCount) state.mainLines = state.mainLines.slice(0,d.lineCount);
+  if(resetBox){
+    state.mainBox.x = d.box.x; state.mainBox.y = d.box.y; state.mainBox.w = d.box.w; state.mainBox.h = d.box.h;
+  }
+  syncRanges();
+}
 
-    function getDesign() { return designs[state.selectedDesignIndex]; }
-    function getPalette() { return palettes[state.selectedPaletteIndex]; }
-    function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+function syncRanges(){
+  el.mainScaleRange.value = String(state.mainBox.scale);
+  el.mainLineGapRange.value = String(state.mainBox.lineGap);
+  el.mainScaleValue.textContent = Number(state.mainBox.scale).toFixed(2);
+  el.mainLineGapValue.textContent = Number(state.mainBox.lineGap).toFixed(2);
+  el.brushSizeRange.value = String(state.brushSize);
+  el.brushSizeValue.textContent = String(state.brushSize);
+  const fb = getSelectedFreeBlock();
+  const disabled = !fb;
+  [el.freeTextInput,el.freeFontSelect,el.freeTextColor,el.freeBgColor,el.freeStrokeColor,el.freeFontSize,el.freeStrokeWidth,el.freeBgAlpha,el.freeLineHeight].forEach(i=>i.disabled=disabled);
+  if(fb){
+    el.freeStatus.textContent = fb.name;
+    el.freeTextInput.value = fb.text;
+    el.freeFontSelect.value = fb.fontKey;
+    el.freeTextColor.value = fb.textColor;
+    el.freeBgColor.value = fb.bgColor;
+    el.freeStrokeColor.value = fb.strokeColor;
+    el.freeFontSize.value = String(fb.fontSize);
+    el.freeStrokeWidth.value = String(fb.strokeWidth);
+    el.freeBgAlpha.value = String(fb.bgAlpha);
+    el.freeLineHeight.value = String(fb.lineHeight);
+    el.freeFontSizeValue.textContent = String(fb.fontSize);
+    el.freeStrokeWidthValue.textContent = String(fb.strokeWidth);
+    el.freeBgAlphaValue.textContent = Number(fb.bgAlpha).toFixed(2);
+    el.freeLineHeightValue.textContent = Number(fb.lineHeight).toFixed(2);
+  } else {
+    el.freeStatus.textContent = '선택된 자유블럭 없음';
+    el.freeTextInput.value='';
+    el.freeFontSizeValue.textContent='28';
+    el.freeStrokeWidthValue.textContent='0';
+    el.freeBgAlphaValue.textContent='0.00';
+    el.freeLineHeightValue.textContent='1.00';
+  }
+}
 
-    function getStageSize() {
-      if (!state.image || !state.image.naturalWidth || !state.image.naturalHeight) {
-        const fallbackWidth = uploadDrop.clientWidth || 1;
-        return { width: fallbackWidth, height: fallbackWidth * (9 / 16) };
-      }
-      const width = uploadDrop.clientWidth || state.image.naturalWidth;
-      const height = width * (state.image.naturalHeight / state.image.naturalWidth);
-      return { width, height };
-    }
+function getActiveMainSpecs(){
+  const d = getDesign();
+  const raw = d.lines.slice(0,d.lineCount).map((spec,index)=>({spec,text:(state.mainLines[index]||'').trim(),index})).filter(v=>v.text!== '');
+  if(raw.length===0) return [];
+  if(raw.length === d.lineCount) return raw;
+  const minY = d.lines[0].y;
+  const maxY = d.lines[d.lineCount-1].y;
+  const span = maxY - minY;
+  const gap = raw.length===1 ? 0 : span/(raw.length-1);
+  return raw.map((item,i)=>({spec:{...item.spec,y:minY + gap*i}, text:item.text, index:item.index}));
+}
 
-    function applyStageSize() {
-      const size = getStageSize();
-      uploadDrop.style.height = `${size.height}px`;
-    }
-
-    function resolveLineColor(spec, palette) {
-      if (spec.colorMode === 'secondary') return palette[1];
-      if (spec.colorMode === 'accent') return palette[2];
-      return palette[0];
-    }
-
-    function getDistributedYPositions(lineSpecs, activeCount) {
-      if (!lineSpecs.length || activeCount <= 0) return [];
-      if (activeCount === 1) {
-        const center = (lineSpecs[0].y + lineSpecs[lineSpecs.length - 1].y) / 2;
-        return [center];
-      }
-      const startY = lineSpecs[0].y;
-      const endY = lineSpecs[lineSpecs.length - 1].y;
-      const step = (endY - startY) / (activeCount - 1);
-      return Array.from({ length: activeCount }, (_, i) => startY + (step * i));
-    }
-
-    function getRenderableMainLines() {
-      const d = getDesign();
-      const items = [];
-      for (let i = 0; i < d.lineCount; i++) {
-        items.push({ spec: d.lines[i], text: state.lines[i] || '', index: i });
-      }
-      if (d.lineCount === 4) {
-        const filled = items.filter(item => item.text.trim());
-        if (filled.length > 0 && filled.length < 4) {
-          const yPositions = getDistributedYPositions(d.lines, filled.length);
-          return filled.map((item, idx) => ({ ...item, renderY: yPositions[idx] }));
+function renderDesignCards(){
+  el.designSlider.innerHTML='';
+  const previewText = ['기본문구 1','기본문구 2','기본문구 3','기본문구 4'];
+  designs.forEach((d,index)=>{
+    const card = document.createElement('button');
+    card.type='button';
+    card.className='design-card'+(index===state.selectedDesignIndex?' active':'');
+    card.innerHTML=`<div class="design-name">${d.name}</div><div class="mini-preview"></div>`;
+    const preview = card.querySelector('.mini-preview');
+    if(d.hidden){
+      preview.style.background='linear-gradient(135deg,#e5e7eb,#f8fafc)';
+      const t=document.createElement('div');
+      t.className='mini-line'; t.textContent='텍스트 없음'; t.style.top='40%'; t.style.fontSize='16px'; t.style.color='#6b7280'; t.style.textShadow='none'; t.style.textAlign='center'; preview.appendChild(t);
+    } else {
+      d.lines.slice(0,d.lineCount).forEach((spec,i)=>{
+        const line=document.createElement('div');
+        line.className='mini-line';
+        line.textContent=previewText[i];
+        line.style.top=`${spec.y*100}%`;
+        line.style.fontSize=`${Math.max(10,13*spec.size)}px`;
+        const colorIndex = spec.colorIndex ?? 0;
+        line.style.color = getPalette()[colorIndex] || '#fff';
+        if(spec.chip){
+          line.style.display='inline-block';line.style.width='auto';line.style.maxWidth='calc(100% - 16px)';line.style.padding='3px 6px';line.style.background='rgba(255,255,255,.88)';line.style.color='#111827';line.style.borderRadius='999px';line.style.textShadow='none';
         }
-      }
-      return items.filter(item => item.text.trim() || d.lineCount < 4).map(item => ({ ...item, renderY: item.spec.y }));
-    }
-
-    function updateToolModeUI() {
-      [...toolModeSeg.querySelectorAll('button')].forEach(btn => btn.classList.toggle('active', btn.dataset.tool === state.toolMode));
-      const mosaicActive = state.toolMode === 'mosaic';
-      mosaicCanvas.style.pointerEvents = mosaicActive ? 'auto' : 'none';
-      canvasStage.style.pointerEvents = mosaicActive ? 'none' : 'auto';
-      dragSurface.style.pointerEvents = mosaicActive ? 'none' : 'auto';
-      resizeHandle.style.pointerEvents = mosaicActive ? 'none' : 'auto';
-      uploadDrop.style.cursor = mosaicActive ? 'crosshair' : 'pointer';
-    }
-
-    function getBrushRadiusPx(targetWidth) {
-      return Math.max(10, targetWidth * state.mosaicBrushSize);
-    }
-
-    function drawMosaicPatch(ctx, image, centerX, centerY, radiusPx, targetW, targetH, sourceW, sourceH) {
-      if (!image) return;
-      const left = Math.max(0, centerX - radiusPx);
-      const top = Math.max(0, centerY - radiusPx);
-      const size = Math.min(radiusPx * 2, targetW - left, targetH - top);
-      if (size <= 0) return;
-      const sx = Math.max(0, (left / targetW) * sourceW);
-      const sy = Math.max(0, (top / targetH) * sourceH);
-      const sw = Math.max(1, (size / targetW) * sourceW);
-      const sh = Math.max(1, (size / targetH) * sourceH);
-      const blocks = Math.max(6, Math.round(radiusPx / 8));
-      const temp = document.createElement('canvas');
-      temp.width = blocks;
-      temp.height = blocks;
-      const tctx = temp.getContext('2d');
-      tctx.imageSmoothingEnabled = true;
-      tctx.drawImage(image, sx, sy, sw, sh, 0, 0, blocks, blocks);
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(left + size / 2, top + size / 2, size / 2, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(temp, left, top, size, size);
-      ctx.restore();
-      ctx.imageSmoothingEnabled = true;
-    }
-
-    function renderMosaicOverlay() {
-      const ctx = mosaicCanvas.getContext('2d');
-      const rect = getStageRect();
-      mosaicCanvas.width = Math.max(1, Math.round(rect.width));
-      mosaicCanvas.height = Math.max(1, Math.round(rect.height));
-      ctx.clearRect(0, 0, mosaicCanvas.width, mosaicCanvas.height);
-      if (!state.image || !state.mosaicStrokes.length) return;
-      state.mosaicStrokes.forEach(point => {
-        drawMosaicPatch(ctx, state.image, point.x * mosaicCanvas.width, point.y * mosaicCanvas.height, point.r * mosaicCanvas.width, mosaicCanvas.width, mosaicCanvas.height, state.image.naturalWidth, state.image.naturalHeight);
+        preview.appendChild(line);
       });
     }
+    card.addEventListener('click',()=>{state.selectedDesignIndex=index; applyDesignDefaults(true); renderAll();});
+    el.designSlider.appendChild(card);
+  });
+}
 
-    function addMosaicPointFromEvent(e) {
-      const rect = mosaicCanvas.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      const x = clamp((e.clientX - rect.left) / rect.width, 0, 1);
-      const y = clamp((e.clientY - rect.top) / rect.height, 0, 1);
-      state.mosaicStrokes.push({ x, y, r: state.mosaicBrushSize });
-      renderMosaicOverlay();
+function renderPaletteCards(){
+  el.paletteSlider.innerHTML='';
+  palettes.forEach((palette,index)=>{
+    const card=document.createElement('button');
+    card.type='button';
+    card.className='palette-card'+(index===state.selectedPaletteIndex?' active':'');
+    const stripes=document.createElement('div'); stripes.className='palette-stripes';
+    palette.forEach(color=>{const div=document.createElement('div');div.style.background=color;stripes.appendChild(div);});
+    const label=document.createElement('div'); label.className='palette-label'; label.textContent=`P${index+1}`;
+    card.appendChild(stripes); card.appendChild(label);
+    card.addEventListener('click',()=>{state.selectedPaletteIndex=index; renderAll();});
+    el.paletteSlider.appendChild(card);
+  });
+}
+
+function renderMainInputs(){
+  el.mainTextInputs.innerHTML='';
+  state.mainLines.forEach((value,index)=>{
+    const ta=document.createElement('textarea');
+    ta.className='text-row'; ta.rows=2; ta.value=value; ta.placeholder=`${index+1}번째 문구 입력`;
+    ta.addEventListener('input',e=>{state.mainLines[index]=e.target.value; renderMainText();});
+    el.mainTextInputs.appendChild(ta);
+  });
+}
+
+function renderImage(){
+  if(!state.imageUrl){ el.placeholder.style.display='flex'; el.imageWrap.style.display='none'; return; }
+  el.placeholder.style.display='none'; el.imageWrap.style.display='block'; el.mainImage.src=state.imageUrl;
+}
+
+function syncModeButtons(){
+  el.modeTextBtn.classList.toggle('active',state.mode==='text');
+  el.modeMosaicBtn.classList.toggle('active',state.mode==='mosaic');
+  el.mosaicCanvas.classList.toggle('active',state.mode==='mosaic');
+}
+
+function positionMainGroup(){
+  const d=getDesign();
+  if(d.hidden){
+    el.mainTextGroup.classList.add('hidden');
+    return;
+  }
+  el.mainTextGroup.classList.remove('hidden');
+  const rect=getImageRect();
+  const x=state.mainBox.x*rect.width, y=state.mainBox.y*rect.height, w=state.mainBox.w*rect.width, h=state.mainBox.h*rect.height;
+  Object.assign(el.mainTextGroup.style,{left:`${x}px`,top:`${y}px`,width:`${w}px`,height:`${h}px`});
+}
+
+function renderMainText(){
+  positionMainGroup();
+  const d=getDesign();
+  el.mainTextGroup.querySelectorAll('.main-line,.main-bg').forEach(node=>node.remove());
+  if(d.hidden) return;
+  const rect=getImageRect();
+  const palette=getPalette();
+  const w=state.mainBox.w*rect.width, h=state.mainBox.h*rect.height;
+  if(d.bg){
+    const bg=document.createElement('div'); bg.className='main-bg'; bg.style.position='absolute';
+    const pad=Math.max(6,Math.min(w,h)*d.bg.pad);
+    Object.assign(bg.style,{left:`${-pad}px`,top:`${-pad}px`,width:`calc(100% + ${pad*2}px)`,height:`calc(100% + ${pad*2}px)`,borderRadius:`${d.bg.radius}px`});
+    bg.style.background = d.bg.type==='gradient' ? `linear-gradient(135deg, ${hexToRgba(palette[0],d.bg.opacity)}, ${hexToRgba(palette[1],d.bg.opacity)})` : hexToRgba(palette[d.bg.colorIndex||0], d.bg.opacity);
+    el.mainTextGroup.insertBefore(bg, el.mainTextGroup.firstChild);
+  }
+  const items=getActiveMainSpecs();
+  items.forEach(item=>{
+    const spec=item.spec; const line=document.createElement('div'); line.className='main-line'; line.textContent=item.text;
+    line.style.top=`${spec.y*100}%`; line.style.left='0'; line.style.width='100%'; line.style.fontSize=`${Math.max(12,h*spec.size*state.mainBox.scale)}px`;
+    line.style.fontWeight=String(spec.weight); line.style.lineHeight=String(.95*state.mainBox.lineGap); line.style.textAlign=state.align;
+    line.style.fontFamily=spec.serif ? 'Georgia, Cambria, "Times New Roman", serif' : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif';
+    line.style.color = getPalette()[spec.colorIndex ?? 0];
+    if(d.stroke>0){const strokePx=Math.max(1,h*(d.stroke||0)*0.18*state.mainBox.scale); line.style.webkitTextStroke=`${strokePx}px ${palette[2]}`; line.style.paintOrder='stroke fill';}
+    if(d.shadow>0){const blur=Math.max(2,18*(d.shadow||0)*state.mainBox.scale); const yoff=Math.max(1,7*(d.shadow||0)*state.mainBox.scale); line.style.textShadow=`0 ${yoff}px ${blur}px rgba(0,0,0,.45)`;}
+    if(spec.chip){
+      line.style.display='inline-block'; line.style.width='auto'; line.style.maxWidth='100%'; line.style.padding='.12em .38em'; line.style.background=hexToRgba(palette[2],.88); line.style.borderRadius='999px'; line.style.color=palette[1]; line.style.webkitTextStroke='0'; line.style.textShadow='none';
+      if(state.align==='center'){ line.style.left='50%'; line.style.transform='translateX(-50%)'; }
+      else if(state.align==='right'){ line.style.left='auto'; line.style.right='0'; }
     }
+    el.mainTextGroup.appendChild(line);
+  });
+}
 
-    function hexToRgba(hex, alpha) {
-      const clean = hex.replace('#','');
-      const n = parseInt(clean, 16);
-      const r = (n >> 16) & 255;
-      const g = (n >> 8) & 255;
-      const b = n & 255;
-      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+function renderFreeBlocks(){
+  el.freeBlocksLayer.innerHTML='';
+  const rect=getImageRect();
+  state.freeBlocks.forEach(block=>{
+    const node=document.createElement('div');
+    node.className='free-block'+(block.id===state.selectedFreeBlockId?' active':'');
+    node.dataset.id=block.id;
+    Object.assign(node.style,{left:`${block.x*rect.width}px`,top:`${block.y*rect.height}px`,width:`${block.w*rect.width}px`,height:`${block.h*rect.height}px`});
+    node.innerHTML=`<div class="free-box"></div><div class="free-close" data-hit="free-close">×</div><div class="free-move-surface" data-hit="free-move"></div><div class="free-resize-handle" data-hit="free-resize"></div><div class="free-block-text"></div>`;
+    const text=node.querySelector('.free-block-text');
+    Object.assign(text.style,{left:'0',top:'0',width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:block.align||'center',textAlign:block.align||'center',padding:'8px',fontSize:`${block.fontSize}px`,fontWeight:'900',fontFamily:getFontFamily(block.fontKey),color:block.textColor,lineHeight:String(block.lineHeight)});
+    text.textContent=block.text||'';
+    if(block.bgAlpha>0){text.style.background=hexToRgba(block.bgColor, block.bgAlpha);text.style.borderRadius='12px';}
+    if(block.strokeWidth>0){text.style.webkitTextStroke=`${block.strokeWidth}px ${block.strokeColor}`;text.style.paintOrder='stroke fill';}
+    el.freeBlocksLayer.appendChild(node);
+  });
+}
+
+function renderMosaicCanvas(){
+  if(!state.imageUrl){return;}
+  const rect=getImageRect();
+  const ratio=window.devicePixelRatio||1;
+  el.mosaicCanvas.width=Math.round(rect.width*ratio);
+  el.mosaicCanvas.height=Math.round(rect.height*ratio);
+  el.mosaicCanvas.style.width=`${rect.width}px`;
+  el.mosaicCanvas.style.height=`${rect.height}px`;
+  const ctx=el.mosaicCanvas.getContext('2d');
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+  ctx.clearRect(0,0,rect.width,rect.height);
+  if(!state.image) return;
+  state.mosaicStrokes.forEach(stroke=>drawMosaicStamp(ctx, state.image, rect.width, rect.height, stroke.x*rect.width, stroke.y*rect.height, stroke.size*rect.width));
+}
+
+function averageColorFromImage(img,sx,sy,sw,sh){
+  const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(sw)); c.height=Math.max(1,Math.round(sh));
+  const cx=c.getContext('2d',{willReadFrequently:true});
+  cx.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height);
+  const data=cx.getImageData(0,0,c.width,c.height).data;
+  let r=0,g=0,b=0,count=0;
+  for(let i=0;i<data.length;i+=4){r+=data[i];g+=data[i+1];b+=data[i+2];count++;}
+  return count?`rgb(${Math.round(r/count)}, ${Math.round(g/count)}, ${Math.round(b/count)})`:'rgb(128,128,128)';
+}
+
+function drawMosaicStamp(ctx,img,dw,dh,cx,cy,size){
+  const nx=img.naturalWidth, ny=img.naturalHeight;
+  const rx=nx/dw, ry=ny/dh;
+  const half=size/2;
+  const sx=clamp((cx-half)*rx,0,nx-1), sy=clamp((cy-half)*ry,0,ny-1), sw=clamp(size*rx,1,nx-sx), sh=clamp(size*ry,1,ny-sy);
+  const pixel=Math.max(6,size/5);
+  for(let y=cy-half;y<cy+half;y+=pixel){
+    for(let x=cx-half;x<cx+half;x+=pixel){
+      const dx=clamp(x,0,dw), dy=clamp(y,0,dh);
+      const ds=Math.min(pixel,dw-dx,dh-dy);
+      const color=averageColorFromImage(img, dx*rx, dy*ry, ds*rx, ds*ry);
+      ctx.fillStyle=color;
+      ctx.fillRect(dx,dy,ds,ds);
     }
+  }
+}
 
-    function drawRoundRect(ctx, x, y, w, h, r, fillStyle) {
-      const radius = Math.min(r, w / 2, h / 2);
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.arcTo(x + w, y, x + w, y + h, radius);
-      ctx.arcTo(x + w, y + h, x, y + h, radius);
-      ctx.arcTo(x, y + h, x, y, radius);
-      ctx.arcTo(x, y, x + w, y, radius);
-      ctx.closePath();
-      ctx.fillStyle = fillStyle;
-      ctx.fill();
+function setMode(mode){state.mode=mode; syncModeButtons();}
+
+function addFreeBlock(){
+  const idx=state.freeBlocks.length+1;
+  const block={id:uid(), name:`자유블럭 ${idx}`, x:.08, y:.08+.03*(idx-1), w:.34, h:.16, text:`자유블럭 ${idx}`, fontKey:'sans', textColor:'#ffffff', bgColor:'#000000', bgAlpha:0, strokeColor:'#111111', strokeWidth:0, fontSize:28, lineHeight:1, align:'center'};
+  state.freeBlocks.push(block); state.selectedFreeBlockId=block.id; renderAll();
+}
+
+function removeFreeBlock(id){
+  state.freeBlocks = state.freeBlocks.filter(b=>b.id!==id);
+  if(state.selectedFreeBlockId===id) state.selectedFreeBlockId = state.freeBlocks[0]?.id || null;
+  renderAll();
+}
+
+function selectFreeBlock(id){state.selectedFreeBlockId=id; renderFreeBlocks(); syncRanges();}
+
+function serializeState(){
+  return {
+    selectedDesignIndex: state.selectedDesignIndex,
+    selectedPaletteIndex: state.selectedPaletteIndex,
+    exportFormat: state.exportFormat,
+    align: state.align,
+    mainLines: state.mainLines,
+    mainBox: state.mainBox,
+    brushSize: state.brushSize,
+    freeBlocks: state.freeBlocks,
+    mosaicStrokes: state.mosaicStrokes
+  };
+}
+
+function applySerializedState(data){
+  if(!data) return;
+  state.selectedDesignIndex = clamp(data.selectedDesignIndex ?? state.selectedDesignIndex,0,designs.length-1);
+  state.selectedPaletteIndex = clamp(data.selectedPaletteIndex ?? state.selectedPaletteIndex,0,palettes.length-1);
+  state.exportFormat = data.exportFormat || 'jpg';
+  state.align = data.align || 'center';
+  state.mainLines = Array.isArray(data.mainLines) ? [...data.mainLines] : state.mainLines;
+  state.mainBox = {...state.mainBox, ...(data.mainBox||{})};
+  state.brushSize = data.brushSize || 56;
+  state.freeBlocks = Array.isArray(data.freeBlocks) ? data.freeBlocks.map((b,i)=>({...b, name:b.name || `자유블럭 ${i+1}`})) : [];
+  state.selectedFreeBlockId = state.freeBlocks[0]?.id || null;
+  state.mosaicStrokes = Array.isArray(data.mosaicStrokes) ? data.mosaicStrokes : [];
+  applyDesignDefaults(false);
+}
+
+function renderStyleGrid(){
+  el.styleGrid.innerHTML='';
+  for(let i=1;i<=12;i++){
+    const key=`maslow-style-${i}`;
+    const saved=localStorage.getItem(key);
+    const slot=document.createElement('div');
+    slot.className='style-slot'+(saved?' saved':'');
+    slot.innerHTML=`<div class="style-slot-head">내스타일 ${i}</div><div class="style-slot-actions"><button type="button" data-save="${i}">저장</button><button type="button" data-apply="${i}">적용</button></div>`;
+    el.styleGrid.appendChild(slot);
+  }
+}
+
+function renderAll(){
+  renderDesignCards();
+  renderPaletteCards();
+  renderMainInputs();
+  renderImage();
+  syncModeButtons();
+  syncSegs();
+  syncRanges();
+  renderMainText();
+  renderFreeBlocks();
+  renderMosaicCanvas();
+  renderStyleGrid();
+}
+
+function syncSegs(){
+  [...el.formatSeg.querySelectorAll('button')].forEach(btn=>btn.classList.toggle('active',btn.dataset.format===state.exportFormat));
+  [...el.alignSeg.querySelectorAll('button')].forEach(btn=>btn.classList.toggle('active',btn.dataset.align===state.align));
+}
+
+function clientToNorm(clientX,clientY){
+  const rect=getImageRect();
+  return {x:clamp((clientX-rect.left)/rect.width,0,1), y:clamp((clientY-rect.top)/rect.height,0,1), rect};
+}
+
+function onOverlayPointerDown(e){
+  if(state.mode==='mosaic'){
+    if(e.target!==el.mosaicCanvas) return;
+    e.preventDefault();
+    const pt=clientToNorm(e.clientX,e.clientY);
+    state.drag={type:'mosaic', pointerId:e.pointerId};
+    el.mosaicCanvas.setPointerCapture(e.pointerId);
+    state.mosaicStrokes.push({x:pt.x,y:pt.y,size:state.brushSize/pt.rect.width});
+    renderMosaicCanvas();
+    return;
+  }
+
+  const freeClose=e.target.closest('.free-close');
+  if(freeClose){ const block=e.target.closest('.free-block'); if(block) removeFreeBlock(block.dataset.id); return; }
+
+  const freeBlock=e.target.closest('.free-block');
+  if(freeBlock){
+    e.preventDefault();
+    const id=freeBlock.dataset.id; selectFreeBlock(id);
+    const hit=e.target.dataset.hit || 'free-move';
+    const pt=clientToNorm(e.clientX,e.clientY); const block=getSelectedFreeBlock(); if(!block) return;
+    state.drag={type:hit==='free-resize'?'free-resize':'free-move', pointerId:e.pointerId, id, startX:pt.x, startY:pt.y, base:{x:block.x,y:block.y,w:block.w,h:block.h}};
+    freeBlock.setPointerCapture(e.pointerId);
+    return;
+  }
+
+  const hit=e.target.dataset.hit;
+  const withinMain=e.target.closest('#mainTextGroup');
+  if(withinMain && !getDesign().hidden){
+    e.preventDefault();
+    const pt=clientToNorm(e.clientX,e.clientY);
+    state.drag={type:hit==='main-resize'?'main-resize':'main-move', pointerId:e.pointerId, startX:pt.x, startY:pt.y, base:{...state.mainBox}};
+    el.mainTextGroup.setPointerCapture(e.pointerId);
+  }
+}
+
+function onOverlayPointerMove(e){
+  if(!state.drag || state.drag.pointerId!==e.pointerId) return;
+  const pt=clientToNorm(e.clientX,e.clientY);
+  if(state.drag.type==='mosaic'){
+    state.mosaicStrokes.push({x:pt.x,y:pt.y,size:state.brushSize/pt.rect.width});
+    renderMosaicCanvas();
+    return;
+  }
+  if(state.drag.type==='main-move'){
+    const dx=pt.x-state.drag.startX, dy=pt.y-state.drag.startY;
+    state.mainBox.x=clamp(state.drag.base.x+dx,0,1-state.mainBox.w);
+    state.mainBox.y=clamp(state.drag.base.y+dy,0,1-state.mainBox.h);
+    renderMainText();
+    return;
+  }
+  if(state.drag.type==='main-resize'){
+    const dx=pt.x-state.drag.startX, dy=pt.y-state.drag.startY;
+    state.mainBox.w=clamp(state.drag.base.w+dx,.18,1-state.mainBox.x);
+    state.mainBox.h=clamp(state.drag.base.h+dy,.10,1-state.mainBox.y);
+    renderMainText();
+    return;
+  }
+  const block=getSelectedFreeBlock();
+  if(!block) return;
+  if(state.drag.type==='free-move'){
+    const dx=pt.x-state.drag.startX, dy=pt.y-state.drag.startY;
+    block.x=clamp(state.drag.base.x+dx,0,1-block.w);
+    block.y=clamp(state.drag.base.y+dy,0,1-block.h);
+    renderFreeBlocks();
+    return;
+  }
+  if(state.drag.type==='free-resize'){
+    const dx=pt.x-state.drag.startX, dy=pt.y-state.drag.startY;
+    block.w=clamp(state.drag.base.w+dx,.08,1-block.x);
+    block.h=clamp(state.drag.base.h+dy,.06,1-block.y);
+    renderFreeBlocks();
+  }
+}
+
+function onOverlayPointerUp(e){ if(state.drag && state.drag.pointerId===e.pointerId) state.drag=null; }
+
+function exportComposite(){
+  if(!state.image || !state.image.complete){ alert('먼저 사진을 넣어주세요.'); return; }
+  const canvas=document.createElement('canvas'); canvas.width=state.image.naturalWidth; canvas.height=state.image.naturalHeight; const ctx=canvas.getContext('2d');
+  if(state.exportFormat==='jpg'){ ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); }
+  ctx.drawImage(state.image,0,0,canvas.width,canvas.height);
+
+  const d=getDesign(); const palette=getPalette(); const x=state.mainBox.x*canvas.width, y=state.mainBox.y*canvas.height, w=state.mainBox.w*canvas.width, h=state.mainBox.h*canvas.height;
+  if(!d.hidden){
+    if(d.bg){
+      const pad=Math.max(8,Math.min(w,h)*d.bg.pad); const bx=x-pad, by=y-pad, bw=w+pad*2, bh=h+pad*2;
+      let fill;
+      if(d.bg.type==='gradient'){ const grad=ctx.createLinearGradient(bx,by,bx+bw,by+bh); grad.addColorStop(0,hexToRgba(palette[0],d.bg.opacity)); grad.addColorStop(1,hexToRgba(palette[1],d.bg.opacity)); fill=grad; }
+      else fill=hexToRgba(palette[d.bg.colorIndex||0], d.bg.opacity);
+      drawRoundRect(ctx,bx,by,bw,bh,d.bg.radius,fill);
     }
-
-    function ensureLineLength() {
-      const count = getDesign().lineCount;
-      while (state.lines.length < count) state.lines.push('');
-      if (state.lines.length > count) state.lines = state.lines.slice(0, count);
-    }
-
-    function applyDesignDefaults(forceBoxReset) {
-      const d = getDesign();
-      ensureLineLength();
-      if (forceBoxReset) {
-        state.group.x = d.box.x;
-        state.group.y = d.box.y;
-        state.group.w = d.box.w;
-        state.group.h = d.box.h;
-        state.group.scale = 1;
-        state.group.lineGap = 1;
+    ctx.textBaseline='top';
+    getActiveMainSpecs().forEach(item=>{
+      const spec=item.spec; const text=item.text; const fontSize=Math.max(12,h*spec.size*state.mainBox.scale);
+      ctx.font=`${spec.weight} ${fontSize}px ${spec.serif?'Georgia, serif':'Arial, sans-serif'}`; ctx.fillStyle=palette[spec.colorIndex ?? 0]; ctx.lineJoin='round'; ctx.miterLimit=2;
+      if(d.shadow>0){ ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=Math.max(2,18*(d.shadow||0)*state.mainBox.scale); ctx.shadowOffsetY=Math.max(1,7*(d.shadow||0)*state.mainBox.scale); ctx.shadowOffsetX=0; }
+      else { ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetX=0; ctx.shadowOffsetY=0; }
+      let textX=x; if(state.align==='center') textX=x+w/2; if(state.align==='right') textX=x+w; ctx.textAlign=state.align;
+      const lineY=y+(h*spec.y);
+      if(spec.chip){
+        const tw=ctx.measureText(text).width; const padX=fontSize*.38, padY=fontSize*.16; let chipX=textX;
+        if(state.align==='center') chipX=textX-(tw/2)-padX; if(state.align==='right') chipX=textX-tw-padX*2;
+        const chipW=tw+padX*2, chipH=fontSize+padY*2; drawRoundRect(ctx,chipX,lineY,chipW,chipH,chipH/2,hexToRgba(palette[2],.88));
+        ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.fillStyle=palette[1];
+        const tx = state.align==='left' ? chipX+padX : state.align==='center' ? chipX+chipW/2 : chipX+chipW-padX;
+        ctx.fillText(text,tx,lineY+padY); return;
       }
-      scaleRange.value = String(state.group.scale);
-      lineGapRange.value = String(state.group.lineGap);
-      scaleValue.textContent = Number(state.group.scale).toFixed(2);
-      lineGapValue.textContent = Number(state.group.lineGap).toFixed(2);
-    }
-
-
-    function loadSavedStyles() {
-      try {
-        const raw = localStorage.getItem(STYLE_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed.slice(0, STYLE_SLOT_COUNT) : [];
-      } catch (err) {
-        return [];
-      }
-    }
-
-    function persistSavedStyles() {
-      try {
-        localStorage.setItem(STYLE_STORAGE_KEY, JSON.stringify(state.savedStyles.slice(0, STYLE_SLOT_COUNT)));
-      } catch (err) {}
-    }
-
-    function captureCurrentStyle() {
-      return {
-        selectedDesignIndex: state.selectedDesignIndex,
-        selectedPaletteIndex: state.selectedPaletteIndex,
-        exportFormat: state.exportFormat,
-        align: state.align,
-        group: {
-          x: state.group.x,
-          y: state.group.y,
-          w: state.group.w,
-          h: state.group.h,
-          scale: state.group.scale,
-          lineGap: state.group.lineGap
-        },
-        lines: [...state.lines],
-        freeBlocks: state.freeBlocks.map(block => ({ ...block })),
-        selectedFreeBlockId: state.selectedFreeBlockId
-      };
-    }
-
-    function saveStyleSlot(slotIndex) {
-      state.savedStyles[slotIndex] = {
-        savedAt: Date.now(),
-        config: captureCurrentStyle()
-      };
-      persistSavedStyles();
-      renderStyleSlots();
-    }
-
-    function applyStyleSlot(slotIndex) {
-      const slot = state.savedStyles[slotIndex];
-      if (!slot || !slot.config) return;
-      const c = slot.config;
-      state.selectedDesignIndex = clamp(c.selectedDesignIndex ?? 0, 0, designs.length - 1);
-      state.selectedPaletteIndex = clamp(c.selectedPaletteIndex ?? 0, 0, palettes.length - 1);
-      state.exportFormat = c.exportFormat === 'png' ? 'png' : 'jpg';
-      state.align = ['left', 'center', 'right'].includes(c.align) ? c.align : 'center';
-      ensureLineLength();
-      state.lines = Array.isArray(c.lines) ? [...c.lines] : [...state.lines];
-      ensureLineLength();
-      if (c.group) {
-        state.group.x = clamp(Number(c.group.x ?? state.group.x), 0, 1);
-        state.group.y = clamp(Number(c.group.y ?? state.group.y), 0, 1);
-        state.group.w = clamp(Number(c.group.w ?? state.group.w), 0.18, 1);
-        state.group.h = clamp(Number(c.group.h ?? state.group.h), 0.10, 1);
-        state.group.scale = clamp(Number(c.group.scale ?? state.group.scale), 0.50, 2.50);
-        state.group.lineGap = clamp(Number(c.group.lineGap ?? state.group.lineGap), 0.75, 1.80);
-        state.group.x = clamp(state.group.x, 0, 1 - state.group.w);
-        state.group.y = clamp(state.group.y, 0, 1 - state.group.h);
-      }
-      state.freeBlocks = Array.isArray(c.freeBlocks) ? c.freeBlocks.map(block => ({
-        id: String(block.id || `fb_${Date.now()}`),
-        text: String(block.text ?? ''),
-        font: ['sans','serif','impact','condensed'].includes(block.font) ? block.font : 'sans',
-        align: ['left','center','right'].includes(block.align) ? block.align : 'center',
-        textColor: String(block.textColor ?? '#ffffff'),
-        bgColor: String(block.bgColor ?? '#000000'),
-        bgOpacity: clamp(Number(block.bgOpacity ?? 0.45), 0, 1),
-        strokeColor: String(block.strokeColor ?? '#111111'),
-        strokeWidth: clamp(Number(block.strokeWidth ?? 2), 0, 12),
-        x: clamp(Number(block.x ?? 0.10), 0, 1),
-        y: clamp(Number(block.y ?? 0.10), 0, 1),
-        w: clamp(Number(block.w ?? 0.34), 0.10, 1),
-        h: clamp(Number(block.h ?? 0.12), 0.06, 0.9)
-      })) : [];
-      state.selectedFreeBlockId = c.selectedFreeBlockId || (state.freeBlocks[0] ? state.freeBlocks[0].id : null);
-      renderAll();
-    }
-
-    
-    function getFreeFontFamily(fontKey) {
-      if (fontKey === 'serif') return 'Georgia, Cambria, "Times New Roman", serif';
-      if (fontKey === 'impact') return 'Impact, Haettenschweiler, "Arial Black", sans-serif';
-      if (fontKey === 'condensed') return '"Arial Narrow", "Roboto Condensed", Arial, sans-serif';
-      return '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif';
-    }
-
-    function getFreeBlockLabel(blockId) {
-      const idx = state.freeBlocks.findIndex(block => block.id === blockId);
-      return idx >= 0 ? `자유블럭 ${idx + 1}` : '자유블럭';
-    }
-
-    function renderFreeBlockTabs() {
-      if (!freeBlockTabs) return;
-      freeBlockTabs.innerHTML = '';
-      state.freeBlocks.forEach(block => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'free-block-tab' + (block.id === state.selectedFreeBlockId ? ' active' : '');
-        btn.textContent = getFreeBlockLabel(block.id);
-        btn.addEventListener('click', () => selectFreeBlock(block.id));
-        freeBlockTabs.appendChild(btn);
-      });
-    }
-
-    function renderFreeBlockEditStage() {
-      if (!freeBlockEditStage) return;
-      const selected = getSelectedFreeBlock();
-      freeBlockEditStage.querySelectorAll('.free-block-panel-item').forEach(el => el.remove());
-      if (freeBlockEditEmpty) freeBlockEditEmpty.style.display = state.freeBlocks.length ? 'none' : 'flex';
-      if (!state.freeBlocks.length) return;
-      const rect = freeBlockEditStage.getBoundingClientRect();
-      const pw = Math.max(1, rect.width);
-      const ph = Math.max(1, rect.height);
-
-      state.freeBlocks.forEach(fb => {
-        const el = document.createElement('div');
-        el.className = 'free-block-panel-item' + (selected && fb.id === selected.id ? ' is-selected' : '');
-        el.dataset.blockId = fb.id;
-        el.textContent = fb.text || getFreeBlockLabel(fb.id);
-        el.style.left = `${fb.x * pw}px`;
-        el.style.top = `${fb.y * ph}px`;
-        el.style.width = `${Math.max(80, fb.w * pw)}px`;
-        el.style.minHeight = `${Math.max(34, fb.h * ph)}px`;
-        el.style.padding = `${Math.max(6, ph * fb.h * 0.12)}px ${Math.max(8, pw * fb.w * 0.05)}px`;
-        el.style.fontSize = `${Math.max(14, ph * fb.h * 0.58)}px`;
-        el.style.fontWeight = '900';
-        el.style.fontFamily = getFreeFontFamily(fb.font);
-        el.style.textAlign = fb.align;
-        el.style.color = fb.textColor;
-        el.style.background = hexToRgba(fb.bgColor, fb.bgOpacity);
-        el.style.borderColor = fb.strokeColor;
-        el.style.borderWidth = `${fb.strokeWidth}px`;
-        el.style.borderRadius = `${Math.max(10, ph * fb.h * 0.18)}px`;
-        el.addEventListener('pointerdown', onFreeBlockPanelPointerDown);
-
-        const del = document.createElement('button');
-        del.type = 'button';
-        del.className = 'free-block-delete-btn';
-        del.dataset.blockId = fb.id;
-        del.textContent = '×';
-        del.addEventListener('click', e => {
-          e.stopPropagation();
-          deleteFreeBlock(fb.id);
-        });
-        el.appendChild(del);
-
-        const resize = document.createElement('div');
-        resize.className = 'free-block-panel-resize';
-        resize.dataset.blockId = fb.id;
-        resize.addEventListener('pointerdown', onFreeBlockPanelResizeDown);
-        el.appendChild(resize);
-        freeBlockEditStage.appendChild(el);
-      });
-    }
-
-    function createDefaultFreeBlock() {
-      return {
-        id: `fb_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        text: '자유블럭',
-        font: 'sans',
-        align: 'center',
-        textColor: '#ffffff',
-        bgColor: '#000000',
-        bgOpacity: 0.45,
-        strokeColor: '#111111',
-        strokeWidth: 2,
-        x: 0.10,
-        y: 0.10,
-        w: 0.34,
-        h: 0.12
-      };
-    }
-
-    function getSelectedFreeBlock() {
-      return state.freeBlocks.find(block => block.id === state.selectedFreeBlockId) || null;
-    }
-
-    function selectFreeBlock(blockId) {
-      state.selectedFreeBlockId = blockId;
-      syncFreeBlockControls();
-      renderFreeBlockTabs();
-      renderFreeBlocks();
-      renderFreeBlockEditStage();
-    }
-
-    function syncFreeBlockControls() {
-      const fb = getSelectedFreeBlock();
-      const disabled = !fb;
-      if (freeBlockStatus) freeBlockStatus.textContent = fb ? `선택됨 · ${getFreeBlockLabel(fb.id)}` : '선택된 자유블럭 없음';
-      [freeTextInput, freeFontSelect, freeAlignSelect, freeTextColorInput, freeBgColorInput, freeStrokeColorInput, freeBgOpacityRange, freeStrokeWidthRange].forEach(el => { if (el) el.disabled = disabled; });
-      if (!fb) { freeTextInput.value = ''; renderFreeBlockEditStage(); return; }
-      freeTextInput.value = fb.text;
-      freeFontSelect.value = fb.font;
-      freeAlignSelect.value = fb.align;
-      freeTextColorInput.value = fb.textColor;
-      freeBgColorInput.value = fb.bgColor;
-      freeStrokeColorInput.value = fb.strokeColor;
-      freeBgOpacityRange.value = String(fb.bgOpacity);
-      freeStrokeWidthRange.value = String(fb.strokeWidth);
-      freeBgOpacityValue.textContent = Number(fb.bgOpacity).toFixed(2);
-      freeStrokeWidthValue.textContent = String(fb.strokeWidth);
-      renderFreeBlockEditStage();
-    }
-
-    function renderFreeBlocks() {
-      if (!freeBlockLayer) return;
-      freeBlockLayer.innerHTML = '';
-      if (!state.imageUrl) return;
-      const rect = getStageRect();
-      state.freeBlocks.forEach(fb => {
-        const el = document.createElement('div');
-        el.className = 'free-block-item' + (fb.id === state.selectedFreeBlockId ? ' is-selected' : '');
-        el.dataset.blockId = fb.id;
-        el.textContent = fb.text || '자유블럭';
-        const x = fb.x * rect.width;
-        const y = fb.y * rect.height;
-        const w = fb.w * rect.width;
-        const h = fb.h * rect.height;
-        el.style.left = `${x}px`;
-        el.style.top = `${y}px`;
-        el.style.width = `${w}px`;
-        el.style.height = `${h}px`;
-        el.style.padding = `${Math.max(6, h * 0.12)}px ${Math.max(8, w * 0.05)}px`;
-        el.style.fontSize = `${Math.max(14, h * 0.58)}px`;
-        el.style.fontWeight = '900';
-        el.style.fontFamily = getFreeFontFamily(fb.font);
-        el.style.textAlign = fb.align;
-        el.style.color = fb.textColor;
-        el.style.background = hexToRgba(fb.bgColor, fb.bgOpacity);
-        el.style.borderColor = fb.strokeColor;
-        el.style.borderWidth = `${fb.strokeWidth}px`;
-        el.style.borderRadius = `${Math.max(10, h * 0.18)}px`;
-        const del = document.createElement('button');
-        del.type = 'button';
-        del.className = 'free-block-delete-btn';
-        del.dataset.blockId = fb.id;
-        del.textContent = '×';
-        del.addEventListener('click', e => {
-          e.stopPropagation();
-          deleteFreeBlock(fb.id);
-        });
-        el.appendChild(del);
-        const resize = document.createElement('div');
-        resize.className = 'free-block-item-resize';
-        resize.dataset.blockId = fb.id;
-        resize.addEventListener('pointerdown', onFreeBlockResizeDown);
-        el.appendChild(resize);
-        freeBlockLayer.appendChild(el);
-      });
-    }
-
-
-    freeBlockLayer.addEventListener('pointerdown', e => {
-      const item = e.target.closest('.free-block-item');
-      if (!item) return;
-      if (e.target.closest('.free-block-item-resize') || e.target.closest('.free-block-delete-btn')) return;
-      onFreeBlockPointerDown({
-        ...e,
-        currentTarget: item
-      });
+      if(d.stroke>0){ ctx.lineWidth=Math.max(1,h*(d.stroke||0)*.18*state.mainBox.scale); ctx.strokeStyle=palette[2]; ctx.strokeText(text,textX,lineY); }
+      ctx.fillText(text,textX,lineY);
     });
-
-    freeBlockLayer.addEventListener('click', e => {
-      const item = e.target.closest('.free-block-item');
-      if (!item) return;
-      if (e.target.closest('.free-block-item-resize') || e.target.closest('.free-block-delete-btn')) return;
-      selectFreeBlock(item.dataset.blockId);
-      e.stopPropagation();
-    });
-
-    function onFreeBlockPointerDown(e) {
-      if (!state.imageUrl) return;
-      if (e.target.closest('.free-block-item-resize') || e.target.closest('.free-block-delete-btn')) return;
-      const blockId = e.currentTarget.dataset.blockId;
-      selectFreeBlock(blockId);
-      e.stopPropagation();
-      e.currentTarget.setPointerCapture(e.pointerId);
-      const fb = getSelectedFreeBlock();
-      state.freeDrag = { id: e.pointerId, blockId, sx: e.clientX, sy: e.clientY, bx: fb.x, by: fb.y };
-    }
-
-    function onFreeBlockResizeDown(e) {
-      if (!state.imageUrl) return;
-      const blockId = e.currentTarget.dataset.blockId;
-      selectFreeBlock(blockId);
-      e.stopPropagation();
-      e.currentTarget.setPointerCapture(e.pointerId);
-      const fb = getSelectedFreeBlock();
-      state.freeResize = { id: e.pointerId, blockId, sx: e.clientX, sy: e.clientY, bw: fb.w, bh: fb.h };
-    }
-
-    function onFreeBlockPanelPointerDown(e) {
-      if (!state.imageUrl) return;
-      if (e.target.closest('.free-block-panel-resize') || e.target.closest('.free-block-delete-btn')) return;
-      const blockId = e.currentTarget.dataset.blockId;
-      selectFreeBlock(blockId);
-      e.stopPropagation();
-      e.currentTarget.setPointerCapture(e.pointerId);
-      const fb = getSelectedFreeBlock();
-      state.freePanelDrag = { id: e.pointerId, blockId, sx: e.clientX, sy: e.clientY, bx: fb.x, by: fb.y };
-    }
-
-    function onFreeBlockPanelResizeDown(e) {
-      if (!state.imageUrl) return;
-      const blockId = e.currentTarget.dataset.blockId;
-      selectFreeBlock(blockId);
-      e.stopPropagation();
-      e.currentTarget.setPointerCapture(e.pointerId);
-      const fb = getSelectedFreeBlock();
-      state.freePanelResize = { id: e.pointerId, blockId, sx: e.clientX, sy: e.clientY, bw: fb.w, bh: fb.h };
-    }
-
-    function updateSelectedFreeBlockPanelDrag(e) {
-      if (!state.freePanelDrag || state.freePanelDrag.id !== e.pointerId) return;
-      const rect = freeBlockEditStage.getBoundingClientRect();
-      const fb = getSelectedFreeBlock();
-      if (!fb || fb.id !== state.freePanelDrag.blockId) return;
-      const dx = (e.clientX - state.freePanelDrag.sx) / Math.max(1, rect.width);
-      const dy = (e.clientY - state.freePanelDrag.sy) / Math.max(1, rect.height);
-      fb.x = clamp(state.freePanelDrag.bx + dx, 0, 1 - fb.w);
-      fb.y = clamp(state.freePanelDrag.by + dy, 0, 1 - fb.h);
-      renderFreeBlocks();
-      renderFreeBlockEditStage();
-    }
-
-    function updateSelectedFreeBlockPanelResize(e) {
-      if (!state.freePanelResize || state.freePanelResize.id !== e.pointerId) return;
-      const rect = freeBlockEditStage.getBoundingClientRect();
-      const fb = getSelectedFreeBlock();
-      if (!fb || fb.id !== state.freePanelResize.blockId) return;
-      const dx = (e.clientX - state.freePanelResize.sx) / Math.max(1, rect.width);
-      const dy = (e.clientY - state.freePanelResize.sy) / Math.max(1, rect.height);
-      fb.w = clamp(state.freePanelResize.bw + dx, 0.12, 1 - fb.x);
-      fb.h = clamp(state.freePanelResize.bh + dy, 0.08, 1 - fb.y);
-      renderFreeBlocks();
-      renderFreeBlockEditStage();
-    }
-
-    function updateSelectedFreeBlockDrag(e) {
-      if (!state.freeDrag || state.freeDrag.id !== e.pointerId) return;
-      const rect = getStageRect();
-      const fb = getSelectedFreeBlock();
-      if (!fb || fb.id !== state.freeDrag.blockId) return;
-      const dx = (e.clientX - state.freeDrag.sx) / rect.width;
-      const dy = (e.clientY - state.freeDrag.sy) / rect.height;
-      fb.x = clamp(state.freeDrag.bx + dx, 0, 1 - fb.w);
-      fb.y = clamp(state.freeDrag.by + dy, 0, 1 - fb.h);
-      renderFreeBlocks();
-    }
-
-    function updateSelectedFreeBlockResize(e) {
-      if (!state.freeResize || state.freeResize.id !== e.pointerId) return;
-      const rect = getStageRect();
-      const fb = getSelectedFreeBlock();
-      if (!fb || fb.id !== state.freeResize.blockId) return;
-      const dx = (e.clientX - state.freeResize.sx) / rect.width;
-      const dy = (e.clientY - state.freeResize.sy) / rect.height;
-      fb.w = clamp(state.freeResize.bw + dx, 0.10, 1 - fb.x);
-      fb.h = clamp(state.freeResize.bh + dy, 0.06, 1 - fb.y);
-      renderFreeBlocks();
-    }
-
-    function clearFreePointerState(pointerId) {
-      if (state.freeDrag && state.freeDrag.id === pointerId) state.freeDrag = null;
-      if (state.freeResize && state.freeResize.id === pointerId) state.freeResize = null;
-    }
-
-    function startTextGroupDrag(e) {
-      if (!state.imageUrl || !dragSurface || getDesign().id === 'none') return;
-      e.stopPropagation();
-      dragSurface.setPointerCapture(e.pointerId);
-      state.drag = {
-        id: e.pointerId,
-        sx: e.clientX,
-        sy: e.clientY,
-        bx: state.group.x,
-        by: state.group.y
-      };
-    }
-
-    function updateFreeBlockField(field, value) {
-      const fb = getSelectedFreeBlock();
-      if (!fb) return;
-      fb[field] = value;
-      renderFreeBlocks();
-      syncFreeBlockControls();
-    }
-
-    function renderStyleSlots() {
-      if (!styleSlots) return;
-      styleSlots.innerHTML = '';
-      for (let i = 0; i < STYLE_SLOT_COUNT; i++) {
-        const saved = !!state.savedStyles[i];
-        const slot = document.createElement('div');
-        slot.className = 'style-slot' + (saved ? ' saved' : '');
-        slot.innerHTML = `
-          <div class="style-slot-top">
-            <div class="style-slot-name">내스타일${i + 1}</div>
-            <div class="style-slot-dot"></div>
-          </div>
-          <div class="style-slot-actions">
-            <button type="button" class="style-text-btn save" data-style-save="${i}">저장</button>
-            <button type="button" class="style-text-btn apply" data-style-apply="${i}" ${saved ? '' : 'disabled'}>적용</button>
-          </div>
-        `;
-        styleSlots.appendChild(slot);
-      }
-    }
-
-    function renderDesignCards() {
-      designSlider.innerHTML = '';
-      designs.forEach((d, index) => {
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'design-card' + (index === state.selectedDesignIndex ? ' active' : '');
-        card.innerHTML = `<div class="design-name">${d.name}</div><div class="mini-preview"></div>`;
-        const preview = card.querySelector('.mini-preview');
-        const samples = ['기본문구','기본문구 2','기본문구 3','기본문구 4'];
-        for (let i = 0; i < d.lineCount; i++) {
-          const line = document.createElement('div');
-          const spec = d.lines[i];
-          line.className = 'mini-line';
-          line.textContent = samples[i];
-          line.style.top = `${spec.y * 100}%`;
-          line.style.fontSize = `${Math.max(10, 13 * spec.size)}px`;
-          line.style.textAlign = 'left';
-          if (spec.colorMode === 'secondary') line.style.color = '#fde68a';
-          if (spec.colorMode === 'accent') line.style.color = '#bfdbfe';
-          if (spec.chip) {
-            line.style.display = 'inline-block';
-            line.style.width = 'auto';
-            line.style.maxWidth = 'calc(100% - 16px)';
-            line.style.padding = '3px 6px';
-            line.style.background = 'rgba(255,255,255,0.88)';
-            line.style.color = '#111827';
-            line.style.borderRadius = '999px';
-            line.style.textShadow = 'none';
-          }
-          preview.appendChild(line);
-        }
-        card.addEventListener('click', () => {
-          const prevScale = state.group.scale;
-          const prevLineGap = state.group.lineGap;
-          state.selectedDesignIndex = index;
-          applyDesignDefaults(true);
-          state.group.scale = prevScale;
-          state.group.lineGap = prevLineGap;
-          renderAll();
-        });
-        designSlider.appendChild(card);
-      });
-    }
-
-    function renderPaletteCards() {
-      paletteSlider.innerHTML = '';
-      palettes.forEach((palette, index) => {
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'palette-card' + (index === state.selectedPaletteIndex ? ' active' : '');
-        const stripes = document.createElement('div');
-        stripes.className = 'palette-stripes';
-        palette.forEach(color => {
-          const div = document.createElement('div');
-          div.style.background = color;
-          stripes.appendChild(div);
-        });
-        const label = document.createElement('div');
-        label.className = 'palette-label';
-        label.textContent = `P${index + 1}`;
-        card.appendChild(stripes);
-        card.appendChild(label);
-        card.addEventListener('click', () => {
-          state.selectedPaletteIndex = index;
-          renderAll();
-        });
-        paletteSlider.appendChild(card);
-      });
-    }
-
-    function renderInputs() {
-      ensureLineLength();
-      textInputs.innerHTML = '';
-      state.lines.forEach((value, index) => {
-        const ta = document.createElement('textarea');
-        ta.className = 'text-row';
-        ta.rows = 2;
-        ta.placeholder = `${index + 1}번째 문구 입력`;
-        ta.value = value;
-        ta.addEventListener('input', e => {
-          state.lines[index] = e.target.value;
-          renderTextOverlay();
-        });
-        textInputs.appendChild(ta);
-      });
-    }
-
-    function renderImage() {
-      if (!state.imageUrl) {
-        uploadPlaceholder.style.display = 'block';
-        mainImage.style.display = 'none';
-        canvasStage.style.display = 'none';
-        uploadDrop.style.height = '';
-        return;
-      }
-      uploadPlaceholder.style.display = 'none';
-      mainImage.style.display = 'block';
-      canvasStage.style.display = 'block';
-      applyStageSize();
-      mainImage.src = state.imageUrl;
-    }
-
-    function getStageRect() {
-      return canvasStage.getBoundingClientRect();
-    }
-
-    function renderTextOverlay() {
-      if (!state.imageUrl) return;
-      applyStageSize();
-      const d = getDesign();
-      const palette = getPalette();
-      textGroup.querySelectorAll('.overlay-bg, .overlay-line').forEach(el => el.remove());
-
-      const rect = getStageRect();
-      const x = state.group.x * rect.width;
-      const y = state.group.y * rect.height;
-      const w = state.group.w * rect.width;
-      const h = state.group.h * rect.height;
-
-      textGroup.style.left = `${x}px`;
-      textGroup.style.top = `${y}px`;
-      textGroup.style.width = `${w}px`;
-      textGroup.style.height = `${h}px`;
-
-      if (d.bg) {
-        const bg = document.createElement('div');
-        bg.className = 'overlay-bg';
-        const pad = Math.max(6, Math.min(w, h) * d.bg.pad);
-        bg.style.left = `${-pad}px`;
-        bg.style.top = `${-pad}px`;
-        bg.style.width = `calc(100% + ${pad * 2}px)`;
-        bg.style.height = `calc(100% + ${pad * 2}px)`;
-        bg.style.borderRadius = `${d.bg.radius}px`;
-        if (d.bg.type === 'gradient') {
-          bg.style.background = `linear-gradient(135deg, ${hexToRgba(palette[0], d.bg.opacity)}, ${hexToRgba(palette[1], d.bg.opacity)})`;
-        } else {
-          bg.style.background = hexToRgba(palette[d.bg.colorIndex || 0], d.bg.opacity);
-        }
-        textGroup.insertBefore(bg, textGroup.firstChild);
-      }
-
-      const renderableLines = getRenderableMainLines();
-
-      for (const item of renderableLines) {
-        const spec = item.spec;
-        const div = document.createElement('div');
-        div.className = 'overlay-line';
-        div.textContent = item.text;
-        div.style.top = `${item.renderY * 100}%`;
-        div.style.left = '0';
-        div.style.fontSize = `${Math.max(12, h * spec.size * state.group.scale)}px`;
-        div.style.fontWeight = String(spec.weight);
-        div.style.lineHeight = String(0.95 * state.group.lineGap);
-        div.style.letterSpacing = '-0.04em';
-        div.style.textAlign = state.align;
-        div.style.color = resolveLineColor(spec, palette);
-        div.style.fontFamily = spec.serif ? 'Georgia, Cambria, "Times New Roman", serif' : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif';
-        if (d.stroke > 0) {
-          const strokePx = Math.max(1, h * d.stroke * 0.18 * state.group.scale);
-          div.style.webkitTextStroke = `${strokePx}px ${palette[2]}`;
-          div.style.paintOrder = 'stroke fill';
-        }
-        if (d.shadow > 0) {
-          const blur = Math.max(2, 18 * d.shadow * state.group.scale);
-          const yoff = Math.max(1, 7 * d.shadow * state.group.scale);
-          div.style.textShadow = `0 ${yoff}px ${blur}px rgba(0,0,0,0.45)`;
-        }
-        if (spec.chip) {
-          div.style.display = 'inline-block';
-          div.style.width = 'auto';
-          div.style.maxWidth = '100%';
-          div.style.padding = '0.12em 0.38em';
-          div.style.background = hexToRgba(palette[2], 0.88);
-          div.style.borderRadius = '999px';
-          div.style.color = palette[1];
-          div.style.webkitTextStroke = '0';
-          div.style.textShadow = 'none';
-          if (state.align === 'center') {
-            div.style.left = '50%';
-            div.style.transform = 'translateX(-50%)';
-          } else if (state.align === 'right') {
-            div.style.left = 'auto';
-            div.style.right = '0';
-          }
-        }
-        textGroup.appendChild(div);
-      }
-    }
-
-    function syncSegState() {
-      [...formatSeg.querySelectorAll('button')].forEach(btn => btn.classList.toggle('active', btn.dataset.format === state.exportFormat));
-      [...alignSeg.querySelectorAll('button')].forEach(btn => btn.classList.toggle('active', btn.dataset.align === state.align));
-    }
-
-    function renderAll() {
-      renderDesignCards();
-      renderPaletteCards();
-      renderInputs();
-      renderImage();
-      renderStyleSlots();
-      renderFreeBlockTabs();
-      applyDesignDefaults(false);
-      syncSegState();
-      mosaicBrushRange.value = String(state.mosaicBrushSize);
-      mosaicBrushValue.textContent = Number(state.mosaicBrushSize).toFixed(2);
-      updateToolModeUI();
-      syncFreeBlockControls();
-      requestAnimationFrame(() => {
-        renderTextOverlay();
-        renderFreeBlocks();
-        renderFreeBlockEditStage();
-        renderMosaicOverlay();
-      });
-    }
-
-    function openFilePicker() {
-      hiddenFile.click();
-    }
-
-    uploadDrop.addEventListener('click', e => {
-      if (state.toolMode === 'mosaic') return;
-      if (e.target === dragSurface || e.target === resizeHandle || e.target === mosaicCanvas || e.target.closest('.free-block-item')) return;
-      openFilePicker();
-    });
-
-    hiddenFile.addEventListener('change', e => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
-      state.imageUrl = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => {
-        state.image = img;
-        applyStageSize();
-        renderAll();
-      };
-      img.src = state.imageUrl;
-    });
-
-    document.querySelectorAll('[data-scroll-target]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const target = document.getElementById(btn.dataset.scrollTarget);
-        const amount = target.clientWidth * 0.78 * (btn.dataset.dir === 'next' ? 1 : -1);
-        target.scrollBy({ left: amount, behavior: 'smooth' });
-      });
-    });
-
-    mosaicCanvas.addEventListener('pointerdown', e => {
-      if (state.toolMode !== 'mosaic' || !state.imageUrl) return;
-      e.preventDefault();
-      mosaicCanvas.setPointerCapture(e.pointerId);
-      state.mosaicPaint = { id: e.pointerId };
-      addMosaicPointFromEvent(e);
-    });
-
-    mosaicCanvas.addEventListener('pointermove', e => {
-      if (!state.mosaicPaint || state.mosaicPaint.id !== e.pointerId) return;
-      addMosaicPointFromEvent(e);
-    });
-
-    mosaicCanvas.addEventListener('pointerup', e => {
-      if (state.mosaicPaint && state.mosaicPaint.id === e.pointerId) state.mosaicPaint = null;
-    });
-    mosaicCanvas.addEventListener('pointercancel', () => { state.mosaicPaint = null; });
-
-
-    addFreeBlockBtn.addEventListener('click', () => {
-      const block = createDefaultFreeBlock();
-      state.freeBlocks.push(block);
-      selectFreeBlock(block.id);
-      renderFreeBlocks();
-    });
-
-    freeTextInput.addEventListener('input', e => updateFreeBlockField('text', e.target.value));
-    freeFontSelect.addEventListener('change', e => updateFreeBlockField('font', e.target.value));
-    freeAlignSelect.addEventListener('change', e => updateFreeBlockField('align', e.target.value));
-    freeTextColorInput.addEventListener('input', e => updateFreeBlockField('textColor', e.target.value));
-    freeBgColorInput.addEventListener('input', e => updateFreeBlockField('bgColor', e.target.value));
-    freeStrokeColorInput.addEventListener('input', e => updateFreeBlockField('strokeColor', e.target.value));
-    freeBgOpacityRange.addEventListener('input', e => updateFreeBlockField('bgOpacity', Number(e.target.value)));
-    freeStrokeWidthRange.addEventListener('input', e => updateFreeBlockField('strokeWidth', Number(e.target.value)));
-
-    styleSlots.addEventListener('click', e => {
-      const saveBtn = e.target.closest('[data-style-save]');
-      if (saveBtn) {
-        saveStyleSlot(Number(saveBtn.dataset.styleSave));
-        return;
-      }
-      const applyBtn = e.target.closest('[data-style-apply]');
-      if (applyBtn && !applyBtn.disabled) {
-        applyStyleSlot(Number(applyBtn.dataset.styleApply));
-      }
-    });
-
-    dragSurface.addEventListener('pointerdown', startTextGroupDrag);
-
-    textGroup.addEventListener('pointerdown', e => {
-      if (!state.imageUrl || getDesign().id === 'none') return;
-      if (e.target === resizeHandle || e.target.closest('.free-block-item') || e.target.closest('.free-block-delete-btn')) return;
-      startTextGroupDrag(e);
-    });
-
-    dragSurface.addEventListener('pointermove', e => {
-      if (!state.drag || state.drag.id !== e.pointerId) return;
-      const rect = getStageRect();
-      const dx = (e.clientX - state.drag.sx) / rect.width;
-      const dy = (e.clientY - state.drag.sy) / rect.height;
-      state.group.x = clamp(state.drag.bx + dx, 0, 1 - state.group.w);
-      state.group.y = clamp(state.drag.by + dy, 0, 1 - state.group.h);
-      renderTextOverlay();
-    });
-
-    dragSurface.addEventListener('pointerup', e => {
-      if (state.drag && state.drag.id === e.pointerId) state.drag = null;
-    });
-    dragSurface.addEventListener('pointercancel', () => { state.drag = null; });
-
-    canvasStage.addEventListener('pointermove', e => {
-      updateSelectedFreeBlockDrag(e);
-      updateSelectedFreeBlockResize(e);
-      updateSelectedFreeBlockPanelDrag(e);
-      updateSelectedFreeBlockPanelResize(e);
-    });
-    canvasStage.addEventListener('pointerup', e => clearFreePointerState(e.pointerId));
-    canvasStage.addEventListener('pointercancel', e => clearFreePointerState(e.pointerId));
-    canvasStage.addEventListener('click', e => {
-      if (e.target === canvasStage || e.target === freeBlockLayer) {
-        state.selectedFreeBlockId = null;
-        syncFreeBlockControls();
-        renderFreeBlocks();
-      }
-    });
-
-    resizeHandle.addEventListener('pointerdown', e => {
-      if (!state.imageUrl) return;
-      e.stopPropagation();
-      resizeHandle.setPointerCapture(e.pointerId);
-      state.resize = {
-        id: e.pointerId,
-        sx: e.clientX,
-        sy: e.clientY,
-        bw: state.group.w,
-        bh: state.group.h
-      };
-    });
-
-    resizeHandle.addEventListener('pointermove', e => {
-      if (!state.resize || state.resize.id !== e.pointerId) return;
-      const rect = getStageRect();
-      const dx = (e.clientX - state.resize.sx) / rect.width;
-      const dy = (e.clientY - state.resize.sy) / rect.height;
-      state.group.w = clamp(state.resize.bw + dx, 0.18, 1 - state.group.x);
-      state.group.h = clamp(state.resize.bh + dy, 0.10, 1 - state.group.y);
-      renderTextOverlay();
-    });
-
-    resizeHandle.addEventListener('pointerup', e => {
-      if (state.resize && state.resize.id === e.pointerId) state.resize = null;
-    });
-    resizeHandle.addEventListener('pointercancel', () => { state.resize = null; });
-
-    scaleRange.addEventListener('input', e => {
-      state.group.scale = Number(e.target.value);
-      scaleValue.textContent = Number(state.group.scale).toFixed(2);
-      renderTextOverlay();
-    });
-
-    lineGapRange.addEventListener('input', e => {
-      state.group.lineGap = Number(e.target.value);
-      lineGapValue.textContent = Number(state.group.lineGap).toFixed(2);
-      renderTextOverlay();
-    });
-
-    formatSeg.addEventListener('click', e => {
-      const btn = e.target.closest('button[data-format]');
-      if (!btn) return;
-      state.exportFormat = btn.dataset.format;
-      syncSegState();
-    });
-
-    alignSeg.addEventListener('click', e => {
-      const btn = e.target.closest('button[data-align]');
-      if (!btn) return;
-      state.align = btn.dataset.align;
-      syncSegState();
-      renderTextOverlay();
-    });
-
-    toolModeSeg.addEventListener('click', e => {
-      const btn = e.target.closest('button[data-tool]');
-      if (!btn) return;
-      state.toolMode = btn.dataset.tool;
-      updateToolModeUI();
-    });
-
-    mosaicBrushRange.addEventListener('input', e => {
-      state.mosaicBrushSize = Number(e.target.value);
-      mosaicBrushValue.textContent = Number(state.mosaicBrushSize).toFixed(2);
-    });
-
-    clearMosaicBtn.addEventListener('click', () => {
-      state.mosaicStrokes = [];
-      renderMosaicOverlay();
-    });
-
-    fitTextBtn.addEventListener('click', () => {
-      const d = getDesign();
-      state.group.x = d.box.x;
-      state.group.y = d.box.y;
-      state.group.w = d.box.w;
-      state.group.h = d.box.h;
-      renderTextOverlay();
-    });
-
-    resetStyleBtn.addEventListener('click', () => {
-      applyDesignDefaults(true);
-      renderAll();
-    });
-
-    downloadBtn.addEventListener('click', () => {
-      if (!state.image || !state.image.complete) {
-        alert('먼저 사진을 넣어주세요.');
-        return;
-      }
-      exportComposite();
-    });
-
-    function exportComposite() {
-      const canvas = document.createElement('canvas');
-      const iw = state.image.naturalWidth;
-      const ih = state.image.naturalHeight;
-      canvas.width = iw;
-      canvas.height = ih;
-      const ctx = canvas.getContext('2d');
-
-      if (state.exportFormat === 'jpg') {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, iw, ih);
-      }
-      ctx.drawImage(state.image, 0, 0, iw, ih);
-
-      state.mosaicStrokes.forEach(point => {
-        drawMosaicPatch(ctx, state.image, point.x * iw, point.y * ih, point.r * iw, iw, ih, state.image.naturalWidth, state.image.naturalHeight);
-      });
-
-      const d = getDesign();
-      const palette = getPalette();
-      const x = state.group.x * iw;
-      const y = state.group.y * ih;
-      const w = state.group.w * iw;
-      const h = state.group.h * ih;
-
-      if (d.bg) {
-        const pad = Math.max(8, Math.min(w, h) * d.bg.pad);
-        const bx = x - pad;
-        const by = y - pad;
-        const bw = w + pad * 2;
-        const bh = h + pad * 2;
-        let fill;
-        if (d.bg.type === 'gradient') {
-          const grad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
-          grad.addColorStop(0, hexToRgba(palette[0], d.bg.opacity));
-          grad.addColorStop(1, hexToRgba(palette[1], d.bg.opacity));
-          fill = grad;
-        } else {
-          fill = hexToRgba(palette[d.bg.colorIndex || 0], d.bg.opacity);
-        }
-        drawRoundRect(ctx, bx, by, bw, bh, d.bg.radius, fill);
-      }
-
-      ctx.textBaseline = 'top';
-      const renderableLines = getRenderableMainLines();
-      for (const item of renderableLines) {
-        const spec = item.spec;
-        const text = item.text;
-        const fontSize = Math.max(12, h * spec.size * state.group.scale);
-        const lineXBase = x;
-        const lineY = y + (h * item.renderY);
-        ctx.font = `${spec.weight} ${fontSize}px ${spec.serif ? 'Georgia, serif' : 'Arial, sans-serif'}`;
-        ctx.fillStyle = resolveLineColor(spec, palette);
-        ctx.lineJoin = 'round';
-        ctx.miterLimit = 2;
-
-        if (d.shadow > 0) {
-          ctx.shadowColor = 'rgba(0,0,0,0.45)';
-          ctx.shadowBlur = Math.max(2, 18 * d.shadow * state.group.scale);
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = Math.max(1, 7 * d.shadow * state.group.scale);
-        } else {
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
-        }
-
-        const isChip = !!spec.chip;
-        let textX = lineXBase;
-        if (state.align === 'center') textX = x + w / 2;
-        if (state.align === 'right') textX = x + w;
-        ctx.textAlign = state.align;
-
-        if (isChip) {
-          const tw = ctx.measureText(text).width;
-          const padX = fontSize * 0.38;
-          const padY = fontSize * 0.16;
-          let chipX = textX;
-          if (state.align === 'center') chipX = textX - (tw / 2) - padX;
-          if (state.align === 'right') chipX = textX - tw - padX * 2;
-          const chipW = tw + padX * 2;
-          const chipH = fontSize + padY * 2;
-          drawRoundRect(ctx, chipX, lineY, chipW, chipH, chipH / 2, hexToRgba(palette[2], 0.88));
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = palette[1];
-          ctx.fillText(text, state.align === 'left' ? chipX + padX : (state.align === 'center' ? chipX + chipW / 2 : chipX + chipW - padX), lineY + padY);
-          continue;
-        }
-
-        if (d.stroke > 0) {
-          ctx.lineWidth = Math.max(1, h * d.stroke * 0.18 * state.group.scale);
-          ctx.strokeStyle = palette[2];
-          ctx.strokeText(text, textX, lineY);
-        }
-        ctx.fillText(text, textX, lineY);
-      }
-
-      state.freeBlocks.forEach(fb => {
-        if (!fb.text) return;
-        const fx = fb.x * iw;
-        const fy = fb.y * ih;
-        const fw = fb.w * iw;
-        const fh = fb.h * ih;
-        drawRoundRect(ctx, fx, fy, fw, fh, Math.max(10, fh * 0.18), hexToRgba(fb.bgColor, fb.bgOpacity));
-        if (fb.strokeWidth > 0) {
-          ctx.lineWidth = fb.strokeWidth;
-          ctx.strokeStyle = fb.strokeColor;
-          ctx.beginPath();
-          const r = Math.min(Math.max(10, fh * 0.18), fw / 2, fh / 2);
-          ctx.moveTo(fx + r, fy);
-          ctx.arcTo(fx + fw, fy, fx + fw, fy + fh, r);
-          ctx.arcTo(fx + fw, fy + fh, fx, fy + fh, r);
-          ctx.arcTo(fx, fy + fh, fx, fy, r);
-          ctx.arcTo(fx, fy, fx + fw, fy, r);
-          ctx.closePath();
-          ctx.stroke();
-        }
-        const padX = Math.max(8, fw * 0.05);
-        const fontSize = Math.max(14, fh * 0.58);
-        ctx.font = `900 ${fontSize}px ${getFreeFontFamily(fb.font)}`;
-        ctx.fillStyle = fb.textColor;
-        ctx.textAlign = fb.align;
-        ctx.textBaseline = 'middle';
-        let tx = fx + padX;
-        if (fb.align === 'center') tx = fx + fw / 2;
-        if (fb.align === 'right') tx = fx + fw - padX;
-        ctx.fillText(fb.text, tx, fy + fh / 2);
-      });
-
-      const ext = state.exportFormat === 'png' ? 'png' : 'jpg';
-      const mime = state.exportFormat === 'png' ? 'image/png' : 'image/jpeg';
-      const dataUrl = canvas.toDataURL(mime, state.exportFormat === 'png' ? undefined : 0.95);
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = `maslow-thumbnail.${ext}`;
-      a.click();
-    }
-
-    window.addEventListener('resize', () => {
-      if (!state.imageUrl) return;
-      applyStageSize();
-      renderTextOverlay();
-      renderMosaicOverlay();
-    });
-
-    renderAll();
-  </script>
+  }
+
+  state.freeBlocks.forEach(block=>{
+    const bx=block.x*canvas.width, by=block.y*canvas.height, bw=block.w*canvas.width, bh=block.h*canvas.height;
+    if(block.bgAlpha>0){ drawRoundRect(ctx,bx,by,bw,bh,14,hexToRgba(block.bgColor,block.bgAlpha)); }
+    ctx.font=`900 ${block.fontSize*(canvas.width/getImageRect().width)}px ${block.fontKey==='serif'?'Georgia, serif':block.fontKey==='impact'?'Impact, sans-serif':block.fontKey==='condensed'?'Arial Narrow, sans-serif':'Arial, sans-serif'}`;
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=block.textColor;
+    if(block.strokeWidth>0){ ctx.lineWidth=block.strokeWidth*(canvas.width/getImageRect().width); ctx.strokeStyle=block.strokeColor; ctx.strokeText(block.text,bx+bw/2,by+bh/2); }
+    ctx.fillText(block.text,bx+bw/2,by+bh/2);
+  });
+
+  if(state.mosaicStrokes.length){
+    state.mosaicStrokes.forEach(stroke=>drawMosaicStamp(ctx,state.image,canvas.width,canvas.height,stroke.x*canvas.width,stroke.y*canvas.height,stroke.size*canvas.width));
+  }
+
+  const ext=state.exportFormat==='png'?'png':'jpg'; const mime=state.exportFormat==='png'?'image/png':'image/jpeg'; const url=canvas.toDataURL(mime,state.exportFormat==='png'?undefined:.95); const a=document.createElement('a'); a.href=url; a.download=`maslow-thumbnail.${ext}`; a.click();
+}
+
+function drawRoundRect(ctx,x,y,w,h,r,fillStyle){ const radius=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+radius,y); ctx.arcTo(x+w,y,x+w,y+h,radius); ctx.arcTo(x+w,y+h,x,y+h,radius); ctx.arcTo(x,y+h,x,y,radius); ctx.arcTo(x,y,x+w,y,radius); ctx.closePath(); ctx.fillStyle=fillStyle; ctx.fill(); }
+
+// events
+el.pickImageBtn.addEventListener('click',()=>el.fileInput.click());
+el.placeholder.addEventListener('click',()=>el.fileInput.click());
+el.fileInput.addEventListener('change',e=>{ const file=e.target.files?.[0]; if(!file) return; if(state.imageUrl) URL.revokeObjectURL(state.imageUrl); state.imageUrl=URL.createObjectURL(file); const img=new Image(); img.onload=()=>{state.image=img; renderAll();}; img.src=state.imageUrl; });
+
+document.querySelectorAll('[data-scroll-target]').forEach(btn=>btn.addEventListener('click',()=>{ const target=document.getElementById(btn.dataset.scrollTarget); const amount=target.clientWidth*.78*(btn.dataset.dir==='next'?1:-1); target.scrollBy({left:amount,behavior:'smooth'}); }));
+
+el.formatSeg.addEventListener('click',e=>{ const btn=e.target.closest('button[data-format]'); if(!btn) return; state.exportFormat=btn.dataset.format; syncSegs(); });
+el.alignSeg.addEventListener('click',e=>{ const btn=e.target.closest('button[data-align]'); if(!btn) return; state.align=btn.dataset.align; syncSegs(); renderMainText(); });
+el.mainScaleRange.addEventListener('input',e=>{ state.mainBox.scale=Number(e.target.value); syncRanges(); renderMainText(); });
+el.mainLineGapRange.addEventListener('input',e=>{ state.mainBox.lineGap=Number(e.target.value); syncRanges(); renderMainText(); });
+el.brushSizeRange.addEventListener('input',e=>{ state.brushSize=Number(e.target.value); syncRanges(); });
+el.modeTextBtn.addEventListener('click',()=>setMode('text'));
+el.modeMosaicBtn.addEventListener('click',()=>setMode('mosaic'));
+el.addFreeBlockBtn.addEventListener('click',addFreeBlock);
+el.clearMosaicBtn.addEventListener('click',()=>{ state.mosaicStrokes=[]; renderMosaicCanvas(); });
+el.resetMainBoxBtn.addEventListener('click',()=>{ const d=getDesign(); state.mainBox.x=d.box.x; state.mainBox.y=d.box.y; state.mainBox.w=d.box.w; state.mainBox.h=d.box.h; renderMainText(); });
+el.resetDesignBtn.addEventListener('click',()=>{ const oldScale=state.mainBox.scale, oldGap=state.mainBox.lineGap; applyDesignDefaults(true); state.mainBox.scale=oldScale; state.mainBox.lineGap=oldGap; renderAll(); });
+el.downloadBtn.addEventListener('click',exportComposite);
+
+el.overlayRoot.addEventListener('pointerdown',onOverlayPointerDown);
+el.overlayRoot.addEventListener('pointermove',onOverlayPointerMove);
+el.overlayRoot.addEventListener('pointerup',onOverlayPointerUp);
+el.overlayRoot.addEventListener('pointercancel',onOverlayPointerUp);
+
+el.freeTextInput.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.text=e.target.value; renderFreeBlocks(); });
+el.freeFontSelect.addEventListener('change',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.fontKey=e.target.value; renderFreeBlocks(); });
+el.freeTextColor.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.textColor=e.target.value; renderFreeBlocks(); });
+el.freeBgColor.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.bgColor=e.target.value; renderFreeBlocks(); });
+el.freeStrokeColor.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.strokeColor=e.target.value; renderFreeBlocks(); });
+el.freeFontSize.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.fontSize=Number(e.target.value); syncRanges(); renderFreeBlocks(); });
+el.freeStrokeWidth.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.strokeWidth=Number(e.target.value); syncRanges(); renderFreeBlocks(); });
+el.freeBgAlpha.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.bgAlpha=Number(e.target.value); syncRanges(); renderFreeBlocks(); });
+el.freeLineHeight.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.lineHeight=Number(e.target.value); syncRanges(); renderFreeBlocks(); });
+
+el.styleGrid.addEventListener('click',e=>{
+  const save=e.target.closest('[data-save]'); const apply=e.target.closest('[data-apply]');
+  if(save){ const n=save.dataset.save; localStorage.setItem(`maslow-style-${n}`, JSON.stringify(serializeState())); renderStyleGrid(); }
+  if(apply){ const n=apply.dataset.apply; const raw=localStorage.getItem(`maslow-style-${n}`); if(raw){ applySerializedState(JSON.parse(raw)); renderAll(); } }
+});
+
+window.addEventListener('resize',()=>{ renderMainText(); renderFreeBlocks(); renderMosaicCanvas(); });
+
+applyDesignDefaults(true);
+renderAll();
+</script>
 </body>
 </html>

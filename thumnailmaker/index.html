@@ -808,69 +808,9 @@ function onOverlayPointerMove(e){
 function onOverlayPointerUp(e){ if(state.drag && state.drag.pointerId===e.pointerId) state.drag=null; }
 
 
+
 function copyComputedStylesDeep(sourceNode,targetNode){
   if(!(sourceNode instanceof Element) || !(targetNode instanceof Element)) return;
-  const style=getComputedStyle(sourceNode);
-  let css='';
-  for(const prop of style){ css += `${prop}:${style.getPropertyValue(prop)};`; }
-  targetNode.style.cssText = css;
-  const srcChildren=[...sourceNode.children];
-  const dstChildren=[...targetNode.children];
-  for(let i=0;i<srcChildren.length;i++) copyComputedStylesDeep(srcChildren[i], dstChildren[i]);
-}
-
-function buildExportClone(){
-  const source=el.imageWrap;
-  const clone=source.cloneNode(true);
-  copyComputedStylesDeep(source, clone);
-  clone.style.margin='0';
-  clone.style.transform='none';
-  clone.style.position='relative';
-  clone.style.left='0';
-  clone.style.top='0';
-  clone.style.width=`${source.clientWidth}px`;
-  clone.style.height=`${source.clientHeight}px`;
-  clone.style.display='block';
-  clone.style.overflow='hidden';
-  clone.querySelectorAll('.main-group-box,.main-resize-handle,.free-box,.free-close,.free-move-surface,.free-resize-handle').forEach(n=>n.remove());
-  clone.querySelectorAll('.main-text-group,.free-block,.main-line,.free-block-text,.main-bg').forEach(n=>{
-    n.style.pointerEvents='none';
-  });
-  const overlay=clone.querySelector('.overlay-root');
-  if(overlay){ overlay.style.pointerEvents='none'; }
-  return clone;
-}
-
-
-function px(value){
-  const n=parseFloat(String(value||'').replace('px',''));
-  return Number.isFinite(n)?n:0;
-}
-
-function getRelativeCanvasRect(node, sourceRect, exportWidth, exportHeight){
-  const rect=node.getBoundingClientRect();
-  return {
-    x: ((rect.left - sourceRect.left) / sourceRect.width) * exportWidth,
-    y: ((rect.top - sourceRect.top) / sourceRect.height) * exportHeight,
-    w: (rect.width / sourceRect.width) * exportWidth,
-    h: (rect.height / sourceRect.height) * exportHeight
-  };
-}
-
-function drawWrappedLinesFromDom(ctx, text, maxWidth, align, lineHeight, drawX, startY, doStroke=true){
-  const lines = wrapCanvasText(ctx, text, maxWidth);
-  const oldAlign = ctx.textAlign;
-  ctx.textAlign = align;
-  for(let i=0;i<lines.length;i++){
-    const y = startY + (i * lineHeight);
-    if(doStroke && ctx.lineWidth>0){ ctx.strokeText(lines[i], drawX, y); }
-    ctx.fillText(lines[i], drawX, y);
-  }
-  ctx.textAlign = oldAlign;
-  return lines.length;
-}
-
-function copyComputedStylesDeep(sourceNode, targetNode){
   const sourceNodes=[sourceNode, ...sourceNode.querySelectorAll('*')];
   const targetNodes=[targetNode, ...targetNode.querySelectorAll('*')];
   sourceNodes.forEach((src, index)=>{
@@ -885,78 +825,111 @@ function copyComputedStylesDeep(sourceNode, targetNode){
   });
 }
 
-function getDisplayImageRect(){
-  const wrapRect=el.imageWrap.getBoundingClientRect();
-  const imgRect=el.mainImage.getBoundingClientRect();
-  return {
-    left: imgRect.left - wrapRect.left,
-    top: imgRect.top - wrapRect.top,
-    width: imgRect.width,
-    height: imgRect.height
-  };
+function buildExportClone(exportWidth, exportHeight){
+  const source = el.imageWrap;
+  const clone = source.cloneNode(true);
+  copyComputedStylesDeep(source, clone);
+
+  clone.querySelectorAll('.main-group-box,.main-resize-handle,.main-move-surface,.free-box,.free-close,.free-move-surface,.free-resize-handle').forEach(n=>n.remove());
+
+  clone.style.margin = '0';
+  clone.style.position = 'relative';
+  clone.style.left = '0';
+  clone.style.top = '0';
+  clone.style.overflow = 'hidden';
+  clone.style.display = 'block';
+  clone.style.transformOrigin = 'top left';
+
+  const displayW = source.clientWidth || 1;
+  const displayH = source.clientHeight || 1;
+  const scaleX = exportWidth / displayW;
+  const scaleY = exportHeight / displayH;
+  clone.style.width = `${displayW}px`;
+  clone.style.height = `${displayH}px`;
+  clone.style.transform = `scale(${scaleX}, ${scaleY})`;
+
+  clone.querySelectorAll('canvas').forEach(canvas=>{
+    try{
+      const img = document.createElement('img');
+      img.src = canvas.toDataURL('image/png');
+      const cs = getComputedStyle(canvas);
+      let styleText='';
+      for(const prop of cs){
+        styleText += `${prop}:${cs.getPropertyValue(prop)};`;
+      }
+      img.setAttribute('style', styleText);
+      img.width = canvas.width;
+      img.height = canvas.height;
+      canvas.replaceWith(img);
+    }catch(err){
+      console.error('canvas replace fail', err);
+    }
+  });
+
+  clone.querySelectorAll('.main-text-group,.free-block,.main-line,.free-block-text,.main-bg,.overlay-root,.mosaic-canvas,img').forEach(n=>{
+    n.style.pointerEvents='none';
+  });
+
+  return { clone, displayW, displayH, scaleX, scaleY };
 }
 
-async function captureOverlayCanvas(exportWidth, exportHeight){
-  if(typeof html2canvas !== 'function'){
-    throw new Error('html2canvas not loaded');
-  }
-  const displayRect=getDisplayImageRect();
-  const scale = Math.max(1, exportWidth / Math.max(1, displayRect.width));
-  const prevClass = document.body.classList.contains('exporting-overlay');
-  document.body.classList.add('exporting-overlay');
-  try{
-    const canvas = await html2canvas(el.overlayRoot,{
-      backgroundColor:null,
-      useCORS:true,
-      allowTaint:true,
-      scale:scale,
-      logging:false,
-      imageTimeout:0,
-      width:displayRect.width,
-      height:displayRect.height,
-      ignoreElements:(node)=>{
-        if(!node || !node.classList) return false;
-        return node.classList.contains('main-group-box') ||
-               node.classList.contains('main-resize-handle') ||
-               node.classList.contains('main-move-surface') ||
-               node.classList.contains('free-box') ||
-               node.classList.contains('free-resize-handle') ||
-               node.classList.contains('free-close');
-      }
-    });
-    if(canvas.width !== exportWidth || canvas.height !== exportHeight){
-      const fitted=document.createElement('canvas');
-      fitted.width=exportWidth;
-      fitted.height=exportHeight;
-      const fctx=fitted.getContext('2d');
-      fctx.drawImage(canvas,0,0,exportWidth,exportHeight);
-      return fitted;
-    }
-    return canvas;
-  } finally {
-    if(!prevClass) document.body.classList.remove('exporting-overlay');
-  }
+function svgToImage(svgText){
+  return new Promise((resolve,reject)=>{
+    const blob = new Blob([svgText], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = ()=>{ URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = (err)=>{ URL.revokeObjectURL(url); reject(err); };
+    img.src = url;
+  });
+}
+
+async function renderImageWrapExact(exportWidth, exportHeight){
+  const { clone, displayW, displayH } = buildExportClone(exportWidth, exportHeight);
+  const holder = document.createElement('div');
+  holder.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  holder.style.width = `${displayW}px`;
+  holder.style.height = `${displayH}px`;
+  holder.style.overflow = 'hidden';
+  holder.style.background = 'transparent';
+  holder.appendChild(clone);
+
+  const serialized = new XMLSerializer().serializeToString(holder)
+    .replace(/#/g, '%23')
+    .replace(/\n/g, ' ');
+
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+  <svg xmlns="http://www.w3.org/2000/svg" width="${exportWidth}" height="${exportHeight}" viewBox="0 0 ${exportWidth} ${exportHeight}">
+    <foreignObject x="0" y="0" width="${exportWidth}" height="${exportHeight}">${serialized}</foreignObject>
+  </svg>`;
+
+  const img = await svgToImage(svg);
+  const canvas = document.createElement('canvas');
+  canvas.width = exportWidth;
+  canvas.height = exportHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, exportWidth, exportHeight);
+  return canvas;
 }
 
 async function exportComposite(){
   if(!state.image || !state.image.complete){ alert('먼저 사진을 넣어주세요.'); return; }
-  const exportWidth=state.image.naturalWidth;
-  const exportHeight=state.image.naturalHeight;
+  const exportWidth = state.image.naturalWidth;
+  const exportHeight = state.image.naturalHeight;
   try{
-    const overlayCanvas=await captureOverlayCanvas(exportWidth, exportHeight);
-    const canvas=document.createElement('canvas');
-    canvas.width=exportWidth;
-    canvas.height=exportHeight;
-    const ctx=canvas.getContext('2d');
+    const exactCanvas = await renderImageWrapExact(exportWidth, exportHeight);
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = exportWidth;
+    finalCanvas.height = exportHeight;
+    const ctx = finalCanvas.getContext('2d');
     if(state.exportFormat==='jpg'){
       ctx.fillStyle='#ffffff';
       ctx.fillRect(0,0,exportWidth,exportHeight);
     }
-    ctx.drawImage(state.image,0,0,exportWidth,exportHeight);
-    ctx.drawImage(overlayCanvas,0,0,exportWidth,exportHeight);
+    ctx.drawImage(exactCanvas, 0, 0, exportWidth, exportHeight);
     const ext=state.exportFormat==='png'?'png':'jpg';
     const mime=state.exportFormat==='png'?'image/png':'image/jpeg';
-    const url=canvas.toDataURL(mime,state.exportFormat==='png'?undefined:.95);
+    const url=finalCanvas.toDataURL(mime,state.exportFormat==='png'?undefined:.95);
     const a=document.createElement('a');
     a.href=url;
     a.download=`maslow-thumbnail.${ext}`;

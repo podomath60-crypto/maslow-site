@@ -801,139 +801,206 @@ function onOverlayPointerMove(e){
 
 function onOverlayPointerUp(e){ if(state.drag && state.drag.pointerId===e.pointerId) state.drag=null; }
 
-function exportComposite(){
+
+function copyComputedStylesDeep(sourceNode,targetNode){
+  if(!(sourceNode instanceof Element) || !(targetNode instanceof Element)) return;
+  const style=getComputedStyle(sourceNode);
+  let css='';
+  for(const prop of style){ css += `${prop}:${style.getPropertyValue(prop)};`; }
+  targetNode.style.cssText = css;
+  const srcChildren=[...sourceNode.children];
+  const dstChildren=[...targetNode.children];
+  for(let i=0;i<srcChildren.length;i++) copyComputedStylesDeep(srcChildren[i], dstChildren[i]);
+}
+
+function buildExportClone(){
+  const source=el.imageWrap;
+  const clone=source.cloneNode(true);
+  copyComputedStylesDeep(source, clone);
+  clone.style.margin='0';
+  clone.style.transform='none';
+  clone.style.position='relative';
+  clone.style.left='0';
+  clone.style.top='0';
+  clone.style.width=`${source.clientWidth}px`;
+  clone.style.height=`${source.clientHeight}px`;
+  clone.style.display='block';
+  clone.style.overflow='hidden';
+  clone.querySelectorAll('.main-group-box,.main-resize-handle,.free-box,.free-close,.free-move-surface,.free-resize-handle').forEach(n=>n.remove());
+  clone.querySelectorAll('.main-text-group,.free-block,.main-line,.free-block-text,.main-bg').forEach(n=>{
+    n.style.pointerEvents='none';
+  });
+  const overlay=clone.querySelector('.overlay-root');
+  if(overlay){ overlay.style.pointerEvents='none'; }
+  return clone;
+}
+
+
+function px(value){
+  const n=parseFloat(String(value||'').replace('px',''));
+  return Number.isFinite(n)?n:0;
+}
+
+function getRelativeCanvasRect(node, sourceRect, exportWidth, exportHeight){
+  const rect=node.getBoundingClientRect();
+  return {
+    x: ((rect.left - sourceRect.left) / sourceRect.width) * exportWidth,
+    y: ((rect.top - sourceRect.top) / sourceRect.height) * exportHeight,
+    w: (rect.width / sourceRect.width) * exportWidth,
+    h: (rect.height / sourceRect.height) * exportHeight
+  };
+}
+
+function drawWrappedLinesFromDom(ctx, text, maxWidth, align, lineHeight, drawX, startY, doStroke=true){
+  const lines = wrapCanvasText(ctx, text, maxWidth);
+  const oldAlign = ctx.textAlign;
+  ctx.textAlign = align;
+  for(let i=0;i<lines.length;i++){
+    const y = startY + (i * lineHeight);
+    if(doStroke && ctx.lineWidth>0){ ctx.strokeText(lines[i], drawX, y); }
+    ctx.fillText(lines[i], drawX, y);
+  }
+  ctx.textAlign = oldAlign;
+  return lines.length;
+}
+
+async function exportComposite(){
   if(!state.image || !state.image.complete){ alert('먼저 사진을 넣어주세요.'); return; }
+
+  const source = el.imageWrap;
+  const sourceRect = source.getBoundingClientRect();
+  const exportWidth = state.image.naturalWidth;
+  const exportHeight = state.image.naturalHeight;
+
   const canvas=document.createElement('canvas');
-  canvas.width=state.image.naturalWidth;
-  canvas.height=state.image.naturalHeight;
+  canvas.width=exportWidth;
+  canvas.height=exportHeight;
   const ctx=canvas.getContext('2d');
 
-  const imageRect=getImageRect();
-  const scaleX=canvas.width/imageRect.width;
-  const scaleY=canvas.height/imageRect.height;
-
-  function mapRect(domRect){
-    return {
-      x:(domRect.left-imageRect.left)*scaleX,
-      y:(domRect.top-imageRect.top)*scaleY,
-      w:domRect.width*scaleX,
-      h:domRect.height*scaleY
-    };
-  }
-
-  function parsePx(v, fallback=0){
-    const n=parseFloat(v);
-    return Number.isFinite(n) ? n : fallback;
-  }
-
-  function isVisibleNode(node){
-    if(!node) return false;
-    const style=getComputedStyle(node);
-    return style.display!=='none' && style.visibility!=='hidden' && parseFloat(style.opacity||'1')>0;
-  }
-
-  function drawNodeText(node, opts={}){
-    if(!node || !isVisibleNode(node)) return;
-    const domRect=node.getBoundingClientRect();
-    if(domRect.width<=0 || domRect.height<=0) return;
-
-    const r=mapRect(domRect);
-    const style=getComputedStyle(node);
-    const fontSize=parsePx(style.fontSize,16)*scaleY;
-    const lineHeightCss=style.lineHeight;
-    const lineHeight=(lineHeightCss && lineHeightCss!=='normal') ? parsePx(lineHeightCss,fontSize)*scaleY : fontSize*1.1;
-    const fontWeight=style.fontWeight || '900';
-    const fontFamily=style.fontFamily || 'Arial, sans-serif';
-    const align=style.textAlign || opts.align || 'left';
-    const color=style.color || '#ffffff';
-    const strokeWidth=parsePx(style.webkitTextStrokeWidth || '0',0)*scaleX;
-    const strokeColor=style.webkitTextStrokeColor || opts.strokeColor || '#111111';
-    const shadowText=style.textShadow || 'none';
-
-    ctx.save();
-    ctx.font=`${fontWeight} ${fontSize}px ${fontFamily}`;
-    ctx.textBaseline='top';
-    ctx.textAlign=align;
-    ctx.fillStyle=color;
-    ctx.lineJoin='round';
-    ctx.miterLimit=2;
-
-    if(strokeWidth>0){
-      ctx.lineWidth=strokeWidth;
-      ctx.strokeStyle=strokeColor;
-    } else {
-      ctx.lineWidth=0;
-    }
-
-    if(shadowText && shadowText!=='none'){
-      const m=shadowText.match(/(-?\d+\.?\d*)px\s+(-?\d+\.?\d*)px\s+(\d+\.?\d*)px\s+(rgba?\([^)]+\))/);
-      if(m){
-        ctx.shadowOffsetX=parseFloat(m[1])*scaleX;
-        ctx.shadowOffsetY=parseFloat(m[2])*scaleY;
-        ctx.shadowBlur=parseFloat(m[3])*scaleX;
-        ctx.shadowColor=m[4];
-      }
-    }
-
-    const text=String(node.textContent ?? '');
-    const maxWidth=r.w;
-    const lines=wrapCanvasText(ctx,text,maxWidth);
-
-    let x=r.x;
-    if(align==='center') x=r.x + r.w/2;
-    if(align==='right' || align==='end') x=r.x + r.w;
-
-    let startY=r.y;
-    if(opts.vAlign==='middle'){
-      const totalHeight=lines.length*lineHeight;
-      startY=r.y + Math.max(0,(r.h-totalHeight)/2);
-    }
-
-    for(let i=0;i<lines.length;i++){
-      const ly=startY+(i*lineHeight);
-      if(strokeWidth>0) ctx.strokeText(lines[i],x,ly);
-      ctx.fillText(lines[i],x,ly);
-    }
-    ctx.restore();
-  }
-
   if(state.exportFormat==='jpg'){
-    ctx.fillStyle='#fff';
+    ctx.fillStyle='#ffffff';
     ctx.fillRect(0,0,canvas.width,canvas.height);
   }
+
   ctx.drawImage(state.image,0,0,canvas.width,canvas.height);
 
   if(state.mosaicStrokes.length){
     state.mosaicStrokes.forEach(stroke=>{
-      drawMosaicStamp(ctx,state.image,canvas.width,canvas.height,stroke.x*canvas.width,stroke.y*canvas.height,stroke.size*canvas.width);
+      drawMosaicStamp(
+        ctx,
+        state.image,
+        exportWidth,
+        exportHeight,
+        stroke.x * exportWidth,
+        stroke.y * exportHeight,
+        stroke.size * exportWidth
+      );
     });
   }
 
-  const mainBg=el.mainTextGroup.querySelector('.main-bg');
-  if(mainBg && isVisibleNode(mainBg)){
-    const bgRect=mapRect(mainBg.getBoundingClientRect());
-    const bgStyle=getComputedStyle(mainBg);
-    drawRoundRect(ctx,bgRect.x,bgRect.y,bgRect.w,bgRect.h,parsePx(bgStyle.borderRadius,14)*scaleX,bgStyle.background);
+  const d = getDesign();
+  if(!d.hidden){
+    source.querySelectorAll('.main-bg').forEach(bg=>{
+      const r=getRelativeCanvasRect(bg, sourceRect, exportWidth, exportHeight);
+      const cs=getComputedStyle(bg);
+      drawRoundRect(ctx, r.x, r.y, r.w, r.h, px(cs.borderRadius) * (exportWidth/sourceRect.width), cs.background || cs.backgroundColor);
+    });
+
+    source.querySelectorAll('.main-line').forEach(line=>{
+      const r=getRelativeCanvasRect(line, sourceRect, exportWidth, exportHeight);
+      const cs=getComputedStyle(line);
+      const fontSize = px(cs.fontSize) * (exportWidth/sourceRect.width);
+      const lineHeightRaw = px(cs.lineHeight);
+      const lineHeight = (lineHeightRaw > 0 ? lineHeightRaw : fontSize) * (exportWidth/sourceRect.width);
+      ctx.save();
+      ctx.font = `${cs.fontWeight} ${fontSize}px ${cs.fontFamily}`;
+      ctx.fillStyle = cs.color;
+      ctx.textBaseline = 'top';
+      ctx.lineJoin = 'round';
+      ctx.miterLimit = 2;
+      const strokeW = px(cs.webkitTextStrokeWidth || cs.textStrokeWidth);
+      if(strokeW > 0){
+        ctx.lineWidth = strokeW * (exportWidth/sourceRect.width);
+        ctx.strokeStyle = cs.webkitTextStrokeColor || cs.textStrokeColor || 'transparent';
+      } else {
+        ctx.lineWidth = 0;
+      }
+      const shadow = cs.textShadow;
+      if(shadow && shadow !== 'none'){
+        const m = shadow.match(/(-?\d+(?:\.\d+)?)px\s+(-?\d+(?:\.\d+)?)px\s+(\d+(?:\.\d+)?)px\s+(.+)/);
+        if(m){
+          ctx.shadowOffsetX = parseFloat(m[1]) * (exportWidth/sourceRect.width);
+          ctx.shadowOffsetY = parseFloat(m[2]) * (exportWidth/sourceRect.width);
+          ctx.shadowBlur = parseFloat(m[3]) * (exportWidth/sourceRect.width);
+          ctx.shadowColor = m[4];
+        }
+      }
+      const align = cs.textAlign || 'left';
+      let drawX = r.x;
+      const paddingLeft = px(cs.paddingLeft) * (exportWidth/sourceRect.width);
+      const paddingRight = px(cs.paddingRight) * (exportWidth/sourceRect.width);
+      const maxWidth = Math.max(1, r.w - paddingLeft - paddingRight);
+      if(align === 'center') drawX = r.x + r.w/2;
+      else if(align === 'right') drawX = r.x + r.w - paddingRight;
+      else drawX = r.x + paddingLeft;
+      drawWrappedLinesFromDom(ctx, line.textContent || '', maxWidth, align, lineHeight, drawX, r.y, strokeW > 0);
+      ctx.restore();
+    });
   }
 
-  el.mainTextGroup.querySelectorAll('.main-line').forEach(line=>{
-    if(!isVisibleNode(line)) return;
-    const style=getComputedStyle(line);
-    if(style.backgroundColor && style.backgroundColor!=='rgba(0, 0, 0, 0)' && style.backgroundColor!=='transparent'){
-      const rr=mapRect(line.getBoundingClientRect());
-      drawRoundRect(ctx,rr.x,rr.y,rr.w,rr.h,parsePx(style.borderRadius,12)*scaleX,style.backgroundColor);
-    }
-    drawNodeText(line);
-  });
+  source.querySelectorAll('.free-block').forEach(block=>{
+    const textNode=block.querySelector('.free-block-text');
+    if(!textNode) return;
+    const r=getRelativeCanvasRect(textNode, sourceRect, exportWidth, exportHeight);
+    const cs=getComputedStyle(textNode);
 
-  el.freeBlocksLayer.querySelectorAll('.free-block-text').forEach(textNode=>{
-    if(!isVisibleNode(textNode)) return;
-    const style=getComputedStyle(textNode);
-    const rr=mapRect(textNode.getBoundingClientRect());
-    if(style.backgroundColor && style.backgroundColor!=='rgba(0, 0, 0, 0)' && style.backgroundColor!=='transparent'){
-      drawRoundRect(ctx,rr.x,rr.y,rr.w,rr.h,parsePx(style.borderRadius,12)*scaleX,style.backgroundColor);
+    const bgColor = cs.backgroundColor;
+    if(bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent'){
+      drawRoundRect(ctx, r.x, r.y, r.w, r.h, px(cs.borderRadius) * (exportWidth/sourceRect.width), bgColor);
     }
-    drawNodeText(textNode,{vAlign:'middle',align:style.textAlign || 'center'});
+
+    ctx.save();
+    const fontSize = px(cs.fontSize) * (exportWidth/sourceRect.width);
+    const lineHeightRaw = px(cs.lineHeight);
+    const lineHeight = (lineHeightRaw > 0 ? lineHeightRaw : fontSize) * (exportWidth/sourceRect.width);
+    ctx.font = `${cs.fontWeight} ${fontSize}px ${cs.fontFamily}`;
+    ctx.fillStyle = cs.color;
+    ctx.textBaseline = 'top';
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 2;
+    const strokeW = px(cs.webkitTextStrokeWidth || cs.textStrokeWidth);
+    if(strokeW > 0){
+      ctx.lineWidth = strokeW * (exportWidth/sourceRect.width);
+      ctx.strokeStyle = cs.webkitTextStrokeColor || cs.textStrokeColor || 'transparent';
+    } else {
+      ctx.lineWidth = 0;
+    }
+
+    const justify = cs.justifyContent || 'center';
+    let align = 'center';
+    if(justify === 'flex-start') align = 'left';
+    else if(justify === 'flex-end') align = 'right';
+
+    const paddingLeft = px(cs.paddingLeft) * (exportWidth/sourceRect.width);
+    const paddingRight = px(cs.paddingRight) * (exportWidth/sourceRect.width);
+    const paddingTop = px(cs.paddingTop) * (exportWidth/sourceRect.width);
+    const maxWidth = Math.max(1, r.w - paddingLeft - paddingRight);
+    let drawX = r.x + r.w/2;
+    if(align === 'left') drawX = r.x + paddingLeft;
+    else if(align === 'right') drawX = r.x + r.w - paddingRight;
+
+    const lines = wrapCanvasText(ctx, textNode.textContent || '', maxWidth);
+    const blockTextHeight = Math.max(lineHeight, lines.length * lineHeight);
+    const startY = r.y + ((r.h - blockTextHeight) / 2);
+    const oldAlign = ctx.textAlign;
+    ctx.textAlign = align;
+    for(let i=0;i<lines.length;i++){
+      const y = startY + (i * lineHeight);
+      if(strokeW > 0){ ctx.strokeText(lines[i], drawX, y); }
+      ctx.fillText(lines[i], drawX, y);
+    }
+    ctx.textAlign = oldAlign;
+    ctx.restore();
   });
 
   const ext=state.exportFormat==='png'?'png':'jpg';
@@ -944,6 +1011,7 @@ function exportComposite(){
   a.download=`maslow-thumbnail.${ext}`;
   a.click();
 }
+
 
 function wrapCanvasText(ctx,text,maxWidth){
   const rawLines=String(text??'').split('\n');
@@ -983,7 +1051,18 @@ function drawRoundRect(ctx,x,y,w,h,r,fillStyle){ const radius=Math.min(r,w/2,h/2
 // events
 el.pickImageBtn.addEventListener('click',()=>el.fileInput.click());
 el.placeholder.addEventListener('click',()=>el.fileInput.click());
-el.fileInput.addEventListener('change',e=>{ const file=e.target.files?.[0]; if(!file) return; if(state.imageUrl) URL.revokeObjectURL(state.imageUrl); state.imageUrl=URL.createObjectURL(file); const img=new Image(); img.onload=()=>{state.image=img; state.history=[]; renderAll();}; img.src=state.imageUrl; });
+el.fileInput.addEventListener('change',e=>{
+  const file=e.target.files?.[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    state.imageUrl=String(reader.result||'');
+    const img=new Image();
+    img.onload=()=>{ state.image=img; state.history=[]; renderAll(); };
+    img.src=state.imageUrl;
+  };
+  reader.readAsDataURL(file);
+});
 
 document.querySelectorAll('[data-scroll-target]').forEach(btn=>btn.addEventListener('click',()=>{ const target=document.getElementById(btn.dataset.scrollTarget); const amount=target.clientWidth*.78*(btn.dataset.dir==='next'?1:-1); target.scrollBy({left:amount,behavior:'smooth'}); }));
 

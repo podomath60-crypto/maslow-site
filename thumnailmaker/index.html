@@ -170,7 +170,7 @@
     .upload-drop {
       position: relative;
       width: 100%;
-      aspect-ratio: 16 / 9;
+      min-height: 320px;
       background: #e5e7eb;
       border-radius: 20px;
       overflow: hidden;
@@ -182,7 +182,7 @@
     .upload-drop img {
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;
       display: none;
       pointer-events: none;
       user-select: none;
@@ -350,6 +350,7 @@
       .design-card { min-width: 130px; }
       .palette-card { min-width: 78px; }
       .inline-grid { grid-template-columns: 1fr; }
+      .upload-drop { min-height: 220px; }
     }
   </style>
 </head>
@@ -449,6 +450,7 @@
   <script>
     const designs = [
       { id:'d01', name:'Bold Hero', lineCount:3, box:{x:0.05,y:0.10,w:0.72,h:0.32}, lines:[{y:0.00,size:0.40,weight:900},{y:0.40,size:0.22,weight:850},{y:0.70,size:0.22,weight:850}], bg:null, stroke:0.05, shadow:0.12 },
+      { id:'d01b', name:'Bold Hero Mix', lineCount:3, box:{x:0.05,y:0.10,w:0.72,h:0.32}, lines:[{y:0.00,size:0.40,weight:900,colorMode:'primary'},{y:0.40,size:0.22,weight:850,colorMode:'secondary'},{y:0.70,size:0.22,weight:850,colorMode:'accent'}], bg:null, stroke:0.05, shadow:0.12 },
       { id:'d02', name:'Clean Box', lineCount:3, box:{x:0.06,y:0.64,w:0.70,h:0.22}, lines:[{y:0.06,size:0.28,weight:900},{y:0.38,size:0.22,weight:800},{y:0.68,size:0.22,weight:800}], bg:{type:'solid',colorIndex:2,opacity:0.90,pad:0.06,radius:16}, stroke:0, shadow:0 },
       { id:'d03', name:'Poster Block', lineCount:4, box:{x:0.04,y:0.08,w:0.78,h:0.46}, lines:[{y:0.00,size:0.34,weight:900},{y:0.28,size:0.20,weight:850},{y:0.50,size:0.20,weight:850},{y:0.72,size:0.20,weight:850}], bg:null, stroke:0.04, shadow:0.10 },
       { id:'d04', name:'Right Punch', lineCount:3, box:{x:0.28,y:0.10,w:0.66,h:0.34}, lines:[{y:0.00,size:0.34,weight:900},{y:0.40,size:0.22,weight:850},{y:0.70,size:0.22,weight:850}], bg:null, stroke:0.03, shadow:0.10 },
@@ -521,6 +523,27 @@
     function getPalette() { return palettes[state.selectedPaletteIndex]; }
     function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
 
+    function getStageSize() {
+      if (!state.image || !state.image.naturalWidth || !state.image.naturalHeight) {
+        const fallbackWidth = uploadDrop.clientWidth || 1;
+        return { width: fallbackWidth, height: fallbackWidth * (9 / 16) };
+      }
+      const width = uploadDrop.clientWidth || state.image.naturalWidth;
+      const height = width * (state.image.naturalHeight / state.image.naturalWidth);
+      return { width, height };
+    }
+
+    function applyStageSize() {
+      const size = getStageSize();
+      uploadDrop.style.height = `${size.height}px`;
+    }
+
+    function resolveLineColor(spec, palette) {
+      if (spec.colorMode === 'secondary') return palette[1];
+      if (spec.colorMode === 'accent') return palette[2];
+      return palette[0];
+    }
+
     function hexToRgba(hex, alpha) {
       const clean = hex.replace('#','');
       const n = parseInt(clean, 16);
@@ -583,6 +606,8 @@
           line.style.top = `${spec.y * 100}%`;
           line.style.fontSize = `${Math.max(10, 13 * spec.size)}px`;
           line.style.textAlign = 'left';
+          if (spec.colorMode === 'secondary') line.style.color = '#fde68a';
+          if (spec.colorMode === 'accent') line.style.color = '#bfdbfe';
           if (spec.chip) {
             line.style.display = 'inline-block';
             line.style.width = 'auto';
@@ -652,11 +677,13 @@
         uploadPlaceholder.style.display = 'block';
         mainImage.style.display = 'none';
         canvasStage.style.display = 'none';
+        uploadDrop.style.height = '';
         return;
       }
       uploadPlaceholder.style.display = 'none';
       mainImage.style.display = 'block';
       canvasStage.style.display = 'block';
+      applyStageSize();
       mainImage.src = state.imageUrl;
     }
 
@@ -666,6 +693,7 @@
 
     function renderTextOverlay() {
       if (!state.imageUrl) return;
+      applyStageSize();
       const d = getDesign();
       const palette = getPalette();
       textGroup.querySelectorAll('.overlay-bg, .overlay-line').forEach(el => el.remove());
@@ -710,7 +738,7 @@
         div.style.lineHeight = String(0.95 * state.group.lineGap);
         div.style.letterSpacing = '-0.04em';
         div.style.textAlign = state.align;
-        div.style.color = palette[0];
+        div.style.color = resolveLineColor(spec, palette);
         div.style.fontFamily = spec.serif ? 'Georgia, Cambria, "Times New Roman", serif' : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif';
         if (d.stroke > 0) {
           const strokePx = Math.max(1, h * d.stroke * 0.18 * state.group.scale);
@@ -776,6 +804,7 @@
       const img = new Image();
       img.onload = () => {
         state.image = img;
+        applyStageSize();
         renderAll();
       };
       img.src = state.imageUrl;
@@ -941,7 +970,7 @@
         const lineXBase = x;
         const lineY = y + (h * spec.y);
         ctx.font = `${spec.weight} ${fontSize}px ${spec.serif ? 'Georgia, serif' : 'Arial, sans-serif'}`;
-        ctx.fillStyle = palette[0];
+        ctx.fillStyle = resolveLineColor(spec, palette);
         ctx.lineJoin = 'round';
         ctx.miterLimit = 2;
 
@@ -996,6 +1025,12 @@
       a.download = `maslow-thumbnail.${ext}`;
       a.click();
     }
+
+    window.addEventListener('resize', () => {
+      if (!state.imageUrl) return;
+      applyStageSize();
+      renderTextOverlay();
+    });
 
     renderAll();
   </script>

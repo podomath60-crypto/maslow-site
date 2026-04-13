@@ -925,88 +925,30 @@ async function exportComposite(){
   if(!state.image || !state.image.complete){ alert('먼저 사진을 넣어주세요.'); return; }
   const exportWidth = state.image.naturalWidth;
   const exportHeight = state.image.naturalHeight;
-  const source = el.imageWrap;
-  const overlay = el.overlayRoot;
-  const toHide = source.querySelectorAll('.main-group-box,.main-resize-handle,.main-move-surface,.free-box,.free-close,.free-move-surface,.free-resize-handle');
   try{
-    if (typeof html2canvas !== 'function') throw new Error('html2canvas not loaded');
-    toHide.forEach(n=>n.style.visibility='hidden');
-
-    const tempStage = document.createElement('div');
-    tempStage.style.position='relative';
-    tempStage.style.width=`${exportWidth}px`;
-    tempStage.style.height=`${exportHeight}px`;
-    tempStage.style.overflow='hidden';
-    tempStage.style.background=state.exportFormat==='jpg' ? '#fff' : 'transparent';
-
-    const bgImg = document.createElement('img');
-    bgImg.src = state.image.src;
-    bgImg.style.position='absolute';
-    bgImg.style.inset='0';
-    bgImg.style.width='100%';
-    bgImg.style.height='100%';
-    bgImg.style.display='block';
-    tempStage.appendChild(bgImg);
-
-    const overlayClone = overlay.cloneNode(true);
-    overlayClone.style.position='absolute';
-    overlayClone.style.left='0';
-    overlayClone.style.top='0';
-    overlayClone.style.width=`${overlay.clientWidth}px`;
-    overlayClone.style.height=`${overlay.clientHeight}px`;
-    overlayClone.style.transformOrigin='top left';
-    overlayClone.style.transform=`scale(${exportWidth / (overlay.clientWidth || 1)}, ${exportHeight / (overlay.clientHeight || 1)})`;
-    overlayClone.style.display='block';
-    overlayClone.classList.remove('mosaic-hide-text');
-    if(state.mode==='mosaic'){
-      overlayClone.classList.add('mosaic-hide-text');
+    if (typeof html2canvas !== 'function') {
+      throw new Error('html2canvas not loaded');
     }
-    overlayClone.querySelectorAll('.main-group-box,.main-resize-handle,.main-move-surface,.free-box,.free-close,.free-move-surface,.free-resize-handle').forEach(n=>n.remove());
-    overlayClone.querySelectorAll('*').forEach(n=>{ n.style.pointerEvents='none'; });
-
-    const cloneCanvas = overlayClone.querySelector('#mosaicCanvas');
-    if(cloneCanvas){
-      const mosaicImg = document.createElement('img');
-      mosaicImg.src = el.mosaicCanvas.toDataURL('image/png');
-      mosaicImg.style.position='absolute';
-      mosaicImg.style.inset='0';
-      mosaicImg.style.width='100%';
-      mosaicImg.style.height='100%';
-      mosaicImg.style.display='block';
-      mosaicImg.style.pointerEvents='none';
-      cloneCanvas.replaceWith(mosaicImg);
+    const exactCanvas = await renderImageWrapExact(exportWidth, exportHeight);
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = exportWidth;
+    finalCanvas.height = exportHeight;
+    const ctx = finalCanvas.getContext('2d');
+    if(state.exportFormat==='jpg'){
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(0,0,exportWidth,exportHeight);
     }
-
-    tempStage.appendChild(overlayClone);
-    el.hiddenExportStage.innerHTML='';
-    el.hiddenExportStage.appendChild(tempStage);
-
-    const canvas = await html2canvas(tempStage, {
-      backgroundColor: state.exportFormat==='jpg' ? '#ffffff' : null,
-      useCORS: true,
-      allowTaint: true,
-      scale: 1,
-      width: exportWidth,
-      height: exportHeight,
-      logging: false,
-      imageTimeout: 0,
-      removeContainer: true,
-      foreignObjectRendering: false
-    });
-
+    ctx.drawImage(exactCanvas, 0, 0, exportWidth, exportHeight);
     const ext=state.exportFormat==='png'?'png':'jpg';
     const mime=state.exportFormat==='png'?'image/png':'image/jpeg';
-    const url=canvas.toDataURL(mime,state.exportFormat==='png'?undefined:.96);
+    const url=finalCanvas.toDataURL(mime,state.exportFormat==='png'?undefined:.95);
     const a=document.createElement('a');
     a.href=url;
     a.download=`maslow-thumbnail.${ext}`;
     a.click();
   }catch(err){
     console.error(err);
-    alert('내려받기 렌더링 중 오류가 발생했습니다.');
-  }finally{
-    toHide.forEach(n=>n.style.visibility='');
-    el.hiddenExportStage.innerHTML='';
+    alert('내려받기 렌더링 중 오류가 발생했습니다. 네트워크 연결을 확인한 뒤 다시 시도해주세요.');
   }
 }
 

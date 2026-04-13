@@ -45,7 +45,7 @@
     .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:13px;font-weight:800;color:#9aa2ac;letter-spacing:.18em;text-transform:uppercase;width:auto}
     .eyebrow::before{content:"";width:36px;height:1px;background:#d7dde5}
     .hero-lite{padding:132px var(--pad-x) 28px;background:radial-gradient(circle at 50% 12%, rgba(201,151,26,.14), transparent 32%),linear-gradient(180deg, #fffdf8 0%, #fff8ea 100%);border-bottom:1px solid var(--line)}
-    .hero-lite h1{margin:18px 0 16px;font-size:clamp(42px,6vw,74px);line-height:1.02;font-weight:800;color:#111;letter-spacing:-0.05em;max-width:980px}
+    .hero-lite h1{margin:18px 0 16px;font-size:clamp(42px,6vw,74px);line-height:1.02;font-weight:800;color:#111;letter-spacing:-0.05em;max-width:980px;white-space:nowrap}.hero-mobile-break{display:none}
     .hero-lite p{margin:0;max-width:860px;color:var(--muted);font-size:21px;line-height:1.8}
 
     .property-search-wrap{width:100%;padding:18px var(--pad-x) 0;background:#fff}
@@ -103,7 +103,7 @@
     .property-detail-carousel-track::-webkit-scrollbar{display:none}
     .property-detail-carousel-slide{flex:0 0 100%;width:100%;scroll-snap-align:start}
     .property-detail-hero{display:block;width:100%;aspect-ratio:1 / 1.25;object-fit:cover;border-radius:0;background:#e9edf2;margin-bottom:0}
-    .property-detail-photo-btn{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:auto;height:auto;display:flex;align-items:center;justify-content:center;background:transparent;border:none;box-shadow:none;color:#111;font-size:64px;font-weight:300;line-height:1;cursor:pointer;user-select:none;padding:0 6px}
+    .property-detail-photo-btn{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:auto;height:auto;display:flex;align-items:center;justify-content:center;background:transparent;border:none;box-shadow:none;color:#111;font-size:64px;font-weight:300;line-height:1;cursor:pointer;user-select:none;padding:0 6px;appearance:none;-webkit-appearance:none;outline:none;font-family:Arial,sans-serif}
     .property-detail-photo-btn.prev{left:-56px}
     .property-detail-photo-btn.next{right:-56px}
     .property-detail-photo-btn.is-hidden{display:none !important}
@@ -188,7 +188,7 @@
       .logo-text strong{font-size:16px}
       .header-right .btn.btn-primary{display:inline-flex !important;min-height:auto;padding:0;font-size:16px;font-weight:900;white-space:nowrap;background:transparent !important;box-shadow:none !important;border:none !important;border-radius:0 !important;color:#111 !important}
       .hero-lite{padding:106px var(--pad-x) 20px}
-      .hero-lite h1{font-size:38px;line-height:1.06;margin:14px 0 12px}
+      .hero-lite h1{font-size:38px;line-height:1.06;margin:14px 0 12px;white-space:normal}.hero-mobile-break{display:inline}
       .hero-lite p{font-size:16px;line-height:1.75}
 
       .property-search-wrap{padding:14px var(--pad-x) 0}
@@ -270,7 +270,7 @@
 
   <section class="hero-lite">
     <div class="eyebrow">Property Line-up</div>
-    <h1>공간을 넘어<br>가치를 <span id="heroDashboardTrigger">봅니다</span></h1>
+    <h1>공간을 넘어<span class="hero-mobile-break"><br></span> 가치를 <span id="heroDashboardTrigger">봅니다</span></h1>
     <p>입지와 흐름, 활용도와 향후 경쟁력까지 함께 살펴봅니다.</p>
   </section>
 
@@ -319,11 +319,11 @@
       <div class="mk-modal-body">
         <div class="property-detail-hero-wrap">
           <div class="property-detail-carousel">
-            <button type="button" id="detailPhotoPrevBtn" class="property-detail-photo-btn prev is-hidden" aria-label="이전 사진" onclick="moveDetailPhoto(-1)">‹</button>
+            <button type="button" id="detailPhotoPrevBtn" class="property-detail-photo-btn prev is-hidden" aria-label="이전 사진" onclick="moveDetailPhoto(-1)"><span aria-hidden="true">‹</span></button>
             <div id="detailPhotoTrack" class="property-detail-carousel-track">
               <div class="property-detail-carousel-slide"><img id="detailHero" class="property-detail-hero" src="https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png" alt="추천 공장 매물"></div>
             </div>
-            <button type="button" id="detailPhotoNextBtn" class="property-detail-photo-btn next is-hidden" aria-label="다음 사진" onclick="moveDetailPhoto(1)">›</button>
+            <button type="button" id="detailPhotoNextBtn" class="property-detail-photo-btn next is-hidden" aria-label="다음 사진" onclick="moveDetailPhoto(1)"><span aria-hidden="true">›</span></button>
           </div>
           <div id="detailPhotoDots" class="property-detail-photo-dots is-hidden"></div>
         </div>
@@ -1537,4 +1537,3 @@
 </script>
 </body>
 </html>
-

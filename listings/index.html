@@ -102,11 +102,24 @@
     .property-detail-carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none}
     .property-detail-carousel-track::-webkit-scrollbar{display:none}
     .property-detail-carousel-slide{flex:0 0 100%;width:100%;scroll-snap-align:start}
-    .property-detail-hero{width:100%;aspect-ratio:1 / 1.25;object-fit:cover;border-radius:0;background:#e9edf2;margin-bottom:0}
+    .property-detail-hero{display:block;width:100%;aspect-ratio:1 / 1.25;object-fit:cover;border-radius:0;background:#e9edf2;margin-bottom:0}
+    .property-detail-photo-btn{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:auto;height:auto;display:flex;align-items:center;justify-content:center;background:transparent;border:none;box-shadow:none;color:#111;font-size:64px;font-weight:300;line-height:1;cursor:pointer;user-select:none;padding:0 6px}
+    .property-detail-photo-btn.prev{left:-56px}
+    .property-detail-photo-btn.next{right:-56px}
+    .property-detail-photo-btn.is-hidden{display:none !important}
     .property-detail-photo-dots{display:flex;justify-content:center;align-items:center;gap:8px;margin:12px 0 0}
     .property-detail-photo-dots.is-hidden{display:none}
     .property-detail-photo-dot{width:8px;height:8px;border-radius:999px;background:#c9d7e5;transition:transform .18s ease, background .18s ease}
     .property-detail-photo-dot.active{background:#0f7cff;transform:scale(1.22)}
+    @media (min-width:861px){
+      .property-detail-modal .mk-modal-inner{max-width:980px}
+      .property-detail-modal .mk-modal-body{padding:0 28px 72px}
+      .property-detail-hero-wrap{max-width:620px;margin:0 auto 22px}
+      .property-detail-carousel{max-height:720px;overflow:visible}
+      .property-detail-hero{width:100%;height:min(72vh, 720px);aspect-ratio:auto;object-fit:contain;background:#eef3f8}
+      .property-detail-photo-btn.prev{left:-72px}
+      .property-detail-photo-btn.next{right:-72px}
+    }
     .property-detail-note{display:none}
     .property-detail-chip{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 22px;border-radius:999px;background:#1f96ff;color:#fff;font-size:22px;font-weight:800;line-height:1;box-shadow:0 8px 20px rgba(31,150,255,.20);margin-bottom:18px;width:auto}
     .property-detail-title{margin:0 0 14px;font-size:56px;line-height:1.08;font-weight:900;color:#202227;letter-spacing:-0.05em}
@@ -161,6 +174,12 @@
 
     @media (max-width:1180px){ .property-grid{grid-template-columns:repeat(2,1fr)} }
     @media (min-width:861px){ .desktop-only-inline{display:inline}.mobile-only-inline{display:none}.desktop-float-phone{display:flex !important} }
+    @media (min-width:861px) and (max-width:1100px){
+      .property-detail-photo-btn{font-size:52px}
+      .property-detail-photo-btn.prev{left:-44px}
+      .property-detail-photo-btn.next{right:-44px}
+    }
+
     @media (max-width:860px){
       :root{--pad-x:22px}
       .header{height:72px}.header-inner{padding-left:18px;padding-right:18px}.nav,.lang{display:none}
@@ -300,9 +319,11 @@
       <div class="mk-modal-body">
         <div class="property-detail-hero-wrap">
           <div class="property-detail-carousel">
+            <button type="button" id="detailPhotoPrevBtn" class="property-detail-photo-btn prev is-hidden" aria-label="이전 사진" onclick="moveDetailPhoto(-1)">‹</button>
             <div id="detailPhotoTrack" class="property-detail-carousel-track">
               <div class="property-detail-carousel-slide"><img id="detailHero" class="property-detail-hero" src="https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png" alt="추천 공장 매물"></div>
             </div>
+            <button type="button" id="detailPhotoNextBtn" class="property-detail-photo-btn next is-hidden" aria-label="다음 사진" onclick="moveDetailPhoto(1)">›</button>
           </div>
           <div id="detailPhotoDots" class="property-detail-photo-dots is-hidden"></div>
         </div>
@@ -767,7 +788,34 @@
     requestAnimationFrame(function(){
       var slide = track.querySelector('.property-detail-carousel-slide[data-photo-index="' + currentDetailPhotoIndex + '"]');
       if (slide) track.scrollLeft = slide.offsetLeft;
+      updateDetailPhotoNavButtons();
     });
+  }
+
+  function updateDetailPhotoNavButtons(){
+    var prevBtn = document.getElementById('detailPhotoPrevBtn');
+    var nextBtn = document.getElementById('detailPhotoNextBtn');
+    var total = currentDetailPhotos.length ? currentDetailPhotos.length : 1;
+    var isDesktop = window.innerWidth >= 861;
+    var shouldShow = isDesktop && total > 1;
+    if (prevBtn) prevBtn.classList.toggle('is-hidden', !shouldShow);
+    if (nextBtn) nextBtn.classList.toggle('is-hidden', !shouldShow);
+  }
+
+  function moveDetailPhoto(direction){
+    var total = currentDetailPhotos.length ? currentDetailPhotos.length : 1;
+    if (total <= 1) return;
+    currentDetailPhotoIndex += direction;
+    if (currentDetailPhotoIndex < 0) currentDetailPhotoIndex = 0;
+    if (currentDetailPhotoIndex > total - 1) currentDetailPhotoIndex = total - 1;
+    var track = document.getElementById('detailPhotoTrack');
+    if (!track) return;
+    var target = track.querySelector('.property-detail-carousel-slide[data-photo-index="' + currentDetailPhotoIndex + '"]');
+    if (target) {
+      track.scrollTo({ left: target.offsetLeft, behavior: 'smooth' });
+    }
+    syncDetailPhotoIndexFromScroll();
+    updateDetailPhotoNavButtons();
   }
 
   function syncDetailPhotoIndexFromScroll(){
@@ -781,6 +829,7 @@
         dot.classList.toggle('active', idx === currentDetailPhotoIndex);
       });
     }
+    updateDetailPhotoNavButtons();
   }
 
   function buildCardTitle_(item){
@@ -1366,6 +1415,7 @@
       currentDetailPhotoIndex = idx;
       renderDetailPhotoCarousel();
     });
+    window.addEventListener('resize', updateDetailPhotoNavButtons);
   });
 
   function getValue(id){

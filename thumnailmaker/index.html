@@ -88,7 +88,13 @@ body.exporting-overlay .main-resize-handle,
 body.exporting-overlay .main-move-surface,
 body.exporting-overlay .free-box,
 body.exporting-overlay .free-resize-handle,
-body.exporting-overlay .free-close{display:none !important}
+body.exporting-overlay .free-close,
+.export-mode .main-group-box,
+.export-mode .main-resize-handle,
+.export-mode .main-move-surface,
+.export-mode .free-box,
+.export-mode .free-resize-handle,
+.export-mode .free-close{display:none !important}
 #fileInput{display:none}
     @media (max-width:980px){.editor-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media (max-width:640px){.app{padding:0 10px 32px}.topbar{margin:0 -10px}.topbar-title{font-size:22px}.inline-grid,.color-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.design-card{min-width:130px}.palette-card{min-width:78px}}
@@ -888,7 +894,7 @@ function svgToImage(svgText){
 async function renderImageWrapExact(exportWidth, exportHeight){
   const source = el.imageWrap;
   const displayW = source.clientWidth || 1;
-  const scale = exportWidth / displayW;
+  const scale = Math.max(1, exportWidth / displayW);
 
   source.classList.add('export-mode');
   try{
@@ -901,8 +907,8 @@ async function renderImageWrapExact(exportWidth, exportHeight){
       imageTimeout: 0,
       removeContainer: true,
       foreignObjectRendering: false,
-      windowWidth: document.documentElement.clientWidth,
-      windowHeight: document.documentElement.clientHeight,
+      windowWidth: Math.ceil(source.scrollWidth),
+      windowHeight: Math.ceil(source.scrollHeight),
       onclone: (doc) => {
         const clonedSource = doc.getElementById('imageWrap');
         if (clonedSource) clonedSource.classList.add('export-mode');

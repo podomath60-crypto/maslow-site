@@ -206,6 +206,7 @@
       inset: 0;
       display: none;
       touch-action: none;
+      z-index: 5;
     }
     .mosaic-layer {
       position: absolute;
@@ -216,9 +217,11 @@
     }
     .text-group {
       position: absolute;
+      z-index: 10;
       min-width: 100px;
       min-height: 80px;
       touch-action: none;
+      pointer-events: auto;
     }
     .group-box {
       position: absolute;
@@ -232,10 +235,13 @@
       inset: 0;
       cursor: grab;
       border-radius: 12px;
+      z-index: 2;
+      pointer-events: auto;
     }
     .drag-surface:active { cursor: grabbing; }
     .resize-handle {
       position: absolute;
+      z-index: 3;
       width: 22px;
       height: 22px;
       right: -10px;
@@ -472,12 +478,16 @@
       position: absolute;
       inset: 0;
       pointer-events: auto;
-      z-index: 8;
+      z-index: 30;
+      background: transparent;
     }
     .free-block-item {
       position: absolute;
-      z-index: 9;
+      z-index: 31;
       pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       white-space: pre-wrap;
       word-break: keep-all;
       line-height: 1.1;
@@ -1306,7 +1316,7 @@
         el.style.left = `${x}px`;
         el.style.top = `${y}px`;
         el.style.width = `${w}px`;
-        el.style.minHeight = `${h}px`;
+        el.style.height = `${h}px`;
         el.style.padding = `${Math.max(6, h * 0.12)}px ${Math.max(8, w * 0.05)}px`;
         el.style.fontSize = `${Math.max(14, h * 0.58)}px`;
         el.style.fontWeight = '900';
@@ -1317,9 +1327,6 @@
         el.style.borderColor = fb.strokeColor;
         el.style.borderWidth = `${fb.strokeWidth}px`;
         el.style.borderRadius = `${Math.max(10, h * 0.18)}px`;
-        el.addEventListener('pointerdown', onFreeBlockPointerDown);
-        el.addEventListener('mousedown', e => { e.stopPropagation(); selectFreeBlock(fb.id); });
-        el.addEventListener('click', e => { e.stopPropagation(); selectFreeBlock(fb.id); });
         const del = document.createElement('button');
         del.type = 'button';
         del.className = 'free-block-delete-btn';
@@ -1338,6 +1345,25 @@
         freeBlockLayer.appendChild(el);
       });
     }
+
+
+    freeBlockLayer.addEventListener('pointerdown', e => {
+      const item = e.target.closest('.free-block-item');
+      if (!item) return;
+      if (e.target.closest('.free-block-item-resize') || e.target.closest('.free-block-delete-btn')) return;
+      onFreeBlockPointerDown({
+        ...e,
+        currentTarget: item
+      });
+    });
+
+    freeBlockLayer.addEventListener('click', e => {
+      const item = e.target.closest('.free-block-item');
+      if (!item) return;
+      if (e.target.closest('.free-block-item-resize') || e.target.closest('.free-block-delete-btn')) return;
+      selectFreeBlock(item.dataset.blockId);
+      e.stopPropagation();
+    });
 
     function onFreeBlockPointerDown(e) {
       if (!state.imageUrl) return;
@@ -1434,6 +1460,19 @@
     function clearFreePointerState(pointerId) {
       if (state.freeDrag && state.freeDrag.id === pointerId) state.freeDrag = null;
       if (state.freeResize && state.freeResize.id === pointerId) state.freeResize = null;
+    }
+
+    function startTextGroupDrag(e) {
+      if (!state.imageUrl || !dragSurface || getDesign().id === 'none') return;
+      e.stopPropagation();
+      dragSurface.setPointerCapture(e.pointerId);
+      state.drag = {
+        id: e.pointerId,
+        sx: e.clientX,
+        sy: e.clientY,
+        bx: state.group.x,
+        by: state.group.y
+      };
     }
 
     function updateFreeBlockField(field, value) {
@@ -1759,17 +1798,12 @@
       }
     });
 
-    dragSurface.addEventListener('pointerdown', e => {
-      if (!state.imageUrl) return;
-      e.stopPropagation();
-      dragSurface.setPointerCapture(e.pointerId);
-      state.drag = {
-        id: e.pointerId,
-        sx: e.clientX,
-        sy: e.clientY,
-        bx: state.group.x,
-        by: state.group.y
-      };
+    dragSurface.addEventListener('pointerdown', startTextGroupDrag);
+
+    textGroup.addEventListener('pointerdown', e => {
+      if (!state.imageUrl || getDesign().id === 'none') return;
+      if (e.target === resizeHandle || e.target.closest('.free-block-item') || e.target.closest('.free-block-delete-btn')) return;
+      startTextGroupDrag(e);
     });
 
     dragSurface.addEventListener('pointermove', e => {

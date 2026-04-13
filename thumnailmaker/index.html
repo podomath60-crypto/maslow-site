@@ -1119,10 +1119,10 @@ function showMobileDevToast(){
 }
 
 renderAll();
+window.addEventListener('load', ()=>{ showMobileDevToast(); });
 </script>
 <div id="hiddenExportStage" style="position:fixed;left:-99999px;top:-99999px;pointer-events:none;opacity:0;"></div>
 
-  <div class="mobile-dev-toast" id="mobileDevToast">데스크탑용으로
-개발되었습니다.</div>
+  <div class="mobile-dev-toast" id="mobileDevToast">이 페이지는 데스크탑 환경에 맞춰 제작되었습니다.</div>
 </body>
 </html>

@@ -96,6 +96,7 @@ body.exporting-overlay .free-close,
 .export-mode .free-resize-handle,
 .export-mode .free-close{display:none !important}
 #fileInput{display:none}
+    .hidden-export-stage{position:fixed;left:-100000px;top:-100000px;pointer-events:none;opacity:0}
     @media (max-width:980px){.editor-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media (max-width:640px){.app{padding:0 10px 32px}.topbar{margin:0 -10px}.topbar-title{font-size:22px}.inline-grid,.color-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.design-card{min-width:130px}.palette-card{min-width:78px}}
   </style>
@@ -341,7 +342,21 @@ function hexToRgba(hex,alpha){const c=hex.replace('#','');const n=parseInt(c,16)
 function getImageRect(){return el.mainImage.getBoundingClientRect();}
 function getSelectedFreeBlock(){return state.freeBlocks.find(b=>b.id===state.selectedFreeBlockId) || null;}
 function getFontFamily(key){if(key==='serif') return 'Georgia, Cambria, "Times New Roman", serif'; if(key==='impact') return 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif'; if(key==='condensed') return 'Arial Narrow, "Noto Sans KR", sans-serif'; return '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif';}
-
+function getHiddenExportStage(){
+  let node = document.getElementById('hiddenExportStage');
+  if(!node){
+    node = document.createElement('div');
+    node.id = 'hiddenExportStage';
+    node.style.position = 'fixed';
+    node.style.left = '-99999px';
+    node.style.top = '-99999px';
+    node.style.pointerEvents = 'none';
+    node.style.opacity = '0';
+    document.body.appendChild(node);
+  }
+  el.hiddenExportStage = node;
+  return node;
+}
 
 function pushHistory(){
   const snap = JSON.parse(JSON.stringify(serializeState()));
@@ -926,131 +941,79 @@ async function exportComposite(){
     alert('먼저 사진을 넣어주세요.');
     return;
   }
-
-  const selectors = '.main-group-box,.main-resize-handle,.main-move-surface,.free-box,.free-resize-handle,.free-close,.free-move-surface';
-  const elementsToHide = [...el.overlayRoot.querySelectorAll(selectors)];
-  const previousVisibility = elementsToHide.map(node => node.style.visibility);
-  elementsToHide.forEach(node => { node.style.visibility = 'hidden'; });
-
-  const displayWidth = el.overlayRoot.clientWidth || el.imageWrap.clientWidth || 1;
-  const displayHeight = el.overlayRoot.clientHeight || el.imageWrap.clientHeight || 1;
-  const exportWidth = state.image.naturalWidth;
-  const exportHeight = state.image.naturalHeight;
-  const scale = exportWidth / displayWidth;
-
+  const currentSelection = { main: el.mainTextGroup.classList.contains('selected') };
+  const elementsToHide = el.overlayRoot.querySelectorAll('.main-group-box,.main-resize-handle,.main-move-surface,.free-box,.free-resize-handle,.free-close,.free-move-surface');
+  elementsToHide.forEach(node => node.classList.add('export-hidden'));
   const tempStage = document.createElement('div');
-  Object.assign(tempStage.style, {
-    position: 'relative',
-    width: `${exportWidth}px`,
-    height: `${exportHeight}px`,
-    overflow: 'hidden',
-    background: state.exportFormat === 'jpg' ? '#fff' : 'transparent'
-  });
+  const scale = state.image.naturalWidth / el.overlayRoot.clientWidth;
+  tempStage.style.position = 'relative';
+  tempStage.style.width = `${state.image.naturalWidth}px`;
+  tempStage.style.height = `${state.image.naturalHeight}px`;
+  tempStage.style.overflow = 'hidden';
+  tempStage.style.background = state.exportFormat === 'jpg' ? '#fff' : 'transparent';
 
   const img = document.createElement('img');
   img.src = state.imageUrl;
-  Object.assign(img.style, {
-    position: 'absolute',
-    inset: '0',
-    width: '100%',
-    height: '100%'
-  });
+  img.style.position = 'absolute';
+  img.style.inset = '0';
+  img.style.width = '100%';
+  img.style.height = '100%';
   tempStage.appendChild(img);
 
   const overlayClone = el.overlayRoot.cloneNode(true);
-  Object.assign(overlayClone.style, {
-    display: 'block',
-    position: 'absolute',
-    left: '0',
-    top: '0',
-    width: `${displayWidth}px`,
-    height: `${displayHeight}px`,
-    transformOrigin: 'top left',
-    transform: `scale(${scale})`
-  });
-  overlayClone.querySelectorAll(selectors).forEach(node => node.remove());
+  overlayClone.style.display = 'block';
+  overlayClone.style.position = 'absolute';
+  overlayClone.style.left = '0';
+  overlayClone.style.top = '0';
+  overlayClone.style.width = `${el.overlayRoot.clientWidth}px`;
+  overlayClone.style.height = `${el.overlayRoot.clientHeight}px`;
+  overlayClone.style.transformOrigin = 'top left';
+  overlayClone.style.transform = `scale(${scale})`;
+  overlayClone.querySelectorAll('.main-group-box,.main-resize-handle,.main-move-surface,.free-box,.free-resize-handle,.free-close,.free-move-surface').forEach(node => node.remove());
 
   const cloneCanvas = overlayClone.querySelector('#mosaicCanvas');
   if(cloneCanvas){
     const mosaicImg = document.createElement('img');
     mosaicImg.src = el.mosaicCanvas.toDataURL('image/png');
-    Object.assign(mosaicImg.style, {
-      position: 'absolute',
-      inset: '0',
-      width: '100%',
-      height: '100%',
-      pointerEvents: 'none'
-    });
+    mosaicImg.style.position = 'absolute';
+    mosaicImg.style.inset = '0';
+    mosaicImg.style.width = '100%';
+    mosaicImg.style.height = '100%';
+    mosaicImg.style.pointerEvents = 'none';
     cloneCanvas.replaceWith(mosaicImg);
   }
 
   tempStage.appendChild(overlayClone);
-  el.hiddenExportStage.innerHTML = '';
-  el.hiddenExportStage.appendChild(tempStage);
+  const hiddenExportStage = getHiddenExportStage();
+  hiddenExportStage.innerHTML = '';
+  hiddenExportStage.appendChild(tempStage);
 
-  try {
+  try{
     const canvas = await html2canvas(tempStage, {
       backgroundColor: state.exportFormat === 'jpg' ? '#ffffff' : null,
       useCORS: true,
       allowTaint: true,
       scale: 1,
-      width: exportWidth,
-      height: exportHeight,
-      logging: false,
-      imageTimeout: 0,
-      removeContainer: true,
-      foreignObjectRendering: false
+      width: state.image.naturalWidth,
+      height: state.image.naturalHeight,
+      logging: false
     });
     const mime = state.exportFormat === 'png' ? 'image/png' : 'image/jpeg';
-    const ext = state.exportFormat === 'png' ? 'png' : 'jpg';
     const url = canvas.toDataURL(mime, state.exportFormat === 'png' ? undefined : .96);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `maslow-thumbnail.${ext}`;
+    a.download = `maslow-thumbnail.${state.exportFormat}`;
     a.click();
-  } catch(err) {
+  }catch(err){
     console.error(err);
     alert('내려받기 렌더링 중 오류가 발생했습니다.');
-  } finally {
-    el.hiddenExportStage.innerHTML = '';
-    elementsToHide.forEach((node, i) => { node.style.visibility = previousVisibility[i] || ''; });
+  }finally{
+    const hiddenExportStage = getHiddenExportStage();
+    hiddenExportStage.innerHTML = '';
+    elementsToHide.forEach(node => node.classList.remove('export-hidden'));
+    if(currentSelection.main) el.mainTextGroup.classList.add('selected');
   }
 }
-
-function wrapCanvasText(ctx,text,maxWidth){
-  const rawLines=String(text??'').split('\n');
-  const out=[];
-  for(const raw of rawLines){
-    if(raw===''){ out.push(''); continue; }
-    let line='';
-    for(const ch of Array.from(raw)){
-      const test=line+ch;
-      if(line && ctx.measureText(test).width>maxWidth){
-        out.push(line);
-        line=ch;
-      } else {
-        line=test;
-      }
-    }
-    out.push(line);
-  }
-  return out.length?out:[''];
-}
-
-function drawWrappedCanvasText(ctx, text, x, y, maxWidth, align, lineHeight){
-  const lines=wrapCanvasText(ctx,text,maxWidth);
-  const oldAlign=ctx.textAlign;
-  for(let i=0;i<lines.length;i++){
-    const ly=y+(i*lineHeight);
-    ctx.textAlign=align;
-    ctx.strokeText(lines[i],x,ly);
-    ctx.fillText(lines[i],x,ly);
-  }
-  ctx.textAlign=oldAlign;
-  return lines.length;
-}
-
-function drawRoundRect(ctx,x,y,w,h,r,fillStyle){ const radius=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+radius,y); ctx.arcTo(x+w,y,x+w,y+h,radius); ctx.arcTo(x+w,y+h,x,y+h,radius); ctx.arcTo(x,y+h,x,y,radius); ctx.arcTo(x,y,x+w,y,radius); ctx.closePath(); ctx.fillStyle=fillStyle; ctx.fill(); }
 
 // events
 el.pickImageBtn.addEventListener('click',()=>el.fileInput.click());

@@ -6,12 +6,12 @@
   <title>Maslow Korea | 공개 매물</title>
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Maslow Korea | 공개 매물" />
-  <meta property="og:description" content="입지와 흐름, 활용도와 향후 경쟁력까지 함께 살펴봅니다." />
+  <meta property="og:description" content="Maslow Korea가 선별한 공개 매물을 먼저 확인하고, 필요한 조건은 상담으로 더 정확하게 좁혀드립니다." />
   <meta property="og:image" content="https://cdn.imweb.me/thumbnail/20260404/cc7830f0b48cc.jpg" />
   <style>
     :root{
-      --bg:#ffffff; --bg-soft:#fffaf0; --white:#ffffff; --text:#111318; --muted:#6d6251;
-      --line:#eadfc8; --blue:#9a6a1f; --blue-2:#c9971a; --blue-soft:#fff1c9; --sky:#d9b15f;
+      --bg:#ffffff; --bg-soft:#f8fbff; --white:#ffffff; --text:#111318; --muted:#67707b;
+      --line:#e6ebf1; --blue:#0f7cff; --blue-2:#2790ff; --blue-soft:#dcebff; --sky:#8fd3ff;
       --shadow:0 14px 36px rgba(15,23,42,.05); --shadow-soft:0 8px 20px rgba(15,23,42,.035); --pad-x:48px;
     }
     *{box-sizing:border-box}
@@ -41,16 +41,16 @@
     .header-right{display:flex;align-items:center;gap:12px;width:auto}
     .lang{font-size:14px;color:#8e97a1;width:auto}
     .btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;min-height:54px;padding:0 24px;border-radius:999px;font-size:17px;font-weight:800;border:1px solid transparent;white-space:nowrap;line-height:1;width:auto}
-    .btn-primary{background:#ffffff;color:var(--blue) !important;border:1px solid #ead7aa;box-shadow:none}
+    .btn-primary{background:#ffffff;color:var(--blue) !important;border:1px solid #cfe8fb;box-shadow:none}
     .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:13px;font-weight:800;color:#9aa2ac;letter-spacing:.18em;text-transform:uppercase;width:auto}
     .eyebrow::before{content:"";width:36px;height:1px;background:#d7dde5}
-    .hero-lite{padding:132px var(--pad-x) 28px;background:radial-gradient(circle at 50% 12%, rgba(201,151,26,.14), transparent 32%),linear-gradient(180deg, #fffdf8 0%, #fff8ea 100%);border-bottom:1px solid var(--line)}
+    .hero-lite{padding:132px var(--pad-x) 28px;background:radial-gradient(circle at 50% 12%, rgba(15,124,255,.10), transparent 32%),linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);border-bottom:1px solid var(--line)}
     .hero-lite h1{margin:18px 0 16px;font-size:clamp(42px,6vw,74px);line-height:1.02;font-weight:800;color:#111;letter-spacing:-0.05em;max-width:980px}
     .hero-lite p{margin:0;max-width:860px;color:var(--muted);font-size:21px;line-height:1.8}
 
     .property-search-wrap{width:100%;padding:18px var(--pad-x) 0;background:#fff}
-    .property-search-box{width:min(300px,100%);margin:0 auto;display:flex;align-items:center;gap:12px;padding:0 18px;min-height:62px;border:1.5px solid #e6dcc9;border-radius:999px;background:#fff;box-shadow:var(--shadow-soft);transition:width .24s ease, box-shadow .24s ease, border-color .24s ease}
-    .property-search-box:focus-within{width:min(65%,720px);border-color:#d4b06a;box-shadow:0 10px 24px rgba(154,106,31,.08)}
+    .property-search-box{width:min(300px,100%);margin:0 auto;display:flex;align-items:center;gap:12px;padding:0 18px;min-height:62px;border:1.5px solid #d9e4ef;border-radius:999px;background:#fff;box-shadow:var(--shadow-soft);transition:width .24s ease, box-shadow .24s ease, border-color .24s ease}
+    .property-search-box:focus-within{width:min(65%,720px);border-color:#bfdcff;box-shadow:0 10px 24px rgba(15,124,255,.08)}
     .property-search-icon{flex:0 0 auto;font-size:18px;color:#7b8794;width:auto}
     .property-search-input{flex:1 1 auto;width:100%;border:none;outline:none;background:transparent;color:#111318;font-size:18px;font-weight:700;letter-spacing:-0.03em}
     .property-search-input::placeholder{color:rgba(154,162,172,.45);font-weight:500}
@@ -63,16 +63,16 @@
     .property-card:hover{transform:translateY(-4px);box-shadow:0 16px 28px rgba(15,23,42,.06)}
     .property-media{position:relative;aspect-ratio:1 / 1;background:#eef3f8 center/cover no-repeat}
     .property-chip-wrap{position:absolute;top:12px;right:12px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 24px);width:auto}
-    .property-chip{display:inline-flex;align-items:center;justify-content:center;min-height:20px;padding:0 6px;border-radius:999px;background:rgba(255,244,212,.92);color:#a97923;font-size:10px;font-weight:800;line-height:1;box-shadow:0 4px 10px rgba(154,106,31,.10);white-space:nowrap;width:auto}
+    .property-chip{display:inline-flex;align-items:center;justify-content:center;min-height:20px;padding:0 6px;border-radius:999px;background:rgba(234,246,255,.92);color:#67addf;font-size:10px;font-weight:800;line-height:1;box-shadow:0 4px 10px rgba(95,194,255,.08);white-space:nowrap;width:auto}
     .property-body{padding:24px 20px 24px}
     .property-body h3{margin:0 0 14px;font-size:31px;line-height:1.22;font-weight:700;color:#111;letter-spacing:-0.05em}
     .property-price{margin:0 0 18px;font-size:24px;line-height:1;font-weight:800;color:var(--blue);letter-spacing:-0.04em}
     .property-meta{margin:0;color:#4f5863;font-size:20px;line-height:1.45;font-weight:500;letter-spacing:-0.04em}
 
-    .desktop-float-phone{position:fixed;right:22px;bottom:92px;z-index:1000;display:none;align-items:center;gap:9px;min-height:56px;padding:0 18px;border-radius:999px;background:#9a6a1f;color:#fff !important;box-shadow:0 16px 30px rgba(154,106,31,.24);font-size:16px;font-weight:900;letter-spacing:-0.01em;width:auto;max-width:calc(100vw - 44px);border:none;cursor:pointer}
-    .desktop-float-phone .icon{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.16);display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;font-size:12px}
+    .desktop-float-phone{position:fixed;right:22px;bottom:92px;z-index:1000;display:none;align-items:center;gap:9px;min-height:56px;padding:0 18px;border-radius:999px;background:#0f7cff;color:#fff !important;box-shadow:0 16px 30px rgba(15,124,255,.24);font-size:16px;font-weight:900;letter-spacing:-0.01em;width:auto;max-width:calc(100vw - 44px);border:none;cursor:pointer}
+    .desktop-float-phone .icon{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;font-size:12px}
     .desktop-float-phone-label{width:auto}
-    .mobile-float-call{position:fixed;right:14px;bottom:80px;z-index:1000;width:50px;height:50px;border-radius:50%;background:#7fc9ff;color:#ffffff !important;box-shadow:0 10px 20px rgba(184,132,26,.24);display:none;align-items:center;justify-content:center;font-size:20px;text-shadow:0 1px 2px rgba(0,0,0,.12)}
+    .mobile-float-call{position:fixed;right:14px;bottom:80px;z-index:1000;width:50px;height:50px;border-radius:50%;background:#7fc9ff;color:#ffffff !important;box-shadow:0 10px 20px rgba(127,201,255,.24);display:none;align-items:center;justify-content:center;font-size:20px;text-shadow:0 1px 2px rgba(0,0,0,.12)}
     .mobile-float-kakao{position:fixed;right:14px;bottom:20px;z-index:1000;width:50px;height:50px;border-radius:50%;background:#ffea00;color:#111 !important;box-shadow:0 10px 20px rgba(255,234,0,.28);display:none;align-items:center;justify-content:center;font-size:18px;font-weight:900}
 
     .menu-panel{position:fixed;inset:0;z-index:1001;display:none;background:rgba(8,17,28,.5);backdrop-filter:blur(6px)}
@@ -83,7 +83,7 @@
     .menu-close{width:40px;height:40px;border-radius:50%;border:1px solid #e5eaf0;display:inline-flex;align-items:center;justify-content:center;background:#fff;font-size:18px;color:#111}
     .menu-list{display:grid;gap:10px}
     .menu-link{display:flex;align-items:center;min-height:56px;padding:0 16px;border:1px solid #e7eef5;border-radius:16px;background:#fff;font-size:16px;font-weight:800;color:#111 !important;line-height:1.4}
-    .menu-link.primary{background:#fff8e8;border-color:#ead7a0;color:#9a6a1f !important}
+    .menu-link.primary{background:#f5f9ff;border-color:#cfe2ff;color:#0f7cff !important}
 
     .mk-modal{position:fixed;inset:0;background:rgba(8,17,28,.72);backdrop-filter:blur(8px);z-index:9999;display:none;align-items:flex-start;justify-content:center;overflow:hidden}
     .mk-modal.active{display:flex}
@@ -110,18 +110,19 @@
     .property-detail-photo-dots{display:flex;justify-content:center;align-items:center;gap:8px;margin:12px 0 0}
     .property-detail-photo-dots.is-hidden{display:none}
     .property-detail-photo-dot{width:8px;height:8px;border-radius:999px;background:#c9d7e5;transition:transform .18s ease, background .18s ease}
-    .property-detail-photo-dot.active{background:#9a6a1f;transform:scale(1.22)}
+    .property-detail-photo-dot.active{background:#0f7cff;transform:scale(1.22)}
     @media (min-width:861px){
       .property-detail-modal .mk-modal-inner{max-width:980px}
       .property-detail-modal .mk-modal-body{padding:0 28px 72px}
-      .property-detail-hero-wrap{max-width:620px;margin:0 auto 22px}
+      .property-detail-hero-wrap{max-width:620px;margin:0 auto 22px;overflow:visible}
       .property-detail-carousel{max-height:720px;overflow:visible}
+      .property-detail-carousel-track{overflow-x:hidden}
       .property-detail-hero{width:100%;height:min(72vh, 720px);aspect-ratio:auto;object-fit:contain;background:#eef3f8}
       .property-detail-photo-btn.prev{left:-72px}
       .property-detail-photo-btn.next{right:-72px}
     }
     .property-detail-note{display:none}
-    .property-detail-chip{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 22px;border-radius:999px;background:#b8841a;color:#fff;font-size:22px;font-weight:800;line-height:1;box-shadow:0 8px 20px rgba(154,106,31,.20);margin-bottom:18px;width:auto}
+    .property-detail-chip{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 22px;border-radius:999px;background:#1f96ff;color:#fff;font-size:22px;font-weight:800;line-height:1;box-shadow:0 8px 20px rgba(31,150,255,.20);margin-bottom:18px;width:auto}
     .property-detail-title{margin:0 0 14px;font-size:56px;line-height:1.08;font-weight:900;color:#202227;letter-spacing:-0.05em}
     .property-detail-address{margin:0 0 28px;font-size:24px;line-height:1.5;color:#43484e;letter-spacing:-0.03em}
     .property-detail-divider{height:1px;background:#dfdfdf;margin:0 0 30px}
@@ -156,20 +157,20 @@
     .mk-contact-card{border:1px solid #e7eef5;background:#fbfdff;border-radius:18px;padding:18px 16px;margin-bottom:16px}
     .mk-contact-card p{margin:0;font-size:15px;line-height:1.8;color:#576272}
     .mk-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-    .mk-input,.mk-textarea{width:100%;border:1px solid #e6dcc9;background:#fff;border-radius:12px;padding:14px 14px;font-size:15px;color:#111;outline:none}
+    .mk-input,.mk-textarea{width:100%;border:1px solid #d9e4ef;background:#fff;border-radius:12px;padding:14px 14px;font-size:15px;color:#111;outline:none}
     .mk-textarea{min-height:120px;resize:vertical;margin-bottom:10px}
     .mk-check{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:13px;color:#667085;line-height:1.5;background:transparent}
     .mk-check input{width:20px !important;height:20px !important;margin:0;flex:0 0 20px}
     .mk-check span{display:inline-block !important;width:auto !important;flex:0 1 auto;font-size:13px;line-height:1.5;color:#667085 !important;background:transparent !important;word-break:keep-all;white-space:nowrap}
-    .mk-submit{width:100%;min-height:54px;border-radius:14px;background:#9a6a1f;color:#fff;font-size:16px;font-weight:800;margin-bottom:10px}
+    .mk-submit{width:100%;min-height:54px;border-radius:14px;background:#0f7cff;color:#fff;font-size:16px;font-weight:800;margin-bottom:10px}
     .mk-toast{position:fixed;left:50%;top:50%;bottom:auto;transform:translate(-50%, -50%) scale(.96);width:auto;max-width:280px;padding:12px 14px;border-radius:16px;background:rgba(17,24,39,.82);color:#fff;font-size:14px;font-weight:700;line-height:1.6;text-align:center;box-shadow:0 18px 36px rgba(15,23,42,.18);opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease;z-index:12000}
     .mk-toast.show{opacity:1;transform:translate(-50%, -50%) scale(1)}
 
     .loading-overlay{position:fixed;inset:0;z-index:12050;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(255,255,255,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
     .loading-overlay.show{display:flex}
     .loading-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
-    .loading-buddy{width:74px;height:74px;object-fit:cover;border-radius:18px;animation:buddyBounce 1.15s ease-in-out infinite;box-shadow:0 10px 22px rgba(154,106,31,.16)}
-    .loading-text{min-height:24px;font-size:18px;font-weight:800;line-height:1.4;color:#9a6a1f;letter-spacing:-0.03em}
+    .loading-buddy{width:74px;height:74px;object-fit:cover;border-radius:18px;animation:buddyBounce 1.15s ease-in-out infinite;box-shadow:0 10px 22px rgba(15,124,255,.16)}
+    .loading-text{min-height:24px;font-size:18px;font-weight:800;line-height:1.4;color:#2b8fe8;letter-spacing:-0.03em}
     @keyframes buddyBounce{0%,100%{transform:translateY(0) scale(1)}20%{transform:translateY(-3px) scale(1.01)}50%{transform:translateY(-10px) scale(1.04)}75%{transform:translateY(-4px) scale(1.01)}}
 
     @media (max-width:1180px){ .property-grid{grid-template-columns:repeat(2,1fr)} }
@@ -270,8 +271,8 @@
 
   <section class="hero-lite">
     <div class="eyebrow">Property Line-up</div>
-    <h1>공간을 넘어<br>가치를 <span id="heroDashboardTrigger">봅니다</span></h1>
-    <p>입지와 흐름, 활용도와 향후 경쟁력까지 함께 살펴봅니다.</p>
+    <h1>조건에 맞는 공장을 한눈에</h1>
+    <p>Maslow Korea가 선별한 공개 매물을 먼저 확인하고, 필요한 조건은 상담으로 더 정확하게 좁혀드립니다.</p>
   </section>
 
 
@@ -513,13 +514,13 @@
       </div>
       <div class="mk-modal-body">
         <div class="mk-contact-card">
-          <p>조건에 맞는 상업용 부동산을 빠르게 안내받고 싶으시면 아래 내용을 남겨주세요.</p>
+          <p>조건에 맞는 공장을 빠르게 안내받고 싶으시면 아래 내용을 남겨주세요.</p>
         </div>
         <div class="mk-form-grid">
           <input id="contactName" class="mk-input" type="text" placeholder="이름">
           <input id="contactPhone" class="mk-input" type="tel" placeholder="연락처">
         </div>
-        <textarea id="contactNote" class="mk-textarea" placeholder="희망 지역 / 예산 / 면적 / 업종 / 목적 / 입주 시기 등을 남겨주세요"></textarea>
+        <textarea id="contactNote" class="mk-textarea" placeholder="희망 지역 / 예산 / 면적 / 업종 / 입주 시기 등을 남겨주세요"></textarea>
         <label class="mk-check">
           <input id="contactAgree" type="checkbox">
           <span>개인정보 수집 및 이용에 동의합니다.</span>
@@ -1068,7 +1069,7 @@
   function filterFactoryListingItems_(items){
     return (items || []).filter(function(item){
       var listingNumber = text(item && item.listingNumber).toUpperCase();
-      return listingNumber.indexOf('SK-') === 0;
+      return listingNumber.indexOf('MK-') === 0;
     });
   }
 
@@ -1337,11 +1338,12 @@
   }
 
   function bindHeroTitleFiveTapDashboard_(){
-    var trigger = document.getElementById('heroDashboardTrigger');
-    if(!trigger) return;
+    var heroTitle = document.querySelector('.hero-lite h1');
+    if(!heroTitle) return;
 
-    function onTap_(e){
-      if(e) e.stopPropagation();
+    function onTap_(){
+      var titleText = text(heroTitle.textContent);
+      if(titleText.indexOf('공장') === -1) return;
 
       heroTitleTapCount += 1;
       clearTimeout(heroTitleTapTimer);
@@ -1356,7 +1358,7 @@
       }
     }
 
-    trigger.addEventListener('pointerup', onTap_, { passive:true });
+    heroTitle.addEventListener('pointerup', onTap_, { passive:true });
   }
 
   function loadPublicProperties(){

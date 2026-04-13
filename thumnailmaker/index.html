@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>매슬로우 썸네일 메이커</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f3f4f6;
+      color: #111827;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    }
+    body { min-height: 100vh; }
+    .app {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 0 12px 40px;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      margin: 0 -12px;
+      padding: 16px 18px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .topbar-title {
+      text-align: center;
+      font-size: 26px;
+      line-height: 1.1;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+    .panel {
+      margin-top: 14px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 22px;
+      padding: 14px;
+      box-shadow: 0 8px 26px rgba(17,24,39,0.05);
+    }
+    .panel-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: #374151;
+      margin-bottom: 10px;
+    }
+    .slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .slider-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      color: #111827;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+    .slider-btn:active { transform: scale(0.98); }
+    .slider {
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      display: flex;
+      gap: 10px;
+      flex: 1;
+      padding-bottom: 2px;
+    }
+    .slider::-webkit-scrollbar { display: none; }
+    .design-card {
+      min-width: 140px;
+      height: 92px;
+      flex: 0 0 auto;
+      border-radius: 18px;
+      border: 2px solid transparent;
+      background: linear-gradient(180deg, #f8fafc, #e5edf7);
+      padding: 10px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .design-card.active {
+      border-color: #111827;
+      box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
+    }
+    .design-name {
+      position: absolute;
+      left: 10px;
+      top: 8px;
+      font-size: 11px;
+      font-weight: 900;
+      color: #4b5563;
+    }
+    .mini-preview {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: 28px;
+      bottom: 10px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #dbeafe, #fde68a);
+    }
+    .mini-line {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.04em;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.35);
+      line-height: 1;
+    }
+    .palette-card {
+      min-width: 84px;
+      height: 64px;
+      flex: 0 0 auto;
+      border-radius: 16px;
+      border: 2px solid transparent;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      background: #fff;
+    }
+    .palette-card.active {
+      border-color: #111827;
+      box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
+    }
+    .palette-stripes {
+      display: grid;
+      height: 100%;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .palette-label {
+      position: absolute;
+      left: 7px;
+      bottom: 6px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.88);
+      font-size: 10px;
+      font-weight: 900;
+    }
+    .editor-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.42fr) minmax(330px, 0.82fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .photo-panel {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 24px;
+      padding: 12px;
+    }
+    .upload-drop {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #e5e7eb;
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .upload-drop img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      background: #111;
+    }
+    .upload-placeholder {
+      text-align: center;
+      color: #6b7280;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .upload-placeholder strong {
+      display: block;
+      color: #111827;
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+    .canvas-stage {
+      position: absolute;
+      inset: 0;
+      display: none;
+      touch-action: none;
+    }
+    .text-group {
+      position: absolute;
+      min-width: 100px;
+      min-height: 80px;
+      touch-action: none;
+    }
+    .group-box {
+      position: absolute;
+      inset: 0;
+      border: 2px dashed rgba(255,255,255,0.95);
+      border-radius: 12px;
+      pointer-events: none;
+    }
+    .drag-surface {
+      position: absolute;
+      inset: 0;
+      cursor: grab;
+      border-radius: 12px;
+    }
+    .drag-surface:active { cursor: grabbing; }
+    .resize-handle {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      right: -10px;
+      bottom: -10px;
+      border-radius: 999px;
+      border: 2px solid #111827;
+      background: #fff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      cursor: nwse-resize;
+    }
+    .overlay-bg {
+      position: absolute;
+      pointer-events: none;
+    }
+    .overlay-line {
+      position: absolute;
+      width: 100%;
+      white-space: pre-wrap;
+      word-break: keep-all;
+      line-height: 1;
+      user-select: none;
+      pointer-events: none;
+    }
+    .controls-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .field-label {
+      font-size: 13px;
+      font-weight: 900;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    .text-inputs {
+      display: grid;
+      gap: 10px;
+    }
+    .text-row {
+      width: 100%;
+      min-height: 52px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid #d1d5db;
+      resize: none;
+      outline: none;
+      font-size: 15px;
+      font-weight: 800;
+      color: #111827;
+      background: #fff;
+    }
+    .inline-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .seg {
+      display: flex;
+      border-radius: 14px;
+      border: 1px solid #d1d5db;
+      overflow: hidden;
+      background: #fff;
+    }
+    .seg button {
+      flex: 1;
+      padding: 12px 10px;
+      border: 0;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      color: #111827;
+    }
+    .seg button.active {
+      background: #111827;
+      color: #fff;
+    }
+    .range-wrap {
+      display: grid;
+      gap: 6px;
+    }
+    input[type="range"] { width: 100%; }
+    .action-btn {
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .action-btn.primary {
+      color: #fff;
+      background: linear-gradient(135deg, #111827, #374151);
+    }
+    .action-btn.soft {
+      background: #eef2ff;
+      color: #3730a3;
+    }
+    .action-btn.danger {
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+    .note {
+      font-size: 12px;
+      line-height: 1.6;
+      color: #6b7280;
+      background: #f9fafb;
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    #hiddenFile { display: none; }
+    @media (max-width: 920px) {
+      .editor-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .app { padding: 0 10px 32px; }
+      .topbar { margin: 0 -10px; }
+      .topbar-title { font-size: 22px; }
+      .design-card { min-width: 130px; }
+      .palette-card { min-width: 78px; }
+      .inline-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="topbar-title">매슬로우 썸네일 메이커</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">텍스트 디자인</div>
+      <div class="slider-wrap">
+        <button class="slider-btn" type="button" data-scroll-target="designSlider" data-dir="prev">‹</button>
+        <div class="slider" id="designSlider"></div>
+        <button class="slider-btn" type="button" data-scroll-target="designSlider" data-dir="next">›</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">컬러 팔레트</div>
+      <div class="slider-wrap">
+        <button class="slider-btn" type="button" data-scroll-target="paletteSlider" data-dir="prev">‹</button>
+        <div class="slider" id="paletteSlider"></div>
+        <button class="slider-btn" type="button" data-scroll-target="paletteSlider" data-dir="next">›</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="editor-grid">
+        <div class="photo-panel">
+          <div class="upload-drop" id="uploadDrop">
+            <img id="mainImage" alt="업로드 이미지" />
+            <div class="upload-placeholder" id="uploadPlaceholder">
+              <strong>사진 패널</strong>
+              누르면 이미지가 입력됩니다<br />
+              가로 기준으로 맞춰서 표시됩니다
+            </div>
+            <div class="canvas-stage" id="canvasStage">
+              <div class="text-group" id="textGroup">
+                <div class="group-box"></div>
+                <div class="drag-surface" id="dragSurface"></div>
+                <div class="resize-handle" id="resizeHandle"></div>
+              </div>
+            </div>
+          </div>
+          <input id="hiddenFile" type="file" accept="image/*" />
+        </div>
+
+        <div class="controls-col">
+          <div>
+            <div class="field-label">문구 입력</div>
+            <div class="text-inputs" id="textInputs"></div>
+          </div>
+
+          <div class="inline-grid">
+            <div>
+              <div class="field-label">내려받기 형식</div>
+              <div class="seg" id="formatSeg">
+                <button type="button" data-format="jpg" class="active">JPG</button>
+                <button type="button" data-format="png">PNG</button>
+              </div>
+            </div>
+            <div>
+              <div class="field-label">정렬</div>
+              <div class="seg" id="alignSeg">
+                <button type="button" data-align="left">좌</button>
+                <button type="button" data-align="center" class="active">중앙</button>
+                <button type="button" data-align="right">우</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="range-wrap">
+            <div class="field-label">글자 크기 배율 <span id="scaleValue">1.00</span></div>
+            <input type="range" id="scaleRange" min="0.50" max="2.50" step="0.01" value="1" />
+          </div>
+
+          <div class="range-wrap">
+            <div class="field-label">줄 간격 <span id="lineGapValue">1.00</span></div>
+            <input type="range" id="lineGapRange" min="0.75" max="1.80" step="0.01" value="1" />
+          </div>
+
+          <button class="action-btn soft" type="button" id="fitTextBtn">문구 박스 위치 리셋</button>
+          <button class="action-btn danger" type="button" id="resetStyleBtn">디자인 기본값 되돌리기</button>
+          <button class="action-btn primary" type="button" id="downloadBtn">내려받기</button>
+
+          <div class="note">
+            3줄 디자인은 입력칸 3개, 4줄 디자인은 입력칸 4개로 자동 전환됩니다.<br />
+            사진 위 문구 박스를 홀드해서 이동할 수 있고, 우하단 원형 핸들로 크기 조절할 수 있습니다.<br />
+            디자인과 컬러를 바꾸면 바로 반영됩니다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const designs = [
+      { id:'d01', name:'Bold Hero', lineCount:3, box:{x:0.05,y:0.10,w:0.72,h:0.32}, lines:[{y:0.00,size:0.40,weight:900},{y:0.40,size:0.22,weight:850},{y:0.70,size:0.22,weight:850}], bg:null, stroke:0.05, shadow:0.12 },
+      { id:'d02', name:'Clean Box', lineCount:3, box:{x:0.06,y:0.64,w:0.70,h:0.22}, lines:[{y:0.06,size:0.28,weight:900},{y:0.38,size:0.22,weight:800},{y:0.68,size:0.22,weight:800}], bg:{type:'solid',colorIndex:2,opacity:0.90,pad:0.06,radius:16}, stroke:0, shadow:0 },
+      { id:'d03', name:'Poster Block', lineCount:4, box:{x:0.04,y:0.08,w:0.78,h:0.46}, lines:[{y:0.00,size:0.34,weight:900},{y:0.28,size:0.20,weight:850},{y:0.50,size:0.20,weight:850},{y:0.72,size:0.20,weight:850}], bg:null, stroke:0.04, shadow:0.10 },
+      { id:'d04', name:'Right Punch', lineCount:3, box:{x:0.28,y:0.10,w:0.66,h:0.34}, lines:[{y:0.00,size:0.34,weight:900},{y:0.40,size:0.22,weight:850},{y:0.70,size:0.22,weight:850}], bg:null, stroke:0.03, shadow:0.10 },
+      { id:'d05', name:'Tag Stack', lineCount:4, box:{x:0.05,y:0.10,w:0.68,h:0.44}, lines:[{y:0.00,size:0.34,weight:900},{y:0.32,size:0.18,weight:900,chip:true},{y:0.56,size:0.18,weight:900,chip:true},{y:0.80,size:0.18,weight:900,chip:true}], bg:null, stroke:0.02, shadow:0.08 },
+      { id:'d06', name:'Bottom Banner', lineCount:3, box:{x:0.05,y:0.70,w:0.82,h:0.18}, lines:[{y:0.06,size:0.28,weight:900},{y:0.42,size:0.19,weight:800},{y:0.72,size:0.19,weight:800}], bg:{type:'solid',colorIndex:1,opacity:0.68,pad:0.06,radius:18}, stroke:0, shadow:0 },
+      { id:'d07', name:'Center Stack', lineCount:4, box:{x:0.15,y:0.18,w:0.70,h:0.48}, lines:[{y:0.00,size:0.30,weight:900},{y:0.28,size:0.20,weight:800},{y:0.54,size:0.20,weight:800},{y:0.78,size:0.20,weight:800}], bg:{type:'gradient',opacity:0.36,pad:0.08,radius:22}, stroke:0, shadow:0.06 },
+      { id:'d08', name:'Outline Max', lineCount:3, box:{x:0.04,y:0.10,w:0.78,h:0.34}, lines:[{y:0.00,size:0.36,weight:900},{y:0.40,size:0.22,weight:900},{y:0.70,size:0.22,weight:900}], bg:null, stroke:0.07, shadow:0 },
+      { id:'d09', name:'Sticker Box', lineCount:4, box:{x:0.05,y:0.54,w:0.72,h:0.34}, lines:[{y:0.02,size:0.26,weight:900},{y:0.30,size:0.18,weight:800},{y:0.56,size:0.18,weight:800},{y:0.80,size:0.18,weight:800}], bg:{type:'solid',colorIndex:2,opacity:0.84,pad:0.06,radius:20}, stroke:0.02, shadow:0.04 },
+      { id:'d10', name:'Serif Luxury', lineCount:3, box:{x:0.06,y:0.12,w:0.74,h:0.34}, lines:[{y:0.00,size:0.30,weight:800,serif:true},{y:0.40,size:0.20,weight:700,serif:true},{y:0.70,size:0.20,weight:700,serif:true}], bg:null, stroke:0.02, shadow:0.08 },
+      { id:'d11', name:'Impact Left', lineCount:3, box:{x:0.05,y:0.10,w:0.66,h:0.34}, lines:[{y:0.00,size:0.40,weight:900},{y:0.42,size:0.18,weight:900},{y:0.70,size:0.18,weight:900}], bg:null, stroke:0.05, shadow:0.08 },
+      { id:'d12', name:'Tall Ribbon', lineCount:4, box:{x:0.05,y:0.18,w:0.50,h:0.56}, lines:[{y:0.02,size:0.24,weight:900},{y:0.28,size:0.17,weight:850},{y:0.54,size:0.17,weight:850},{y:0.78,size:0.17,weight:850}], bg:{type:'solid',colorIndex:1,opacity:0.58,pad:0.08,radius:22}, stroke:0, shadow:0.04 },
+      { id:'d13', name:'Center Punch', lineCount:3, box:{x:0.16,y:0.24,w:0.68,h:0.26}, lines:[{y:0.00,size:0.32,weight:900},{y:0.42,size:0.19,weight:800},{y:0.72,size:0.19,weight:800}], bg:{type:'gradient',opacity:0.30,pad:0.08,radius:20}, stroke:0.02, shadow:0.06 },
+      { id:'d14', name:'Corner Badge', lineCount:4, box:{x:0.42,y:0.08,w:0.52,h:0.42}, lines:[{y:0.00,size:0.28,weight:900},{y:0.28,size:0.16,weight:850},{y:0.52,size:0.16,weight:850},{y:0.76,size:0.16,weight:850}], bg:{type:'solid',colorIndex:0,opacity:0.76,pad:0.06,radius:20}, stroke:0, shadow:0.05 },
+      { id:'d15', name:'Wide Headline', lineCount:3, box:{x:0.03,y:0.10,w:0.90,h:0.26}, lines:[{y:0.00,size:0.31,weight:900},{y:0.44,size:0.18,weight:800},{y:0.72,size:0.18,weight:800}], bg:null, stroke:0.03, shadow:0.10 },
+      { id:'d16', name:'Bottom Strip', lineCount:4, box:{x:0.04,y:0.63,w:0.84,h:0.24}, lines:[{y:0.04,size:0.22,weight:900},{y:0.30,size:0.15,weight:800},{y:0.55,size:0.15,weight:800},{y:0.78,size:0.15,weight:800}], bg:{type:'solid',colorIndex:2,opacity:0.92,pad:0.06,radius:16}, stroke:0, shadow:0 },
+      { id:'d17', name:'Shadow Drama', lineCount:3, box:{x:0.05,y:0.12,w:0.72,h:0.34}, lines:[{y:0.00,size:0.35,weight:900},{y:0.40,size:0.21,weight:900},{y:0.70,size:0.21,weight:900}], bg:null, stroke:0.02, shadow:0.22 },
+      { id:'d18', name:'Luxury Box', lineCount:4, box:{x:0.16,y:0.20,w:0.68,h:0.48}, lines:[{y:0.04,size:0.26,weight:800,serif:true},{y:0.32,size:0.16,weight:700,serif:true},{y:0.56,size:0.16,weight:700,serif:true},{y:0.80,size:0.16,weight:700,serif:true}], bg:{type:'solid',colorIndex:2,opacity:0.78,pad:0.09,radius:22}, stroke:0, shadow:0.03 },
+      { id:'d19', name:'Sharp Label', lineCount:3, box:{x:0.05,y:0.58,w:0.70,h:0.24}, lines:[{y:0.02,size:0.28,weight:900},{y:0.40,size:0.18,weight:850},{y:0.72,size:0.18,weight:850}], bg:{type:'solid',colorIndex:1,opacity:0.78,pad:0.05,radius:8}, stroke:0.02, shadow:0.03 },
+      { id:'d20', name:'Top Card', lineCount:4, box:{x:0.04,y:0.07,w:0.74,h:0.44}, lines:[{y:0.00,size:0.31,weight:900},{y:0.28,size:0.18,weight:800},{y:0.53,size:0.18,weight:800},{y:0.78,size:0.18,weight:800}], bg:{type:'gradient',opacity:0.42,pad:0.07,radius:18}, stroke:0.02, shadow:0.06 }
+    ];
+
+    const palettes = [
+      ['#ff8a00','#ffb347','#fff4e5'],['#ef4444','#f97316','#fff1f2'],['#111827','#374151','#f9fafb'],['#facc15','#f97316','#1f2937'],['#22c55e','#84cc16','#f0fdf4'],
+      ['#3b82f6','#06b6d4','#eff6ff'],['#8b5cf6','#ec4899','#faf5ff'],['#14b8a6','#2dd4bf','#ecfeff'],['#0f172a','#38bdf8','#e0f2fe'],['#7c2d12','#fdba74','#fff7ed'],
+      ['#fde047','#eab308','#422006'],['#fb7185','#fda4af','#fff1f2'],['#10b981','#34d399','#ecfdf5'],['#2563eb','#93c5fd','#eff6ff'],['#ea580c','#fdba74','#fff7ed'],
+      ['#e11d48','#fb7185','#fff1f2'],['#1d4ed8','#60a5fa','#eff6ff'],['#7c3aed','#a78bfa','#f5f3ff'],['#047857','#6ee7b7','#ecfdf5'],['#be123c','#fda4af','#fff1f2'],
+      ['#4338ca','#818cf8','#eef2ff'],['#b45309','#fcd34d','#fffbeb'],['#155e75','#67e8f9','#ecfeff'],['#166534','#86efac','#f0fdf4'],['#9a3412','#fdba74','#fff7ed'],
+      ['#0f766e','#5eead4','#f0fdfa'],['#86198f','#e879f9','#fdf4ff'],['#ca8a04','#fde047','#fefce8'],['#7f1d1d','#fca5a5','#fef2f2'],['#1e3a8a','#93c5fd','#eff6ff'],
+      ['#4c1d95','#c4b5fd','#f5f3ff'],['#083344','#67e8f9','#ecfeff'],['#3f6212','#bef264','#f7fee7'],['#92400e','#fcd34d','#fffbeb'],['#881337','#f9a8d4','#fdf2f8'],
+      ['#27272a','#a1a1aa','#fafafa'],['#0a0a0a','#525252','#ffffff'],['#fafaf9','#fb923c','#7c2d12'],['#ffffff','#ef4444','#111827'],['#ffffff','#16a34a','#052e16'],
+      ['#ffffff','#2563eb','#172554'],['#ffffff','#7c3aed','#2e1065'],['#ffffff','#0f766e','#042f2e'],['#fef3c7','#f59e0b','#78350f'],['#ffe4e6','#e11d48','#4c0519'],
+      ['#dcfce7','#16a34a','#052e16'],['#dbeafe','#2563eb','#172554'],['#f3e8ff','#9333ea','#3b0764'],['#ccfbf1','#14b8a6','#042f2e'],['#f1f5f9','#0f172a','#020617']
+    ];
+
+    const state = {
+      selectedDesignIndex: 0,
+      selectedPaletteIndex: 0,
+      exportFormat: 'jpg',
+      align: 'center',
+      imageUrl: '',
+      image: null,
+      lines: ['군산 나운동 상가매매', '빌딩앞 입지조건 최고!!', '많은 유동인구', '일반 상업지역(다양한 업종가능)'],
+      group: { x:0.05, y:0.10, w:0.72, h:0.32, scale:1, lineGap:1 },
+      drag: null,
+      resize: null
+    };
+
+    const designSlider = document.getElementById('designSlider');
+    const paletteSlider = document.getElementById('paletteSlider');
+    const uploadDrop = document.getElementById('uploadDrop');
+    const hiddenFile = document.getElementById('hiddenFile');
+    const mainImage = document.getElementById('mainImage');
+    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+    const canvasStage = document.getElementById('canvasStage');
+    const textGroup = document.getElementById('textGroup');
+    const dragSurface = document.getElementById('dragSurface');
+    const resizeHandle = document.getElementById('resizeHandle');
+    const textInputs = document.getElementById('textInputs');
+    const scaleRange = document.getElementById('scaleRange');
+    const lineGapRange = document.getElementById('lineGapRange');
+    const scaleValue = document.getElementById('scaleValue');
+    const lineGapValue = document.getElementById('lineGapValue');
+    const fitTextBtn = document.getElementById('fitTextBtn');
+    const resetStyleBtn = document.getElementById('resetStyleBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const formatSeg = document.getElementById('formatSeg');
+    const alignSeg = document.getElementById('alignSeg');
+
+    function getDesign() { return designs[state.selectedDesignIndex]; }
+    function getPalette() { return palettes[state.selectedPaletteIndex]; }
+    function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+
+    function hexToRgba(hex, alpha) {
+      const clean = hex.replace('#','');
+      const n = parseInt(clean, 16);
+      const r = (n >> 16) & 255;
+      const g = (n >> 8) & 255;
+      const b = n & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function drawRoundRect(ctx, x, y, w, h, r, fillStyle) {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + w, y, x + w, y + h, radius);
+      ctx.arcTo(x + w, y + h, x, y + h, radius);
+      ctx.arcTo(x, y + h, x, y, radius);
+      ctx.arcTo(x, y, x + w, y, radius);
+      ctx.closePath();
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+    }
+
+    function ensureLineLength() {
+      const count = getDesign().lineCount;
+      while (state.lines.length < count) state.lines.push('');
+      if (state.lines.length > count) state.lines = state.lines.slice(0, count);
+    }
+
+    function applyDesignDefaults(forceBoxReset) {
+      const d = getDesign();
+      ensureLineLength();
+      if (forceBoxReset) {
+        state.group.x = d.box.x;
+        state.group.y = d.box.y;
+        state.group.w = d.box.w;
+        state.group.h = d.box.h;
+        state.group.scale = 1;
+        state.group.lineGap = 1;
+      }
+      scaleRange.value = String(state.group.scale);
+      lineGapRange.value = String(state.group.lineGap);
+      scaleValue.textContent = Number(state.group.scale).toFixed(2);
+      lineGapValue.textContent = Number(state.group.lineGap).toFixed(2);
+    }
+
+    function renderDesignCards() {
+      designSlider.innerHTML = '';
+      designs.forEach((d, index) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'design-card' + (index === state.selectedDesignIndex ? ' active' : '');
+        card.innerHTML = `<div class="design-name">${d.name}</div><div class="mini-preview"></div>`;
+        const preview = card.querySelector('.mini-preview');
+        const samples = ['핵심 타이틀','포인트 1','포인트 2','포인트 3'];
+        for (let i = 0; i < d.lineCount; i++) {
+          const line = document.createElement('div');
+          const spec = d.lines[i];
+          line.className = 'mini-line';
+          line.textContent = samples[i];
+          line.style.top = `${spec.y * 100}%`;
+          line.style.fontSize = `${Math.max(10, 13 * spec.size)}px`;
+          line.style.textAlign = 'left';
+          if (spec.chip) {
+            line.style.display = 'inline-block';
+            line.style.width = 'auto';
+            line.style.maxWidth = 'calc(100% - 16px)';
+            line.style.padding = '3px 6px';
+            line.style.background = 'rgba(255,255,255,0.88)';
+            line.style.color = '#111827';
+            line.style.borderRadius = '999px';
+            line.style.textShadow = 'none';
+          }
+          preview.appendChild(line);
+        }
+        card.addEventListener('click', () => {
+          state.selectedDesignIndex = index;
+          applyDesignDefaults(true);
+          renderAll();
+        });
+        designSlider.appendChild(card);
+      });
+    }
+
+    function renderPaletteCards() {
+      paletteSlider.innerHTML = '';
+      palettes.forEach((palette, index) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'palette-card' + (index === state.selectedPaletteIndex ? ' active' : '');
+        const stripes = document.createElement('div');
+        stripes.className = 'palette-stripes';
+        palette.forEach(color => {
+          const div = document.createElement('div');
+          div.style.background = color;
+          stripes.appendChild(div);
+        });
+        const label = document.createElement('div');
+        label.className = 'palette-label';
+        label.textContent = `P${index + 1}`;
+        card.appendChild(stripes);
+        card.appendChild(label);
+        card.addEventListener('click', () => {
+          state.selectedPaletteIndex = index;
+          renderAll();
+        });
+        paletteSlider.appendChild(card);
+      });
+    }
+
+    function renderInputs() {
+      ensureLineLength();
+      textInputs.innerHTML = '';
+      state.lines.forEach((value, index) => {
+        const ta = document.createElement('textarea');
+        ta.className = 'text-row';
+        ta.rows = 2;
+        ta.placeholder = `${index + 1}번째 문구 입력`;
+        ta.value = value;
+        ta.addEventListener('input', e => {
+          state.lines[index] = e.target.value;
+          renderTextOverlay();
+        });
+        textInputs.appendChild(ta);
+      });
+    }
+
+    function renderImage() {
+      if (!state.imageUrl) {
+        uploadPlaceholder.style.display = 'block';
+        mainImage.style.display = 'none';
+        canvasStage.style.display = 'none';
+        return;
+      }
+      uploadPlaceholder.style.display = 'none';
+      mainImage.style.display = 'block';
+      canvasStage.style.display = 'block';
+      mainImage.src = state.imageUrl;
+    }
+
+    function getStageRect() {
+      return canvasStage.getBoundingClientRect();
+    }
+
+    function renderTextOverlay() {
+      if (!state.imageUrl) return;
+      const d = getDesign();
+      const palette = getPalette();
+      textGroup.querySelectorAll('.overlay-bg, .overlay-line').forEach(el => el.remove());
+
+      const rect = getStageRect();
+      const x = state.group.x * rect.width;
+      const y = state.group.y * rect.height;
+      const w = state.group.w * rect.width;
+      const h = state.group.h * rect.height;
+
+      textGroup.style.left = `${x}px`;
+      textGroup.style.top = `${y}px`;
+      textGroup.style.width = `${w}px`;
+      textGroup.style.height = `${h}px`;
+
+      if (d.bg) {
+        const bg = document.createElement('div');
+        bg.className = 'overlay-bg';
+        const pad = Math.max(6, Math.min(w, h) * d.bg.pad);
+        bg.style.left = `${-pad}px`;
+        bg.style.top = `${-pad}px`;
+        bg.style.width = `calc(100% + ${pad * 2}px)`;
+        bg.style.height = `calc(100% + ${pad * 2}px)`;
+        bg.style.borderRadius = `${d.bg.radius}px`;
+        if (d.bg.type === 'gradient') {
+          bg.style.background = `linear-gradient(135deg, ${hexToRgba(palette[0], d.bg.opacity)}, ${hexToRgba(palette[1], d.bg.opacity)})`;
+        } else {
+          bg.style.background = hexToRgba(palette[d.bg.colorIndex || 0], d.bg.opacity);
+        }
+        textGroup.insertBefore(bg, textGroup.firstChild);
+      }
+
+      for (let i = 0; i < d.lineCount; i++) {
+        const spec = d.lines[i];
+        const div = document.createElement('div');
+        div.className = 'overlay-line';
+        div.textContent = state.lines[i] || '';
+        div.style.top = `${spec.y * 100}%`;
+        div.style.left = '0';
+        div.style.fontSize = `${Math.max(12, h * spec.size * state.group.scale)}px`;
+        div.style.fontWeight = String(spec.weight);
+        div.style.lineHeight = String(0.95 * state.group.lineGap);
+        div.style.letterSpacing = '-0.04em';
+        div.style.textAlign = state.align;
+        div.style.color = palette[0];
+        div.style.fontFamily = spec.serif ? 'Georgia, Cambria, "Times New Roman", serif' : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif';
+        if (d.stroke > 0) {
+          const strokePx = Math.max(1, h * d.stroke * 0.18 * state.group.scale);
+          div.style.webkitTextStroke = `${strokePx}px ${palette[2]}`;
+          div.style.paintOrder = 'stroke fill';
+        }
+        if (d.shadow > 0) {
+          const blur = Math.max(2, 18 * d.shadow * state.group.scale);
+          const yoff = Math.max(1, 7 * d.shadow * state.group.scale);
+          div.style.textShadow = `0 ${yoff}px ${blur}px rgba(0,0,0,0.45)`;
+        }
+        if (spec.chip) {
+          div.style.display = 'inline-block';
+          div.style.width = 'auto';
+          div.style.maxWidth = '100%';
+          div.style.padding = '0.12em 0.38em';
+          div.style.background = hexToRgba(palette[2], 0.88);
+          div.style.borderRadius = '999px';
+          div.style.color = palette[1];
+          div.style.webkitTextStroke = '0';
+          div.style.textShadow = 'none';
+          if (state.align === 'center') {
+            div.style.left = '50%';
+            div.style.transform = 'translateX(-50%)';
+          } else if (state.align === 'right') {
+            div.style.left = 'auto';
+            div.style.right = '0';
+          }
+        }
+        textGroup.appendChild(div);
+      }
+    }
+
+    function syncSegState() {
+      [...formatSeg.querySelectorAll('button')].forEach(btn => btn.classList.toggle('active', btn.dataset.format === state.exportFormat));
+      [...alignSeg.querySelectorAll('button')].forEach(btn => btn.classList.toggle('active', btn.dataset.align === state.align));
+    }
+
+    function renderAll() {
+      renderDesignCards();
+      renderPaletteCards();
+      renderInputs();
+      renderImage();
+      applyDesignDefaults(false);
+      syncSegState();
+      requestAnimationFrame(renderTextOverlay);
+    }
+
+    function openFilePicker() {
+      hiddenFile.click();
+    }
+
+    uploadDrop.addEventListener('click', e => {
+      if (e.target === dragSurface || e.target === resizeHandle) return;
+      openFilePicker();
+    });
+
+    hiddenFile.addEventListener('change', e => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
+      state.imageUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        state.image = img;
+        renderAll();
+      };
+      img.src = state.imageUrl;
+    });
+
+    document.querySelectorAll('[data-scroll-target]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.dataset.scrollTarget);
+        const amount = target.clientWidth * 0.78 * (btn.dataset.dir === 'next' ? 1 : -1);
+        target.scrollBy({ left: amount, behavior: 'smooth' });
+      });
+    });
+
+    dragSurface.addEventListener('pointerdown', e => {
+      if (!state.imageUrl) return;
+      e.stopPropagation();
+      dragSurface.setPointerCapture(e.pointerId);
+      state.drag = {
+        id: e.pointerId,
+        sx: e.clientX,
+        sy: e.clientY,
+        bx: state.group.x,
+        by: state.group.y
+      };
+    });
+
+    dragSurface.addEventListener('pointermove', e => {
+      if (!state.drag || state.drag.id !== e.pointerId) return;
+      const rect = getStageRect();
+      const dx = (e.clientX - state.drag.sx) / rect.width;
+      const dy = (e.clientY - state.drag.sy) / rect.height;
+      state.group.x = clamp(state.drag.bx + dx, 0, 1 - state.group.w);
+      state.group.y = clamp(state.drag.by + dy, 0, 1 - state.group.h);
+      renderTextOverlay();
+    });
+
+    dragSurface.addEventListener('pointerup', e => {
+      if (state.drag && state.drag.id === e.pointerId) state.drag = null;
+    });
+    dragSurface.addEventListener('pointercancel', () => { state.drag = null; });
+
+    resizeHandle.addEventListener('pointerdown', e => {
+      if (!state.imageUrl) return;
+      e.stopPropagation();
+      resizeHandle.setPointerCapture(e.pointerId);
+      state.resize = {
+        id: e.pointerId,
+        sx: e.clientX,
+        sy: e.clientY,
+        bw: state.group.w,
+        bh: state.group.h
+      };
+    });
+
+    resizeHandle.addEventListener('pointermove', e => {
+      if (!state.resize || state.resize.id !== e.pointerId) return;
+      const rect = getStageRect();
+      const dx = (e.clientX - state.resize.sx) / rect.width;
+      const dy = (e.clientY - state.resize.sy) / rect.height;
+      state.group.w = clamp(state.resize.bw + dx, 0.18, 1 - state.group.x);
+      state.group.h = clamp(state.resize.bh + dy, 0.10, 1 - state.group.y);
+      renderTextOverlay();
+    });
+
+    resizeHandle.addEventListener('pointerup', e => {
+      if (state.resize && state.resize.id === e.pointerId) state.resize = null;
+    });
+    resizeHandle.addEventListener('pointercancel', () => { state.resize = null; });
+
+    scaleRange.addEventListener('input', e => {
+      state.group.scale = Number(e.target.value);
+      scaleValue.textContent = Number(state.group.scale).toFixed(2);
+      renderTextOverlay();
+    });
+
+    lineGapRange.addEventListener('input', e => {
+      state.group.lineGap = Number(e.target.value);
+      lineGapValue.textContent = Number(state.group.lineGap).toFixed(2);
+      renderTextOverlay();
+    });
+
+    formatSeg.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-format]');
+      if (!btn) return;
+      state.exportFormat = btn.dataset.format;
+      syncSegState();
+    });
+
+    alignSeg.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-align]');
+      if (!btn) return;
+      state.align = btn.dataset.align;
+      syncSegState();
+      renderTextOverlay();
+    });
+
+    fitTextBtn.addEventListener('click', () => {
+      const d = getDesign();
+      state.group.x = d.box.x;
+      state.group.y = d.box.y;
+      state.group.w = d.box.w;
+      state.group.h = d.box.h;
+      renderTextOverlay();
+    });
+
+    resetStyleBtn.addEventListener('click', () => {
+      applyDesignDefaults(true);
+      renderAll();
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      if (!state.image || !state.image.complete) {
+        alert('먼저 사진을 넣어주세요.');
+        return;
+      }
+      exportComposite();
+    });
+
+    function exportComposite() {
+      const canvas = document.createElement('canvas');
+      const iw = state.image.naturalWidth;
+      const ih = state.image.naturalHeight;
+      canvas.width = iw;
+      canvas.height = ih;
+      const ctx = canvas.getContext('2d');
+
+      if (state.exportFormat === 'jpg') {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, iw, ih);
+      }
+      ctx.drawImage(state.image, 0, 0, iw, ih);
+
+      const d = getDesign();
+      const palette = getPalette();
+      const x = state.group.x * iw;
+      const y = state.group.y * ih;
+      const w = state.group.w * iw;
+      const h = state.group.h * ih;
+
+      if (d.bg) {
+        const pad = Math.max(8, Math.min(w, h) * d.bg.pad);
+        const bx = x - pad;
+        const by = y - pad;
+        const bw = w + pad * 2;
+        const bh = h + pad * 2;
+        let fill;
+        if (d.bg.type === 'gradient') {
+          const grad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
+          grad.addColorStop(0, hexToRgba(palette[0], d.bg.opacity));
+          grad.addColorStop(1, hexToRgba(palette[1], d.bg.opacity));
+          fill = grad;
+        } else {
+          fill = hexToRgba(palette[d.bg.colorIndex || 0], d.bg.opacity);
+        }
+        drawRoundRect(ctx, bx, by, bw, bh, d.bg.radius, fill);
+      }
+
+      ctx.textBaseline = 'top';
+      for (let i = 0; i < d.lineCount; i++) {
+        const spec = d.lines[i];
+        const text = state.lines[i] || '';
+        const fontSize = Math.max(12, h * spec.size * state.group.scale);
+        const lineXBase = x;
+        const lineY = y + (h * spec.y);
+        ctx.font = `${spec.weight} ${fontSize}px ${spec.serif ? 'Georgia, serif' : 'Arial, sans-serif'}`;
+        ctx.fillStyle = palette[0];
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+
+        if (d.shadow > 0) {
+          ctx.shadowColor = 'rgba(0,0,0,0.45)';
+          ctx.shadowBlur = Math.max(2, 18 * d.shadow * state.group.scale);
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = Math.max(1, 7 * d.shadow * state.group.scale);
+        } else {
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+        }
+
+        const isChip = !!spec.chip;
+        let textX = lineXBase;
+        if (state.align === 'center') textX = x + w / 2;
+        if (state.align === 'right') textX = x + w;
+        ctx.textAlign = state.align;
+
+        if (isChip) {
+          const tw = ctx.measureText(text).width;
+          const padX = fontSize * 0.38;
+          const padY = fontSize * 0.16;
+          let chipX = textX;
+          if (state.align === 'center') chipX = textX - (tw / 2) - padX;
+          if (state.align === 'right') chipX = textX - tw - padX * 2;
+          const chipW = tw + padX * 2;
+          const chipH = fontSize + padY * 2;
+          drawRoundRect(ctx, chipX, lineY, chipW, chipH, chipH / 2, hexToRgba(palette[2], 0.88));
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = palette[1];
+          ctx.fillText(text, state.align === 'left' ? chipX + padX : (state.align === 'center' ? chipX + chipW / 2 : chipX + chipW - padX), lineY + padY);
+          continue;
+        }
+
+        if (d.stroke > 0) {
+          ctx.lineWidth = Math.max(1, h * d.stroke * 0.18 * state.group.scale);
+          ctx.strokeStyle = palette[2];
+          ctx.strokeText(text, textX, lineY);
+        }
+        ctx.fillText(text, textX, lineY);
+      }
+
+      const ext = state.exportFormat === 'png' ? 'png' : 'jpg';
+      const mime = state.exportFormat === 'png' ? 'image/png' : 'image/jpeg';
+      const dataUrl = canvas.toDataURL(mime, state.exportFormat === 'png' ? undefined : 0.95);
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `maslow-thumbnail.${ext}`;
+      a.click();
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>

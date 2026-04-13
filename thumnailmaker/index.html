@@ -4,61 +4,57 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>매슬로우 썸네일 메이커</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     *{box-sizing:border-box}
     html,body{margin:0;padding:0;background:#f3f4f6;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif}
-    body{min-height:100vh}
-    .app{max-width:1240px;margin:0 auto;padding:0 12px 40px}
-    .topbar{position:sticky;top:0;z-index:1000;margin:0 -12px;padding:16px 18px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid #e5e7eb}
-    .topbar-title{text-align:center;font-size:27px;font-weight:900;letter-spacing:-.04em}
-    .panel{margin-top:14px;background:#fff;border:1px solid #e5e7eb;border-radius:22px;padding:14px;box-shadow:0 8px 26px rgba(17,24,39,.05)}
+    .app{max-width:1220px;margin:0 auto;padding:0 12px 28px}
+    .topbar{position:sticky;top:0;z-index:50;margin:0 -12px;padding:16px 18px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-bottom:1px solid #e5e7eb}
+    .topbar-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .topbar-title{font-size:26px;font-weight:900;letter-spacing:-.04em;text-align:center;flex:1}
+    .small-btn{border:1px solid #d1d5db;background:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:900;cursor:pointer;white-space:nowrap}
+    .small-btn.primary{background:#111827;color:#fff;border-color:#111827}
+    .panel{margin-top:14px;background:#fff;border:1px solid #e5e7eb;border-radius:22px;padding:14px;box-shadow:0 8px 24px rgba(17,24,39,.05)}
     .panel-title{font-size:14px;font-weight:900;color:#374151;margin-bottom:10px}
     .slider-wrap{display:flex;align-items:center;gap:8px}
-    .slider{display:flex;gap:10px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;flex:1;padding-bottom:2px}
+    .slider-btn{width:40px;height:40px;border-radius:999px;border:1px solid #d1d5db;background:#fff;font-size:18px;font-weight:900;cursor:pointer}
+    .slider{overflow-x:auto;scrollbar-width:none;display:flex;gap:10px;flex:1;padding-bottom:2px;scroll-behavior:smooth}
     .slider::-webkit-scrollbar{display:none}
-    .slider-btn{width:40px;height:40px;border-radius:999px;border:1px solid #d1d5db;background:#fff;font-size:18px;font-weight:900;cursor:pointer;flex:0 0 auto}
-    .design-card,.palette-card,.style-slot{border:2px solid transparent;cursor:pointer}
-    .design-card{min-width:140px;height:92px;border-radius:18px;background:linear-gradient(180deg,#f8fafc,#e5edf7);padding:10px;position:relative;overflow:hidden}
-    .design-card.active,.palette-card.active{border-color:#111827;box-shadow:0 0 0 3px rgba(17,24,39,.08)}
+    .design-card{min-width:150px;height:98px;border-radius:18px;border:2px solid transparent;background:linear-gradient(180deg,#f8fafc,#e5edf7);position:relative;overflow:hidden;cursor:pointer;padding:10px}
+    .design-card.active{border-color:#111827;box-shadow:0 0 0 3px rgba(17,24,39,.08)}
     .design-name{position:absolute;left:10px;top:8px;font-size:11px;font-weight:900;color:#4b5563}
     .mini-preview{position:absolute;left:10px;right:10px;top:28px;bottom:10px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#dbeafe,#fde68a)}
     .mini-line{position:absolute;left:8px;right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:900;letter-spacing:-.04em;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,.35)}
-    .palette-card{min-width:84px;height:64px;border-radius:16px;overflow:hidden;position:relative;background:#fff}
+    .palette-card{min-width:84px;height:64px;border-radius:16px;border:2px solid transparent;overflow:hidden;cursor:pointer;background:#fff;position:relative}
+    .palette-card.active{border-color:#111827;box-shadow:0 0 0 3px rgba(17,24,39,.08)}
     .palette-stripes{display:grid;height:100%;grid-template-columns:repeat(3,1fr)}
-    .palette-label{position:absolute;left:7px;bottom:6px;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.9);font-size:10px;font-weight:900}
-    .editor-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(330px,.85fr);gap:14px;align-items:start}
-    .photo-panel{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:24px;padding:12px}
-    .stage-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-    .stage-actions .spacer{margin-left:auto}
-    .overlay-root.mosaic-hide-text .main-text-group,.overlay-root.mosaic-hide-text #freeBlocksLayer{display:none}
-    .stage-btn,.ghost-btn,.small-btn{border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;cursor:pointer}
-    .stage-btn{padding:11px 14px;border-radius:14px}
-    .stage-btn.active{background:#111827;color:#fff;border-color:#111827}
-    .small-btn{padding:8px 10px;border-radius:12px;font-size:12px}
-    .ghost-btn{padding:10px 12px;border-radius:14px}
-    .stage-shell{border-radius:20px;overflow:hidden;background:#111;position:relative;min-height:220px}
-    .placeholder{display:flex;align-items:center;justify-content:center;min-height:320px;padding:24px;text-align:center;background:#e5e7eb;color:#6b7280;cursor:pointer}
-    .placeholder strong{display:block;color:#111827;font-size:22px;margin-bottom:6px}
-    .image-wrap{position:relative;width:100%;display:none;line-height:0}
-    .main-image{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
-    .overlay-root{position:absolute;inset:0;touch-action:none}
-    .mosaic-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-    .mosaic-canvas.active{pointer-events:auto;cursor:crosshair}
-    .main-text-group,.free-block{position:absolute;touch-action:none}
-    .main-text-group.hidden{display:none}
-    .main-text-group:not(.selected) .main-group-box,.main-text-group:not(.selected) .main-resize-handle{display:none}
-    .main-group-box{position:absolute;inset:0;border:2px dashed rgba(255,255,255,.96);border-radius:14px;pointer-events:none}
-    .main-text-group.active .main-group-box,.free-block.active .free-box{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18)}
-    .main-move-surface,.free-move-surface{position:absolute;inset:0;cursor:grab}
-    .main-resize-handle,.free-resize-handle{position:absolute;width:24px;height:24px;right:-11px;bottom:-11px;border-radius:999px;background:#fff;border:2px solid #111827;box-shadow:0 4px 10px rgba(0,0,0,.25);cursor:nwse-resize}
-    .main-line,.free-block-text{position:absolute;white-space:pre-wrap;word-break:keep-all;line-height:1;letter-spacing:-.04em;pointer-events:none;user-select:none}
-    .free-box{position:absolute;inset:0;border:2px dashed rgba(255,255,255,.92);border-radius:14px;pointer-events:none}
-    .free-close{position:absolute;top:-14px;right:-14px;width:40px;height:40px;border-radius:999px;border:2px solid #fff;background:#ef4444;color:#fff;font-weight:900;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.28);z-index:20;touch-action:manipulation}
-    .controls-col{display:flex;flex-direction:column;gap:12px}
+    .palette-label{position:absolute;left:7px;bottom:6px;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.88);font-size:10px;font-weight:900}
+    .workspace{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(330px,.9fr);gap:14px;align-items:start}
+    .photo-shell{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:24px;padding:12px}
+    .photo-stage-wrap{position:relative;width:100%;overflow:auto}
+    .photo-stage{position:relative;width:100%;min-height:260px;border-radius:20px;overflow:hidden;background:#e5e7eb;cursor:default}
+    .photo-stage.empty{display:flex;align-items:center;justify-content:center}
+    .base-image{display:block;width:100%;height:auto;pointer-events:none;user-select:none;-webkit-user-drag:none;background:#111}
+    .overlay-root{position:absolute;inset:0;overflow:visible}
+    .mosaic-canvas{position:absolute;inset:0;pointer-events:none}
+    .main-text-box,.free-block{position:absolute;touch-action:none}
+    .main-text-box.selected .select-outline,.free-block.selected .select-outline{display:block}
+    .select-outline{position:absolute;inset:0;border:2px dashed rgba(255,255,255,.96);border-radius:12px;display:none;pointer-events:none}
+    .main-text-box[data-hidden="1"] .select-outline,.main-text-box[data-hidden="1"] .resize-handle{display:none !important}
+    .drag-hit{position:absolute;inset:0;cursor:grab;background:transparent}
+    .drag-hit:active{cursor:grabbing}
+    .resize-handle{position:absolute;right:-11px;bottom:-11px;width:22px;height:22px;border-radius:999px;border:2px solid #111827;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.22);cursor:nwse-resize}
+    .main-text-bg,.free-block-bg{position:absolute;pointer-events:none}
+    .main-line{position:absolute;left:0;width:100%;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;user-select:none;pointer-events:none;letter-spacing:-.04em;line-height:1}
+    .free-block-content{position:absolute;inset:0;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;display:flex;align-items:center;justify-content:center;text-align:center;padding:.18em .34em;user-select:none;pointer-events:none}
+    .free-block-delete{position:absolute;top:-16px;right:-16px;width:42px;height:42px;border-radius:999px;border:1px solid #d1d5db;background:rgba(255,255,255,.96);font-size:18px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3}
+    .controls{display:flex;flex-direction:column;gap:12px}
     .field-label{font-size:13px;font-weight:900;color:#374151;margin-bottom:6px}
     .text-inputs{display:grid;gap:10px}
-    .text-row,.text-input,.select-input{width:100%;min-height:52px;padding:12px 14px;border-radius:14px;border:1px solid #d1d5db;outline:none;font-size:15px;font-weight:800;color:#111827;background:#fff}
-    .text-row{resize:vertical}
+    .text-row-wrap{display:grid;grid-template-columns:minmax(0,1fr) 42px;gap:8px;align-items:stretch}
+    .text-row{width:100%;min-height:52px;padding:12px 14px;border-radius:14px;border:1px solid #d1d5db;resize:none;outline:none;font-size:15px;font-weight:800;color:#111827;background:#fff}
+    .gap-buttons{display:grid;grid-template-rows:1fr 1fr;gap:6px}
+    .gap-btn{border:1px solid #d1d5db;background:#fff;border-radius:12px;font-size:16px;font-weight:900;cursor:pointer}
     .inline-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .seg{display:flex;border-radius:14px;border:1px solid #d1d5db;overflow:hidden;background:#fff}
     .seg button{flex:1;padding:12px 10px;border:0;background:transparent;font-size:14px;font-weight:900;cursor:pointer;color:#111827}
@@ -69,41 +65,31 @@
     .action-btn.primary{color:#fff;background:linear-gradient(135deg,#111827,#374151)}
     .action-btn.soft{background:#eef2ff;color:#3730a3}
     .action-btn.danger{background:#fef2f2;color:#b91c1c}
-    .color-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-    .color-box{padding:10px;border:1px solid #e5e7eb;border-radius:16px;background:#fff}
-    .color-box label{display:block;font-size:12px;font-weight:900;color:#4b5563;margin-bottom:6px}
-    .color-box input[type="color"]{width:100%;height:42px;border:0;background:transparent;padding:0}
-    .free-panel{margin-top:12px}
-    .free-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-    .free-status{font-size:13px;font-weight:900;color:#374151}
+    .subgrid{display:grid;gap:10px}
     .note{font-size:12px;line-height:1.6;color:#6b7280;background:#f9fafb;border-radius:14px;padding:10px 12px}
-    .style-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-    .style-slot{border-radius:16px;background:#f8fafc;padding:10px;cursor:default}
-    .style-slot-head{font-size:12px;font-weight:900;color:#111827;margin-bottom:8px}
-    .style-slot-actions{display:flex;gap:6px}
-    .style-slot-actions button{flex:1;border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:7px 8px;font-size:12px;font-weight:900;cursor:pointer}
-    .style-slot.saved{background:#eefbf3;border-color:#86efac}
-    body.exporting-overlay .main-group-box,
-body.exporting-overlay .main-resize-handle,
-body.exporting-overlay .main-move-surface,
-body.exporting-overlay .free-box,
-body.exporting-overlay .free-resize-handle,
-body.exporting-overlay .free-close,
-.export-mode .main-group-box,
-.export-mode .main-resize-handle,
-.export-mode .main-move-surface,
-.export-mode .free-box,
-.export-mode .free-resize-handle,
-.export-mode .free-close{display:none !important}
-#fileInput{display:none}
-    @media (max-width:980px){.editor-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media (max-width:640px){.app{padding:0 10px 32px}.topbar{margin:0 -10px}.topbar-title{font-size:22px}.inline-grid,.color-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.design-card{min-width:130px}.palette-card{min-width:78px}}
+    .style-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .style-slot{border:1px solid #e5e7eb;background:#fff;border-radius:16px;padding:10px}
+    .style-name{font-size:12px;font-weight:900;margin-bottom:8px}
+    .style-actions{display:flex;gap:6px}
+    .style-actions button{flex:1;border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:8px 6px;font-size:12px;font-weight:900;cursor:pointer}
+    .free-panel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .mini-input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid #d1d5db;background:#fff;font-size:14px;font-weight:700;outline:none}
+    .hidden-file{display:none}
+    .export-hidden{display:none !important}
+    .hidden-export-stage{position:fixed;left:-100000px;top:-100000px;pointer-events:none;opacity:0}
+    @media (max-width:920px){.workspace{grid-template-columns:1fr}}
+    @media (max-width:640px){.app{padding:0 10px 28px}.topbar{margin:0 -10px}.topbar-title{font-size:22px}.inline-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
   <div class="app">
-    <div class="topbar"><div class="topbar-title">매슬로우 썸네일 메이커</div></div>
+    <div class="topbar">
+      <div class="topbar-row">
+        <button class="small-btn" id="uploadBtnTop" type="button">사진 넣기</button>
+        <div class="topbar-title">매슬로우 썸네일 메이커</div>
+        <button class="small-btn primary" id="undoBtn" type="button">되돌리기</button>
+      </div>
+    </div>
 
     <div class="panel">
       <div class="panel-title">텍스트 디자인</div>
@@ -124,85 +110,43 @@ body.exporting-overlay .free-close,
     </div>
 
     <div class="panel">
-      <div class="editor-grid">
-        <div>
-          <div class="photo-panel">
-            <div class="stage-actions">
-              <button class="stage-btn" id="pickImageBtn" type="button">사진 넣기</button>
-              <button class="stage-btn active" id="modeTextBtn" type="button">텍스트 모드</button>
-              <button class="stage-btn" id="modeMosaicBtn" type="button">모자이크 모드</button>
-              <button class="ghost-btn" id="addFreeBlockBtn" type="button">자유블럭 추가</button>
-              <button class="ghost-btn" id="clearMosaicBtn" type="button">모자이크 전체 지우기</button>
-              <span class="spacer"></span>
-              <button class="ghost-btn" id="undoBtn" type="button">되돌리기</button>
-            </div>
-
-            <div class="stage-shell" id="stageShell">
-              <div class="placeholder" id="placeholder">
-                <div><strong>사진 패널</strong>누르면 이미지가 입력됩니다<br>가로폭은 꽉 맞추고, 세로는 원본 비율대로 표시됩니다</div>
-              </div>
-              <div class="image-wrap" id="imageWrap">
-                <img id="mainImage" class="main-image" alt="업로드 이미지">
-                <div class="overlay-root" id="overlayRoot">
-                  <canvas class="mosaic-canvas" id="mosaicCanvas"></canvas>
-                  <div class="main-text-group" id="mainTextGroup">
-                    <div class="main-group-box"></div>
-                    <div class="main-move-surface" data-hit="main-move"></div>
-                    <div class="main-resize-handle" data-hit="main-resize"></div>
-                  </div>
-                  <div id="freeBlocksLayer"></div>
+      <div class="workspace">
+        <div class="photo-shell">
+          <div class="photo-stage-wrap">
+            <div class="photo-stage empty" id="photoStage">
+              <img id="baseImage" class="base-image" alt="업로드 이미지" style="display:none" />
+              <div class="overlay-root" id="overlayRoot" style="display:none">
+                <canvas class="mosaic-canvas" id="mosaicCanvas"></canvas>
+                <div class="main-text-box" id="mainTextBox">
+                  <div class="select-outline"></div>
+                  <div class="drag-hit" data-role="main-drag"></div>
+                  <div class="resize-handle" data-role="main-resize"></div>
                 </div>
+                <div id="freeBlocksLayer"></div>
+              </div>
+              <div id="emptyMsg" style="text-align:center;color:#6b7280;padding:24px;line-height:1.6">
+                <strong style="display:block;color:#111827;font-size:22px;margin-bottom:6px">사진 패널</strong>
+                사진을 넣고, 패널 위에서 그대로 배치한 뒤 저장합니다.<br />
+                저장은 오버레이 루트를 통째로 복제해서 원본 위에 얹는 구조입니다.
               </div>
             </div>
-            <input id="fileInput" type="file" accept="image/*">
           </div>
-
-          <div class="panel free-panel">
-            <div class="free-panel-head">
-              <div class="panel-title" style="margin:0">자유블럭</div>
-              <div class="free-status" id="freeStatus">선택된 자유블럭 없음</div>
-            </div>
-            <div class="inline-grid">
-              <div>
-                <div class="field-label">자유블럭 텍스트</div>
-                <textarea id="freeTextInput" class="text-row" rows="3" placeholder="선택된 자유블럭 문구"></textarea>
-              </div>
-              <div>
-                <div class="field-label">글꼴</div>
-                <select id="freeFontSelect" class="select-input">
-                  <option value="sans">기본 고딕</option>
-                  <option value="serif">바탕</option>
-                  <option value="impact">임팩트</option>
-                  <option value="condensed">압축 굵게</option>
-                </select>
-              </div>
-            </div>
-            <div class="color-grid" style="margin-top:10px">
-              <div class="color-box"><label>글자색</label><input id="freeTextColor" type="color" value="#ffffff"></div>
-              <div class="color-box"><label>바탕색</label><input id="freeBgColor" type="color" value="#000000"></div>
-              <div class="color-box"><label>테두리색</label><input id="freeStrokeColor" type="color" value="#111111"></div>
-            </div>
-            <div class="inline-grid" style="margin-top:10px">
-              <div class="range-wrap"><div class="field-label">글자 크기 <span id="freeFontSizeValue">28</span></div><input id="freeFontSize" type="range" min="12" max="120" step="1" value="28"></div>
-              <div class="range-wrap"><div class="field-label">테두리 두께 <span id="freeStrokeWidthValue">0</span></div><input id="freeStrokeWidth" type="range" min="0" max="12" step="1" value="0"></div>
-            </div>
-            <div class="inline-grid" style="margin-top:10px">
-              <div class="range-wrap"><div class="field-label">배경 투명도 <span id="freeBgAlphaValue">0.00</span></div><input id="freeBgAlpha" type="range" min="0" max="1" step="0.01" value="0"></div>
-              <div class="range-wrap"><div class="field-label">줄 간격 <span id="freeLineHeightValue">1.00</span></div><input id="freeLineHeight" type="range" min="0.8" max="1.8" step="0.01" value="1"></div>
-            </div>
-            <div class="note" style="margin-top:10px">자유블럭 선택은 사진영역에서만 됩니다. 사진 위 자유블럭을 클릭하면 여기 상태가 해당 블럭으로 바뀝니다.</div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-title">내스타일</div>
-            <div class="style-grid" id="styleGrid"></div>
-          </div>
+          <input type="file" accept="image/*" id="imageFile" class="hidden-file" />
         </div>
 
-        <div class="controls-col">
+        <div class="controls">
           <div>
+            <div class="field-label">작업 모드</div>
+            <div class="seg" id="modeSeg">
+              <button type="button" data-mode="text" class="active">텍스트</button>
+              <button type="button" data-mode="free">자유블럭</button>
+              <button type="button" data-mode="mosaic">모자이크</button>
+            </div>
+          </div>
+
+          <div id="textPanel">
             <div class="field-label">문구 입력</div>
-            <div class="text-inputs" id="mainTextInputs"></div>
+            <div class="text-inputs" id="textInputs"></div>
           </div>
 
           <div class="inline-grid">
@@ -223,826 +167,708 @@ body.exporting-overlay .free-close,
             </div>
           </div>
 
-          <div class="range-wrap"><div class="field-label">글자 크기 배율 <span id="mainScaleValue">1.00</span></div><input id="mainScaleRange" type="range" min="0.5" max="2.5" step="0.01" value="1"></div>
-          <div class="range-wrap"><div class="field-label">줄 간격 <span id="mainLineGapValue">1.00</span></div><input id="mainLineGapRange" type="range" min="0.75" max="1.8" step="0.01" value="1"></div>
-          <div class="range-wrap"><div class="field-label">모자이크 브러시 크기 <span id="brushSizeValue">56</span></div><input id="brushSizeRange" type="range" min="10" max="180" step="1" value="56"></div>
+          <div class="range-wrap">
+            <div class="field-label">글자 크기 배율 <span id="scaleValue">1.00</span></div>
+            <input type="range" id="scaleRange" min="0.50" max="2.50" step="0.01" value="1" />
+          </div>
+          <div class="range-wrap">
+            <div class="field-label">줄 간격 <span id="lineGapValue">1.00</span></div>
+            <input type="range" id="lineGapRange" min="0.75" max="1.80" step="0.01" value="1" />
+          </div>
 
-          <button class="action-btn soft" id="resetMainBoxBtn" type="button">문구 박스 위치 리셋</button>
-          <button class="action-btn danger" id="resetDesignBtn" type="button">디자인 기본값 되돌리기</button>
-          <button class="action-btn primary" id="downloadBtn" type="button">내려받기</button>
+          <div class="subgrid" id="freePanel">
+            <div class="field-label">자유블럭</div>
+            <button class="action-btn soft" type="button" id="addFreeBlockBtn">자유블럭 추가</button>
+            <div id="freeStatus" class="note">사진 패널에서 자유블럭을 클릭하면 여기 상태가 잡힙니다.</div>
+            <div class="free-panel-grid">
+              <div><div class="field-label">내용</div><input class="mini-input" id="freeTextInput" placeholder="자유블럭 내용" /></div>
+              <div><div class="field-label">글꼴</div>
+                <select class="mini-input" id="freeFontSelect">
+                  <option value="system">기본 고딕</option>
+                  <option value="serif">바탕 계열</option>
+                  <option value="impact">임팩트</option>
+                  <option value="condensed">압축 굵게</option>
+                </select>
+              </div>
+              <div><div class="field-label">글자색</div><input class="mini-input" id="freeTextColor" type="color" value="#ffffff" /></div>
+              <div><div class="field-label">바탕색</div><input class="mini-input" id="freeBgColor" type="color" value="#111827" /></div>
+              <div><div class="field-label">테두리색</div><input class="mini-input" id="freeStrokeColor" type="color" value="#60a5fa" /></div>
+              <div><div class="field-label">테두리 두께</div><input class="mini-input" id="freeStrokeWidth" type="number" min="0" max="12" step="1" value="2" /></div>
+            </div>
+          </div>
 
-          <div class="note">디자인을 바꿔도 글자 크기 배율과 줄 간격은 유지됩니다. 4줄 디자인이어도 2개나 3개만 입력하면 자동으로 세로 균형을 맞춰 다시 배열합니다. 디자인이 <b>없음</b>이면 메인 텍스트 점선 박스와 핸들이 숨겨집니다.</div>
+          <div class="subgrid" id="mosaicPanel">
+            <div class="field-label">모자이크</div>
+            <div class="range-wrap">
+              <div class="field-label">브러시 크기 <span id="mosaicSizeValue">60</span></div>
+              <input type="range" id="mosaicSizeRange" min="12" max="180" step="1" value="60" />
+            </div>
+            <button class="action-btn danger" type="button" id="clearMosaicBtn">모자이크 전체 지우기</button>
+          </div>
+
+          <div class="inline-grid">
+            <button class="action-btn soft" type="button" id="resetMainBoxBtn">문구 박스 위치 리셋</button>
+            <button class="action-btn danger" type="button" id="resetDesignBtn">디자인 기본값 되돌리기</button>
+          </div>
+          <button class="action-btn primary" type="button" id="downloadBtn">내려받기</button>
+
+          <div class="note">
+            저장 원칙: 텍스트/자유블럭을 다시 계산해서 그리지 않고, 사진패널의 오버레이 루트를 통째로 복제해서 원본 위에 얹습니다.<br />
+            점선·핸들·X 버튼 같은 편집 UI는 저장에서 제외됩니다.
+          </div>
         </div>
       </div>
     </div>
+
+    <div class="panel">
+      <div class="panel-title">내스타일</div>
+      <div class="style-grid" id="styleGrid"></div>
+    </div>
   </div>
+  <div class="hidden-export-stage" id="hiddenExportStage"></div>
 
-<script>
-const designs = [
-  { id:'none', name:'없음', lineCount:4, hidden:true, box:{x:.06,y:.12,w:.72,h:.32}, lines:[{y:0,size:.34,weight:900},{y:.26,size:.22,weight:800},{y:.52,size:.22,weight:800},{y:.78,size:.22,weight:800}] },
-  { id:'boldHero', name:'Bold Hero', lineCount:3, box:{x:.05,y:.10,w:.72,h:.32}, lines:[{y:0,size:.40,weight:900},{y:.40,size:.22,weight:850},{y:.70,size:.22,weight:850}], stroke:.05, shadow:.12 },
-  { id:'boldHeroMix', name:'Bold Hero Mix', lineCount:3, box:{x:.05,y:.10,w:.72,h:.32}, lines:[{y:0,size:.40,weight:900,colorIndex:0},{y:.40,size:.22,weight:850,colorIndex:1},{y:.70,size:.22,weight:850,colorIndex:2}], stroke:.05, shadow:.12 },
-  { id:'cleanBox', name:'Clean Box', lineCount:3, box:{x:.06,y:.64,w:.70,h:.22}, lines:[{y:.06,size:.28,weight:900},{y:.38,size:.22,weight:800},{y:.68,size:.22,weight:800}], bg:{type:'solid',colorIndex:2,opacity:.92,pad:.06,radius:16}, shadow:0, stroke:0 },
-  { id:'posterBlock', name:'Poster Block', lineCount:4, box:{x:.04,y:.08,w:.78,h:.46}, lines:[{y:0,size:.34,weight:900},{y:.28,size:.20,weight:850},{y:.50,size:.20,weight:850},{y:.72,size:.20,weight:850}], stroke:.04, shadow:.10 },
-  { id:'tagStack', name:'Tag Stack', lineCount:4, box:{x:.05,y:.10,w:.68,h:.44}, lines:[{y:0,size:.34,weight:900},{y:.32,size:.18,weight:900,chip:true},{y:.56,size:.18,weight:900,chip:true},{y:.80,size:.18,weight:900,chip:true}], stroke:.02, shadow:.08 },
-  { id:'centerStack', name:'Center Stack', lineCount:4, box:{x:.15,y:.18,w:.70,h:.48}, lines:[{y:0,size:.30,weight:900},{y:.28,size:.20,weight:800},{y:.54,size:.20,weight:800},{y:.78,size:.20,weight:800}], bg:{type:'gradient',opacity:.36,pad:.08,radius:22}, shadow:.06 },
-  { id:'outlineMax', name:'Outline Max', lineCount:3, box:{x:.04,y:.10,w:.78,h:.34}, lines:[{y:0,size:.36,weight:900},{y:.40,size:.22,weight:900},{y:.70,size:.22,weight:900}], stroke:.07, shadow:0 },
-  { id:'stickerBox', name:'Sticker Box', lineCount:4, box:{x:.05,y:.54,w:.72,h:.34}, lines:[{y:.02,size:.26,weight:900},{y:.30,size:.18,weight:800},{y:.56,size:.18,weight:800},{y:.80,size:.18,weight:800}], bg:{type:'solid',colorIndex:2,opacity:.84,pad:.06,radius:20}, stroke:.02, shadow:.04 },
-  { id:'serifLuxury', name:'Serif Luxury', lineCount:3, box:{x:.06,y:.12,w:.74,h:.34}, lines:[{y:0,size:.30,weight:800,serif:true},{y:.40,size:.20,weight:700,serif:true},{y:.70,size:.20,weight:700,serif:true}], stroke:.02, shadow:.08 },
-  { id:'bottomStrip', name:'Bottom Strip', lineCount:4, box:{x:.04,y:.63,w:.84,h:.24}, lines:[{y:.04,size:.22,weight:900},{y:.30,size:.15,weight:800},{y:.55,size:.15,weight:800},{y:.78,size:.15,weight:800}], bg:{type:'solid',colorIndex:2,opacity:.92,pad:.06,radius:16}, shadow:0 },
-  { id:'topCard', name:'Top Card', lineCount:4, box:{x:.04,y:.07,w:.74,h:.44}, lines:[{y:0,size:.31,weight:900},{y:.28,size:.18,weight:800},{y:.53,size:.18,weight:800},{y:.78,size:.18,weight:800}], bg:{type:'gradient',opacity:.42,pad:.07,radius:18}, stroke:.02, shadow:.06 }
-];
+  <script>
+    const designs = [
+      { id:'none', name:'없음', lineCount:4, box:{x:0.06,y:0.12,w:0.72,h:0.34}, lines:[{y:0.00,size:0.36,weight:900},{y:0.30,size:0.20,weight:850},{y:0.58,size:0.20,weight:850},{y:0.82,size:0.20,weight:850}], bg:null, stroke:0, shadow:0, colorMode:'single', hidden:true },
+      { id:'boldHero', name:'Bold Hero', lineCount:3, box:{x:0.05,y:0.10,w:0.72,h:0.32}, lines:[{y:0.00,size:0.40,weight:900},{y:0.42,size:0.22,weight:850},{y:0.72,size:0.22,weight:850}], bg:null, stroke:0.05, shadow:0.12, colorMode:'single' },
+      { id:'boldHeroMix', name:'Bold Hero Mix', lineCount:3, box:{x:0.05,y:0.10,w:0.72,h:0.32}, lines:[{y:0.00,size:0.40,weight:900},{y:0.42,size:0.22,weight:850},{y:0.72,size:0.22,weight:850}], bg:null, stroke:0.05, shadow:0.12, colorMode:'perLine' },
+      { id:'posterBlock', name:'Poster Block', lineCount:4, box:{x:0.04,y:0.08,w:0.78,h:0.46}, lines:[{y:0.00,size:0.34,weight:900},{y:0.28,size:0.20,weight:850},{y:0.52,size:0.20,weight:850},{y:0.76,size:0.20,weight:850}], bg:null, stroke:0.04, shadow:0.10, colorMode:'single' },
+      { id:'cleanBox', name:'Clean Box', lineCount:3, box:{x:0.06,y:0.64,w:0.70,h:0.22}, lines:[{y:0.06,size:0.28,weight:900},{y:0.40,size:0.22,weight:800},{y:0.72,size:0.22,weight:800}], bg:{type:'solid',colorIndex:2,opacity:0.90,pad:0.06,radius:16}, stroke:0, shadow:0, colorMode:'single' }
+    ];
 
-const palettes = [
-  ['#ff8a00','#ffb347','#fff4e5'],['#ef4444','#f97316','#fff1f2'],['#111827','#374151','#f9fafb'],['#facc15','#f97316','#1f2937'],['#22c55e','#84cc16','#f0fdf4'],
-  ['#3b82f6','#06b6d4','#eff6ff'],['#8b5cf6','#ec4899','#faf5ff'],['#14b8a6','#2dd4bf','#ecfeff'],['#0f172a','#38bdf8','#e0f2fe'],['#7c2d12','#fdba74','#fff7ed'],
-  ['#fde047','#eab308','#422006'],['#fb7185','#fda4af','#fff1f2'],['#10b981','#34d399','#ecfdf5'],['#2563eb','#93c5fd','#eff6ff'],['#ea580c','#fdba74','#fff7ed'],
-  ['#e11d48','#fb7185','#fff1f2'],['#1d4ed8','#60a5fa','#eff6ff'],['#7c3aed','#a78bfa','#f5f3ff'],['#047857','#6ee7b7','#ecfdf5'],['#be123c','#fda4af','#fff1f2'],
-  ['#4338ca','#818cf8','#eef2ff'],['#b45309','#fcd34d','#fffbeb'],['#155e75','#67e8f9','#ecfeff'],['#166534','#86efac','#f0fdf4'],['#9a3412','#fdba74','#fff7ed'],
-  ['#0f766e','#5eead4','#f0fdfa'],['#86198f','#e879f9','#fdf4ff'],['#ca8a04','#fde047','#fefce8'],['#7f1d1d','#fca5a5','#fef2f2'],['#1e3a8a','#93c5fd','#eff6ff'],
-  ['#4c1d95','#c4b5fd','#f5f3ff'],['#083344','#67e8f9','#ecfeff'],['#3f6212','#bef264','#f7fee7'],['#92400e','#fcd34d','#fffbeb'],['#881337','#f9a8d4','#fdf2f8'],
-  ['#27272a','#a1a1aa','#fafafa'],['#0a0a0a','#525252','#ffffff'],['#fafaf9','#fb923c','#7c2d12'],['#ffffff','#ef4444','#111827'],['#ffffff','#16a34a','#052e16'],
-  ['#ffffff','#2563eb','#172554'],['#ffffff','#7c3aed','#2e1065'],['#ffffff','#0f766e','#042f2e'],['#fef3c7','#f59e0b','#78350f'],['#ffe4e6','#e11d48','#4c0519'],
-  ['#dcfce7','#16a34a','#052e16'],['#dbeafe','#2563eb','#172554'],['#f3e8ff','#9333ea','#3b0764'],['#ccfbf1','#14b8a6','#042f2e'],['#f1f5f9','#0f172a','#020617']
-];
+    const palettes = [
+      ['#ff8a00','#ffb347','#fff4e5'],['#ef4444','#f97316','#fff1f2'],['#111827','#374151','#f9fafb'],['#facc15','#f97316','#1f2937'],['#22c55e','#84cc16','#f0fdf4'],
+      ['#3b82f6','#06b6d4','#eff6ff'],['#8b5cf6','#ec4899','#faf5ff'],['#14b8a6','#2dd4bf','#ecfeff'],['#0f172a','#38bdf8','#e0f2fe'],['#7c2d12','#fdba74','#fff7ed'],
+      ['#fde047','#eab308','#422006'],['#fb7185','#fda4af','#fff1f2'],['#10b981','#34d399','#ecfdf5'],['#2563eb','#93c5fd','#eff6ff'],['#ea580c','#fdba74','#fff7ed'],
+      ['#e11d48','#fb7185','#fff1f2'],['#1d4ed8','#60a5fa','#eff6ff'],['#7c3aed','#a78bfa','#f5f3ff'],['#047857','#6ee7b7','#ecfdf5'],['#be123c','#fda4af','#fff1f2'],
+      ['#4338ca','#818cf8','#eef2ff'],['#b45309','#fcd34d','#fffbeb'],['#155e75','#67e8f9','#ecfeff'],['#166534','#86efac','#f0fdf4'],['#9a3412','#fdba74','#fff7ed'],
+      ['#0f766e','#5eead4','#f0fdfa'],['#86198f','#e879f9','#fdf4ff'],['#ca8a04','#fde047','#fefce8'],['#7f1d1d','#fca5a5','#fef2f2'],['#1e3a8a','#93c5fd','#eff6ff'],
+      ['#4c1d95','#c4b5fd','#f5f3ff'],['#083344','#67e8f9','#ecfeff'],['#3f6212','#bef264','#f7fee7'],['#92400e','#fcd34d','#fffbeb'],['#881337','#f9a8d4','#fdf2f8'],
+      ['#27272a','#a1a1aa','#fafafa'],['#0a0a0a','#525252','#ffffff'],['#fafaf9','#fb923c','#7c2d12'],['#ffffff','#ef4444','#111827'],['#ffffff','#16a34a','#052e16'],
+      ['#ffffff','#2563eb','#172554'],['#ffffff','#7c3aed','#2e1065'],['#ffffff','#0f766e','#042f2e'],['#fef3c7','#f59e0b','#78350f'],['#ffe4e6','#e11d48','#4c0519'],
+      ['#dcfce7','#16a34a','#052e16'],['#dbeafe','#2563eb','#172554'],['#f3e8ff','#9333ea','#3b0764'],['#ccfbf1','#14b8a6','#042f2e'],['#f1f5f9','#0f172a','#020617']
+    ];
 
-const state = {
-  selectedDesignIndex: 1,
-  selectedPaletteIndex: 0,
-  exportFormat: 'jpg',
-  align: 'center',
-  mode: 'text',
-  imageUrl: '',
-  image: null,
-  mainLines: ['군산 나운동 상가매매','빌딩앞 입지조건 최고!!','많은 유동인구','일반 상업지역(다양한 업종가능)'],
-  mainLineOffsets: [0,0,0,0],
-  mainBox: {x:.05,y:.10,w:.72,h:.32,scale:1,lineGap:1},
-  freeBlocks: [],
-  selectedFreeBlockId: null,
-  drag: null,
-  brushSize: 56,
-  mosaicStrokes: [],
-  mainSelected: false,
-  history: []
-};
+    const $ = sel => document.querySelector(sel);
+    const state = {
+      mode:'text',
+      format:'jpg',
+      align:'center',
+      selectedDesignIndex:1,
+      selectedPaletteIndex:0,
+      imageSrc:'',
+      imageNaturalWidth:0,
+      imageNaturalHeight:0,
+      lines:['군산 나운동 상가매매','빌딩앞 입지조건 최고!!','많은 유동인구',''],
+      lineOffsets:[0,0,0,0],
+      mainBox:{x:0.05,y:0.10,w:0.72,h:0.32,scale:1,lineGap:1},
+      selectedTarget:'main',
+      freeBlocks:[],
+      selectedFreeBlockId:null,
+      drag:null,
+      resize:null,
+      history:[],
+      mosaicStrokes:[],
+      mosaicBrushSize:60,
+      mosaicDrawing:false,
+      styleSlots:Array.from({length:12}, (_,i)=>`내스타일${i+1}`)
+    };
 
-const el = {
-  designSlider: document.getElementById('designSlider'),
-  paletteSlider: document.getElementById('paletteSlider'),
-  placeholder: document.getElementById('placeholder'),
-  imageWrap: document.getElementById('imageWrap'),
-  mainImage: document.getElementById('mainImage'),
-  overlayRoot: document.getElementById('overlayRoot'),
-  mainTextGroup: document.getElementById('mainTextGroup'),
-  freeBlocksLayer: document.getElementById('freeBlocksLayer'),
-  mosaicCanvas: document.getElementById('mosaicCanvas'),
-  fileInput: document.getElementById('fileInput'),
-  mainTextInputs: document.getElementById('mainTextInputs'),
-  formatSeg: document.getElementById('formatSeg'),
-  alignSeg: document.getElementById('alignSeg'),
-  mainScaleRange: document.getElementById('mainScaleRange'),
-  mainLineGapRange: document.getElementById('mainLineGapRange'),
-  mainScaleValue: document.getElementById('mainScaleValue'),
-  mainLineGapValue: document.getElementById('mainLineGapValue'),
-  brushSizeRange: document.getElementById('brushSizeRange'),
-  brushSizeValue: document.getElementById('brushSizeValue'),
-  styleGrid: document.getElementById('styleGrid'),
-  pickImageBtn: document.getElementById('pickImageBtn'),
-  modeTextBtn: document.getElementById('modeTextBtn'),
-  modeMosaicBtn: document.getElementById('modeMosaicBtn'),
-  addFreeBlockBtn: document.getElementById('addFreeBlockBtn'),
-  clearMosaicBtn: document.getElementById('clearMosaicBtn'),
-  undoBtn: document.getElementById('undoBtn'),
-  resetMainBoxBtn: document.getElementById('resetMainBoxBtn'),
-  resetDesignBtn: document.getElementById('resetDesignBtn'),
-  downloadBtn: document.getElementById('downloadBtn'),
-  freeStatus: document.getElementById('freeStatus'),
-  freeTextInput: document.getElementById('freeTextInput'),
-  freeFontSelect: document.getElementById('freeFontSelect'),
-  freeTextColor: document.getElementById('freeTextColor'),
-  freeBgColor: document.getElementById('freeBgColor'),
-  freeStrokeColor: document.getElementById('freeStrokeColor'),
-  freeFontSize: document.getElementById('freeFontSize'),
-  freeStrokeWidth: document.getElementById('freeStrokeWidth'),
-  freeBgAlpha: document.getElementById('freeBgAlpha'),
-  freeLineHeight: document.getElementById('freeLineHeight'),
-  freeFontSizeValue: document.getElementById('freeFontSizeValue'),
-  freeStrokeWidthValue: document.getElementById('freeStrokeWidthValue'),
-  freeBgAlphaValue: document.getElementById('freeBgAlphaValue'),
-  freeLineHeightValue: document.getElementById('freeLineHeightValue')
-};
+    const photoStage = $('#photoStage');
+    const baseImage = $('#baseImage');
+    const overlayRoot = $('#overlayRoot');
+    const emptyMsg = $('#emptyMsg');
+    const mainTextBox = $('#mainTextBox');
+    const freeBlocksLayer = $('#freeBlocksLayer');
+    const mosaicCanvas = $('#mosaicCanvas');
+    const imageFile = $('#imageFile');
+    const textInputs = $('#textInputs');
+    const designSlider = $('#designSlider');
+    const paletteSlider = $('#paletteSlider');
+    const styleGrid = $('#styleGrid');
+    const hiddenExportStage = $('#hiddenExportStage');
 
-function clamp(v,min,max){return Math.min(max,Math.max(min,v));}
-function uid(){return 'fb_'+Math.random().toString(36).slice(2,10);}
-function getDesign(){return designs[state.selectedDesignIndex];}
-function getPalette(){return palettes[state.selectedPaletteIndex];}
-function hexToRgba(hex,alpha){const c=hex.replace('#','');const n=parseInt(c,16);return `rgba(${(n>>16)&255}, ${(n>>8)&255}, ${n&255}, ${alpha})`;}
-function getImageRect(){return el.mainImage.getBoundingClientRect();}
-function getSelectedFreeBlock(){return state.freeBlocks.find(b=>b.id===state.selectedFreeBlockId) || null;}
-function getFontFamily(key){if(key==='serif') return 'Georgia, Cambria, "Times New Roman", serif'; if(key==='impact') return 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif'; if(key==='condensed') return 'Arial Narrow, "Noto Sans KR", sans-serif'; return '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif';}
+    function clamp(v, min, max){ return Math.min(max, Math.max(min, v)); }
+    function getDesign(){ return designs[state.selectedDesignIndex]; }
+    function getPalette(){ return palettes[state.selectedPaletteIndex]; }
+    function hexToRgba(hex, alpha){
+      const n = parseInt(hex.replace('#',''), 16);
+      const r = (n>>16)&255, g=(n>>8)&255, b=n&255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
+    function pushHistory(){
+      const snapshot = deepClone({
+        mode:state.mode, format:state.format, align:state.align,
+        selectedDesignIndex:state.selectedDesignIndex, selectedPaletteIndex:state.selectedPaletteIndex,
+        imageSrc:state.imageSrc, imageNaturalWidth:state.imageNaturalWidth, imageNaturalHeight:state.imageNaturalHeight,
+        lines:state.lines, lineOffsets:state.lineOffsets, mainBox:state.mainBox,
+        freeBlocks:state.freeBlocks, selectedFreeBlockId:state.selectedFreeBlockId,
+        mosaicStrokes:state.mosaicStrokes, mosaicBrushSize:state.mosaicBrushSize
+      });
+      state.history.push(snapshot);
+      if(state.history.length > 40) state.history.shift();
+    }
+    function restoreSnapshot(s){
+      state.mode = s.mode; state.format = s.format; state.align = s.align;
+      state.selectedDesignIndex = s.selectedDesignIndex; state.selectedPaletteIndex = s.selectedPaletteIndex;
+      state.imageSrc = s.imageSrc; state.imageNaturalWidth = s.imageNaturalWidth; state.imageNaturalHeight = s.imageNaturalHeight;
+      state.lines = s.lines; state.lineOffsets = s.lineOffsets; state.mainBox = s.mainBox;
+      state.freeBlocks = s.freeBlocks; state.selectedFreeBlockId = s.selectedFreeBlockId;
+      state.mosaicStrokes = s.mosaicStrokes; state.mosaicBrushSize = s.mosaicBrushSize;
+      syncSegs();
+      renderAll();
+    }
 
+    function ensureLineLength(){
+      const count = getDesign().lineCount;
+      while(state.lines.length < count) state.lines.push('');
+      while(state.lineOffsets.length < count) state.lineOffsets.push(0);
+      if(state.lines.length > count) state.lines = state.lines.slice(0, count);
+      if(state.lineOffsets.length > count) state.lineOffsets = state.lineOffsets.slice(0, count);
+    }
 
-function pushHistory(){
-  const snap = JSON.parse(JSON.stringify(serializeState()));
-  state.history.push(snap);
-  if(state.history.length > 40) state.history.shift();
-}
-function restoreFromHistory(snapshot){
-  if(!snapshot) return;
-  applySerializedState(snapshot);
-  renderAll();
-}
-function undoLast(){
-  const snap = state.history.pop();
-  if(!snap) return;
-  restoreFromHistory(snap);
-}
+    function applyDesignDefaults(resetBox = true, keepScaleGap = true){
+      const d = getDesign();
+      ensureLineLength();
+      const prevScale = state.mainBox.scale;
+      const prevGap = state.mainBox.lineGap;
+      if(resetBox){
+        state.mainBox.x = d.box.x; state.mainBox.y = d.box.y; state.mainBox.w = d.box.w; state.mainBox.h = d.box.h;
+      }
+      if(!keepScaleGap){ state.mainBox.scale = 1; state.mainBox.lineGap = 1; }
+      else { state.mainBox.scale = prevScale; state.mainBox.lineGap = prevGap; }
+    }
 
-function applyDesignDefaults(resetBox){
-  const d = getDesign();
-  while(state.mainLines.length < d.lineCount) state.mainLines.push('');
-  if(state.mainLines.length > d.lineCount) state.mainLines = state.mainLines.slice(0,d.lineCount);
-  while(state.mainLineOffsets.length < d.lineCount) state.mainLineOffsets.push(0);
-  if(state.mainLineOffsets.length > d.lineCount) state.mainLineOffsets = state.mainLineOffsets.slice(0,d.lineCount);
-  if(resetBox){
-    state.mainBox.x = d.box.x; state.mainBox.y = d.box.y; state.mainBox.w = d.box.w; state.mainBox.h = d.box.h;
-  }
-  syncRanges();
-}
+    function getVisibleLineLayout(){
+      const d = getDesign();
+      const active = [];
+      for(let i=0;i<d.lineCount;i++) if((state.lines[i] || '').trim()) active.push(i);
+      if(active.length === 0) return [];
+      if(active.length === d.lineCount) return active.map(i => ({index:i,y:d.lines[i].y}));
+      const ys = active.map(i => d.lines[i].y);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const span = maxY - minY;
+      const targetSpan = span > 0 ? span : 0.24 * Math.max(1, active.length - 1);
+      const center = (Math.min(...d.lines.map(v=>v.y)) + Math.max(...d.lines.map(v=>v.y))) / 2;
+      const start = center - targetSpan / 2;
+      return active.map((idx, order) => ({
+        index: idx,
+        y: active.length === 1 ? center : start + (targetSpan * order / (active.length - 1))
+      }));
+    }
 
-function syncRanges(){
-  el.mainScaleRange.value = String(state.mainBox.scale);
-  el.mainLineGapRange.value = String(state.mainBox.lineGap);
-  el.mainScaleValue.textContent = Number(state.mainBox.scale).toFixed(2);
-  el.mainLineGapValue.textContent = Number(state.mainBox.lineGap).toFixed(2);
-  el.brushSizeRange.value = String(state.brushSize);
-  el.brushSizeValue.textContent = String(state.brushSize);
-  const fb = getSelectedFreeBlock();
-  const disabled = !fb;
-  [el.freeTextInput,el.freeFontSelect,el.freeTextColor,el.freeBgColor,el.freeStrokeColor,el.freeFontSize,el.freeStrokeWidth,el.freeBgAlpha,el.freeLineHeight].forEach(i=>i.disabled=disabled);
-  if(fb){
-    el.freeStatus.textContent = fb.name;
-    el.freeTextInput.value = fb.text;
-    el.freeFontSelect.value = fb.fontKey;
-    el.freeTextColor.value = fb.textColor;
-    el.freeBgColor.value = fb.bgColor;
-    el.freeStrokeColor.value = fb.strokeColor;
-    el.freeFontSize.value = String(fb.fontSize);
-    el.freeStrokeWidth.value = String(fb.strokeWidth);
-    el.freeBgAlpha.value = String(fb.bgAlpha);
-    el.freeLineHeight.value = String(fb.lineHeight);
-    el.freeFontSizeValue.textContent = String(fb.fontSize);
-    el.freeStrokeWidthValue.textContent = String(fb.strokeWidth);
-    el.freeBgAlphaValue.textContent = Number(fb.bgAlpha).toFixed(2);
-    el.freeLineHeightValue.textContent = Number(fb.lineHeight).toFixed(2);
-  } else {
-    el.freeStatus.textContent = '선택된 자유블럭 없음';
-    el.freeTextInput.value='';
-    el.freeFontSizeValue.textContent='28';
-    el.freeStrokeWidthValue.textContent='0';
-    el.freeBgAlphaValue.textContent='0.00';
-    el.freeLineHeightValue.textContent='1.00';
-  }
-}
-
-function getActiveMainSpecs(){
-  const d = getDesign();
-  const raw = d.lines.slice(0,d.lineCount).map((spec,index)=>({spec,text:(state.mainLines[index]||'').trim(),index,offset:(state.mainLineOffsets[index]||0)})).filter(v=>v.text!== '');
-  if(raw.length===0) return [];
-  let items;
-  if(raw.length === d.lineCount){
-    items = raw.map(item=>({spec:{...item.spec}, text:item.text, index:item.index, offset:item.offset}));
-  } else {
-    const minY = d.lines[0].y;
-    const maxY = d.lines[d.lineCount-1].y;
-    const span = maxY - minY;
-    const gap = raw.length===1 ? 0 : span/(raw.length-1);
-    items = raw.map((item,i)=>({spec:{...item.spec,y:minY + gap*i}, text:item.text, index:item.index, offset:item.offset}));
-  }
-  let cumulativeOffset = 0;
-  return items.map(item=>{
-    const adjusted = {...item.spec, y:item.spec.y + cumulativeOffset};
-    cumulativeOffset += item.offset;
-    return {spec:adjusted, text:item.text, index:item.index, offset:item.offset};
-  });
-}
-
-function renderDesignCards(){
-  el.designSlider.innerHTML='';
-  const previewText = ['기본문구 1','기본문구 2','기본문구 3','기본문구 4'];
-  designs.forEach((d,index)=>{
-    const card = document.createElement('button');
-    card.type='button';
-    card.className='design-card'+(index===state.selectedDesignIndex?' active':'');
-    card.innerHTML=`<div class="design-name">${d.name}</div><div class="mini-preview"></div>`;
-    const preview = card.querySelector('.mini-preview');
-    if(d.hidden){
-      preview.style.background='linear-gradient(135deg,#e5e7eb,#f8fafc)';
-      const t=document.createElement('div');
-      t.className='mini-line'; t.textContent='텍스트 없음'; t.style.top='40%'; t.style.fontSize='16px'; t.style.color='#6b7280'; t.style.textShadow='none'; t.style.textAlign='center'; preview.appendChild(t);
-    } else {
-      d.lines.slice(0,d.lineCount).forEach((spec,i)=>{
-        const line=document.createElement('div');
-        line.className='mini-line';
-        line.textContent=previewText[i];
-        line.style.top=`${spec.y*100}%`;
-        line.style.fontSize=`${Math.max(10,13*spec.size)}px`;
-        const colorIndex = spec.colorIndex ?? 0;
-        line.style.color = getPalette()[colorIndex] || '#fff';
-        if(spec.chip){
-          line.style.display='inline-block';line.style.width='auto';line.style.maxWidth='calc(100% - 16px)';line.style.padding='3px 6px';line.style.background='rgba(255,255,255,.88)';line.style.color='#111827';line.style.borderRadius='999px';line.style.textShadow='none';
+    function renderDesignCards(){
+      designSlider.innerHTML = '';
+      designs.forEach((d, index) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'design-card' + (index === state.selectedDesignIndex ? ' active' : '');
+        card.innerHTML = `<div class="design-name">${d.name}</div><div class="mini-preview"></div>`;
+        const preview = card.querySelector('.mini-preview');
+        const sampleLines = d.id === 'none' ? ['없음','','',''] : ['군산 나운동 상가매매','빌딩앞 입지조건 최고!!','많은 유동인구','일반 상업지역'];
+        for(let i=0;i<d.lineCount;i++){
+          const spec = d.lines[i];
+          const line = document.createElement('div');
+          line.className = 'mini-line';
+          line.textContent = sampleLines[i] || '';
+          line.style.top = `${spec.y * 100}%`;
+          line.style.fontSize = `${Math.max(10, 13 * spec.size)}px`;
+          const palette = getPalette();
+          if(d.colorMode === 'perLine') line.style.color = palette[i % 3];
+          else line.style.color = palette[0];
+          if(d.stroke > 0) line.style.webkitTextStroke = `${Math.max(1, 8 * d.stroke)}px ${palette[2]}`;
+          preview.appendChild(line);
         }
-        preview.appendChild(line);
+        card.addEventListener('click', () => {
+          pushHistory();
+          state.selectedDesignIndex = index;
+          applyDesignDefaults(true, true);
+          renderAll();
+        });
+        designSlider.appendChild(card);
       });
     }
-    card.addEventListener('click',()=>{state.selectedDesignIndex=index; applyDesignDefaults(true); renderAll();});
-    el.designSlider.appendChild(card);
-  });
-}
 
-function renderPaletteCards(){
-  el.paletteSlider.innerHTML='';
-  palettes.forEach((palette,index)=>{
-    const card=document.createElement('button');
-    card.type='button';
-    card.className='palette-card'+(index===state.selectedPaletteIndex?' active':'');
-    const stripes=document.createElement('div'); stripes.className='palette-stripes';
-    palette.forEach(color=>{const div=document.createElement('div');div.style.background=color;stripes.appendChild(div);});
-    const label=document.createElement('div'); label.className='palette-label'; label.textContent=`P${index+1}`;
-    card.appendChild(stripes); card.appendChild(label);
-    card.addEventListener('click',()=>{state.selectedPaletteIndex=index; renderAll();});
-    el.paletteSlider.appendChild(card);
-  });
-}
+    function renderPaletteCards(){
+      paletteSlider.innerHTML = '';
+      palettes.forEach((palette, index) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'palette-card' + (index === state.selectedPaletteIndex ? ' active' : '');
+        const stripes = document.createElement('div'); stripes.className = 'palette-stripes';
+        palette.forEach(color => { const d = document.createElement('div'); d.style.background = color; stripes.appendChild(d); });
+        card.appendChild(stripes);
+        const label = document.createElement('div'); label.className = 'palette-label'; label.textContent = `P${index+1}`; card.appendChild(label);
+        card.addEventListener('click', () => { pushHistory(); state.selectedPaletteIndex = index; renderAll(); });
+        paletteSlider.appendChild(card);
+      });
+    }
 
-function renderMainInputs(){
-  el.mainTextInputs.innerHTML='';
-  state.mainLines.forEach((value,index)=>{
-    const row=document.createElement('div');
-    row.style.display='grid';
-    row.style.gridTemplateColumns='1fr 44px';
-    row.style.gap='8px';
-    row.style.alignItems='stretch';
+    function renderTextInputs(){
+      ensureLineLength();
+      textInputs.innerHTML = '';
+      state.lines.forEach((value, index) => {
+        const wrap = document.createElement('div'); wrap.className = 'text-row-wrap';
+        const ta = document.createElement('textarea'); ta.className = 'text-row'; ta.rows = 2; ta.value = value; ta.placeholder = `${index+1}번째 문구 입력`;
+        ta.addEventListener('input', e => { state.lines[index] = e.target.value; renderMainText(); });
+        const gapWrap = document.createElement('div'); gapWrap.className = 'gap-buttons';
+        const up = document.createElement('button'); up.type = 'button'; up.className = 'gap-btn'; up.textContent = '↑';
+        const down = document.createElement('button'); down.type = 'button'; down.className = 'gap-btn'; down.textContent = '↓';
+        up.addEventListener('click', () => { pushHistory(); state.lineOffsets[index] = clamp((state.lineOffsets[index] || 0) - 0.02, -0.35, 0.35); renderMainText(); });
+        down.addEventListener('click', () => { pushHistory(); state.lineOffsets[index] = clamp((state.lineOffsets[index] || 0) + 0.02, -0.35, 0.35); renderMainText(); });
+        gapWrap.appendChild(up); gapWrap.appendChild(down);
+        wrap.appendChild(ta); wrap.appendChild(gapWrap); textInputs.appendChild(wrap);
+      });
+    }
 
-    const ta=document.createElement('textarea');
-    ta.className='text-row'; ta.rows=2; ta.value=value; ta.placeholder=`${index+1}번째 문구 입력`;
-    ta.addEventListener('input',e=>{state.mainLines[index]=e.target.value; renderMainText();});
+    function renderStyles(){
+      styleGrid.innerHTML = '';
+      for(let i=0;i<12;i++){
+        const slot = document.createElement('div'); slot.className = 'style-slot';
+        slot.innerHTML = `<div class="style-name">${state.styleSlots[i]}</div>`;
+        const actions = document.createElement('div'); actions.className = 'style-actions';
+        const save = document.createElement('button'); save.textContent = '저장';
+        const apply = document.createElement('button'); apply.textContent = '적용';
+        save.addEventListener('click', () => {
+          const payload = deepClone({
+            selectedDesignIndex:state.selectedDesignIndex, selectedPaletteIndex:state.selectedPaletteIndex,
+            format:state.format, align:state.align, lines:state.lines, lineOffsets:state.lineOffsets,
+            mainBox:state.mainBox, freeBlocks:state.freeBlocks, mosaicStrokes:state.mosaicStrokes, mosaicBrushSize:state.mosaicBrushSize
+          });
+          localStorage.setItem(`maslow_style_${i+1}`, JSON.stringify(payload));
+          alert(`${state.styleSlots[i]} 저장 완료`);
+        });
+        apply.addEventListener('click', () => {
+          const raw = localStorage.getItem(`maslow_style_${i+1}`);
+          if(!raw){ alert('저장된 스타일이 없습니다.'); return; }
+          pushHistory();
+          const s = JSON.parse(raw);
+          state.selectedDesignIndex = s.selectedDesignIndex;
+          state.selectedPaletteIndex = s.selectedPaletteIndex;
+          state.format = s.format; state.align = s.align; state.lines = s.lines; state.lineOffsets = s.lineOffsets;
+          state.mainBox = s.mainBox; state.freeBlocks = s.freeBlocks || []; state.mosaicStrokes = s.mosaicStrokes || []; state.mosaicBrushSize = s.mosaicBrushSize || 60;
+          state.selectedFreeBlockId = state.freeBlocks[0]?.id || null;
+          renderAll();
+        });
+        actions.appendChild(save); actions.appendChild(apply); slot.appendChild(actions); styleGrid.appendChild(slot);
+      }
+    }
 
-    const nudger=document.createElement('div');
-    nudger.style.display='grid';
-    nudger.style.gridTemplateRows='1fr 1fr';
-    nudger.style.gap='6px';
+    function updateStageGeometry(){
+      if(!state.imageSrc || !state.imageNaturalWidth || !state.imageNaturalHeight) return;
+      const shellWidth = photoStage.clientWidth || photoStage.parentElement.clientWidth;
+      const stageHeight = Math.max(260, Math.round(shellWidth * state.imageNaturalHeight / state.imageNaturalWidth));
+      photoStage.style.height = `${stageHeight}px`;
+      overlayRoot.style.width = `${shellWidth}px`;
+      overlayRoot.style.height = `${stageHeight}px`;
+      mosaicCanvas.width = Math.round(shellWidth);
+      mosaicCanvas.height = Math.round(stageHeight);
+      mosaicCanvas.style.width = `${shellWidth}px`;
+      mosaicCanvas.style.height = `${stageHeight}px`;
+    }
 
-    const upBtn=document.createElement('button');
-    upBtn.type='button';
-    upBtn.textContent='↑';
-    upBtn.title='아래 여백 줄이기';
-    upBtn.style.border='1px solid #d1d5db';
-    upBtn.style.borderRadius='12px';
-    upBtn.style.background='#fff';
-    upBtn.style.fontWeight='900';
-    upBtn.style.cursor='pointer';
-    upBtn.addEventListener('click',()=>{
-      state.mainLineOffsets[index]=clamp((state.mainLineOffsets[index]||0)-0.02,-0.12,0.30);
+    function renderImage(){
+      const hasImage = !!state.imageSrc;
+      baseImage.style.display = hasImage ? 'block' : 'none';
+      overlayRoot.style.display = hasImage ? 'block' : 'none';
+      emptyMsg.style.display = hasImage ? 'none' : 'block';
+      photoStage.classList.toggle('empty', !hasImage);
+      if(hasImage){
+        baseImage.src = state.imageSrc;
+        updateStageGeometry();
+      }
+    }
+
+    function renderMainText(){
+      ensureLineLength();
+      const d = getDesign();
+      const palette = getPalette();
+      const stageW = overlayRoot.clientWidth || photoStage.clientWidth;
+      const stageH = overlayRoot.clientHeight || photoStage.clientHeight;
+      mainTextBox.dataset.hidden = d.hidden ? '1' : '0';
+      mainTextBox.classList.toggle('selected', state.selectedTarget === 'main' && !d.hidden);
+      mainTextBox.style.display = state.imageSrc ? 'block' : 'none';
+      mainTextBox.style.left = `${state.mainBox.x * stageW}px`;
+      mainTextBox.style.top = `${state.mainBox.y * stageH}px`;
+      mainTextBox.style.width = `${state.mainBox.w * stageW}px`;
+      mainTextBox.style.height = `${state.mainBox.h * stageH}px`;
+      mainTextBox.querySelectorAll('.main-line,.main-text-bg').forEach(el => el.remove());
+      const dragHit = mainTextBox.querySelector('.drag-hit');
+      const resizeHandle = mainTextBox.querySelector('.resize-handle');
+      dragHit.classList.toggle('export-hidden', d.hidden);
+      resizeHandle.classList.toggle('export-hidden', d.hidden);
+      if(d.hidden) return;
+      if(d.bg){
+        const bg = document.createElement('div'); bg.className = 'main-text-bg';
+        const pad = Math.max(6, Math.min(state.mainBox.w * stageW, state.mainBox.h * stageH) * d.bg.pad);
+        bg.style.left = `${-pad}px`; bg.style.top = `${-pad}px`; bg.style.width = `calc(100% + ${pad*2}px)`; bg.style.height = `calc(100% + ${pad*2}px)`; bg.style.borderRadius = `${d.bg.radius}px`;
+        if(d.bg.type === 'gradient') bg.style.background = `linear-gradient(135deg, ${hexToRgba(palette[0], d.bg.opacity)}, ${hexToRgba(palette[1], d.bg.opacity)})`;
+        else bg.style.background = hexToRgba(palette[d.bg.colorIndex || 0], d.bg.opacity);
+        mainTextBox.insertBefore(bg, mainTextBox.firstChild);
+      }
+      const layout = getVisibleLineLayout();
+      layout.forEach(({index, y}) => {
+        const spec = d.lines[index];
+        const line = document.createElement('div');
+        line.className = 'main-line';
+        line.textContent = state.lines[index] || '';
+        const shiftedY = y + (state.lineOffsets[index] || 0);
+        line.style.top = `${shiftedY * 100}%`;
+        line.style.fontSize = `${Math.max(12, state.mainBox.h * stageH * spec.size * state.mainBox.scale)}px`;
+        line.style.fontWeight = spec.weight;
+        line.style.fontFamily = spec.serif ? 'Georgia, Cambria, "Times New Roman", serif' : '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif';
+        line.style.lineHeight = String(.95 * state.mainBox.lineGap);
+        line.style.textAlign = state.align;
+        line.style.color = d.colorMode === 'perLine' ? palette[index % 3] : palette[0];
+        if(d.stroke > 0){
+          const px = Math.max(1, state.mainBox.h * stageH * d.stroke * .18 * state.mainBox.scale);
+          line.style.webkitTextStroke = `${px}px ${palette[2]}`;
+          line.style.paintOrder = 'stroke fill';
+        }
+        if(d.shadow > 0){
+          const blur = Math.max(2, 18 * d.shadow * state.mainBox.scale);
+          const yoff = Math.max(1, 7 * d.shadow * state.mainBox.scale);
+          line.style.textShadow = `0 ${yoff}px ${blur}px rgba(0,0,0,.45)`;
+        }
+        mainTextBox.appendChild(line);
+      });
+    }
+
+    function fontCssFromKey(key){
+      if(key === 'serif') return 'Georgia, Cambria, "Times New Roman", serif';
+      if(key === 'impact') return 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif';
+      if(key === 'condensed') return 'Arial Narrow, Arial, sans-serif';
+      return '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif';
+    }
+
+    function renderFreeBlocks(){
+      freeBlocksLayer.innerHTML = '';
+      const stageW = overlayRoot.clientWidth || photoStage.clientWidth;
+      const stageH = overlayRoot.clientHeight || photoStage.clientHeight;
+      state.freeBlocks.forEach(block => {
+        const wrap = document.createElement('div');
+        wrap.className = 'free-block' + (state.selectedFreeBlockId === block.id ? ' selected' : '');
+        wrap.dataset.id = block.id;
+        wrap.style.left = `${block.x * stageW}px`;
+        wrap.style.top = `${block.y * stageH}px`;
+        wrap.style.width = `${block.w * stageW}px`;
+        wrap.style.height = `${block.h * stageH}px`;
+        wrap.innerHTML = `
+          <div class="select-outline"></div>
+          <div class="drag-hit" data-role="free-drag"></div>
+          <button type="button" class="free-block-delete" data-role="free-delete">×</button>
+          <div class="resize-handle" data-role="free-resize"></div>
+        `;
+        const bg = document.createElement('div'); bg.className = 'free-block-bg'; bg.style.inset = '0'; bg.style.borderRadius = '12px'; bg.style.background = block.bgColor; bg.style.border = `${block.strokeWidth}px solid ${block.strokeColor}`;
+        const content = document.createElement('div'); content.className = 'free-block-content';
+        content.textContent = block.text || '';
+        content.style.fontFamily = fontCssFromKey(block.fontKey);
+        content.style.fontSize = `${Math.max(12, block.h * stageH * block.fontScale)}px`;
+        content.style.color = block.textColor;
+        content.style.textAlign = block.align || 'center';
+        content.style.justifyContent = block.align === 'left' ? 'flex-start' : block.align === 'right' ? 'flex-end' : 'center';
+        wrap.appendChild(bg); wrap.appendChild(content);
+        freeBlocksLayer.appendChild(wrap);
+      });
+      updateFreePanelState();
+    }
+
+    function getSelectedFreeBlock(){ return state.freeBlocks.find(v => v.id === state.selectedFreeBlockId) || null; }
+
+    function updateFreePanelState(){
+      const block = getSelectedFreeBlock();
+      const status = $('#freeStatus');
+      if(!block){ status.textContent = '선택된 자유블럭 없음'; $('#freeTextInput').value = ''; return; }
+      const order = state.freeBlocks.findIndex(v => v.id === block.id) + 1;
+      status.textContent = `자유블럭 ${order} 선택됨`;
+      $('#freeTextInput').value = block.text || '';
+      $('#freeFontSelect').value = block.fontKey || 'system';
+      $('#freeTextColor').value = block.textColor || '#ffffff';
+      $('#freeBgColor').value = block.bgColor || '#111827';
+      $('#freeStrokeColor').value = block.strokeColor || '#60a5fa';
+      $('#freeStrokeWidth').value = block.strokeWidth ?? 2;
+    }
+
+    function redrawMosaic(){
+      const ctx = mosaicCanvas.getContext('2d');
+      ctx.clearRect(0,0,mosaicCanvas.width,mosaicCanvas.height);
+      if(!state.imageSrc || !state.mosaicStrokes.length) return;
+      state.mosaicStrokes.forEach(stroke => {
+        stroke.points.forEach(point => drawMosaicStamp(point.x * mosaicCanvas.width, point.y * mosaicCanvas.height, stroke.size));
+      });
+    }
+
+    function drawMosaicStamp(cx, cy, size){
+      const ctx = mosaicCanvas.getContext('2d');
+      const tile = Math.max(4, Math.round(size / 6));
+      const half = size / 2;
+      for(let y = cy - half; y < cy + half; y += tile){
+        for(let x = cx - half; x < cx + half; x += tile){
+          const sx = clamp(x, 0, mosaicCanvas.width - tile);
+          const sy = clamp(y, 0, mosaicCanvas.height - tile);
+          const w = Math.min(tile, mosaicCanvas.width - sx);
+          const h = Math.min(tile, mosaicCanvas.height - sy);
+          const srcX = Math.round((sx / mosaicCanvas.width) * state.imageNaturalWidth);
+          const srcY = Math.round((sy / mosaicCanvas.height) * state.imageNaturalHeight);
+          const srcW = Math.max(1, Math.round((w / mosaicCanvas.width) * state.imageNaturalWidth));
+          const srcH = Math.max(1, Math.round((h / mosaicCanvas.height) * state.imageNaturalHeight));
+          ctx.drawImage(baseImage, srcX, srcY, srcW, srcH, sx, sy, 1, 1);
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(mosaicCanvas, sx, sy, 1, 1, sx, sy, w, h);
+          ctx.imageSmoothingEnabled = true;
+        }
+      }
+    }
+
+    function renderAll(){
+      renderImage();
+      updateStageGeometry();
+      renderDesignCards();
+      renderPaletteCards();
+      renderTextInputs();
       renderMainText();
+      renderFreeBlocks();
+      redrawMosaic();
+      renderStyles();
+      syncSegs();
+    }
+
+    function syncSegs(){
+      document.querySelectorAll('#formatSeg button').forEach(b => b.classList.toggle('active', b.dataset.format === state.format));
+      document.querySelectorAll('#alignSeg button').forEach(b => b.classList.toggle('active', b.dataset.align === state.align));
+      document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('active', b.dataset.mode === state.mode));
+      $('#scaleRange').value = String(state.mainBox.scale); $('#scaleValue').textContent = state.mainBox.scale.toFixed(2);
+      $('#lineGapRange').value = String(state.mainBox.lineGap); $('#lineGapValue').textContent = state.mainBox.lineGap.toFixed(2);
+      $('#mosaicSizeRange').value = String(state.mosaicBrushSize); $('#mosaicSizeValue').textContent = String(state.mosaicBrushSize);
+      mainTextBox.classList.toggle('selected', state.selectedTarget === 'main' && !getDesign().hidden);
+      if(state.mode === 'mosaic') overlayRoot.classList.add('mosaic-mode'); else overlayRoot.classList.remove('mosaic-mode');
+      const hideText = state.mode === 'mosaic';
+      mainTextBox.style.opacity = hideText ? '0' : '1';
+      freeBlocksLayer.style.opacity = hideText ? '0' : '1';
+    }
+
+    function openFile(){ imageFile.click(); }
+    $('#uploadBtnTop').addEventListener('click', openFile);
+    imageFile.addEventListener('change', e => {
+      const file = e.target.files?.[0]; if(!file) return;
+      pushHistory();
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.imageSrc = reader.result;
+        const img = new Image();
+        img.onload = () => {
+          state.imageNaturalWidth = img.naturalWidth; state.imageNaturalHeight = img.naturalHeight;
+          renderAll();
+        };
+        img.src = state.imageSrc;
+      };
+      reader.readAsDataURL(file);
     });
 
-    const downBtn=document.createElement('button');
-    downBtn.type='button';
-    downBtn.textContent='↓';
-    downBtn.title='아래 여백 늘리기';
-    downBtn.style.border='1px solid #d1d5db';
-    downBtn.style.borderRadius='12px';
-    downBtn.style.background='#fff';
-    downBtn.style.fontWeight='900';
-    downBtn.style.cursor='pointer';
-    downBtn.addEventListener('click',()=>{
-      state.mainLineOffsets[index]=clamp((state.mainLineOffsets[index]||0)+0.02,-0.12,0.30);
-      renderMainText();
+    document.querySelectorAll('[data-scroll-target]').forEach(btn => btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.scrollTarget);
+      const amount = target.clientWidth * .78 * (btn.dataset.dir === 'next' ? 1 : -1);
+      target.scrollBy({left:amount, behavior:'smooth'});
+    }));
+
+    $('#formatSeg').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-format]'); if(!btn) return; state.format = btn.dataset.format; syncSegs();
+    });
+    $('#alignSeg').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-align]'); if(!btn) return; pushHistory(); state.align = btn.dataset.align; renderMainText(); syncSegs();
+    });
+    $('#modeSeg').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-mode]'); if(!btn) return; state.mode = btn.dataset.mode; syncSegs();
     });
 
-    nudger.appendChild(upBtn);
-    nudger.appendChild(downBtn);
-    row.appendChild(ta);
-    row.appendChild(nudger);
-    el.mainTextInputs.appendChild(row);
-  });
-}
+    $('#scaleRange').addEventListener('input', e => { state.mainBox.scale = Number(e.target.value); $('#scaleValue').textContent = state.mainBox.scale.toFixed(2); renderMainText(); });
+    $('#lineGapRange').addEventListener('input', e => { state.mainBox.lineGap = Number(e.target.value); $('#lineGapValue').textContent = state.mainBox.lineGap.toFixed(2); renderMainText(); });
+    $('#mosaicSizeRange').addEventListener('input', e => { state.mosaicBrushSize = Number(e.target.value); $('#mosaicSizeValue').textContent = String(state.mosaicBrushSize); });
 
-function renderImage(){
-  if(!state.imageUrl){ el.placeholder.style.display='flex'; el.imageWrap.style.display='none'; return; }
-  el.placeholder.style.display='none'; el.imageWrap.style.display='block'; el.mainImage.src=state.imageUrl;
-}
+    $('#resetMainBoxBtn').addEventListener('click', () => { pushHistory(); const d = getDesign(); state.mainBox.x = d.box.x; state.mainBox.y = d.box.y; state.mainBox.w = d.box.w; state.mainBox.h = d.box.h; renderMainText(); });
+    $('#resetDesignBtn').addEventListener('click', () => { pushHistory(); applyDesignDefaults(true, false); renderAll(); });
+    $('#clearMosaicBtn').addEventListener('click', () => { pushHistory(); state.mosaicStrokes = []; redrawMosaic(); });
+    $('#undoBtn').addEventListener('click', () => { const s = state.history.pop(); if(s) restoreSnapshot(s); });
 
-function syncModeButtons(){
-  el.modeTextBtn.classList.toggle('active',state.mode==='text');
-  el.modeMosaicBtn.classList.toggle('active',state.mode==='mosaic');
-  el.mosaicCanvas.classList.toggle('active',state.mode==='mosaic');
-  el.overlayRoot.classList.toggle('mosaic-hide-text',state.mode==='mosaic');
-}
+    $('#addFreeBlockBtn').addEventListener('click', () => {
+      pushHistory();
+      const id = `fb_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+      state.freeBlocks.push({id, text:'자유블럭', x:.12, y:.18, w:.28, h:.10, fontKey:'system', textColor:'#ffffff', bgColor:'#111827', strokeColor:'#60a5fa', strokeWidth:2, fontScale:.42, align:'center'});
+      state.selectedFreeBlockId = id; state.selectedTarget = 'free'; state.mode = 'free'; renderFreeBlocks(); syncSegs();
+    });
 
-function positionMainGroup(){
-  const d=getDesign();
-  if(d.hidden){
-    el.mainTextGroup.classList.add('hidden');
-    return;
-  }
-  el.mainTextGroup.classList.remove('hidden');
-  el.mainTextGroup.classList.toggle('selected', !!state.mainSelected);
-  const rect=getImageRect();
-  const x=state.mainBox.x*rect.width, y=state.mainBox.y*rect.height, w=state.mainBox.w*rect.width, h=state.mainBox.h*rect.height;
-  Object.assign(el.mainTextGroup.style,{left:`${x}px`,top:`${y}px`,width:`${w}px`,height:`${h}px`});
-}
+    $('#freeTextInput').addEventListener('input', e => { const b = getSelectedFreeBlock(); if(!b) return; b.text = e.target.value; renderFreeBlocks(); });
+    $('#freeFontSelect').addEventListener('change', e => { const b = getSelectedFreeBlock(); if(!b) return; b.fontKey = e.target.value; renderFreeBlocks(); });
+    $('#freeTextColor').addEventListener('input', e => { const b = getSelectedFreeBlock(); if(!b) return; b.textColor = e.target.value; renderFreeBlocks(); });
+    $('#freeBgColor').addEventListener('input', e => { const b = getSelectedFreeBlock(); if(!b) return; b.bgColor = e.target.value; renderFreeBlocks(); });
+    $('#freeStrokeColor').addEventListener('input', e => { const b = getSelectedFreeBlock(); if(!b) return; b.strokeColor = e.target.value; renderFreeBlocks(); });
+    $('#freeStrokeWidth').addEventListener('input', e => { const b = getSelectedFreeBlock(); if(!b) return; b.strokeWidth = Number(e.target.value || 0); renderFreeBlocks(); });
 
-function renderMainText(){
-  positionMainGroup();
-  const d=getDesign();
-  el.mainTextGroup.querySelectorAll('.main-line,.main-bg').forEach(node=>node.remove());
-  if(d.hidden) return;
-  const rect=getImageRect();
-  const palette=getPalette();
-  const w=state.mainBox.w*rect.width, h=state.mainBox.h*rect.height;
-  if(d.bg){
-    const bg=document.createElement('div'); bg.className='main-bg'; bg.style.position='absolute';
-    const pad=Math.max(6,Math.min(w,h)*d.bg.pad);
-    Object.assign(bg.style,{left:`${-pad}px`,top:`${-pad}px`,width:`calc(100% + ${pad*2}px)`,height:`calc(100% + ${pad*2}px)`,borderRadius:`${d.bg.radius}px`});
-    bg.style.background = d.bg.type==='gradient' ? `linear-gradient(135deg, ${hexToRgba(palette[0],d.bg.opacity)}, ${hexToRgba(palette[1],d.bg.opacity)})` : hexToRgba(palette[d.bg.colorIndex||0], d.bg.opacity);
-    el.mainTextGroup.insertBefore(bg, el.mainTextGroup.firstChild);
-  }
-  const items=getActiveMainSpecs();
-  items.forEach(item=>{
-    const spec=item.spec; const line=document.createElement('div'); line.className='main-line'; line.textContent=item.text;
-    line.style.top=`${spec.y*100}%`; line.style.left='0'; line.style.width='100%'; line.style.fontSize=`${Math.max(12,h*spec.size*state.mainBox.scale)}px`;
-    line.style.fontWeight=String(spec.weight); line.style.lineHeight=String(.95*state.mainBox.lineGap); line.style.textAlign=state.align;
-    line.style.fontFamily=spec.serif ? 'Georgia, Cambria, "Times New Roman", serif' : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif';
-    line.style.color = getPalette()[spec.colorIndex ?? 0];
-    if(d.stroke>0){const strokePx=Math.max(1,h*(d.stroke||0)*0.18*state.mainBox.scale); line.style.webkitTextStroke=`${strokePx}px ${palette[2]}`; line.style.paintOrder='stroke fill';}
-    if(d.shadow>0){const blur=Math.max(2,18*(d.shadow||0)*state.mainBox.scale); const yoff=Math.max(1,7*(d.shadow||0)*state.mainBox.scale); line.style.textShadow=`0 ${yoff}px ${blur}px rgba(0,0,0,.45)`;}
-    if(spec.chip){
-      line.style.display='inline-block'; line.style.width='auto'; line.style.maxWidth='100%'; line.style.padding='.12em .38em'; line.style.background=hexToRgba(palette[2],.88); line.style.borderRadius='999px'; line.style.color=palette[1]; line.style.webkitTextStroke='0'; line.style.textShadow='none';
-      if(state.align==='center'){ line.style.left='50%'; line.style.transform='translateX(-50%)'; }
-      else if(state.align==='right'){ line.style.left='auto'; line.style.right='0'; }
+    function pointerToStageRatio(clientX, clientY){
+      const rect = overlayRoot.getBoundingClientRect();
+      return { x: clamp((clientX - rect.left) / rect.width, 0, 1), y: clamp((clientY - rect.top) / rect.height, 0, 1), rect };
     }
-    el.mainTextGroup.appendChild(line);
-  });
-}
 
-function renderFreeBlocks(){
-  el.freeBlocksLayer.innerHTML='';
-  const rect=getImageRect();
-  state.freeBlocks.forEach(block=>{
-    const node=document.createElement('div');
-    node.className='free-block'+(block.id===state.selectedFreeBlockId?' active':'');
-    node.dataset.id=block.id;
-    Object.assign(node.style,{left:`${block.x*rect.width}px`,top:`${block.y*rect.height}px`,width:`${block.w*rect.width}px`,height:`${block.h*rect.height}px`});
-    node.innerHTML=`<div class="free-box"></div><div class="free-close" data-hit="free-close">×</div><div class="free-move-surface" data-hit="free-move"></div><div class="free-resize-handle" data-hit="free-resize"></div><div class="free-block-text"></div>`;
-    const text=node.querySelector('.free-block-text');
-    Object.assign(text.style,{left:'0',top:'0',width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:block.align||'center',textAlign:block.align||'center',padding:'8px',fontSize:`${block.fontSize}px`,fontWeight:'900',fontFamily:getFontFamily(block.fontKey),color:block.textColor,lineHeight:String(block.lineHeight)});
-    text.textContent=block.text||'';
-    if(block.bgAlpha>0){text.style.background=hexToRgba(block.bgColor, block.bgAlpha);text.style.borderRadius='12px';}
-    if(block.strokeWidth>0){text.style.webkitTextStroke=`${block.strokeWidth}px ${block.strokeColor}`;text.style.paintOrder='stroke fill';}
-    el.freeBlocksLayer.appendChild(node);
-  });
-}
+    overlayRoot.addEventListener('pointerdown', e => {
+      if(!state.imageSrc) return;
+      const target = e.target;
+      const fb = target.closest('.free-block');
+      if(state.mode === 'mosaic'){
+        if(target.closest('.resize-handle') || target.closest('.free-block-delete')) return;
+        pushHistory();
+        state.mosaicDrawing = true;
+        const pos = pointerToStageRatio(e.clientX, e.clientY);
+        state.mosaicStrokes.push({ size: state.mosaicBrushSize, points:[{x:pos.x,y:pos.y}] });
+        redrawMosaic();
+        return;
+      }
+      if(target.dataset.role === 'main-drag' || (target.closest('#mainTextBox') && !target.dataset.role)){
+        if(getDesign().hidden) return;
+        e.preventDefault();
+        state.selectedTarget = 'main'; state.selectedFreeBlockId = null; renderAll();
+        const pos = pointerToStageRatio(e.clientX, e.clientY);
+        state.drag = { type:'main', startX:pos.x, startY:pos.y, box: deepClone(state.mainBox) };
+        return;
+      }
+      if(target.dataset.role === 'main-resize'){
+        e.preventDefault();
+        state.selectedTarget = 'main'; state.selectedFreeBlockId = null; renderAll();
+        const pos = pointerToStageRatio(e.clientX, e.clientY);
+        state.resize = { type:'main', startX:pos.x, startY:pos.y, box: deepClone(state.mainBox) };
+        return;
+      }
+      if(fb){
+        const id = fb.dataset.id;
+        const block = state.freeBlocks.find(v => v.id === id); if(!block) return;
+        if(target.dataset.role === 'free-delete'){
+          e.preventDefault(); pushHistory(); state.freeBlocks = state.freeBlocks.filter(v => v.id !== id); state.selectedFreeBlockId = state.freeBlocks[0]?.id || null; renderAll(); return;
+        }
+        state.selectedTarget = 'free'; state.selectedFreeBlockId = id; state.mode = 'free'; renderAll();
+        if(target.dataset.role === 'free-resize'){
+          e.preventDefault();
+          const pos = pointerToStageRatio(e.clientX, e.clientY);
+          state.resize = { type:'free', id, startX:pos.x, startY:pos.y, box: deepClone(block) };
+          return;
+        }
+        if(target.dataset.role === 'free-drag' || target === fb || target.closest('.free-block-content') || target.closest('.free-block-bg')){
+          e.preventDefault();
+          const pos = pointerToStageRatio(e.clientX, e.clientY);
+          state.drag = { type:'free', id, startX:pos.x, startY:pos.y, box: deepClone(block) };
+          return;
+        }
+      }
+    });
 
-function renderMosaicCanvas(){
-  if(!state.imageUrl){return;}
-  const rect=getImageRect();
-  const ratio=window.devicePixelRatio||1;
-  el.mosaicCanvas.width=Math.round(rect.width*ratio);
-  el.mosaicCanvas.height=Math.round(rect.height*ratio);
-  el.mosaicCanvas.style.width=`${rect.width}px`;
-  el.mosaicCanvas.style.height=`${rect.height}px`;
-  const ctx=el.mosaicCanvas.getContext('2d');
-  ctx.setTransform(ratio,0,0,ratio,0,0);
-  ctx.clearRect(0,0,rect.width,rect.height);
-  if(!state.image) return;
-  state.mosaicStrokes.forEach(stroke=>drawMosaicStamp(ctx, state.image, rect.width, rect.height, stroke.x*rect.width, stroke.y*rect.height, stroke.size*rect.width));
-}
+    window.addEventListener('pointermove', e => {
+      if(state.mode === 'mosaic' && state.mosaicDrawing){
+        const pos = pointerToStageRatio(e.clientX, e.clientY);
+        state.mosaicStrokes[state.mosaicStrokes.length - 1].points.push({x:pos.x,y:pos.y});
+        redrawMosaic();
+        return;
+      }
+      if(state.drag){
+        const pos = pointerToStageRatio(e.clientX, e.clientY);
+        const dx = pos.x - state.drag.startX, dy = pos.y - state.drag.startY;
+        if(state.drag.type === 'main'){
+          state.mainBox.x = clamp(state.drag.box.x + dx, 0, 1 - state.mainBox.w);
+          state.mainBox.y = clamp(state.drag.box.y + dy, 0, 1 - state.mainBox.h);
+          renderMainText();
+        } else {
+          const b = state.freeBlocks.find(v => v.id === state.drag.id); if(!b) return;
+          b.x = clamp(state.drag.box.x + dx, 0, 1 - b.w);
+          b.y = clamp(state.drag.box.y + dy, 0, 1 - b.h);
+          renderFreeBlocks();
+        }
+      }
+      if(state.resize){
+        const pos = pointerToStageRatio(e.clientX, e.clientY);
+        const dx = pos.x - state.resize.startX, dy = pos.y - state.resize.startY;
+        if(state.resize.type === 'main'){
+          state.mainBox.w = clamp(state.resize.box.w + dx, .12, 1 - state.mainBox.x);
+          state.mainBox.h = clamp(state.resize.box.h + dy, .08, 1 - state.mainBox.y);
+          renderMainText();
+        } else {
+          const b = state.freeBlocks.find(v => v.id === state.resize.id); if(!b) return;
+          b.w = clamp(state.resize.box.w + dx, .08, 1 - b.x);
+          b.h = clamp(state.resize.box.h + dy, .06, 1 - b.y);
+          renderFreeBlocks();
+        }
+      }
+    });
 
-function averageColorFromImage(img,sx,sy,sw,sh){
-  const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(sw)); c.height=Math.max(1,Math.round(sh));
-  const cx=c.getContext('2d',{willReadFrequently:true});
-  cx.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height);
-  const data=cx.getImageData(0,0,c.width,c.height).data;
-  let r=0,g=0,b=0,count=0;
-  for(let i=0;i<data.length;i+=4){r+=data[i];g+=data[i+1];b+=data[i+2];count++;}
-  return count?`rgb(${Math.round(r/count)}, ${Math.round(g/count)}, ${Math.round(b/count)})`:'rgb(128,128,128)';
-}
+    window.addEventListener('pointerup', () => { state.drag = null; state.resize = null; state.mosaicDrawing = false; });
 
-function drawMosaicStamp(ctx,img,dw,dh,cx,cy,size){
-  const nx=img.naturalWidth, ny=img.naturalHeight;
-  const rx=nx/dw, ry=ny/dh;
-  const half=size/2;
-  const sx=clamp((cx-half)*rx,0,nx-1), sy=clamp((cy-half)*ry,0,ny-1), sw=clamp(size*rx,1,nx-sx), sh=clamp(size*ry,1,ny-sy);
-  const pixel=Math.max(6,size/5);
-  for(let y=cy-half;y<cy+half;y+=pixel){
-    for(let x=cx-half;x<cx+half;x+=pixel){
-      const dx=clamp(x,0,dw), dy=clamp(y,0,dh);
-      const ds=Math.min(pixel,dw-dx,dh-dy);
-      const color=averageColorFromImage(img, dx*rx, dy*ry, ds*rx, ds*ry);
-      ctx.fillStyle=color;
-      ctx.fillRect(dx,dy,ds,ds);
-    }
-  }
-}
+    async function exportImage(){
+      if(!state.imageSrc){ alert('먼저 사진을 넣어주세요.'); return; }
+      const currentSelection = { main: mainTextBox.classList.contains('selected') };
+      const elementsToHide = overlayRoot.querySelectorAll('.select-outline,.resize-handle,.free-block-delete,.drag-hit');
+      elementsToHide.forEach(el => el.classList.add('export-hidden'));
+      const tempStage = document.createElement('div');
+      const scale = state.imageNaturalWidth / overlayRoot.clientWidth;
+      tempStage.style.position = 'relative';
+      tempStage.style.width = `${state.imageNaturalWidth}px`;
+      tempStage.style.height = `${state.imageNaturalHeight}px`;
+      tempStage.style.overflow = 'hidden';
+      tempStage.style.background = state.format === 'jpg' ? '#fff' : 'transparent';
 
-function setMode(mode){state.mode=mode; syncModeButtons();}
-
-function addFreeBlock(){
-  pushHistory();
-  const idx=state.freeBlocks.length+1;
-  const block={id:uid(), name:`자유블럭 ${idx}`, x:.08, y:.08+.03*(idx-1), w:.34, h:.16, text:`자유블럭 ${idx}`, fontKey:'sans', textColor:'#ffffff', bgColor:'#000000', bgAlpha:0, strokeColor:'#111111', strokeWidth:0, fontSize:28, lineHeight:1, align:'center'};
-  state.freeBlocks.push(block); state.selectedFreeBlockId=block.id; renderAll();
-}
-
-function removeFreeBlock(id){
-  state.freeBlocks = state.freeBlocks.filter(b=>b.id!==id);
-  if(state.selectedFreeBlockId===id) state.selectedFreeBlockId = state.freeBlocks[0]?.id || null;
-  renderAll();
-}
-
-function selectFreeBlock(id){state.selectedFreeBlockId=id; state.mainSelected=false; renderMainText(); renderFreeBlocks(); syncRanges();}
-
-function serializeState(){
-  return {
-    selectedDesignIndex: state.selectedDesignIndex,
-    selectedPaletteIndex: state.selectedPaletteIndex,
-    exportFormat: state.exportFormat,
-    align: state.align,
-    mainLines: state.mainLines,
-    mainLineOffsets: state.mainLineOffsets,
-    mainBox: state.mainBox,
-    brushSize: state.brushSize,
-    freeBlocks: state.freeBlocks,
-    mosaicStrokes: state.mosaicStrokes
-  };
-}
-
-function applySerializedState(data){
-  if(!data) return;
-  state.selectedDesignIndex = clamp(data.selectedDesignIndex ?? state.selectedDesignIndex,0,designs.length-1);
-  state.selectedPaletteIndex = clamp(data.selectedPaletteIndex ?? state.selectedPaletteIndex,0,palettes.length-1);
-  state.exportFormat = data.exportFormat || 'jpg';
-  state.align = data.align || 'center';
-  state.mainLines = Array.isArray(data.mainLines) ? [...data.mainLines] : state.mainLines;
-  state.mainBox = {...state.mainBox, ...(data.mainBox||{})};
-  state.brushSize = data.brushSize || 56;
-  state.freeBlocks = Array.isArray(data.freeBlocks) ? data.freeBlocks.map((b,i)=>({...b, name:b.name || `자유블럭 ${i+1}`})) : [];
-  state.selectedFreeBlockId = state.freeBlocks[0]?.id || null;
-  state.mosaicStrokes = Array.isArray(data.mosaicStrokes) ? data.mosaicStrokes : [];
-  applyDesignDefaults(false);
-}
-
-function renderStyleGrid(){
-  el.styleGrid.innerHTML='';
-  for(let i=1;i<=12;i++){
-    const key=`maslow-style-${i}`;
-    const saved=localStorage.getItem(key);
-    const slot=document.createElement('div');
-    slot.className='style-slot'+(saved?' saved':'');
-    slot.innerHTML=`<div class="style-slot-head">내스타일 ${i}</div><div class="style-slot-actions"><button type="button" data-save="${i}">저장</button><button type="button" data-apply="${i}">적용</button></div>`;
-    el.styleGrid.appendChild(slot);
-  }
-}
-
-function renderAll(){
-  renderDesignCards();
-  renderPaletteCards();
-  renderMainInputs();
-  renderImage();
-  syncModeButtons();
-  syncSegs();
-  syncRanges();
-  renderMainText();
-  renderFreeBlocks();
-  renderMosaicCanvas();
-  renderStyleGrid();
-}
-
-function syncSegs(){
-  [...el.formatSeg.querySelectorAll('button')].forEach(btn=>btn.classList.toggle('active',btn.dataset.format===state.exportFormat));
-  [...el.alignSeg.querySelectorAll('button')].forEach(btn=>btn.classList.toggle('active',btn.dataset.align===state.align));
-}
-
-function clientToNorm(clientX,clientY){
-  const rect=getImageRect();
-  return {x:clamp((clientX-rect.left)/rect.width,0,1), y:clamp((clientY-rect.top)/rect.height,0,1), rect};
-}
-
-function onOverlayPointerDown(e){
-  if(state.mode==='mosaic'){
-    if(e.target!==el.mosaicCanvas) return;
-    e.preventDefault();
-    const pt=clientToNorm(e.clientX,e.clientY);
-    pushHistory();
-    state.drag={type:'mosaic', pointerId:e.pointerId};
-    el.mosaicCanvas.setPointerCapture(e.pointerId);
-    state.mosaicStrokes.push({x:pt.x,y:pt.y,size:state.brushSize/pt.rect.width});
-    renderMosaicCanvas();
-    return;
-  }
-
-  const freeClose=e.target.closest('.free-close');
-  if(freeClose){ const block=e.target.closest('.free-block'); if(block){ pushHistory(); removeFreeBlock(block.dataset.id); } return; }
-
-  const freeBlock=e.target.closest('.free-block');
-  if(freeBlock){
-    e.preventDefault();
-    const id=freeBlock.dataset.id; selectFreeBlock(id);
-    const hit=e.target.dataset.hit || 'free-move';
-    const pt=clientToNorm(e.clientX,e.clientY); const block=getSelectedFreeBlock(); if(!block) return;
-    pushHistory();
-    state.drag={type:hit==='free-resize'?'free-resize':'free-move', pointerId:e.pointerId, id, startX:pt.x, startY:pt.y, base:{x:block.x,y:block.y,w:block.w,h:block.h}};
-    freeBlock.setPointerCapture(e.pointerId);
-    return;
-  }
-
-  const hit=e.target.dataset.hit;
-  const withinMain=e.target.closest('#mainTextGroup');
-  if(withinMain && !getDesign().hidden){
-    e.preventDefault();
-    state.mainSelected = true;
-    state.selectedFreeBlockId = null;
-    renderFreeBlocks();
-    const pt=clientToNorm(e.clientX,e.clientY);
-    pushHistory();
-    state.drag={type:hit==='main-resize'?'main-resize':'main-move', pointerId:e.pointerId, startX:pt.x, startY:pt.y, base:{...state.mainBox}};
-    el.mainTextGroup.setPointerCapture(e.pointerId);
-    renderMainText();
-  }
-}
-
-function onOverlayPointerMove(e){
-  if(!state.drag || state.drag.pointerId!==e.pointerId) return;
-  const pt=clientToNorm(e.clientX,e.clientY);
-  if(state.drag.type==='mosaic'){
-    state.mosaicStrokes.push({x:pt.x,y:pt.y,size:state.brushSize/pt.rect.width});
-    renderMosaicCanvas();
-    return;
-  }
-  if(state.drag.type==='main-move'){
-    const dx=pt.x-state.drag.startX, dy=pt.y-state.drag.startY;
-    state.mainBox.x=clamp(state.drag.base.x+dx,0,1-state.mainBox.w);
-    state.mainBox.y=clamp(state.drag.base.y+dy,0,1-state.mainBox.h);
-    renderMainText();
-    return;
-  }
-  if(state.drag.type==='main-resize'){
-    const dx=pt.x-state.drag.startX, dy=pt.y-state.drag.startY;
-    state.mainBox.w=clamp(state.drag.base.w+dx,.18,1-state.mainBox.x);
-    state.mainBox.h=clamp(state.drag.base.h+dy,.10,1-state.mainBox.y);
-    renderMainText();
-    return;
-  }
-  const block=getSelectedFreeBlock();
-  if(!block) return;
-  if(state.drag.type==='free-move'){
-    const dx=pt.x-state.drag.startX, dy=pt.y-state.drag.startY;
-    block.x=clamp(state.drag.base.x+dx,0,1-block.w);
-    block.y=clamp(state.drag.base.y+dy,0,1-block.h);
-    renderFreeBlocks();
-    return;
-  }
-  if(state.drag.type==='free-resize'){
-    const dx=pt.x-state.drag.startX, dy=pt.y-state.drag.startY;
-    block.w=clamp(state.drag.base.w+dx,.08,1-block.x);
-    block.h=clamp(state.drag.base.h+dy,.06,1-block.y);
-    renderFreeBlocks();
-  }
-}
-
-function onOverlayPointerUp(e){ if(state.drag && state.drag.pointerId===e.pointerId) state.drag=null; }
-
-
-
-function copyComputedStylesDeep(sourceNode,targetNode){
-  if(!(sourceNode instanceof Element) || !(targetNode instanceof Element)) return;
-  const sourceNodes=[sourceNode, ...sourceNode.querySelectorAll('*')];
-  const targetNodes=[targetNode, ...targetNode.querySelectorAll('*')];
-  sourceNodes.forEach((src, index)=>{
-    const tgt=targetNodes[index];
-    if(!tgt) return;
-    const cs=getComputedStyle(src);
-    let styleText='';
-    for(const prop of cs){
-      styleText += `${prop}:${cs.getPropertyValue(prop)};`;
-    }
-    tgt.setAttribute('style', styleText);
-  });
-}
-
-function buildExportClone(exportWidth, exportHeight){
-  const source = el.imageWrap;
-  const clone = source.cloneNode(true);
-  copyComputedStylesDeep(source, clone);
-
-  clone.querySelectorAll('.main-group-box,.main-resize-handle,.main-move-surface,.free-box,.free-close,.free-move-surface,.free-resize-handle').forEach(n=>n.remove());
-
-  clone.style.margin = '0';
-  clone.style.position = 'relative';
-  clone.style.left = '0';
-  clone.style.top = '0';
-  clone.style.overflow = 'hidden';
-  clone.style.display = 'block';
-  clone.style.transformOrigin = 'top left';
-
-  const displayW = source.clientWidth || 1;
-  const displayH = source.clientHeight || 1;
-  const scaleX = exportWidth / displayW;
-  const scaleY = exportHeight / displayH;
-  clone.style.width = `${displayW}px`;
-  clone.style.height = `${displayH}px`;
-  clone.style.transform = `scale(${scaleX}, ${scaleY})`;
-
-  clone.querySelectorAll('canvas').forEach(canvas=>{
-    try{
       const img = document.createElement('img');
-      img.src = canvas.toDataURL('image/png');
-      const cs = getComputedStyle(canvas);
-      let styleText='';
-      for(const prop of cs){
-        styleText += `${prop}:${cs.getPropertyValue(prop)};`;
+      img.src = state.imageSrc;
+      img.style.position = 'absolute'; img.style.inset = '0';
+      img.style.width = '100%'; img.style.height = '100%';
+      tempStage.appendChild(img);
+
+      const overlayClone = overlayRoot.cloneNode(true);
+      overlayClone.style.display = 'block';
+      overlayClone.style.position = 'absolute';
+      overlayClone.style.left = '0'; overlayClone.style.top = '0';
+      overlayClone.style.width = `${overlayRoot.clientWidth}px`;
+      overlayClone.style.height = `${overlayRoot.clientHeight}px`;
+      overlayClone.style.transformOrigin = 'top left';
+      overlayClone.style.transform = `scale(${scale})`;
+      overlayClone.querySelectorAll('.select-outline,.resize-handle,.free-block-delete,.drag-hit').forEach(el => el.remove());
+      const cloneCanvas = overlayClone.querySelector('#mosaicCanvas');
+      if(cloneCanvas){
+        const mosaicImg = document.createElement('img');
+        mosaicImg.src = mosaicCanvas.toDataURL('image/png');
+        mosaicImg.style.position = 'absolute';
+        mosaicImg.style.inset = '0';
+        mosaicImg.style.width = '100%';
+        mosaicImg.style.height = '100%';
+        mosaicImg.style.pointerEvents = 'none';
+        cloneCanvas.replaceWith(mosaicImg);
       }
-      img.setAttribute('style', styleText);
-      img.width = canvas.width;
-      img.height = canvas.height;
-      canvas.replaceWith(img);
-    }catch(err){
-      console.error('canvas replace fail', err);
-    }
-  });
-
-  clone.querySelectorAll('.main-text-group,.free-block,.main-line,.free-block-text,.main-bg,.overlay-root,.mosaic-canvas,img').forEach(n=>{
-    n.style.pointerEvents='none';
-  });
-
-  return { clone, displayW, displayH, scaleX, scaleY };
-}
-
-function svgToImage(svgText){
-  return new Promise((resolve,reject)=>{
-    const blob = new Blob([svgText], {type:'image/svg+xml;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = ()=>{ URL.revokeObjectURL(url); resolve(img); };
-    img.onerror = (err)=>{ URL.revokeObjectURL(url); reject(err); };
-    img.src = url;
-  });
-}
-
-async function renderImageWrapExact(exportWidth, exportHeight){
-  const source = el.imageWrap;
-  const displayW = source.clientWidth || 1;
-  const scale = Math.max(1, exportWidth / displayW);
-
-  source.classList.add('export-mode');
-  try{
-    const canvas = await html2canvas(source, {
-      backgroundColor: null,
-      scale,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      imageTimeout: 0,
-      removeContainer: true,
-      foreignObjectRendering: false,
-      windowWidth: Math.ceil(source.scrollWidth),
-      windowHeight: Math.ceil(source.scrollHeight),
-      onclone: (doc) => {
-        const clonedSource = doc.getElementById('imageWrap');
-        if (clonedSource) clonedSource.classList.add('export-mode');
-      }
-    });
-    return canvas;
-  } finally {
-    source.classList.remove('export-mode');
-  }
-}
-
-async function exportComposite(){
-  if(!state.image || !state.image.complete){ alert('먼저 사진을 넣어주세요.'); return; }
-  const exportWidth = state.image.naturalWidth;
-  const exportHeight = state.image.naturalHeight;
-  try{
-    if (typeof html2canvas !== 'function') {
-      throw new Error('html2canvas not loaded');
-    }
-    const exactCanvas = await renderImageWrapExact(exportWidth, exportHeight);
-    const finalCanvas = document.createElement('canvas');
-    finalCanvas.width = exportWidth;
-    finalCanvas.height = exportHeight;
-    const ctx = finalCanvas.getContext('2d');
-    if(state.exportFormat==='jpg'){
-      ctx.fillStyle='#ffffff';
-      ctx.fillRect(0,0,exportWidth,exportHeight);
-    }
-    ctx.drawImage(exactCanvas, 0, 0, exportWidth, exportHeight);
-    const ext=state.exportFormat==='png'?'png':'jpg';
-    const mime=state.exportFormat==='png'?'image/png':'image/jpeg';
-    const url=finalCanvas.toDataURL(mime,state.exportFormat==='png'?undefined:.95);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=`maslow-thumbnail.${ext}`;
-    a.click();
-  }catch(err){
-    console.error(err);
-    alert('내려받기 렌더링 중 오류가 발생했습니다. 네트워크 연결을 확인한 뒤 다시 시도해주세요.');
-  }
-}
-
-function wrapCanvasText(ctx,text,maxWidth){
-  const rawLines=String(text??'').split('\n');
-  const out=[];
-  for(const raw of rawLines){
-    if(raw===''){ out.push(''); continue; }
-    let line='';
-    for(const ch of Array.from(raw)){
-      const test=line+ch;
-      if(line && ctx.measureText(test).width>maxWidth){
-        out.push(line);
-        line=ch;
-      } else {
-        line=test;
+      tempStage.appendChild(overlayClone);
+      hiddenExportStage.innerHTML = '';
+      hiddenExportStage.appendChild(tempStage);
+      try{
+        const canvas = await html2canvas(tempStage, {
+          backgroundColor: state.format === 'jpg' ? '#ffffff' : null,
+          useCORS: true,
+          allowTaint: true,
+          scale: 1,
+          width: state.imageNaturalWidth,
+          height: state.imageNaturalHeight,
+          logging: false
+        });
+        const mime = state.format === 'png' ? 'image/png' : 'image/jpeg';
+        const url = canvas.toDataURL(mime, state.format === 'png' ? undefined : .96);
+        const a = document.createElement('a'); a.href = url; a.download = `maslow-thumbnail.${state.format}`; a.click();
+      } catch(err){
+        console.error(err);
+        alert('내려받기 렌더링 중 오류가 발생했습니다.');
+      } finally {
+        hiddenExportStage.innerHTML = '';
+        elementsToHide.forEach(el => el.classList.remove('export-hidden'));
+        if(currentSelection.main) mainTextBox.classList.add('selected');
       }
     }
-    out.push(line);
-  }
-  return out.length?out:[''];
-}
+    $('#downloadBtn').addEventListener('click', exportImage);
 
-function drawWrappedCanvasText(ctx, text, x, y, maxWidth, align, lineHeight){
-  const lines=wrapCanvasText(ctx,text,maxWidth);
-  const oldAlign=ctx.textAlign;
-  for(let i=0;i<lines.length;i++){
-    const ly=y+(i*lineHeight);
-    ctx.textAlign=align;
-    ctx.strokeText(lines[i],x,ly);
-    ctx.fillText(lines[i],x,ly);
-  }
-  ctx.textAlign=oldAlign;
-  return lines.length;
-}
+    window.addEventListener('resize', () => { if(state.imageSrc) renderAll(); });
 
-function drawRoundRect(ctx,x,y,w,h,r,fillStyle){ const radius=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+radius,y); ctx.arcTo(x+w,y,x+w,y+h,radius); ctx.arcTo(x+w,y+h,x,y+h,radius); ctx.arcTo(x,y+h,x,y,radius); ctx.arcTo(x,y,x+w,y,radius); ctx.closePath(); ctx.fillStyle=fillStyle; ctx.fill(); }
-
-// events
-el.pickImageBtn.addEventListener('click',()=>el.fileInput.click());
-el.placeholder.addEventListener('click',()=>el.fileInput.click());
-el.fileInput.addEventListener('change',e=>{
-  const file=e.target.files?.[0];
-  if(!file) return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    state.imageUrl=String(reader.result||'');
-    const img=new Image();
-    img.onload=()=>{ state.image=img; state.history=[]; renderAll(); };
-    img.src=state.imageUrl;
-  };
-  reader.readAsDataURL(file);
-});
-
-document.querySelectorAll('[data-scroll-target]').forEach(btn=>btn.addEventListener('click',()=>{ const target=document.getElementById(btn.dataset.scrollTarget); const amount=target.clientWidth*.78*(btn.dataset.dir==='next'?1:-1); target.scrollBy({left:amount,behavior:'smooth'}); }));
-
-el.formatSeg.addEventListener('click',e=>{ const btn=e.target.closest('button[data-format]'); if(!btn) return; state.exportFormat=btn.dataset.format; syncSegs(); });
-el.alignSeg.addEventListener('click',e=>{ const btn=e.target.closest('button[data-align]'); if(!btn) return; state.align=btn.dataset.align; syncSegs(); renderMainText(); });
-el.mainScaleRange.addEventListener('input',e=>{ state.mainBox.scale=Number(e.target.value); syncRanges(); renderMainText(); });
-el.mainLineGapRange.addEventListener('input',e=>{ state.mainBox.lineGap=Number(e.target.value); syncRanges(); renderMainText(); });
-el.brushSizeRange.addEventListener('input',e=>{ state.brushSize=Number(e.target.value); syncRanges(); });
-el.modeTextBtn.addEventListener('click',()=>setMode('text'));
-el.modeMosaicBtn.addEventListener('click',()=>setMode('mosaic'));
-el.addFreeBlockBtn.addEventListener('click',addFreeBlock);
-el.clearMosaicBtn.addEventListener('click',()=>{ if(state.mosaicStrokes.length) pushHistory(); state.mosaicStrokes=[]; renderMosaicCanvas(); });
-el.undoBtn.addEventListener('click',undoLast);
-el.resetMainBoxBtn.addEventListener('click',()=>{ pushHistory(); const d=getDesign(); state.mainBox.x=d.box.x; state.mainBox.y=d.box.y; state.mainBox.w=d.box.w; state.mainBox.h=d.box.h; renderMainText(); });
-el.resetDesignBtn.addEventListener('click',()=>{ pushHistory(); const oldScale=state.mainBox.scale, oldGap=state.mainBox.lineGap; applyDesignDefaults(true); state.mainBox.scale=oldScale; state.mainBox.lineGap=oldGap; renderAll(); });
-el.downloadBtn.addEventListener('click',exportComposite);
-
-el.overlayRoot.addEventListener('pointerdown',onOverlayPointerDown);
-el.overlayRoot.addEventListener('pointermove',onOverlayPointerMove);
-el.overlayRoot.addEventListener('pointerup',onOverlayPointerUp);
-el.overlayRoot.addEventListener('pointercancel',onOverlayPointerUp);
-
-el.freeTextInput.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.text=e.target.value; renderFreeBlocks(); });
-el.freeFontSelect.addEventListener('change',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.fontKey=e.target.value; renderFreeBlocks(); });
-el.freeTextColor.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.textColor=e.target.value; renderFreeBlocks(); });
-el.freeBgColor.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.bgColor=e.target.value; renderFreeBlocks(); });
-el.freeStrokeColor.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.strokeColor=e.target.value; renderFreeBlocks(); });
-el.freeFontSize.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.fontSize=Number(e.target.value); syncRanges(); renderFreeBlocks(); });
-el.freeStrokeWidth.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.strokeWidth=Number(e.target.value); syncRanges(); renderFreeBlocks(); });
-el.freeBgAlpha.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.bgAlpha=Number(e.target.value); syncRanges(); renderFreeBlocks(); });
-el.freeLineHeight.addEventListener('input',e=>{ const fb=getSelectedFreeBlock(); if(!fb) return; fb.lineHeight=Number(e.target.value); syncRanges(); renderFreeBlocks(); });
-
-el.styleGrid.addEventListener('click',e=>{
-  const save=e.target.closest('[data-save]'); const apply=e.target.closest('[data-apply]');
-  if(save){ const n=save.dataset.save; localStorage.setItem(`maslow-style-${n}`, JSON.stringify(serializeState())); renderStyleGrid(); }
-  if(apply){ const n=apply.dataset.apply; const raw=localStorage.getItem(`maslow-style-${n}`); if(raw){ pushHistory(); applySerializedState(JSON.parse(raw)); renderAll(); } }
-});
-
-window.addEventListener('resize',()=>{ renderMainText(); renderFreeBlocks(); renderMosaicCanvas(); });
-
-applyDesignDefaults(true);
-renderAll();
-</script>
+    applyDesignDefaults(true, false);
+    renderAll();
+  </script>
 </body>
 </html>

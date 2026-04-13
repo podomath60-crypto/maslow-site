@@ -83,7 +83,13 @@
     .style-slot-actions{display:flex;gap:6px}
     .style-slot-actions button{flex:1;border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:7px 8px;font-size:12px;font-weight:900;cursor:pointer}
     .style-slot.saved{background:#eefbf3;border-color:#86efac}
-    #fileInput{display:none}
+    body.exporting-overlay .main-group-box,
+body.exporting-overlay .main-resize-handle,
+body.exporting-overlay .main-move-surface,
+body.exporting-overlay .free-box,
+body.exporting-overlay .free-resize-handle,
+body.exporting-overlay .free-close{display:none !important}
+#fileInput{display:none}
     @media (max-width:980px){.editor-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media (max-width:640px){.app{padding:0 10px 32px}.topbar{margin:0 -10px}.topbar-title{font-size:22px}.inline-grid,.color-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.design-card{min-width:130px}.palette-card{min-width:78px}}
   </style>
@@ -879,155 +885,57 @@ function copyComputedStylesDeep(sourceNode, targetNode){
   });
 }
 
-function prepareExportClone(exportWidth, exportHeight){
-  const source=el.imageWrap;
-  const sourceRect=source.getBoundingClientRect();
-  const scale=exportWidth/sourceRect.width;
-  const clone=source.cloneNode(true);
-  copyComputedStylesDeep(source, clone);
-
-  clone.setAttribute('style', [
-    `position:relative`,
-    `display:block`,
-    `overflow:hidden`,
-    `width:${exportWidth}px`,
-    `height:${exportHeight}px`,
-    `line-height:0`,
-    `background:${state.exportFormat==='jpg' ? '#ffffff' : 'transparent'}`
-  ].join(';'));
-
-  const cloneImg=clone.querySelector('#mainImage') || clone.querySelector('.main-image');
-  if(cloneImg){
-    cloneImg.setAttribute('src', state.imageUrl);
-    cloneImg.setAttribute('style', [
-      `display:block`,
-      `width:${exportWidth}px`,
-      `height:${exportHeight}px`,
-      `position:absolute`,
-      `left:0`,
-      `top:0`
-    ].join(';'));
-  }
-
-  const cloneOverlay=clone.querySelector('#overlayRoot') || clone.querySelector('.overlay-root');
-  if(cloneOverlay){
-    cloneOverlay.style.position='absolute';
-    cloneOverlay.style.left='0px';
-    cloneOverlay.style.top='0px';
-    cloneOverlay.style.width=`${exportWidth}px`;
-    cloneOverlay.style.height=`${exportHeight}px`;
-    cloneOverlay.style.inset='0px';
-  }
-
-  clone.querySelectorAll('.main-group-box,.main-resize-handle,.free-box,.free-resize-handle,.free-close').forEach(node=>{
-    node.style.display='none';
-  });
-
-  clone.querySelectorAll('.main-text-group,.free-block').forEach(node=>{
-    const rect=node.getBoundingClientRect();
-    const left=(rect.left-sourceRect.left)*scale;
-    const top=(rect.top-sourceRect.top)*scale;
-    const width=rect.width*scale;
-    const height=rect.height*scale;
-    node.style.position='absolute';
-    node.style.left=`${left}px`;
-    node.style.top=`${top}px`;
-    node.style.width=`${width}px`;
-    node.style.height=`${height}px`;
-    node.style.minWidth='0px';
-    node.style.minHeight='0px';
-  });
-
-  source.querySelectorAll('.main-line,.main-bg,.free-block-text').forEach((srcNode,index)=>{
-    const selector = srcNode.classList.contains('main-line') ? '.main-line' : (srcNode.classList.contains('main-bg') ? '.main-bg' : '.free-block-text');
-  });
-
-  const srcMainLines=source.querySelectorAll('.main-line');
-  const cloneMainLines=clone.querySelectorAll('.main-line');
-  srcMainLines.forEach((srcNode,index)=>{
-    const node=cloneMainLines[index];
-    if(!node) return;
-    const rect=srcNode.getBoundingClientRect();
-    node.style.position='absolute';
-    node.style.left=`${(rect.left-sourceRect.left)*scale}px`;
-    node.style.top=`${(rect.top-sourceRect.top)*scale}px`;
-    node.style.width=`${rect.width*scale}px`;
-    node.style.height=`${rect.height*scale}px`;
-    node.style.fontSize=`${rect.height ? px(getComputedStyle(srcNode).fontSize)*scale : px(getComputedStyle(srcNode).fontSize)*scale}px`;
-    node.style.lineHeight=`${px(getComputedStyle(srcNode).lineHeight)*scale || px(getComputedStyle(srcNode).fontSize)*scale}px`;
-    node.style.whiteSpace='pre-wrap';
-    node.style.wordBreak='keep-all';
-  });
-
-  const srcMainBgs=source.querySelectorAll('.main-bg');
-  const cloneMainBgs=clone.querySelectorAll('.main-bg');
-  srcMainBgs.forEach((srcNode,index)=>{
-    const node=cloneMainBgs[index];
-    if(!node) return;
-    const rect=srcNode.getBoundingClientRect();
-    node.style.position='absolute';
-    node.style.left=`${(rect.left-sourceRect.left)*scale}px`;
-    node.style.top=`${(rect.top-sourceRect.top)*scale}px`;
-    node.style.width=`${rect.width*scale}px`;
-    node.style.height=`${rect.height*scale}px`;
-    node.style.borderRadius=`${px(getComputedStyle(srcNode).borderRadius)*scale}px`;
-  });
-
-  const srcFreeTexts=source.querySelectorAll('.free-block-text');
-  const cloneFreeTexts=clone.querySelectorAll('.free-block-text');
-  srcFreeTexts.forEach((srcNode,index)=>{
-    const node=cloneFreeTexts[index];
-    if(!node) return;
-    const rect=srcNode.getBoundingClientRect();
-    node.style.position='absolute';
-    node.style.left=`${(rect.left-sourceRect.left)*scale}px`;
-    node.style.top=`${(rect.top-sourceRect.top)*scale}px`;
-    node.style.width=`${rect.width*scale}px`;
-    node.style.height=`${rect.height*scale}px`;
-    node.style.fontSize=`${px(getComputedStyle(srcNode).fontSize)*scale}px`;
-    node.style.lineHeight=`${px(getComputedStyle(srcNode).lineHeight)*scale || px(getComputedStyle(srcNode).fontSize)*scale}px`;
-    node.style.borderRadius=`${px(getComputedStyle(srcNode).borderRadius)*scale}px`;
-    node.style.paddingLeft=`${px(getComputedStyle(srcNode).paddingLeft)*scale}px`;
-    node.style.paddingRight=`${px(getComputedStyle(srcNode).paddingRight)*scale}px`;
-    node.style.paddingTop=`${px(getComputedStyle(srcNode).paddingTop)*scale}px`;
-    node.style.paddingBottom=`${px(getComputedStyle(srcNode).paddingBottom)*scale}px`;
-  });
-
-  const srcCanvas=source.querySelector('#mosaicCanvas') || source.querySelector('.mosaic-canvas');
-  const cloneCanvas=clone.querySelector('#mosaicCanvas') || clone.querySelector('.mosaic-canvas');
-  if(cloneCanvas){
-    const img=document.createElement('img');
-    img.setAttribute('src', srcCanvas ? srcCanvas.toDataURL('image/png') : '');
-    img.setAttribute('style', `position:absolute;left:0;top:0;width:${exportWidth}px;height:${exportHeight}px;display:block;`);
-    cloneCanvas.replaceWith(img);
-  }
-
-  return clone;
+function getDisplayImageRect(){
+  const wrapRect=el.imageWrap.getBoundingClientRect();
+  const imgRect=el.mainImage.getBoundingClientRect();
+  return {
+    left: imgRect.left - wrapRect.left,
+    top: imgRect.top - wrapRect.top,
+    width: imgRect.width,
+    height: imgRect.height
+  };
 }
 
-function svgToImageDataUrl(svgString){
-  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
-}
-
-async function renderCloneToCanvas(clone, exportWidth, exportHeight){
-  const xmlns='http://www.w3.org/2000/svg';
-  const svg=`<svg xmlns="${xmlns}" width="${exportWidth}" height="${exportHeight}" viewBox="0 0 ${exportWidth} ${exportHeight}"><foreignObject width="100%" height="100%">${new XMLSerializer().serializeToString(clone)}</foreignObject></svg>`;
-  const img=new Image();
-  await new Promise((resolve,reject)=>{
-    img.onload=resolve;
-    img.onerror=reject;
-    img.src=svgToImageDataUrl(svg);
-  });
-  const canvas=document.createElement('canvas');
-  canvas.width=exportWidth;
-  canvas.height=exportHeight;
-  const ctx=canvas.getContext('2d');
-  if(state.exportFormat==='jpg'){
-    ctx.fillStyle='#ffffff';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+async function captureOverlayCanvas(exportWidth, exportHeight){
+  if(typeof html2canvas !== 'function'){
+    throw new Error('html2canvas not loaded');
   }
-  ctx.drawImage(img,0,0,exportWidth,exportHeight);
-  return canvas;
+  const displayRect=getDisplayImageRect();
+  const scale = Math.max(1, exportWidth / Math.max(1, displayRect.width));
+  const prevClass = document.body.classList.contains('exporting-overlay');
+  document.body.classList.add('exporting-overlay');
+  try{
+    const canvas = await html2canvas(el.overlayRoot,{
+      backgroundColor:null,
+      useCORS:true,
+      allowTaint:true,
+      scale:scale,
+      logging:false,
+      imageTimeout:0,
+      width:displayRect.width,
+      height:displayRect.height,
+      ignoreElements:(node)=>{
+        if(!node || !node.classList) return false;
+        return node.classList.contains('main-group-box') ||
+               node.classList.contains('main-resize-handle') ||
+               node.classList.contains('main-move-surface') ||
+               node.classList.contains('free-box') ||
+               node.classList.contains('free-resize-handle') ||
+               node.classList.contains('free-close');
+      }
+    });
+    if(canvas.width !== exportWidth || canvas.height !== exportHeight){
+      const fitted=document.createElement('canvas');
+      fitted.width=exportWidth;
+      fitted.height=exportHeight;
+      const fctx=fitted.getContext('2d');
+      fctx.drawImage(canvas,0,0,exportWidth,exportHeight);
+      return fitted;
+    }
+    return canvas;
+  } finally {
+    if(!prevClass) document.body.classList.remove('exporting-overlay');
+  }
 }
 
 async function exportComposite(){
@@ -1035,8 +943,17 @@ async function exportComposite(){
   const exportWidth=state.image.naturalWidth;
   const exportHeight=state.image.naturalHeight;
   try{
-    const clone=prepareExportClone(exportWidth, exportHeight);
-    const canvas=await renderCloneToCanvas(clone, exportWidth, exportHeight);
+    const overlayCanvas=await captureOverlayCanvas(exportWidth, exportHeight);
+    const canvas=document.createElement('canvas');
+    canvas.width=exportWidth;
+    canvas.height=exportHeight;
+    const ctx=canvas.getContext('2d');
+    if(state.exportFormat==='jpg'){
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(0,0,exportWidth,exportHeight);
+    }
+    ctx.drawImage(state.image,0,0,exportWidth,exportHeight);
+    ctx.drawImage(overlayCanvas,0,0,exportWidth,exportHeight);
     const ext=state.exportFormat==='png'?'png':'jpg';
     const mime=state.exportFormat==='png'?'image/png':'image/jpeg';
     const url=canvas.toDataURL(mime,state.exportFormat==='png'?undefined:.95);
@@ -1049,7 +966,6 @@ async function exportComposite(){
     alert('내려받기 렌더링 중 오류가 발생했습니다. 다시 시도해주세요.');
   }
 }
-
 
 function wrapCanvasText(ctx,text,maxWidth){
   const rawLines=String(text??'').split('\n');

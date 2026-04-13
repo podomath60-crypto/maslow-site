@@ -512,6 +512,27 @@
       cursor: nwse-resize;
       background: transparent;
     }
+    .free-block-delete-btn {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 26px;
+      height: 26px;
+      border: 0;
+      border-radius: 999px;
+      background: #111827;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.22);
+      z-index: 3;
+    }
+    .free-block-delete-btn:active { transform: scale(0.96); }
 
     .free-block-tabs {
       display: grid;
@@ -589,6 +610,9 @@
       border-radius: 999px;
       cursor: nwse-resize;
       background: transparent;
+    }
+    .free-block-panel-item.is-selected {
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.85), 0 8px 20px rgba(0,0,0,0.12);
     }
 
     #hiddenFile { display: none; }
@@ -780,6 +804,7 @@
 
   <script>
     const designs = [
+      { id:'d00', name:'없음', lineCount:0, box:{x:0.05,y:0.10,w:0.72,h:0.32}, lines:[], bg:null, stroke:0, shadow:0 },
       { id:'d01', name:'Bold Hero', lineCount:3, box:{x:0.05,y:0.10,w:0.72,h:0.32}, lines:[{y:0.00,size:0.40,weight:900},{y:0.40,size:0.22,weight:850},{y:0.70,size:0.22,weight:850}], bg:null, stroke:0.05, shadow:0.12 },
       { id:'d01b', name:'Bold Hero Mix', lineCount:3, box:{x:0.05,y:0.10,w:0.72,h:0.32}, lines:[{y:0.00,size:0.40,weight:900,colorMode:'primary'},{y:0.40,size:0.22,weight:850,colorMode:'secondary'},{y:0.70,size:0.22,weight:850,colorMode:'accent'}], bg:null, stroke:0.05, shadow:0.12 },
       { id:'d02', name:'Clean Box', lineCount:3, box:{x:0.06,y:0.64,w:0.70,h:0.22}, lines:[{y:0.06,size:0.28,weight:900},{y:0.38,size:0.22,weight:800},{y:0.68,size:0.22,weight:800}], bg:{type:'solid',colorIndex:2,opacity:0.90,pad:0.06,radius:16}, stroke:0, shadow:0 },
@@ -913,6 +938,33 @@
       return palette[0];
     }
 
+    function getDistributedYPositions(lineSpecs, activeCount) {
+      if (!lineSpecs.length || activeCount <= 0) return [];
+      if (activeCount === 1) {
+        const center = (lineSpecs[0].y + lineSpecs[lineSpecs.length - 1].y) / 2;
+        return [center];
+      }
+      const startY = lineSpecs[0].y;
+      const endY = lineSpecs[lineSpecs.length - 1].y;
+      const step = (endY - startY) / (activeCount - 1);
+      return Array.from({ length: activeCount }, (_, i) => startY + (step * i));
+    }
+
+    function getRenderableMainLines() {
+      const d = getDesign();
+      const items = [];
+      for (let i = 0; i < d.lineCount; i++) {
+        items.push({ spec: d.lines[i], text: state.lines[i] || '', index: i });
+      }
+      if (d.lineCount === 4) {
+        const filled = items.filter(item => item.text.trim());
+        if (filled.length > 0 && filled.length < 4) {
+          const yPositions = getDistributedYPositions(d.lines, filled.length);
+          return filled.map((item, idx) => ({ ...item, renderY: yPositions[idx] }));
+        }
+      }
+      return items.filter(item => item.text.trim() || d.lineCount < 4).map(item => ({ ...item, renderY: item.spec.y }));
+    }
 
     function updateToolModeUI() {
       [...toolModeSeg.querySelectorAll('button')].forEach(btn => btn.classList.toggle('active', btn.dataset.tool === state.toolMode));
@@ -1136,38 +1188,53 @@
 
     function renderFreeBlockEditStage() {
       if (!freeBlockEditStage) return;
-      const fb = getSelectedFreeBlock();
+      const selected = getSelectedFreeBlock();
       freeBlockEditStage.querySelectorAll('.free-block-panel-item').forEach(el => el.remove());
-      if (freeBlockEditEmpty) freeBlockEditEmpty.style.display = fb ? 'none' : 'flex';
-      if (!fb) return;
+      if (freeBlockEditEmpty) freeBlockEditEmpty.style.display = state.freeBlocks.length ? 'none' : 'flex';
+      if (!state.freeBlocks.length) return;
       const rect = freeBlockEditStage.getBoundingClientRect();
       const pw = Math.max(1, rect.width);
       const ph = Math.max(1, rect.height);
-      const el = document.createElement('div');
-      el.className = 'free-block-panel-item';
-      el.dataset.blockId = fb.id;
-      el.textContent = fb.text || getFreeBlockLabel(fb.id);
-      el.style.left = `${fb.x * pw}px`;
-      el.style.top = `${fb.y * ph}px`;
-      el.style.width = `${Math.max(80, fb.w * pw)}px`;
-      el.style.minHeight = `${Math.max(34, fb.h * ph)}px`;
-      el.style.padding = `${Math.max(6, ph * fb.h * 0.12)}px ${Math.max(8, pw * fb.w * 0.05)}px`;
-      el.style.fontSize = `${Math.max(14, ph * fb.h * 0.58)}px`;
-      el.style.fontWeight = '900';
-      el.style.fontFamily = getFreeFontFamily(fb.font);
-      el.style.textAlign = fb.align;
-      el.style.color = fb.textColor;
-      el.style.background = hexToRgba(fb.bgColor, fb.bgOpacity);
-      el.style.borderColor = fb.strokeColor;
-      el.style.borderWidth = `${fb.strokeWidth}px`;
-      el.style.borderRadius = `${Math.max(10, ph * fb.h * 0.18)}px`;
-      el.addEventListener('pointerdown', onFreeBlockPanelPointerDown);
-      const resize = document.createElement('div');
-      resize.className = 'free-block-panel-resize';
-      resize.dataset.blockId = fb.id;
-      resize.addEventListener('pointerdown', onFreeBlockPanelResizeDown);
-      el.appendChild(resize);
-      freeBlockEditStage.appendChild(el);
+
+      state.freeBlocks.forEach(fb => {
+        const el = document.createElement('div');
+        el.className = 'free-block-panel-item' + (selected && fb.id === selected.id ? ' is-selected' : '');
+        el.dataset.blockId = fb.id;
+        el.textContent = fb.text || getFreeBlockLabel(fb.id);
+        el.style.left = `${fb.x * pw}px`;
+        el.style.top = `${fb.y * ph}px`;
+        el.style.width = `${Math.max(80, fb.w * pw)}px`;
+        el.style.minHeight = `${Math.max(34, fb.h * ph)}px`;
+        el.style.padding = `${Math.max(6, ph * fb.h * 0.12)}px ${Math.max(8, pw * fb.w * 0.05)}px`;
+        el.style.fontSize = `${Math.max(14, ph * fb.h * 0.58)}px`;
+        el.style.fontWeight = '900';
+        el.style.fontFamily = getFreeFontFamily(fb.font);
+        el.style.textAlign = fb.align;
+        el.style.color = fb.textColor;
+        el.style.background = hexToRgba(fb.bgColor, fb.bgOpacity);
+        el.style.borderColor = fb.strokeColor;
+        el.style.borderWidth = `${fb.strokeWidth}px`;
+        el.style.borderRadius = `${Math.max(10, ph * fb.h * 0.18)}px`;
+        el.addEventListener('pointerdown', onFreeBlockPanelPointerDown);
+
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'free-block-delete-btn';
+        del.dataset.blockId = fb.id;
+        del.textContent = '×';
+        del.addEventListener('click', e => {
+          e.stopPropagation();
+          deleteFreeBlock(fb.id);
+        });
+        el.appendChild(del);
+
+        const resize = document.createElement('div');
+        resize.className = 'free-block-panel-resize';
+        resize.dataset.blockId = fb.id;
+        resize.addEventListener('pointerdown', onFreeBlockPanelResizeDown);
+        el.appendChild(resize);
+        freeBlockEditStage.appendChild(el);
+      });
     }
 
     function createDefaultFreeBlock() {
@@ -1249,6 +1316,16 @@
         el.style.borderRadius = `${Math.max(10, h * 0.18)}px`;
         el.addEventListener('pointerdown', onFreeBlockPointerDown);
         el.addEventListener('click', e => { e.stopPropagation(); selectFreeBlock(fb.id); });
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'free-block-delete-btn';
+        del.dataset.blockId = fb.id;
+        del.textContent = '×';
+        del.addEventListener('click', e => {
+          e.stopPropagation();
+          deleteFreeBlock(fb.id);
+        });
+        el.appendChild(del);
         const resize = document.createElement('div');
         resize.className = 'free-block-item-resize';
         resize.dataset.blockId = fb.id;
@@ -1260,7 +1337,7 @@
 
     function onFreeBlockPointerDown(e) {
       if (!state.imageUrl) return;
-      if (e.target.closest('.free-block-item-resize')) return;
+      if (e.target.closest('.free-block-item-resize') || e.target.closest('.free-block-delete-btn')) return;
       const blockId = e.currentTarget.dataset.blockId;
       selectFreeBlock(blockId);
       e.stopPropagation();
@@ -1281,7 +1358,7 @@
 
     function onFreeBlockPanelPointerDown(e) {
       if (!state.imageUrl) return;
-      if (e.target.closest('.free-block-panel-resize')) return;
+      if (e.target.closest('.free-block-panel-resize') || e.target.closest('.free-block-delete-btn')) return;
       const blockId = e.currentTarget.dataset.blockId;
       selectFreeBlock(blockId);
       e.stopPropagation();
@@ -1525,12 +1602,14 @@
         textGroup.insertBefore(bg, textGroup.firstChild);
       }
 
-      for (let i = 0; i < d.lineCount; i++) {
-        const spec = d.lines[i];
+      const renderableLines = getRenderableMainLines();
+
+      for (const item of renderableLines) {
+        const spec = item.spec;
         const div = document.createElement('div');
         div.className = 'overlay-line';
-        div.textContent = state.lines[i] || '';
-        div.style.top = `${spec.y * 100}%`;
+        div.textContent = item.text;
+        div.style.top = `${item.renderY * 100}%`;
         div.style.left = '0';
         div.style.fontSize = `${Math.max(12, h * spec.size * state.group.scale)}px`;
         div.style.fontWeight = String(spec.weight);
@@ -1858,12 +1937,13 @@
       }
 
       ctx.textBaseline = 'top';
-      for (let i = 0; i < d.lineCount; i++) {
-        const spec = d.lines[i];
-        const text = state.lines[i] || '';
+      const renderableLines = getRenderableMainLines();
+      for (const item of renderableLines) {
+        const spec = item.spec;
+        const text = item.text;
         const fontSize = Math.max(12, h * spec.size * state.group.scale);
         const lineXBase = x;
-        const lineY = y + (h * spec.y);
+        const lineY = y + (h * item.renderY);
         ctx.font = `${spec.weight} ${fontSize}px ${spec.serif ? 'Georgia, serif' : 'Arial, sans-serif'}`;
         ctx.fillStyle = resolveLineColor(spec, palette);
         ctx.lineJoin = 'round';

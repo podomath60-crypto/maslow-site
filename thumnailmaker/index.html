@@ -476,6 +476,7 @@
     }
     .free-block-item {
       position: absolute;
+      z-index: 7;
       pointer-events: auto;
       white-space: pre-wrap;
       word-break: keep-all;
@@ -535,7 +536,8 @@
     .free-block-delete-btn:active { transform: scale(0.96); }
 
     .free-block-tabs {
-      display: grid;
+      display: none;
+
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
     }
@@ -555,6 +557,7 @@
       border-color: #111827;
     }
     .free-block-edit-stage {
+      display: none;
       position: relative;
       width: 100%;
       height: 160px;
@@ -686,7 +689,7 @@
             <button type="button" class="action-btn soft" id="addFreeBlockBtn">자유블럭 추가</button>
             <div class="free-block-tabs" id="freeBlockTabs"></div>
             <div class="free-block-edit-stage" id="freeBlockEditStage">
-              <div class="free-block-edit-empty" id="freeBlockEditEmpty">자유블럭을 추가하거나 선택하세요.<br />패널 안에서도 드래그와 크기조절이 됩니다.</div>
+              <div class="free-block-edit-empty" id="freeBlockEditEmpty">자유블럭을 추가한 뒤 사진영역에서 선택하세요.</div>
             </div>
             <input type="text" id="freeTextInput" class="text-input" placeholder="선택한 자유블럭 문구 입력" />
             <div class="mini-field-grid">
@@ -1315,6 +1318,7 @@
         el.style.borderWidth = `${fb.strokeWidth}px`;
         el.style.borderRadius = `${Math.max(10, h * 0.18)}px`;
         el.addEventListener('pointerdown', onFreeBlockPointerDown);
+        el.addEventListener('mousedown', e => { e.stopPropagation(); selectFreeBlock(fb.id); });
         el.addEventListener('click', e => { e.stopPropagation(); selectFreeBlock(fb.id); });
         const del = document.createElement('button');
         del.type = 'button';
@@ -1469,7 +1473,7 @@
         card.className = 'design-card' + (index === state.selectedDesignIndex ? ' active' : '');
         card.innerHTML = `<div class="design-name">${d.name}</div><div class="mini-preview"></div>`;
         const preview = card.querySelector('.mini-preview');
-        const samples = ['핵심 타이틀','포인트 1','포인트 2','포인트 3'];
+        const samples = ['기본문구','기본문구 2','기본문구 3','기본문구 4'];
         for (let i = 0; i < d.lineCount; i++) {
           const line = document.createElement('div');
           const spec = d.lines[i];

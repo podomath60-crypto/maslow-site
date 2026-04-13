@@ -108,6 +108,10 @@ body.exporting-overlay .free-close,
     .hidden-export-stage{position:fixed;left:-100000px;top:-100000px;pointer-events:none;opacity:0}
     @media (max-width:980px){.editor-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media (max-width:640px){.app{padding:0 10px 32px}.topbar{margin:0 -10px}.topbar-title{font-size:22px}.inline-grid,.color-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.design-card{min-width:130px}.palette-card{min-width:78px}}
+  
+    .mobile-dev-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:rgba(17,24,39,.96);color:#fff;padding:12px 16px;border-radius:14px;font-size:14px;font-weight:800;line-height:1.45;box-shadow:0 10px 30px rgba(0,0,0,.22);z-index:4000;opacity:0;pointer-events:none;transition:opacity .28s ease,transform .28s ease;white-space:pre-line;text-align:center}
+    .mobile-dev-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
   </style>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
@@ -384,6 +388,7 @@ function restoreFromHistory(snapshot){
   if(!snapshot) return;
   applySerializedState(snapshot);
   renderAll();
+showMobileDevToast();
 }
 function undoLast(){
   const snap = state.history.pop();
@@ -1100,8 +1105,24 @@ el.styleGrid.addEventListener('click',e=>{
 window.addEventListener('resize',()=>{ renderMainText(); renderFreeBlocks(); renderMosaicCanvas(); });
 
 applyDesignDefaults(true);
+
+function isMobileDevice(){
+  const ua = navigator.userAgent || '';
+  return /Android|iPhone|iPad|iPod|Mobile|Windows Phone|webOS|BlackBerry|Opera Mini|IEMobile/i.test(ua) || window.innerWidth <= 980;
+}
+
+function showMobileDevToast(){
+  const toast = document.getElementById('mobileDevToast');
+  if(!toast || !isMobileDevice()) return;
+  toast.classList.add('show');
+  window.setTimeout(()=>{ toast.classList.remove('show'); }, 3000);
+}
+
 renderAll();
 </script>
 <div id="hiddenExportStage" style="position:fixed;left:-99999px;top:-99999px;pointer-events:none;opacity:0;"></div>
+
+  <div class="mobile-dev-toast" id="mobileDevToast">데스크탑용으로
+개발되었습니다.</div>
 </body>
 </html>

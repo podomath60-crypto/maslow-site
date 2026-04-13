@@ -93,6 +93,7 @@ body.exporting-overlay .free-close{display:none !important}
     @media (max-width:980px){.editor-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media (max-width:640px){.app{padding:0 10px 32px}.topbar{margin:0 -10px}.topbar-title{font-size:22px}.inline-grid,.color-grid{grid-template-columns:1fr}.style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.design-card{min-width:130px}.palette-card{min-width:78px}}
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
   <div class="app">
@@ -885,31 +886,32 @@ function svgToImage(svgText){
 }
 
 async function renderImageWrapExact(exportWidth, exportHeight){
-  const { clone, displayW, displayH } = buildExportClone(exportWidth, exportHeight);
-  const holder = document.createElement('div');
-  holder.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-  holder.style.width = `${displayW}px`;
-  holder.style.height = `${displayH}px`;
-  holder.style.overflow = 'hidden';
-  holder.style.background = 'transparent';
-  holder.appendChild(clone);
+  const source = el.imageWrap;
+  const displayW = source.clientWidth || 1;
+  const scale = exportWidth / displayW;
 
-  const serialized = new XMLSerializer().serializeToString(holder)
-    .replace(/#/g, '%23')
-    .replace(/\n/g, ' ');
-
-  const svg = `<?xml version="1.0" encoding="UTF-8"?>
-  <svg xmlns="http://www.w3.org/2000/svg" width="${exportWidth}" height="${exportHeight}" viewBox="0 0 ${exportWidth} ${exportHeight}">
-    <foreignObject x="0" y="0" width="${exportWidth}" height="${exportHeight}">${serialized}</foreignObject>
-  </svg>`;
-
-  const img = await svgToImage(svg);
-  const canvas = document.createElement('canvas');
-  canvas.width = exportWidth;
-  canvas.height = exportHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0, exportWidth, exportHeight);
-  return canvas;
+  source.classList.add('export-mode');
+  try{
+    const canvas = await html2canvas(source, {
+      backgroundColor: null,
+      scale,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      imageTimeout: 0,
+      removeContainer: true,
+      foreignObjectRendering: false,
+      windowWidth: document.documentElement.clientWidth,
+      windowHeight: document.documentElement.clientHeight,
+      onclone: (doc) => {
+        const clonedSource = doc.getElementById('imageWrap');
+        if (clonedSource) clonedSource.classList.add('export-mode');
+      }
+    });
+    return canvas;
+  } finally {
+    source.classList.remove('export-mode');
+  }
 }
 
 async function exportComposite(){
@@ -917,6 +919,9 @@ async function exportComposite(){
   const exportWidth = state.image.naturalWidth;
   const exportHeight = state.image.naturalHeight;
   try{
+    if (typeof html2canvas !== 'function') {
+      throw new Error('html2canvas not loaded');
+    }
     const exactCanvas = await renderImageWrapExact(exportWidth, exportHeight);
     const finalCanvas = document.createElement('canvas');
     finalCanvas.width = exportWidth;
@@ -936,7 +941,7 @@ async function exportComposite(){
     a.click();
   }catch(err){
     console.error(err);
-    alert('내려받기 렌더링 중 오류가 발생했습니다. 다시 시도해주세요.');
+    alert('내려받기 렌더링 중 오류가 발생했습니다. 네트워크 연결을 확인한 뒤 다시 시도해주세요.');
   }
 }
 

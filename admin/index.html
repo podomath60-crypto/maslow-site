@@ -4116,13 +4116,12 @@
         }
 
         (Array.isArray(jijiguItems) ? jijiguItems : []).forEach(function(item){
-          if(!item) return;
-          push(item.jiyukCdNm);
-          push(item.jiguCdNm);
-          push(item.guyukCdNm);
-          push(item.jijiguCdNm);
-          push(item.etcJijigu);
-          push(item.jijigu);
+          push(item && item.jiyukCdNm);
+          push(item && item.jiguCdNm);
+          push(item && item.guyukCdNm);
+          push(item && item.jijiguCdNm);
+          push(item && item.etcJijigu);
+          push(item && item.jijigu);
         });
 
         push(basis && basis.jiyukCdNm);
@@ -4155,7 +4154,13 @@
           titleItem.indrMechUtcnt,
           titleItem.oudrMechUtcnt
         );
-        var zoningText = firstNonEmpty_(buildCombinedZoningText_(jijiguItems, basis), getJijiguText_(jijiguItems), basis.jiyukCdNm, basis.jiguCdNm, basis.guyukCdNm);
+        var zoningText = firstNonEmpty_(
+          buildCombinedZoningText_(jijiguItems, basis),
+          getJijiguText_(jijiguItems),
+          basis.jiyukCdNm,
+          basis.jiguCdNm,
+          basis.guyukCdNm
+        );
 
         return {
           address: firstNonEmpty_(selectedAddressSearchData && selectedAddressSearchData.jibunAddress, json.address),

@@ -1948,6 +1948,7 @@
           <div class="property-spec-row"><div class="property-spec-label">* 매매가 / 임대가</div><div id="priceField" class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">* 사용승인일</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">* 대지면적</div><div class="property-spec-value"><div class="measure-field" data-measure="landArea"><div class="measure-line"><input class="measure-input" data-unit="m2" type="number" inputmode="decimal" placeholder="입력" /><span class="measure-unit">㎡</span></div><div class="measure-line measure-line-sub"><input class="measure-input" data-unit="pyeong" type="number" inputmode="decimal" placeholder="자동계산" /><span class="measure-unit">평</span></div></div></div></div>
+          <div class="property-spec-row"><div class="property-spec-label">* 건축면적</div><div class="property-spec-value"><div class="measure-field" data-measure="buildingArea"><div class="measure-line"><input class="measure-input" data-unit="m2" type="number" inputmode="decimal" placeholder="입력" /><span class="measure-unit">㎡</span></div><div class="measure-line measure-line-sub"><input class="measure-input" data-unit="pyeong" type="number" inputmode="decimal" placeholder="자동계산" /><span class="measure-unit">평</span></div></div></div></div>
           <div class="property-spec-row"><div class="property-spec-label">* 연면적</div><div class="property-spec-value"><div class="measure-field" data-measure="totalFloorArea"><div class="measure-line"><input class="measure-input" data-unit="m2" type="number" inputmode="decimal" placeholder="입력" /><span class="measure-unit">㎡</span></div><div class="measure-line measure-line-sub"><input class="measure-input" data-unit="pyeong" type="number" inputmode="decimal" placeholder="자동계산" /><span class="measure-unit">평</span></div></div></div></div>
           <div class="property-spec-row"><div class="property-spec-label">전용면적</div><div class="property-spec-value"><div class="measure-field" data-measure="exclusiveArea"><div class="measure-line"><input class="measure-input" data-unit="m2" type="number" inputmode="decimal" placeholder="입력" /><span class="measure-unit">㎡</span></div><div class="measure-line measure-line-sub"><input class="measure-input" data-unit="pyeong" type="number" inputmode="decimal" placeholder="자동계산" /><span class="measure-unit">평</span></div></div></div></div>
           <div class="property-spec-row"><div class="property-spec-label">용도지역</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
@@ -2511,6 +2512,8 @@
           approvalDate: plainText(findSpecValueByLabel_('* 사용승인일')),
           landAreaM2: getMeasureValue_('landArea', 'm2'),
           landAreaPy: getMeasureValue_('landArea', 'pyeong'),
+          buildingAreaM2: getMeasureValue_('buildingArea', 'm2'),
+          buildingAreaPy: getMeasureValue_('buildingArea', 'pyeong'),
           totalFloorAreaM2: getMeasureValue_('totalFloorArea', 'm2'),
           totalFloorAreaPy: getMeasureValue_('totalFloorArea', 'pyeong'),
           exclusiveAreaM2: getMeasureValue_('exclusiveArea', 'm2'),
@@ -2751,6 +2754,7 @@
 
         setEditableText_(findSpecValueByLabel_('* 사용승인일'), item.approvalDate || '');
         setMeasureField_('landArea', item.landAreaM2 || '', item.landAreaPy || '');
+        setMeasureField_('buildingArea', item.buildingAreaM2 || '', item.buildingAreaPy || '');
         setMeasureField_('totalFloorArea', item.totalFloorAreaM2 || '', item.totalFloorAreaPy || '');
         setMeasureField_('exclusiveArea', item.exclusiveAreaM2 || '', item.exclusiveAreaPy || '');
         setEditableText_(findSpecValueByLabel_('용도지역'), item.zoning || '');
@@ -4049,16 +4053,40 @@
 
       function getJijiguText_(items){
         if(!Array.isArray(items) || !items.length) return '';
-        var item = items[0] || {};
-        var arr = [
-          item.jiyukCdNm, item.jiguCdNm, item.guyukCdNm,
-          item.jijiguCdNm, item.jijiguGbCdNm, item.jijigu
-        ].map(function(v){ return String(v || '').trim(); }).filter(Boolean);
         var out = [];
-        arr.forEach(function(v){
-          if(out.indexOf(v) === -1) out.push(v);
+        items.forEach(function(item){
+          [
+            item && item.jiyukCdNm,
+            item && item.jiguCdNm,
+            item && item.guyukCdNm,
+            item && item.jijiguCdNm,
+            item && item.etcJijigu
+          ].forEach(function(v){
+            v = String(v || '').trim();
+            if(v && out.indexOf(v) === -1) out.push(v);
+          });
         });
         return out.join(' / ');
+      }
+
+      function getParkingCountText_(recap, titleItem){
+        var recapTotal = firstNonEmpty_(recap && recap.totPkngCnt);
+        if(recapTotal) return recapTotal;
+
+        var indoorAuto = Number(firstNonEmpty_(titleItem && titleItem.indrAutoUtcnt) || 0);
+        var outdoorAuto = Number(firstNonEmpty_(titleItem && titleItem.oudrAutoUtcnt) || 0);
+        var indoorMech = Number(firstNonEmpty_(titleItem && titleItem.indrMechUtcnt) || 0);
+        var outdoorMech = Number(firstNonEmpty_(titleItem && titleItem.oudrMechUtcnt) || 0);
+        var total = indoorAuto + outdoorAuto + indoorMech + outdoorMech;
+        if(isFinite(total) && total > 0) return String(total);
+
+        return firstNonEmpty_(
+          titleItem && titleItem.totPkngCnt,
+          titleItem && titleItem.oudrAutoUtcnt,
+          titleItem && titleItem.indrAutoUtcnt,
+          titleItem && titleItem.oudrMechUtcnt,
+          titleItem && titleItem.indrMechUtcnt
+        );
       }
 
       function buildCompositionText_(recap, titleItem){
@@ -4092,6 +4120,7 @@
         var exposFirst = exposItems[0] || {};
 
         var landAreaM2 = firstNonEmpty_(recap.platArea, titleItem.platArea);
+        var buildingAreaM2 = firstNonEmpty_(recap.archArea, titleItem.archArea);
         var totalFloorAreaM2 = firstNonEmpty_(recap.totArea, titleItem.totArea);
         var exclusiveAreaM2 = firstNonEmpty_(exposFirst.excluUseArea, exposFirst.exposArea, exposFirst.area);
 
@@ -4100,14 +4129,16 @@
           approvalDate: formatYmd_(firstNonEmpty_(titleItem.useAprDay, recap.useAprDay)),
           landAreaM2: numberText_(landAreaM2),
           landAreaPy: pyeongFromM2_(landAreaM2),
+          buildingAreaM2: numberText_(buildingAreaM2),
+          buildingAreaPy: pyeongFromM2_(buildingAreaM2),
           totalFloorAreaM2: numberText_(totalFloorAreaM2),
           totalFloorAreaPy: pyeongFromM2_(totalFloorAreaM2),
           exclusiveAreaM2: numberText_(exclusiveAreaM2),
           exclusiveAreaPy: pyeongFromM2_(exclusiveAreaM2),
-          zoning: firstNonEmpty_(getJijiguText_(jijiguItems), basis.jiyukCdNm, basis.jiguCdNm, basis.guyukCdNm),
+          zoning: firstNonEmpty_(getJijiguText_(jijiguItems), [basis.jiyukCdNm, basis.jiguCdNm, basis.guyukCdNm].filter(Boolean).join(' / ')),
           propertyType: firstNonEmpty_(recap.mainPurpsCdNm, titleItem.mainPurpsCdNm),
           buildingComposition: buildCompositionText_(recap, titleItem),
-          parkingCount: firstNonEmpty_(recap.totPkngCnt),
+          parkingCount: getParkingCountText_(recap, titleItem),
           floorInfo: buildFloorInfoText_(recap, titleItem),
           ceilingHeight: firstNonEmpty_(titleItem.heit)
         };
@@ -4151,6 +4182,7 @@
 
         chainEditable('* 사용승인일', fill.approvalDate);
         changed = changed.then(function(prev){ return fillMeasureIfBlank_('landArea', fill.landAreaM2, fill.landAreaPy).then(function(now){ return prev || now; }); });
+        changed = changed.then(function(prev){ return fillMeasureIfBlank_('buildingArea', fill.buildingAreaM2, fill.buildingAreaPy).then(function(now){ return prev || now; }); });
         changed = changed.then(function(prev){ return fillMeasureIfBlank_('totalFloorArea', fill.totalFloorAreaM2, fill.totalFloorAreaPy).then(function(now){ return prev || now; }); });
         changed = changed.then(function(prev){ return fillMeasureIfBlank_('exclusiveArea', fill.exclusiveAreaM2, fill.exclusiveAreaPy).then(function(now){ return prev || now; }); });
         chainEditable('용도지역', fill.zoning);
@@ -4456,6 +4488,7 @@
 
         changed = (await setEditableIfBlank_(findSpecValueByLabel_('* 사용승인일'), aiJson.approvalDate)) || changed;
         changed = (await setMeasureWithAutoCalcAnimated_('landArea', aiJson.landAreaM2, aiJson.landAreaPy)) || changed;
+        changed = (await setMeasureWithAutoCalcAnimated_('buildingArea', aiJson.buildingAreaM2, aiJson.buildingAreaPy)) || changed;
         changed = (await setMeasureWithAutoCalcAnimated_('totalFloorArea', aiJson.totalFloorAreaM2, aiJson.totalFloorAreaPy)) || changed;
         changed = (await setMeasureWithAutoCalcAnimated_('exclusiveArea', aiJson.exclusiveAreaM2, aiJson.exclusiveAreaPy)) || changed;
         changed = (await setEditableIfBlank_(findSpecValueByLabel_('용도지역'), aiJson.zoning)) || changed;

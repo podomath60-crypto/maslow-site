@@ -4107,14 +4107,22 @@
         function push(value){
           var text = plainText(value);
           if(!text) return;
+          if(text === '0') return;
+          if(/코드/.test(text)) return;
+          if(/^[A-Z0-9_-]+$/.test(text)) return;
           if(map[text]) return;
           map[text] = true;
           parts.push(text);
         }
 
         (Array.isArray(jijiguItems) ? jijiguItems : []).forEach(function(item){
-          push(item && item.jijiguCdNm);
-          push(item && item.etcJijigu);
+          if(!item) return;
+          push(item.jiyukCdNm);
+          push(item.jiguCdNm);
+          push(item.guyukCdNm);
+          push(item.jijiguCdNm);
+          push(item.etcJijigu);
+          push(item.jijigu);
         });
 
         push(basis && basis.jiyukCdNm);
@@ -4147,7 +4155,7 @@
           titleItem.indrMechUtcnt,
           titleItem.oudrMechUtcnt
         );
-        var zoningText = buildCombinedZoningText_(jijiguItems, basis);
+        var zoningText = firstNonEmpty_(buildCombinedZoningText_(jijiguItems, basis), getJijiguText_(jijiguItems), basis.jiyukCdNm, basis.jiguCdNm, basis.guyukCdNm);
 
         return {
           address: firstNonEmpty_(selectedAddressSearchData && selectedAddressSearchData.jibunAddress, json.address),

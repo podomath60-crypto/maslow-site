@@ -931,8 +931,7 @@
     let calendarCurrentMonth = '';
     let calendarOverviewMap = {};
     let selectedListing = null;
-    let pendingImageGenerationController = null;
-    let nextLookupInitialQuery = "";
+    let selectedAddressSearchData = null;
     let lastLookupResult = null;
     let assets = [];
     let searchTimer = null;
@@ -1173,7 +1172,7 @@
       selectedListing = null;
       assets = [];
       lastLookupResult = null;
-      picked = null;
+      selectedAddressSearchData = null;
       els.selectedSummary.classList.remove('show');
       els.assetsSection.classList.remove('show');
       els.assetGrid.innerHTML = '';
@@ -1228,7 +1227,7 @@
 
     function selectListing(item){
       selectedListing = item;
-      picked = null;
+      selectedAddressSearchData = null;
       lastLookupResult = null;
       assets = buildPhotoAssets(item.photoUrlsJson);
       if(assets[0]) assets[0].isHero = true;
@@ -1426,45 +1425,26 @@
     function openAddressSearch(initialQuery){
       try{
         new daum.Postcode({
-          q: String(initialQuery || '').trim(),
-          autoClose: true,
-          oncomplete:function(data){
-            picked = {
-              jibunAddress: data.jibunAddress || data.autoJibunAddress || '',
-              roadAddress: data.roadAddress || data.autoRoadAddress || '',
-              lookupAddress: (data.jibunAddress || data.autoJibunAddress || data.roadAddress || data.autoRoadAddress || ''),
+          oncomplete: function(data){
+            selectedAddressSearchData = {
+              roadAddress: data.roadAddress || '',
+              jibunAddress: data.jibunAddress || '',
+              sigunguCode: data.sigunguCode || '',
               bcode: data.bcode || '',
-              sido: data.sido || '',
-              sigungu: data.sigungu || '',
-              bname: data.bname || '',
-              buildingName: data.buildingName || '',
               zonecode: data.zonecode || '',
+              buildingName: data.buildingName || '',
               apartment: data.apartment || '',
-              autoJibunAddress: data.autoJibunAddress || '',
-              autoRoadAddress: data.autoRoadAddress || '',
-              addressType: data.addressType || ''
+              addressType: data.userSelectedType || ''
             };
-            addressLocked = true;
-            renderAddressDisplay();
-            els.pickedLine.textContent = joinValues([
-              picked.roadAddress ? ('도로명: ' + picked.roadAddress) : '',
-              picked.jibunAddress ? ('지번: ' + picked.jibunAddress) : '',
-              picked.lookupAddress ? ('조회기준: ' + picked.lookupAddress) : ''
-            ], '
-');
-            setStatus('', '');
-            renderMapLink();
-            lookup();
+            showToast('주소 선택 완료');
           }
-        }).open({ q: String(initialQuery || '').trim() });
+        }).open({ q: initialQuery || (selectedListing && selectedListing.address) || '' });
       }catch(e){
-        if(pendingImageGenerationController){
-          pendingImageGenerationController.reject(e);
-          pendingImageGenerationController = null;
-        }
+        console.error(e);
         showToast('주소검색 오류');
       }
     }
+
 
     function infoFirstNonEmpty(){
       for(var i=0;i<arguments.length;i++){
@@ -1861,52 +1841,309 @@
         showToast('먼저 매물 선택');
         return;
       }
-      nextLookupInitialQuery = text((selectedListing.raw && (selectedListing.raw.lookupAddress || selectedListing.raw.jibunAddress || selectedListing.raw.roadAddress || selectedListing.raw.address)) || selectedListing.address || '');
-      picked = null;
-      addressLocked = false;
-      lookup();
-    }
-
-    function lookup(){
-      if(!picked){
-        openAddressSearch(nextLookupInitialQuery || '');
+      if(!selectedAddressSearchData){
+        openAddressSearch(selectedListing.address || '');
         return;
       }
+      setLoading(true, '건축물 조회 중');
+      const payload = { action:'fetchPublicPropertyBySearchResult' };
+      Object.keys(selectedAddressSearchData).forEach(function(k){
+        payload[k] = selectedAddressSearchData[k];
+      });
+      fetchPostJson(payload)
+        .then(function(data){
+          if(!(data && data.ok)){
+            throw new Error(((data && (data.error || data.message)) || '조회 실패') + ' · 다시 버튼을 눌러주세요');
+          }
+          lastLookupResult = data;
+          showToast('조회 완료');
+        })
+        .catch(function(err){
+          console.error(err);
+          showToast((err && err.message) || '조회 실패');
+        })
+        .finally(function(){
+          setLoading(false);
+        });
+    }
 
-      setLoading(true, '공적자료 조회 중');
-      setStatus('', '');
+
+
+    function jsonpLookupCall(params){
+      return new Promise(function(resolve, reject){
+        var cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+        var script = document.createElement('script');
+        var done = false;
+        var timer = null;
+
+        function cleanup(){
+          try{ delete window[cb]; }catch(e){}
+          if(timer) clearTimeout(timer);
+          if(script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[cb] = function(payload){
+          if(done) return;
+          done = true;
+          cleanup();
+          resolve(payload);
+        };
+
+        script.onerror = function(){
+          if(done) return;
+          done = true;
+          cleanup();
+          reject(new Error('JSONP 요청 실패'));
+        };
+
+        params = params || {};
+        params.callback = cb;
+        params._ts = Date.now();
+
+        var q = new URLSearchParams();
+        Object.keys(params).forEach(function(k){
+          q.set(k, params[k] == null ? '' : String(params[k]));
+        });
+
+        script.src = CONFIG.adminListUrl + '?' + q.toString();
+        document.body.appendChild(script);
+
+        timer = setTimeout(function(){
+          if(done) return;
+          done = true;
+          cleanup();
+          reject(new Error('JSONP 타임아웃'));
+        }, 15000);
+      });
+    }
+
+    function guessQueryAddressType_(address){
+      var s = String(address || '').trim();
+      if(!s) return 'ROAD';
+      return /(?:로|길)\s*\d/.test(s) ? 'ROAD' : 'JIBUN';
+    }
+
+    async function fetchLookupByListingAddress(){
+      if(!selectedListing){
+        throw new Error('먼저 매물 선택');
+      }
+
+      var raw = selectedListing.raw || {};
+      var baseAddress = text(
+        raw.lookupAddress ||
+        raw.jibunAddress ||
+        raw.roadAddress ||
+        raw.address
+      );
+
+      if(!baseAddress){
+        throw new Error('매물 주소 없음');
+      }
+
+      function looksRoadAddress(addr){
+        var s = String(addr || '').trim();
+        return /(?:로|길)\s*\d/.test(s);
+      }
+
+      function splitAdministrative(addr){
+        var s = String(addr || '').trim().replace(/\s+/g, ' ');
+        var parts = s.split(' ');
+        return {
+          sido: parts[0] || '',
+          sigungu: parts[1] || '',
+          bname: parts[2] || ''
+        };
+      }
+
+      var admin = splitAdministrative(baseAddress);
+      var queryAddressType = raw.queryAddressType || raw.addressType || (looksRoadAddress(baseAddress) ? 'ROAD' : 'JIBUN');
+
+      var picked = {
+        jibunAddress: text(raw.jibunAddress || (queryAddressType === 'JIBUN' ? baseAddress : '')),
+        roadAddress: text(raw.roadAddress || (queryAddressType === 'ROAD' ? baseAddress : '')),
+        lookupAddress: text(raw.lookupAddress || baseAddress),
+        bcode: text(raw.bcode),
+        sido: text(raw.sido || admin.sido),
+        sigungu: text(raw.sigungu || admin.sigungu),
+        bname: text(raw.bname || admin.bname),
+        buildingName: text(raw.buildingName),
+        zonecode: text(raw.zonecode),
+        apartment: text(raw.apartment),
+        autoJibunAddress: text(raw.autoJibunAddress),
+        autoRoadAddress: text(raw.autoRoadAddress),
+        addressType: text(raw.addressType || queryAddressType)
+      };
+
+      var params = { action:'fetchPublicPropertyBySearchResult' };
+      Object.keys(picked).forEach(function(k){ params[k] = picked[k]; });
+      params.queryAddress = picked.lookupAddress || picked.jibunAddress || picked.autoJibunAddress || picked.roadAddress || '';
+      params.queryAddressType = queryAddressType;
+
+      var data = await jsonpLookupCall(params);
+      if(!(data && data.ok)){
+        throw new Error((data && (data.error || data.message)) || '조회 실패');
+      }
+      lastLookupResult = data;
+      return data;
+    }
+
+
+        function rawAddressValue_(raw, keys){
+      raw = raw || {};
+      for(var i=0;i<keys.length;i++){
+        var k = keys[i];
+        var v = raw[k];
+        if(v != null && String(v).trim()) return String(v).trim();
+      }
+      return '';
+    }
+
+    function looksRoadAddress_(addr){
+      var s = String(addr || '').trim();
+      return /(?:로|길)\s*\d/.test(s);
+    }
+
+    function buildPickedFromListingRaw_(){
+      if(!selectedListing) return null;
+      var raw = selectedListing.raw || {};
+
+      var lookupAddress = rawAddressValue_(raw, [
+        'lookupAddress','queryAddress','address','jibunAddress','roadAddress'
+      ]) || text(selectedListing.address);
+
+      var jibunAddress = rawAddressValue_(raw, [
+        'jibunAddress','autoJibunAddress','addressJibun','jibun_address'
+      ]);
+
+      var roadAddress = rawAddressValue_(raw, [
+        'roadAddress','autoRoadAddress','addressRoad','road_address'
+      ]);
+
+      var addressType = rawAddressValue_(raw, [
+        'queryAddressType','addressType','address_type'
+      ]);
+
+      if(!addressType){
+        addressType = looksRoadAddress_(lookupAddress || roadAddress) ? 'ROAD' : 'JIBUN';
+      }
+
+      if(!jibunAddress && addressType === 'JIBUN') jibunAddress = lookupAddress;
+      if(!roadAddress && addressType === 'ROAD') roadAddress = lookupAddress;
+
+      var bcode = rawAddressValue_(raw, [
+        'bcode','bCode','법정동코드','legalDongCode','bjdongCd','bjDongCd'
+      ]);
+
+      var sigungu = rawAddressValue_(raw, [
+        'sigungu','sigunGu','sigunguName','시군구'
+      ]);
+      var sido = rawAddressValue_(raw, [
+        'sido','siDo','sidoName','시도'
+      ]);
+      var bname = rawAddressValue_(raw, [
+        'bname','beopjeongdong','법정동','dongName'
+      ]);
+
+      var zonecode = rawAddressValue_(raw, [
+        'zonecode','zoneCode','postcode','postCode','우편번호'
+      ]);
+
+      var buildingName = rawAddressValue_(raw, [
+        'buildingName','building_name','건물명'
+      ]);
+
+      var apartment = rawAddressValue_(raw, [
+        'apartment','isApartment'
+      ]);
+
+      var picked = {
+        jibunAddress: jibunAddress,
+        roadAddress: roadAddress,
+        lookupAddress: lookupAddress,
+        bcode: bcode,
+        sido: sido,
+        sigungu: sigungu,
+        bname: bname,
+        buildingName: buildingName,
+        zonecode: zonecode,
+        apartment: apartment,
+        autoJibunAddress: rawAddressValue_(raw, ['autoJibunAddress']),
+        autoRoadAddress: rawAddressValue_(raw, ['autoRoadAddress']),
+        addressType: addressType
+      };
+
+      if(!picked.lookupAddress) return null;
+      return picked;
+    }
+
+    async function runLookupLikeOriginal_(){
+      var picked = buildPickedFromListingRaw_();
+      if(!picked){
+        throw new Error('주소 데이터 없음 · 다시 버튼을 눌러주세요');
+      }
+
       var params = { action:'fetchPublicPropertyBySearchResult' };
       Object.keys(picked).forEach(function(k){ params[k] = picked[k]; });
       params.queryAddress = picked.lookupAddress || picked.jibunAddress || picked.autoJibunAddress || picked.roadAddress || '';
       params.queryAddressType = (picked.jibunAddress || picked.autoJibunAddress) ? 'JIBUN' : 'ROAD';
 
-      return jsonpLookupCall(params).then(function(res){
-        if(!(res && res.ok)){
-          var err = new Error((res && (res.error || res.message)) || '조회 실패 · 서버가 혼잡합니다. 다시 조회 버튼을 눌러주세요.');
-          setStatus('조회 실패 · 서버가 혼잡합니다. 다시 조회 버튼을 눌러주세요.', 'err');
-          if(pendingImageGenerationController){
-            pendingImageGenerationController.reject(err);
-            pendingImageGenerationController = null;
-          }
-          throw err;
+      var res = await jsonpLookupCall(params);
+      if(!(res && res.ok)){
+        throw new Error('조회 실패 · 다시 버튼을 눌러주세요');
+      }
+      lastLookupResult = res;
+      return res;
+    }
+
+    function openAddressSearchForInfoImage_(initialQuery){
+      return new Promise(function(resolve, reject){
+        try{
+          new daum.Postcode({
+            q: String(initialQuery || '').trim(),
+            autoClose: true,
+            oncomplete:function(data){
+              var picked = {
+                jibunAddress: data.jibunAddress || data.autoJibunAddress || '',
+                roadAddress: data.roadAddress || data.autoRoadAddress || '',
+                lookupAddress: (data.jibunAddress || data.autoJibunAddress || data.roadAddress || data.autoRoadAddress || ''),
+                bcode: data.bcode || '',
+                sido: data.sido || '',
+                sigungu: data.sigungu || '',
+                bname: data.bname || '',
+                buildingName: data.buildingName || '',
+                zonecode: data.zonecode || '',
+                apartment: data.apartment || '',
+                autoJibunAddress: data.autoJibunAddress || '',
+                autoRoadAddress: data.autoRoadAddress || '',
+                addressType: data.addressType || ''
+              };
+              resolve(picked);
+            },
+            onclose:function(state){
+              if(state === 'FORCE_CLOSE') reject(new Error('주소 선택 취소'));
+            }
+          }).open({ q: initialQuery || '' });
+        }catch(e){
+          reject(e);
         }
-        lastLookupResult = res;
-        if(pendingImageGenerationController){
-          pendingImageGenerationController.resolve(res);
-          pendingImageGenerationController = null;
-        }
-        return res;
-      }).catch(function(err){
-        if(!pendingImageGenerationController){
-          showToast((err && err.message) || '조회 실패 · 다시 버튼을 눌러주세요');
-        }
-        throw err;
-      }).finally(function(){
-        setLoading(false);
       });
     }
 
-async function generateInfoImages(){
+    async function lookupByPickedForInfoImage_(picked){
+      var params = { action:'fetchPublicPropertyBySearchResult' };
+      Object.keys(picked || {}).forEach(function(k){ params[k] = picked[k]; });
+      params.queryAddress = picked.lookupAddress || picked.jibunAddress || picked.autoJibunAddress || picked.roadAddress || '';
+      params.queryAddressType = (picked.jibunAddress || picked.autoJibunAddress) ? 'JIBUN' : 'ROAD';
+
+      var res = await jsonpLookupCall(params);
+      if(!(res && res.ok)){
+        throw new Error(((res && (res.error || res.message)) || '조회 실패') + ' · 다시 버튼을 눌러주세요');
+      }
+      lastLookupResult = res;
+      return res;
+    }
+
+    async function generateInfoImages(){
       if(!selectedListing){
         showToast('먼저 매물 선택');
         return;
@@ -1914,16 +2151,11 @@ async function generateInfoImages(){
 
       try{
         lastLookupResult = null;
-        nextLookupInitialQuery = text((selectedListing.raw && (selectedListing.raw.lookupAddress || selectedListing.raw.jibunAddress || selectedListing.raw.roadAddress || selectedListing.raw.address)) || selectedListing.address || '');
-        picked = null;
-        addressLocked = false;
-
-        await new Promise(function(resolve, reject){
-          pendingImageGenerationController = { resolve: resolve, reject: reject };
-          lookup();
-        });
-
+        var picked = await openAddressSearchForInfoImage_(selectedListing.address || '');
+        setLoading(true, '건축물 조회 중');
+        await lookupByPickedForInfoImage_(picked);
         setLoading(true, '주소 조회 후 이미지 생성 중');
+
         var built = await buildLookupGeneratedAssets(lastLookupResult);
         if(!built.length){
           showToast('자료가 없어 넣을 이미지가 없습니다');
@@ -1950,10 +2182,10 @@ async function generateInfoImages(){
         renderAssets();
         showToast('정보 이미지 추가');
       }catch(err){
+        if(err && err.message === '주소 선택 취소') return;
         console.error(err);
         showToast((err && err.message) || '조회 실패 · 다시 버튼을 눌러주세요');
       }finally{
-        pendingImageGenerationController = null;
         setLoading(false);
       }
     }

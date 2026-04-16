@@ -1067,7 +1067,7 @@
   <div id="paragraphPicker" class="paragraph-picker" aria-hidden="true">
     <div class="paragraph-picker-sheet">
       <div class="paragraph-picker-head">
-        <div class="paragraph-picker-title">단락 선택</div>
+        <div class="paragraph-picker-title">사진 구분 선택</div>
         <button type="button" id="paragraphPickerClose" class="paragraph-picker-close" aria-label="닫기">×</button>
       </div>
       <div id="paragraphPickerGrid" class="paragraph-picker-grid"></div>
@@ -1427,28 +1427,59 @@
       });
     }
 
+    const FACTORY_PHOTO_TYPE_LABELS = {
+      p1: '외관전경',
+      p2: '마당/야드',
+      p3: '진입로/출입구',
+      p4: '내부전경',
+      p5: '작업공간',
+      p6: '설비/장비',
+      p7: '창고/적재공간',
+      p8: '사무/편의공간',
+      p9: '기타'
+    };
+
+    const COMMERCIAL_PHOTO_TYPE_LABELS = {
+      p1: '건물외관',
+      p2: '전면/출입구',
+      p3: '주변환경',
+      p4: '내부전경',
+      p5: '메인공간',
+      p6: '룸/구획공간',
+      p7: '업무/설비공간',
+      p8: '편의공간',
+      p9: '기타'
+    };
+
+    function getPhotoTypeLabels(){
+      const teamType = selectedListing ? detectTeamByListingNumber(selectedListing.listingNumber) : '';
+      return teamType === 'factory' ? FACTORY_PHOTO_TYPE_LABELS : COMMERCIAL_PHOTO_TYPE_LABELS;
+    }
+
     function paragraphOptionsHtml(current){
+      const labels = getPhotoTypeLabels();
       let html = '';
       for(let i=1;i<=9;i++){
         const value = 'p' + i;
-        html += '<option value="' + value + '"' + (current === value ? ' selected' : '') + '>' + i + '단락</option>';
+        html += '<option value="' + value + '"' + (current === value ? ' selected' : '') + '>' + escapeAttr(labels[value] || value) + '</option>';
       }
       return html;
     }
 
     function paragraphLabel(value){
-      const num = String(value || '').replace(/^p/, '');
-      return (num || '1') + '단락';
+      const labels = getPhotoTypeLabels();
+      return labels[String(value || 'p1')] || labels.p1;
     }
 
     function openParagraphPicker(assetId){
       activeParagraphPickerAssetId = assetId || '';
       const item = assets.find(function(v){ return v.assetId === activeParagraphPickerAssetId; });
       if(!item) return;
+      const labels = getPhotoTypeLabels();
       let html = '';
       for(let i=1;i<=9;i++){
         const value = 'p' + i;
-        html += '<button type="button" class="paragraph-picker-btn' + (item.paragraph === value ? ' is-active' : '') + '" data-value="' + value + '">' + i + '단락</button>';
+        html += '<button type="button" class="paragraph-picker-btn' + (item.paragraph === value ? ' is-active' : '') + '" data-value="' + value + '">' + escapeAttr(labels[value] || value) + '</button>';
       }
       els.paragraphPickerGrid.innerHTML = html;
       Array.prototype.forEach.call(els.paragraphPickerGrid.querySelectorAll('.paragraph-picker-btn'), function(btn){

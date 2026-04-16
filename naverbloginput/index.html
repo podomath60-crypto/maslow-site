@@ -2498,6 +2498,13 @@
       els.generateInfoImageBtn.addEventListener('click', generateInfoImages);
       els.draftSaveBtn.addEventListener('click', saveDraft);
       els.publishPrepBtn.addEventListener('click', goEditor);
+      els.imageViewerClose.addEventListener('click', closeImageViewer);
+      els.imageViewer.addEventListener('click', function(e){
+        if(e.target === els.imageViewer) closeImageViewer();
+      });
+      document.addEventListener('keydown', function(e){
+        if(e.key === 'Escape' && els.imageViewer.classList.contains('show')) closeImageViewer();
+      });
     }
 
     bindEvents();

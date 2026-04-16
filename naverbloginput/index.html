@@ -427,13 +427,52 @@
       border-color:var(--hero-on-line);
       color:var(--hero-on-text);
     }
-    .asset-check{display:none !important;}
-    .asset-card.is-selected .asset-check{display:none !important;}
+    .asset-check{
+      position:absolute;
+      top:8px;
+      right:8px;
+      width:24px;
+      height:24px;
+      border-radius:8px;
+      background:#fff;
+      border:2px solid #0f7cff;
+      color:transparent;
+      font-size:14px;
+      font-weight:900;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      line-height:1;
+      cursor:pointer;
+      z-index:2;
+      box-shadow:0 6px 14px rgba(15,23,42,.08);
+    }
+    .asset-card.is-selected .asset-check{
+      background:#0f7cff;
+      border-color:#0f7cff;
+      color:#fff;
+    }
     .asset-body{
       padding:9px;
       display:grid;
       gap:6px;
     }
+    .asset-fixed-label{
+      width:100%;
+      min-height:32px;
+      border-radius:10px;
+      border:1px solid #dce6f1;
+      background:#f8fbff;
+      color:#2643a2;
+      padding:6px 10px;
+      font-size:12px;
+      font-weight:900;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+    }
+
     .select{
       width:100%;
       min-height:32px;
@@ -1504,16 +1543,18 @@
       els.assetsSection.classList.add('show');
       els.assetGrid.innerHTML = assets.map(function(item){
         const preview = item.previewUrl ? "background-image:url('" + escapeAttr(item.previewUrl) + "')" : '';
+        const isInfoAsset = !!(item && item.source && item.source.kind === 'generated_from_lookup');
         return ''
-          + '<div class="asset-card' + (item.isHero ? ' is-hero' : '') + '" data-asset-id="' + escapeAttr(item.assetId) + '">'
+          + '<div class="asset-card' + (item.isHero ? ' is-hero' : '') + (item.selected ? ' is-selected' : '') + '" data-asset-id="' + escapeAttr(item.assetId) + '">'
           + '  <div class="asset-preview" style="' + preview + '">'
           + '    <button type="button" class="asset-hero">대표</button>'
+          + '    <button type="button" class="asset-check" aria-label="선택">' + (item.selected ? '✓' : '') + '</button>'
           + '  </div>'
           + '  <div class="asset-body">'
-          + '    <select class="select asset-paragraph-select">'
-          + paragraphOptionsHtml(item.paragraph)
-          + '    </select>'
-          + '    <button type="button" class="asset-paragraph-mobile-btn">' + paragraphLabel(item.paragraph) + '</button>'
+          + (isInfoAsset
+              ? '    <div class="asset-fixed-label">기본정보</div>'
+              : '    <select class="select asset-paragraph-select">' + paragraphOptionsHtml(item.paragraph) + '    </select>'
+                + '    <button type="button" class="asset-paragraph-mobile-btn">' + paragraphLabel(item.paragraph) + '</button>')
           + '  </div>'
           + '</div>';
       }).join('');
@@ -1525,13 +1566,16 @@
 
         const paraSelect = card.querySelector('.asset-paragraph-select');
         const paraMobileBtn = card.querySelector('.asset-paragraph-mobile-btn');
+        const checkBtn = card.querySelector('.asset-check');
         const heroBtn = card.querySelector('.asset-hero');
         const previewEl = card.querySelector('.asset-preview');
 
-        paraSelect.addEventListener('change', function(){
-          item.paragraph = paraSelect.value;
-          if(paraMobileBtn) paraMobileBtn.textContent = paragraphLabel(item.paragraph);
-        });
+        if(paraSelect){
+          paraSelect.addEventListener('change', function(){
+            item.paragraph = paraSelect.value;
+            if(paraMobileBtn) paraMobileBtn.textContent = paragraphLabel(item.paragraph);
+          });
+        }
         if(paraMobileBtn){
           paraMobileBtn.addEventListener('click', function(e){
             e.preventDefault();
@@ -1542,6 +1586,14 @@
         previewEl.addEventListener('click', function(){
           openImageViewer(item.previewUrl || item.url || '');
         });
+        if(checkBtn){
+          checkBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            item.selected = !item.selected;
+            renderAssets();
+          });
+        }
         heroBtn.addEventListener('click', function(e){
           e.preventDefault();
           e.stopPropagation();

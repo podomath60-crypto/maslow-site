@@ -2047,30 +2047,29 @@
       });
     }
 
-    function lookup(){
-      if(!lookupPicked){
-        return new Promise(function(resolve, reject){
-          lookupAddressSearchWaiter = { resolve: resolve, reject: reject };
-          openAddressSearch((selectedListing && selectedListing.address) || '');
+    function lookup(pickedArg){
+      var pickedValue = pickedArg || lookupPicked;
+      if(!pickedValue){
+        return openAddressSearch((selectedListing && selectedListing.address) || '').then(function(selectedPicked){
+          return lookup(selectedPicked);
         });
       }
 
+      lookupPicked = pickedValue;
       setLoading(true, '공적자료 조회 중');
       setStatus && setStatus('', '');
 
       var params = { action:'fetchPublicPropertyBySearchResult' };
-      Object.keys(lookupPicked).forEach(function(k){ params[k] = lookupPicked[k]; });
-      params.queryAddress = lookupPicked.lookupAddress || lookupPicked.jibunAddress || lookupPicked.autoJibunAddress || lookupPicked.roadAddress || '';
-      params.queryAddressType = (lookupPicked.jibunAddress || lookupPicked.autoJibunAddress) ? 'JIBUN' : 'ROAD';
+      Object.keys(pickedValue).forEach(function(k){ params[k] = pickedValue[k]; });
+      params.queryAddress = pickedValue.lookupAddress || pickedValue.jibunAddress || pickedValue.autoJibunAddress || pickedValue.roadAddress || '';
+      params.queryAddressType = (pickedValue.jibunAddress || pickedValue.autoJibunAddress) ? 'JIBUN' : 'ROAD';
 
       return jsonpLookupCall(params).then(function(res){
         if(!(res && res.ok)){
-          throw new Error('조회 실패 · 서버가 혼잡합니다. 다시 조회 버튼을 눌러주세요.');
+          throw new Error((res && (res.error || res.message)) || '조회 실패 · 서버가 혼잡합니다. 다시 조회 버튼을 눌러주세요.');
         }
         lastLookupResult = res;
         return res;
-      }).catch(function(err){
-        throw err;
       }).finally(function(){
         setLoading(false);
       });

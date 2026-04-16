@@ -427,31 +427,8 @@
       border-color:var(--hero-on-line);
       color:var(--hero-on-text);
     }
-    .asset-check{
-      position:absolute;
-      top:8px;
-      right:8px;
-      width:24px;
-      height:24px;
-      border-radius:999px;
-      background:rgba(255,255,255,.96);
-      border:1px solid #dce6f1;
-      color:#b8c2cc;
-      font-size:14px;
-      font-weight:900;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      line-height:1;
-      cursor:pointer;
-      z-index:2;
-      box-shadow:0 6px 14px rgba(15,23,42,.08);
-    }
-    .asset-card.is-selected .asset-check{
-      background:#0f7cff;
-      border-color:#0f7cff;
-      color:#fff;
-    }
+    .asset-check{display:none !important;}
+    .asset-card.is-selected .asset-check{display:none !important;}
     .asset-body{
       padding:9px;
       display:grid;
@@ -1933,6 +1910,24 @@
       };
     }
 
+    function maskInfoImageAddress_(value){
+      var s = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+      if(!s) return '-';
+      s = s.replace(/\s산?\d+(?:-\d+)?(?:번지)?$/, '').trim();
+      return s || '-';
+    }
+
+    function sanitizeInfoRowsForImage_(rows){
+      return (rows || []).map(function(row){
+        var label = String((row && row[0]) == null ? '' : row[0]).trim();
+        var value = (row && row[1]) == null ? '' : row[1];
+        if(label === '주소' || label === '도로명주소'){
+          return [label, maskInfoImageAddress_(value)];
+        }
+        return [label, value];
+      });
+    }
+
     function drawInfoRowsToBlob(title, rows){
       return new Promise(function(resolve, reject){
         try{
@@ -1972,7 +1967,7 @@
             ctx.closePath();
           }
 
-          var safeRows = (rows || []).map(function(row){ return [row[0], row[1]]; });
+          var safeRows = sanitizeInfoRowsForImage_(rows);
           var dpr = 2;
           var paddingLeft = 20, paddingRight = 12, paddingTop = 20, paddingBottom = 18, titleH = 58, labelW = 132;
           var probe = document.createElement('canvas');

@@ -931,8 +931,8 @@
     let calendarCurrentMonth = '';
     let calendarOverviewMap = {};
     let selectedListing = null;
-    let lookupPicked = null;
-    let lookupAddressSearchWaiter = null;
+    let pendingImageGenerationController = null;
+    let nextLookupInitialQuery = "";
     let lastLookupResult = null;
     let assets = [];
     let searchTimer = null;
@@ -1173,7 +1173,7 @@
       selectedListing = null;
       assets = [];
       lastLookupResult = null;
-      lookupPicked = null;
+      picked = null;
       els.selectedSummary.classList.remove('show');
       els.assetsSection.classList.remove('show');
       els.assetGrid.innerHTML = '';
@@ -1228,7 +1228,7 @@
 
     function selectListing(item){
       selectedListing = item;
-      lookupPicked = null;
+      picked = null;
       lastLookupResult = null;
       assets = buildPhotoAssets(item.photoUrlsJson);
       if(assets[0]) assets[0].isHero = true;
@@ -1423,58 +1423,48 @@
       els.calendarModal.classList.remove('show');
     }
 
-    function buildLookupPickedFromPostcode_(data){
-      data = data || {};
-      return {
-        jibunAddress: data.jibunAddress || data.autoJibunAddress || '',
-        roadAddress: data.roadAddress || data.autoRoadAddress || '',
-        lookupAddress: (data.jibunAddress || data.autoJibunAddress || data.roadAddress || data.autoRoadAddress || ''),
-        bcode: data.bcode || '',
-        sido: data.sido || '',
-        sigungu: data.sigungu || '',
-        bname: data.bname || '',
-        buildingName: data.buildingName || '',
-        zonecode: data.zonecode || '',
-        apartment: data.apartment || '',
-        autoJibunAddress: data.autoJibunAddress || '',
-        autoRoadAddress: data.autoRoadAddress || '',
-        addressType: data.addressType || data.userSelectedType || ''
-      };
-    }
-
     function openAddressSearch(initialQuery){
       try{
         new daum.Postcode({
+          q: String(initialQuery || '').trim(),
           autoClose: true,
           oncomplete:function(data){
-            lookupPicked = buildLookupPickedFromPostcode_(data);
-            if(lookupAddressSearchWaiter){
-              var waiter = lookupAddressSearchWaiter;
-              lookupAddressSearchWaiter = null;
-              lookup().then(waiter.resolve).catch(waiter.reject);
-            }
-          },
-          onclose:function(state){
-            if(String(state || '').toUpperCase() === 'COMPLETE') return;
-            if(lookupAddressSearchWaiter){
-              var waiter = lookupAddressSearchWaiter;
-              lookupAddressSearchWaiter = null;
-              waiter.reject(new Error('주소 선택 취소'));
-            }
+            picked = {
+              jibunAddress: data.jibunAddress || data.autoJibunAddress || '',
+              roadAddress: data.roadAddress || data.autoRoadAddress || '',
+              lookupAddress: (data.jibunAddress || data.autoJibunAddress || data.roadAddress || data.autoRoadAddress || ''),
+              bcode: data.bcode || '',
+              sido: data.sido || '',
+              sigungu: data.sigungu || '',
+              bname: data.bname || '',
+              buildingName: data.buildingName || '',
+              zonecode: data.zonecode || '',
+              apartment: data.apartment || '',
+              autoJibunAddress: data.autoJibunAddress || '',
+              autoRoadAddress: data.autoRoadAddress || '',
+              addressType: data.addressType || ''
+            };
+            addressLocked = true;
+            renderAddressDisplay();
+            els.pickedLine.textContent = joinValues([
+              picked.roadAddress ? ('도로명: ' + picked.roadAddress) : '',
+              picked.jibunAddress ? ('지번: ' + picked.jibunAddress) : '',
+              picked.lookupAddress ? ('조회기준: ' + picked.lookupAddress) : ''
+            ], '
+');
+            setStatus('', '');
+            renderMapLink();
+            lookup();
           }
         }).open({ q: String(initialQuery || '').trim() });
       }catch(e){
-        if(lookupAddressSearchWaiter){
-          var waiter = lookupAddressSearchWaiter;
-          lookupAddressSearchWaiter = null;
-          waiter.reject(e);
+        if(pendingImageGenerationController){
+          pendingImageGenerationController.reject(e);
+          pendingImageGenerationController = null;
         }
-        console.error(e);
         showToast('주소검색 오류');
       }
     }
-
-
 
     function infoFirstNonEmpty(){
       for(var i=0;i<arguments.length;i++){
@@ -1871,214 +1861,50 @@
         showToast('먼저 매물 선택');
         return;
       }
-      lookup().then(function(){
-        showToast('조회 완료');
-      }).catch(function(err){
-        console.error(err);
-        showToast((err && err.message) || '조회 실패 · 다시 버튼을 눌러주세요');
-      });
+      nextLookupInitialQuery = text((selectedListing.raw && (selectedListing.raw.lookupAddress || selectedListing.raw.jibunAddress || selectedListing.raw.roadAddress || selectedListing.raw.address)) || selectedListing.address || '');
+      picked = null;
+      addressLocked = false;
+      lookup();
     }
 
-
-    function jsonpLookupCall(params){
-      return new Promise(function(resolve, reject){
-        var cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-        var script = document.createElement('script');
-        var done = false;
-        var timer = null;
-
-        function cleanup(){
-          try{ delete window[cb]; }catch(e){}
-          if(timer) clearTimeout(timer);
-          if(script.parentNode) script.parentNode.removeChild(script);
-        }
-
-        window[cb] = function(payload){
-          if(done) return;
-          done = true;
-          cleanup();
-          resolve(payload);
-        };
-
-        script.onerror = function(){
-          if(done) return;
-          done = true;
-          cleanup();
-          reject(new Error('JSONP 요청 실패'));
-        };
-
-        params = params || {};
-        params.callback = cb;
-        params._ts = Date.now();
-
-        var q = new URLSearchParams();
-        Object.keys(params).forEach(function(k){
-          q.set(k, params[k] == null ? '' : String(params[k]));
-        });
-
-        script.src = CONFIG.adminListUrl + '?' + q.toString();
-        document.body.appendChild(script);
-
-        timer = setTimeout(function(){
-          if(done) return;
-          done = true;
-          cleanup();
-          reject(new Error('JSONP 타임아웃'));
-        }, 15000);
-      });
-    }
-
-    function guessQueryAddressType_(address){
-      var s = String(address || '').trim();
-      if(!s) return 'ROAD';
-      return /(?:로|길)\s*\d/.test(s) ? 'ROAD' : 'JIBUN';
-    }
-
-    async function fetchLookupByListingAddress(){
-      if(!selectedListing){
-        throw new Error('먼저 매물 선택');
+    function lookup(){
+      if(!picked){
+        openAddressSearch(nextLookupInitialQuery || '');
+        return;
       }
 
-      var raw = selectedListing.raw || {};
-      var baseAddress = text(
-        raw.lookupAddress ||
-        raw.jibunAddress ||
-        raw.roadAddress ||
-        raw.address
-      );
-
-      if(!baseAddress){
-        throw new Error('매물 주소 없음');
-      }
-
-      function looksRoadAddress(addr){
-        var s = String(addr || '').trim();
-        return /(?:로|길)\s*\d/.test(s);
-      }
-
-      function splitAdministrative(addr){
-        var s = String(addr || '').trim().replace(/\s+/g, ' ');
-        var parts = s.split(' ');
-        return {
-          sido: parts[0] || '',
-          sigungu: parts[1] || '',
-          bname: parts[2] || ''
-        };
-      }
-
-      var admin = splitAdministrative(baseAddress);
-      var queryAddressType = raw.queryAddressType || raw.addressType || (looksRoadAddress(baseAddress) ? 'ROAD' : 'JIBUN');
-
-      var picked = {
-        jibunAddress: text(raw.jibunAddress || (queryAddressType === 'JIBUN' ? baseAddress : '')),
-        roadAddress: text(raw.roadAddress || (queryAddressType === 'ROAD' ? baseAddress : '')),
-        lookupAddress: text(raw.lookupAddress || baseAddress),
-        bcode: text(raw.bcode),
-        sido: text(raw.sido || admin.sido),
-        sigungu: text(raw.sigungu || admin.sigungu),
-        bname: text(raw.bname || admin.bname),
-        buildingName: text(raw.buildingName),
-        zonecode: text(raw.zonecode),
-        apartment: text(raw.apartment),
-        autoJibunAddress: text(raw.autoJibunAddress),
-        autoRoadAddress: text(raw.autoRoadAddress),
-        addressType: text(raw.addressType || queryAddressType)
-      };
-
+      setLoading(true, '공적자료 조회 중');
+      setStatus('', '');
       var params = { action:'fetchPublicPropertyBySearchResult' };
       Object.keys(picked).forEach(function(k){ params[k] = picked[k]; });
       params.queryAddress = picked.lookupAddress || picked.jibunAddress || picked.autoJibunAddress || picked.roadAddress || '';
-      params.queryAddressType = queryAddressType;
-
-      var data = await jsonpLookupCall(params);
-      if(!(data && data.ok)){
-        throw new Error((data && (data.error || data.message)) || '조회 실패');
-      }
-      lastLookupResult = data;
-      return data;
-    }
-
-
-        function jsonpLookupCall(params){
-      return new Promise(function(resolve, reject){
-        var cb = 'lookup_cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-        var script = document.createElement('script');
-        var done = false;
-        var timer = null;
-
-        function cleanup(){
-          try{ delete window[cb]; }catch(e){}
-          if(timer) clearTimeout(timer);
-          if(script.parentNode) script.parentNode.removeChild(script);
-        }
-
-        window[cb] = function(payload){
-          if(done) return;
-          done = true;
-          cleanup();
-          resolve(payload);
-        };
-
-        script.onerror = function(){
-          if(done) return;
-          done = true;
-          cleanup();
-          reject(new Error('JSONP 요청 실패'));
-        };
-
-        params = params || {};
-        params.callback = cb;
-        params._ts = Date.now();
-
-        var q = new URLSearchParams();
-        Object.keys(params).forEach(function(k){
-          q.set(k, params[k] == null ? '' : String(params[k]));
-        });
-
-        script.src = CONFIG.adminListUrl + '?' + q.toString();
-        document.body.appendChild(script);
-
-        timer = setTimeout(function(){
-          if(done) return;
-          done = true;
-          cleanup();
-          reject(new Error('JSONP 타임아웃'));
-        }, 15000);
-      });
-    }
-
-    function lookup(pickedArg){
-      var pickedValue = pickedArg || lookupPicked;
-      if(!pickedValue){
-        return openAddressSearch((selectedListing && selectedListing.address) || '').then(function(selectedPicked){
-          return lookup(selectedPicked);
-        });
-      }
-
-      lookupPicked = pickedValue;
-      setLoading(true, '공적자료 조회 중');
-      setStatus && setStatus('', '');
-
-      var params = { action:'fetchPublicPropertyBySearchResult' };
-      Object.keys(pickedValue).forEach(function(k){ params[k] = pickedValue[k]; });
-      params.queryAddress = pickedValue.lookupAddress || pickedValue.jibunAddress || pickedValue.autoJibunAddress || pickedValue.roadAddress || '';
-      params.queryAddressType = (pickedValue.jibunAddress || pickedValue.autoJibunAddress) ? 'JIBUN' : 'ROAD';
+      params.queryAddressType = (picked.jibunAddress || picked.autoJibunAddress) ? 'JIBUN' : 'ROAD';
 
       return jsonpLookupCall(params).then(function(res){
         if(!(res && res.ok)){
-          throw new Error((res && (res.error || res.message)) || '조회 실패 · 서버가 혼잡합니다. 다시 조회 버튼을 눌러주세요.');
+          var err = new Error((res && (res.error || res.message)) || '조회 실패 · 서버가 혼잡합니다. 다시 조회 버튼을 눌러주세요.');
+          setStatus('조회 실패 · 서버가 혼잡합니다. 다시 조회 버튼을 눌러주세요.', 'err');
+          if(pendingImageGenerationController){
+            pendingImageGenerationController.reject(err);
+            pendingImageGenerationController = null;
+          }
+          throw err;
         }
         lastLookupResult = res;
+        if(pendingImageGenerationController){
+          pendingImageGenerationController.resolve(res);
+          pendingImageGenerationController = null;
+        }
         return res;
+      }).catch(function(err){
+        if(!pendingImageGenerationController){
+          showToast((err && err.message) || '조회 실패 · 다시 버튼을 눌러주세요');
+        }
+        throw err;
       }).finally(function(){
         setLoading(false);
       });
     }
-
-    async function runLookupLikeOriginal_(){
-      return lookup();
-    }
-
 
 async function generateInfoImages(){
       if(!selectedListing){
@@ -2088,8 +1914,14 @@ async function generateInfoImages(){
 
       try{
         lastLookupResult = null;
-        lookupPicked = null;
-        await runLookupLikeOriginal_();
+        nextLookupInitialQuery = text((selectedListing.raw && (selectedListing.raw.lookupAddress || selectedListing.raw.jibunAddress || selectedListing.raw.roadAddress || selectedListing.raw.address)) || selectedListing.address || '');
+        picked = null;
+        addressLocked = false;
+
+        await new Promise(function(resolve, reject){
+          pendingImageGenerationController = { resolve: resolve, reject: reject };
+          lookup();
+        });
 
         setLoading(true, '주소 조회 후 이미지 생성 중');
         var built = await buildLookupGeneratedAssets(lastLookupResult);
@@ -2119,9 +1951,9 @@ async function generateInfoImages(){
         showToast('정보 이미지 추가');
       }catch(err){
         console.error(err);
-        if(err && err.message === '주소 선택 취소') return;
         showToast((err && err.message) || '조회 실패 · 다시 버튼을 눌러주세요');
       }finally{
+        pendingImageGenerationController = null;
         setLoading(false);
       }
     }

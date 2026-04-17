@@ -2143,22 +2143,13 @@
         var p = parts[i];
 
         if(/\d/.test(p)) break;
-        if(/^(지하|B\d+|\d+층|\d+호)$/i.test(p)) break;
-        if(/^(산)?\d+(?:-\d+)?(?:번지)?$/.test(p)) break;
 
         kept.push(p);
 
-        if(/[동가리로길]$/.test(p)) break;
+        if(/[동읍면가리로길]$/.test(p)) break;
       }
 
       var out = kept.join(' ').trim();
-
-      if(!out){
-        out = parts.slice(0, 3).filter(function(p){
-          return !/\d/.test(p);
-        }).join(' ').trim();
-      }
-
       return out || '-';
     }
 

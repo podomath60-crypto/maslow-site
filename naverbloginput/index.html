@@ -2909,7 +2909,7 @@ async function buildLookupGeneratedAssets(lookupResult){
       }
 
       closeAiCallModal();
-      setLoading(true, 'AI 호출 준비중');
+      setLoading(true, '초안 생성중');
 
       fetchPostJson(payload)
         .then(function(data){
@@ -2922,11 +2922,22 @@ async function buildLookupGeneratedAssets(lookupResult){
             throw new Error('blogId 없음');
           }
 
-          var moveUrl = buildEditorMoveUrl(blogId, directionText);
-          els.loadingText.textContent = 'AI 호출 중';
+          els.loadingText.textContent = 'GPT 호출 중';
 
-          return wait(5000).then(function(){
-            location.href = moveUrl;
+          return fetchPostJson({
+            action:'callBlogDraftAi',
+            blogId: blogId
+          }).then(function(aiData){
+            if(!aiData || aiData.ok === false){
+              throw new Error((aiData && aiData.message) || 'GPT 호출 실패');
+            }
+
+            var moveUrl = buildEditorMoveUrl(blogId, directionText);
+            els.loadingText.textContent = '에디터로 이동 중';
+
+            return wait(5000).then(function(){
+              location.href = moveUrl;
+            });
           });
         })
         .catch(function(err){

@@ -2144,6 +2144,7 @@
 
         if(/\d/.test(p)) break;
         if(/^(산)?\d+(?:-\d+)?(?:번지)?$/.test(p)) break;
+        if(/^(지하|B\d+|\d+층|\d+호)$/i.test(p)) break;
 
         kept.push(p);
 
@@ -2152,6 +2153,13 @@
       }
 
       var out = kept.join(' ').trim();
+
+      if(!out){
+        out = parts.filter(function(p){
+          return !/\d/.test(p);
+        }).slice(0, 3).join(' ').trim();
+      }
+
       return out || '-';
     }
 

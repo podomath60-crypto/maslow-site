@@ -2909,7 +2909,7 @@ async function buildLookupGeneratedAssets(lookupResult){
       }
 
       closeAiCallModal();
-      setLoading(true, '이미지 저장 및 AI 준비중');
+      setLoading(true, 'AI 호출 준비중');
 
       fetchPostJson(payload)
         .then(function(data){
@@ -2923,20 +2923,11 @@ async function buildLookupGeneratedAssets(lookupResult){
           }
 
           var moveUrl = buildEditorMoveUrl(blogId, directionText);
-          els.loadingText.textContent = '사진 정리중...';
-          return wait(1700)
-            .then(function(){
-              els.loadingText.textContent = '기본정보 이미지 저장중...';
-              return wait(1600);
-            })
-            .then(function(){
-              els.loadingText.textContent = '저장 마무리중...';
-              return wait(1700);
-            })
-            .then(function(){
-              setLoading(false);
-              showToast('저장 완료');
-            });
+          els.loadingText.textContent = 'AI 호출 중';
+
+          return wait(5000).then(function(){
+            location.href = moveUrl;
+          });
         })
         .catch(function(err){
           console.error(err);

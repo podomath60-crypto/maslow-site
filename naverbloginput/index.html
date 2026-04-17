@@ -2691,6 +2691,139 @@
       };
     }
 
+    function wait(ms){
+      return new Promise(function(resolve){
+        setTimeout(resolve, ms);
+      });
+    }
+
+    function maskAddressForBlog(address){
+      var s = text(address);
+      if(!s) return '';
+      return s.replace(/(\d+)(-\d+)?$/,'').trim();
+    }
+
+    function buildAssetType(item){
+      if(item && item.source && item.source.kind === 'generated_from_lookup') return 'basic_info';
+      return 'photo';
+    }
+
+    function buildAssetSource(item){
+      if(item && item.source && item.source.kind) return item.source.kind;
+      return 'property_photo';
+    }
+
+    function buildSelectedAssetsForPayload(){
+      return assets
+        .filter(function(item){ return !!item.selected; })
+        .map(function(item, idx){
+          var sourceObj = (item && item.source && typeof item.source === 'object') ? item.source : {};
+          return {
+            assetId: text(item.assetId || ('asset_' + idx)),
+            selected: !!item.selected,
+            isHero: !!item.isHero,
+            paragraph: text(item.paragraph || 'p1'),
+            assetType: buildAssetType(item),
+            assetSource: buildAssetSource(item),
+            previewUrl: text(item.previewUrl || ''),
+            originalUrl: text(
+              sourceObj.originalUrl ||
+              sourceObj.url ||
+              sourceObj.heroUrl ||
+              sourceObj.lightUrl ||
+              sourceObj.thumbUrl ||
+              item.previewUrl ||
+              ''
+            ),
+            fileId: text(sourceObj.fileId || ''),
+            fileName: text(sourceObj.fileName || sourceObj.name || ''),
+            mimeType: text(sourceObj.mimeType || ''),
+            kind: text(sourceObj.kind || '')
+          };
+        });
+    }
+
+    function buildCreateBlogDraftPayload(){
+      if(!selectedListing){
+        throw new Error('먼저 매물을 선택해주세요.');
+      }
+
+      var directionText = text(els.aiDirectionInput && els.aiDirectionInput.value);
+      var selectedAssets = buildSelectedAssetsForPayload();
+      var hero = selectedAssets.find(function(item){ return !!item.isHero; });
+
+      if(!selectedAssets.length){
+        throw new Error('선택된 이미지가 없습니다.');
+      }
+      if(!hero){
+        throw new Error('대표 이미지가 없습니다.');
+      }
+
+      var assetOrder = selectedAssets.map(function(item){ return item.assetId; });
+      var selectedAssetIds = selectedAssets.map(function(item){ return item.assetId; });
+      var assetParagraphMap = {};
+      var assetTypeMap = {};
+      var assetSourceMap = {};
+
+      selectedAssets.forEach(function(item){
+        assetParagraphMap[item.assetId] = item.paragraph || 'p1';
+        assetTypeMap[item.assetId] = item.assetType || 'photo';
+        assetSourceMap[item.assetId] = item.assetSource || 'property_photo';
+      });
+
+      return {
+        action:'createBlogDraft',
+        blogDraft:{
+          listingNumber: text(selectedListing.listingNumber),
+          selectedDate: text(selectedDate || ''),
+          searchKeyword: text(els.searchInput && els.searchInput.value),
+          styleType: text(selectedAiStyle || '깔끔형'),
+          directionText: directionText,
+          status: 'asset_pending',
+          subStatus: 'init',
+          userAgent: navigator.userAgent || ''
+        },
+        listingSnapshot: Object.assign({}, selectedListing.raw || {}, {
+          listingNumber: text(selectedListing.listingNumber),
+          title: text(selectedListing.title),
+          address: text(selectedListing.address),
+          addressMasked: maskAddressForBlog(selectedListing.address),
+          dealType: text(selectedListing.dealType),
+          price: text(selectedListing.price),
+          deposit: text(selectedListing.deposit),
+          monthlyRent: text(selectedListing.monthlyRent),
+          pageUrl: text(selectedListing.raw && selectedListing.raw.pageUrl)
+        }),
+        assetBundle:{
+          sourceFolderHint:{
+            listingNumber: text(selectedListing.listingNumber)
+          },
+          basicInfoFolderName:'basic info',
+          blogAssetsFolderName:'blog assets',
+          heroAssetId: text(hero.assetId),
+          selectedAssetIds: selectedAssetIds,
+          assetOrder: assetOrder,
+          assetParagraphMap: assetParagraphMap,
+          assetTypeMap: assetTypeMap,
+          assetSourceMap: assetSourceMap,
+          assets: selectedAssets
+        },
+        clientMeta:{
+          createdFrom:'blog_publisher',
+          pageUrl: location.href,
+          viewportWidth: window.innerWidth || 0,
+          viewportHeight: window.innerHeight || 0
+        }
+      };
+    }
+
+    function buildEditorMoveUrl(blogId, directionText){
+      return CONFIG.editorUrl
+        + '?blogId=' + encodeURIComponent(blogId)
+        + '&style=' + encodeURIComponent(text(selectedAiStyle || '깔끔형'))
+        + '&direction=' + encodeURIComponent(text(directionText || ''));
+    }
+
     function saveDraft(){
       if(!selectedListing){
         showToast('먼저 매물 선택');
@@ -2738,32 +2871,50 @@
 
     function submitAiCall(){
       var directionText = text(els.aiDirectionInput && els.aiDirectionInput.value);
-      closeAiCallModal();
-      setLoading(true, 'AI 호출 중');
-      fetchPostJson({
-        action:'saveBlogDraft',
-        payload: collectDraftPayload()
-      })
-      .then(function(data){
-        if(!data || data.ok === false){
-          throw new Error((data && data.message) || '초안 저장 실패');
-        }
-        const blogId = text(data.blogId);
-        if(!blogId){
-          throw new Error('blogId 없음');
-        }
-        location.href = CONFIG.editorUrl
-          + '?blogId=' + encodeURIComponent(blogId)
-          + '&style=' + encodeURIComponent(selectedAiStyle)
-          + '&direction=' + encodeURIComponent(directionText);
-      })
-      .catch(function(err){
+      var payload = null;
+
+      try{
+        payload = buildCreateBlogDraftPayload();
+      }catch(err){
         console.error(err);
-        showToast((err && err.message) || 'AI 호출 실패');
-      })
-      .finally(function(){
-        setLoading(false);
-      });
+        showToast((err && err.message) || '페이로드 생성 실패');
+        return;
+      }
+
+      closeAiCallModal();
+      setLoading(true, '이미지 저장 및 AI 준비중');
+
+      fetchPostJson(payload)
+        .then(function(data){
+          if(!data || data.ok === false){
+            throw new Error((data && data.message) || '초안 생성 실패');
+          }
+
+          var blogId = text(data.blogId);
+          if(!blogId){
+            throw new Error('blogId 없음');
+          }
+
+          var moveUrl = buildEditorMoveUrl(blogId, directionText);
+          els.loadingText.textContent = '사진 정리중...';
+          return wait(1700)
+            .then(function(){
+              els.loadingText.textContent = '기본정보 이미지 저장중...';
+              return wait(1600);
+            })
+            .then(function(){
+              els.loadingText.textContent = '다음 화면으로 이동중...';
+              return wait(1700);
+            })
+            .then(function(){
+              location.href = moveUrl;
+            });
+        })
+        .catch(function(err){
+          console.error(err);
+          setLoading(false);
+          showToast((err && err.message) || 'AI 호출 실패');
+        });
     }
 
     function goRelativeDate(offset){

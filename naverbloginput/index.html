@@ -2930,11 +2930,12 @@ async function buildLookupGeneratedAssets(lookupResult){
               return wait(1600);
             })
             .then(function(){
-              els.loadingText.textContent = '다음 화면으로 이동중...';
+              els.loadingText.textContent = '저장 마무리중...';
               return wait(1700);
             })
             .then(function(){
-              location.href = moveUrl;
+              setLoading(false);
+              showToast('저장 완료');
             });
         })
         .catch(function(err){

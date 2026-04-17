@@ -433,10 +433,10 @@
       right:8px;
       width:24px;
       height:24px;
-      border-radius:8px;
-      background:#fff;
-      border:2px solid #0f7cff;
-      color:transparent;
+      border-radius:999px;
+      background:rgba(255,255,255,.96);
+      border:1px solid #dce6f1;
+      color:#b8c2cc;
       font-size:14px;
       font-weight:900;
       display:inline-flex;
@@ -1548,7 +1548,7 @@
           + '<div class="asset-card' + (item.isHero ? ' is-hero' : '') + (item.selected ? ' is-selected' : '') + '" data-asset-id="' + escapeAttr(item.assetId) + '">'
           + '  <div class="asset-preview" style="' + preview + '">'
           + '    <button type="button" class="asset-hero">대표</button>'
-          + '    <button type="button" class="asset-check" aria-label="선택">' + (item.selected ? '✓' : '') + '</button>'
+          + '    <button type="button" class="asset-check">' + (item.selected ? '✓' : '') + '</button>'
           + '  </div>'
           + '  <div class="asset-body">'
           + (isInfoAsset

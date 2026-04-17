@@ -2134,40 +2134,41 @@
     function maskInfoImageAddress_(value){
       var s = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
       if(!s) return '-';
-      s = s.replace(/\s산?\d+(?:-\d+)?(?:번지)?$/, '').trim();
-      return s || '-';
+
+      var parts = s.split(' ').filter(Boolean);
+      if(!parts.length) return '-';
+
+      var kept = [];
+      for(var i = 0; i < parts.length; i++){
+        var p = parts[i];
+
+        if(/\d/.test(p)) break;
+        if(/^(지하|B\d+|\d+층|\d+호)$/i.test(p)) break;
+        if(/^(산)?\d+(?:-\d+)?(?:번지)?$/.test(p)) break;
+
+        kept.push(p);
+
+        if(/[동가리로길]$/.test(p)) break;
+      }
+
+      var out = kept.join(' ').trim();
+
+      if(!out){
+        out = parts.slice(0, 3).filter(function(p){
+          return !/\d/.test(p);
+        }).join(' ').trim();
+      }
+
+      return out || '-';
     }
 
     function sanitizeInfoRowsForImage_(rows){
-      function trimAddressForImage(value){
-        var s = String(value == null ? '' : value).trim();
-        if(!s) return '';
-
-        var parts = s.split(/\s+/).filter(Boolean);
-        if(!parts.length) return s;
-
-        var kept = [];
-        for(var i = 0; i < parts.length; i++){
-          var p = parts[i];
-
-          if(/\d/.test(p)) break;
-
-          kept.push(p);
-
-          if(/[동가리로]$/.test(p)) break;
-        }
-
-        return kept.join(' ').trim() || s;
-      }
-
       return (rows || []).map(function(row){
         var label = String((row && row[0]) == null ? '' : row[0]).trim();
         var value = (row && row[1]) == null ? '' : row[1];
-
         if(label === '주소' || label === '도로명주소'){
-          value = trimAddressForImage(value);
+          return [label, maskInfoImageAddress_(value)];
         }
-
         return [label, value];
       });
     }
@@ -2175,76 +2176,103 @@
     function drawInfoRowsToBlob(title, rows){
       return new Promise(function(resolve, reject){
         try{
-          function splitLines(ctx, value, maxWidth){
-            var raw = String(value == null ? '' : value).split('\n');
+          function splitLines(ctx, text, maxWidth){
+            var raw = String(text == null ? '' : text).split('\n');
             var lines = [];
             raw.forEach(function(block){
-              var words = block.split(/\s+/).filter(Boolean);
-              if(!words.length){
-                lines.push('');
-                return;
-              }
+              var words = block.split(' ');
               var line = '';
-              words.forEach(function(word){
-                var test = line ? (line + ' ' + word) : word;
+              for(var i=0;i<words.length;i++){
+                var test = line ? (line + ' ' + words[i]) : words[i];
                 if(ctx.measureText(test).width <= maxWidth){
                   line = test;
                 }else{
                   if(line) lines.push(line);
-                  line = word;
+                  line = words[i];
+                  while(ctx.measureText(line).width > maxWidth && line.length > 1){
+                    var cut = line.length - 1;
+                    while(cut > 1 && ctx.measureText(line.slice(0, cut)).width > maxWidth) cut--;
+                    lines.push(line.slice(0, cut));
+                    line = line.slice(cut);
+                  }
                 }
-              });
-              if(line) lines.push(line);
+              }
+              lines.push(line || '');
             });
             return lines.length ? lines : [''];
           }
+          function roundRect(ctx, x, y, w, h, r){
+            var radius = Math.min(r, w/2, h/2);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.arcTo(x + w, y, x + w, y + h, radius);
+            ctx.arcTo(x + w, y + h, x, y + h, radius);
+            ctx.arcTo(x, y + h, x, y, radius);
+            ctx.arcTo(x, y, x + w, y, radius);
+            ctx.closePath();
+          }
 
-          var canvas = document.createElement('canvas');
-          var ctx = canvas.getContext('2d');
+          var safeRows = sanitizeInfoRowsForImage_(rows);
+          var dpr = 2;
+          var paddingLeft = 20, paddingRight = 12, paddingTop = 20, paddingBottom = 18, titleH = 58, labelW = 132;
+          var probe = document.createElement('canvas');
+          var pctx = probe.getContext('2d');
 
-          var safeRows = Array.isArray(rows) ? rows.filter(function(row){
-            return Array.isArray(row) && (text(row[0]) || text(row[1]));
-          }) : [];
-
-          var paddingLeft = 30;
-          var paddingRight = 30;
-          var paddingTop = 34;
-          var paddingBottom = 34;
-          var titleH = 52;
-          var tableW = 740;
-          var labelW = 210;
-          var valueW = tableW - labelW;
-          var xLabel = paddingLeft;
-          var xValue = paddingLeft + labelW;
-
-          canvas.width = paddingLeft + tableW + paddingRight;
-          canvas.height = 200;
-
-          ctx.font = '900 20px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
-
-          var rowHeights = safeRows.map(function(row){
-            var lines = splitLines(ctx, row[1], valueW - 24);
-            return Math.max(54, 28 + lines.length * 24);
+          pctx.font = '900 17px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
+          safeRows.forEach(function(row){
+            labelW = Math.max(labelW, Math.ceil(pctx.measureText(String(row[0] || '')).width) + 26);
           });
 
-          var totalRowsHeight = rowHeights.reduce(function(acc, h){ return acc + h; }, 0);
-          canvas.height = paddingTop + titleH + totalRowsHeight + paddingBottom;
+          pctx.font = '900 20px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
+          var valueW = 220;
+          safeRows.forEach(function(row){
+            String(row[1] == null ? '' : row[1]).split('\n').forEach(function(line){
+              valueW = Math.max(valueW, Math.ceil(pctx.measureText(line).width) + 34);
+            });
+          });
+          valueW = Math.min(valueW, 540);
 
+          var rowHeights = [];
+          safeRows.forEach(function(row){
+            var lines = splitLines(pctx, row[1], valueW - 24);
+            rowHeights.push(Math.max(52, 18 + Math.max(1, lines.length) * 24));
+          });
+
+          var tableW = labelW + valueW;
+          var fullW = paddingLeft + tableW + paddingRight;
+          var fullH = paddingTop + titleH + rowHeights.reduce(function(a,b){ return a+b; }, 0) + paddingBottom;
+
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.ceil(fullW * dpr);
+          canvas.height = Math.ceil(fullH * dpr);
+          var ctx = canvas.getContext('2d');
+          ctx.scale(dpr, dpr);
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillRect(0, 0, fullW, fullH);
+
+          ctx.strokeStyle = '#dfe7f3';
+          ctx.lineWidth = 1;
+          roundRect(ctx, 0.5, 0.5, fullW - 1, fullH - 1, 14);
+          ctx.stroke();
+
+          ctx.fillStyle = '#f8fbff';
+          roundRect(ctx, 0.5, 0.5, fullW - 1, titleH + 10, 14);
+          ctx.fillRect(1, titleH, fullW - 2, 10);
+          ctx.fill();
 
           ctx.fillStyle = '#111827';
-          ctx.font = '900 26px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
-          ctx.textBaseline = 'top';
-          ctx.fillText(String(title || ''), paddingLeft, paddingTop - 4);
+          ctx.font = '900 24px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(title || '부동산 기본정보', paddingLeft, paddingTop + titleH / 2 - 2);
 
           var startY = paddingTop + titleH;
+          var xLabel = paddingLeft;
+          var xValue = paddingLeft + labelW;
 
           for(var i=0;i<safeRows.length;i++){
             var row = safeRows[i];
             var rh = rowHeights[i];
             var y = startY;
-
             ctx.fillStyle = '#f8fbff';
             ctx.fillRect(xLabel, y, labelW, rh);
 
@@ -2266,7 +2294,6 @@
               ctx.fillText(String(line || ''), xValue + 14, textY);
               textY += 24;
             });
-
             startY += rh;
           }
 
@@ -2279,54 +2306,32 @@
           canvas.toBlob(function(blob){
             if(!blob) reject(new Error('이미지 생성 실패'));
             else resolve(blob);
-          }, 'image/jpeg', 0.92);
-        }catch(err){
-          reject(err);
-        }
-      });
-    }
-
-    function blobToDataUrl(blob){
-      return new Promise(function(resolve, reject){
-        try{
-          var reader = new FileReader();
-          reader.onloadend = function(){
-            resolve(reader.result || '');
-          };
-          reader.onerror = function(){
-            reject(new Error('dataURL 변환 실패'));
-          };
-          reader.readAsDataURL(blob);
-        }catch(err){
+          }, 'image/png');
+        } catch (err){
           reject(err);
         }
       });
     }
 
     async function buildLookupGeneratedAssets(lookupResult){
-      return new Promise(async function(resolve, reject){
-        try{
-          var extracted = extractLookupImageRows(lookupResult);
-          var defs = [];
-          if((extracted.summaryRows || []).length){
-            defs.push({ title: '부동산 기본정보', rows: extracted.summaryRows });
-          }
-          defs = defs.concat((extracted.buildings || []).map(function(b){ return { title: b.title, rows: b.rows }; }));
+      var extracted = extractLookupImageRows(lookupResult);
+      var defs = [];
+      if((extracted.summaryRows || []).length){
+        defs.push({ title: '부동산 기본정보', rows: extracted.summaryRows });
+      }
+      defs = defs.concat((extracted.buildings || []).map(function(b){ return { title: b.title, rows: b.rows }; }));
 
-          var out = [];
-          for(var i=0;i<defs.length;i++){
-            var blob = await drawInfoRowsToBlob(defs[i].title, defs[i].rows);
-            var dataUrl = await blobToDataUrl(blob);
-            out.push({
-              title: defs[i].title,
-              url: dataUrl
-            });
-          }
-          resolve(out);
-        }catch(err){
-          reject(err);
-        }
-      });
+      var out = [];
+      for(var i=0;i<defs.length;i++){
+        var blob = await drawInfoRowsToBlob(defs[i].title, defs[i].rows);
+        var url = URL.createObjectURL(blob);
+        out.push({
+          title: defs[i].title,
+          url: url,
+          blob: blob
+        });
+      }
+      return out;
     }
 
     function runLookup(){
@@ -2737,15 +2742,13 @@
         .filter(function(item){ return !!item.selected; })
         .map(function(item, idx){
           var sourceObj = (item && item.source && typeof item.source === 'object') ? item.source : {};
-          var assetType = buildAssetType(item);
-          var assetSource = buildAssetSource(item);
           return {
             assetId: text(item.assetId || ('asset_' + idx)),
             selected: !!item.selected,
             isHero: !!item.isHero,
             paragraph: text(item.paragraph || 'p1'),
-            assetType: assetType,
-            assetSource: assetSource,
+            assetType: buildAssetType(item),
+            assetSource: buildAssetSource(item),
             previewUrl: text(item.previewUrl || ''),
             originalUrl: text(
               sourceObj.originalUrl ||
@@ -2758,7 +2761,7 @@
             ),
             fileId: text(sourceObj.fileId || ''),
             fileName: text(sourceObj.fileName || sourceObj.name || ''),
-            mimeType: text(sourceObj.mimeType || (assetSource === 'generated_from_lookup' ? 'image/jpeg' : '')),
+            mimeType: text(sourceObj.mimeType || ''),
             kind: text(sourceObj.kind || '')
           };
         });

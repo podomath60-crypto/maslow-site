@@ -6,224 +6,214 @@
   <title>블로그 에디터</title>
   <style>
     :root{
-      --bg:#f7f9fc;
-      --card:#ffffff;
-      --line:#e4ebf3;
-      --text:#101318;
-      --muted:#6f7a86;
+      --bg:#f5f7fb;
+      --paper:#ffffff;
+      --ink:#16181d;
+      --muted:#6b7280;
+      --line:#e7ecf2;
       --blue:#0f7cff;
       --blue-soft:#eef5ff;
-      --green:#1dbf73;
-      --shadow:0 16px 34px rgba(15,23,42,.07);
-      --radius:24px;
+      --shadow:0 18px 38px rgba(15,23,42,.08);
+      --page:920px;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif}
     body{min-width:0}
     button,input,textarea{font:inherit}
     button{cursor:pointer;border:none;background:none}
-    textarea,input{outline:none}
-    .page{min-height:100vh;padding:18px}
-    .shell{max-width:1320px;margin:0 auto}
+    input,textarea{outline:none}
+    .page{min-height:100vh;padding:0 0 72px}
     .topbar{
-      position:sticky;top:0;z-index:20;
-      display:flex;align-items:center;justify-content:space-between;gap:12px;
-      padding:14px 0 16px;margin-bottom:16px;
-      background:linear-gradient(180deg, rgba(247,249,252,.98) 0%, rgba(247,249,252,.92) 85%, rgba(247,249,252,0) 100%);
-      backdrop-filter:blur(10px);
+      position:sticky;top:0;z-index:40;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:12px 16px;
+      background:rgba(245,247,251,.9);
+      backdrop-filter:blur(12px);
+      border-bottom:1px solid rgba(231,236,242,.9);
     }
     .top-left,.top-right{display:flex;align-items:center;gap:10px;min-width:0}
-    .page-title-wrap{min-width:0}
-    .page-title{font-size:24px;font-weight:900;letter-spacing:-0.04em;line-height:1.2}
-    .page-sub{margin-top:4px;font-size:12px;color:var(--muted);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56vw}
-    .btn{min-height:46px;padding:0 16px;border-radius:16px;border:1px solid var(--line);background:#fff;color:var(--text);font-size:14px;font-weight:900;letter-spacing:-0.03em;box-shadow:0 8px 20px rgba(15,23,42,.04)}
+    .btn{
+      min-height:42px;padding:0 14px;border-radius:14px;border:1px solid var(--line);
+      background:#fff;color:var(--ink);font-size:14px;font-weight:900;letter-spacing:-0.03em;
+      box-shadow:0 8px 20px rgba(15,23,42,.04)
+    }
     .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
-    .btn.green{background:var(--green);border-color:var(--green);color:#fff}
-    .chip{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid #cfe0ff;background:var(--blue-soft);color:var(--blue);font-size:12px;font-weight:900}
-    .layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(320px,.9fr);gap:16px;align-items:start}
-    .left-col,.right-col{display:grid;gap:16px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;min-width:0}
-    .card-title{margin:0 0 14px;font-size:18px;font-weight:900;letter-spacing:-0.04em}
-    .muted{color:var(--muted)}
-    .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-    .summary-item{padding:12px 14px;border-radius:18px;background:#fbfcff;border:1px solid #edf2f7;min-width:0}
-    .summary-label{font-size:11px;font-weight:900;color:#7b8794;margin-bottom:6px}
-    .summary-value{font-size:14px;line-height:1.5;font-weight:800;word-break:keep-all}
-    .summary-list{display:grid;gap:8px;margin-top:12px}
-    .summary-bullet{padding:10px 12px;border-radius:16px;background:#fbfcff;border:1px solid #edf2f7;font-size:14px;font-weight:800;line-height:1.6}
-    .field{display:grid;gap:8px}
-    .field + .field{margin-top:14px}
-    .label{font-size:13px;font-weight:900;color:#1b2027;letter-spacing:-0.03em}
-    .input,.textarea{
-      width:100%;border:1px solid #dce6f1;background:#fff;border-radius:18px;padding:14px 16px;color:var(--text);
-      font-size:15px;font-weight:700;line-height:1.6;
+    .chip{
+      display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 12px;
+      border-radius:999px;background:var(--blue-soft);border:1px solid #cfe2ff;color:var(--blue);
+      font-size:12px;font-weight:900;white-space:nowrap
     }
-    .input.title{font-size:22px;font-weight:900;letter-spacing:-0.04em}
-    .textarea{resize:vertical;min-height:240px}
-    .textarea.body{min-height:520px}
-    .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-    .tiny-btn{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid #dce6f1;background:#fff;color:#111;font-size:12px;font-weight:900}
-    .assets-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .asset{border:1px solid #e5ecf3;border-radius:20px;background:#fff;overflow:hidden}
-    .asset-thumb{width:100%;aspect-ratio:1/.82;background:#eef3f8 center/cover no-repeat;border-bottom:1px solid #edf2f7}
-    .asset-body{padding:10px 12px;display:grid;gap:6px}
-    .asset-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-    .asset-badge{display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:999px;background:#f3f6fb;border:1px solid #dce6f1;font-size:11px;font-weight:900;color:#55606c}
-    .asset-badge.hero{background:#e7f7eb;border-color:#b9e7c9;color:#177d4d}
-    .asset-text{font-size:12px;font-weight:800;color:#59636f}
-    .tag-box{display:flex;flex-wrap:wrap;gap:8px;padding:12px;border-radius:18px;border:1px solid #dce6f1;background:#fff;min-height:58px}
-    .tag{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:0 12px;border-radius:999px;background:#eef5ff;border:1px solid #cfe2ff;color:#0f7cff;font-size:13px;font-weight:900}
-    .tag-x{font-size:15px;line-height:1;color:#5d84d6;cursor:pointer}
-    .tag-input-row{display:flex;gap:8px;margin-top:10px}
-    .tag-input-row .input{padding:12px 14px;min-height:44px}
-    .rows2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .status-box{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    .status-text{font-size:13px;color:var(--muted);font-weight:800}
-    .empty-assets{padding:26px 16px;border-radius:20px;border:1px dashed #d6e1ec;background:#fbfcff;text-align:center;font-size:14px;font-weight:800;color:#7b8794}
-    .loading-overlay{
-      position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
-      background:rgba(255,255,255,.72);backdrop-filter:blur(3px);padding:24px;
+    .shell{max-width:var(--page);margin:0 auto;padding:18px 14px 0}
+    .paper{
+      background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;overflow:hidden;
     }
+    .hero{background:#eef2f7;aspect-ratio:16/9;background-position:center;background-size:cover}
+    .hero.empty{display:flex;align-items:center;justify-content:center;color:#8b95a1;font-size:15px;font-weight:800}
+    .article{padding:26px 22px 34px}
+    .meta-line{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;color:#7a8491;font-size:13px;font-weight:800}
+    .meta-pill{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;background:#f7f9fc;border:1px solid #e8edf4}
+    .title{margin:0;font-size:38px;line-height:1.24;font-weight:950;letter-spacing:-0.05em;word-break:keep-all}
+    .lead{margin:16px 0 0;font-size:20px;line-height:1.85;color:#2f3742;font-weight:700;word-break:keep-all}
+    .lead.is-empty{color:#98a1ad}
+    .divider{height:1px;background:var(--line);margin:28px 0}
+    .block{margin:0 0 34px}
+    .section-title{margin:0 0 14px;font-size:28px;line-height:1.34;font-weight:900;letter-spacing:-0.04em;word-break:keep-all}
+    .paragraphs{display:grid;gap:18px}
+    .paragraph{
+      margin:0;font-size:19px;line-height:2.02;color:#2e3741;font-weight:500;word-break:keep-all;
+    }
+    .paragraph.is-empty{color:#98a1ad}
+    .figure{margin:22px 0 26px}
+    .figure img{width:100%;display:block;border-radius:22px;border:1px solid #ebeff5;background:#f0f4f8}
+    .figcap{margin-top:8px;font-size:12px;color:#85909d;font-weight:800}
+    .info-strip{margin:30px 0;padding:18px 18px;border-radius:22px;background:#fbfcff;border:1px solid #e9eef5}
+    .info-strip-title{font-size:15px;font-weight:900;margin:0 0 10px;color:#1d2430}
+    .thumb-lines{display:grid;gap:8px}
+    .thumb-line{font-size:16px;font-weight:800;color:#334155}
+    .cta{margin-top:40px;padding:24px;border-radius:24px;background:#fbfcff;border:1px solid #e9eef5}
+    .cta-title{margin:0 0 8px;font-size:22px;font-weight:900;letter-spacing:-0.04em}
+    .cta-text{margin:0;font-size:16px;line-height:1.75;color:#475161;font-weight:700}
+    .hashtags{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px}
+    .tag{display:inline-flex;align-items:center;min-height:34px;padding:0 12px;border-radius:999px;background:#eef5ff;border:1px solid #d5e6ff;color:#2369d9;font-size:13px;font-weight:900}
+    .footer-note{margin-top:28px;font-size:12px;color:#9aa3af;font-weight:800}
+
+    .editbox{display:none;margin-top:10px}
+    .editbox.show{display:block}
+    .textarea,.input{
+      width:100%;padding:14px 15px;border-radius:18px;border:1px solid #dce5ef;background:#fff;color:var(--ink);
+      font-size:15px;line-height:1.7;font-weight:700
+    }
+    .textarea{min-height:140px;resize:vertical}
+    .mini-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+    .mini-btn{min-height:38px;padding:0 12px;border-radius:12px;border:1px solid #dce5ef;background:#fff;color:var(--ink);font-size:13px;font-weight:900}
+    .mini-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+    .touch-hint{margin-top:8px;font-size:12px;color:#97a1ae;font-weight:800}
+    .editable{cursor:pointer}
+    .editable:hover{opacity:.95}
+
+    .floating-tools{
+      position:fixed;right:18px;bottom:18px;z-index:35;display:flex;flex-direction:column;gap:10px;
+    }
+    .fab{min-width:52px;min-height:52px;padding:0 14px;border-radius:16px;background:#fff;border:1px solid var(--line);box-shadow:0 14px 28px rgba(15,23,42,.1);font-size:13px;font-weight:900;color:#1a202c}
+
+    .loading-overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.74);backdrop-filter:blur(3px);padding:24px}
     .loading-overlay.show{display:flex}
     .loading-panel{display:grid;gap:12px;justify-items:center;text-align:center}
-    .spinner{width:66px;height:66px;border-radius:999px;border:5px solid #dbe8ff;border-top-color:#0f7cff;animation:spin 1s linear infinite}
+    .spinner{width:66px;height:66px;border-radius:999px;border:5px solid #dae8ff;border-top-color:#0f7cff;animation:spin 1s linear infinite}
     .loading-text{font-size:18px;font-weight:900;color:#257fe3;letter-spacing:-0.03em}
     @keyframes spin{to{transform:rotate(360deg)}}
-    .toast{
-      position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:120;
-      min-width:190px;max-width:calc(100% - 36px);padding:13px 16px;border-radius:14px;
-      background:rgba(17,24,39,.92);color:#fff;font-size:14px;font-weight:800;line-height:1.45;text-align:center;
-      opacity:0;pointer-events:none;transition:opacity .18s ease;
-    }
+    .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:120;min-width:180px;max-width:calc(100% - 40px);padding:13px 16px;border-radius:14px;background:rgba(17,24,39,.92);color:#fff;font-size:14px;font-weight:800;line-height:1.45;text-align:center;opacity:0;pointer-events:none;transition:opacity .18s ease}
     .toast.show{opacity:1}
-    @media (max-width:980px){
-      .layout{grid-template-columns:1fr}
-      .page{padding:14px}
+
+    @media (max-width: 900px){
+      .title{font-size:31px}
+      .lead{font-size:18px;line-height:1.9}
+      .section-title{font-size:24px}
+      .paragraph{font-size:17px;line-height:1.92}
+      .article{padding:20px 16px 28px}
+      .shell{padding:12px 10px 0}
       .topbar{flex-wrap:wrap;align-items:flex-start}
       .top-right{width:100%;justify-content:flex-end;flex-wrap:wrap}
-      .page-sub{max-width:100%}
-      .summary-grid,.rows2,.assets-grid{grid-template-columns:1fr}
-      .input.title{font-size:20px}
-      .textarea.body{min-height:360px}
+      .floating-tools{right:12px;bottom:14px}
     }
   </style>
 </head>
 <body>
   <div class="page">
+    <div class="topbar">
+      <div class="top-left">
+        <button type="button" class="btn" id="backBtn">← 뒤로</button>
+        <div class="chip" id="statusChip">초안 로딩중</div>
+      </div>
+      <div class="top-right">
+        <button type="button" class="btn" id="saveBtn">임시저장</button>
+        <button type="button" class="btn primary" id="publishBtn">발행준비</button>
+      </div>
+    </div>
+
     <div class="shell">
-      <div class="topbar">
-        <div class="top-left">
-          <button type="button" class="btn" id="backBtn">← 뒤로</button>
-          <div class="page-title-wrap">
-            <div class="page-title">블로그 에디터</div>
-            <div class="page-sub" id="pageSub">blogId를 불러오는 중입니다.</div>
+      <article class="paper">
+        <div class="hero empty" id="heroBox">대표 이미지 없음</div>
+        <div class="article">
+          <div class="meta-line">
+            <span class="meta-pill" id="metaListing">매물번호 -</span>
+            <span class="meta-pill" id="metaStatus">상태 -</span>
+            <span class="meta-pill" id="metaStyle">스타일 -</span>
           </div>
+
+          <h1 class="title editable" id="titleDisplay">제목을 불러오는 중입니다.</h1>
+          <div class="editbox" id="titleEditBox">
+            <input type="text" class="input" id="titleInput" placeholder="제목 입력" />
+            <div class="mini-actions">
+              <button type="button" class="mini-btn" id="titleCancelBtn">취소</button>
+              <button type="button" class="mini-btn primary" id="titleSaveBtn">저장</button>
+            </div>
+          </div>
+
+          <p class="lead editable" id="leadDisplay">도입 문구를 불러오는 중입니다.</p>
+          <div class="editbox" id="leadEditBox">
+            <textarea class="textarea" id="leadInput" placeholder="도입 문구"></textarea>
+            <div class="mini-actions">
+              <button type="button" class="mini-btn" id="leadCancelBtn">취소</button>
+              <button type="button" class="mini-btn primary" id="leadSaveBtn">저장</button>
+            </div>
+          </div>
+
+          <div class="touch-hint">제목이나 문단을 터치하면 바로 수정할 수 있습니다.</div>
+
+          <div class="divider"></div>
+
+          <section class="block">
+            <h2 class="section-title">매물 개요</h2>
+            <div class="paragraphs" id="overviewParagraphs"></div>
+          </section>
+
+          <div class="figure" id="heroFigure" style="display:none;">
+            <img id="heroFigureImg" alt="대표 이미지" />
+            <div class="figcap">대표 이미지</div>
+          </div>
+
+          <section class="block">
+            <h2 class="section-title">상세 설명</h2>
+            <div class="paragraphs" id="bodyParagraphs"></div>
+          </section>
+
+          <div id="imageBlocks"></div>
+
+          <div class="info-strip" id="thumbStrip" style="display:none;">
+            <div class="info-strip-title">썸네일 문구</div>
+            <div class="thumb-lines" id="thumbLines"></div>
+          </div>
+
+          <section class="cta">
+            <h3 class="cta-title editable" id="ctaLabelDisplay">문의하기</h3>
+            <div class="editbox" id="ctaLabelEditBox">
+              <input type="text" class="input" id="ctaLabelInput" placeholder="CTA 라벨" />
+              <div class="mini-actions">
+                <button type="button" class="mini-btn" id="ctaLabelCancelBtn">취소</button>
+                <button type="button" class="mini-btn primary" id="ctaLabelSaveBtn">저장</button>
+              </div>
+            </div>
+
+            <p class="cta-text editable" id="ctaTextDisplay">문의 문구를 입력하세요.</p>
+            <div class="editbox" id="ctaTextEditBox">
+              <textarea class="textarea" id="ctaTextInput" placeholder="CTA 문구"></textarea>
+              <div class="mini-actions">
+                <button type="button" class="mini-btn" id="ctaTextCancelBtn">취소</button>
+                <button type="button" class="mini-btn primary" id="ctaTextSaveBtn">저장</button>
+              </div>
+            </div>
+          </section>
+
+          <div class="hashtags" id="tagWrap"></div>
+          <div class="footer-note" id="footerNote">blogId를 불러오는 중입니다.</div>
         </div>
-        <div class="top-right">
-          <div class="chip" id="statusChip">초안 로딩중</div>
-          <button type="button" class="btn" id="saveBtn">임시저장</button>
-          <button type="button" class="btn green" id="publishBtn">발행준비</button>
-        </div>
-      </div>
+      </article>
+    </div>
 
-      <div class="layout">
-        <div class="left-col">
-          <section class="card">
-            <h2 class="card-title">매물 요약</h2>
-            <div class="summary-grid">
-              <div class="summary-item"><div class="summary-label">매물번호</div><div class="summary-value" id="summaryListingNumber">-</div></div>
-              <div class="summary-item"><div class="summary-label">상태</div><div class="summary-value" id="summaryStatus">-</div></div>
-              <div class="summary-item"><div class="summary-label">주소</div><div class="summary-value" id="summaryAddress">-</div></div>
-              <div class="summary-item"><div class="summary-label">거래 / 가격</div><div class="summary-value" id="summaryDealPrice">-</div></div>
-              <div class="summary-item"><div class="summary-label">스타일</div><div class="summary-value" id="summaryStyle">-</div></div>
-              <div class="summary-item"><div class="summary-label">글방향</div><div class="summary-value" id="summaryDirection">-</div></div>
-            </div>
-            <div class="summary-list" id="summaryBullets"></div>
-          </section>
-
-          <section class="card">
-            <h2 class="card-title">제목 편집</h2>
-            <div class="field">
-              <div class="label">초안 제목</div>
-              <input id="draftTitleInput" class="input title" type="text" placeholder="초안 제목" />
-            </div>
-            <div class="field">
-              <div class="label">SEO 제목</div>
-              <input id="seoTitleInput" class="input" type="text" placeholder="SEO 제목" />
-            </div>
-          </section>
-
-          <section class="card">
-            <div class="status-box">
-              <h2 class="card-title" style="margin:0">본문 편집</h2>
-              <div class="toolbar">
-                <button type="button" class="tiny-btn" id="bodyToHtmlBtn">본문 → HTML 반영</button>
-                <button type="button" class="tiny-btn" id="restoreBodyBtn">원문 다시불러오기</button>
-              </div>
-            </div>
-            <div class="field">
-              <div class="label">본문 텍스트</div>
-              <textarea id="bodyTextInput" class="textarea body" placeholder="본문 텍스트"></textarea>
-            </div>
-            <div class="field">
-              <div class="label">HTML 본문</div>
-              <textarea id="bodyHtmlInput" class="textarea" placeholder="bodyHtml"></textarea>
-            </div>
-          </section>
-        </div>
-
-        <div class="right-col">
-          <section class="card">
-            <h2 class="card-title">선택 이미지</h2>
-            <div id="assetsBox" class="assets-grid"></div>
-          </section>
-
-          <section class="card">
-            <h2 class="card-title">해시태그</h2>
-            <div id="tagBox" class="tag-box"></div>
-            <div class="tag-input-row">
-              <input id="tagInput" class="input" type="text" placeholder="#태그 입력 후 엔터" />
-              <button type="button" class="btn" id="addTagBtn">추가</button>
-            </div>
-          </section>
-
-          <section class="card">
-            <h2 class="card-title">썸네일 / CTA</h2>
-            <div class="rows2">
-              <div class="field">
-                <div class="label">썸네일 문구 1</div>
-                <input id="thumb1" class="input" type="text" placeholder="썸네일 문구" />
-              </div>
-              <div class="field">
-                <div class="label">썸네일 문구 2</div>
-                <input id="thumb2" class="input" type="text" placeholder="썸네일 문구" />
-              </div>
-              <div class="field">
-                <div class="label">썸네일 문구 3</div>
-                <input id="thumb3" class="input" type="text" placeholder="썸네일 문구" />
-              </div>
-              <div class="field">
-                <div class="label">썸네일 문구 4</div>
-                <input id="thumb4" class="input" type="text" placeholder="썸네일 문구" />
-              </div>
-            </div>
-            <div class="field">
-              <div class="label">CTA 문구</div>
-              <input id="ctaTextInput" class="input" type="text" placeholder="문의 유도 문구" />
-            </div>
-            <div class="rows2">
-              <div class="field">
-                <div class="label">CTA 버튼 라벨</div>
-                <input id="ctaLabelInput" class="input" type="text" placeholder="문의하기" />
-              </div>
-              <div class="field">
-                <div class="label">CTA 설명</div>
-                <input id="ctaDescInput" class="input" type="text" placeholder="CTA 보조문구" />
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
+    <div class="floating-tools">
+      <button type="button" class="fab" id="bodyEditBtn">본문수정</button>
+      <button type="button" class="fab" id="tagEditBtn">태그수정</button>
     </div>
   </div>
 
@@ -238,84 +228,85 @@
   <script>
     const CONFIG = {
       adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec',
-      listUrl: '/naverbloginput',
-      statusUrl: '/blog-status'
+      listUrl: '/naverbloginput'
     };
 
     const state = {
       blogId: '',
-      style: '',
-      direction: '',
-      blog: null,
+      row: null,
+      original: null,
       tags: [],
-      originalBodyText: '',
-      originalBodyHtml: ''
+      thumbs: [],
+      cta: { label:'', text:'' },
+      bodyParagraphs: [],
+      overviewParagraphs: []
     };
 
     const els = {
-      pageSub: document.getElementById('pageSub'),
-      statusChip: document.getElementById('statusChip'),
       backBtn: document.getElementById('backBtn'),
       saveBtn: document.getElementById('saveBtn'),
       publishBtn: document.getElementById('publishBtn'),
-      summaryListingNumber: document.getElementById('summaryListingNumber'),
-      summaryStatus: document.getElementById('summaryStatus'),
-      summaryAddress: document.getElementById('summaryAddress'),
-      summaryDealPrice: document.getElementById('summaryDealPrice'),
-      summaryStyle: document.getElementById('summaryStyle'),
-      summaryDirection: document.getElementById('summaryDirection'),
-      summaryBullets: document.getElementById('summaryBullets'),
-      draftTitleInput: document.getElementById('draftTitleInput'),
-      seoTitleInput: document.getElementById('seoTitleInput'),
-      bodyTextInput: document.getElementById('bodyTextInput'),
-      bodyHtmlInput: document.getElementById('bodyHtmlInput'),
-      bodyToHtmlBtn: document.getElementById('bodyToHtmlBtn'),
-      restoreBodyBtn: document.getElementById('restoreBodyBtn'),
-      assetsBox: document.getElementById('assetsBox'),
-      tagBox: document.getElementById('tagBox'),
-      tagInput: document.getElementById('tagInput'),
-      addTagBtn: document.getElementById('addTagBtn'),
-      thumb1: document.getElementById('thumb1'),
-      thumb2: document.getElementById('thumb2'),
-      thumb3: document.getElementById('thumb3'),
-      thumb4: document.getElementById('thumb4'),
-      ctaTextInput: document.getElementById('ctaTextInput'),
+      statusChip: document.getElementById('statusChip'),
+      heroBox: document.getElementById('heroBox'),
+      metaListing: document.getElementById('metaListing'),
+      metaStatus: document.getElementById('metaStatus'),
+      metaStyle: document.getElementById('metaStyle'),
+      titleDisplay: document.getElementById('titleDisplay'),
+      titleEditBox: document.getElementById('titleEditBox'),
+      titleInput: document.getElementById('titleInput'),
+      titleCancelBtn: document.getElementById('titleCancelBtn'),
+      titleSaveBtn: document.getElementById('titleSaveBtn'),
+      leadDisplay: document.getElementById('leadDisplay'),
+      leadEditBox: document.getElementById('leadEditBox'),
+      leadInput: document.getElementById('leadInput'),
+      leadCancelBtn: document.getElementById('leadCancelBtn'),
+      leadSaveBtn: document.getElementById('leadSaveBtn'),
+      overviewParagraphs: document.getElementById('overviewParagraphs'),
+      bodyParagraphs: document.getElementById('bodyParagraphs'),
+      imageBlocks: document.getElementById('imageBlocks'),
+      thumbStrip: document.getElementById('thumbStrip'),
+      thumbLines: document.getElementById('thumbLines'),
+      ctaLabelDisplay: document.getElementById('ctaLabelDisplay'),
+      ctaLabelEditBox: document.getElementById('ctaLabelEditBox'),
       ctaLabelInput: document.getElementById('ctaLabelInput'),
-      ctaDescInput: document.getElementById('ctaDescInput'),
+      ctaLabelCancelBtn: document.getElementById('ctaLabelCancelBtn'),
+      ctaLabelSaveBtn: document.getElementById('ctaLabelSaveBtn'),
+      ctaTextDisplay: document.getElementById('ctaTextDisplay'),
+      ctaTextEditBox: document.getElementById('ctaTextEditBox'),
+      ctaTextInput: document.getElementById('ctaTextInput'),
+      ctaTextCancelBtn: document.getElementById('ctaTextCancelBtn'),
+      ctaTextSaveBtn: document.getElementById('ctaTextSaveBtn'),
+      tagWrap: document.getElementById('tagWrap'),
+      footerNote: document.getElementById('footerNote'),
+      bodyEditBtn: document.getElementById('bodyEditBtn'),
+      tagEditBtn: document.getElementById('tagEditBtn'),
       loadingOverlay: document.getElementById('loadingOverlay'),
       loadingText: document.getElementById('loadingText'),
-      toast: document.getElementById('toast')
+      toast: document.getElementById('toast'),
+      heroFigure: document.getElementById('heroFigure'),
+      heroFigureImg: document.getElementById('heroFigureImg')
     };
 
     function text(v){ return String(v == null ? '' : v).trim(); }
     function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
     function parseJson(v, fallback){ try{ const x = JSON.parse(v); return x == null ? fallback : x; }catch(e){ return fallback; } }
     function getParam(name){ return new URLSearchParams(location.search).get(name) || ''; }
-    function showToast(msg){
-      if(!msg) return;
-      els.toast.textContent = msg;
-      els.toast.classList.add('show');
-      clearTimeout(showToast._timer);
-      showToast._timer = setTimeout(() => els.toast.classList.remove('show'), 1800);
-    }
-    function setLoading(on, label){
-      els.loadingText.textContent = label || '불러오는 중';
-      els.loadingOverlay.classList.toggle('show', !!on);
-      els.loadingOverlay.setAttribute('aria-hidden', on ? 'false' : 'true');
-    }
+    function setLoading(on, label){ els.loadingText.textContent = label || '불러오는 중'; els.loadingOverlay.classList.toggle('show', !!on); }
+    function showToast(msg){ if(!msg) return; els.toast.textContent = msg; els.toast.classList.add('show'); clearTimeout(showToast._timer); showToast._timer=setTimeout(()=>els.toast.classList.remove('show'),1800); }
     function fetchPostJson(payload){
       return fetch(CONFIG.adminListUrl, {
-        method:'POST',
-        mode:'cors',
-        headers:{'Content-Type':'text/plain;charset=UTF-8'},
-        body: JSON.stringify(payload)
-      }).then(res => {
-        if(!res.ok) throw new Error('요청 실패: ' + res.status);
-        return res.json();
-      });
+        method:'POST', mode:'cors', headers:{'Content-Type':'text/plain;charset=UTF-8'}, body: JSON.stringify(payload)
+      }).then(res => { if(!res.ok) throw new Error('요청 실패: ' + res.status); return res.json(); });
     }
-    function statusText(status, subStatus){
-      return [text(status), text(subStatus)].filter(Boolean).join(' / ') || '초안 편집';
+    function splitParagraphs(bodyText){ return text(bodyText).split(/\n{2,}/).map(s=>s.trim()).filter(Boolean); }
+    function bodyTextToHtml(bodyText){ return splitParagraphs(bodyText).map(p => '<p>' + esc(p).replace(/\n/g,'<br>') + '</p>').join('\n'); }
+    function toDirectImageUrl(url){
+      const s = text(url);
+      let m = s.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if(m && m[1]) return 'https://drive.google.com/uc?export=view&id=' + m[1];
+      m = s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if(m && m[1]) return 'https://drive.google.com/uc?export=view&id=' + m[1];
+      return s;
     }
     function makeDealPrice(row){
       const deal = text(row.dealTypeSnapshot || row.dealType);
@@ -323,186 +314,141 @@
       if(deal && price) return deal + ' / ' + price;
       return deal || price || '-';
     }
-    function bulletsFromBlog(row){
+    function makeOverview(row){
       const listing = parseJson(row.listingSnapshotJson || '{}', {});
-      return [listing.summary1, listing.summary2, listing.summary3].map(text).filter(Boolean);
+      const lines = [];
+      const bullets = [listing.summary1, listing.summary2, listing.summary3].map(text).filter(Boolean);
+      if(bullets.length) lines.push.apply(lines, bullets);
+      const info = [];
+      if(text(listing.propertyType)) info.push('유형 ' + text(listing.propertyType));
+      if(text(listing.floorInfo)) info.push('층수 ' + text(listing.floorInfo));
+      if(text(listing.exclusiveAreaPy)) info.push('전용 ' + text(listing.exclusiveAreaPy) + '평');
+      if(text(listing.moveInDate)) info.push('입주 ' + text(listing.moveInDate));
+      if(text(listing.parkingCount)) info.push('주차 ' + text(listing.parkingCount));
+      if(info.length) lines.push(info.join(' · '));
+      if(!lines.length) lines.push('매물 기본정보를 바탕으로 블로그 내용을 정리해 주세요.');
+      return lines;
     }
-    function splitParagraphs(bodyText){
-      return text(bodyText)
-        .split(/\n{2,}/)
-        .map(s => s.trim())
-        .filter(Boolean);
+    function makeBodyParagraphs(row){
+      const fromBody = splitParagraphs(row.bodyText || '');
+      if(fromBody.length) return fromBody;
+      const listing = parseJson(row.listingSnapshotJson || '{}', {});
+      const fallback = [];
+      const memo = text(listing.memo || row.memo || '');
+      if(text(listing.title)) fallback.push(text(listing.title));
+      const facts = [
+        text(listing.addressMasked || row.addressMasked || row.address),
+        makeDealPrice(row),
+        text(listing.approvalDate) ? '사용승인 ' + text(listing.approvalDate) : '',
+        text(listing.buildingComposition),
+        text(listing.zoning)
+      ].filter(Boolean);
+      if(facts.length) fallback.push(facts.join(' · '));
+      if(memo) fallback.push(memo);
+      if(!fallback.length) fallback.push('AI 초안이 아직 생성되지 않았습니다.');
+      return fallback;
     }
-    function bodyTextToHtml(bodyText){
-      const paragraphs = splitParagraphs(bodyText);
-      return paragraphs.map(p => '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>').join('\n');
-    }
-    function uniqueTags(list){
-      const out = [];
-      (list || []).forEach(v => {
-        v = text(v);
-        if(!v) return;
-        if(v[0] !== '#') v = '#' + v;
-        if(out.indexOf(v) === -1) out.push(v);
-      });
-      return out;
-    }
-    function renderTags(){
-      if(!state.tags.length){
-        els.tagBox.innerHTML = '<div class="muted" style="font-size:13px;font-weight:800">해시태그가 없습니다.</div>';
-        return;
-      }
-      els.tagBox.innerHTML = state.tags.map((tag, idx) => (
-        '<div class="tag">' + esc(tag) + '<span class="tag-x" data-idx="' + idx + '">×</span></div>'
-      )).join('');
-      Array.prototype.forEach.call(els.tagBox.querySelectorAll('.tag-x'), btn => {
-        btn.addEventListener('click', function(){
-          const idx = Number(this.getAttribute('data-idx'));
-          state.tags.splice(idx, 1);
-          renderTags();
-        });
-      });
-    }
-    function renderAssets(row){
-      const assets = parseJson(row.infoImageFilesJson || '[]', []).concat([]);
-      const snaps = parseJson(row.assetSnapshotJson || '[]', []);
-      const byId = {};
-      assets.forEach(a => { byId[text(a.assetId)] = a; });
-
-      const merged = snaps.map(s => {
-        const id = text(s.assetId);
-        const saved = byId[id] || {};
-        const url = text(saved.url || s.originalUrl || s.previewUrl || '');
-        return {
-          assetId: id,
-          assetType: text(saved.assetType || s.assetType),
-          assetSource: text(saved.assetSource || s.assetSource),
-          paragraph: text(saved.paragraph || s.paragraph || 'p1'),
-          isHero: !!s.isHero,
-          url: url
-        };
-      }).filter(x => !!x.url);
-
-      if(!merged.length){
-        els.assetsBox.innerHTML = '<div class="empty-assets">선택 이미지가 없습니다.</div>';
-        return;
-      }
-
-      els.assetsBox.innerHTML = merged.map(item => {
-        const bg = "background-image:url('" + esc(item.url) + "')";
-        return ''
-          + '<div class="asset">'
-          + '  <div class="asset-thumb" style="' + bg + '"></div>'
-          + '  <div class="asset-body">'
-          + '    <div class="asset-row">'
-          + '      <span class="asset-badge' + (item.isHero ? ' hero' : '') + '">' + (item.isHero ? '대표' : (item.assetType === 'basic_info' ? '기본정보' : '사진')) + '</span>'
-          + '      <span class="asset-text">' + esc(item.paragraph || '-') + '</span>'
-          + '    </div>'
-          + '    <div class="asset-text">' + esc(item.assetId) + '</div>'
-          + '  </div>'
-          + '</div>';
+    function renderParagraphList(target, list, key){
+      target.innerHTML = (list || []).map((p, idx) => {
+        const empty = !text(p);
+        return '' +
+          '<p class="paragraph editable' + (empty ? ' is-empty' : '') + '" data-edit-key="' + key + '" data-edit-idx="' + idx + '">' +
+          (empty ? '내용을 입력하세요.' : esc(p)) +
+          '</p>' +
+          '<div class="editbox" id="edit-' + key + '-' + idx + '">' +
+          '  <textarea class="textarea" id="input-' + key + '-' + idx + '" placeholder="문단 입력">' + esc(p) + '</textarea>' +
+          '  <div class="mini-actions">' +
+          '    <button type="button" class="mini-btn" data-cancel-key="' + key + '" data-cancel-idx="' + idx + '">취소</button>' +
+          '    <button type="button" class="mini-btn primary" data-save-key="' + key + '" data-save-idx="' + idx + '">저장</button>' +
+          '  </div>' +
+          '</div>';
       }).join('');
     }
-    function fillForm(row){
-      const cta = parseJson(row.ctaJson || '{}', {});
-      const thumbs = parseJson(row.thumbnailTextJson || '[]', []);
-      const bodyText = text(row.bodyText);
-      const bodyHtml = text(row.bodyHtml);
+    function renderTags(){
+      if(!state.tags.length){ els.tagWrap.innerHTML = ''; return; }
+      els.tagWrap.innerHTML = state.tags.map(v => '<span class="tag">' + esc(v) + '</span>').join('');
+    }
+    function renderThumbs(){
+      if(!state.thumbs.length){ els.thumbStrip.style.display='none'; els.thumbLines.innerHTML=''; return; }
+      els.thumbStrip.style.display='block';
+      els.thumbLines.innerHTML = state.thumbs.map(v => '<div class="thumb-line">' + esc(v) + '</div>').join('');
+    }
+    function mergeAssets(row){
+      const snaps = parseJson(row.assetSnapshotJson || '[]', []);
+      const infos = parseJson(row.infoImageFilesJson || '[]', []);
+      const byId = {};
+      infos.forEach(a => { byId[text(a.assetId)] = a; });
+      return snaps.map(function(s){
+        const id = text(s.assetId);
+        const saved = byId[id] || {};
+        return {
+          assetId:id,
+          type:text(saved.assetType || s.assetType),
+          paragraph:text(saved.paragraph || s.paragraph || 'p1'),
+          isHero:!!s.isHero,
+          url: toDirectImageUrl(saved.url || s.previewUrl || s.originalUrl || '')
+        };
+      }).filter(v => !!v.url);
+    }
+    function renderImages(row){
+      const assets = mergeAssets(row);
+      const hero = assets.find(v => v.isHero) || assets[0] || null;
+      if(hero){
+        els.heroBox.classList.remove('empty');
+        els.heroBox.style.backgroundImage = 'url("' + hero.url.replace(/"/g, '%22') + '")';
+        els.heroBox.textContent = '';
+        els.heroFigure.style.display='block';
+        els.heroFigureImg.src = hero.url;
+      }else{
+        els.heroBox.classList.add('empty');
+        els.heroBox.style.backgroundImage='none';
+        els.heroBox.textContent='대표 이미지 없음';
+        els.heroFigure.style.display='none';
+      }
 
-      els.draftTitleInput.value = text(row.draftTitle);
-      els.seoTitleInput.value = text(row.seoTitle);
-      els.bodyTextInput.value = bodyText;
-      els.bodyHtmlInput.value = bodyHtml;
-      els.thumb1.value = text(thumbs[0]);
-      els.thumb2.value = text(thumbs[1]);
-      els.thumb3.value = text(thumbs[2]);
-      els.thumb4.value = text(thumbs[3]);
-      els.ctaTextInput.value = text(row.ctaText);
-      els.ctaLabelInput.value = text(cta.label);
-      els.ctaDescInput.value = text(cta.text);
+      const nonHero = assets.filter(v => !hero || v.assetId !== hero.assetId);
+      els.imageBlocks.innerHTML = nonHero.map(v => {
+        const label = v.type === 'basic_info' ? '기본정보 이미지' : '본문 이미지';
+        return '<div class="figure"><img src="' + esc(v.url) + '" alt="이미지" /><div class="figcap">' + esc(label) + ' · ' + esc(v.paragraph || '-') + '</div></div>';
+      }).join('');
+    }
+    function renderAll(row){
+      state.row = row;
+      state.original = JSON.parse(JSON.stringify(row));
+      state.overviewParagraphs = makeOverview(row);
+      state.bodyParagraphs = makeBodyParagraphs(row);
+      state.tags = parseJson(row.hashtagsJson || '[]', []).map(text).filter(Boolean);
+      state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
+      state.cta = parseJson(row.ctaJson || '{}', {});
 
-      state.tags = uniqueTags(parseJson(row.hashtagsJson || '[]', []));
-      state.originalBodyText = bodyText;
-      state.originalBodyHtml = bodyHtml;
+      els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
+      els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');
+      els.metaStatus.textContent = '상태 ' + ([text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '-');
+      els.metaStyle.textContent = '스타일 ' + (text(row.styleType) || '-');
+      els.footerNote.textContent = 'blogId: ' + (text(row.blogId) || state.blogId);
+
+      els.titleDisplay.textContent = text(row.draftTitle || parseJson(row.listingSnapshotJson || '{}', {}).title || '제목을 입력하세요.');
+      els.titleDisplay.classList.toggle('is-empty', !text(els.titleDisplay.textContent));
+      const lead = state.overviewParagraphs[0] || '';
+      els.leadDisplay.textContent = lead || '도입 문구를 입력하세요.';
+      els.leadDisplay.classList.toggle('is-empty', !text(lead));
+      els.ctaLabelDisplay.textContent = text(state.cta.label) || '문의하기';
+      els.ctaTextDisplay.textContent = text(row.ctaText || state.cta.text) || '문의 문구를 입력하세요.';
+      els.ctaTextDisplay.classList.toggle('is-empty', !text(row.ctaText || state.cta.text));
+
+      renderParagraphList(els.overviewParagraphs, state.overviewParagraphs, 'overview');
+      renderParagraphList(els.bodyParagraphs, state.bodyParagraphs, 'body');
+      renderImages(row);
+      renderThumbs();
       renderTags();
     }
-    function renderSummary(row){
-      els.pageSub.textContent = 'blogId: ' + text(row.blogId || state.blogId);
-      els.statusChip.textContent = statusText(row.status, row.subStatus);
-      els.summaryListingNumber.textContent = text(row.listingNumber) || '-';
-      els.summaryStatus.textContent = statusText(row.status, row.subStatus);
-      els.summaryAddress.textContent = text(row.addressMasked || row.address) || '-';
-      els.summaryDealPrice.textContent = makeDealPrice(row);
-      els.summaryStyle.textContent = text(row.styleType || state.style) || '-';
-      els.summaryDirection.textContent = text(row.directionText || state.direction) || '-';
-
-      const bullets = bulletsFromBlog(row);
-      els.summaryBullets.innerHTML = bullets.length
-        ? bullets.map(v => '<div class="summary-bullet">' + esc(v) + '</div>').join('')
-        : '<div class="muted" style="font-size:13px;font-weight:800">요약 정보가 없습니다.</div>';
-    }
-    function collectPatch(){
-      const bodyText = text(els.bodyTextInput.value);
-      const paragraphTextJson = splitParagraphs(bodyText);
-      return {
-        draftTitle: text(els.draftTitleInput.value),
-        seoTitle: text(els.seoTitleInput.value),
-        bodyText: bodyText,
-        bodyHtml: text(els.bodyHtmlInput.value),
-        paragraphTextJson: JSON.stringify(paragraphTextJson),
-        hashtagsJson: JSON.stringify(uniqueTags(state.tags)),
-        thumbnailTextJson: JSON.stringify([
-          text(els.thumb1.value),
-          text(els.thumb2.value),
-          text(els.thumb3.value),
-          text(els.thumb4.value)
-        ].filter(Boolean)),
-        ctaText: text(els.ctaTextInput.value),
-        ctaJson: JSON.stringify({
-          label: text(els.ctaLabelInput.value),
-          text: text(els.ctaDescInput.value)
-        }),
-        isUserEdited: true,
-        status: 'editing',
-        subStatus: 'user_editing'
-      };
-    }
-    function saveLocalFallback(patch){
-      const key = 'blog-editor:' + state.blogId;
-      localStorage.setItem(key, JSON.stringify({ patch: patch, savedAt: new Date().toISOString() }));
-    }
-    function applyLocalFallback(){
-      const key = 'blog-editor:' + state.blogId;
-      const saved = parseJson(localStorage.getItem(key) || '{}', {});
-      const patch = saved.patch || null;
-      if(!patch) return false;
-      if(text(patch.draftTitle)) els.draftTitleInput.value = text(patch.draftTitle);
-      if(text(patch.seoTitle)) els.seoTitleInput.value = text(patch.seoTitle);
-      if(text(patch.bodyText)) els.bodyTextInput.value = text(patch.bodyText);
-      if(text(patch.bodyHtml)) els.bodyHtmlInput.value = text(patch.bodyHtml);
-      state.tags = uniqueTags(parseJson(patch.hashtagsJson || '[]', []));
-      const thumbs = parseJson(patch.thumbnailTextJson || '[]', []);
-      els.thumb1.value = text(thumbs[0]);
-      els.thumb2.value = text(thumbs[1]);
-      els.thumb3.value = text(thumbs[2]);
-      els.thumb4.value = text(thumbs[3]);
-      const cta = parseJson(patch.ctaJson || '{}', {});
-      els.ctaTextInput.value = text(patch.ctaText);
-      els.ctaLabelInput.value = text(cta.label);
-      els.ctaDescInput.value = text(cta.text);
-      renderTags();
-      return true;
-    }
-    function buildMinimalRowFromQuery(){
+    function buildMinimalRow(){
       return {
         blogId: state.blogId,
         listingNumber: '',
         status: 'editing',
         subStatus: 'draft_generated',
-        styleType: state.style,
-        directionText: state.direction,
-        addressMasked: '',
-        address: '',
+        draftTitle: '',
         bodyText: '',
         bodyHtml: '',
         hashtagsJson: '[]',
@@ -511,140 +457,159 @@
         ctaText: '',
         listingSnapshotJson: '{}',
         assetSnapshotJson: '[]',
-        infoImageFilesJson: '[]'
+        infoImageFilesJson: '[]',
+        styleType: text(getParam('style')),
+        addressMasked: '',
+        address: ''
       };
     }
-    function loadBlogDraft(){
+    function loadDraft(){
       state.blogId = text(getParam('blogId'));
-      state.style = text(getParam('style'));
-      state.direction = text(getParam('direction'));
-
       if(!state.blogId){
-        const row = buildMinimalRowFromQuery();
-        renderSummary(row);
-        fillForm(row);
-        renderAssets(row);
+        renderAll(buildMinimalRow());
         showToast('blogId 없이 열렸습니다');
         return;
       }
-
       setLoading(true, '초안 불러오는 중');
       fetchPostJson({ action:'getBlogDraftDetail', blogId: state.blogId })
-        .then(data => {
+        .then(function(data){
           const row = data && (data.row || data.blog || data.item);
           if(!row) throw new Error('초안 데이터 없음');
-          state.blog = row;
-          renderSummary(row);
-          fillForm(row);
-          renderAssets(row);
-          applyLocalFallback();
-          showToast('AI 초안이 준비되었습니다');
+          renderAll(row);
+          showToast('블로그 초안을 불러왔습니다');
         })
-        .catch(err => {
+        .catch(function(err){
           console.error(err);
-          const row = buildMinimalRowFromQuery();
-          renderSummary(row);
-          fillForm(row);
-          renderAssets(row);
-          const restored = applyLocalFallback();
-          showToast(restored ? '로컬 임시편집본 복원됨' : '서버 초안 로드 실패');
+          renderAll(buildMinimalRow());
+          showToast('서버 초안 로드 실패');
         })
-        .finally(() => setLoading(false));
+        .finally(function(){ setLoading(false); });
+    }
+    function buildPatch(){
+      const bodyText = state.bodyParagraphs.join('\n\n');
+      return {
+        draftTitle: text(els.titleDisplay.textContent),
+        seoTitle: text(els.titleDisplay.textContent),
+        bodyText: bodyText,
+        bodyHtml: bodyTextToHtml(bodyText),
+        paragraphTextJson: state.bodyParagraphs,
+        sectionStructureJson: parseJson((state.row && state.row.sectionStructureJson) || '[]', []),
+        hashtagsJson: state.tags,
+        thumbnailTextJson: state.thumbs,
+        ctaText: text(els.ctaTextDisplay.textContent),
+        ctaJson: {
+          label: text(els.ctaLabelDisplay.textContent),
+          text: text(els.ctaTextDisplay.textContent)
+        }
+      };
     }
     function saveDraft(){
-      const patch = collectPatch();
-      if(!state.blogId){
-        saveLocalFallback(patch);
-        els.statusChip.textContent = '로컬 임시저장';
-        showToast('로컬에 저장되었습니다');
-        return;
-      }
-
+      if(!state.blogId){ showToast('blogId가 없습니다'); return; }
+      const patch = buildPatch();
       setLoading(true, '임시저장 중');
-      fetchPostJson({
-        action:'saveBlogEditorDraft',
-        blogId: state.blogId,
-        patch: patch
-      })
-      .then(data => {
-        if(!data || data.ok === false){
-          throw new Error((data && (data.message || data.error)) || '임시저장 실패');
-        }
-        els.statusChip.textContent = '저장완료';
-        showToast('임시저장 완료');
-      })
-      .catch(err => {
-        console.error(err);
-        saveLocalFallback(patch);
-        els.statusChip.textContent = '로컬 임시저장';
-        showToast('서버 저장 실패, 로컬 저장됨');
-      })
-      .finally(() => setLoading(false));
+      fetchPostJson({ action:'saveBlogEditorDraft', blogId: state.blogId, patch: patch })
+        .then(function(data){
+          if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '임시저장 실패');
+          els.statusChip.textContent = '저장완료';
+          showToast('임시저장 완료');
+        })
+        .catch(function(err){ console.error(err); showToast('임시저장 실패'); })
+        .finally(function(){ setLoading(false); });
     }
-    function markReadyToPublish(){
-      const patch = collectPatch();
-      patch.status = 'ready';
-      patch.subStatus = 'ready_to_publish';
-
-      if(!state.blogId){
-        saveLocalFallback(patch);
-        els.statusChip.textContent = '발행준비';
-        showToast('로컬 발행준비 저장');
-        return;
-      }
-
+    function markReady(){
+      if(!state.blogId){ showToast('blogId가 없습니다'); return; }
       setLoading(true, '발행준비 저장 중');
-      fetchPostJson({
-        action:'markBlogReadyToPublish',
-        blogId: state.blogId,
-        patch: patch
-      })
-      .then(data => {
-        if(!data || data.ok === false){
-          throw new Error((data && (data.message || data.error)) || '발행준비 실패');
+      fetchPostJson({ action:'markBlogReadyToPublish', blogId: state.blogId })
+        .then(function(data){
+          if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '발행준비 실패');
+          els.statusChip.textContent = '발행준비';
+          showToast('발행준비 완료');
+        })
+        .catch(function(err){ console.error(err); showToast('발행준비 실패'); })
+        .finally(function(){ setLoading(false); });
+    }
+    function openEdit(key){
+      document.querySelectorAll('.editbox.show').forEach(el => el.classList.remove('show'));
+      const box = document.getElementById(key);
+      if(box) box.classList.add('show');
+    }
+    function bindInlineEditors(){
+      els.titleDisplay.addEventListener('click', function(){ els.titleInput.value = text(els.titleDisplay.textContent); openEdit('titleEditBox'); els.titleInput.focus(); });
+      els.titleCancelBtn.addEventListener('click', function(){ els.titleEditBox.classList.remove('show'); });
+      els.titleSaveBtn.addEventListener('click', function(){ els.titleDisplay.textContent = text(els.titleInput.value) || '제목을 입력하세요.'; els.titleEditBox.classList.remove('show'); });
+
+      els.leadDisplay.addEventListener('click', function(){ els.leadInput.value = state.overviewParagraphs[0] || ''; openEdit('leadEditBox'); els.leadInput.focus(); });
+      els.leadCancelBtn.addEventListener('click', function(){ els.leadEditBox.classList.remove('show'); });
+      els.leadSaveBtn.addEventListener('click', function(){ state.overviewParagraphs[0] = text(els.leadInput.value); renderParagraphList(els.overviewParagraphs, state.overviewParagraphs, 'overview'); els.leadDisplay.textContent = state.overviewParagraphs[0] || '도입 문구를 입력하세요.'; els.leadDisplay.classList.toggle('is-empty', !text(state.overviewParagraphs[0])); els.leadEditBox.classList.remove('show'); });
+
+      els.ctaLabelDisplay.addEventListener('click', function(){ els.ctaLabelInput.value = text(els.ctaLabelDisplay.textContent); openEdit('ctaLabelEditBox'); els.ctaLabelInput.focus(); });
+      els.ctaLabelCancelBtn.addEventListener('click', function(){ els.ctaLabelEditBox.classList.remove('show'); });
+      els.ctaLabelSaveBtn.addEventListener('click', function(){ els.ctaLabelDisplay.textContent = text(els.ctaLabelInput.value) || '문의하기'; els.ctaLabelEditBox.classList.remove('show'); });
+
+      els.ctaTextDisplay.addEventListener('click', function(){ els.ctaTextInput.value = text(els.ctaTextDisplay.textContent); openEdit('ctaTextEditBox'); els.ctaTextInput.focus(); });
+      els.ctaTextCancelBtn.addEventListener('click', function(){ els.ctaTextEditBox.classList.remove('show'); });
+      els.ctaTextSaveBtn.addEventListener('click', function(){ els.ctaTextDisplay.textContent = text(els.ctaTextInput.value) || '문의 문구를 입력하세요.'; els.ctaTextDisplay.classList.toggle('is-empty', !text(els.ctaTextDisplay.textContent)); els.ctaTextEditBox.classList.remove('show'); });
+
+      document.addEventListener('click', function(e){
+        const p = e.target.closest('.paragraph.editable');
+        if(p){
+          const key = p.getAttribute('data-edit-key');
+          const idx = Number(p.getAttribute('data-edit-idx'));
+          const boxId = 'edit-' + key + '-' + idx;
+          const inputId = 'input-' + key + '-' + idx;
+          openEdit(boxId);
+          const input = document.getElementById(inputId);
+          if(input) input.focus();
+          return;
         }
-        els.statusChip.textContent = '발행준비';
-        showToast('발행준비 완료');
-      })
-      .catch(err => {
-        console.error(err);
-        saveLocalFallback(patch);
-        els.statusChip.textContent = '로컬 발행준비';
-        showToast('서버 실패, 로컬 발행준비 저장');
-      })
-      .finally(() => setLoading(false));
+        const saveBtn = e.target.closest('[data-save-key]');
+        if(saveBtn){
+          const key = saveBtn.getAttribute('data-save-key');
+          const idx = Number(saveBtn.getAttribute('data-save-idx'));
+          const input = document.getElementById('input-' + key + '-' + idx);
+          const value = text(input && input.value);
+          if(key === 'overview') state.overviewParagraphs[idx] = value;
+          if(key === 'body') state.bodyParagraphs[idx] = value;
+          if(key === 'overview') renderParagraphList(els.overviewParagraphs, state.overviewParagraphs, 'overview');
+          if(key === 'body') renderParagraphList(els.bodyParagraphs, state.bodyParagraphs, 'body');
+          if(key === 'overview' && idx === 0){
+            els.leadDisplay.textContent = value || '도입 문구를 입력하세요.';
+            els.leadDisplay.classList.toggle('is-empty', !value);
+          }
+          return;
+        }
+        const cancelBtn = e.target.closest('[data-cancel-key]');
+        if(cancelBtn){
+          const key = cancelBtn.getAttribute('data-cancel-key');
+          const idx = Number(cancelBtn.getAttribute('data-cancel-idx'));
+          const box = document.getElementById('edit-' + key + '-' + idx);
+          if(box) box.classList.remove('show');
+        }
+      });
+
+      els.bodyEditBtn.addEventListener('click', function(){
+        const joined = prompt('본문 전체를 한 번에 수정합니다. 문단은 빈 줄로 구분하세요.', state.bodyParagraphs.join('\n\n'));
+        if(joined == null) return;
+        state.bodyParagraphs = splitParagraphs(joined);
+        if(!state.bodyParagraphs.length) state.bodyParagraphs = [''];
+        renderParagraphList(els.bodyParagraphs, state.bodyParagraphs, 'body');
+        showToast('본문이 반영되었습니다');
+      });
+
+      els.tagEditBtn.addEventListener('click', function(){
+        const joined = prompt('해시태그를 쉼표로 구분해서 입력하세요.', state.tags.join(', '));
+        if(joined == null) return;
+        state.tags = joined.split(',').map(text).filter(Boolean).map(v => v.startsWith('#') ? v : ('#' + v));
+        renderTags();
+      });
     }
 
-    els.backBtn.addEventListener('click', function(){
-      if(document.referrer) history.back();
-      else location.href = CONFIG.listUrl;
-    });
+    els.backBtn.addEventListener('click', function(){ if(document.referrer) history.back(); else location.href = CONFIG.listUrl; });
     els.saveBtn.addEventListener('click', saveDraft);
-    els.publishBtn.addEventListener('click', markReadyToPublish);
-    els.bodyToHtmlBtn.addEventListener('click', function(){
-      els.bodyHtmlInput.value = bodyTextToHtml(els.bodyTextInput.value);
-      showToast('본문을 HTML로 반영했습니다');
-    });
-    els.restoreBodyBtn.addEventListener('click', function(){
-      els.bodyTextInput.value = state.originalBodyText || '';
-      els.bodyHtmlInput.value = state.originalBodyHtml || '';
-      showToast('원문을 다시 불러왔습니다');
-    });
-    els.addTagBtn.addEventListener('click', function(){
-      const value = text(els.tagInput.value);
-      if(!value) return;
-      state.tags = uniqueTags(state.tags.concat([value]));
-      els.tagInput.value = '';
-      renderTags();
-    });
-    els.tagInput.addEventListener('keydown', function(e){
-      if(e.key === 'Enter'){
-        e.preventDefault();
-        els.addTagBtn.click();
-      }
-    });
+    els.publishBtn.addEventListener('click', markReady);
 
-    loadBlogDraft();
+    bindInlineEditors();
+    loadDraft();
   </script>
 </body>
 </html>

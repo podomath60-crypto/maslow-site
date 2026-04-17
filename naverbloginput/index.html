@@ -1902,7 +1902,30 @@
     }
 
 
-    function infoFirstNonEmpty(){
+    function makeInfoImageAddress_(value){
+      var s = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+      if(!s) return '-';
+
+      var parts = s.split(' ').filter(Boolean);
+      if(!parts.length) return '-';
+
+      var kept = [];
+      for(var i = 0; i < parts.length; i++){
+        var p = parts[i];
+
+        if(/\d/.test(p)) break;
+
+        kept.push(p);
+
+        if(/[동읍면가리]$/.test(p)) break;
+        if(/[로길]$/.test(p)) break;
+      }
+
+      var out = kept.join(' ').trim();
+      return out || '-';
+    }
+
+function infoFirstNonEmpty(){
       for(var i=0;i<arguments.length;i++){
         var v = arguments[i];
         if(v == null) continue;
@@ -2048,8 +2071,19 @@
       }
 
       var summaryRows = [
-        ['주소', infoFirstNonEmpty(data && data.normalized && data.normalized.jibunAddress, data && data.address, titleFirst.platPlc, recapFirst.platPlc, '-')],
-        ['도로명주소', infoFirstNonEmpty(data && data.normalized && data.normalized.roadAddress, titleFirst.newPlatPlc, recapFirst.newPlatPlc, '-')],
+        ['주소', makeInfoImageAddress_(infoFirstNonEmpty(
+        data && data.normalized && data.normalized.jibunAddress,
+        data && data.address,
+        titleFirst.platPlc,
+        recapFirst.platPlc,
+        '-'
+      ))],
+        ['도로명주소', makeInfoImageAddress_(infoFirstNonEmpty(
+        data && data.normalized && data.normalized.roadAddress,
+        titleFirst.newPlatPlc,
+        recapFirst.newPlatPlc,
+        '-'
+      ))],
         ['건축물구성', compText],
         ['건물용도', infoFirstNonEmpty(recapFirst.mainPurpsCdNm, titleFirst.mainPurpsCdNm, recapFirst.etcPurps, titleFirst.etcPurps, '-')],
         ['용도지역', zoningParts || '-'],
@@ -2134,33 +2168,8 @@
     function maskInfoImageAddress_(value){
       var s = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
       if(!s) return '-';
-
-      var parts = s.split(' ').filter(Boolean);
-      if(!parts.length) return '-';
-
-      var kept = [];
-      for(var i = 0; i < parts.length; i++){
-        var p = parts[i];
-
-        if(/\d/.test(p)) break;
-        if(/^(산)?\d+(?:-\d+)?(?:번지)?$/.test(p)) break;
-        if(/^(지하|B\d+|\d+층|\d+호)$/i.test(p)) break;
-
-        kept.push(p);
-
-        if(/[동읍면가리]$/.test(p)) break;
-        if(/[로길]$/.test(p)) break;
-      }
-
-      var out = kept.join(' ').trim();
-
-      if(!out){
-        out = parts.filter(function(p){
-          return !/\d/.test(p);
-        }).slice(0, 3).join(' ').trim();
-      }
-
-      return out || '-';
+      s = s.replace(/\s산?\d+(?:-\d+)?(?:번지)?$/, '').trim();
+      return s || '-';
     }
 
     function sanitizeInfoRowsForImage_(rows){

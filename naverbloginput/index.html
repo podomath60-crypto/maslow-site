@@ -864,6 +864,127 @@
     }
     .toast.show{opacity:1}
 
+
+    .ai-call-modal{
+      position:fixed;
+      inset:0;
+      z-index:170;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(17,24,39,.46);
+      backdrop-filter:blur(3px);
+    }
+    .ai-call-modal.show{display:flex}
+    .ai-call-dialog{
+      width:min(100%, 520px);
+      border:1px solid #e6ebf1;
+      border-radius:28px;
+      background:#fff;
+      box-shadow:0 20px 50px rgba(15,23,42,.18);
+      padding:20px;
+    }
+    .ai-call-title{
+      margin:0;
+      font-size:22px;
+      line-height:1.25;
+      font-weight:900;
+      color:#111318;
+      letter-spacing:-0.04em;
+    }
+    .ai-call-sub{
+      margin:8px 0 0;
+      font-size:13px;
+      line-height:1.6;
+      color:#6b7480;
+      font-weight:700;
+    }
+    .ai-call-form{
+      display:grid;
+      gap:16px;
+      margin-top:18px;
+    }
+    .ai-call-field{
+      display:grid;
+      gap:8px;
+    }
+    .ai-call-label{
+      font-size:14px;
+      line-height:1.4;
+      font-weight:900;
+      color:#111318;
+      letter-spacing:-0.03em;
+    }
+    .ai-call-label .optional{
+      margin-left:6px;
+      font-size:12px;
+      color:#8a94a0;
+      font-weight:800;
+    }
+    .ai-style-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+    }
+    .ai-style-btn{
+      min-height:52px;
+      border-radius:16px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-0.03em;
+      padding:0 10px;
+      word-break:keep-all;
+      text-align:center;
+    }
+    .ai-style-btn.is-active{
+      background:#eef5ff;
+      border-color:#bfdcff;
+      color:#0f7cff;
+    }
+    .ai-direction-input{
+      width:100%;
+      min-height:120px;
+      border-radius:18px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      padding:14px 16px;
+      resize:none;
+      outline:none;
+      font-size:14px;
+      line-height:1.6;
+      font-weight:700;
+    }
+    .ai-direction-input::placeholder{
+      color:#9aa4af;
+      font-weight:700;
+    }
+    .ai-call-actions{
+      display:flex;
+      gap:10px;
+      margin-top:4px;
+    }
+    .ai-call-btn{
+      flex:1 1 auto;
+      min-height:50px;
+      border-radius:16px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:15px;
+      font-weight:900;
+      letter-spacing:-0.03em;
+    }
+    .ai-call-btn.primary{
+      background:#0f7cff;
+      border-color:#0f7cff;
+      color:#fff;
+    }
+
     @media (max-width:860px){
       .shell{
         padding:0 14px 120px;
@@ -944,6 +1065,16 @@
         min-height:48px;
         font-size:14px;
       }
+
+      .ai-call-modal{padding:14px}
+      .ai-call-dialog{padding:18px 16px;border-radius:24px}
+      .ai-call-title{font-size:20px}
+      .ai-style-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      .ai-style-btn{min-height:46px;padding:0 8px;font-size:13px;border-radius:14px}
+      .ai-call-actions{gap:8px}
+      .ai-call-btn{min-height:48px;font-size:14px}
+      .ai-direction-input{font-size:22.4px}
+
       .calendar-top-inner,
       .calendar-inner{
         padding-left:16px;
@@ -1037,6 +1168,38 @@
     </div>
   </div>
 
+
+  <div id="aiCallModal" class="ai-call-modal" aria-hidden="true">
+    <div class="ai-call-dialog">
+      <h3 class="ai-call-title">AI호출 설정</h3>
+      <p class="ai-call-sub">글스타일을 고르고, 원하면 글방향도 적어주세요.</p>
+      <div class="ai-call-form">
+        <div class="ai-call-field">
+          <div class="ai-call-label">글스타일</div>
+          <div id="aiStyleGrid" class="ai-style-grid">
+            <button type="button" class="ai-style-btn is-active" data-style="깔끔형">깔끔형</button>
+            <button type="button" class="ai-style-btn" data-style="소개형">소개형</button>
+            <button type="button" class="ai-style-btn" data-style="광고형">광고형</button>
+            <button type="button" class="ai-style-btn" data-style="정보형">정보형</button>
+            <button type="button" class="ai-style-btn" data-style="현장브리핑형">현장브리핑형</button>
+            <button type="button" class="ai-style-btn" data-style="전문형">전문형</button>
+            <button type="button" class="ai-style-btn" data-style="친근형">친근형</button>
+            <button type="button" class="ai-style-btn" data-style="고급형">고급형</button>
+            <button type="button" class="ai-style-btn" data-style="빠른요약형">빠른요약형</button>
+          </div>
+        </div>
+        <div class="ai-call-field">
+          <div class="ai-call-label">글방향 쓰기 <span class="optional">선택사항</span></div>
+          <textarea id="aiDirectionInput" class="ai-direction-input" placeholder="예: 실사용자 관점으로 차분하게, 입지 장점을 먼저 강조"></textarea>
+        </div>
+        <div class="ai-call-actions">
+          <button type="button" class="ai-call-btn" id="aiCallCancelBtn">취소</button>
+          <button type="button" class="ai-call-btn primary" id="aiCallConfirmBtn">확인</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="calendarModal" class="calendar-modal" aria-hidden="true">
     <div class="calendar-sheet">
       <div class="calendar-top">
@@ -1116,6 +1279,7 @@
     let assets = [];
     let searchTimer = null;
     let activeParagraphPickerAssetId = '';
+    let selectedAiStyle = '깔끔형';
 
     const els = {
       goStatusBtn: document.getElementById('goStatusBtn'),
@@ -1142,6 +1306,11 @@
       generateInfoImageBtn: document.getElementById('generateInfoImageBtn'),
       draftSaveBtn: document.getElementById('draftSaveBtn'),
       publishPrepBtn: document.getElementById('publishPrepBtn'),
+      aiCallModal: document.getElementById('aiCallModal'),
+      aiStyleGrid: document.getElementById('aiStyleGrid'),
+      aiDirectionInput: document.getElementById('aiDirectionInput'),
+      aiCallCancelBtn: document.getElementById('aiCallCancelBtn'),
+      aiCallConfirmBtn: document.getElementById('aiCallConfirmBtn'),
       calendarModal: document.getElementById('calendarModal'),
       calendarBackBtn: document.getElementById('calendarBackBtn'),
       calendarPrevBtn: document.getElementById('calendarPrevBtn'),
@@ -2547,9 +2716,30 @@
       });
     }
 
-    function goEditor(){
+    function openAiCallModal(){
       if(els.publishPrepBtn.disabled) return;
-      setLoading(true, '초안 저장 중');
+      els.aiCallModal.classList.add('show');
+      els.aiCallModal.setAttribute('aria-hidden', 'false');
+      syncAiStyleButtons();
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeAiCallModal(){
+      els.aiCallModal.classList.remove('show');
+      els.aiCallModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function syncAiStyleButtons(){
+      Array.prototype.forEach.call(els.aiStyleGrid.querySelectorAll('.ai-style-btn'), function(btn){
+        btn.classList.toggle('is-active', btn.getAttribute('data-style') === selectedAiStyle);
+      });
+    }
+
+    function submitAiCall(){
+      var directionText = text(els.aiDirectionInput && els.aiDirectionInput.value);
+      closeAiCallModal();
+      setLoading(true, 'AI 호출 중');
       fetchPostJson({
         action:'saveBlogDraft',
         payload: collectDraftPayload()
@@ -2562,11 +2752,14 @@
         if(!blogId){
           throw new Error('blogId 없음');
         }
-        location.href = CONFIG.editorUrl + '?blogId=' + encodeURIComponent(blogId);
+        location.href = CONFIG.editorUrl
+          + '?blogId=' + encodeURIComponent(blogId)
+          + '&style=' + encodeURIComponent(selectedAiStyle)
+          + '&direction=' + encodeURIComponent(directionText);
       })
       .catch(function(err){
         console.error(err);
-        showToast((err && err.message) || '초안 저장 실패');
+        showToast((err && err.message) || 'AI 호출 실패');
       })
       .finally(function(){
         setLoading(false);
@@ -2717,7 +2910,18 @@
       });
       els.generateInfoImageBtn.addEventListener('click', generateInfoImages);
       els.draftSaveBtn.addEventListener('click', saveDraft);
-      els.publishPrepBtn.addEventListener('click', goEditor);
+      els.publishPrepBtn.addEventListener('click', openAiCallModal);
+      els.aiStyleGrid.addEventListener('click', function(e){
+        var btn = e.target.closest('.ai-style-btn');
+        if(!btn) return;
+        selectedAiStyle = btn.getAttribute('data-style') || '깔끔형';
+        syncAiStyleButtons();
+      });
+      els.aiCallCancelBtn.addEventListener('click', closeAiCallModal);
+      els.aiCallConfirmBtn.addEventListener('click', submitAiCall);
+      els.aiCallModal.addEventListener('click', function(e){
+        if(e.target === els.aiCallModal) closeAiCallModal();
+      });
       els.imageViewerClose.addEventListener('click', closeImageViewer);
       els.imageViewer.addEventListener('click', function(e){
         if(e.target === els.imageViewer) closeImageViewer();
@@ -2729,6 +2933,7 @@
       document.addEventListener('keydown', function(e){
         if(e.key === 'Escape' && els.imageViewer.classList.contains('show')) closeImageViewer();
         if(e.key === 'Escape' && els.paragraphPicker.classList.contains('show')) closeParagraphPicker();
+        if(e.key === 'Escape' && els.aiCallModal.classList.contains('show')) closeAiCallModal();
       });
     }
 

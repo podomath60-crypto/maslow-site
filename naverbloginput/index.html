@@ -2139,12 +2139,35 @@
     }
 
     function sanitizeInfoRowsForImage_(rows){
+      function trimAddressForImage(value){
+        var s = String(value == null ? '' : value).trim();
+        if(!s) return '';
+
+        var parts = s.split(/\s+/).filter(Boolean);
+        if(!parts.length) return s;
+
+        var kept = [];
+        for(var i = 0; i < parts.length; i++){
+          var p = parts[i];
+
+          if(/\d/.test(p)) break;
+
+          kept.push(p);
+
+          if(/[동가리로]$/.test(p)) break;
+        }
+
+        return kept.join(' ').trim() || s;
+      }
+
       return (rows || []).map(function(row){
         var label = String((row && row[0]) == null ? '' : row[0]).trim();
         var value = (row && row[1]) == null ? '' : row[1];
+
         if(label === '주소' || label === '도로명주소'){
-          return [label, maskInfoImageAddress_(value)];
+          value = trimAddressForImage(value);
         }
+
         return [label, value];
       });
     }

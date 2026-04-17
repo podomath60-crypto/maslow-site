@@ -2152,6 +2152,30 @@
     function drawInfoRowsToBlob(title, rows){
       return new Promise(function(resolve, reject){
         try{
+          function splitLines(ctx, value, maxWidth){
+            var raw = String(value == null ? '' : value).split('\n');
+            var lines = [];
+            raw.forEach(function(block){
+              var words = block.split(/\s+/).filter(Boolean);
+              if(!words.length){
+                lines.push('');
+                return;
+              }
+              var line = '';
+              words.forEach(function(word){
+                var test = line ? (line + ' ' + word) : word;
+                if(ctx.measureText(test).width <= maxWidth){
+                  line = test;
+                }else{
+                  if(line) lines.push(line);
+                  line = word;
+                }
+              });
+              if(line) lines.push(line);
+            });
+            return lines.length ? lines : [''];
+          }
+
           var canvas = document.createElement('canvas');
           var ctx = canvas.getContext('2d');
 
@@ -2172,24 +2196,6 @@
 
           canvas.width = paddingLeft + tableW + paddingRight;
           canvas.height = 200;
-
-          function splitLines(ctx, value, maxWidth){
-            var words = String(value == null ? '' : value).split(/\s+/).filter(Boolean);
-            if(!words.length) return [''];
-            var lines = [];
-            var line = '';
-            words.forEach(function(word){
-              var test = line ? (line + ' ' + word) : word;
-              if(ctx.measureText(test).width <= maxWidth){
-                line = test;
-              }else{
-                if(line) lines.push(line);
-                line = word;
-              }
-            });
-            if(line) lines.push(line);
-            return lines;
-          }
 
           ctx.font = '900 20px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
 
@@ -2251,13 +2257,12 @@
             if(!blob) reject(new Error('이미지 생성 실패'));
             else resolve(blob);
           }, 'image/jpeg', 0.92);
-        } catch (err){
+        }catch(err){
           reject(err);
         }
       });
     }
 
-    
     function blobToDataUrl(blob){
       return new Promise(function(resolve, reject){
         try{
@@ -2275,24 +2280,30 @@
       });
     }
 
-async async function buildLookupGeneratedAssets(lookupResult){
-      var extracted = extractLookupImageRows(lookupResult);
-      var defs = [];
-      if((extracted.summaryRows || []).length){
-        defs.push({ title: '부동산 기본정보', rows: extracted.summaryRows });
-      }
-      defs = defs.concat((extracted.buildings || []).map(function(b){ return { title: b.title, rows: b.rows }; }));
+    async function buildLookupGeneratedAssets(lookupResult){
+      return new Promise(async function(resolve, reject){
+        try{
+          var extracted = extractLookupImageRows(lookupResult);
+          var defs = [];
+          if((extracted.summaryRows || []).length){
+            defs.push({ title: '부동산 기본정보', rows: extracted.summaryRows });
+          }
+          defs = defs.concat((extracted.buildings || []).map(function(b){ return { title: b.title, rows: b.rows }; }));
 
-      var out = [];
-      for(var i=0;i<defs.length;i++){
-        var blob = await drawInfoRowsToBlob(defs[i].title, defs[i].rows);
-        var dataUrl = await blobToDataUrl(blob);
-        out.push({
-          title: defs[i].title,
-          url: dataUrl
-        });
-      }
-      return out;
+          var out = [];
+          for(var i=0;i<defs.length;i++){
+            var blob = await drawInfoRowsToBlob(defs[i].title, defs[i].rows);
+            var dataUrl = await blobToDataUrl(blob);
+            out.push({
+              title: defs[i].title,
+              url: dataUrl
+            });
+          }
+          resolve(out);
+        }catch(err){
+          reject(err);
+        }
+      });
     }
 
     function runLookup(){
@@ -2703,13 +2714,15 @@ async async function buildLookupGeneratedAssets(lookupResult){
         .filter(function(item){ return !!item.selected; })
         .map(function(item, idx){
           var sourceObj = (item && item.source && typeof item.source === 'object') ? item.source : {};
+          var assetType = buildAssetType(item);
+          var assetSource = buildAssetSource(item);
           return {
             assetId: text(item.assetId || ('asset_' + idx)),
             selected: !!item.selected,
             isHero: !!item.isHero,
             paragraph: text(item.paragraph || 'p1'),
-            assetType: buildAssetType(item),
-            assetSource: buildAssetSource(item),
+            assetType: assetType,
+            assetSource: assetSource,
             previewUrl: text(item.previewUrl || ''),
             originalUrl: text(
               sourceObj.originalUrl ||
@@ -2722,7 +2735,7 @@ async async function buildLookupGeneratedAssets(lookupResult){
             ),
             fileId: text(sourceObj.fileId || ''),
             fileName: text(sourceObj.fileName || sourceObj.name || ''),
-            mimeType: text(sourceObj.mimeType || ''),
+            mimeType: text(sourceObj.mimeType || (assetSource === 'generated_from_lookup' ? 'image/jpeg' : '')),
             kind: text(sourceObj.kind || '')
           };
         });

@@ -296,69 +296,6 @@
         .replace(/\n{3,}/g, '\n\n')
         .trim();
     }
-
-    function buildSectionBlocksFromStored(row){
-      const stored = parseJson(row.sectionStructureJson || '[]', []);
-      if(Array.isArray(stored) && stored.length){
-        return stored.map(function(sec, idx){
-          const fallbackMeta = getSectionMeta(row)[idx] || {};
-          return {
-            sectionKey: text(sec && sec.sectionKey) || text(fallbackMeta.key) || ('section_' + idx),
-            heading: text(sec && sec.heading) || text(fallbackMeta.heading) || '섹션',
-            paragraphs: Array.isArray(sec && sec.paragraphs) ? sec.paragraphs.map(text).filter(Boolean) : []
-          };
-        });
-      }
-      const metas = getSectionMeta(row);
-      const distributed = distributeParagraphs(makeBodyParagraphs(row), metas);
-      return metas.map(function(meta){
-        return {
-          sectionKey: meta.key,
-          heading: meta.heading,
-          paragraphs: (distributed[meta.key] || []).map(text).filter(Boolean)
-        };
-      });
-    }
-    function rebuildSectionParagraphMap(){
-      const out = {};
-      (state.sectionBlocks || []).forEach(function(sec){
-        out[text(sec.sectionKey)] = Array.isArray(sec.paragraphs) ? sec.paragraphs.slice() : [];
-      });
-      state.sectionParagraphs = out;
-    }
-    function sectionBlocksToBodyText(blocks){
-      return (blocks || []).map(function(sec){
-        const parts = [];
-        const heading = text(sec && sec.heading);
-        if(heading) parts.push(heading);
-        (Array.isArray(sec && sec.paragraphs) ? sec.paragraphs : []).forEach(function(p){
-          const v = text(p);
-          if(v) parts.push(v);
-        });
-        return parts.join('
-
-');
-      }).filter(Boolean).join('
-
-
-');
-    }
-    function sectionBlocksToBodyHtml(blocks){
-      return (blocks || []).map(function(sec){
-        const heading = text(sec && sec.heading);
-        const paras = Array.isArray(sec && sec.paragraphs) ? sec.paragraphs.map(text).filter(Boolean) : [];
-        const chunks = [];
-        if(heading) chunks.push('<h2>' + esc(heading) + '</h2>');
-        paras.forEach(function(p){
-          chunks.push('<p>' + esc(p).replace(/
-/g,'<br>') + '</p>');
-        });
-        return chunks.join('
-');
-      }).filter(Boolean).join('
-
-');
-    }
     function toDirectImageUrl(url){
       return text(url);
     }
@@ -481,7 +418,7 @@
           const paragraphs = Array.isArray(sec && sec.paragraphs)
             ? sec.paragraphs.map(function(v){ return text(v); }).filter(Boolean)
             : [];
-          return { sectionKey:key, heading:heading, paragraphs:paragraphs };
+          return { key:key, heading:heading, paragraphs:paragraphs };
         }).filter(function(sec){
           return text(sec.heading) || (sec.paragraphs && sec.paragraphs.length);
         });
@@ -501,7 +438,7 @@
     function syncSectionParagraphsFromBlocks(){
       const out = {};
       (state.sectionBlocks || []).forEach(function(sec){
-        out[text(sec.sectionKey)] = Array.isArray(sec.paragraphs) ? sec.paragraphs.slice() : [];
+        out[text(sec.key)] = Array.isArray(sec.paragraphs) ? sec.paragraphs.slice() : [];
       });
       state.sectionParagraphs = out;
     }
@@ -626,20 +563,20 @@
         els.heroBox.textContent='대표 이미지 없음';
       }
 
-      const sectionSlotsMeta = {};
-      getSectionMeta(row).forEach(function(meta){ sectionSlotsMeta[meta.key] = meta; });
-
-      const renderedSections = (state.sectionBlocks || []).map(function(sec){
-        const secKey = text(sec.sectionKey);
+      const fallbackMeta = getSectionMeta(row || {});
+      const fallbackByKey = {};
+      fallbackMeta.forEach(function(sec){ fallbackByKey[sec.key] = sec; });
+      const renderedSections = (state.sectionBlocks || []).map(function(sec, secIdx){
+        const secKey = text(sec.key) || ('section_' + secIdx);
         const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
-        const slotMeta = sectionSlotsMeta[secKey] || { slots: [] };
-        const images = getSectionImages(slotMeta, grouped);
+        const meta = fallbackByKey[secKey] || { key: secKey, slots: [], min: 0 };
+        const images = getSectionImages(meta, grouped);
         const imageHtml = images.map(function(asset){
           return renderFigure(asset, getCaptionTextForAsset(asset, row));
         }).join('');
         return '<section class="block">'
           + '<div class="section-kicker">SECTION</div>'
-          + '<h2 class="section-title editable" contenteditable="plaintext-only" spellcheck="false" data-section-heading="' + esc(secKey) + '">' + esc(text(sec.heading) || '섹션') + '</h2>'
+          + '<h2 class="section-title">' + esc(text(sec.heading) || '섹션') + '</h2>'
           + '<div class="paragraphs">' + renderParagraphList(paras, secKey) + '</div>'
           + (imageHtml ? '<div class="section-image-stack">' + imageHtml + '</div>' : '')
           + '</section>';
@@ -677,7 +614,7 @@
       els.titleDisplay.textContent = text(row.draftTitle || parseJson(row.listingSnapshotJson || '{}', {}).title || '제목을 입력하세요.');
       els.titleDisplay.classList.toggle('is-empty', !text(els.titleDisplay.textContent));
       const lead = formatDisplayText(state.overviewParagraphs[0] || '');
-      
+      if(state.overviewParagraphs.length) state.overviewParagraphs[0] = lead;
       els.leadDisplay.textContent = lead || '도입 문구를 입력하세요.';
       els.leadDisplay.classList.toggle('is-empty', !text(lead));
       els.ctaLabelDisplay.textContent = text(state.cta.label) || '문의하기';
@@ -732,55 +669,15 @@
         .finally(function(){ setLoading(false); });
     }
     function buildPatch(){
-      const sectionBlocks = (state.sectionBlocks || []).map(function(sec){
-        return {
-          sectionKey: text(sec.sectionKey),
-          heading: text(sec.heading),
-          paragraphs: (Array.isArray(sec.paragraphs) ? sec.paragraphs : []).map(text)
-        };
-      }).filter(function(sec){
-        return sec.heading || sec.paragraphs.some(Boolean);
-      });
-
-      const ordered = sectionBlocks.reduce(function(acc, sec){
-        return acc.concat((sec.paragraphs || []).map(text).filter(Boolean));
-      }, []);
-
-      const bodyText = sectionBlocksToBodyText(sectionBlocks);
-      const bodyHtml = sectionBlocksToBodyHtml(sectionBlocks);
-
-      return {
-        draftTitle: text(els.titleDisplay.textContent),
-        seoTitle: text(els.titleDisplay.textContent),
-        bodyText: bodyText,
-        bodyHtml: bodyHtml,
-        paragraphTextJson: ordered,
-        sectionStructureJson: sectionBlocks,
-        hashtagsJson: state.tags,
-        thumbnailTextJson: state.thumbs,
-        ctaText: text(els.ctaTextDisplay.textContent),
-        ctaJson: {
-          label: text(els.ctaLabelDisplay.textContent),
-          text: text(els.ctaTextDisplay.textContent)
-        }
-      };
-    };
-      }).filter(function(sec){
-        return text(sec.heading) || (sec.paragraphs && sec.paragraphs.length);
-      });
-
-      const ordered = sectionStructure.reduce(function(acc, sec){
-        return acc.concat(sec.paragraphs || []);
-      }, []);
+      const ordered = getSectionMeta(state.row || {}).reduce(function(acc, sec){ return acc.concat(state.sectionParagraphs[sec.key] || []); }, []);
       const bodyText = ordered.join('\n\n');
-
       return {
         draftTitle: text(els.titleDisplay.textContent),
         seoTitle: text(els.titleDisplay.textContent),
         bodyText: bodyText,
         bodyHtml: bodyTextToHtml(bodyText),
         paragraphTextJson: ordered,
-        sectionStructureJson: sectionStructure,
+        sectionStructureJson: parseJson((state.row && state.row.sectionStructureJson) || '[]', []),
         hashtagsJson: state.tags,
         thumbnailTextJson: state.thumbs,
         ctaText: text(els.ctaTextDisplay.textContent),
@@ -881,28 +778,11 @@
       });
 
       document.addEventListener('click', function(e){
-        const h = e.target.closest('.section-title.editable');
-        if(!h) return;
-        startInline(h);
-      });
-
-      document.addEventListener('click', function(e){
         const p = e.target.closest('.paragraph.editable');
         if(!p) return;
         startInline(p);
       });
 
-      document.addEventListener('blur', function(e){
-        const h = e.target.closest && e.target.closest('.section-title.editable');
-        if(h){
-          const key = h.getAttribute('data-section-heading');
-          const value = normalizeEditableText(h) || '섹션';
-          const sec = (state.sectionBlocks || []).find(function(v){ return text(v.sectionKey) === text(key); });
-          if(sec) sec.heading = value;
-          h.textContent = value;
-          endInline(h);
-          return;
-        }
       document.addEventListener('blur', function(e){
         const p = e.target.closest && e.target.closest('.paragraph.editable');
         if(!p) return;

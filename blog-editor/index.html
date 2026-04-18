@@ -438,6 +438,72 @@
       return layout;
     }
 
+    function rebuildImageLayoutFromDom(row){
+      const layout = normalizeImageLayout({});
+      const assetMap = buildAssetMapFromRow(row || {});
+      const used = {};
+
+      const heroUrl = text(row && row.heroImageUrl);
+      if (heroUrl) {
+        Object.keys(assetMap).forEach(function(assetId){
+          const asset = assetMap[assetId];
+          if (text(asset && asset.url) === heroUrl || !!(asset && asset.isHero)) {
+            if (!layout.hero) {
+              layout.hero = assetId;
+              used[assetId] = true;
+            }
+          }
+        });
+      }
+
+      document.querySelectorAll('#articleSections .block').forEach(function(block){
+        const headingEl = block.querySelector('[data-section-heading]');
+        const secKey = text(headingEl && headingEl.getAttribute('data-section-heading'));
+        if (!secKey) return;
+
+        layout.sections[secKey] = [];
+
+        block.querySelectorAll('.figure').forEach(function(fig){
+          const img = fig.querySelector('img');
+          const imgSrc = text(img && img.getAttribute('src'));
+          if (!imgSrc) return;
+
+          let matchedId = '';
+
+          Object.keys(assetMap).some(function(assetId){
+            const asset = assetMap[assetId];
+            if (used[assetId]) return false;
+            if (text(asset && asset.url) === imgSrc) {
+              matchedId = assetId;
+              return true;
+            }
+            return false;
+          });
+
+          if (matchedId) {
+            layout.sections[secKey].push(matchedId);
+            used[matchedId] = true;
+          }
+        });
+      });
+
+      Object.keys(assetMap).forEach(function(assetId){
+        if (used[assetId]) return;
+        const asset = assetMap[assetId];
+        if (!!(asset && asset.isHero) && !layout.hero) {
+          layout.hero = assetId;
+          used[assetId] = true;
+          return;
+        }
+        const fallbackKey = 'detailed_note';
+        layout.sections[fallbackKey] = layout.sections[fallbackKey] || [];
+        layout.sections[fallbackKey].push(assetId);
+        used[assetId] = true;
+      });
+
+      return layout;
+    }
+
     function moveImageInLayout(sectionKey, idx, direction){
       if(!state.imageLayout) return;
       const key = text(sectionKey);
@@ -861,7 +927,7 @@
             const currentIdx = Number(fig.getAttribute('data-idx'));
             const direction = mv.getAttribute('data-move');
             if(!state.imageLayout){
-              state.imageLayout = buildImageLayoutFromMap(getSectionImagesMap(state.row || {}));
+              state.imageLayout = rebuildImageLayoutFromDom(state.row || {});
             }
             moveImageInLayout(currentSectionKey, currentIdx, direction);
             renderImages(state.row || {});

@@ -73,7 +73,6 @@
       display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;
       box-shadow:0 8px 16px rgba(15,23,42,.18);
     }
-    .fig-move-btn[disabled]{opacity:.35;pointer-events:none}
     .figcap{display:none !important}
     .section-image-stack{display:grid;gap:18px;margin:18px 0 10px}
     .section-kicker{margin:0 0 8px;font-size:12px;font-weight:900;color:#7d8794;letter-spacing:.08em;text-transform:uppercase}
@@ -242,8 +241,7 @@
       thumbs: [],
       cta: { label:'', text:'' },
       sectionBlocks: [],
-      imageAssets: [],
-      imageLayout: { hero:'', sections:{} }
+      imageLayout: null
     };
 
     const els = {
@@ -393,104 +391,174 @@
       'closing_cta'
     ];
 
-    function ensureImageLayoutShape(layout){
-      const base = { hero:'', sections:{} };
-      SECTION_ORDER.forEach(function(key){ base.sections[key] = []; });
+    function normalizeImageLayout(layout){
+      const out = { hero:'', sections:{} };
+      SECTION_ORDER.forEach(function(key){ out.sections[key] = []; });
       const src = parseJson(layout || '{}', {});
       if(src && typeof src === 'object'){
-        base.hero = text(src.hero || '');
+        out.hero = text(src.hero || '');
         const sections = src.sections || {};
         SECTION_ORDER.forEach(function(key){
-          const arr = Array.isArray(sections[key]) ? sections[key] : [];
-          base.sections[key] = arr.map(function(v){ return text(v); }).filter(Boolean);
+          out.sections[key] = Array.isArray(sections[key]) ? sections[key].map(text).filter(Boolean) : [];
         });
       }
-      return base;
+      return out;
     }
 
-    function buildImageAssets(row){
+    function buildAssetMapFromRow(row){
       const infos = parseJson(row.infoImageFilesJson || '[]', []);
       const snaps = parseJson(row.assetSnapshotJson || '[]', []);
       const snapById = {};
       snaps.forEach(function(s){ snapById[text(s.assetId)] = s || {}; });
 
-      return infos.map(function(info, idx){
-        const id = text(info && info.assetId) || ('asset_' + idx);
+      const map = {};
+      infos.forEach(function(info){
+        const id = text(info && info.assetId);
         const snap = snapById[id] || {};
-        return {
+        const url = text(info && (info.url || info.previewUrl || info.originalUrl));
+        if(!id || !url) return;
+        map[id] = {
           assetId: id,
-          url: text(info && (info.url || info.previewUrl || info.originalUrl)),
+          url: url,
           isHero: !!(info && info.isHero) || !!snap.isHero,
-          sectionKey: text(info && (info.sectionKey || info.section_key)),
-          paragraph: text(info && info.paragraph) || text(snap && snap.paragraph)
+          paragraph: text(info && info.paragraph) || text(snap && snap.paragraph),
+          sectionKey: text(info && (info.sectionKey || info.section_key))
         };
-      }).filter(function(v){ return !!v.url; });
+      });
+      return map;
     }
 
-    function mapParagraphToSectionKey(paragraph){
-      const p = text(paragraph).toLowerCase();
-      if(p === 'p1') return 'property_overview';
-      if(p === 'p2' || p === 'p3') return 'location_context';
-      if(p === 'p4' || p === 'p5') return 'building_and_usage';
-      if(p === 'p6') return 'strengths_summary';
-      if(p === 'p7' || p === 'p8' || p === 'p9') return 'detailed_note';
-      return '';
+    function buildImageLayoutFromMap(imgMap){
+      const layout = normalizeImageLayout({});
+      layout.hero = text((imgMap.hero && imgMap.hero.assetId) || '');
+      const bySection = (imgMap && imgMap.bySection) || {};
+      Object.keys(bySection).forEach(function(key){
+        layout.sections[key] = (bySection[key] || []).map(function(asset){ return text(asset && asset.assetId); }).filter(Boolean);
+      });
+      return layout;
     }
 
-    function buildInitialImageLayout(row){
-      const layout = ensureImageLayoutShape(parseJson(row.imageLayoutJson || '{}', {}));
-      const hasSaved = layout.hero || SECTION_ORDER.some(function(k){ return (layout.sections[k] || []).length; });
-      if(hasSaved) return layout;
+    function moveImageInLayout(sectionKey, idx, direction){
+      if(!state.imageLayout) return;
+      const key = text(sectionKey);
+      const sections = state.imageLayout.sections || {};
+      if(!Array.isArray(sections[key])) return;
+      const arr = sections[key];
+      idx = Number(idx);
+      if(!(idx >= 0 && idx < arr.length)) return;
+
+      const secIndex = SECTION_ORDER.indexOf(key);
+      if(secIndex < 0) return;
+
+      if(direction === 'up'){
+        if(idx > 0){
+          var tmp = arr[idx - 1];
+          arr[idx - 1] = arr[idx];
+          arr[idx] = tmp;
+        }else if(secIndex > 0){
+          const prevKey = SECTION_ORDER[secIndex - 1];
+          const moved = arr.shift();
+          if(!Array.isArray(sections[prevKey])) sections[prevKey] = [];
+          sections[prevKey].push(moved);
+        }
+      }else if(direction === 'down'){
+        if(idx < arr.length - 1){
+          var tmp2 = arr[idx + 1];
+          arr[idx + 1] = arr[idx];
+          arr[idx] = tmp2;
+        }else if(secIndex < SECTION_ORDER.length - 1){
+          const nextKey = SECTION_ORDER[secIndex + 1];
+          const moved2 = arr.pop();
+          if(!Array.isArray(sections[nextKey])) sections[nextKey] = [];
+          sections[nextKey].unshift(moved2);
+        }
+      }
+    }
+
+    function getSectionImagesMap(row){
+      if(state.imageLayout){
+        const assetMap = buildAssetMapFromRow(row || {});
+        const bySection = {};
+        Object.keys((state.imageLayout.sections || {})).forEach(function(key){
+          bySection[key] = (state.imageLayout.sections[key] || []).map(function(assetId){
+            return assetMap[text(assetId)] || null;
+          }).filter(Boolean);
+        });
+        const heroAsset = assetMap[text(state.imageLayout.hero)] || null;
+        return {
+          hero: text(row.heroImageUrl) ? { url: text(row.heroImageUrl), isHero:true } : heroAsset,
+          bySection: bySection
+        };
+      }
+      const infos = parseJson(row.infoImageFilesJson || '[]', []);
+      const snaps = parseJson(row.assetSnapshotJson || '[]', []);
+      const snapById = {};
+      snaps.forEach(function(s){ snapById[text(s.assetId)] = s || {}; });
+
+      const map = {};
+      let hero = null;
 
       const sectionKeys = (state.sectionBlocks || []).map(function(sec){ return text(sec.sectionKey); }).filter(Boolean);
       const fallbackOrder = sectionKeys.filter(function(k){ return k !== 'hero_intro'; });
 
-      state.imageAssets.forEach(function(asset){
-        if(asset.isHero && !layout.hero) layout.hero = asset.assetId;
-        let sectionKey = asset.sectionKey || mapParagraphToSectionKey(asset.paragraph);
-        if(!sectionKey && fallbackOrder.length) sectionKey = fallbackOrder[0];
-        if(!sectionKey) return;
-        if(!layout.sections[sectionKey]) layout.sections[sectionKey] = [];
-        layout.sections[sectionKey].push(asset.assetId);
+      function mapParagraphToSectionKey(paragraph){
+        const p = text(paragraph).toLowerCase();
+        if(p === 'p1') return 'property_overview';
+        if(p === 'p2' || p === 'p3') return 'location_context';
+        if(p === 'p4' || p === 'p5') return 'building_and_usage';
+        if(p === 'p6') return 'strengths_summary';
+        if(p === 'p7' || p === 'p8' || p === 'p9') return 'detailed_note';
+        return '';
+      }
+
+      infos.forEach(function(info){
+        const id = text(info && info.assetId);
+        const snap = snapById[id] || {};
+        const isHero = !!(info && info.isHero) || !!snap.isHero;
+        const url = text(info && (info.url || info.previewUrl || info.originalUrl));
+        if(!url) return;
+
+        const sectionKeyDirect = text(info && (info.sectionKey || info.section_key));
+        const paragraph = text(info && info.paragraph) || text(snap && snap.paragraph);
+        let sectionKey = sectionKeyDirect || mapParagraphToSectionKey(paragraph);
+
+        const asset = {
+          assetId: id,
+          url: url,
+          isHero: isHero
+        };
+
+        if(isHero && !hero) hero = asset;
+
+        if(!sectionKey && fallbackOrder.length){
+          sectionKey = fallbackOrder[0];
+        }
+        if(sectionKey){
+          if(!map[sectionKey]) map[sectionKey] = [];
+          map[sectionKey].push(asset);
+        }
       });
 
+      // Rebalance: if images are concentrated in one section while others are empty,
+      // spread extras across empty sections in section order.
       const allKeys = fallbackOrder.slice();
-      const emptyKeys = allKeys.filter(function(k){ return !(layout.sections[k] && layout.sections[k].length); });
-      const richKeys = allKeys.filter(function(k){ return layout.sections[k] && layout.sections[k].length > 1; });
+      const emptyKeys = allKeys.filter(function(k){ return !(map[k] && map[k].length); });
+      const richKeys = allKeys.filter(function(k){ return map[k] && map[k].length > 1; });
 
       emptyKeys.forEach(function(emptyKey){
         for(var i=0; i<richKeys.length; i++){
           var richKey = richKeys[i];
-          if(layout.sections[richKey] && layout.sections[richKey].length > 1){
-            var moved = layout.sections[richKey].pop();
-            layout.sections[emptyKey] = [moved];
+          if(map[richKey] && map[richKey].length > 1){
+            var moved = map[richKey].pop();
+            map[emptyKey] = [moved];
             break;
           }
         }
       });
 
-      return layout;
-    }
-
-    function getAssetById(assetId){
-      const id = text(assetId);
-      return (state.imageAssets || []).find(function(v){ return text(v.assetId) === id; }) || null;
-    }
-
-    function getImagesForSection(sectionKey){
-      const ids = (((state.imageLayout || {}).sections || {})[sectionKey] || []).map(function(v){ return text(v); }).filter(Boolean);
-      const seen = {};
-      return ids.map(getAssetById).filter(function(v){
-        const id = text(v && v.assetId);
-        if(!v || !id || seen[id]) return false;
-        return True
-      });
-    }
-    function getSectionImagesMap(row){
-      const heroAsset = getAssetById(((state.imageLayout || {}).hero || ''));
       return {
-        hero: text(row.heroImageUrl) ? { url: text(row.heroImageUrl), isHero:true } : heroAsset,
-        bySection: (((state.imageLayout || {}).sections) || {})
+        hero: text(row.heroImageUrl) ? { url: text(row.heroImageUrl), isHero:true } : hero,
+        bySection: map
       };
     }
 
@@ -506,13 +574,11 @@
 
     function renderFigure(asset, sectionKey, idx, total){
       if(!asset || !asset.url) return '';
-      const atTop = idx === 0;
-      const atBottom = idx === (total - 1);
-      return '<div class="figure" data-asset-id="' + esc(text(asset.assetId)) + '" data-section-key="' + esc(text(sectionKey)) + '" data-idx="' + idx + '">'
+      return '<div class="figure" data-section-key="' + esc(text(sectionKey)) + '" data-idx="' + idx + '">'
         + '<img src="' + esc(asset.url) + '" alt="이미지" />'
         + '<div class="fig-move">'
-        +   '<button type="button" class="fig-move-btn" data-move="up"' + (atTop ? '' : '') + '>▲</button>'
-        +   '<button type="button" class="fig-move-btn" data-move="down"' + (atBottom ? '' : '') + '>▼</button>'
+        +   '<button type="button" class="fig-move-btn" data-move="up">▲</button>'
+        +   '<button type="button" class="fig-move-btn" data-move="down">▼</button>'
         + '</div>'
         + '</div>';
     }
@@ -544,10 +610,8 @@
       const renderedSections = (state.sectionBlocks || []).map(function(sec){
         const secKey = text(sec.sectionKey);
         const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
-        const images = getImagesForSection(secKey);
-        const imageHtml = images.map(function(asset, idx){
-          return renderFigure(asset, secKey, idx, images.length);
-        }).join('');
+        const images = uniqueAssets(imgMap.bySection[secKey] || []);
+        const imageHtml = images.map(function(asset, idx){ return renderFigure(asset, secKey, idx, images.length); }).join('');
         return '<section class="block">'
           + '<div class="section-kicker">SECTION</div>'
           + '<h2 class="section-title editable" contenteditable="plaintext-only" spellcheck="false" data-section-heading="' + esc(secKey) + '">' + esc(text(sec.heading) || '섹션') + '</h2>'
@@ -588,8 +652,7 @@
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
       state.sectionBlocks = buildSectionBlocksFromRow(row);
-      state.imageAssets = buildImageAssets(row);
-      state.imageLayout = buildInitialImageLayout(row);
+      state.imageLayout = text(row.imageLayoutJson || '') ? normalizeImageLayout(row.imageLayoutJson) : null;
 
       els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
       els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');
@@ -667,7 +730,7 @@
         bodyHtml: sectionBlocksToBodyHtmlForSave(sectionBlocks),
         paragraphTextJson: sectionBlocksToParagraphTextJsonForSave(sectionBlocks),
         sectionStructureJson: sectionBlocks,
-        imageLayoutJson: state.imageLayout,
+        imageLayoutJson: state.imageLayout || null,
         hashtagsJson: state.tags,
         thumbnailTextJson: state.thumbs,
         ctaText: text(els.ctaTextDisplay.textContent),
@@ -780,7 +843,11 @@
         if(mv){
           const fig = mv.closest('.figure');
           if(fig){
-            moveImage(fig.getAttribute('data-section-key'), fig.getAttribute('data-idx'), mv.getAttribute('data-move'));
+            if(!state.imageLayout){
+              state.imageLayout = buildImageLayoutFromMap(getSectionImagesMap(state.row || {}));
+            }
+            moveImageInLayout(fig.getAttribute('data-section-key'), fig.getAttribute('data-idx'), mv.getAttribute('data-move'));
+            renderImages(state.row || {});
           }
           return;
         }
@@ -821,48 +888,6 @@
         p.classList.toggle('is-empty', !value);
         endInline(p);
       }, true);
-
-
-    function moveImage(sectionKey, idx, direction){
-      const key = text(sectionKey);
-      const sections = ((state.imageLayout || {}).sections || {});
-      if(!sections[key]) return;
-      const arr = sections[key];
-      const index = Number(idx);
-      if(!(index >= 0 && index < arr.length)) return;
-
-      const currentSectionIdx = SECTION_ORDER.indexOf(key);
-      if(currentSectionIdx < 0) return;
-
-      if(direction === 'up'){
-        if(index > 0){
-          const tmp = arr[index - 1];
-          arr[index - 1] = arr[index];
-          arr[index] = tmp;
-        }else{
-          const prevKey = SECTION_ORDER[currentSectionIdx - 1];
-          if(prevKey){
-            const moved = arr.shift();
-            if(!sections[prevKey]) sections[prevKey] = [];
-            sections[prevKey].push(moved);
-          }
-        }
-      }else if(direction === 'down'){
-        if(index < arr.length - 1){
-          const tmp = arr[index + 1];
-          arr[index + 1] = arr[index];
-          arr[index] = tmp;
-        }else{
-          const nextKey = SECTION_ORDER[currentSectionIdx + 1];
-          if(nextKey){
-            const moved = arr.pop();
-            if(!sections[nextKey]) sections[nextKey] = [];
-            sections[nextKey].unshift(moved);
-          }
-        }
-      }
-      renderImages(state.row || {});
-    }
 
       els.tagEditBtn.addEventListener('click', function(){
         const joined = prompt('해시태그를 쉼표로 구분해서 입력하세요.', state.tags.join(', '));

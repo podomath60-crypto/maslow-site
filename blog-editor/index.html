@@ -218,6 +218,7 @@
   </div>
   <div id="toast" class="toast"></div>
 
+  
   <script>
     const CONFIG = {
       adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec',
@@ -231,9 +232,6 @@
       tags: [],
       thumbs: [],
       cta: { label:'', text:'' },
-      bodyParagraphs: [],
-      overviewParagraphs: [],
-      sectionParagraphs: {},
       sectionBlocks: []
     };
 
@@ -247,28 +245,12 @@
       metaStatus: document.getElementById('metaStatus'),
       metaStyle: document.getElementById('metaStyle'),
       titleDisplay: document.getElementById('titleDisplay'),
-      titleEditBox: document.getElementById('titleEditBox'),
-      titleInput: document.getElementById('titleInput'),
-      titleCancelBtn: document.getElementById('titleCancelBtn'),
-      titleSaveBtn: document.getElementById('titleSaveBtn'),
       leadDisplay: document.getElementById('leadDisplay'),
-      leadEditBox: document.getElementById('leadEditBox'),
-      leadInput: document.getElementById('leadInput'),
-      leadCancelBtn: document.getElementById('leadCancelBtn'),
-      leadSaveBtn: document.getElementById('leadSaveBtn'),
       articleSections: document.getElementById('articleSections'),
       thumbStrip: document.getElementById('thumbStrip'),
       thumbLines: document.getElementById('thumbLines'),
       ctaLabelDisplay: document.getElementById('ctaLabelDisplay'),
-      ctaLabelEditBox: document.getElementById('ctaLabelEditBox'),
-      ctaLabelInput: document.getElementById('ctaLabelInput'),
-      ctaLabelCancelBtn: document.getElementById('ctaLabelCancelBtn'),
-      ctaLabelSaveBtn: document.getElementById('ctaLabelSaveBtn'),
       ctaTextDisplay: document.getElementById('ctaTextDisplay'),
-      ctaTextEditBox: document.getElementById('ctaTextEditBox'),
-      ctaTextInput: document.getElementById('ctaTextInput'),
-      ctaTextCancelBtn: document.getElementById('ctaTextCancelBtn'),
-      ctaTextSaveBtn: document.getElementById('ctaTextSaveBtn'),
       tagWrap: document.getElementById('tagWrap'),
       footerNote: document.getElementById('footerNote'),
       tagEditBtn: document.getElementById('tagEditBtn'),
@@ -278,332 +260,237 @@
     };
 
     function text(v){ return String(v == null ? '' : v).trim(); }
-    function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
-    function parseJson(v, fallback){ try{ const x = JSON.parse(v); return x == null ? fallback : x; }catch(e){ return fallback; } }
+    function esc(v){
+      return String(v == null ? '' : v).replace(/[&<>"']/g, function(s){
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'})[s];
+      });
+    }
+    function parseJson(v, fallback){
+      if(v == null || v === '') return fallback;
+      if(typeof v === 'object') return v;
+      try{
+        const x = JSON.parse(v);
+        return x == null ? fallback : x;
+      }catch(e){
+        return fallback;
+      }
+    }
     function getParam(name){ return new URLSearchParams(location.search).get(name) || ''; }
-    function setLoading(on, label){ els.loadingText.textContent = label || '불러오는 중'; els.loadingOverlay.classList.toggle('show', !!on); }
-    function showToast(msg){ if(!msg) return; els.toast.textContent = msg; els.toast.classList.add('show'); clearTimeout(showToast._timer); showToast._timer=setTimeout(()=>els.toast.classList.remove('show'),1800); }
+    function setLoading(on, label){
+      els.loadingText.textContent = label || '불러오는 중';
+      els.loadingOverlay.classList.toggle('show', !!on);
+    }
+    function showToast(msg){
+      if(!msg) return;
+      els.toast.textContent = msg;
+      els.toast.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(function(){ els.toast.classList.remove('show'); }, 1800);
+    }
     function fetchPostJson(payload){
       return fetch(CONFIG.adminListUrl, {
-        method:'POST', mode:'cors', headers:{'Content-Type':'text/plain;charset=UTF-8'}, body: JSON.stringify(payload)
-      }).then(res => { if(!res.ok) throw new Error('요청 실패: ' + res.status); return res.json(); });
+        method:'POST',
+        mode:'cors',
+        headers:{'Content-Type':'text/plain;charset=UTF-8'},
+        body: JSON.stringify(payload)
+      }).then(function(res){
+        if(!res.ok) throw new Error('요청 실패: ' + res.status);
+        return res.json();
+      });
     }
-    function splitParagraphs(bodyText){ return text(bodyText).split(/\n{2,}/).map(s=>s.trim()).filter(Boolean); }
-    function bodyTextToHtml(bodyText){ return splitParagraphs(bodyText).map(p => '<p>' + esc(p).replace(/\n/g,'<br>') + '</p>').join('\n'); }
     function formatDisplayText(v){
       return text(v)
         .replace(/\s*\/\s*/g, '\n')
         .replace(/\n{3,}/g, '\n\n')
         .trim();
     }
-    function toDirectImageUrl(url){
-      return text(url);
-    }
-    function makeDealPrice(row){
-      const deal = text(row.dealTypeSnapshot || row.dealType);
-      const price = text(row.priceSnapshot || row.price);
-      if(deal && price) return deal + ' / ' + price;
-      return deal || price || '-';
+
+    function buildSectionBlocksFromRow(row){
+      const stored = parseJson(row && row.sectionStructureJson || '[]', []);
+      if(Array.isArray(stored) && stored.length){
+        return stored.map(function(sec, idx){
+          return {
+            sectionKey: text(sec && (sec.sectionKey || sec.key)) || ('section_' + idx),
+            heading: text(sec && sec.heading) || '섹션',
+            paragraphs: Array.isArray(sec && sec.paragraphs)
+              ? sec.paragraphs.map(function(v){ return text(v); })
+              : []
+          };
+        });
+      }
+      return [];
     }
 
-    function makeOverview(row){
-      const listing = parseJson(row.listingSnapshotJson || '{}', {});
-      const lines = [];
-      const bullets = [listing.summary1, listing.summary2, listing.summary3].map(text).filter(Boolean);
-      if(bullets.length) lines.push.apply(lines, bullets);
-      const info = [];
-      if(text(listing.propertyType)) info.push('유형 ' + text(listing.propertyType));
-      if(text(listing.floorInfo)) info.push('층수 ' + text(listing.floorInfo));
-      if(text(listing.exclusiveAreaPy)) info.push('전용 ' + text(listing.exclusiveAreaPy) + '평');
-      if(text(listing.moveInDate)) info.push('입주 ' + text(listing.moveInDate));
-      if(text(listing.parkingCount)) info.push('주차 ' + text(listing.parkingCount));
-      if(info.length) lines.push(info.join(' · '));
-      if(!lines.length) lines.push('매물 기본정보를 바탕으로 블로그 내용을 정리해 주세요.');
-      return lines;
-    }
-    function htmlToPlainParagraphs(html){
-      const s = text(html);
-      if(!s) return [];
-      try{
-        const div = document.createElement('div');
-        div.innerHTML = s;
-        const paras = [];
-        Array.prototype.forEach.call(div.querySelectorAll('p'), function(p){
-          const t = text((p.innerText || '').replace(/\u00A0/g,' '));
-          if(t) paras.push(t);
-        });
-        if(paras.length) return paras;
-        const t = text((div.innerText || '').replace(/\u00A0/g,' '));
-        return t ? t.split(/\n{2,}/).map(text).filter(Boolean) : [];
-      }catch(_){
-        return [];
-      }
-    }
-    function makeBodyParagraphs(row){
-      const fromJson = parseJson(row.paragraphTextJson || '[]', []);
-      if(Array.isArray(fromJson) && fromJson.map(text).filter(Boolean).length){
-        return fromJson.map(text).filter(Boolean);
-      }
-      const fromBody = splitParagraphs(row.bodyText || '');
-      if(fromBody.length) return fromBody;
-      const fromHtml = htmlToPlainParagraphs(row.bodyHtml || '');
-      if(fromHtml.length) return fromHtml;
-      const listing = parseJson(row.listingSnapshotJson || '{}', {});
-      const fallback = [];
-      const memo = text(listing.memo || row.memo || '');
-      if(text(listing.title)) fallback.push(text(listing.title));
-      const facts = [
-        text(listing.addressMasked || row.addressMasked || row.address),
-        makeDealPrice(row),
-        text(listing.approvalDate) ? '사용승인 ' + text(listing.approvalDate) : '',
-        text(listing.buildingComposition),
-        text(listing.zoning)
-      ].filter(Boolean);
-      if(facts.length) fallback.push(facts.join(' · '));
-      if(memo) fallback.push(memo);
-      if(!fallback.length) fallback.push('AI 초안이 아직 생성되지 않았습니다.');
-      return fallback;
-    }
-    function getTeamType(row){
-      const no = text(row && row.listingNumber).toUpperCase();
-      if(no.indexOf('SK') === 0) return 'commercial';
-      return 'factory';
-    }
-    function getSectionMeta(row){
-      const team = getTeamType(row);
-      return team === 'commercial'
-        ? [
-            { key:'hero_intro', heading:'매물 한눈에 보기', slots:['hero','p1'], min:1 },
-            { key:'property_overview', heading:'매물 개요', slots:['p1'], min:1 },
-            { key:'location_context', heading:'입지와 접근', slots:['p2','p3'], min:1 },
-            { key:'building_and_usage', heading:'공간 구성', slots:['p4','p5'], min:1 },
-            { key:'strengths_summary', heading:'핵심 포인트', slots:['p6'], min:1 },
-            { key:'detailed_note', heading:'세부 참고', slots:['p7','p8','p9'], min:1 }
-          ]
-        : [
-            { key:'hero_intro', heading:'매물 한눈에 보기', slots:['hero','p1'], min:1 },
-            { key:'property_overview', heading:'매물 개요', slots:['p1'], min:1 },
-            { key:'location_context', heading:'야드와 진입', slots:['p2','p3'], min:1 },
-            { key:'building_and_usage', heading:'내부와 작업 동선', slots:['p4','p5'], min:1 },
-            { key:'strengths_summary', heading:'설비와 장점', slots:['p6'], min:1 },
-            { key:'detailed_note', heading:'세부 참고', slots:['p7','p8','p9'], min:1 }
-          ];
-    }
-    function distributeParagraphs(paragraphs, sections){
-      const list = (paragraphs || []).slice();
-      const count = sections.length;
-      const out = {};
-      sections.forEach(function(sec){ out[sec.key] = []; });
-      if(!list.length) return out;
-      let idx = 0;
-      sections.forEach(function(sec){
-        if(idx < list.length && sec.min > 0){
-          out[sec.key].push(list[idx++]);
-        }
+    function serializeSectionBlocksForSave(){
+      return (state.sectionBlocks || []).map(function(sec, idx){
+        return {
+          sectionKey: text(sec && sec.sectionKey) || ('section_' + idx),
+          heading: text(sec && sec.heading),
+          paragraphs: Array.isArray(sec && sec.paragraphs)
+            ? sec.paragraphs.map(function(v){ return text(v); })
+            : []
+        };
+      }).filter(function(sec){
+        return sec.heading || sec.paragraphs.some(Boolean);
       });
-      let secIndex = 0;
-      while(idx < list.length){
-        const sec = sections[Math.min(secIndex, sections.length - 1)];
-        out[sec.key].push(list[idx++]);
-        secIndex = (secIndex + 1) % sections.length;
-      }
+    }
+    function sectionBlocksToBodyTextForSave(blocks){
+      return (blocks || []).map(function(sec){
+        const parts = [];
+        const heading = text(sec && sec.heading);
+        if(heading) parts.push(heading);
+        (Array.isArray(sec && sec.paragraphs) ? sec.paragraphs : []).forEach(function(p){
+          const v = text(p);
+          if(v) parts.push(v);
+        });
+        return parts.join('\n\n');
+      }).filter(Boolean).join('\n\n\n');
+    }
+    function sectionBlocksToBodyHtmlForSave(blocks){
+      return (blocks || []).map(function(sec){
+        const chunks = [];
+        const heading = text(sec && sec.heading);
+        if(heading) chunks.push('<h2>' + esc(heading) + '</h2>');
+        (Array.isArray(sec && sec.paragraphs) ? sec.paragraphs : []).forEach(function(p){
+          const v = text(p);
+          if(v) chunks.push('<p>' + esc(v).replace(/\n/g, '<br>') + '</p>');
+        });
+        return chunks.join('\n');
+      }).filter(Boolean).join('\n\n');
+    }
+    function sectionBlocksToParagraphTextJsonForSave(blocks){
+      const out = [];
+      (blocks || []).forEach(function(sec){
+        (Array.isArray(sec && sec.paragraphs) ? sec.paragraphs : []).forEach(function(p){
+          const v = text(p);
+          if(v) out.push(v);
+        });
+      });
       return out;
     }
-    function buildSectionBlocksFromRow(row){
-      const fromJson = parseJson(row && row.sectionStructureJson || '[]', []);
-      if(Array.isArray(fromJson) && fromJson.length){
-        const cleaned = fromJson.map(function(sec, idx){
-          const key = text(sec && sec.sectionKey) || ('section_' + idx);
-          const heading = text(sec && sec.heading) || '섹션';
-          const paragraphs = Array.isArray(sec && sec.paragraphs)
-            ? sec.paragraphs.map(function(v){ return text(v); }).filter(Boolean)
-            : [];
-          return { key:key, heading:heading, paragraphs:paragraphs };
-        }).filter(function(sec){
-          return text(sec.heading) || (sec.paragraphs && sec.paragraphs.length);
-        });
-        if(cleaned.length) return cleaned;
-      }
 
-      const fallbackSections = getSectionMeta(row || {});
-      const fallbackParagraphs = distributeParagraphs(state.bodyParagraphs, fallbackSections);
-      return fallbackSections.map(function(sec){
-        return {
-          key: sec.key,
-          heading: sec.heading,
-          paragraphs: (fallbackParagraphs[sec.key] || []).map(function(v){ return text(v); }).filter(Boolean)
-        };
-      });
-    }
-    function syncSectionParagraphsFromBlocks(){
-      const out = {};
-      (state.sectionBlocks || []).forEach(function(sec){
-        out[text(sec.key)] = Array.isArray(sec.paragraphs) ? sec.paragraphs.slice() : [];
-      });
-      state.sectionParagraphs = out;
-    }
-    function renderParagraphList(list, key){
-      return (list || []).map(function(p, idx){
-        const displayText = formatDisplayText(p);
-        const empty = !text(displayText);
-        return '<p class="paragraph editable' + (empty ? ' is-empty' : '') + '" contenteditable="plaintext-only" spellcheck="false" data-edit-key="' + key + '" data-edit-idx="' + idx + '">' +
-          (empty ? '내용을 입력하세요.' : esc(displayText)) +
-          '</p>';
-      }).join('');
-    }
-
-    function renderTags(){
-      if(!state.tags.length){ els.tagWrap.innerHTML = ''; return; }
-      els.tagWrap.innerHTML = state.tags.map(v => '<span class="tag">' + esc(v) + '</span>').join('');
-    }
-    function renderThumbs(){
-      if(!state.thumbs.length){ els.thumbStrip.style.display='none'; els.thumbLines.innerHTML=''; return; }
-      els.thumbStrip.style.display='block';
-      els.thumbLines.innerHTML = state.thumbs.map(v => '<div class="thumb-line">' + esc(v) + '</div>').join('');
-    }
-    function mergeAssets(row){
-      const snaps = parseJson(row.assetSnapshotJson || '[]', []);
+    function getSectionImagesMap(row){
       const infos = parseJson(row.infoImageFilesJson || '[]', []);
-      const byId = {};
-      snaps.forEach(function(s){ byId[text(s.assetId)] = s; });
-      return infos.map(function(info){
-        const id = text(info.assetId);
-        const snap = byId[id] || {};
-        return {
-          assetId:id,
-          type:text(info.assetType || snap.assetType),
-          paragraph:text(info.paragraph || snap.paragraph || 'p1'),
-          isHero: !!snap.isHero || !!info.isHero,
-          url: text(info.url || info.previewUrl || info.originalUrl || ''),
-          sourceLabel: text(info.assetSource || snap.assetSource)
+      const snaps = parseJson(row.assetSnapshotJson || '[]', []);
+      const snapById = {};
+      snaps.forEach(function(s){ snapById[text(s.assetId)] = s || {}; });
+
+      const map = {};
+      let hero = null;
+
+      infos.forEach(function(info){
+        const id = text(info && info.assetId);
+        const snap = snapById[id] || {};
+        const secKey = text(info && (info.sectionKey || info.section_key));
+        const isHero = !!(info && info.isHero) || !!snap.isHero;
+        const url = text(info && (info.url || info.previewUrl || info.originalUrl));
+        if(!url) return;
+        const asset = {
+          assetId: id,
+          url: url,
+          caption: text(info && (info.caption || info.sourceLabel || '')),
+          isHero: isHero
         };
-      }).filter(v => !!v.url);
-    }
-    function groupAssets(row){
-      const assets = mergeAssets(row);
-      const grouped = { hero:null, basic:[], p1:[], p2:[], p3:[], p4:[], p5:[], p6:[], p7:[], p8:[], p9:[] };
-      const hero = assets.find(v => v.isHero) || assets[0] || null;
-      if(hero) grouped.hero = hero;
-      assets.forEach(function(v){
-        if(v.type === 'basic_info') grouped.basic.push(v);
-        if(/^p[1-9]$/.test(v.paragraph)) grouped[v.paragraph].push(v);
+        if(isHero && !hero) hero = asset;
+        if(secKey){
+          if(!map[secKey]) map[secKey] = [];
+          map[secKey].push(asset);
+        }
       });
-      return grouped;
+
+      return {
+        hero: text(row.heroImageUrl) ? { url: text(row.heroImageUrl), caption:'', isHero:true } : hero,
+        bySection: map
+      };
     }
+
     function uniqueAssets(list){
       const seen = {};
       return (list || []).filter(function(v){
-        const id = text(v && v.assetId);
+        const id = text(v && v.assetId) || text(v && v.url);
         if(!id || seen[id]) return false;
         seen[id] = true;
         return true;
       });
     }
-    function getSectionImages(section, grouped){
-      const out = [];
-      (section.slots || []).forEach(function(slot){
-        if(slot === 'hero'){
-          if(grouped.hero) out.push(grouped.hero);
-          return;
-        }
-        if(grouped[slot] && grouped[slot].length) out.push(grouped[slot][0]);
-      });
-      return uniqueAssets(out);
-    }
-    const FACTORY_PHOTO_TYPE_LABELS = {
-      p1: '외관전경',
-      p2: '마당/야드',
-      p3: '진입로/출입구',
-      p4: '내부전경',
-      p5: '작업공간',
-      p6: '설비/장비',
-      p7: '창고/적재공간',
-      p8: '사무/편의공간',
-      p9: '기타'
-    };
-    const COMMERCIAL_PHOTO_TYPE_LABELS = {
-      p1: '건물외관',
-      p2: '전면/출입구',
-      p3: '주변환경',
-      p4: '내부전경',
-      p5: '메인공간',
-      p6: '룸/구획공간',
-      p7: '업무/설비공간',
-      p8: '편의공간',
-      p9: '기타'
-    };
-    function getPhotoTypeLabels(row){
-      return getTeamType(row) === 'commercial'
-        ? COMMERCIAL_PHOTO_TYPE_LABELS
-        : FACTORY_PHOTO_TYPE_LABELS;
-    }
-    function getCaptionTextForAsset(asset, row){
-      if(!asset) return '';
-      if(text(asset.type) === 'basic_info') return '기본정보';
-      const labels = getPhotoTypeLabels(row || state.row || {});
-      const paragraphKey = text(asset.paragraph || 'p1');
-      return text(labels[paragraphKey] || labels.p1 || '');
-    }
-    function renderFigure(asset, caption){
+
+    function renderFigure(asset){
       if(!asset || !asset.url) return '';
+      const caption = text(asset.caption);
       return '<div class="figure"><img src="' + esc(asset.url) + '" alt="이미지" />'
-        + (text(caption) ? '<div class="figcap">' + esc(caption) + '</div>' : '')
+        + (caption ? '<div class="figcap">' + esc(caption) + '</div>' : '')
         + '</div>';
     }
+
+    function renderParagraphList(list, sectionKey){
+      return (list || []).map(function(p, idx){
+        const displayText = formatDisplayText(p);
+        const empty = !text(displayText);
+        return '<p class="paragraph editable' + (empty ? ' is-empty' : '') + '" contenteditable="plaintext-only" spellcheck="false" data-edit-key="' + esc(sectionKey) + '" data-edit-idx="' + idx + '">'
+          + (empty ? '내용을 입력하세요.' : esc(displayText))
+          + '</p>';
+      }).join('');
+    }
+
     function renderImages(row){
-      const grouped = groupAssets(row);
-      const hero = text(row.heroImageUrl) ? { url: text(row.heroImageUrl) } : grouped.hero;
-      if(hero){
+      const imgMap = getSectionImagesMap(row);
+      const hero = imgMap.hero;
+
+      if(hero && hero.url){
         els.heroBox.classList.remove('empty');
         els.heroBox.style.backgroundImage = 'url("' + hero.url.replace(/"/g, '%22') + '")';
         els.heroBox.textContent = '';
       }else{
         els.heroBox.classList.add('empty');
-        els.heroBox.style.backgroundImage='none';
-        els.heroBox.textContent='대표 이미지 없음';
+        els.heroBox.style.backgroundImage = 'none';
+        els.heroBox.textContent = '대표 이미지 없음';
       }
 
-      const fallbackMeta = getSectionMeta(row || {});
-      const fallbackByKey = {};
-      fallbackMeta.forEach(function(sec){ fallbackByKey[sec.key] = sec; });
-      const renderedSections = (state.sectionBlocks || []).map(function(sec, secIdx){
-        const secKey = text(sec.key) || ('section_' + secIdx);
+      const renderedSections = (state.sectionBlocks || []).map(function(sec){
+        const secKey = text(sec.sectionKey);
         const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
-        const meta = fallbackByKey[secKey] || { key: secKey, slots: [], min: 0 };
-        const images = getSectionImages(meta, grouped);
-        const imageHtml = images.map(function(asset){
-          return renderFigure(asset, getCaptionTextForAsset(asset, row));
-        }).join('');
+        const images = uniqueAssets(imgMap.bySection[secKey] || []);
+        const imageHtml = images.map(renderFigure).join('');
         return '<section class="block">'
           + '<div class="section-kicker">SECTION</div>'
-          + '<h2 class="section-title">' + esc(text(sec.heading) || '섹션') + '</h2>'
+          + '<h2 class="section-title editable" contenteditable="plaintext-only" spellcheck="false" data-section-heading="' + esc(secKey) + '">' + esc(text(sec.heading) || '섹션') + '</h2>'
           + '<div class="paragraphs">' + renderParagraphList(paras, secKey) + '</div>'
           + (imageHtml ? '<div class="section-image-stack">' + imageHtml + '</div>' : '')
           + '</section>';
       }).join('');
 
-      const basicInfoHtml = grouped.basic.length ? (
-        '<section class="block basic-info-block">'
-        + '<div class="section-kicker">BASIC INFO</div>'
-        + '<h2 class="section-title">기본 정보</h2>'
-        + '<div class="section-image-stack">'
-        + grouped.basic.map(function(asset){ return renderFigure(asset, getCaptionTextForAsset(asset, row)); }).join('')
-        + '</div>'
-        + '</section>'
-      ) : '';
-
-      els.articleSections.innerHTML = renderedSections + basicInfoHtml;
+      els.articleSections.innerHTML = renderedSections;
     }
+
+    function renderTags(){
+      if(!state.tags.length){
+        els.tagWrap.innerHTML = '';
+        return;
+      }
+      els.tagWrap.innerHTML = state.tags.map(function(v){
+        return '<span class="tag">' + esc(v) + '</span>';
+      }).join('');
+    }
+
+    function renderThumbs(){
+      if(!state.thumbs.length){
+        els.thumbStrip.style.display = 'none';
+        els.thumbLines.innerHTML = '';
+        return;
+      }
+      els.thumbStrip.style.display = 'block';
+      els.thumbLines.innerHTML = state.thumbs.map(function(v){
+        return '<div class="thumb-line">' + esc(v) + '</div>';
+      }).join('');
+    }
+
     function renderAll(row){
       state.row = row;
       state.original = JSON.parse(JSON.stringify(row));
-      state.overviewParagraphs = makeOverview(row);
-      state.bodyParagraphs = makeBodyParagraphs(row);
       state.tags = parseJson(row.hashtagsJson || '[]', []).map(text).filter(Boolean);
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
       state.sectionBlocks = buildSectionBlocksFromRow(row);
-      syncSectionParagraphsFromBlocks();
 
       els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
       els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');
@@ -613,10 +500,12 @@
 
       els.titleDisplay.textContent = text(row.draftTitle || parseJson(row.listingSnapshotJson || '{}', {}).title || '제목을 입력하세요.');
       els.titleDisplay.classList.toggle('is-empty', !text(els.titleDisplay.textContent));
-      const lead = formatDisplayText(state.overviewParagraphs[0] || '');
-      if(state.overviewParagraphs.length) state.overviewParagraphs[0] = lead;
+
+      const firstLead = (((state.sectionBlocks || [])[0] || {}).paragraphs || [])[0] || '';
+      const lead = formatDisplayText(firstLead);
       els.leadDisplay.textContent = lead || '도입 문구를 입력하세요.';
       els.leadDisplay.classList.toggle('is-empty', !text(lead));
+
       els.ctaLabelDisplay.textContent = text(state.cta.label) || '문의하기';
       els.ctaTextDisplay.textContent = text(row.ctaText || state.cta.text) || '문의 문구를 입력하세요.';
       els.ctaTextDisplay.classList.toggle('is-empty', !text(row.ctaText || state.cta.text));
@@ -625,6 +514,7 @@
       renderThumbs();
       renderTags();
     }
+
     function buildMinimalRow(){
       return {
         blogId: state.blogId,
@@ -632,20 +522,18 @@
         status: 'editing',
         subStatus: 'draft_generated',
         draftTitle: '',
-        bodyText: '',
-        bodyHtml: '',
+        sectionStructureJson: '[]',
         hashtagsJson: '[]',
         thumbnailTextJson: '[]',
         ctaJson: '{}',
         ctaText: '',
-        listingSnapshotJson: '{}',
-        assetSnapshotJson: '[]',
         infoImageFilesJson: '[]',
-        styleType: text(getParam('style')),
-        addressMasked: '',
-        address: ''
+        assetSnapshotJson: '[]',
+        heroImageUrl: '',
+        styleType: text(getParam('style'))
       };
     }
+
     function loadDraft(){
       state.blogId = text(getParam('blogId'));
       if(!state.blogId){
@@ -666,18 +554,20 @@
           renderAll(buildMinimalRow());
           showToast('서버 초안 로드 실패');
         })
-        .finally(function(){ setLoading(false); });
+        .finally(function(){
+          setLoading(false);
+        });
     }
+
     function buildPatch(){
-      const ordered = getSectionMeta(state.row || {}).reduce(function(acc, sec){ return acc.concat(state.sectionParagraphs[sec.key] || []); }, []);
-      const bodyText = ordered.join('\n\n');
+      const sectionBlocks = serializeSectionBlocksForSave();
       return {
         draftTitle: text(els.titleDisplay.textContent),
         seoTitle: text(els.titleDisplay.textContent),
-        bodyText: bodyText,
-        bodyHtml: bodyTextToHtml(bodyText),
-        paragraphTextJson: ordered,
-        sectionStructureJson: parseJson((state.row && state.row.sectionStructureJson) || '[]', []),
+        bodyText: sectionBlocksToBodyTextForSave(sectionBlocks),
+        bodyHtml: sectionBlocksToBodyHtmlForSave(sectionBlocks),
+        paragraphTextJson: sectionBlocksToParagraphTextJsonForSave(sectionBlocks),
+        sectionStructureJson: sectionBlocks,
         hashtagsJson: state.tags,
         thumbnailTextJson: state.thumbs,
         ctaText: text(els.ctaTextDisplay.textContent),
@@ -687,8 +577,12 @@
         }
       };
     }
+
     function saveDraft(){
-      if(!state.blogId){ showToast('blogId가 없습니다'); return; }
+      if(!state.blogId){
+        showToast('blogId가 없습니다');
+        return;
+      }
       const patch = buildPatch();
       setLoading(true, '임시저장 중');
       fetchPostJson({ action:'saveBlogEditorDraft', blogId: state.blogId, patch: patch })
@@ -697,11 +591,20 @@
           els.statusChip.textContent = '저장완료';
           showToast('임시저장 완료');
         })
-        .catch(function(err){ console.error(err); showToast('임시저장 실패'); })
-        .finally(function(){ setLoading(false); });
+        .catch(function(err){
+          console.error(err);
+          showToast('임시저장 실패');
+        })
+        .finally(function(){
+          setLoading(false);
+        });
     }
+
     function markReady(){
-      if(!state.blogId){ showToast('blogId가 없습니다'); return; }
+      if(!state.blogId){
+        showToast('blogId가 없습니다');
+        return;
+      }
       setLoading(true, '발행준비 저장 중');
       fetchPostJson({ action:'markBlogReadyToPublish', blogId: state.blogId })
         .then(function(data){
@@ -709,35 +612,29 @@
           els.statusChip.textContent = '발행준비';
           showToast('발행준비 완료');
         })
-        .catch(function(err){ console.error(err); showToast('발행준비 실패'); })
-        .finally(function(){ setLoading(false); });
+        .catch(function(err){
+          console.error(err);
+          showToast('발행준비 실패');
+        })
+        .finally(function(){
+          setLoading(false);
+        });
     }
-    function openEdit(key){}
-    function placeCaretAtEnd(el){
-      try{
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        range.collapse(false);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }catch(_){}
+
+    function startInline(el){
+      if(!el) return;
+      el.classList.add('is-editing');
+      el.setAttribute('contenteditable','plaintext-only');
+    }
+    function endInline(el){
+      if(!el) return;
+      el.classList.remove('is-editing');
     }
     function normalizeEditableText(el){
       return text((el && el.innerText) || '').replace(/\u00A0/g,' ');
     }
 
     function bindInlineEditors(){
-      function startInline(el){
-        if(!el) return;
-        el.classList.add('is-editing');
-        el.setAttribute('contenteditable','plaintext-only');
-      }
-      function endInline(el){
-        if(!el) return;
-        el.classList.remove('is-editing');
-      }
-
       els.titleDisplay.addEventListener('click', function(){ startInline(els.titleDisplay); });
       els.titleDisplay.addEventListener('blur', function(){
         const v = normalizeEditableText(els.titleDisplay) || '제목을 입력하세요.';
@@ -748,14 +645,15 @@
       els.leadDisplay.addEventListener('click', function(){ startInline(els.leadDisplay); });
       els.leadDisplay.addEventListener('blur', function(){
         const v = normalizeEditableText(els.leadDisplay);
-        state.overviewParagraphs[0] = v;
-        const heroBlock = (state.sectionBlocks || []).find(function(sec){ return text(sec.key) === 'hero_intro'; });
-        if(heroBlock){
-          if(!Array.isArray(heroBlock.paragraphs)) heroBlock.paragraphs = [];
-          if(heroBlock.paragraphs.length){ heroBlock.paragraphs[0] = v; }
-          else if(v){ heroBlock.paragraphs = [v]; }
+        const firstSec = (state.sectionBlocks || [])[0];
+        if(firstSec){
+          if(!Array.isArray(firstSec.paragraphs)) firstSec.paragraphs = [];
+          if(firstSec.paragraphs.length){
+            firstSec.paragraphs[0] = v;
+          }else if(v){
+            firstSec.paragraphs = [v];
+          }
         }
-        syncSectionParagraphsFromBlocks();
         els.leadDisplay.textContent = v || '도입 문구를 입력하세요.';
         els.leadDisplay.classList.toggle('is-empty', !v);
         renderImages(state.row || {});
@@ -778,43 +676,58 @@
       });
 
       document.addEventListener('click', function(e){
+        const h = e.target.closest('.section-title.editable');
+        if(h){
+          startInline(h);
+          return;
+        }
         const p = e.target.closest('.paragraph.editable');
-        if(!p) return;
-        startInline(p);
+        if(p){
+          startInline(p);
+        }
       });
 
       document.addEventListener('blur', function(e){
+        const h = e.target.closest && e.target.closest('.section-title.editable');
+        if(h){
+          const key = text(h.getAttribute('data-section-heading'));
+          const value = normalizeEditableText(h) || '섹션';
+          const sec = (state.sectionBlocks || []).find(function(v){ return text(v.sectionKey) === key; });
+          if(sec) sec.heading = value;
+          h.textContent = value;
+          endInline(h);
+          return;
+        }
+
         const p = e.target.closest && e.target.closest('.paragraph.editable');
         if(!p) return;
-        const key = p.getAttribute('data-edit-key');
+        const key = text(p.getAttribute('data-edit-key'));
         const idx = Number(p.getAttribute('data-edit-idx'));
         const value = normalizeEditableText(p);
-        const block = (state.sectionBlocks || []).find(function(sec){ return text(sec.key) === text(key); });
-        if(block){
-          if(!Array.isArray(block.paragraphs)) block.paragraphs = [];
-          block.paragraphs[idx] = value;
+        const sec = (state.sectionBlocks || []).find(function(v){ return text(v.sectionKey) === key; });
+        if(sec){
+          if(!Array.isArray(sec.paragraphs)) sec.paragraphs = [];
+          sec.paragraphs[idx] = value;
         }
-        syncSectionParagraphsFromBlocks();
         p.textContent = value || '내용을 입력하세요.';
         p.classList.toggle('is-empty', !value);
-        if(text(key) === 'hero_intro' && idx === 0){
-          els.leadDisplay.textContent = value || '도입 문구를 입력하세요.';
-          els.leadDisplay.classList.toggle('is-empty', !value);
-          state.overviewParagraphs[0] = value;
-        }
         endInline(p);
       }, true);
 
       els.tagEditBtn.addEventListener('click', function(){
         const joined = prompt('해시태그를 쉼표로 구분해서 입력하세요.', state.tags.join(', '));
         if(joined == null) return;
-        state.tags = joined.split(',').map(text).filter(Boolean).map(v => v.startsWith('#') ? v : ('#' + v));
+        state.tags = joined.split(',').map(text).filter(Boolean).map(function(v){
+          return v.startsWith('#') ? v : ('#' + v);
+        });
         renderTags();
       });
     }
 
-
-    els.backBtn.addEventListener('click', function(){ if(document.referrer) history.back(); else location.href = CONFIG.listUrl; });
+    els.backBtn.addEventListener('click', function(){
+      if(document.referrer) history.back();
+      else location.href = CONFIG.listUrl;
+    });
     els.saveBtn.addEventListener('click', saveDraft);
     els.publishBtn.addEventListener('click', markReady);
 

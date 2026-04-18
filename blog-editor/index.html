@@ -64,7 +64,7 @@
     }
     .paragraph.is-empty{color:#98a1ad}
     .figure{margin:22px 0 26px}
-    .figure img{width:100%;display:block;border-radius:22px;border:1px solid #ebeff5;background:#f0f4f8}
+    .figure img{width:100%;max-width:680px;display:block;margin:0 auto;border-radius:22px;border:1px solid #ebeff5;background:#f0f4f8}
     .figcap{margin-top:8px;font-size:12px;color:#85909d;font-weight:800}
     .section-image-stack{display:grid;gap:18px;margin:18px 0 10px}
     .section-kicker{margin:0 0 8px;font-size:12px;font-weight:900;color:#7d8794;letter-spacing:.08em;text-transform:uppercase}
@@ -114,6 +114,7 @@
     .toast.show{opacity:1}
 
     @media (max-width: 900px){
+      .figure img{max-width:100%}
       .title{font-size:31px}
       .lead{font-size:18px;line-height:1.9}
       .section-title{font-size:30px}
@@ -288,6 +289,12 @@
     }
     function splitParagraphs(bodyText){ return text(bodyText).split(/\n{2,}/).map(s=>s.trim()).filter(Boolean); }
     function bodyTextToHtml(bodyText){ return splitParagraphs(bodyText).map(p => '<p>' + esc(p).replace(/\n/g,'<br>') + '</p>').join('\n'); }
+    function formatDisplayText(v){
+      return text(v)
+        .replace(/\s*\/\s*/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
     function toDirectImageUrl(url){
       return text(url);
     }
@@ -403,9 +410,10 @@
     }
     function renderParagraphList(list, key){
       return (list || []).map(function(p, idx){
-        const empty = !text(p);
+        const displayText = formatDisplayText(p);
+        const empty = !text(displayText);
         return '<p class="paragraph editable' + (empty ? ' is-empty' : '') + '" contenteditable="plaintext-only" spellcheck="false" data-edit-key="' + key + '" data-edit-idx="' + idx + '">' +
-          (empty ? '내용을 입력하세요.' : esc(p)) +
+          (empty ? '내용을 입력하세요.' : esc(displayText)) +
           '</p>';
       }).join('');
     }
@@ -534,7 +542,8 @@
 
       els.titleDisplay.textContent = text(row.draftTitle || parseJson(row.listingSnapshotJson || '{}', {}).title || '제목을 입력하세요.');
       els.titleDisplay.classList.toggle('is-empty', !text(els.titleDisplay.textContent));
-      const lead = state.overviewParagraphs[0] || '';
+      const lead = formatDisplayText(state.overviewParagraphs[0] || '');
+      if(state.overviewParagraphs.length) state.overviewParagraphs[0] = lead;
       els.leadDisplay.textContent = lead || '도입 문구를 입력하세요.';
       els.leadDisplay.classList.toggle('is-empty', !text(lead));
       els.ctaLabelDisplay.textContent = text(state.cta.label) || '문의하기';

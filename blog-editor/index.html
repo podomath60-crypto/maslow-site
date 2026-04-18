@@ -52,12 +52,12 @@
     .article{padding:26px 22px 34px}
     .meta-line{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;color:#7a8491;font-size:13px;font-weight:800}
     .meta-pill{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;background:#f7f9fc;border:1px solid #e8edf4}
-    .title{margin:0;font-size:38px;line-height:1.24;font-weight:950;letter-spacing:-0.05em;word-break:keep-all}
+    .title{margin:0;font-size:38px;line-height:1.24;font-weight:950;letter-spacing:-0.05em;word-break:keep-all;white-space:pre-line}
     .lead{margin:16px 0 0;font-size:20px;line-height:1.85;color:#2f3742;font-weight:700;word-break:keep-all;white-space:pre-line}
     .lead.is-empty{color:#98a1ad}
     .divider{height:1px;background:var(--line);margin:28px 0}
     .block{margin:0 0 34px}
-    .section-title{margin:0 0 16px;font-size:34px;line-height:1.28;font-weight:950;letter-spacing:-0.05em;word-break:keep-all}
+    .section-title{margin:0 0 14px;font-size:34px;line-height:1.28;font-weight:950;letter-spacing:-0.05em;word-break:keep-all}
     .paragraphs{display:grid;gap:18px}
     .paragraph{
       margin:0;font-size:19px;line-height:2.02;color:#2e3741;font-weight:500;word-break:keep-all;white-space:pre-line;
@@ -69,13 +69,13 @@
     .info-strip{margin:30px 0;padding:18px 18px;border-radius:22px;background:#fbfcff;border:1px solid #e9eef5}
     .info-strip-title{font-size:15px;font-weight:900;margin:0 0 10px;color:#1d2430}
     .thumb-lines{display:grid;gap:8px}
-    .thumb-line{font-size:16px;font-weight:800;color:#334155;white-space:pre-line}
+    .thumb-line{font-size:16px;font-weight:800;color:#334155}
     .cta{margin-top:40px;padding:24px;border-radius:24px;background:#fbfcff;border:1px solid #e9eef5}
-    .cta-title{margin:0 0 8px;font-size:22px;font-weight:900;letter-spacing:-0.04em}
+    .cta-title{margin:0 0 8px;font-size:26px;font-weight:950;letter-spacing:-0.05em;white-space:pre-line}
     .cta-text{margin:0;font-size:16px;line-height:1.75;color:#475161;font-weight:700;white-space:pre-line}
     .hashtags{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px}
     .tag{display:inline-flex;align-items:center;min-height:34px;padding:0 12px;border-radius:999px;background:#eef5ff;border:1px solid #d5e6ff;color:#2369d9;font-size:13px;font-weight:900}
-    .footer-note{margin-top:28px;font-size:12px;color:#9aa3af;font-weight:800}
+    .footer-note{margin-top:28px;font-size:12px;color:#9aa3af;font-weight:800;white-space:pre-line}
 
     .editbox{display:none;margin-top:10px}
     .editbox.show{display:block}
@@ -88,18 +88,10 @@
     .mini-btn{min-height:38px;padding:0 12px;border-radius:12px;border:1px solid #dce5ef;background:#fff;color:var(--ink);font-size:13px;font-weight:900}
     .mini-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
     .touch-hint{margin-top:8px;font-size:12px;color:#97a1ae;font-weight:800}
-    .editable{cursor:pointer}
-    .editable:hover{opacity:.95}
-    .inline-editing{outline:2px solid rgba(15,124,255,.18);border-radius:12px;background:#fdfefe}
-    [contenteditable="true"]{cursor:text}
     .editable{cursor:text}
-    .editable:focus{outline:none}
+    .editable:hover{opacity:.95}
 
-
-    .floating-tools{
-      position:fixed;right:18px;bottom:18px;z-index:35;display:flex;flex-direction:column;gap:10px;
-    }
-    .fab{min-width:52px;min-height:52px;padding:0 14px;border-radius:16px;background:#fff;border:1px solid var(--line);box-shadow:0 14px 28px rgba(15,23,42,.1);font-size:13px;font-weight:900;color:#1a202c}
+    .floating-tools{display:none}
 
     .loading-overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.74);backdrop-filter:blur(3px);padding:24px}
     .loading-overlay.show{display:flex}
@@ -147,11 +139,24 @@
           </div>
 
           <h1 class="title editable" id="titleDisplay">제목을 불러오는 중입니다.</h1>
+          <div class="editbox" id="titleEditBox">
+            <input type="text" class="input" id="titleInput" placeholder="제목 입력" />
+            <div class="mini-actions">
+              <button type="button" class="mini-btn" id="titleCancelBtn">취소</button>
+              <button type="button" class="mini-btn primary" id="titleSaveBtn">저장</button>
+            </div>
           </div>
 
           <p class="lead editable" id="leadDisplay">도입 문구를 불러오는 중입니다.</p>
+          <div class="editbox" id="leadEditBox">
+            <textarea class="textarea" id="leadInput" placeholder="도입 문구"></textarea>
+            <div class="mini-actions">
+              <button type="button" class="mini-btn" id="leadCancelBtn">취소</button>
+              <button type="button" class="mini-btn primary" id="leadSaveBtn">저장</button>
+            </div>
           </div>
-          <div class="touch-hint">제목, 도입문, 문단, CTA를 바로 터치해서 수정하세요. 엔터로 줄바꿈됩니다.</div>
+
+          <div class="touch-hint">제목, 도입문, 문단, CTA를 바로 수정할 수 있습니다.</div>
 
           <div class="divider"></div>
 
@@ -179,9 +184,21 @@
 
           <section class="cta">
             <h3 class="cta-title editable" id="ctaLabelDisplay">문의하기</h3>
+            <div class="editbox" id="ctaLabelEditBox">
+              <input type="text" class="input" id="ctaLabelInput" placeholder="CTA 라벨" />
+              <div class="mini-actions">
+                <button type="button" class="mini-btn" id="ctaLabelCancelBtn">취소</button>
+                <button type="button" class="mini-btn primary" id="ctaLabelSaveBtn">저장</button>
+              </div>
             </div>
 
             <p class="cta-text editable" id="ctaTextDisplay">문의 문구를 입력하세요.</p>
+            <div class="editbox" id="ctaTextEditBox">
+              <textarea class="textarea" id="ctaTextInput" placeholder="CTA 문구"></textarea>
+              <div class="mini-actions">
+                <button type="button" class="mini-btn" id="ctaTextCancelBtn">취소</button>
+                <button type="button" class="mini-btn primary" id="ctaTextSaveBtn">저장</button>
+              </div>
             </div>
           </section>
 
@@ -189,6 +206,11 @@
           <div class="footer-note" id="footerNote">blogId를 불러오는 중입니다.</div>
         </div>
       </article>
+    </div>
+
+    <div class="floating-tools">
+      <button type="button" class="fab" id="bodyEditBtn">본문수정</button>
+      <button type="button" class="fab" id="tagEditBtn">태그수정</button>
     </div>
   </div>
 
@@ -209,11 +231,13 @@
     const state = {
       blogId: '',
       row: null,
+      original: null,
       tags: [],
       thumbs: [],
       cta: { label:'', text:'' },
       bodyParagraphs: [],
-      overviewParagraphs: []
+      overviewParagraphs: [],
+      activeEditable: null
     };
 
     const els = {
@@ -236,6 +260,8 @@
       ctaTextDisplay: document.getElementById('ctaTextDisplay'),
       tagWrap: document.getElementById('tagWrap'),
       footerNote: document.getElementById('footerNote'),
+      bodyEditBtn: document.getElementById('bodyEditBtn'),
+      tagEditBtn: document.getElementById('tagEditBtn'),
       loadingOverlay: document.getElementById('loadingOverlay'),
       loadingText: document.getElementById('loadingText'),
       toast: document.getElementById('toast'),
@@ -245,7 +271,7 @@
 
     function text(v){ return String(v == null ? '' : v).trim(); }
     function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
-    function parseJson(v, fallback){ try{ const x = JSON.parse(v); return x == null ? fallback : x; }catch(e){ return fallback; } }
+    function parseJson(v, fallback){ try{ const x = typeof v === 'string' ? JSON.parse(v) : v; return x == null ? fallback : x; }catch(e){ return fallback; } }
     function getParam(name){ return new URLSearchParams(location.search).get(name) || ''; }
     function setLoading(on, label){ els.loadingText.textContent = label || '불러오는 중'; els.loadingOverlay.classList.toggle('show', !!on); }
     function showToast(msg){ if(!msg) return; els.toast.textContent = msg; els.toast.classList.add('show'); clearTimeout(showToast._timer); showToast._timer=setTimeout(()=>els.toast.classList.remove('show'),1800); }
@@ -254,16 +280,20 @@
         method:'POST', mode:'cors', headers:{'Content-Type':'text/plain;charset=UTF-8'}, body: JSON.stringify(payload)
       }).then(res => { if(!res.ok) throw new Error('요청 실패: ' + res.status); return res.json(); });
     }
-    function splitParagraphs(bodyText){ return String(bodyText == null ? '' : bodyText).replace(/
-/g,'').split(/
-
-+/).map(s=>s.trim()).filter(Boolean); }
+    function splitParagraphs(bodyText){
+      return text(bodyText)
+        .split(/
+{2,}/)
+        .map(s=>s.trim())
+        .filter(Boolean);
+    }
     function bodyTextToHtml(bodyText){
-      return String(bodyText == null ? '' : bodyText).replace(/
-/g,'').split(/
-
-+/).map(p => '<p>' + esc(p).replace(/
-/g,'<br>') + '</p>').join('
+      return text(bodyText)
+        .split(/
+{2,}/)
+        .map(p => '<p>' + esc(p).replace(/
+/g,'<br>') + '</p>')
+        .join('
 ');
     }
     function toDirectImageUrl(url){
@@ -280,8 +310,11 @@
       if(deal && price) return deal + ' / ' + price;
       return deal || price || '-';
     }
+    function getListingSnapshot(row){
+      return parseJson(row.listingSnapshotJson || '{}', {});
+    }
     function makeOverview(row){
-      const listing = parseJson(row.listingSnapshotJson || '{}', {});
+      const listing = getListingSnapshot(row);
       const lines = [];
       const bullets = [listing.summary1, listing.summary2, listing.summary3].map(text).filter(Boolean);
       if(bullets.length) lines.push.apply(lines, bullets);
@@ -295,12 +328,18 @@
       if(!lines.length) lines.push('매물 기본정보를 바탕으로 블로그 내용을 정리해 주세요.');
       return lines;
     }
+    function getSavedParagraphArray(row){
+      const arr = parseJson(row.paragraphTextJson || '[]', []);
+      return Array.isArray(arr) ? arr.map(text).filter(v => v !== '') : [];
+    }
     function makeBodyParagraphs(row){
+      const saved = getSavedParagraphArray(row);
+      if(saved.length) return saved;
       const fromBody = splitParagraphs(row.bodyText || '');
       if(fromBody.length) return fromBody;
-      const listing = parseJson(row.listingSnapshotJson || '{}', {});
+      const listing = getListingSnapshot(row);
       const fallback = [];
-      const memo = text(listing.memo || row.memo || '');
+      const memo = text((row.listingRow && row.listingRow.memo) || row.memo || listing.memo || '');
       if(text(listing.title)) fallback.push(text(listing.title));
       const facts = [
         text(listing.addressMasked || row.addressMasked || row.address),
@@ -317,20 +356,17 @@
     function renderParagraphList(target, list, key){
       target.innerHTML = (list || []).map((p, idx) => {
         const empty = !text(p);
-        return '<p class="paragraph editable' + (empty ? ' is-empty' : '') + '" contenteditable="true" spellcheck="false" data-edit-key="' + key + '" data-edit-idx="' + idx + '">' +
-          (empty ? '내용을 입력하세요.' : esc(p).replace(/
-/g,'<br>')) + '</p>';
+        return '<p class="paragraph editable' + (empty ? ' is-empty' : '') + '" data-edit-key="' + key + '" data-edit-idx="' + idx + '">' + (empty ? '내용을 입력하세요.' : esc(p)) + '</p>';
       }).join('');
     }
     function renderTags(){
       if(!state.tags.length){ els.tagWrap.innerHTML = ''; return; }
-      els.tagWrap.innerHTML = state.tags.map(v => '<span class="tag">' + esc(v) + '</span>').join('');
+      els.tagWrap.innerHTML = state.tags.map(v => '<span class="tag editable-tag">' + esc(v) + '</span>').join('');
     }
     function renderThumbs(){
       if(!state.thumbs.length){ els.thumbStrip.style.display='none'; els.thumbLines.innerHTML=''; return; }
       els.thumbStrip.style.display='block';
-      els.thumbLines.innerHTML = state.thumbs.map(v => '<div class="thumb-line">' + esc(v).replace(/
-/g,'<br>') + '</div>').join('');
+      els.thumbLines.innerHTML = state.thumbs.map(v => '<div class="thumb-line">' + esc(v) + '</div>').join('');
     }
     function mergeAssets(row){
       const snaps = parseJson(row.assetSnapshotJson || '[]', []);
@@ -372,34 +408,31 @@
     }
     function renderAll(row){
       state.row = row;
+      state.original = JSON.parse(JSON.stringify(row));
       state.overviewParagraphs = makeOverview(row);
       state.bodyParagraphs = makeBodyParagraphs(row);
       state.tags = parseJson(row.hashtagsJson || '[]', []).map(text).filter(Boolean);
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
-
       els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
       els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');
       els.metaStatus.textContent = '상태 ' + ([text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '-');
       els.metaStyle.textContent = '스타일 ' + (text(row.styleType) || '-');
       els.footerNote.textContent = 'blogId: ' + (text(row.blogId) || state.blogId);
-
-      els.titleDisplay.textContent = text(row.draftTitle || parseJson(row.listingSnapshotJson || '{}', {}).title || '제목을 입력하세요.');
-      els.titleDisplay.classList.toggle('is-empty', !text(els.titleDisplay.textContent));
+      const listing = getListingSnapshot(row);
+      els.titleDisplay.textContent = text(row.draftTitle || listing.title || '제목을 입력하세요.');
       const lead = state.overviewParagraphs[0] || '';
-      els.leadDisplay.innerHTML = esc(lead || '도입 문구를 입력하세요.').replace(/
-/g,'<br>');
+      els.leadDisplay.textContent = lead || '도입 문구를 입력하세요.';
       els.leadDisplay.classList.toggle('is-empty', !text(lead));
       els.ctaLabelDisplay.textContent = text(state.cta.label) || '문의하기';
-      els.ctaTextDisplay.innerHTML = esc(text(row.ctaText || state.cta.text) || '문의 문구를 입력하세요.').replace(/
-/g,'<br>');
+      els.ctaTextDisplay.textContent = text(row.ctaText || state.cta.text) || '문의 문구를 입력하세요.';
       els.ctaTextDisplay.classList.toggle('is-empty', !text(row.ctaText || state.cta.text));
-
       renderParagraphList(els.overviewParagraphs, state.overviewParagraphs, 'overview');
       renderParagraphList(els.bodyParagraphs, state.bodyParagraphs, 'body');
       renderImages(row);
       renderThumbs();
       renderTags();
+      bindContentEditable();
     }
     function buildMinimalRow(){
       return {
@@ -410,6 +443,7 @@
         draftTitle: '',
         bodyText: '',
         bodyHtml: '',
+        paragraphTextJson: '[]',
         hashtagsJson: '[]',
         thumbnailTextJson: '[]',
         ctaJson: '{}',
@@ -444,37 +478,23 @@
         })
         .finally(function(){ setLoading(false); });
     }
-    function readEditableParagraph(el){
-      return text((el.innerText || '').replace(/ /g,' '));
-    }
-    function syncStateFromDom(){
-      const overviewEls = Array.from(els.overviewParagraphs.querySelectorAll('.paragraph'));
-      const bodyEls = Array.from(els.bodyParagraphs.querySelectorAll('.paragraph'));
-      state.overviewParagraphs = overviewEls.map(readEditableParagraph);
-      state.bodyParagraphs = bodyEls.map(readEditableParagraph);
-      const lead = state.overviewParagraphs[0] || '';
-      els.leadDisplay.innerHTML = esc(lead || '도입 문구를 입력하세요.').replace(/
-/g,'<br>');
-      els.leadDisplay.classList.toggle('is-empty', !text(lead));
-    }
     function buildPatch(){
-      syncStateFromDom();
-      const bodyText = state.bodyParagraphs.join('
+      const bodyText = state.bodyParagraphs.map(text).join('
 
 ');
       return {
-        draftTitle: text(els.titleDisplay.innerText),
-        seoTitle: text(els.titleDisplay.innerText),
+        draftTitle: text(els.titleDisplay.textContent),
+        seoTitle: text(els.titleDisplay.textContent),
         bodyText: bodyText,
         bodyHtml: bodyTextToHtml(bodyText),
-        paragraphTextJson: state.bodyParagraphs,
+        paragraphTextJson: state.bodyParagraphs.slice(),
         sectionStructureJson: parseJson((state.row && state.row.sectionStructureJson) || '[]', []),
-        hashtagsJson: state.tags,
-        thumbnailTextJson: state.thumbs,
-        ctaText: text(els.ctaTextDisplay.innerText),
+        hashtagsJson: state.tags.slice(),
+        thumbnailTextJson: state.thumbs.slice(),
+        ctaText: text(els.ctaTextDisplay.textContent),
         ctaJson: {
-          label: text(els.ctaLabelDisplay.innerText),
-          text: text(els.ctaTextDisplay.innerText)
+          label: text(els.ctaLabelDisplay.textContent),
+          text: text(els.ctaTextDisplay.textContent)
         }
       };
     }
@@ -503,49 +523,77 @@
         .catch(function(err){ console.error(err); showToast('발행준비 실패'); })
         .finally(function(){ setLoading(false); });
     }
-    function bindInlineEditors(){
-      [els.titleDisplay, els.leadDisplay, els.ctaLabelDisplay, els.ctaTextDisplay].forEach(function(el){
-        el.setAttribute('contenteditable','true');
-        el.setAttribute('spellcheck','false');
+    function makePlainEditable(el, initialValue, onCommit){
+      if(!el) return;
+      el.contentEditable = 'true';
+      el.spellcheck = false;
+      el.addEventListener('focus', function(){ state.activeEditable = el; if(el.textContent === initialValue) { /* noop */ } });
+      el.addEventListener('blur', function(){
+        state.activeEditable = null;
+        onCommit(text(el.innerText));
       });
-      document.addEventListener('focusin', function(e){
-        const t = e.target.closest('[contenteditable="true"]');
-        if(t) t.classList.add('inline-editing');
-      });
-      document.addEventListener('focusout', function(e){
-        const t = e.target.closest('[contenteditable="true"]');
-        if(t) t.classList.remove('inline-editing');
-        syncStateFromDom();
-      });
-      document.addEventListener('keydown', function(e){
-        const t = e.target;
-        if(!t || t.getAttribute('contenteditable') !== 'true') return;
-        if(e.key === 'Enter' && (t === els.titleDisplay || t === els.ctaLabelDisplay)){
+      el.addEventListener('keydown', function(e){
+        if(e.key === 'Escape'){
           e.preventDefault();
-          document.execCommand('insertLineBreak');
+          el.blur();
         }
       });
+    }
+    function bindContentEditable(){
+      makePlainEditable(els.titleDisplay, '제목을 입력하세요.', function(value){
+        els.titleDisplay.textContent = value || '제목을 입력하세요.';
+      });
+      makePlainEditable(els.leadDisplay, '도입 문구를 입력하세요.', function(value){
+        state.overviewParagraphs[0] = value;
+        els.leadDisplay.textContent = value || '도입 문구를 입력하세요.';
+        els.leadDisplay.classList.toggle('is-empty', !value);
+        renderParagraphList(els.overviewParagraphs, state.overviewParagraphs, 'overview');
+        bindContentEditable();
+      });
+      makePlainEditable(els.ctaLabelDisplay, '문의하기', function(value){
+        els.ctaLabelDisplay.textContent = value || '문의하기';
+      });
+      makePlainEditable(els.ctaTextDisplay, '문의 문구를 입력하세요.', function(value){
+        els.ctaTextDisplay.textContent = value || '문의 문구를 입력하세요.';
+        els.ctaTextDisplay.classList.toggle('is-empty', !value);
+      });
+      document.querySelectorAll('.paragraph.editable').forEach(function(p){
+        const key = p.getAttribute('data-edit-key');
+        const idx = Number(p.getAttribute('data-edit-idx'));
+        makePlainEditable(p, '내용을 입력하세요.', function(value){
+          if(key === 'overview') state.overviewParagraphs[idx] = value;
+          if(key === 'body') state.bodyParagraphs[idx] = value;
+          p.textContent = value || '내용을 입력하세요.';
+          p.classList.toggle('is-empty', !value);
+          if(key === 'overview' && idx === 0){
+            els.leadDisplay.textContent = value || '도입 문구를 입력하세요.';
+            els.leadDisplay.classList.toggle('is-empty', !value);
+          }
+        });
+      });
+    }
+    function bindActions(){
+      els.backBtn.addEventListener('click', function(){ if(document.referrer) history.back(); else location.href = CONFIG.listUrl; });
+      els.saveBtn.addEventListener('click', saveDraft);
+      els.publishBtn.addEventListener('click', markReady);
+      if(els.bodyEditBtn) els.bodyEditBtn.remove();
+      if(els.tagEditBtn){
+        els.tagEditBtn.textContent = '태그수정';
+        els.tagEditBtn.addEventListener('click', function(){
+          const joined = prompt('해시태그를 쉼표로 구분해서 입력하세요.', state.tags.join(', '));
+          if(joined == null) return;
+          state.tags = joined.split(',').map(text).filter(Boolean).map(v => v.startsWith('#') ? v : ('#' + v));
+          renderTags();
+        });
+      }
       els.tagWrap.addEventListener('click', function(){
         const joined = prompt('해시태그를 쉼표로 구분해서 입력하세요.', state.tags.join(', '));
         if(joined == null) return;
         state.tags = joined.split(',').map(text).filter(Boolean).map(v => v.startsWith('#') ? v : ('#' + v));
         renderTags();
       });
-      els.thumbStrip.addEventListener('click', function(){
-        const joined = prompt('썸네일 문구를 줄바꿈으로 입력하세요.', state.thumbs.join('
-'));
-        if(joined == null) return;
-        state.thumbs = String(joined).split(/
-/).map(text).filter(Boolean);
-        renderThumbs();
-      });
     }
-
-    els.backBtn.addEventListener('click', function(){ if(document.referrer) history.back(); else location.href = CONFIG.listUrl; });
-    els.saveBtn.addEventListener('click', saveDraft);
-    els.publishBtn.addEventListener('click', markReady);
-
-    bindInlineEditors();
+    bindActions();
     loadDraft();
   </script>
 </body>

@@ -730,7 +730,7 @@
         bodyHtml: sectionBlocksToBodyHtmlForSave(sectionBlocks),
         paragraphTextJson: sectionBlocksToParagraphTextJsonForSave(sectionBlocks),
         sectionStructureJson: sectionBlocks,
-        imageLayoutJson: state.imageLayout || null,
+        imageLayoutJson: JSON.stringify(state.imageLayout || {}),
         hashtagsJson: state.tags,
         thumbnailTextJson: state.thumbs,
         ctaText: text(els.ctaTextDisplay.textContent),

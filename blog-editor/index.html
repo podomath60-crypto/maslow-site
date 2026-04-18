@@ -121,6 +121,137 @@
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:120;min-width:180px;max-width:calc(100% - 40px);padding:13px 16px;border-radius:14px;background:rgba(17,24,39,.92);color:#fff;font-size:14px;font-weight:800;line-height:1.45;text-align:center;opacity:0;pointer-events:none;transition:opacity .18s ease}
     .toast.show{opacity:1}
 
+    .naver-mark{
+      color:#16a34a;
+      font-weight:950;
+      margin-right:2px;
+    }
+
+    .publish-modal{
+      position:fixed;
+      inset:0;
+      z-index:140;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      background:rgba(15,23,42,.42);
+      backdrop-filter:blur(4px);
+    }
+    .publish-modal.show{
+      display:flex;
+    }
+    .publish-panel{
+      width:min(100%,520px);
+      background:#fff;
+      border:1px solid #e5ebf3;
+      border-radius:24px;
+      box-shadow:0 24px 60px rgba(15,23,42,.18);
+      padding:22px 18px 18px;
+    }
+    .publish-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:16px;
+    }
+    .publish-title{
+      margin:0;
+      font-size:22px;
+      line-height:1.25;
+      font-weight:950;
+      letter-spacing:-0.04em;
+    }
+    .publish-close{
+      width:38px;
+      height:38px;
+      border-radius:999px;
+      border:1px solid #dce5ef;
+      background:#fff;
+      color:#374151;
+      font-size:18px;
+      font-weight:900;
+    }
+
+    .publish-mode{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:14px;
+    }
+    .publish-mode-btn{
+      min-height:44px;
+      border-radius:14px;
+      border:1px solid #dce5ef;
+      background:#fff;
+      color:#111827;
+      font-size:14px;
+      font-weight:900;
+    }
+    .publish-mode-btn.active{
+      background:#0f7cff;
+      border-color:#0f7cff;
+      color:#fff;
+    }
+
+    .publish-form{
+      display:grid;
+      gap:12px;
+    }
+    .publish-label{
+      font-size:13px;
+      font-weight:900;
+      color:#475569;
+      margin:0 0 6px;
+    }
+    .publish-input{
+      width:100%;
+      min-height:46px;
+      padding:0 14px;
+      border-radius:14px;
+      border:1px solid #dce5ef;
+      background:#fff;
+      color:#111827;
+      font-size:14px;
+      font-weight:800;
+    }
+    .publish-row{
+      display:grid;
+      gap:12px;
+    }
+    .publish-scheduled-wrap{
+      display:none;
+    }
+    .publish-scheduled-wrap.show{
+      display:block;
+    }
+    .publish-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:8px;
+    }
+    .publish-submit{
+      min-height:44px;
+      padding:0 18px;
+      border-radius:14px;
+      background:#0f7cff;
+      color:#fff;
+      font-size:14px;
+      font-weight:900;
+    }
+    .publish-cancel{
+      min-height:44px;
+      padding:0 18px;
+      border-radius:14px;
+      background:#fff;
+      color:#111827;
+      border:1px solid #dce5ef;
+      font-size:14px;
+      font-weight:900;
+    }
+
     @media (max-width: 900px){
       .figure img{max-width:100%}
       .title{font-size:31px}
@@ -139,12 +270,13 @@
   <div class="page">
     <div class="topbar">
       <div class="top-left">
-        <button type="button" class="btn" id="backBtn">← 뒤로</button>
+        <button type="button" class="btn" id="launcherBtn"><span class="naver-mark">N</span>발행기</button>
+        <button type="button" class="btn" id="dashboardBtn"><span class="naver-mark">N</span>현황판</button>
         <div class="chip" id="statusChip">초안 로딩중</div>
       </div>
       <div class="top-right">
         <button type="button" class="btn" id="saveBtn">임시저장</button>
-        <button type="button" class="btn primary" id="publishBtn">발행준비</button>
+        <button type="button" class="btn primary" id="publishBtn">발행</button>
       </div>
     </div>
 
@@ -225,11 +357,49 @@
   </div>
   <div id="toast" class="toast"></div>
 
+  <div id="publishModal" class="publish-modal" aria-hidden="true">
+    <div class="publish-panel">
+      <div class="publish-head">
+        <h3 class="publish-title">네이버 발행 설정</h3>
+        <button type="button" class="publish-close" id="publishCloseBtn">✕</button>
+      </div>
+
+      <div class="publish-mode">
+        <button type="button" class="publish-mode-btn active" id="publishNowBtn">즉시발행</button>
+        <button type="button" class="publish-mode-btn" id="publishScheduledBtn">예약발행</button>
+      </div>
+
+      <div class="publish-form">
+        <div class="publish-scheduled-wrap" id="publishScheduledWrap">
+          <div class="publish-label">예약 날짜 / 시간</div>
+          <input type="datetime-local" class="publish-input" id="scheduledAtInput" />
+        </div>
+
+        <div class="publish-row">
+          <div>
+            <div class="publish-label">네이버 아이디</div>
+            <input type="text" class="publish-input" id="naverIdInput" placeholder="네이버 아이디" />
+          </div>
+          <div>
+            <div class="publish-label">네이버 비밀번호</div>
+            <input type="password" class="publish-input" id="naverPasswordInput" placeholder="네이버 비밀번호" />
+          </div>
+        </div>
+
+        <div class="publish-actions">
+          <button type="button" class="publish-cancel" id="publishCancelBtn">취소</button>
+          <button type="button" class="publish-submit" id="publishSubmitBtn">완료</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   
   <script>
     const CONFIG = {
       adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec',
-      listUrl: '/naverbloginput'
+      launcherUrl: '/naverbloginput',
+      dashboardUrl: '/naverblog-dashboard'
     };
 
     const state = {
@@ -240,11 +410,13 @@
       thumbs: [],
       cta: { label:'', text:'' },
       sectionBlocks: [],
-      imageLayout: null
+      imageLayout: null,
+      publishMode: 'now'
     };
 
     const els = {
-      backBtn: document.getElementById('backBtn'),
+      launcherBtn: document.getElementById('launcherBtn'),
+      dashboardBtn: document.getElementById('dashboardBtn'),
       saveBtn: document.getElementById('saveBtn'),
       publishBtn: document.getElementById('publishBtn'),
       statusChip: document.getElementById('statusChip'),
@@ -264,7 +436,17 @@
       tagEditBtn: document.getElementById('tagEditBtn'),
       loadingOverlay: document.getElementById('loadingOverlay'),
       loadingText: document.getElementById('loadingText'),
-      toast: document.getElementById('toast')
+      toast: document.getElementById('toast'),
+      publishModal: document.getElementById('publishModal'),
+      publishCloseBtn: document.getElementById('publishCloseBtn'),
+      publishCancelBtn: document.getElementById('publishCancelBtn'),
+      publishSubmitBtn: document.getElementById('publishSubmitBtn'),
+      publishNowBtn: document.getElementById('publishNowBtn'),
+      publishScheduledBtn: document.getElementById('publishScheduledBtn'),
+      publishScheduledWrap: document.getElementById('publishScheduledWrap'),
+      scheduledAtInput: document.getElementById('scheduledAtInput'),
+      naverIdInput: document.getElementById('naverIdInput'),
+      naverPasswordInput: document.getElementById('naverPasswordInput')
     };
 
     function text(v){ return String(v == null ? '' : v).trim(); }
@@ -305,6 +487,37 @@
         if(!res.ok) throw new Error('요청 실패: ' + res.status);
         return res.json();
       });
+    }
+
+    function openPublishModal(){
+      state.publishMode = 'now';
+      syncPublishModeUi();
+      els.publishModal.classList.add('show');
+      els.publishModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closePublishModal(){
+      els.publishModal.classList.remove('show');
+      els.publishModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function syncPublishModeUi(){
+      const isNow = state.publishMode === 'now';
+      els.publishNowBtn.classList.toggle('active', isNow);
+      els.publishScheduledBtn.classList.toggle('active', !isNow);
+      els.publishScheduledWrap.classList.toggle('show', !isNow);
+    }
+
+    function buildPublishRequestPayload(){
+      return {
+        action: 'saveBlogPublishRequest',
+        blogId: text(state.blogId),
+        publishPlatform: 'naver_blog',
+        publishMode: state.publishMode,
+        scheduledAt: state.publishMode === 'scheduled' ? text(els.scheduledAtInput.value) : '',
+        naverId: text(els.naverIdInput.value),
+        naverPassword: text(els.naverPasswordInput.value)
+      };
     }
     function formatDisplayText(v){
       return text(v)
@@ -820,22 +1033,28 @@ function getSectionImagesMap(row){
       };
     }
 
+    function saveDraftCore(showDoneToast){
+      const requestPayload = buildSaveRequestPayload();
+      return fetchPostJson(requestPayload).then(function(data){
+        if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '임시저장 실패');
+        if(state.row){
+          state.row.imageLayoutJson = requestPayload.patch.imageLayoutJson;
+        }
+        if(showDoneToast){
+          els.statusChip.textContent = '저장완료';
+          showToast('임시저장 완료');
+        }
+        return data;
+      });
+    }
+
     function saveDraft(){
       if(!state.blogId){
         showToast('blogId가 없습니다');
         return;
       }
-      const requestPayload = buildSaveRequestPayload();
       setLoading(true, '임시저장 중');
-      fetchPostJson(requestPayload)
-        .then(function(data){
-          if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '임시저장 실패');
-          if(state.row){
-            state.row.imageLayoutJson = requestPayload.patch.imageLayoutJson;
-          }
-          els.statusChip.textContent = '저장완료';
-          showToast('임시저장 완료');
-        })
+      saveDraftCore(true)
         .catch(function(err){
           console.error(err);
           showToast('임시저장 실패');
@@ -845,21 +1064,49 @@ function getSectionImagesMap(row){
         });
     }
 
-    function markReady(){
+    function openPublishFlow(){
+      openPublishModal();
+    }
+
+    function submitPublishRequest(){
       if(!state.blogId){
         showToast('blogId가 없습니다');
         return;
       }
-      setLoading(true, '발행준비 저장 중');
-      fetchPostJson({ action:'markBlogReadyToPublish', blogId: state.blogId })
+
+      const payload = buildPublishRequestPayload();
+
+      if(!payload.naverId){
+        showToast('네이버 아이디를 입력하세요');
+        return;
+      }
+      if(!payload.naverPassword){
+        showToast('네이버 비밀번호를 입력하세요');
+        return;
+      }
+      if(payload.publishMode === 'scheduled' && !payload.scheduledAt){
+        showToast('예약 날짜와 시간을 선택하세요');
+        return;
+      }
+
+      setLoading(true, payload.publishMode === 'scheduled' ? '예약발행 저장 중' : '즉시발행 저장 중');
+
+      saveDraftCore(false)
+        .then(function(){
+          return fetchPostJson(payload);
+        })
         .then(function(data){
-          if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '발행준비 실패');
-          els.statusChip.textContent = '발행준비';
-          showToast('발행준비 완료');
+          if(!data || data.ok === false){
+            throw new Error((data && (data.message || data.error)) || '발행 요청 저장 실패');
+          }
+
+          els.statusChip.textContent = payload.publishMode === 'scheduled' ? '예약발행중' : '발행대기';
+          closePublishModal();
+          showToast(payload.publishMode === 'scheduled' ? '예약발행 저장 완료' : '즉시발행 요청 저장 완료');
         })
         .catch(function(err){
           console.error(err);
-          showToast('발행준비 실패');
+          showToast('발행 요청 저장 실패');
         })
         .finally(function(){
           setLoading(false);
@@ -1025,14 +1272,29 @@ function getSectionImagesMap(row){
       });
     }
 
-    els.backBtn.addEventListener('click', function(){
-      if(document.referrer) history.back();
-      else location.href = CONFIG.listUrl;
+    els.launcherBtn.addEventListener('click', function(){
+      location.href = CONFIG.launcherUrl;
+    });
+    els.dashboardBtn.addEventListener('click', function(){
+      location.href = CONFIG.dashboardUrl;
     });
     els.saveBtn.addEventListener('click', saveDraft);
-    els.publishBtn.addEventListener('click', markReady);
+    els.publishBtn.addEventListener('click', openPublishFlow);
+
+    els.publishCloseBtn.addEventListener('click', closePublishModal);
+    els.publishCancelBtn.addEventListener('click', closePublishModal);
+    els.publishNowBtn.addEventListener('click', function(){
+      state.publishMode = 'now';
+      syncPublishModeUi();
+    });
+    els.publishScheduledBtn.addEventListener('click', function(){
+      state.publishMode = 'scheduled';
+      syncPublishModeUi();
+    });
+    els.publishSubmitBtn.addEventListener('click', submitPublishRequest);
 
     bindInlineEditors();
+    syncPublishModeUi();
     loadDraft();
   </script>
 </body>

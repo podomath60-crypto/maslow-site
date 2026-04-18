@@ -30,7 +30,23 @@
       display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
       margin-bottom:20px;
     }
-    .title{margin:0;font-size:34px;line-height:1.2;font-weight:950;letter-spacing:-0.05em}
+    .title{
+      margin:0;
+      font-size:34px;
+      line-height:1.2;
+      font-weight:950;
+      letter-spacing:-0.05em;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .title-n{
+      color:#16a34a;
+      font-size:1em;
+      line-height:1;
+      font-weight:950;
+      display:inline-block;
+    }
     .sub{margin:8px 0 0;font-size:14px;color:var(--muted);font-weight:800}
     .count{
       display:inline-flex;align-items:center;justify-content:center;
@@ -135,7 +151,7 @@
     <div class="wrap">
       <div class="head">
         <div>
-          <h1 class="title">블로그 대시보드</h1>
+          <h1 class="title"><span class="title-n">N</span> 블로그 발행 작업현황</h1>
           <p class="sub">createdAt 기준 최신순</p>
         </div>
         <div class="count" id="countBox">불러오는 중</div>

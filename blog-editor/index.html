@@ -296,6 +296,59 @@
         .replace(/\n{3,}/g, '\n\n')
         .trim();
     }
+
+    function buildSectionBlocksFromStored(row){
+      const stored = parseJson(row.sectionStructureJson || '[]', []);
+      if(Array.isArray(stored) && stored.length){
+        return stored.map(function(sec, idx){
+          const fallbackMeta = getSectionMeta(row)[idx] || {};
+          return {
+            sectionKey: text(sec && sec.sectionKey) || text(fallbackMeta.key) || ('section_' + idx),
+            heading: text(sec && sec.heading) || text(fallbackMeta.heading) || '섹션',
+            paragraphs: Array.isArray(sec && sec.paragraphs) ? sec.paragraphs.map(text).filter(Boolean) : []
+          };
+        });
+      }
+      const metas = getSectionMeta(row);
+      const distributed = distributeParagraphs(makeBodyParagraphs(row), metas);
+      return metas.map(function(meta){
+        return {
+          sectionKey: meta.key,
+          heading: meta.heading,
+          paragraphs: (distributed[meta.key] || []).map(text).filter(Boolean)
+        };
+      });
+    }
+    function rebuildSectionParagraphMap(){
+      const out = {};
+      (state.sectionBlocks || []).forEach(function(sec){
+        out[text(sec.sectionKey)] = Array.isArray(sec.paragraphs) ? sec.paragraphs.slice() : [];
+      });
+      state.sectionParagraphs = out;
+    }
+    function sectionBlocksToBodyText(blocks){
+      return (blocks || []).map(function(sec){
+        const parts = [];
+        const heading = text(sec && sec.heading);
+        if(heading) parts.push(heading);
+        (Array.isArray(sec && sec.paragraphs) ? sec.paragraphs : []).map(text).filter(Boolean).forEach(function(p){
+          parts.push(p);
+        });
+        return parts.join('\n');
+      }).filter(Boolean).join('\n\n');
+    }
+    function sectionBlocksToBodyHtml(blocks){
+      return (blocks || []).map(function(sec){
+        const heading = text(sec && sec.heading);
+        const paras = Array.isArray(sec && sec.paragraphs) ? sec.paragraphs.map(text).filter(Boolean) : [];
+        let chunk = '';
+        if(heading) chunk += '<h2>' + esc(heading) + '</h2>\n';
+        chunk += paras.map(function(p){
+          return '<p>' + esc(p).replace(/\n/g,'<br>') + '</p>';
+        }).join('\n');
+        return chunk.trim();
+      }).filter(Boolean).join('\n\n');
+    }
     function toDirectImageUrl(url){
       return text(url);
     }
@@ -563,20 +616,20 @@
         els.heroBox.textContent='대표 이미지 없음';
       }
 
-      const fallbackMeta = getSectionMeta(row || {});
-      const fallbackByKey = {};
-      fallbackMeta.forEach(function(sec){ fallbackByKey[sec.key] = sec; });
-      const renderedSections = (state.sectionBlocks || []).map(function(sec, secIdx){
-        const secKey = text(sec.key) || ('section_' + secIdx);
+      const sectionSlotsMeta = {};
+      getSectionMeta(row).forEach(function(meta){ sectionSlotsMeta[meta.key] = meta; });
+
+      const renderedSections = (state.sectionBlocks || []).map(function(sec){
+        const secKey = text(sec.sectionKey);
         const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
-        const meta = fallbackByKey[secKey] || { key: secKey, slots: [], min: 0 };
-        const images = getSectionImages(meta, grouped);
+        const slotMeta = sectionSlotsMeta[secKey] || { slots: [] };
+        const images = getSectionImages(slotMeta, grouped);
         const imageHtml = images.map(function(asset){
           return renderFigure(asset, getCaptionTextForAsset(asset, row));
         }).join('');
         return '<section class="block">'
           + '<div class="section-kicker">SECTION</div>'
-          + '<h2 class="section-title">' + esc(text(sec.heading) || '섹션') + '</h2>'
+          + '<h2 class="section-title editable" contenteditable="plaintext-only" spellcheck="false" data-section-heading="' + esc(secKey) + '">' + esc(text(sec.heading) || '섹션') + '</h2>'
           + '<div class="paragraphs">' + renderParagraphList(paras, secKey) + '</div>'
           + (imageHtml ? '<div class="section-image-stack">' + imageHtml + '</div>' : '')
           + '</section>';
@@ -669,14 +722,33 @@
         .finally(function(){ setLoading(false); });
     }
     function buildPatch(){
-      const sectionStructure = (state.sectionBlocks || []).map(function(sec, idx){
+      const sectionBlocks = (state.sectionBlocks || []).map(function(sec){
         return {
-          sectionKey: text(sec && sec.key) || ('section_' + idx),
-          heading: text(sec && sec.heading) || '섹션',
-          paragraphs: Array.isArray(sec && sec.paragraphs)
-            ? sec.paragraphs.map(function(v){ return text(v); }).filter(Boolean)
-            : []
+          sectionKey: text(sec.sectionKey),
+          heading: text(sec.heading),
+          paragraphs: (Array.isArray(sec.paragraphs) ? sec.paragraphs : []).map(text).filter(Boolean)
         };
+      });
+      const ordered = sectionBlocks.reduce(function(acc, sec){
+        return acc.concat(sec.paragraphs || []);
+      }, []);
+      const bodyText = sectionBlocksToBodyText(sectionBlocks);
+      return {
+        draftTitle: text(els.titleDisplay.textContent),
+        seoTitle: text(els.titleDisplay.textContent),
+        bodyText: bodyText,
+        bodyHtml: sectionBlocksToBodyHtml(sectionBlocks),
+        paragraphTextJson: ordered,
+        sectionStructureJson: sectionBlocks,
+        hashtagsJson: state.tags,
+        thumbnailTextJson: state.thumbs,
+        ctaText: text(els.ctaTextDisplay.textContent),
+        ctaJson: {
+          label: text(els.ctaLabelDisplay.textContent),
+          text: text(els.ctaTextDisplay.textContent)
+        }
+      };
+    };
       }).filter(function(sec){
         return text(sec.heading) || (sec.paragraphs && sec.paragraphs.length);
       });
@@ -793,11 +865,28 @@
       });
 
       document.addEventListener('click', function(e){
+        const h = e.target.closest('.section-title.editable');
+        if(!h) return;
+        startInline(h);
+      });
+
+      document.addEventListener('click', function(e){
         const p = e.target.closest('.paragraph.editable');
         if(!p) return;
         startInline(p);
       });
 
+      document.addEventListener('blur', function(e){
+        const h = e.target.closest && e.target.closest('.section-title.editable');
+        if(h){
+          const key = h.getAttribute('data-section-heading');
+          const value = normalizeEditableText(h) || '섹션';
+          const sec = (state.sectionBlocks || []).find(function(v){ return text(v.sectionKey) === text(key); });
+          if(sec) sec.heading = value;
+          h.textContent = value;
+          endInline(h);
+          return;
+        }
       document.addEventListener('blur', function(e){
         const p = e.target.closest && e.target.closest('.paragraph.editable');
         if(!p) return;

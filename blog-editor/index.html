@@ -66,6 +66,9 @@
     .figure{margin:22px 0 26px}
     .figure img{width:100%;display:block;border-radius:22px;border:1px solid #ebeff5;background:#f0f4f8}
     .figcap{margin-top:8px;font-size:12px;color:#85909d;font-weight:800}
+    .section-image-stack{display:grid;gap:18px;margin:18px 0 10px}
+    .section-kicker{margin:0 0 8px;font-size:12px;font-weight:900;color:#7d8794;letter-spacing:.08em;text-transform:uppercase}
+    .basic-info-block{margin-top:44px;padding-top:6px}
     .info-strip{margin:30px 0;padding:18px 18px;border-radius:22px;background:#fbfcff;border:1px solid #e9eef5}
     .info-strip-title{font-size:15px;font-weight:900;margin:0 0 10px;color:#1d2430}
     .thumb-lines{display:grid;gap:8px}
@@ -168,22 +171,7 @@
 
           <div class="divider"></div>
 
-          <section class="block">
-            <h2 class="section-title">매물 개요</h2>
-            <div class="paragraphs" id="overviewParagraphs"></div>
-          </section>
-
-          <div class="figure" id="heroFigure" style="display:none;">
-            <img id="heroFigureImg" alt="대표 이미지" />
-            <div class="figcap">대표 이미지</div>
-          </div>
-
-          <section class="block">
-            <h2 class="section-title">상세 설명</h2>
-            <div class="paragraphs" id="bodyParagraphs"></div>
-          </section>
-
-          <div id="imageBlocks"></div>
+          <div id="articleSections"></div>
 
           <div class="info-strip" id="thumbStrip" style="display:none;">
             <div class="info-strip-title">썸네일 문구</div>
@@ -243,7 +231,8 @@
       thumbs: [],
       cta: { label:'', text:'' },
       bodyParagraphs: [],
-      overviewParagraphs: []
+      overviewParagraphs: [],
+      sectionParagraphs: {}
     };
 
     const els = {
@@ -265,9 +254,7 @@
       leadInput: document.getElementById('leadInput'),
       leadCancelBtn: document.getElementById('leadCancelBtn'),
       leadSaveBtn: document.getElementById('leadSaveBtn'),
-      overviewParagraphs: document.getElementById('overviewParagraphs'),
-      bodyParagraphs: document.getElementById('bodyParagraphs'),
-      imageBlocks: document.getElementById('imageBlocks'),
+      articleSections: document.getElementById('articleSections'),
       thumbStrip: document.getElementById('thumbStrip'),
       thumbLines: document.getElementById('thumbLines'),
       ctaLabelDisplay: document.getElementById('ctaLabelDisplay'),
@@ -285,9 +272,7 @@
       tagEditBtn: document.getElementById('tagEditBtn'),
       loadingOverlay: document.getElementById('loadingOverlay'),
       loadingText: document.getElementById('loadingText'),
-      toast: document.getElementById('toast'),
-      heroFigure: document.getElementById('heroFigure'),
-      heroFigureImg: document.getElementById('heroFigureImg')
+      toast: document.getElementById('toast')
     };
 
     function text(v){ return String(v == null ? '' : v).trim(); }
@@ -317,6 +302,7 @@
       if(deal && price) return deal + ' / ' + price;
       return deal || price || '-';
     }
+
     function makeOverview(row){
       const listing = parseJson(row.listingSnapshotJson || '{}', {});
       const lines = [];
@@ -332,9 +318,33 @@
       if(!lines.length) lines.push('매물 기본정보를 바탕으로 블로그 내용을 정리해 주세요.');
       return lines;
     }
+    function htmlToPlainParagraphs(html){
+      const s = text(html);
+      if(!s) return [];
+      try{
+        const div = document.createElement('div');
+        div.innerHTML = s;
+        const paras = [];
+        Array.prototype.forEach.call(div.querySelectorAll('p'), function(p){
+          const t = text((p.innerText || '').replace(/\u00A0/g,' '));
+          if(t) paras.push(t);
+        });
+        if(paras.length) return paras;
+        const t = text((div.innerText || '').replace(/\u00A0/g,' '));
+        return t ? t.split(/\n{2,}/).map(text).filter(Boolean) : [];
+      }catch(_){
+        return [];
+      }
+    }
     function makeBodyParagraphs(row){
+      const fromJson = parseJson(row.paragraphTextJson || '[]', []);
+      if(Array.isArray(fromJson) && fromJson.map(text).filter(Boolean).length){
+        return fromJson.map(text).filter(Boolean);
+      }
       const fromBody = splitParagraphs(row.bodyText || '');
       if(fromBody.length) return fromBody;
+      const fromHtml = htmlToPlainParagraphs(row.bodyHtml || '');
+      if(fromHtml.length) return fromHtml;
       const listing = parseJson(row.listingSnapshotJson || '{}', {});
       const fallback = [];
       const memo = text(listing.memo || row.memo || '');
@@ -351,8 +361,53 @@
       if(!fallback.length) fallback.push('AI 초안이 아직 생성되지 않았습니다.');
       return fallback;
     }
-    function renderParagraphList(target, list, key){
-      target.innerHTML = (list || []).map((p, idx) => {
+    function getTeamType(row){
+      const no = text(row && row.listingNumber).toUpperCase();
+      if(no.indexOf('SK') === 0) return 'commercial';
+      return 'factory';
+    }
+    function getSectionMeta(row){
+      const team = getTeamType(row);
+      return team === 'commercial'
+        ? [
+            { key:'hero_intro', heading:'매물 한눈에 보기', slots:['hero','p1'], min:1 },
+            { key:'property_overview', heading:'매물 개요', slots:['p1'], min:1 },
+            { key:'location_context', heading:'입지와 접근', slots:['p2','p3'], min:1 },
+            { key:'building_and_usage', heading:'공간 구성', slots:['p4','p5'], min:1 },
+            { key:'strengths_summary', heading:'핵심 포인트', slots:['p6'], min:1 },
+            { key:'detailed_note', heading:'세부 참고', slots:['p7','p8','p9'], min:1 }
+          ]
+        : [
+            { key:'hero_intro', heading:'매물 한눈에 보기', slots:['hero','p1'], min:1 },
+            { key:'property_overview', heading:'매물 개요', slots:['p1'], min:1 },
+            { key:'location_context', heading:'야드와 진입', slots:['p2','p3'], min:1 },
+            { key:'building_and_usage', heading:'내부와 작업 동선', slots:['p4','p5'], min:1 },
+            { key:'strengths_summary', heading:'설비와 장점', slots:['p6'], min:1 },
+            { key:'detailed_note', heading:'세부 참고', slots:['p7','p8','p9'], min:1 }
+          ];
+    }
+    function distributeParagraphs(paragraphs, sections){
+      const list = (paragraphs || []).slice();
+      const count = sections.length;
+      const out = {};
+      sections.forEach(function(sec){ out[sec.key] = []; });
+      if(!list.length) return out;
+      let idx = 0;
+      sections.forEach(function(sec){
+        if(idx < list.length && sec.min > 0){
+          out[sec.key].push(list[idx++]);
+        }
+      });
+      let secIndex = 0;
+      while(idx < list.length){
+        const sec = sections[Math.min(secIndex, sections.length - 1)];
+        out[sec.key].push(list[idx++]);
+        secIndex = (secIndex + 1) % sections.length;
+      }
+      return out;
+    }
+    function renderParagraphList(list, key){
+      return (list || []).map(function(p, idx){
         const empty = !text(p);
         return '<p class="paragraph editable' + (empty ? ' is-empty' : '') + '" contenteditable="plaintext-only" spellcheck="false" data-edit-key="' + key + '" data-edit-idx="' + idx + '">' +
           (empty ? '내용을 입력하세요.' : esc(p)) +
@@ -382,31 +437,86 @@
           type:text(saved.assetType || s.assetType),
           paragraph:text(saved.paragraph || s.paragraph || 'p1'),
           isHero:!!s.isHero,
-          url: toDirectImageUrl(saved.url || s.previewUrl || s.originalUrl || '')
+          url: toDirectImageUrl(saved.url || s.previewUrl || s.originalUrl || ''),
+          sourceLabel: text(saved.assetSource || s.assetSource)
         };
       }).filter(v => !!v.url);
     }
-    function renderImages(row){
+    function groupAssets(row){
       const assets = mergeAssets(row);
+      const grouped = { hero:null, basic:[], p1:[], p2:[], p3:[], p4:[], p5:[], p6:[], p7:[], p8:[], p9:[] };
       const hero = assets.find(v => v.isHero) || assets[0] || null;
+      if(hero) grouped.hero = hero;
+      assets.forEach(function(v){
+        if(v.type === 'basic_info') grouped.basic.push(v);
+        if(/^p[1-9]$/.test(v.paragraph)) grouped[v.paragraph].push(v);
+      });
+      return grouped;
+    }
+    function uniqueAssets(list){
+      const seen = {};
+      return (list || []).filter(function(v){
+        const id = text(v && v.assetId);
+        if(!id || seen[id]) return false;
+        seen[id] = true;
+        return true;
+      });
+    }
+    function getSectionImages(section, grouped){
+      const out = [];
+      (section.slots || []).forEach(function(slot){
+        if(slot === 'hero'){
+          if(grouped.hero) out.push(grouped.hero);
+          return;
+        }
+        if(grouped[slot] && grouped[slot].length) out.push(grouped[slot][0]);
+      });
+      return uniqueAssets(out);
+    }
+    function renderFigure(asset, caption){
+      if(!asset || !asset.url) return '';
+      return '<div class="figure"><img src="' + esc(asset.url) + '" alt="이미지" /><div class="figcap">' + esc(caption || '본문 이미지') + '</div></div>';
+    }
+    function renderImages(row){
+      const grouped = groupAssets(row);
+      const hero = grouped.hero;
       if(hero){
         els.heroBox.classList.remove('empty');
         els.heroBox.style.backgroundImage = 'url("' + hero.url.replace(/"/g, '%22') + '")';
         els.heroBox.textContent = '';
-        els.heroFigure.style.display='block';
-        els.heroFigureImg.src = hero.url;
       }else{
         els.heroBox.classList.add('empty');
         els.heroBox.style.backgroundImage='none';
         els.heroBox.textContent='대표 이미지 없음';
-        els.heroFigure.style.display='none';
       }
 
-      const nonHero = assets.filter(v => !hero || v.assetId !== hero.assetId);
-      els.imageBlocks.innerHTML = nonHero.map(v => {
-        const label = v.type === 'basic_info' ? '기본정보 이미지' : '본문 이미지';
-        return '<div class="figure"><img src="' + esc(v.url) + '" alt="이미지" /><div class="figcap">' + esc(label) + ' · ' + esc(v.paragraph || '-') + '</div></div>';
+      const sections = getSectionMeta(row);
+      const renderedSections = sections.map(function(sec){
+        const paras = state.sectionParagraphs[sec.key] || [];
+        const images = getSectionImages(sec, grouped);
+        const imageHtml = images.map(function(asset, idx){
+          const cap = asset.isHero ? '대표 이미지' : (asset.paragraph ? asset.paragraph.toUpperCase() + ' 이미지' : '본문 이미지');
+          return renderFigure(asset, cap + (idx === 0 ? '' : '')); 
+        }).join('');
+        return '<section class="block">'
+          + '<div class="section-kicker">SECTION</div>'
+          + '<h2 class="section-title">' + esc(sec.heading) + '</h2>'
+          + '<div class="paragraphs">' + renderParagraphList(paras, sec.key) + '</div>'
+          + (imageHtml ? '<div class="section-image-stack">' + imageHtml + '</div>' : '')
+          + '</section>';
       }).join('');
+
+      const basicInfoHtml = grouped.basic.length ? (
+        '<section class="block basic-info-block">'
+        + '<div class="section-kicker">BASIC INFO</div>'
+        + '<h2 class="section-title">기본 정보</h2>'
+        + '<div class="section-image-stack">'
+        + grouped.basic.map(function(asset, idx){ return renderFigure(asset, '기본정보 이미지 ' + (idx + 1)); }).join('')
+        + '</div>'
+        + '</section>'
+      ) : '';
+
+      els.articleSections.innerHTML = renderedSections + basicInfoHtml;
     }
     function renderAll(row){
       state.row = row;
@@ -416,6 +526,10 @@
       state.tags = parseJson(row.hashtagsJson || '[]', []).map(text).filter(Boolean);
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
+      state.sectionParagraphs = distributeParagraphs(state.bodyParagraphs, getSectionMeta(row));
+      if(state.sectionParagraphs.hero_intro && state.overviewParagraphs[0]){
+        state.sectionParagraphs.hero_intro = [state.overviewParagraphs[0]].concat(state.sectionParagraphs.hero_intro || []);
+      }
 
       els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
       els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');
@@ -432,8 +546,6 @@
       els.ctaTextDisplay.textContent = text(row.ctaText || state.cta.text) || '문의 문구를 입력하세요.';
       els.ctaTextDisplay.classList.toggle('is-empty', !text(row.ctaText || state.cta.text));
 
-      renderParagraphList(els.overviewParagraphs, state.overviewParagraphs, 'overview');
-      renderParagraphList(els.bodyParagraphs, state.bodyParagraphs, 'body');
       renderImages(row);
       renderThumbs();
       renderTags();
@@ -482,13 +594,14 @@
         .finally(function(){ setLoading(false); });
     }
     function buildPatch(){
-      const bodyText = state.bodyParagraphs.join('\n\n');
+      const ordered = getSectionMeta(state.row || {}).reduce(function(acc, sec){ return acc.concat(state.sectionParagraphs[sec.key] || []); }, []);
+      const bodyText = ordered.join('\n\n');
       return {
         draftTitle: text(els.titleDisplay.textContent),
         seoTitle: text(els.titleDisplay.textContent),
         bodyText: bodyText,
         bodyHtml: bodyTextToHtml(bodyText),
-        paragraphTextJson: state.bodyParagraphs,
+        paragraphTextJson: ordered,
         sectionStructureJson: parseJson((state.row && state.row.sectionStructureJson) || '[]', []),
         hashtagsJson: state.tags,
         thumbnailTextJson: state.thumbs,
@@ -538,6 +651,7 @@
     function normalizeEditableText(el){
       return text((el && el.innerText) || '').replace(/\u00A0/g,' ');
     }
+
     function bindInlineEditors(){
       function startInline(el){
         if(!el) return;
@@ -561,9 +675,13 @@
       els.leadDisplay.addEventListener('blur', function(){
         const v = normalizeEditableText(els.leadDisplay);
         state.overviewParagraphs[0] = v;
+        if(state.sectionParagraphs.hero_intro){
+          if(state.sectionParagraphs.hero_intro.length){ state.sectionParagraphs.hero_intro[0] = v; }
+          else if(v){ state.sectionParagraphs.hero_intro = [v]; }
+        }
         els.leadDisplay.textContent = v || '도입 문구를 입력하세요.';
         els.leadDisplay.classList.toggle('is-empty', !v);
-        renderParagraphList(els.overviewParagraphs, state.overviewParagraphs, 'overview');
+        renderImages(state.row || {});
         endInline(els.leadDisplay);
       });
 
@@ -594,13 +712,14 @@
         const key = p.getAttribute('data-edit-key');
         const idx = Number(p.getAttribute('data-edit-idx'));
         const value = normalizeEditableText(p);
-        if(key === 'overview') state.overviewParagraphs[idx] = value;
-        if(key === 'body') state.bodyParagraphs[idx] = value;
+        if(!state.sectionParagraphs[key]) state.sectionParagraphs[key] = [];
+        state.sectionParagraphs[key][idx] = value;
         p.textContent = value || '내용을 입력하세요.';
         p.classList.toggle('is-empty', !value);
-        if(key === 'overview' && idx === 0){
+        if(key === 'hero_intro' && idx === 0){
           els.leadDisplay.textContent = value || '도입 문구를 입력하세요.';
           els.leadDisplay.classList.toggle('is-empty', !value);
+          state.overviewParagraphs[0] = value;
         }
         endInline(p);
       }, true);
@@ -612,6 +731,7 @@
         renderTags();
       });
     }
+
 
     els.backBtn.addEventListener('click', function(){ if(document.referrer) history.back(); else location.href = CONFIG.listUrl; });
     els.saveBtn.addEventListener('click', saveDraft);

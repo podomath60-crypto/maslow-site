@@ -405,6 +405,75 @@
       return out;
     }
 
+    function hasMeaningfulImageLayout(layoutLike){
+      const layout = normalizeImageLayout(layoutLike);
+      if (text(layout.hero)) return true;
+      return SECTION_ORDER.some(function(key){
+        return Array.isArray(layout.sections[key]) && layout.sections[key].length > 0;
+      });
+    }
+
+    function buildInitialImageLayoutFromRow(row){
+      const infos = parseJson(row && row.infoImageFilesJson || '[]', []);
+      const snaps = parseJson(row && row.assetSnapshotJson || '[]', []);
+      const snapById = {};
+      snaps.forEach(function(s){ snapById[text(s.assetId)] = s || {}; });
+
+      const layout = normalizeImageLayout({});
+      const sectionKeys = (state.sectionBlocks || []).map(function(sec){ return text(sec.sectionKey); }).filter(Boolean);
+      const fallbackOrder = sectionKeys.filter(function(k){ return k !== 'hero_intro'; });
+
+      function mapParagraphToSectionKey(paragraph){
+        const p = text(paragraph).toLowerCase();
+        if(p === 'p1') return 'property_overview';
+        if(p === 'p2' || p === 'p3') return 'location_context';
+        if(p === 'p4' || p === 'p5') return 'building_and_usage';
+        if(p === 'p6') return 'strengths_summary';
+        if(p === 'p7' || p === 'p8' || p === 'p9') return 'detailed_note';
+        return '';
+      }
+
+      infos.forEach(function(info){
+        const id = text(info && info.assetId);
+        if(!id) return;
+        const snap = snapById[id] || {};
+        const isHero = !!(info && info.isHero) || !!snap.isHero;
+        const sectionKeyDirect = text(info && (info.sectionKey || info.section_key));
+        const paragraph = text(info && info.paragraph) || text(snap && snap.paragraph);
+
+        if(isHero && !layout.hero){
+          layout.hero = id;
+        }
+
+        let sectionKey = sectionKeyDirect || mapParagraphToSectionKey(paragraph);
+        if(!sectionKey && fallbackOrder.length){
+          sectionKey = fallbackOrder[0];
+        }
+        if(!sectionKey) return;
+
+        layout.sections[sectionKey] = layout.sections[sectionKey] || [];
+        layout.sections[sectionKey].push(id);
+      });
+
+      // distribute a bit if one section is overloaded and others are empty
+      const allKeys = fallbackOrder.slice();
+      const emptyKeys = allKeys.filter(function(k){ return !(layout.sections[k] && layout.sections[k].length); });
+      const richKeys = allKeys.filter(function(k){ return layout.sections[k] && layout.sections[k].length > 1; });
+
+      emptyKeys.forEach(function(emptyKey){
+        for (var i = 0; i < richKeys.length; i++) {
+          var richKey = richKeys[i];
+          if (layout.sections[richKey] && layout.sections[richKey].length > 1) {
+            var moved = layout.sections[richKey].pop();
+            layout.sections[emptyKey] = [moved];
+            break;
+          }
+        }
+      });
+
+      return layout;
+    }
+
     function buildAssetMapFromRow(row){
       const infos = parseJson(row.infoImageFilesJson || '[]', []);
       const snaps = parseJson(row.assetSnapshotJson || '[]', []);
@@ -435,45 +504,6 @@
       Object.keys(bySection).forEach(function(key){
         layout.sections[key] = (bySection[key] || []).map(function(asset){ return text(asset && asset.assetId); }).filter(Boolean);
       });
-      return layout;
-    }
-
-    function rebuildImageLayoutFromDom(row){
-      const layout = normalizeImageLayout({});
-      const assetMap = buildAssetMapFromRow(row || {});
-
-      Object.keys(assetMap).forEach(function(assetId){
-        const asset = assetMap[assetId];
-        if (!!(asset && asset.isHero) && !layout.hero) {
-          layout.hero = assetId;
-        }
-      });
-
-      document.querySelectorAll('#articleSections .block').forEach(function(block){
-        const headingEl = block.querySelector('[data-section-heading]');
-        const secKey = text(headingEl && headingEl.getAttribute('data-section-heading'));
-        if (!secKey) return;
-
-        layout.sections[secKey] = [];
-
-        block.querySelectorAll('.figure').forEach(function(fig){
-          const assetId = text(fig.getAttribute('data-asset-id'));
-          if (!assetId) return;
-          if (!assetMap[assetId]) return;
-          layout.sections[secKey].push(assetId);
-        });
-      });
-
-      Object.keys(assetMap).forEach(function(assetId){
-        if (assetId === layout.hero) return;
-        const alreadyPlaced = SECTION_ORDER.some(function(secKey){
-          return (layout.sections[secKey] || []).indexOf(assetId) !== -1;
-        });
-        if (alreadyPlaced) return;
-        layout.sections.detailed_note = layout.sections.detailed_note || [];
-        layout.sections.detailed_note.push(assetId);
-      });
-
       return layout;
     }
 
@@ -613,7 +643,7 @@
 
     function renderFigure(asset, sectionKey, idx, total){
       if(!asset || !asset.url) return '';
-      return '<div class="figure" data-asset-id="' + esc(text(asset.assetId)) + '" data-section-key="' + esc(text(sectionKey)) + '" data-idx="' + idx + '">'
+      return '<div class="figure" data-section-key="' + esc(text(sectionKey)) + '" data-idx="' + idx + '">'
         + '<img src="' + esc(asset.url) + '" alt="이미지" />'
         + '<div class="fig-move">'
         +   '<button type="button" class="fig-move-btn" data-move="up">▲</button>'
@@ -691,10 +721,9 @@
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
       state.sectionBlocks = buildSectionBlocksFromRow(row);
-      state.imageLayout =
-  text(row.imageLayoutJson || '') && text(row.imageLayoutJson || '') !== '{}'
-    ? normalizeImageLayout(row.imageLayoutJson)
-    : null;
+      state.imageLayout = hasMeaningfulImageLayout(row.imageLayoutJson)
+        ? normalizeImageLayout(row.imageLayoutJson)
+        : buildInitialImageLayoutFromRow(row);
 
       els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
       els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');
@@ -793,6 +822,9 @@
       fetchPostJson({ action:'saveBlogEditorDraft', blogId: state.blogId, patch: patch })
         .then(function(data){
           if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '임시저장 실패');
+          if(state.row){
+            state.row.imageLayoutJson = patch.imageLayoutJson;
+          }
           els.statusChip.textContent = '저장완료';
           showToast('임시저장 완료');
         })
@@ -902,10 +934,13 @@
             const currentSectionKey = fig.getAttribute('data-section-key');
             const currentIdx = Number(fig.getAttribute('data-idx'));
             const direction = mv.getAttribute('data-move');
-            if(!state.imageLayout){
-              state.imageLayout = rebuildImageLayoutFromDom(state.row || {});
+            if(!state.imageLayout || !hasMeaningfulImageLayout(state.imageLayout)){
+              state.imageLayout = buildInitialImageLayoutFromRow(state.row || {});
             }
             moveImageInLayout(currentSectionKey, currentIdx, direction);
+            if(state.row){
+              state.row.imageLayoutJson = JSON.stringify(state.imageLayout || {});
+            }
             renderImages(state.row || {});
             let nextSectionKey = currentSectionKey;
             let nextIdx = currentIdx;

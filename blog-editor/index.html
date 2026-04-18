@@ -121,6 +121,29 @@
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:120;min-width:180px;max-width:calc(100% - 40px);padding:13px 16px;border-radius:14px;background:rgba(17,24,39,.92);color:#fff;font-size:14px;font-weight:800;line-height:1.45;text-align:center;opacity:0;pointer-events:none;transition:opacity .18s ease}
     .toast.show{opacity:1}
 
+
+
+    .debug-panel{
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:130;
+      width:min(92vw,720px);max-height:min(68vh,720px);overflow:auto;
+      padding:16px 18px;border-radius:22px;
+      background:rgba(17,24,39,.94);color:#e5eefc;border:1px solid rgba(148,163,184,.28);
+      box-shadow:0 24px 60px rgba(15,23,42,.38);backdrop-filter:blur(10px);
+    }
+    .debug-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+    .debug-panel-title{font-size:15px;font-weight:900;letter-spacing:-0.03em}
+    .debug-panel-sub{font-size:12px;font-weight:800;color:#94a3b8}
+    .debug-panel-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .debug-chip{
+      display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 12px;
+      border-radius:999px;background:rgba(15,124,255,.16);border:1px solid rgba(96,165,250,.38);
+      color:#dbeafe;font-size:12px;font-weight:900;white-space:nowrap
+    }
+    .debug-pre{
+      margin:0;padding:14px 15px;border-radius:16px;background:rgba(2,6,23,.44);border:1px solid rgba(148,163,184,.18);
+      font-size:13px;line-height:1.7;font-weight:700;white-space:pre-wrap;word-break:break-word;
+    }
+
     @media (max-width: 900px){
       .figure img{max-width:100%}
       .title{font-size:31px}
@@ -218,6 +241,21 @@
     </div>
   </div>
 
+
+  <div class="debug-panel" id="debugPanel" aria-live="polite">
+    <div class="debug-panel-head">
+      <div>
+        <div class="debug-panel-title">사진 이동 배열 로그</div>
+        <div class="debug-panel-sub" id="debugPanelMeta">초기 로딩 대기중</div>
+      </div>
+      <div class="debug-panel-actions">
+        <button type="button" class="debug-chip" id="debugRefreshBtn">새로고침</button>
+        <button type="button" class="debug-chip" id="debugCopyBtn">복사</button>
+      </div>
+    </div>
+    <pre class="debug-pre" id="debugPre">아직 로그가 없습니다.</pre>
+  </div>
+
   <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-panel">
       <div class="spinner"></div>
@@ -263,6 +301,11 @@
       tagWrap: document.getElementById('tagWrap'),
       footerNote: document.getElementById('footerNote'),
       tagEditBtn: document.getElementById('tagEditBtn'),
+      debugPanel: document.getElementById('debugPanel'),
+      debugPanelMeta: document.getElementById('debugPanelMeta'),
+      debugPre: document.getElementById('debugPre'),
+      debugRefreshBtn: document.getElementById('debugRefreshBtn'),
+      debugCopyBtn: document.getElementById('debugCopyBtn'),
       loadingOverlay: document.getElementById('loadingOverlay'),
       loadingText: document.getElementById('loadingText'),
       toast: document.getElementById('toast')
@@ -295,6 +338,40 @@
       els.toast.classList.add('show');
       clearTimeout(showToast._timer);
       showToast._timer = setTimeout(function(){ els.toast.classList.remove('show'); }, 1800);
+    }
+    function getDebugSnapshot(){
+      return {
+        blogId: text(state.blogId),
+        hero: text(state.imageLayout && state.imageLayout.hero),
+        sections: normalizeImageLayout(state.imageLayout || {}).sections
+      };
+    }
+    function updateDebugPanel(reason){
+      if(!els.debugPre) return;
+      const snapshot = getDebugSnapshot();
+      const stamp = new Date();
+      const hh = String(stamp.getHours()).padStart(2,'0');
+      const mm = String(stamp.getMinutes()).padStart(2,'0');
+      const ss = String(stamp.getSeconds()).padStart(2,'0');
+      els.debugPanelMeta.textContent = (reason || '갱신') + ' · ' + hh + ':' + mm + ':' + ss;
+      els.debugPre.textContent = JSON.stringify(snapshot, null, 2);
+    }
+    function copyDebugPanel(){
+      const textToCopy = els.debugPre ? els.debugPre.textContent : '';
+      if(!textToCopy) return;
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(textToCopy)
+          .then(function(){ showToast('배열 로그 복사됨'); })
+          .catch(function(){ showToast('복사 실패'); });
+        return;
+      }
+      const ta = document.createElement('textarea');
+      ta.value = textToCopy;
+      document.body.appendChild(ta);
+      ta.select();
+      try{ document.execCommand('copy'); showToast('배열 로그 복사됨'); }
+      catch(_){ showToast('복사 실패'); }
+      document.body.removeChild(ta);
     }
     function fetchPostJson(payload){
       return fetch(CONFIG.adminListUrl, {
@@ -379,22 +456,26 @@
     }
 
 
-    
-    function getLiveSectionOrder(){
-      return (state.sectionBlocks || []).map(function(sec){
-        return text(sec && sec.sectionKey);
-      }).filter(Boolean);
-    }
+    const SECTION_ORDER = [
+      'hero_intro',
+      'property_overview',
+      'location_context',
+      'basic_specs',
+      'pricing_and_deal',
+      'building_and_usage',
+      'strengths_summary',
+      'detailed_note',
+      'closing_cta'
+    ];
 
     function normalizeImageLayout(layout){
-      const order = getLiveSectionOrder();
       const out = { hero:'', sections:{} };
-      order.forEach(function(key){ out.sections[key] = []; });
+      SECTION_ORDER.forEach(function(key){ out.sections[key] = []; });
       const src = parseJson(layout || '{}', {});
       if(src && typeof src === 'object'){
         out.hero = text(src.hero || '');
         const sections = src.sections || {};
-        order.forEach(function(key){
+        SECTION_ORDER.forEach(function(key){
           out.sections[key] = Array.isArray(sections[key]) ? sections[key].map(text).filter(Boolean) : [];
         });
       }
@@ -404,8 +485,7 @@
     function hasMeaningfulImageLayout(layoutLike){
       const layout = normalizeImageLayout(layoutLike);
       if (text(layout.hero)) return true;
-      const order = getLiveSectionOrder();
-      return order.some(function(key){
+      return SECTION_ORDER.some(function(key){
         return Array.isArray(layout.sections[key]) && layout.sections[key].length > 0;
       });
     }
@@ -417,17 +497,17 @@
       snaps.forEach(function(s){ snapById[text(s.assetId)] = s || {}; });
 
       const layout = normalizeImageLayout({});
-      const order = getLiveSectionOrder();
+      const sectionKeys = (state.sectionBlocks || []).map(function(sec){ return text(sec.sectionKey); }).filter(Boolean);
+      const fallbackOrder = sectionKeys.filter(function(k){ return k !== 'hero_intro'; });
 
       function mapParagraphToSectionKey(paragraph){
         const p = text(paragraph).toLowerCase();
-        if (p === 'p1') return text(order[1] || order[0] || '');
-        if (p === 'p2' || p === 'p3') return text(order[2] || order[1] || order[0] || '');
-        if (p === 'p4' || p === 'p5') return text(order[5] || order[4] || order[0] || '');
-        if (p === 'p6') return text(order[6] || order[5] || order[0] || '');
-        if (p === 'p7' || p === 'p8') return text(order[7] || order[6] || order[0] || '');
-        if (p === 'p9') return text(order[8] || order[7] || order[0] || '');
-        return text(order[0] || '');
+        if(p === 'p1') return 'property_overview';
+        if(p === 'p2' || p === 'p3') return 'location_context';
+        if(p === 'p4' || p === 'p5') return 'building_and_usage';
+        if(p === 'p6') return 'strengths_summary';
+        if(p === 'p7' || p === 'p8' || p === 'p9') return 'detailed_note';
+        return '';
       }
 
       infos.forEach(function(info){
@@ -442,9 +522,9 @@
           layout.hero = id;
         }
 
-        let sectionKey = sectionKeyDirect;
-        if(!sectionKey || !Object.prototype.hasOwnProperty.call(layout.sections, sectionKey)){
-          sectionKey = mapParagraphToSectionKey(paragraph);
+        let sectionKey = sectionKeyDirect || mapParagraphToSectionKey(paragraph);
+        if(!sectionKey && fallbackOrder.length){
+          sectionKey = fallbackOrder[0];
         }
         if(!sectionKey) return;
 
@@ -452,8 +532,10 @@
         layout.sections[sectionKey].push(id);
       });
 
-      const emptyKeys = order.filter(function(k){ return !(layout.sections[k] && layout.sections[k].length); });
-      const richKeys = order.filter(function(k){ return layout.sections[k] && layout.sections[k].length > 1; });
+      // distribute a bit if one section is overloaded and others are empty
+      const allKeys = fallbackOrder.slice();
+      const emptyKeys = allKeys.filter(function(k){ return !(layout.sections[k] && layout.sections[k].length); });
+      const richKeys = allKeys.filter(function(k){ return layout.sections[k] && layout.sections[k].length > 1; });
 
       emptyKeys.forEach(function(emptyKey){
         for (var i = 0; i < richKeys.length; i++) {
@@ -470,7 +552,6 @@
     }
 
     function buildAssetMapFromRow(row){
-
       const infos = parseJson(row.infoImageFilesJson || '[]', []);
       const snaps = parseJson(row.assetSnapshotJson || '[]', []);
       const snapById = {};
@@ -503,45 +584,10 @@
       return layout;
     }
 
-    
     function moveImageInLayout(sectionKey, idx, direction){
       if(!state.imageLayout) return;
       const key = text(sectionKey);
       const sections = state.imageLayout.sections || {};
-      if(!Array.isArray(sections[key])) return;
-      const arr = sections[key];
-      idx = Number(idx);
-      if(!(idx >= 0 && idx < arr.length)) return;
-
-      const order = getLiveSectionOrder();
-      const secIndex = order.indexOf(key);
-      if(secIndex < 0) return;
-
-      if(direction === 'up'){
-        if(idx > 0){
-          var tmp = arr[idx - 1];
-          arr[idx - 1] = arr[idx];
-          arr[idx] = tmp;
-        }else if(secIndex > 0){
-          const prevKey = order[secIndex - 1];
-          const moved = arr.shift();
-          if(!Array.isArray(sections[prevKey])) sections[prevKey] = [];
-          sections[prevKey].push(moved);
-        }
-      }else if(direction === 'down'){
-        if(idx < arr.length - 1){
-          var tmp2 = arr[idx + 1];
-          arr[idx + 1] = arr[idx];
-          arr[idx] = tmp2;
-        }else if(secIndex < order.length - 1){
-          const nextKey = order[secIndex + 1];
-          const moved2 = arr.pop();
-          if(!Array.isArray(sections[nextKey])) sections[nextKey] = [];
-          sections[nextKey].unshift(moved2);
-        }
-      }
-    }
-;
       if(!Array.isArray(sections[key])) return;
       const arr = sections[key];
       idx = Number(idx);
@@ -777,6 +823,7 @@
       renderImages(row);
       renderThumbs();
       renderTags();
+      updateDebugPanel('초안 렌더');
     }
 
     function buildMinimalRow(){
@@ -849,6 +896,7 @@
         return;
       }
       const patch = buildPatch();
+      updateDebugPanel('임시저장 payload 준비');
       setLoading(true, '임시저장 중');
       fetchPostJson({ action:'saveBlogEditorDraft', blogId: state.blogId, patch: patch })
         .then(function(data){
@@ -973,16 +1021,16 @@
               state.row.imageLayoutJson = JSON.stringify(state.imageLayout || {});
             }
             renderImages(state.row || {});
+            updateDebugPanel('사진 이동');
             let nextSectionKey = currentSectionKey;
             let nextIdx = currentIdx;
-            const liveOrder = getLiveSectionOrder();
-            const orderIdx = liveOrder.indexOf(String(currentSectionKey));
+            const orderIdx = SECTION_ORDER.indexOf(String(currentSectionKey));
             const secArr = (((state.imageLayout || {}).sections || {})[currentSectionKey] || []);
             if(direction === 'up'){
               if(currentIdx > 0){
                 nextIdx = currentIdx - 1;
               }else if(orderIdx > 0){
-                nextSectionKey = liveOrder[orderIdx - 1];
+                nextSectionKey = SECTION_ORDER[orderIdx - 1];
                 nextIdx = ((((state.imageLayout || {}).sections || {})[nextSectionKey] || []).length - 1);
               }else{
                 nextIdx = 0;
@@ -991,8 +1039,8 @@
               if(currentIdx < secArr.length){
                 nextIdx = Math.min(currentIdx + 1, ((((state.imageLayout || {}).sections || {})[currentSectionKey] || []).length - 1));
               }
-              if(currentIdx >= secArr.length - 1 && orderIdx < liveOrder.length - 1){
-                nextSectionKey = liveOrder[orderIdx + 1];
+              if(currentIdx >= secArr.length - 1 && orderIdx < SECTION_ORDER.length - 1){
+                nextSectionKey = SECTION_ORDER[orderIdx + 1];
                 nextIdx = 0;
               }
             }
@@ -1046,6 +1094,15 @@
         });
         renderTags();
       });
+
+      if(els.debugRefreshBtn){
+        els.debugRefreshBtn.addEventListener('click', function(){
+          updateDebugPanel('수동 새로고침');
+        });
+      }
+      if(els.debugCopyBtn){
+        els.debugCopyBtn.addEventListener('click', copyDebugPanel);
+      }
     }
 
     els.backBtn.addEventListener('click', function(){
@@ -1056,6 +1113,7 @@
     els.publishBtn.addEventListener('click', markReady);
 
     bindInlineEditors();
+    updateDebugPanel('초기 대기');
     loadDraft();
   </script>
 </body>

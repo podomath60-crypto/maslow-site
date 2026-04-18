@@ -3,479 +3,1615 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>블로그 에디터</title>
+  <title>블로그 발행기</title>
+  <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
   <style>
     :root{
-      --bg:#f5f7fb;
-      --paper:#ffffff;
-      --ink:#16181d;
-      --muted:#6b7280;
-      --line:#e7ecf2;
+      --bg:#ffffff;
+      --line:#e6ebf1;
+      --text:#111318;
+      --muted:#67707b;
       --blue:#0f7cff;
       --blue-soft:#eef5ff;
-      --shadow:0 18px 38px rgba(15,23,42,.08);
-      --page:920px;
+      --shadow:0 14px 30px rgba(15,23,42,.05);
+      --hero-on:#dff7bf;
+      --hero-on-line:#b7e37d;
+      --hero-on-text:#4e7b10;
+      --hero-off:#f3f5f8;
+      --hero-off-line:#dce3ea;
+      --hero-off-text:#9aa4af;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif}
+    html,body{
+      margin:0;
+      padding:0;
+      background:#fff;
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif !important;
+      letter-spacing:-0.02em;
+      overflow-x:hidden;
+    }
     body{min-width:0}
-    button,input,textarea{font:inherit}
-    button{cursor:pointer;border:none;background:none}
-    input,textarea{outline:none}
-    .page{min-height:100vh;padding:0 0 72px}
-    .topbar{
-      position:sticky;top:0;z-index:40;
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      padding:12px 16px;
-      background:rgba(245,247,251,.9);
-      backdrop-filter:blur(12px);
-      border-bottom:1px solid rgba(231,236,242,.9);
+    img{display:block;max-width:100%}
+    button,input,select{font:inherit}
+    button{border:none;background:none;cursor:pointer}
+    .page{
+      min-height:100vh;
+      background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%);
+      overflow-x:hidden;
     }
-    .top-left,.top-right{display:flex;align-items:center;gap:10px;min-width:0}
-    .btn{
-      min-height:42px;padding:0 14px;border-radius:14px;border:1px solid var(--line);
-      background:#fff;color:var(--ink);font-size:14px;font-weight:900;letter-spacing:-0.03em;
-      box-shadow:0 8px 20px rgba(15,23,42,.04)
+    .shell{
+      width:100%;
+      max-width:980px;
+      margin:0 auto;
+      padding:0 20px 128px;
+      min-width:0;
+      overflow-x:hidden;
     }
-    .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
-    .chip{
-      display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 12px;
-      border-radius:999px;background:var(--blue-soft);border:1px solid #cfe2ff;color:var(--blue);
-      font-size:12px;font-weight:900;white-space:nowrap
+    .head{
+      position:sticky;
+      top:0;
+      z-index:20;
+      background:rgba(255,255,255,.94);
+      backdrop-filter:blur(10px);
+      border-bottom:1px solid rgba(230,235,241,.95);
+      padding:14px 0 12px;
     }
-    .shell{max-width:var(--page);margin:0 auto;padding:18px 14px 0}
-    .paper{
-      background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;overflow:hidden;
+    .head-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:12px;
+      min-width:0;
     }
-    .hero{background:#eef2f7;aspect-ratio:16/9;background-position:center;background-size:cover}
-    .hero.empty{display:flex;align-items:center;justify-content:center;color:#8b95a1;font-size:15px;font-weight:800}
-    .article{padding:26px 22px 34px}
-    .meta-line{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;color:#7a8491;font-size:13px;font-weight:800}
-    .meta-pill{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;background:#f7f9fc;border:1px solid #e8edf4}
-    .title{margin:0;font-size:38px;line-height:1.24;font-weight:950;letter-spacing:-0.05em;word-break:keep-all}
-    .lead{margin:16px 0 0;font-size:20px;line-height:1.85;color:#2f3742;font-weight:700;word-break:keep-all;white-space:pre-line}
-    .lead.is-empty{color:#98a1ad}
-    .divider{height:1px;background:var(--line);margin:28px 0}
-    .block{margin:0 0 34px}
-    .section-title{margin:0 0 16px;font-size:34px;line-height:1.3;font-weight:950;letter-spacing:-0.04em;word-break:keep-all}
-    .paragraphs{display:grid;gap:18px}
-    .paragraph{
-      margin:0;font-size:19px;line-height:2.02;color:#2e3741;font-weight:500;word-break:keep-all;white-space:pre-line;
+    .title{
+      font-size:22px;
+      line-height:1.1;
+      font-weight:900;
+      color:#111318;
+      letter-spacing:-0.04em;
+      min-width:0;
     }
-    .paragraph.is-empty{color:#98a1ad}
-    .figure{margin:22px 0 26px}
-    .figure img{width:100%;max-width:680px;display:block;margin:0 auto;border-radius:22px;border:1px solid #ebeff5;background:#f0f4f8}
-    .figcap{margin-top:8px;font-size:12px;color:#85909d;font-weight:800}
-    .section-image-stack{display:grid;gap:18px;margin:18px 0 10px}
-    .section-kicker{margin:0 0 8px;font-size:12px;font-weight:900;color:#7d8794;letter-spacing:.08em;text-transform:uppercase}
-    .basic-info-block{margin-top:44px;padding-top:6px}
-    .info-strip{margin:30px 0;padding:18px 18px;border-radius:22px;background:#fbfcff;border:1px solid #e9eef5}
-    .info-strip-title{font-size:15px;font-weight:900;margin:0 0 10px;color:#1d2430}
-    .thumb-lines{display:grid;gap:8px}
-    .thumb-line{font-size:16px;font-weight:800;color:#334155}
-    .cta{margin-top:40px;padding:24px;border-radius:24px;background:#fbfcff;border:1px solid #e9eef5}
-    .cta-title{margin:0 0 8px;font-size:22px;font-weight:900;letter-spacing:-0.04em}
-    .cta-text{margin:0;font-size:16px;line-height:1.75;color:#475161;font-weight:700;white-space:pre-line}
-    .hashtags{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px}
-    .tag{display:inline-flex;align-items:center;min-height:34px;padding:0 12px;border-radius:999px;background:#eef5ff;border:1px solid #d5e6ff;color:#2369d9;font-size:13px;font-weight:900}
-    .footer-note{margin-top:28px;font-size:12px;color:#9aa3af;font-weight:800}
+    .ghost-btn{
+      min-height:40px;
+      padding:0 14px;
+      border-radius:999px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111;
+      font-size:14px;
+      font-weight:800;
+      flex:0 0 auto;
+    }
 
-    .editbox{display:none !important;margin-top:10px}
-    .editbox.show{display:none !important}
-    .textarea,.input{
-      width:100%;padding:14px 15px;border-radius:18px;border:1px solid #dce5ef;background:#fff;color:var(--ink);
-      font-size:15px;line-height:1.7;font-weight:700
+    .top-tools{
+      display:grid;
+      grid-template-columns:190px minmax(0,1fr);
+      gap:8px;
+      align-items:center;
+      min-width:0;
     }
-    .textarea{min-height:140px;resize:vertical}
-    .mini-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
-    .mini-btn{min-height:38px;padding:0 12px;border-radius:12px;border:1px solid #dce5ef;background:#fff;color:var(--ink);font-size:13px;font-weight:900}
-    .mini-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
-    .touch-hint{margin-top:8px;font-size:12px;color:#97a1ae;font-weight:800}
-    .editable{cursor:text}
-    .editable:hover{opacity:.98}
-    .editable.is-editing{
-      outline:2px solid rgba(15,124,255,.18);
+    .date-nav{
+      display:grid;
+      grid-template-columns:32px minmax(0,1fr) 32px;
+      align-items:center;
+      gap:4px;
+      min-height:44px;
+      padding:0 6px;
+      border:1px solid #dce6f1;
+      border-radius:14px;
+      background:#fff;
+      box-shadow:0 8px 20px rgba(15,23,42,.03);
+      min-width:0;
+      overflow:hidden;
+    }
+    .nav-arrow{
+      width:32px;
+      min-width:32px;
+      max-width:32px;
+      min-height:30px;
+      height:30px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       border-radius:10px;
+      color:#111318;
+      font-size:20px;
+      font-weight:900;
+      flex:0 0 32px;
+      user-select:none;
+    }
+    .date-trigger{
+      min-width:0;
+      width:100%;
+      min-height:30px;
+      height:30px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:-0.03em;
+      color:#111318;
+    }
+    .search-col{
+      min-width:0;
+      width:100%;
+    }
+    .search-input{
+      width:100%;
+      min-width:0;
+      min-height:44px;
+      padding:0 14px;
+      border-radius:14px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:14px;
+      font-weight:800;
+      outline:none;
+      box-shadow:0 8px 20px rgba(15,23,42,.03);
+    }
+    .search-input::placeholder{
+      color:rgba(123,135,148,.55);
+      font-weight:700;
+    }
+    .meta-line{
+      margin-top:8px;
+      padding-left:2px;
+      font-size:12px;
+      color:#7b8794;
+      font-weight:800;
+      line-height:1.4;
+    }
+
+    .section{
+      margin-top:16px;
+      border:1px solid var(--line);
+      border-radius:28px;
+      background:#fff;
+      box-shadow:var(--shadow);
+      padding:14px;
+      min-width:0;
+      overflow:hidden;
+    }
+    .section-title{
+      margin:0 0 12px;
+      font-size:18px;
+      line-height:1.25;
+      font-weight:900;
+      color:#17191d;
+      letter-spacing:-0.04em;
+    }
+    .empty{
+      border:1px dashed #d9e3ed;
+      border-radius:22px;
+      background:#fff;
+      padding:28px 18px;
+      text-align:center;
+      color:#7b8794;
+      font-size:14px;
+      font-weight:800;
+    }
+
+    .listing-slider-wrap{
+      width:100%;
+      overflow-x:auto;
+      overflow-y:visible;
+      -webkit-overflow-scrolling:touch;
+      min-width:0;
+    }
+    .listing-slider-wrap::-webkit-scrollbar{display:none}
+    .listing-slider{
+      display:flex;
+      gap:12px;
+      width:max-content;
+      max-width:none;
+      min-width:100%;
+    }
+    .listing-card{
+      flex:0 0 232px;
+      width:232px;
+      border:1px solid #e6ebf1;
+      border-radius:22px;
+      background:#fff;
+      overflow:hidden;
+      box-shadow:0 8px 18px rgba(15,23,42,.04);
+      cursor:pointer;
+    }
+    .listing-card.is-active{
+      border-color:#bfdcff;
+      box-shadow:0 14px 26px rgba(15,124,255,.10);
+    }
+    .listing-thumb{
+      width:100%;
+      height:152px;
+      background:#edf2f7 center/cover no-repeat;
+    }
+    .listing-body{
+      padding:12px;
+      display:grid;
+      gap:7px;
+    }
+    .listing-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .listing-team{
+      min-height:24px;
+      padding:0 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .listing-team.shopping{background:#fff3f7;color:#c13f73;border:1px solid #efb6c8}
+    .listing-team.factory{background:#eef5ff;color:#0f7cff;border:1px solid #cfe2ff}
+    .listing-no{
+      font-size:11px;
+      color:#7b8794;
+      font-weight:900;
+    }
+    .listing-title{
+      font-size:16px;
+      line-height:1.4;
+      font-weight:900;
+      color:#17191d;
+      letter-spacing:-0.03em;
+      min-height:44px;
+      word-break:keep-all;
+    }
+    .listing-address,.listing-price{
+      font-size:12px;
+      line-height:1.5;
+      color:#58616b;
+      font-weight:700;
+      word-break:keep-all;
+    }
+
+    .slider-bar-wrap{
+      display:block;
+      margin-top:10px;
+      padding:16px 0;
+    }
+    .slider-track{
+      position:relative;
+      height:6px;
+      background:#eef2f6;
+      border-radius:999px;
+      overflow:visible;
+    }
+    .slider-track-hit{
+      position:absolute;
+      left:0;
+      right:0;
+      top:50%;
+      height:36px;
+      transform:translateY(-50%);
+      background:transparent;
+      cursor:pointer;
+    }
+    .slider-thumb-hit{
+      position:absolute;
+      left:0;
+      top:50%;
+      height:36px;
+      width:0;
+      transform:translateY(-50%) translateX(0);
+      display:flex;
+      align-items:center;
+      background:transparent;
+      cursor:grab;
+    }
+    .slider-thumb{
+      width:100%;
+      height:6px;
+      background:#0f7cff;
+      border-radius:999px;
+    }
+
+    .selected-summary{
+      display:none;
+      margin-top:16px;
+      border:1px solid var(--line);
+      border-radius:24px;
+      background:#fff;
+      box-shadow:var(--shadow);
+      padding:16px;
+    }
+    .selected-summary.show{display:block}
+    .selected-title{
+      font-size:20px;
+      line-height:1.3;
+      font-weight:900;
+      color:#17191d;
+      letter-spacing:-0.04em;
+      margin-bottom:6px;
+    }
+    .selected-sub{
+      font-size:13px;
+      line-height:1.6;
+      color:#66707a;
+      font-weight:700;
+    }
+
+    .assets-section{display:none}
+    .assets-section.show{display:block}
+    .tools-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .tools-left,.tools-right{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .chip{
+      min-height:30px;
+      padding:0 10px;
+      border-radius:999px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#5d6670;
+      font-size:12px;
+      font-weight:900;
+    }
+    .mini-btn{
+      min-height:34px;
+      padding:0 12px;
+      border-radius:999px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:12px;
+      font-weight:900;
+    }
+    .mini-btn.blue{background:#eef5ff;border-color:#cfe2ff;color:#0f7cff}
+    .mini-btn.pink{background:#fff3f7;border-color:#efb6c8;color:#b83268}
+
+    .asset-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+      min-width:0;
+    }
+    .asset-card{
+      border:1px solid #e6ebf1;
+      border-radius:22px;
+      background:#fff;
+      overflow:hidden;
+      box-shadow:0 8px 18px rgba(15,23,42,.04);
+      min-width:0;
+    }
+    .asset-preview{
+      position:relative;
+      width:100%;
+      aspect-ratio:1 / .9;
+      background:#edf2f7 center/cover no-repeat;
+      border-bottom:1px solid #eef2f6;
+    }
+    .asset-hero{
+      position:absolute;
+      top:8px;
+      left:8px;
+      min-height:22px;
+      padding:0 6px;
+      border-radius:8px;
+      background:var(--hero-off);
+      border:1px solid var(--hero-off-line);
+      color:var(--hero-off-text);
+      font-size:10px;
+      font-weight:900;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      line-height:1;
+      cursor:pointer;
+      z-index:2;
+    }
+    .asset-card.is-hero .asset-hero{
+      background:var(--hero-on);
+      border-color:var(--hero-on-line);
+      color:var(--hero-on-text);
+    }
+    .asset-check{
+      position:absolute;
+      top:8px;
+      right:8px;
+      width:24px;
+      height:24px;
+      border-radius:8px;
+      background:#fff;
+      border:2px solid #0f7cff;
+      color:transparent;
+      font-size:14px;
+      font-weight:900;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      line-height:1;
+      cursor:pointer;
+      z-index:2;
+      box-shadow:0 6px 14px rgba(15,23,42,.08);
+    }
+    .asset-card.is-selected .asset-check{
+      background:#0f7cff;
+      border-color:#0f7cff;
+      color:#fff;
+    }
+    .asset-body{
+      padding:9px;
+      display:grid;
+      gap:6px;
+    }
+    .asset-fixed-label{
+      width:100%;
+      min-height:32px;
+      border-radius:10px;
+      border:1px solid #dce6f1;
       background:#f8fbff;
+      color:#2643a2;
+      padding:6px 10px;
+      font-size:12px;
+      font-weight:900;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
     }
 
-    .floating-tools{
-      position:fixed;right:18px;bottom:18px;z-index:35;display:flex;flex-direction:column;gap:10px;
+    .select{
+      width:100%;
+      min-height:32px;
+      border-radius:10px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111;
+      padding:0 8px;
+      outline:none;
+      font-size:12px;
+      font-weight:800;
     }
-    .fab{min-width:52px;min-height:52px;padding:0 14px;border-radius:16px;background:#fff;border:1px solid var(--line);box-shadow:0 14px 28px rgba(15,23,42,.1);font-size:13px;font-weight:900;color:#1a202c}
+    .asset-paragraph-mobile-btn{
+      display:none;
+      width:100%;
+      min-height:40px;
+      border-radius:12px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      padding:0 12px;
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:-0.03em;
+    }
 
-    .loading-overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.74);backdrop-filter:blur(3px);padding:24px}
+    .paragraph-picker{
+      position:fixed;
+      inset:0;
+      z-index:185;
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      background:rgba(17,24,39,.42);
+      backdrop-filter:blur(2px);
+    }
+    .paragraph-picker.show{display:flex}
+    .paragraph-picker-sheet{
+      width:100%;
+      max-width:980px;
+      background:#fff;
+      border-radius:24px 24px 0 0;
+      padding:16px 0 calc(18px + env(safe-area-inset-bottom, 0px));
+      box-shadow:0 -18px 42px rgba(15,23,42,.16);
+    }
+    .paragraph-picker-head{
+      padding:0 16px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .paragraph-picker-title{
+      font-size:16px;
+      line-height:1.3;
+      font-weight:900;
+      color:#111318;
+      letter-spacing:-0.04em;
+    }
+    .paragraph-picker-close{
+      width:34px;
+      height:34px;
+      border-radius:999px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:22px;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .paragraph-picker-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+      padding:0 12px;
+    }
+    .paragraph-picker-btn{
+      min-height:54px;
+      border-radius:16px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      padding:0 6px;
+      font-size:15px;
+      font-weight:900;
+      letter-spacing:-0.04em;
+    }
+    .paragraph-picker-btn.is-active{
+      background:#eef5ff;
+      border-color:#bfdcff;
+      color:#0f7cff;
+    }
+
+    .image-viewer{
+      position:fixed;
+      inset:0;
+      z-index:180;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background:rgba(17,24,39,.82);
+      backdrop-filter:blur(3px);
+    }
+    .image-viewer.show{display:flex}
+    .image-viewer-dialog{
+      position:relative;
+      width:min(92vw, 980px);
+      max-height:88vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .image-viewer-img{
+      display:block;
+      max-width:100%;
+      max-height:88vh;
+      border-radius:20px;
+      background:#fff;
+      box-shadow:0 18px 42px rgba(0,0,0,.28);
+      object-fit:contain;
+    }
+    .image-viewer-close{
+      position:absolute;
+      top:-14px;
+      right:-14px;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      background:#fff;
+      border:1px solid #dce6f1;
+      color:#111318;
+      font-size:24px;
+      font-weight:900;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 10px 22px rgba(15,23,42,.18);
+    }
+
+    .bottom-bar{
+      position:fixed;
+      left:50%;
+      bottom:calc(18px + env(safe-area-inset-bottom, 0px));
+      transform:translateX(-50%);
+      z-index:40;
+      width:min(980px - 32px, calc(100% - 20px));
+      display:flex;
+      gap:10px;
+      padding:10px;
+      border-radius:22px;
+      border:1px solid #dfe7f0;
+      background:rgba(255,255,255,.96);
+      backdrop-filter:blur(10px);
+      box-shadow:0 16px 36px rgba(15,23,42,.12);
+    }
+    .bottom-btn{
+      flex:1 1 auto;
+      min-height:52px;
+      border-radius:16px;
+      font-size:15px;
+      font-weight:900;
+      letter-spacing:-0.03em;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111;
+    }
+    .bottom-btn.primary{
+      background:#0f7cff;
+      border-color:#0f7cff;
+      color:#fff;
+    }
+    .bottom-btn:disabled{opacity:.5;cursor:default}
+
+    .calendar-modal{
+      position:fixed;
+      inset:0;
+      z-index:120;
+      display:none;
+      background:#f7f8fb;
+    }
+    .calendar-modal.show{display:block}
+    .calendar-sheet{
+      width:100vw;
+      height:100dvh;
+      min-height:100dvh;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      background:#f7f8fb;
+    }
+    .calendar-top{
+      position:sticky;
+      top:0;
+      z-index:3;
+      min-height:72px;
+      background:rgba(247,248,251,.92);
+      backdrop-filter:blur(10px);
+      border-bottom:1px solid #e7ebf1;
+    }
+    .calendar-top-inner{
+      max-width:980px;
+      margin:0 auto;
+      padding:0 20px;
+      min-height:72px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .calendar-back{
+      min-height:42px;
+      padding:0 14px;
+      border-radius:999px;
+      border:1px solid #d8e0ea;
+      background:#fff;
+      color:#111318;
+      font-size:14px;
+      font-weight:800;
+    }
+    .calendar-title{
+      flex:1 1 auto;
+      text-align:center;
+      font-size:18px;
+      font-weight:900;
+      color:#17191d;
+      letter-spacing:-0.04em;
+    }
+    .calendar-spacer{width:72px;flex:0 0 72px}
+    .calendar-inner{
+      max-width:980px;
+      margin:0 auto;
+      padding:14px 20px 28px;
+    }
+    .calendar-shell{
+      border:1px solid #e5e9ef;
+      border-radius:30px;
+      background:#fdfefe;
+      box-shadow:0 14px 30px rgba(15,23,42,.04);
+      padding:18px 18px 16px;
+      overflow:hidden;
+    }
+    .calendar-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .calendar-nav{
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      border:1px solid #dde4ec;
+      background:#fff;
+      color:#111318;
+      font-size:24px;
+      line-height:1;
+      font-weight:500;
+    }
+    .calendar-month-label{
+      font-size:17px;
+      font-weight:800;
+      color:#17191d;
+      letter-spacing:-0.03em;
+    }
+    .calendar-weekdays{
+      display:grid;
+      grid-template-columns:repeat(7,minmax(0,1fr));
+      padding:0 2px 8px;
+      border-bottom:1px solid #edf1f5;
+    }
+    .calendar-weekday{
+      text-align:center;
+      font-size:12px;
+      font-weight:700;
+      color:#7f8792;
+      padding:0 0 6px;
+    }
+    .calendar-grid{
+      display:grid;
+      grid-template-columns:repeat(7,minmax(0,1fr));
+    }
+    .calendar-cell{
+      min-height:76px;
+      padding:5px 5px 5px;
+      border-right:1px solid #eef2f6;
+      border-bottom:1px solid #eef2f6;
+      background:transparent;
+      text-align:left;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      border-radius:0;
+      min-width:0;
+    }
+    .calendar-cell:nth-child(7n){border-right:none}
+    .calendar-cell.is-selected{background:#eef5ff}
+    .calendar-day-number{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:4px;
+      font-size:16px;
+      line-height:1.15;
+      font-weight:700;
+      color:#111318;
+    }
+    .calendar-lines{
+      margin-top:3px;
+      display:grid;
+      gap:2px;
+      line-height:1.22;
+    }
+    .calendar-line{
+      font-size:11.5px;
+      line-height:1.32;
+      font-weight:400;
+      color:#5f6873;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .calendar-line.zero{display:none}
+
+    .loading-overlay{
+      position:fixed;
+      inset:0;
+      z-index:140;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background:rgba(255,255,255,.72);
+      backdrop-filter:blur(3px);
+    }
     .loading-overlay.show{display:flex}
-    .loading-panel{display:grid;gap:12px;justify-items:center;text-align:center}
-    .spinner{width:66px;height:66px;border-radius:999px;border:5px solid #dae8ff;border-top-color:#0f7cff;animation:spin 1s linear infinite}
-    .loading-text{font-size:18px;font-weight:900;color:#257fe3;letter-spacing:-0.03em}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:120;min-width:180px;max-width:calc(100% - 40px);padding:13px 16px;border-radius:14px;background:rgba(17,24,39,.92);color:#fff;font-size:14px;font-weight:800;line-height:1.45;text-align:center;opacity:0;pointer-events:none;transition:opacity .18s ease}
+    .loading-panel{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      text-align:center;
+    }
+    .loading-buddy{
+      width:74px;
+      height:74px;
+      object-fit:cover;
+      border-radius:18px;
+      animation:buddyBounce 1.15s ease-in-out infinite;
+      box-shadow:0 10px 22px rgba(15,124,255,.16);
+    }
+    .loading-text{
+      min-height:24px;
+      font-size:18px;
+      font-weight:800;
+      line-height:1.4;
+      color:#2b8fe8;
+      letter-spacing:-0.03em;
+    }
+    @keyframes buddyBounce{
+      0%,100%{transform:translateY(0) scale(1)}
+      20%{transform:translateY(-3px) scale(1.01)}
+      50%{transform:translateY(-10px) scale(1.04)}
+      75%{transform:translateY(-4px) scale(1.01)}
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:calc(92px + env(safe-area-inset-bottom, 0px));
+      transform:translateX(-50%);
+      z-index:160;
+      min-width:180px;
+      max-width:calc(100% - 48px);
+      padding:13px 16px;
+      border-radius:14px;
+      background:rgba(17,24,39,.92);
+      color:#fff;
+      font-size:14px;
+      line-height:1.45;
+      font-weight:800;
+      text-align:center;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .18s ease;
+    }
     .toast.show{opacity:1}
 
-    @media (max-width: 900px){
-      .figure img{max-width:100%}
-      .title{font-size:31px}
-      .lead{font-size:18px;line-height:1.9}
-      .section-title{font-size:30px}
-      .paragraph{font-size:17px;line-height:1.92}
-      .article{padding:20px 16px 28px}
-      .shell{padding:12px 10px 0}
-      .topbar{flex-wrap:wrap;align-items:flex-start}
-      .top-right{width:100%;justify-content:flex-end;flex-wrap:wrap}
-      .floating-tools{right:12px;bottom:14px}
+
+    .ai-call-modal{
+      position:fixed;
+      inset:0;
+      z-index:170;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(17,24,39,.46);
+      backdrop-filter:blur(3px);
+    }
+    .ai-call-modal.show{display:flex}
+    .ai-call-dialog{
+      width:min(100%, 520px);
+      border:1px solid #e6ebf1;
+      border-radius:28px;
+      background:#fff;
+      box-shadow:0 20px 50px rgba(15,23,42,.18);
+      padding:20px;
+    }
+    .ai-call-title{
+      margin:0;
+      font-size:22px;
+      line-height:1.25;
+      font-weight:900;
+      color:#111318;
+      letter-spacing:-0.04em;
+    }
+    .ai-call-sub{
+      margin:8px 0 0;
+      font-size:13px;
+      line-height:1.6;
+      color:#6b7480;
+      font-weight:700;
+    }
+    .ai-call-form{
+      display:grid;
+      gap:16px;
+      margin-top:18px;
+    }
+    .ai-call-field{
+      display:grid;
+      gap:8px;
+    }
+    .ai-call-label{
+      font-size:14px;
+      line-height:1.4;
+      font-weight:900;
+      color:#111318;
+      letter-spacing:-0.03em;
+    }
+    .ai-call-label .optional{
+      margin-left:6px;
+      font-size:12px;
+      color:#8a94a0;
+      font-weight:800;
+    }
+    .ai-style-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+    }
+    .ai-style-btn{
+      min-height:52px;
+      border-radius:16px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-0.03em;
+      padding:0 10px;
+      word-break:keep-all;
+      text-align:center;
+    }
+    .ai-style-btn.is-active{
+      background:#eef5ff;
+      border-color:#bfdcff;
+      color:#0f7cff;
+    }
+    .ai-direction-input{
+      width:100%;
+      min-height:120px;
+      border-radius:18px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      padding:14px 16px;
+      resize:none;
+      outline:none;
+      font-size:14px;
+      line-height:1.6;
+      font-weight:700;
+    }
+    .ai-direction-input::placeholder{
+      color:#9aa4af;
+      font-weight:700;
+    }
+    .ai-call-actions{
+      display:flex;
+      gap:10px;
+      margin-top:4px;
+    }
+    .ai-call-btn{
+      flex:1 1 auto;
+      min-height:50px;
+      border-radius:16px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:15px;
+      font-weight:900;
+      letter-spacing:-0.03em;
+    }
+    .ai-call-btn.primary{
+      background:#0f7cff;
+      border-color:#0f7cff;
+      color:#fff;
+    }
+
+    @media (max-width:860px){
+      .shell{
+        padding:0 14px 120px;
+        overflow-x:hidden;
+      }
+      .top-tools{
+        grid-template-columns:132px minmax(0,1fr);
+        gap:6px;
+      }
+      .date-nav{
+        grid-template-columns:24px minmax(0,1fr) 24px;
+        min-height:38px;
+        padding:0 4px;
+        gap:2px;
+      }
+      .nav-arrow{
+        width:24px;
+        min-width:24px;
+        max-width:24px;
+        min-height:24px;
+        height:24px;
+        font-size:17px;
+        flex:0 0 24px;
+      }
+      .date-trigger{
+        min-height:24px;
+        height:24px;
+        font-size:11px;
+      }
+      .search-input{
+        min-height:38px;
+        height:38px;
+        font-size:13px;
+      }
+      .listing-slider{
+        display:flex;
+        gap:10px;
+        width:max-content;
+        max-width:none;
+        min-width:0;
+      }
+      .listing-card{
+        flex:0 0 186px;
+        width:186px;
+        min-width:186px;
+        max-width:186px;
+      }
+      .listing-thumb{
+        height:132px;
+      }
+      .slider-bar-wrap{display:none !important}
+      .asset-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+      .asset-body{padding:10px 0 0}
+      .asset-body .select{display:none}
+      .asset-body .asset-paragraph-mobile-btn{display:block}
+      .paragraph-picker-sheet{
+        max-width:none;
+        border-radius:22px 22px 0 0;
+        padding-top:18px;
+      }
+      .paragraph-picker-head{padding:0 16px 14px}
+      .paragraph-picker-grid{padding:0 8px}
+      .paragraph-picker-btn{min-height:58px}
+      .image-viewer{padding:16px}
+      .image-viewer-dialog{width:100%;max-height:84vh}
+      .image-viewer-img{max-height:84vh;border-radius:16px}
+      .image-viewer-close{top:-10px;right:-2px;width:38px;height:38px;font-size:22px}
+
+      .bottom-bar{
+        width:calc(100% - 20px);
+        gap:8px;
+        padding:8px;
+        border-radius:18px;
+      }
+      .bottom-btn{
+        min-height:48px;
+        font-size:14px;
+      }
+
+      .ai-call-modal{padding:14px}
+      .ai-call-dialog{padding:18px 16px;border-radius:24px}
+      .ai-call-title{font-size:20px}
+      .ai-style-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      .ai-style-btn{min-height:46px;padding:0 8px;font-size:13px;border-radius:14px}
+      .ai-call-actions{gap:8px}
+      .ai-call-btn{min-height:48px;font-size:14px}
+      .ai-direction-input{font-size:22.4px}
+
+      .calendar-top-inner,
+      .calendar-inner{
+        padding-left:16px;
+        padding-right:16px;
+      }
+      .calendar-shell{
+        padding:14px 12px 12px;
+        border-radius:26px;
+      }
+      .calendar-nav{
+        width:38px;
+        height:38px;
+        font-size:22px;
+      }
+      .calendar-month-label{
+        font-size:16px;
+      }
+      .calendar-cell{
+        min-height:68px;
+        padding:4px 4px 4px;
+      }
+      .calendar-line{font-size:11px}
     }
   </style>
 </head>
 <body>
   <div class="page">
-    <div class="topbar">
-      <div class="top-left">
-        <button type="button" class="btn" id="backBtn">← 뒤로</button>
-        <div class="chip" id="statusChip">초안 로딩중</div>
-      </div>
-      <div class="top-right">
-        <button type="button" class="btn" id="saveBtn">임시저장</button>
-        <button type="button" class="btn primary" id="publishBtn">발행준비</button>
-      </div>
-    </div>
-
     <div class="shell">
-      <article class="paper">
-        <div class="hero empty" id="heroBox">대표 이미지 없음</div>
-        <div class="article">
-          <div class="meta-line">
-            <span class="meta-pill" id="metaListing">매물번호 -</span>
-            <span class="meta-pill" id="metaStatus">상태 -</span>
-            <span class="meta-pill" id="metaStyle">스타일 -</span>
-          </div>
-
-          <h1 class="title editable" id="titleDisplay">제목을 불러오는 중입니다.</h1>
-          <div class="editbox" id="titleEditBox">
-            <input type="text" class="input" id="titleInput" placeholder="제목 입력" />
-            <div class="mini-actions">
-              <button type="button" class="mini-btn" id="titleCancelBtn">취소</button>
-              <button type="button" class="mini-btn primary" id="titleSaveBtn">저장</button>
-            </div>
-          </div>
-
-          <p class="lead editable" id="leadDisplay">도입 문구를 불러오는 중입니다.</p>
-          <div class="editbox" id="leadEditBox">
-            <textarea class="textarea" id="leadInput" placeholder="도입 문구"></textarea>
-            <div class="mini-actions">
-              <button type="button" class="mini-btn" id="leadCancelBtn">취소</button>
-              <button type="button" class="mini-btn primary" id="leadSaveBtn">저장</button>
-            </div>
-          </div>
-
-          <div class="touch-hint">제목이나 문단을 터치하면 바로 수정할 수 있습니다.</div>
-
-          <div class="divider"></div>
-
-          <div id="articleSections"></div>
-
-          <div class="info-strip" id="thumbStrip" style="display:none;">
-            <div class="info-strip-title">썸네일 문구</div>
-            <div class="thumb-lines" id="thumbLines"></div>
-          </div>
-
-          <section class="cta">
-            <h3 class="cta-title editable" id="ctaLabelDisplay">문의하기</h3>
-            <div class="editbox" id="ctaLabelEditBox">
-              <input type="text" class="input" id="ctaLabelInput" placeholder="CTA 라벨" />
-              <div class="mini-actions">
-                <button type="button" class="mini-btn" id="ctaLabelCancelBtn">취소</button>
-                <button type="button" class="mini-btn primary" id="ctaLabelSaveBtn">저장</button>
-              </div>
-            </div>
-
-            <p class="cta-text editable" id="ctaTextDisplay">문의 문구를 입력하세요.</p>
-            <div class="editbox" id="ctaTextEditBox">
-              <textarea class="textarea" id="ctaTextInput" placeholder="CTA 문구"></textarea>
-              <div class="mini-actions">
-                <button type="button" class="mini-btn" id="ctaTextCancelBtn">취소</button>
-                <button type="button" class="mini-btn primary" id="ctaTextSaveBtn">저장</button>
-              </div>
-            </div>
-          </section>
-
-          <div class="hashtags" id="tagWrap"></div>
-          <div class="footer-note" id="footerNote">blogId를 불러오는 중입니다.</div>
+      <div class="head">
+        <div class="head-top">
+          <div class="title"><span style="display:inline-block;margin-right:8px;font-weight:1000;font-size:1.28em;line-height:1;color:#19ce60;">N</span>블로그 발행기</div>
+          <button type="button" class="ghost-btn" id="goStatusBtn"><span style="display:inline-block;margin-right:6px;font-weight:1000;font-size:1.18em;line-height:1;color:#19ce60;">N</span>현황판</button>
         </div>
-      </article>
+
+        <div class="top-tools">
+          <div class="date-nav">
+            <button type="button" class="nav-arrow" id="prevDateBtn">‹</button>
+            <button type="button" class="date-trigger" id="datePickerBtn">날짜 선택</button>
+            <button type="button" class="nav-arrow" id="nextDateBtn">›</button>
+          </div>
+          <div class="search-col">
+            <input id="searchInput" class="search-input" type="text" placeholder="제목, 주소, 매물번호 검색" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="meta-line" id="dateMetaLine">날짜를 선택하거나 검색하세요.</div>
+      </div>
+
+      <section class="section">
+        <h2 class="section-title">매물 선택</h2>
+        <div id="listingEmpty" class="empty">매물을 불러오는 중입니다.</div>
+
+        <div id="listingSliderWrap" class="listing-slider-wrap" style="display:none;">
+          <div id="listingSlider" class="listing-slider"></div>
+        </div>
+
+        <div id="listingSliderBarWrap" class="slider-bar-wrap" style="display:none;">
+          <div id="listingSliderTrack" class="slider-track">
+            <div id="listingSliderTrackHit" class="slider-track-hit"></div>
+            <div id="listingSliderBarHit" class="slider-thumb-hit">
+              <div id="listingSliderBar" class="slider-thumb"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="selectedSummary" class="selected-summary">
+        <div id="selectedListingTitle" class="selected-title"></div>
+        <div id="selectedListingSub" class="selected-sub"></div>
+      </section>
+
+      <section id="assetsSection" class="section assets-section">
+        <div class="tools-row">
+          <div class="tools-left">
+            <div id="selectedCountChip" class="chip">선택 0</div>
+            <div id="heroCountChip" class="chip">대표 미지정</div>
+          </div>
+          <div class="tools-right">
+            <button type="button" class="mini-btn pink" id="generateInfoImageBtn">정보 이미지 생성</button>
+          </div>
+        </div>
+
+        <h2 class="section-title">사진 배치</h2>
+        <div id="assetGrid" class="asset-grid"></div>
+      </section>
     </div>
 
-    <div class="floating-tools">
-      <button type="button" class="fab" id="tagEditBtn">태그수정</button>
+    <div class="bottom-bar">
+      <button type="button" class="bottom-btn" id="draftSaveBtn">임시저장</button>
+      <button type="button" class="bottom-btn primary" id="publishPrepBtn" disabled>AI호출</button>
+    </div>
+  </div>
+
+
+  <div id="aiCallModal" class="ai-call-modal" aria-hidden="true">
+    <div class="ai-call-dialog">
+      <h3 class="ai-call-title">AI호출 설정</h3>
+      <p class="ai-call-sub">글스타일을 고르고, 원하면 글방향도 적어주세요.</p>
+      <div class="ai-call-form">
+        <div class="ai-call-field">
+          <div class="ai-call-label">글스타일</div>
+          <div id="aiStyleGrid" class="ai-style-grid">
+            <button type="button" class="ai-style-btn is-active" data-style="깔끔형">깔끔형</button>
+            <button type="button" class="ai-style-btn" data-style="소개형">소개형</button>
+            <button type="button" class="ai-style-btn" data-style="광고형">광고형</button>
+            <button type="button" class="ai-style-btn" data-style="정보형">정보형</button>
+            <button type="button" class="ai-style-btn" data-style="현장브리핑형">현장브리핑형</button>
+            <button type="button" class="ai-style-btn" data-style="전문형">전문형</button>
+            <button type="button" class="ai-style-btn" data-style="친근형">친근형</button>
+            <button type="button" class="ai-style-btn" data-style="고급형">고급형</button>
+            <button type="button" class="ai-style-btn" data-style="빠른요약형">빠른요약형</button>
+          </div>
+        </div>
+        <div class="ai-call-field">
+          <div class="ai-call-label">글방향 쓰기 <span class="optional">선택사항</span></div>
+          <textarea id="aiDirectionInput" class="ai-direction-input" placeholder="예: 실사용자 관점으로 차분하게, 입지 장점을 먼저 강조"></textarea>
+        </div>
+        <div class="ai-call-actions">
+          <button type="button" class="ai-call-btn" id="aiCallCancelBtn">취소</button>
+          <button type="button" class="ai-call-btn primary" id="aiCallConfirmBtn">확인</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="calendarModal" class="calendar-modal" aria-hidden="true">
+    <div class="calendar-sheet">
+      <div class="calendar-top">
+        <div class="calendar-top-inner">
+          <button type="button" class="calendar-back" id="calendarBackBtn">← 뒤로</button>
+          <div class="calendar-title">캘린더</div>
+          <div class="calendar-spacer"></div>
+        </div>
+      </div>
+
+      <div class="calendar-inner">
+        <section class="calendar-shell">
+          <div class="calendar-head">
+            <button type="button" class="calendar-nav" id="calendarPrevBtn">‹</button>
+            <div id="calendarMonthLabel" class="calendar-month-label">2026.04</div>
+            <button type="button" class="calendar-nav" id="calendarNextBtn">›</button>
+          </div>
+
+          <div class="calendar-weekdays">
+            <div class="calendar-weekday">월</div>
+            <div class="calendar-weekday">화</div>
+            <div class="calendar-weekday">수</div>
+            <div class="calendar-weekday">목</div>
+            <div class="calendar-weekday">금</div>
+            <div class="calendar-weekday">토</div>
+            <div class="calendar-weekday">일</div>
+          </div>
+
+          <div id="calendarGrid" class="calendar-grid"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div id="imageViewer" class="image-viewer" aria-hidden="true">
+    <div class="image-viewer-dialog">
+      <button type="button" id="imageViewerClose" class="image-viewer-close" aria-label="닫기">×</button>
+      <img id="imageViewerImg" class="image-viewer-img" alt="미리보기">
+    </div>
+  </div>
+
+  <div id="paragraphPicker" class="paragraph-picker" aria-hidden="true">
+    <div class="paragraph-picker-sheet">
+      <div class="paragraph-picker-head">
+        <div class="paragraph-picker-title">사진 구분 선택</div>
+        <button type="button" id="paragraphPickerClose" class="paragraph-picker-close" aria-label="닫기">×</button>
+      </div>
+      <div id="paragraphPickerGrid" class="paragraph-picker-grid"></div>
     </div>
   </div>
 
   <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-panel">
-      <div class="spinner"></div>
+      <img class="loading-buddy" src="https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg" alt="로딩">
       <div id="loadingText" class="loading-text">불러오는 중</div>
     </div>
   </div>
+
   <div id="toast" class="toast"></div>
 
   <script>
     const CONFIG = {
       adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec',
-      listUrl: '/naverbloginput'
+      editorUrl: '/blog-editor',
+      statusUrl: '/blog-status'
     };
 
-    const state = {
-      blogId: '',
-      row: null,
-      original: null,
-      tags: [],
-      thumbs: [],
-      cta: { label:'', text:'' },
-      bodyParagraphs: [],
-      overviewParagraphs: [],
-      sectionParagraphs: {}
-    };
+    let rawItems = [];
+    let selectedDate = '';
+    let calendarCurrentMonth = '';
+    let calendarOverviewMap = {};
+    let selectedListing = null;
+    let selectedAddressSearchData = null;
+    let lastLookupResult = null;
+    let assets = [];
+    let searchTimer = null;
+    let activeParagraphPickerAssetId = '';
+    let selectedAiStyle = '깔끔형';
 
     const els = {
-      backBtn: document.getElementById('backBtn'),
-      saveBtn: document.getElementById('saveBtn'),
-      publishBtn: document.getElementById('publishBtn'),
-      statusChip: document.getElementById('statusChip'),
-      heroBox: document.getElementById('heroBox'),
-      metaListing: document.getElementById('metaListing'),
-      metaStatus: document.getElementById('metaStatus'),
-      metaStyle: document.getElementById('metaStyle'),
-      titleDisplay: document.getElementById('titleDisplay'),
-      titleEditBox: document.getElementById('titleEditBox'),
-      titleInput: document.getElementById('titleInput'),
-      titleCancelBtn: document.getElementById('titleCancelBtn'),
-      titleSaveBtn: document.getElementById('titleSaveBtn'),
-      leadDisplay: document.getElementById('leadDisplay'),
-      leadEditBox: document.getElementById('leadEditBox'),
-      leadInput: document.getElementById('leadInput'),
-      leadCancelBtn: document.getElementById('leadCancelBtn'),
-      leadSaveBtn: document.getElementById('leadSaveBtn'),
-      articleSections: document.getElementById('articleSections'),
-      thumbStrip: document.getElementById('thumbStrip'),
-      thumbLines: document.getElementById('thumbLines'),
-      ctaLabelDisplay: document.getElementById('ctaLabelDisplay'),
-      ctaLabelEditBox: document.getElementById('ctaLabelEditBox'),
-      ctaLabelInput: document.getElementById('ctaLabelInput'),
-      ctaLabelCancelBtn: document.getElementById('ctaLabelCancelBtn'),
-      ctaLabelSaveBtn: document.getElementById('ctaLabelSaveBtn'),
-      ctaTextDisplay: document.getElementById('ctaTextDisplay'),
-      ctaTextEditBox: document.getElementById('ctaTextEditBox'),
-      ctaTextInput: document.getElementById('ctaTextInput'),
-      ctaTextCancelBtn: document.getElementById('ctaTextCancelBtn'),
-      ctaTextSaveBtn: document.getElementById('ctaTextSaveBtn'),
-      tagWrap: document.getElementById('tagWrap'),
-      footerNote: document.getElementById('footerNote'),
-      tagEditBtn: document.getElementById('tagEditBtn'),
+      goStatusBtn: document.getElementById('goStatusBtn'),
+      prevDateBtn: document.getElementById('prevDateBtn'),
+      nextDateBtn: document.getElementById('nextDateBtn'),
+      datePickerBtn: document.getElementById('datePickerBtn'),
+      searchInput: document.getElementById('searchInput'),
+      dateMetaLine: document.getElementById('dateMetaLine'),
+      listingEmpty: document.getElementById('listingEmpty'),
+      listingSliderWrap: document.getElementById('listingSliderWrap'),
+      listingSlider: document.getElementById('listingSlider'),
+      listingSliderBarWrap: document.getElementById('listingSliderBarWrap'),
+      listingSliderTrack: document.getElementById('listingSliderTrack'),
+      listingSliderTrackHit: document.getElementById('listingSliderTrackHit'),
+      listingSliderBarHit: document.getElementById('listingSliderBarHit'),
+      listingSliderBar: document.getElementById('listingSliderBar'),
+      selectedSummary: document.getElementById('selectedSummary'),
+      selectedListingTitle: document.getElementById('selectedListingTitle'),
+      selectedListingSub: document.getElementById('selectedListingSub'),
+      assetsSection: document.getElementById('assetsSection'),
+      assetGrid: document.getElementById('assetGrid'),
+      selectedCountChip: document.getElementById('selectedCountChip'),
+      heroCountChip: document.getElementById('heroCountChip'),
+      generateInfoImageBtn: document.getElementById('generateInfoImageBtn'),
+      draftSaveBtn: document.getElementById('draftSaveBtn'),
+      publishPrepBtn: document.getElementById('publishPrepBtn'),
+      aiCallModal: document.getElementById('aiCallModal'),
+      aiStyleGrid: document.getElementById('aiStyleGrid'),
+      aiDirectionInput: document.getElementById('aiDirectionInput'),
+      aiCallCancelBtn: document.getElementById('aiCallCancelBtn'),
+      aiCallConfirmBtn: document.getElementById('aiCallConfirmBtn'),
+      calendarModal: document.getElementById('calendarModal'),
+      calendarBackBtn: document.getElementById('calendarBackBtn'),
+      calendarPrevBtn: document.getElementById('calendarPrevBtn'),
+      calendarNextBtn: document.getElementById('calendarNextBtn'),
+      calendarMonthLabel: document.getElementById('calendarMonthLabel'),
+      calendarGrid: document.getElementById('calendarGrid'),
       loadingOverlay: document.getElementById('loadingOverlay'),
       loadingText: document.getElementById('loadingText'),
-      toast: document.getElementById('toast')
+      toast: document.getElementById('toast'),
+      imageViewer: document.getElementById('imageViewer'),
+      imageViewerClose: document.getElementById('imageViewerClose'),
+      imageViewerImg: document.getElementById('imageViewerImg'),
+      paragraphPicker: document.getElementById('paragraphPicker'),
+      paragraphPickerClose: document.getElementById('paragraphPickerClose'),
+      paragraphPickerGrid: document.getElementById('paragraphPickerGrid')
     };
 
     function text(v){ return String(v == null ? '' : v).trim(); }
-    function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
-    function parseJson(v, fallback){ try{ const x = JSON.parse(v); return x == null ? fallback : x; }catch(e){ return fallback; } }
-    function getParam(name){ return new URLSearchParams(location.search).get(name) || ''; }
-    function setLoading(on, label){ els.loadingText.textContent = label || '불러오는 중'; els.loadingOverlay.classList.toggle('show', !!on); }
-    function showToast(msg){ if(!msg) return; els.toast.textContent = msg; els.toast.classList.add('show'); clearTimeout(showToast._timer); showToast._timer=setTimeout(()=>els.toast.classList.remove('show'),1800); }
+    function escapeAttr(v){
+      return String(v == null ? '' : v)
+        .replace(/&/g,'&amp;')
+        .replace(/"/g,'&quot;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;');
+    }
+    function parseDateValue(value){
+      const s = text(value);
+      if(!s) return null;
+      const t = new Date(s).getTime();
+      return Number.isNaN(t) ? null : t;
+    }
+    function formatDateKeyFromTs(ts){
+      const d = new Date(ts);
+      return [
+        d.getFullYear(),
+        String(d.getMonth()+1).padStart(2,'0'),
+        String(d.getDate()).padStart(2,'0')
+      ].join('-');
+    }
+    function formatDateLabel(dateKey){
+      if(!dateKey) return '날짜 선택';
+      const d = new Date(dateKey + 'T00:00:00');
+      return d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
+    }
+    function formatMonthLabel(monthKey){
+      const parts = String(monthKey || '').split('-');
+      if(parts.length !== 2) return '';
+      return Number(parts[0]) + '.' + parts[1];
+    }
+    function getCurrentMonthKeyFromDate(dateKey){
+      return text(dateKey).slice(0, 7);
+    }
+    function detectTeamByListingNumber(listingNumber){
+      const s = text(listingNumber).toUpperCase();
+      if(s.indexOf('SK-') === 0 || s.indexOf('SK') === 0) return 'shopping';
+      if(s.indexOf('MK-') === 0 || s.indexOf('MK') === 0) return 'factory';
+      return '';
+    }
+    function teamLabel(teamType){
+      if(teamType === 'shopping') return '상가';
+      if(teamType === 'factory') return '공장';
+      return '매물';
+    }
+    function firstDayOfMonthKey(baseDateKey){
+      const d = baseDateKey ? new Date(baseDateKey + 'T00:00:00') : new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    }
+    function safeJsonParse(textValue, fallback){
+      try{
+        const parsed = JSON.parse(textValue);
+        return parsed == null ? fallback : parsed;
+      }catch(e){
+        return fallback;
+      }
+    }
+    function showToast(message){
+      if(!message) return;
+      els.toast.textContent = message;
+      els.toast.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(function(){
+        els.toast.classList.remove('show');
+      }, 1800);
+    }
+    function setLoading(on, label){
+      els.loadingText.textContent = label || '불러오는 중';
+      els.loadingOverlay.classList.toggle('show', !!on);
+    }
+
+    function normalizeItem(item, idx){
+      const photoList = safeJsonParse(item && item.photoUrlsJson || '[]', []) || [];
+      let firstPhoto = '';
+      if(Array.isArray(photoList) && photoList.length){
+        const p0 = photoList[0];
+        firstPhoto = typeof p0 === 'string' ? p0 : (p0 && (p0.heroUrl || p0.url || p0.lightUrl || p0.thumbUrl)) || '';
+      }
+      return {
+        id: text(item && item.listingNumber) || ('LIST-' + idx),
+        listingNumber: text(item && item.listingNumber),
+        title: text(item && item.title) || text(item && item.summary1) || '제목 없음',
+        address: text(item && item.address),
+        dealType: text(item && item.dealType),
+        price: text(item && (item.price || item.salePrice)),
+        deposit: text(item && item.deposit),
+        monthlyRent: text(item && item.monthlyRent),
+        heroUrl: text(item && item.heroUrl) || firstPhoto,
+        photoUrlsJson: text(item && item.photoUrlsJson) || '[]',
+        createdAt: text(item && item.createdAt),
+        updatedAt: text(item && item.updatedAt),
+        raw: item || {}
+      };
+    }
+
+    function formatDealPrice(item){
+      const dealType = text(item.dealType);
+      const price = text(item.price);
+      if(dealType && price) return dealType + ' / ' + price;
+      if(dealType) return dealType;
+      if(price) return price;
+      if(item.deposit || item.monthlyRent){
+        return '보증금 ' + (item.deposit || '-') + ' / 월세 ' + (item.monthlyRent || '-');
+      }
+      return '-';
+    }
+
     function fetchPostJson(payload){
       return fetch(CONFIG.adminListUrl, {
-        method:'POST', mode:'cors', headers:{'Content-Type':'text/plain;charset=UTF-8'}, body: JSON.stringify(payload)
-      }).then(res => { if(!res.ok) throw new Error('요청 실패: ' + res.status); return res.json(); });
-    }
-    function splitParagraphs(bodyText){ return text(bodyText).split(/\n{2,}/).map(s=>s.trim()).filter(Boolean); }
-    function bodyTextToHtml(bodyText){ return splitParagraphs(bodyText).map(p => '<p>' + esc(p).replace(/\n/g,'<br>') + '</p>').join('\n'); }
-    function formatDisplayText(v){
-      return text(v)
-        .replace(/\s*\/\s*/g, '\n')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-    }
-    function toDirectImageUrl(url){
-      return text(url);
-    }
-    function makeDealPrice(row){
-      const deal = text(row.dealTypeSnapshot || row.dealType);
-      const price = text(row.priceSnapshot || row.price);
-      if(deal && price) return deal + ' / ' + price;
-      return deal || price || '-';
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify(payload)
+      }).then(function(res){
+        if(!res.ok) throw new Error('조회 실패: ' + res.status);
+        return res.json();
+      });
     }
 
-    function makeOverview(row){
-      const listing = parseJson(row.listingSnapshotJson || '{}', {});
-      const lines = [];
-      const bullets = [listing.summary1, listing.summary2, listing.summary3].map(text).filter(Boolean);
-      if(bullets.length) lines.push.apply(lines, bullets);
-      const info = [];
-      if(text(listing.propertyType)) info.push('유형 ' + text(listing.propertyType));
-      if(text(listing.floorInfo)) info.push('층수 ' + text(listing.floorInfo));
-      if(text(listing.exclusiveAreaPy)) info.push('전용 ' + text(listing.exclusiveAreaPy) + '평');
-      if(text(listing.moveInDate)) info.push('입주 ' + text(listing.moveInDate));
-      if(text(listing.parkingCount)) info.push('주차 ' + text(listing.parkingCount));
-      if(info.length) lines.push(info.join(' · '));
-      if(!lines.length) lines.push('매물 기본정보를 바탕으로 블로그 내용을 정리해 주세요.');
-      return lines;
-    }
-    function htmlToPlainParagraphs(html){
-      const s = text(html);
-      if(!s) return [];
-      try{
-        const div = document.createElement('div');
-        div.innerHTML = s;
-        const paras = [];
-        Array.prototype.forEach.call(div.querySelectorAll('p'), function(p){
-          const t = text((p.innerText || '').replace(/\u00A0/g,' '));
-          if(t) paras.push(t);
+    function fetchAdminItems(){
+      const monthKey = calendarCurrentMonth || firstDayOfMonthKey(selectedDate || formatDateKeyFromTs(Date.now()));
+      setLoading(true, '매물 불러오는 중');
+      return Promise.all([
+        fetchPostJson({ action: 'listAdminProperties' }),
+        fetchPostJson({ action: 'getCalendarOverview', month: monthKey })
+      ])
+      .then(function(results){
+        const propertyData = results[0] || {};
+        const calendarData = results[1] || {};
+
+        const items = Array.isArray(propertyData && propertyData.items) ? propertyData.items : [];
+        rawItems = items.map(normalizeItem);
+
+        calendarCurrentMonth = monthKey;
+        calendarOverviewMap = {};
+
+        (Array.isArray(calendarData && calendarData.days) ? calendarData.days : []).forEach(function(day){
+          const dateKey = text(day && day.dateKey);
+          calendarOverviewMap[dateKey] = {
+            shoppingCount: Number(day && day.shoppingCount || 0),
+            factoryCount: Number(day && day.factoryCount || 0),
+            threadCount: Number(day && day.threadCount || 0)
+          };
         });
-        if(paras.length) return paras;
-        const t = text((div.innerText || '').replace(/\u00A0/g,' '));
-        return t ? t.split(/\n{2,}/).map(text).filter(Boolean) : [];
-      }catch(_){
-        return [];
-      }
-    }
-    function makeBodyParagraphs(row){
-      const fromJson = parseJson(row.paragraphTextJson || '[]', []);
-      if(Array.isArray(fromJson) && fromJson.map(text).filter(Boolean).length){
-        return fromJson.map(text).filter(Boolean);
-      }
-      const fromBody = splitParagraphs(row.bodyText || '');
-      if(fromBody.length) return fromBody;
-      const fromHtml = htmlToPlainParagraphs(row.bodyHtml || '');
-      if(fromHtml.length) return fromHtml;
-      const listing = parseJson(row.listingSnapshotJson || '{}', {});
-      const fallback = [];
-      const memo = text(listing.memo || row.memo || '');
-      if(text(listing.title)) fallback.push(text(listing.title));
-      const facts = [
-        text(listing.addressMasked || row.addressMasked || row.address),
-        makeDealPrice(row),
-        text(listing.approvalDate) ? '사용승인 ' + text(listing.approvalDate) : '',
-        text(listing.buildingComposition),
-        text(listing.zoning)
-      ].filter(Boolean);
-      if(facts.length) fallback.push(facts.join(' · '));
-      if(memo) fallback.push(memo);
-      if(!fallback.length) fallback.push('AI 초안이 아직 생성되지 않았습니다.');
-      return fallback;
-    }
-    function getTeamType(row){
-      const no = text(row && row.listingNumber).toUpperCase();
-      if(no.indexOf('SK') === 0) return 'commercial';
-      return 'factory';
-    }
-    function getSectionMeta(row){
-      const team = getTeamType(row);
-      return team === 'commercial'
-        ? [
-            { key:'hero_intro', heading:'매물 한눈에 보기', slots:['hero','p1'], min:1 },
-            { key:'property_overview', heading:'매물 개요', slots:['p1'], min:1 },
-            { key:'location_context', heading:'입지와 접근', slots:['p2','p3'], min:1 },
-            { key:'building_and_usage', heading:'공간 구성', slots:['p4','p5'], min:1 },
-            { key:'strengths_summary', heading:'핵심 포인트', slots:['p6'], min:1 },
-            { key:'detailed_note', heading:'세부 참고', slots:['p7','p8','p9'], min:1 }
-          ]
-        : [
-            { key:'hero_intro', heading:'매물 한눈에 보기', slots:['hero','p1'], min:1 },
-            { key:'property_overview', heading:'매물 개요', slots:['p1'], min:1 },
-            { key:'location_context', heading:'야드와 진입', slots:['p2','p3'], min:1 },
-            { key:'building_and_usage', heading:'내부와 작업 동선', slots:['p4','p5'], min:1 },
-            { key:'strengths_summary', heading:'설비와 장점', slots:['p6'], min:1 },
-            { key:'detailed_note', heading:'세부 참고', slots:['p7','p8','p9'], min:1 }
-          ];
-    }
-    function distributeParagraphs(paragraphs, sections){
-      const list = (paragraphs || []).slice();
-      const count = sections.length;
-      const out = {};
-      sections.forEach(function(sec){ out[sec.key] = []; });
-      if(!list.length) return out;
-      let idx = 0;
-      sections.forEach(function(sec){
-        if(idx < list.length && sec.min > 0){
-          out[sec.key].push(list[idx++]);
+
+        if(!selectedDate){
+          selectedDate = formatDateKeyFromTs(Date.now());
         }
+
+        renderDateMetaLine();
+        renderCalendarGrid();
+        applyFiltersAndRenderListings();
+      })
+      .catch(function(err){
+        console.error(err);
+        els.listingEmpty.style.display = 'block';
+        els.listingEmpty.textContent = '매물 데이터를 불러오지 못했습니다.';
+        els.listingSliderWrap.style.display = 'none';
+        showToast((err && err.message) || '불러오기 실패');
+      })
+      .finally(function(){
+        setLoading(false);
       });
-      let secIndex = 0;
-      while(idx < list.length){
-        const sec = sections[Math.min(secIndex, sections.length - 1)];
-        out[sec.key].push(list[idx++]);
-        secIndex = (secIndex + 1) % sections.length;
-      }
-      return out;
-    }
-    function renderParagraphList(list, key){
-      return (list || []).map(function(p, idx){
-        const displayText = formatDisplayText(p);
-        const empty = !text(displayText);
-        return '<p class="paragraph editable' + (empty ? ' is-empty' : '') + '" contenteditable="plaintext-only" spellcheck="false" data-edit-key="' + key + '" data-edit-idx="' + idx + '">' +
-          (empty ? '내용을 입력하세요.' : esc(displayText)) +
-          '</p>';
-      }).join('');
     }
 
-    function renderTags(){
-      if(!state.tags.length){ els.tagWrap.innerHTML = ''; return; }
-      els.tagWrap.innerHTML = state.tags.map(v => '<span class="tag">' + esc(v) + '</span>').join('');
+    function getLocalCalendarPropertiesByDate(dateKey){
+      return rawItems
+        .filter(function(item){
+          const created = parseDateValue(item && item.createdAt);
+          if(!created) return false;
+          return formatDateKeyFromTs(created) === dateKey;
+        })
+        .sort(function(a, b){
+          return (parseDateValue(b.createdAt) || 0) - (parseDateValue(a.createdAt) || 0);
+        });
     }
-    function renderThumbs(){
-      if(!state.thumbs.length){ els.thumbStrip.style.display='none'; els.thumbLines.innerHTML=''; return; }
-      els.thumbStrip.style.display='block';
-      els.thumbLines.innerHTML = state.thumbs.map(v => '<div class="thumb-line">' + esc(v) + '</div>').join('');
+
+    function matchesKeyword(item, keyword){
+      if(!keyword) return true;
+      const haystack = [
+        item.title, item.address, item.listingNumber, item.dealType, item.price,
+        item.raw && item.raw.summary1, item.raw && item.raw.summary2, item.raw && item.raw.summary3
+      ].map(text).join(' ').toLowerCase();
+      return haystack.indexOf(keyword.toLowerCase()) > -1;
     }
-    function mergeAssets(row){
-      const snaps = parseJson(row.assetSnapshotJson || '[]', []);
-      const infos = parseJson(row.infoImageFilesJson || '[]', []);
-      const byId = {};
-      snaps.forEach(function(s){ byId[text(s.assetId)] = s; });
-      return infos.map(function(info){
-        const id = text(info.assetId);
-        const snap = byId[id] || {};
-        return {
-          assetId:id,
-          type:text(info.assetType || snap.assetType),
-          paragraph:text(info.paragraph || snap.paragraph || 'p1'),
-          isHero: !!snap.isHero || !!info.isHero,
-          url: text(info.url || info.previewUrl || info.originalUrl || ''),
-          sourceLabel: text(info.assetSource || snap.assetSource)
-        };
-      }).filter(v => !!v.url);
+
+    function applyFiltersAndRenderListings(){
+      const keyword = text(els.searchInput.value);
+      let items = selectedDate ? getLocalCalendarPropertiesByDate(selectedDate) : rawItems.slice();
+      if(keyword){
+        items = items.filter(function(item){ return matchesKeyword(item, keyword); });
+      }
+      renderListingSlider(items);
     }
-    function groupAssets(row){
-      const assets = mergeAssets(row);
-      const grouped = { hero:null, basic:[], p1:[], p2:[], p3:[], p4:[], p5:[], p6:[], p7:[], p8:[], p9:[] };
-      const hero = assets.find(v => v.isHero) || assets[0] || null;
-      if(hero) grouped.hero = hero;
-      assets.forEach(function(v){
-        if(v.type === 'basic_info') grouped.basic.push(v);
-        if(/^p[1-9]$/.test(v.paragraph)) grouped[v.paragraph].push(v);
-      });
-      return grouped;
-    }
-    function uniqueAssets(list){
-      const seen = {};
-      return (list || []).filter(function(v){
-        const id = text(v && v.assetId);
-        if(!id || seen[id]) return false;
-        seen[id] = true;
-        return true;
-      });
-    }
-    function getSectionImages(section, grouped){
-      const out = [];
-      (section.slots || []).forEach(function(slot){
-        if(slot === 'hero'){
-          if(grouped.hero) out.push(grouped.hero);
-          return;
+
+    function renderListingSlider(items){
+      selectedListing = null;
+      assets = [];
+      lastLookupResult = null;
+      selectedAddressSearchData = null;
+      els.selectedSummary.classList.remove('show');
+      els.assetsSection.classList.remove('show');
+      els.assetGrid.innerHTML = '';
+      syncBottomButtons();
+
+      if(!Array.isArray(items) || !items.length){
+        els.listingEmpty.style.display = 'block';
+        els.listingEmpty.textContent = '해당 조건의 매물이 없습니다.';
+        els.listingSliderWrap.style.display = 'none';
+        if(els.listingSliderBarWrap) els.listingSliderBarWrap.style.display = 'none';
+        return;
+      }
+
+      els.listingEmpty.style.display = 'none';
+      els.listingSliderWrap.style.display = 'block';
+      if(els.listingSliderBarWrap){
+        els.listingSliderBarWrap.style.display = (window.innerWidth <= 860 ? 'none' : 'block');
+      }
+
+      els.listingSlider.innerHTML = items.map(function(item){
+        const team = detectTeamByListingNumber(item.listingNumber);
+        const thumb = item.heroUrl ? "background-image:url('" + escapeAttr(item.heroUrl) + "')" : '';
+        return ''
+          + '<div class="listing-card" data-id="' + escapeAttr(item.id) + '">'
+          + '  <div class="listing-thumb" style="' + thumb + '"></div>'
+          + '  <div class="listing-body">'
+          + '    <div class="listing-top">'
+          + '      <div class="listing-team ' + team + '">' + teamLabel(team) + '</div>'
+          + '      <div class="listing-no">' + escapeAttr(item.listingNumber) + '</div>'
+          + '    </div>'
+          + '    <div class="listing-title">' + escapeAttr(item.title) + '</div>'
+          + '    <div class="listing-address">' + escapeAttr(item.address || '주소 정보 없음') + '</div>'
+          + '    <div class="listing-price">' + escapeAttr(formatDealPrice(item)) + '</div>'
+          + '  </div>'
+          + '</div>';
+      }).join('');
+
+      els.listingSlider.onclick = function(e){
+        const card = e.target.closest('.listing-card');
+        const id = card ? card.getAttribute('data-id') : '';
+        if(!id) return;
+        const found = items.find(function(v){ return String(v.id) === String(id); });
+        if(found){
+          selectListing(found);
         }
-        if(grouped[slot] && grouped[slot].length) out.push(grouped[slot][0]);
-      });
-      return uniqueAssets(out);
+      };
+
+      if(bindSliderBar._update && window.innerWidth > 860){
+        bindSliderBar._update();
+      }
     }
+
+    function selectListing(item){
+      selectedListing = item;
+      selectedAddressSearchData = null;
+      lastLookupResult = null;
+      assets = buildPhotoAssets(item.photoUrlsJson);
+      if(assets[0]) assets[0].isHero = true;
+
+      Array.prototype.forEach.call(els.listingSlider.querySelectorAll('.listing-card'), function(card){
+        card.classList.toggle('is-active', card.getAttribute('data-id') === String(item.id));
+      });
+
+      els.selectedSummary.classList.add('show');
+      els.selectedListingTitle.textContent = item.title || '선택된 매물';
+      els.selectedListingSub.textContent = [item.listingNumber || '-', item.address || '-', formatDealPrice(item)].join(' · ');
+      renderAssets();
+    }
+
+    function buildPhotoAssets(photoUrlsJson){
+      const list = safeJsonParse(photoUrlsJson || '[]', []) || [];
+      return (Array.isArray(list) ? list : []).map(function(row, idx){
+        return {
+          assetId: 'photo_' + idx,
+          previewUrl: typeof row === 'string' ? row : text(row && (row.heroUrl || row.url || row.lightUrl || row.thumbUrl)),
+          selected: true,
+          paragraph: 'p1',
+          isHero: false,
+          source: row
+        };
+      });
+    }
+
     const FACTORY_PHOTO_TYPE_LABELS = {
       p1: '외관전경',
       p2: '마당/야드',
@@ -487,6 +1623,7 @@
       p8: '사무/편의공간',
       p9: '기타'
     };
+
     const COMMERCIAL_PHOTO_TYPE_LABELS = {
       p1: '건물외관',
       p2: '전면/출입구',
@@ -498,286 +1635,1496 @@
       p8: '편의공간',
       p9: '기타'
     };
-    function getPhotoTypeLabels(row){
-      return getTeamType(row) === 'commercial'
-        ? COMMERCIAL_PHOTO_TYPE_LABELS
-        : FACTORY_PHOTO_TYPE_LABELS;
+
+    function getPhotoTypeLabels(){
+      const teamType = selectedListing ? detectTeamByListingNumber(selectedListing.listingNumber) : '';
+      return teamType === 'factory' ? FACTORY_PHOTO_TYPE_LABELS : COMMERCIAL_PHOTO_TYPE_LABELS;
     }
-    function getCaptionTextForAsset(asset, row){
-      if(!asset) return '';
-      if(text(asset.type) === 'basic_info') return '기본정보';
-      const labels = getPhotoTypeLabels(row || state.row || {});
-      const paragraphKey = text(asset.paragraph || 'p1');
-      return text(labels[paragraphKey] || labels.p1 || '');
-    }
-    function renderFigure(asset, caption){
-      if(!asset || !asset.url) return '';
-      return '<div class="figure"><img src="' + esc(asset.url) + '" alt="이미지" />'
-        + (text(caption) ? '<div class="figcap">' + esc(caption) + '</div>' : '')
-        + '</div>';
-    }
-    function renderImages(row){
-      const grouped = groupAssets(row);
-      const hero = text(row.heroImageUrl) ? { url: text(row.heroImageUrl) } : grouped.hero;
-      if(hero){
-        els.heroBox.classList.remove('empty');
-        els.heroBox.style.backgroundImage = 'url("' + hero.url.replace(/"/g, '%22') + '")';
-        els.heroBox.textContent = '';
-      }else{
-        els.heroBox.classList.add('empty');
-        els.heroBox.style.backgroundImage='none';
-        els.heroBox.textContent='대표 이미지 없음';
+
+    function paragraphOptionsHtml(current){
+      const labels = getPhotoTypeLabels();
+      let html = '';
+      for(let i=1;i<=9;i++){
+        const value = 'p' + i;
+        html += '<option value="' + value + '"' + (current === value ? ' selected' : '') + '>' + escapeAttr(labels[value] || value) + '</option>';
       }
-
-      const sections = getSectionMeta(row);
-      const renderedSections = sections.map(function(sec){
-        const paras = state.sectionParagraphs[sec.key] || [];
-        const images = getSectionImages(sec, grouped);
-        const imageHtml = images.map(function(asset){
-          return renderFigure(asset, getCaptionTextForAsset(asset, row));
-        }).join('');
-        return '<section class="block">'
-          + '<div class="section-kicker">SECTION</div>'
-          + '<h2 class="section-title">' + esc(sec.heading) + '</h2>'
-          + '<div class="paragraphs">' + renderParagraphList(paras, sec.key) + '</div>'
-          + (imageHtml ? '<div class="section-image-stack">' + imageHtml + '</div>' : '')
-          + '</section>';
-      }).join('');
-
-      const basicInfoHtml = grouped.basic.length ? (
-        '<section class="block basic-info-block">'
-        + '<div class="section-kicker">BASIC INFO</div>'
-        + '<h2 class="section-title">기본 정보</h2>'
-        + '<div class="section-image-stack">'
-        + grouped.basic.map(function(asset){ return renderFigure(asset, getCaptionTextForAsset(asset, row)); }).join('')
-        + '</div>'
-        + '</section>'
-      ) : '';
-
-      els.articleSections.innerHTML = renderedSections + basicInfoHtml;
+      return html;
     }
-    function renderAll(row){
-      state.row = row;
-      state.original = JSON.parse(JSON.stringify(row));
-      state.overviewParagraphs = makeOverview(row);
-      state.bodyParagraphs = makeBodyParagraphs(row);
-      state.tags = parseJson(row.hashtagsJson || '[]', []).map(text).filter(Boolean);
-      state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
-      state.cta = parseJson(row.ctaJson || '{}', {});
-      state.sectionParagraphs = distributeParagraphs(state.bodyParagraphs, getSectionMeta(row));
-      if(state.sectionParagraphs.hero_intro && state.overviewParagraphs[0]){
-        state.sectionParagraphs.hero_intro = [state.overviewParagraphs[0]].concat(state.sectionParagraphs.hero_intro || []);
+
+    function paragraphLabel(value){
+      const labels = getPhotoTypeLabels();
+      return labels[String(value || 'p1')] || labels.p1;
+    }
+
+    function openParagraphPicker(assetId){
+      activeParagraphPickerAssetId = assetId || '';
+      const item = assets.find(function(v){ return v.assetId === activeParagraphPickerAssetId; });
+      if(!item) return;
+      const labels = getPhotoTypeLabels();
+      let html = '';
+      for(let i=1;i<=9;i++){
+        const value = 'p' + i;
+        html += '<button type="button" class="paragraph-picker-btn' + (item.paragraph === value ? ' is-active' : '') + '" data-value="' + value + '">' + escapeAttr(labels[value] || value) + '</button>';
       }
-
-      els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
-      els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');
-      els.metaStatus.textContent = '상태 ' + ([text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '-');
-      els.metaStyle.textContent = '스타일 ' + (text(row.styleType) || '-');
-      els.footerNote.textContent = 'blogId: ' + (text(row.blogId) || state.blogId);
-
-      els.titleDisplay.textContent = text(row.draftTitle || parseJson(row.listingSnapshotJson || '{}', {}).title || '제목을 입력하세요.');
-      els.titleDisplay.classList.toggle('is-empty', !text(els.titleDisplay.textContent));
-      const lead = formatDisplayText(state.overviewParagraphs[0] || '');
-      if(state.overviewParagraphs.length) state.overviewParagraphs[0] = lead;
-      els.leadDisplay.textContent = lead || '도입 문구를 입력하세요.';
-      els.leadDisplay.classList.toggle('is-empty', !text(lead));
-      els.ctaLabelDisplay.textContent = text(state.cta.label) || '문의하기';
-      els.ctaTextDisplay.textContent = text(row.ctaText || state.cta.text) || '문의 문구를 입력하세요.';
-      els.ctaTextDisplay.classList.toggle('is-empty', !text(row.ctaText || state.cta.text));
-
-      renderImages(row);
-      renderThumbs();
-      renderTags();
+      els.paragraphPickerGrid.innerHTML = html;
+      Array.prototype.forEach.call(els.paragraphPickerGrid.querySelectorAll('.paragraph-picker-btn'), function(btn){
+        btn.addEventListener('click', function(){
+          item.paragraph = btn.getAttribute('data-value') || 'p1';
+          closeParagraphPicker();
+          renderAssets();
+        });
+      });
+      els.paragraphPicker.classList.add('show');
+      els.paragraphPicker.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
     }
-    function buildMinimalRow(){
-      return {
-        blogId: state.blogId,
-        listingNumber: '',
-        status: 'editing',
-        subStatus: 'draft_generated',
-        draftTitle: '',
-        bodyText: '',
-        bodyHtml: '',
-        hashtagsJson: '[]',
-        thumbnailTextJson: '[]',
-        ctaJson: '{}',
-        ctaText: '',
-        listingSnapshotJson: '{}',
-        assetSnapshotJson: '[]',
-        infoImageFilesJson: '[]',
-        styleType: text(getParam('style')),
-        addressMasked: '',
-        address: ''
-      };
+
+    function closeParagraphPicker(){
+      els.paragraphPicker.classList.remove('show');
+      els.paragraphPicker.setAttribute('aria-hidden', 'true');
+      els.paragraphPickerGrid.innerHTML = '';
+      activeParagraphPickerAssetId = '';
+      document.body.style.overflow = '';
     }
-    function loadDraft(){
-      state.blogId = text(getParam('blogId'));
-      if(!state.blogId){
-        renderAll(buildMinimalRow());
-        showToast('blogId 없이 열렸습니다');
+
+    function openImageViewer(src){
+      if(!src) return;
+      els.imageViewerImg.src = src;
+      els.imageViewer.classList.add('show');
+      els.imageViewer.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeImageViewer(){
+      els.imageViewer.classList.remove('show');
+      els.imageViewer.setAttribute('aria-hidden', 'true');
+      els.imageViewerImg.removeAttribute('src');
+      document.body.style.overflow = '';
+    }
+
+    function renderAssets(){
+      if(!selectedListing){
+        els.assetsSection.classList.remove('show');
+        syncBottomButtons();
         return;
       }
-      setLoading(true, '초안 불러오는 중');
-      fetchPostJson({ action:'getBlogDraftDetail', blogId: state.blogId })
-        .then(function(data){
-          const row = data && (data.row || data.blog || data.item);
-          if(!row) throw new Error('초안 데이터 없음');
-          renderAll(row);
-          showToast('블로그 초안을 불러왔습니다');
+
+      els.assetsSection.classList.add('show');
+      els.assetGrid.innerHTML = assets.map(function(item){
+        const preview = item.previewUrl ? "background-image:url('" + escapeAttr(item.previewUrl) + "')" : '';
+        const isInfoAsset = !!(item && item.source && item.source.kind === 'generated_from_lookup');
+        return ''
+          + '<div class="asset-card' + (item.isHero ? ' is-hero' : '') + (item.selected ? ' is-selected' : '') + '" data-asset-id="' + escapeAttr(item.assetId) + '">'
+          + '  <div class="asset-preview" style="' + preview + '">'
+          + '    <button type="button" class="asset-hero">대표</button>'
+          + '    <button type="button" class="asset-check" aria-label="선택">' + (item.selected ? '✓' : '') + '</button>'
+          + '  </div>'
+          + '  <div class="asset-body">'
+          + (isInfoAsset
+              ? '    <div class="asset-fixed-label">기본정보</div>'
+              : '    <select class="select asset-paragraph-select">' + paragraphOptionsHtml(item.paragraph) + '    </select>'
+                + '    <button type="button" class="asset-paragraph-mobile-btn">' + paragraphLabel(item.paragraph) + '</button>')
+          + '  </div>'
+          + '</div>';
+      }).join('');
+
+      Array.prototype.forEach.call(els.assetGrid.querySelectorAll('.asset-card'), function(card){
+        const assetId = card.getAttribute('data-asset-id');
+        const item = assets.find(function(v){ return v.assetId === assetId; });
+        if(!item) return;
+
+        const paraSelect = card.querySelector('.asset-paragraph-select');
+        const paraMobileBtn = card.querySelector('.asset-paragraph-mobile-btn');
+        const checkBtn = card.querySelector('.asset-check');
+        const heroBtn = card.querySelector('.asset-hero');
+        const previewEl = card.querySelector('.asset-preview');
+
+        if(paraSelect){
+          paraSelect.addEventListener('change', function(){
+            item.paragraph = paraSelect.value;
+            if(paraMobileBtn) paraMobileBtn.textContent = paragraphLabel(item.paragraph);
+          });
+        }
+        if(paraMobileBtn){
+          paraMobileBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            openParagraphPicker(assetId);
+          });
+        }
+        previewEl.addEventListener('click', function(){
+          openImageViewer(item.previewUrl || item.url || '');
+        });
+        if(checkBtn){
+          checkBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            item.selected = !item.selected;
+            renderAssets();
+          });
+        }
+        heroBtn.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          assets.forEach(function(v){ v.isHero = false; });
+          item.isHero = true;
+          renderAssets();
+        });
+      });
+
+      renderAssetMeta();
+      syncBottomButtons();
+    }
+
+    function renderAssetMeta(){
+      const selectedCount = assets.filter(function(v){ return !!v.selected; }).length;
+      const hero = assets.find(function(v){ return !!v.isHero; });
+      els.selectedCountChip.textContent = '선택 ' + selectedCount;
+      els.heroCountChip.textContent = hero ? '대표 지정됨' : '대표 미지정';
+    }
+
+    function syncBottomButtons(){
+      const hasListing = !!selectedListing;
+      const selectedCount = assets.filter(function(v){ return !!v.selected; }).length;
+      const hasHero = assets.some(function(v){ return !!v.isHero; });
+      els.draftSaveBtn.disabled = !hasListing;
+      els.publishPrepBtn.disabled = !(hasListing && selectedCount > 0 && hasHero);
+    }
+
+    function renderDateMetaLine(){
+      const key = selectedDate;
+      const counts = key ? (calendarOverviewMap[key] || { shoppingCount:0, factoryCount:0 }) : null;
+      els.datePickerBtn.textContent = key ? formatDateLabel(key) : '날짜 선택';
+      els.dateMetaLine.textContent = key
+        ? (formatDateLabel(key) + ' · 상가 ' + (counts.shoppingCount || 0) + ' · 공장 ' + (counts.factoryCount || 0))
+        : '날짜를 선택하거나 검색하세요.';
+    }
+
+    function renderCalendarGrid(){
+      els.calendarMonthLabel.textContent = formatMonthLabel(calendarCurrentMonth);
+      const parts = String(calendarCurrentMonth || '').split('-');
+      const year = Number(parts[0] || 0);
+      const monthIndex = Number(parts[1] || 1) - 1;
+      const first = new Date(year, monthIndex, 1);
+      const start = new Date(first);
+      const mondayOffset = (first.getDay() + 6) % 7;
+      start.setDate(first.getDate() - mondayOffset);
+
+      let html = '';
+      for(let i=0;i<42;i++){
+        const date = new Date(start);
+        date.setDate(start.getDate() + i);
+        const dateKey = formatDateKeyFromTs(date.getTime());
+        const isSelected = dateKey === selectedDate;
+        const counts = calendarOverviewMap[dateKey] || { shoppingCount:0, factoryCount:0, threadCount:0 };
+        html += ''
+          + '<button type="button" class="calendar-cell' + (isSelected ? ' is-selected' : '') + '" data-date-key="' + dateKey + '">'
+          + '  <div class="calendar-day-number">' + date.getDate() + '</div>'
+          + '  <div class="calendar-lines">'
+          + '    <div class="calendar-line' + ((counts.shoppingCount || 0) ? '' : ' zero') + '">상가 ' + (counts.shoppingCount || 0) + '</div>'
+          + '    <div class="calendar-line' + ((counts.factoryCount || 0) ? '' : ' zero') + '">공장 ' + (counts.factoryCount || 0) + '</div>'
+          + '  </div>'
+          + '</button>';
+      }
+      els.calendarGrid.innerHTML = html;
+
+      Array.prototype.forEach.call(els.calendarGrid.querySelectorAll('.calendar-cell'), function(cell){
+        cell.addEventListener('click', function(){
+          selectedDate = cell.getAttribute('data-date-key');
+          renderDateMetaLine();
+          applyFiltersAndRenderListings();
+          closeCalendarModal();
+        });
+      });
+    }
+
+    function moveCalendarMonth(offset){
+      const parts = String(calendarCurrentMonth || firstDayOfMonthKey()).split('-');
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1 + offset, 1);
+      calendarCurrentMonth = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      fetchCalendarOverviewOnly();
+    }
+
+    function fetchCalendarOverviewOnly(){
+      setLoading(true, '달력 불러오는 중');
+      fetchPostJson({ action:'getCalendarOverview', month: calendarCurrentMonth })
+        .then(function(calendarData){
+          calendarOverviewMap = {};
+          (Array.isArray(calendarData && calendarData.days) ? calendarData.days : []).forEach(function(day){
+            const dateKey = text(day && day.dateKey);
+            calendarOverviewMap[dateKey] = {
+              shoppingCount: Number(day && day.shoppingCount || 0),
+              factoryCount: Number(day && day.factoryCount || 0),
+              threadCount: Number(day && day.threadCount || 0)
+            };
+          });
+          renderCalendarGrid();
+          renderDateMetaLine();
         })
         .catch(function(err){
           console.error(err);
-          renderAll(buildMinimalRow());
-          showToast('서버 초안 로드 실패');
+          showToast((err && err.message) || '달력 불러오기 실패');
         })
-        .finally(function(){ setLoading(false); });
+        .finally(function(){
+          setLoading(false);
+        });
     }
-    function buildPatch(){
-      const ordered = getSectionMeta(state.row || {}).reduce(function(acc, sec){ return acc.concat(state.sectionParagraphs[sec.key] || []); }, []);
-      const bodyText = ordered.join('\n\n');
+
+    function openCalendarModal(){
+      els.calendarModal.classList.add('show');
+      renderCalendarGrid();
+    }
+    function closeCalendarModal(){
+      els.calendarModal.classList.remove('show');
+    }
+
+    function openAddressSearch(initialQuery){
+      try{
+        new daum.Postcode({
+          oncomplete: function(data){
+            selectedAddressSearchData = {
+              roadAddress: data.roadAddress || '',
+              jibunAddress: data.jibunAddress || '',
+              sigunguCode: data.sigunguCode || '',
+              bcode: data.bcode || '',
+              zonecode: data.zonecode || '',
+              buildingName: data.buildingName || '',
+              apartment: data.apartment || '',
+              addressType: data.userSelectedType || ''
+            };
+            showToast('주소 선택 완료');
+          }
+        }).open({ q: initialQuery || (selectedListing && selectedListing.address) || '' });
+      }catch(e){
+        console.error(e);
+        showToast('주소검색 오류');
+      }
+    }
+
+
+    function makeInfoImageAddress_(value){
+      var s = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+      if(!s) return '-';
+
+      var parts = s.split(' ').filter(Boolean);
+      if(!parts.length) return '-';
+
+      var kept = [];
+      for(var i = 0; i < parts.length; i++){
+        var p = parts[i];
+
+        if(/\d/.test(p)) break;
+
+        kept.push(p);
+
+        if(/[동읍면가리]$/.test(p)) break;
+        if(/[로길]$/.test(p)) break;
+      }
+
+      var out = kept.join(' ').trim();
+      return out || '-';
+    }
+
+function infoFirstNonEmpty(){
+      for(var i=0;i<arguments.length;i++){
+        var v = arguments[i];
+        if(v == null) continue;
+        v = String(v).trim();
+        if(v) return v;
+      }
+      return '';
+    }
+    function infoNumberText(n){
+      if(!isFinite(n)) return '';
+      if(Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
+      return (Math.round(n*100)/100).toString();
+    }
+    function infoFormatDate(v){
+      v = String(v == null ? '' : v).replace(/\D/g,'');
+      if(v.length !== 8) return String(v || '').trim();
+      return v.slice(0,4)+'.'+v.slice(4,6)+'.'+v.slice(6,8);
+    }
+    function infoFormatArea(v){
+      if(v == null || v === '') return '-';
+      var n = Number(v);
+      if(!isFinite(n) || n <= 0) return '-';
+      var py = n / 3.305785;
+      return infoNumberText(n) + '㎡ / ' + infoNumberText(py) + '평';
+    }
+    function infoFormatPercent(v){
+      if(v == null || v === '') return '-';
+      var n = Number(v);
+      if(!isFinite(n)) return String(v).trim() || '-';
+      return infoNumberText(n) + '%';
+    }
+    function infoFormatHeight(v){
+      if(v == null || v === '') return '-';
+      var n = Number(v);
+      if(!isFinite(n) || n === 0) return '-';
+      return infoNumberText(n) + 'm';
+    }
+    function infoUniqueNonEmpty(arr){
+      var out = [];
+      (arr || []).forEach(function(v){
+        v = String(v == null ? '' : v).trim();
+        if(v && out.indexOf(v) === -1) out.push(v);
+      });
+      return out;
+    }
+    function infoFindPositive(items, key){
+      var best = null;
+      (items || []).forEach(function(it){
+        var n = Number(it && it[key]);
+        if(isFinite(n) && n > 0 && (best == null || n > best)) best = n;
+      });
+      return best;
+    }
+    function infoBuildFloorText(v){
+      var g = infoFirstNonEmpty(v && v.grndFlrCnt);
+      var u = infoFirstNonEmpty(v && v.ugrndFlrCnt);
+      if(!g && !u) return '-';
+      return '지상 ' + (g || '0') + '층 / 지하 ' + (u || '0') + '층';
+    }
+    function infoBuildingSortKey(name){
+      var m = String(name || '').match(/(\d+)/);
+      return m ? parseInt(m[1],10) : 9999;
+    }
+    function infoFloorSortKey(name){
+      var s = String(name || '').trim();
+      var m = s.match(/-?\d+/);
+      if(!m) return 9999;
+      return parseInt(m[0],10);
+    }
+    function infoJoinAreaPurpose(area, purpose, struct){
+      var parts = [];
+      if(area && area !== '-') parts.push(area);
+      if(purpose && purpose !== '-') parts.push(purpose);
+      if(struct && struct !== '-') parts.push(struct);
+      return parts.length ? parts.join(' / ') : '-';
+    }
+    function infoGetBuildingArchArea(buildingSource, flrItemsForBuilding){
+      var direct = Number(buildingSource && buildingSource.archArea);
+      if(isFinite(direct) && direct > 0) return direct;
+      var firstFloorArea = null;
+      (flrItemsForBuilding || []).forEach(function(f){
+        var floorName = String(f.flrNoNm || '').trim();
+        var floorGb = String(f.flrGbCdNm || '').trim();
+        var floorNo = String(f.flrNo == null ? '' : f.flrNo).trim();
+        var area = Number(f && f.area);
+        if(!isFinite(area) || area <= 0) return;
+        var isFirstFloor = floorName === '1층' || (floorGb === '지상' && floorNo === '1');
+        if(isFirstFloor) firstFloorArea = area;
+      });
+      return firstFloorArea;
+    }
+    function extractLookupImageRows(data){
+      var apis = (data && data.apis) || {};
+      var titleItems = ((apis.title || {}).items || []).slice();
+      var recapItems = ((apis.recap || {}).items || []).slice();
+      var basisItems = ((apis.basis || {}).items || []).slice();
+      var jijiguItems = ((apis.jijigu || {}).items || []).slice();
+      var flrItems = ((apis.flr || {}).items || []).slice();
+      var titleFirst = ((apis.title || {}).firstItem || {});
+      var recapFirst = ((apis.recap || {}).firstItem || {});
+
+      var zoningParts = infoUniqueNonEmpty(
+        basisItems.map(function(it){ return it.jiyukCdNm; })
+          .concat(basisItems.map(function(it){ return it.jiguCdNm; }))
+          .concat(basisItems.map(function(it){ return it.guyukCdNm; }))
+          .concat(jijiguItems.map(function(it){ return it.jiyukCdNm; }))
+          .concat(jijiguItems.map(function(it){ return it.jiguCdNm; }))
+          .concat(jijiguItems.map(function(it){ return it.guyukCdNm; }))
+          .concat(jijiguItems.map(function(it){ return it.jijigu; }))
+      ).join(' / ');
+
+      var landArea = Number(recapFirst.platArea);
+      if(!isFinite(landArea) || landArea <= 0) landArea = infoFindPositive(recapItems, 'platArea');
+      if(!isFinite(landArea) || landArea <= 0) landArea = infoFindPositive(titleItems, 'platArea');
+
+      var archArea = Number(recapFirst.archArea);
+      if(!isFinite(archArea) || archArea <= 0) archArea = infoFindPositive(recapItems, 'archArea');
+      if(!isFinite(archArea) || archArea <= 0) {
+        archArea = titleItems.reduce(function(sum, it){
+          var n = Number(it.archArea);
+          return sum + (isFinite(n) && n > 0 ? n : 0);
+        }, 0);
+      }
+
+      var totArea = Number(recapFirst.totArea);
+      if(!isFinite(totArea) || totArea <= 0) totArea = infoFindPositive(recapItems, 'totArea');
+      if(!isFinite(totArea) || totArea <= 0) {
+        totArea = titleItems.reduce(function(sum, it){
+          var n = Number(it.totArea);
+          return sum + (isFinite(n) && n > 0 ? n : 0);
+        }, 0);
+      }
+
+      var mainCnt = titleItems.filter(function(it){ return String(it.mainAtchGbCd || '').trim() === '0'; }).length;
+      var atchCnt = titleItems.filter(function(it){ return String(it.mainAtchGbCd || '').trim() && String(it.mainAtchGbCd || '').trim() !== '0'; }).length;
+      if(!mainCnt && recapFirst.mainBldCnt) mainCnt = Number(recapFirst.mainBldCnt) || 0;
+      if(!atchCnt && recapFirst.atchBldCnt) atchCnt = Number(recapFirst.atchBldCnt) || 0;
+      var totalCnt = titleItems.length || (mainCnt + atchCnt);
+      var compText = '-';
+      if(totalCnt){
+        compText = '총 ' + totalCnt + '동';
+        if(mainCnt || atchCnt) compText += ' (주건축물 ' + (mainCnt || 0) + '동, 부속건축물 ' + (atchCnt || 0) + '동)';
+      }
+
+      var summaryRows = [
+        ['주소', makeInfoImageAddress_(infoFirstNonEmpty(
+        data && data.normalized && data.normalized.jibunAddress,
+        data && data.address,
+        titleFirst.platPlc,
+        recapFirst.platPlc,
+        '-'
+      ))],
+        ['도로명주소', makeInfoImageAddress_(infoFirstNonEmpty(
+        data && data.normalized && data.normalized.roadAddress,
+        titleFirst.newPlatPlc,
+        recapFirst.newPlatPlc,
+        '-'
+      ))],
+        ['건축물구성', compText],
+        ['건물용도', infoFirstNonEmpty(recapFirst.mainPurpsCdNm, titleFirst.mainPurpsCdNm, recapFirst.etcPurps, titleFirst.etcPurps, '-')],
+        ['용도지역', zoningParts || '-'],
+        ['사용승인일', infoFormatDate(infoFirstNonEmpty(recapFirst.useAprDay, titleFirst.useAprDay)) || '-'],
+        ['대지면적', infoFormatArea(landArea)],
+        ['건축면적', infoFormatArea(archArea)],
+        ['연면적', infoFormatArea(totArea)],
+        ['건폐율', infoFormatPercent(infoFirstNonEmpty(recapFirst.bcRat, titleFirst.bcRat))],
+        ['용적률', infoFormatPercent(infoFirstNonEmpty(recapFirst.vlRat, titleFirst.vlRat))],
+        ['주차대수', (function(){
+          var n = Number(infoFirstNonEmpty(recapFirst.totPkngCnt, ''));
+          return (isFinite(n) && n > 0) ? (String(Math.round(n)) + '대') : '-';
+        })()]
+      ];
+
+      var basisByPk = {};
+      basisItems.forEach(function(it){
+        var pk = String(it.mgmBldrgstPk || '').trim();
+        if(!pk) return;
+        if(!basisByPk[pk]) basisByPk[pk] = [];
+        basisByPk[pk].push(it);
+      });
+
+      var floorsByDong = {};
+      flrItems.forEach(function(it){
+        var dk = String(it.dongNm || '').trim();
+        if(!dk) return;
+        if(!floorsByDong[dk]) floorsByDong[dk] = [];
+        floorsByDong[dk].push(it);
+      });
+
+      var buildings = titleItems.slice().sort(function(a,b){
+        return infoBuildingSortKey(a.dongNm) - infoBuildingSortKey(b.dongNm);
+      }).map(function(it){
+        var floorList = (floorsByDong[String(it.dongNm || '').trim()] || []).slice().sort(function(a,b){
+          return infoFloorSortKey(a.flrNoNm || a.flrGbCdNm) - infoFloorSortKey(b.flrNoNm || b.flrGbCdNm);
+        });
+        var isMainBuilding = String(it.mainAtchGbCd || '').trim() === '0';
+        var isResidentialApartmentDong = isMainBuilding && /공동주택|아파트/.test(
+          infoFirstNonEmpty(it.mainPurpsCdNm, '') + ' ' + infoFirstNonEmpty(it.etcPurps, '')
+        ) && /(\d+동)$/.test(infoFirstNonEmpty(it.dongNm, ''));
+        var floorSummary = isResidentialApartmentDong
+          ? '-'
+          : (floorList.length ? floorList.map(function(f){
+              var fname = infoFirstNonEmpty(f.flrNoNm, f.flrGbCdNm, '층정보');
+              var fpurpose = infoFirstNonEmpty(f.mainPurpsCdNm, f.etcPurps, '-');
+              var fstruct = infoFirstNonEmpty(f.strctCdNm, f.etcStrct, '-');
+              return fname + ': ' + infoJoinAreaPurpose(infoFormatArea(f.area), fpurpose, fstruct);
+            }).join('\n') : '-');
+
+        return {
+          title: infoFirstNonEmpty(it.dongNm, '건물'),
+          rows: [
+            ['동명', infoFirstNonEmpty(it.dongNm, '-')],
+            ['구분', infoFirstNonEmpty(it.mainAtchGbCdNm, '-')],
+            ['용도', infoFirstNonEmpty(it.mainPurpsCdNm, it.etcPurps, '-')],
+            ['구조', infoFirstNonEmpty(it.strctCdNm, it.etcStrct, '-')],
+            ['지붕', infoFirstNonEmpty(it.roofCdNm, it.etcRoof, '-')],
+            ['층수', infoBuildFloorText(it)],
+            ['층고', infoFormatHeight(it.heit)],
+            ['건축면적', infoFormatArea(infoGetBuildingArchArea(it, floorList))],
+            ['연면적', infoFormatArea(it.totArea)],
+            ['사용승인일', infoFormatDate(it.useAprDay) || '-'],
+            ['층별요약', floorSummary]
+          ]
+        };
+      });
+
+      function hasMeaningfulRows(rows){
+        return (rows || []).some(function(row){
+          var v = String((row && row[1]) == null ? '' : row[1]).trim();
+          return v && v !== '-' && v !== '--';
+        });
+      }
+
       return {
-        draftTitle: text(els.titleDisplay.textContent),
-        seoTitle: text(els.titleDisplay.textContent),
-        bodyText: bodyText,
-        bodyHtml: bodyTextToHtml(bodyText),
-        paragraphTextJson: ordered,
-        sectionStructureJson: parseJson((state.row && state.row.sectionStructureJson) || '[]', []),
-        hashtagsJson: state.tags,
-        thumbnailTextJson: state.thumbs,
-        ctaText: text(els.ctaTextDisplay.textContent),
-        ctaJson: {
-          label: text(els.ctaLabelDisplay.textContent),
-          text: text(els.ctaTextDisplay.textContent)
+        summaryRows: hasMeaningfulRows(summaryRows) ? summaryRows : [],
+        buildings: buildings.filter(function(b){ return hasMeaningfulRows(b.rows); })
+      };
+    }
+
+    function maskInfoImageAddress_(value){
+      var s = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+      if(!s) return '-';
+      s = s.replace(/\s산?\d+(?:-\d+)?(?:번지)?$/, '').trim();
+      return s || '-';
+    }
+
+    function sanitizeInfoRowsForImage_(rows){
+      return (rows || []).map(function(row){
+        var label = String((row && row[0]) == null ? '' : row[0]).trim();
+        var value = (row && row[1]) == null ? '' : row[1];
+        if(label === '주소' || label === '도로명주소'){
+          return [label, maskInfoImageAddress_(value)];
+        }
+        return [label, value];
+      });
+    }
+
+    function drawInfoRowsToBlob(title, rows){
+      return new Promise(function(resolve, reject){
+        try{
+          var canvas = document.createElement('canvas');
+          var ctx = canvas.getContext('2d');
+
+          var safeRows = Array.isArray(rows) ? rows.filter(function(row){
+            return Array.isArray(row) && (text(row[0]) || text(row[1]));
+          }) : [];
+
+          var paddingLeft = 30;
+          var paddingRight = 30;
+          var paddingTop = 34;
+          var paddingBottom = 34;
+          var titleH = 52;
+          var tableW = 740;
+          var labelW = 210;
+          var valueW = tableW - labelW;
+          var xLabel = paddingLeft;
+          var xValue = paddingLeft + labelW;
+
+          canvas.width = paddingLeft + tableW + paddingRight;
+          canvas.height = 200;
+
+          function splitLines(ctx, value, maxWidth){
+            var words = String(value == null ? '' : value).split(/\s+/).filter(Boolean);
+            if(!words.length) return [''];
+            var lines = [];
+            var line = '';
+            words.forEach(function(word){
+              var test = line ? (line + ' ' + word) : word;
+              if(ctx.measureText(test).width <= maxWidth){
+                line = test;
+              }else{
+                if(line) lines.push(line);
+                line = word;
+              }
+            });
+            if(line) lines.push(line);
+            return lines;
+          }
+
+          ctx.font = '900 20px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
+
+          var rowHeights = safeRows.map(function(row){
+            var lines = splitLines(ctx, row[1], valueW - 24);
+            return Math.max(54, 28 + lines.length * 24);
+          });
+
+          var totalRowsHeight = rowHeights.reduce(function(acc, h){ return acc + h; }, 0);
+          canvas.height = paddingTop + titleH + totalRowsHeight + paddingBottom;
+
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.fillStyle = '#111827';
+          ctx.font = '900 26px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
+          ctx.textBaseline = 'top';
+          ctx.fillText(String(title || ''), paddingLeft, paddingTop - 4);
+
+          var startY = paddingTop + titleH;
+
+          for(var i=0;i<safeRows.length;i++){
+            var row = safeRows[i];
+            var rh = rowHeights[i];
+            var y = startY;
+
+            ctx.fillStyle = '#f8fbff';
+            ctx.fillRect(xLabel, y, labelW, rh);
+
+            ctx.strokeStyle = '#e7edf5';
+            ctx.beginPath(); ctx.moveTo(xLabel, y); ctx.lineTo(xLabel + tableW, y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(xValue, y); ctx.lineTo(xValue, y + rh); ctx.stroke();
+
+            ctx.fillStyle = '#344054';
+            ctx.font = '900 17px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(row[0] || ''), xLabel + 14, y + rh / 2);
+
+            ctx.fillStyle = '#111827';
+            ctx.font = '900 20px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
+            ctx.textBaseline = 'top';
+            var lines = splitLines(ctx, row[1], valueW - 24);
+            var textY = y + 14;
+            lines.forEach(function(line){
+              ctx.fillText(String(line || ''), xValue + 14, textY);
+              textY += 24;
+            });
+
+            startY += rh;
+          }
+
+          ctx.beginPath();
+          ctx.moveTo(xLabel, startY);
+          ctx.lineTo(xLabel + tableW, startY);
+          ctx.strokeStyle = '#e7edf5';
+          ctx.stroke();
+
+          canvas.toBlob(function(blob){
+            if(!blob) reject(new Error('이미지 생성 실패'));
+            else resolve(blob);
+          }, 'image/jpeg', 0.92);
+        }catch(err){
+          reject(err);
+        }
+      });
+    }
+
+    
+    function blobToDataUrl(blob){
+      return new Promise(function(resolve, reject){
+        try{
+          var reader = new FileReader();
+          reader.onloadend = function(){
+            resolve(reader.result || '');
+          };
+          reader.onerror = function(){
+            reject(new Error('dataURL 변환 실패'));
+          };
+          reader.readAsDataURL(blob);
+        }catch(err){
+          reject(err);
+        }
+      });
+    }
+
+async function buildLookupGeneratedAssets(lookupResult){
+      var extracted = extractLookupImageRows(lookupResult);
+      var defs = [];
+
+      if((extracted.summaryRows || []).length){
+        defs.push({ title: '부동산 기본정보', rows: extracted.summaryRows });
+      }
+
+      defs = defs.concat((extracted.buildings || []).map(function(b){
+        return { title: b.title, rows: b.rows };
+      }));
+
+      var out = [];
+      for(var i=0;i<defs.length;i++){
+        var blob = await drawInfoRowsToBlob(defs[i].title, defs[i].rows);
+        var dataUrl = await blobToDataUrl(blob);
+
+        out.push({
+          title: defs[i].title,
+          url: dataUrl,
+          mimeType: 'image/jpeg'
+        });
+      }
+
+      return out;
+    }
+
+    function runLookup(){
+      if(!selectedListing){
+        showToast('먼저 매물 선택');
+        return;
+      }
+      if(!selectedAddressSearchData){
+        openAddressSearch(selectedListing.address || '');
+        return;
+      }
+      setLoading(true, '건축물 조회 중');
+      const payload = { action:'fetchPublicPropertyBySearchResult' };
+      Object.keys(selectedAddressSearchData).forEach(function(k){
+        payload[k] = selectedAddressSearchData[k];
+      });
+      fetchPostJson(payload)
+        .then(function(data){
+          if(!(data && data.ok)){
+            throw new Error(((data && (data.error || data.message)) || '조회 실패') + ' · 다시 버튼을 눌러주세요');
+          }
+          lastLookupResult = data;
+          showToast('조회 완료');
+        })
+        .catch(function(err){
+          console.error(err);
+          showToast((err && err.message) || '조회 실패');
+        })
+        .finally(function(){
+          setLoading(false);
+        });
+    }
+
+
+
+    function jsonpLookupCall(params){
+      return new Promise(function(resolve, reject){
+        var cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+        var script = document.createElement('script');
+        var done = false;
+        var timer = null;
+
+        function cleanup(){
+          try{ delete window[cb]; }catch(e){}
+          if(timer) clearTimeout(timer);
+          if(script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[cb] = function(payload){
+          if(done) return;
+          done = true;
+          cleanup();
+          resolve(payload);
+        };
+
+        script.onerror = function(){
+          if(done) return;
+          done = true;
+          cleanup();
+          reject(new Error('JSONP 요청 실패'));
+        };
+
+        params = params || {};
+        params.callback = cb;
+        params._ts = Date.now();
+
+        var q = new URLSearchParams();
+        Object.keys(params).forEach(function(k){
+          q.set(k, params[k] == null ? '' : String(params[k]));
+        });
+
+        script.src = CONFIG.adminListUrl + '?' + q.toString();
+        document.body.appendChild(script);
+
+        timer = setTimeout(function(){
+          if(done) return;
+          done = true;
+          cleanup();
+          reject(new Error('JSONP 타임아웃'));
+        }, 15000);
+      });
+    }
+
+    function guessQueryAddressType_(address){
+      var s = String(address || '').trim();
+      if(!s) return 'ROAD';
+      return /(?:로|길)\s*\d/.test(s) ? 'ROAD' : 'JIBUN';
+    }
+
+    async function fetchLookupByListingAddress(){
+      if(!selectedListing){
+        throw new Error('먼저 매물 선택');
+      }
+
+      var raw = selectedListing.raw || {};
+      var baseAddress = text(
+        raw.lookupAddress ||
+        raw.jibunAddress ||
+        raw.roadAddress ||
+        raw.address
+      );
+
+      if(!baseAddress){
+        throw new Error('매물 주소 없음');
+      }
+
+      function looksRoadAddress(addr){
+        var s = String(addr || '').trim();
+        return /(?:로|길)\s*\d/.test(s);
+      }
+
+      function splitAdministrative(addr){
+        var s = String(addr || '').trim().replace(/\s+/g, ' ');
+        var parts = s.split(' ');
+        return {
+          sido: parts[0] || '',
+          sigungu: parts[1] || '',
+          bname: parts[2] || ''
+        };
+      }
+
+      var admin = splitAdministrative(baseAddress);
+      var queryAddressType = raw.queryAddressType || raw.addressType || (looksRoadAddress(baseAddress) ? 'ROAD' : 'JIBUN');
+
+      var picked = {
+        jibunAddress: text(raw.jibunAddress || (queryAddressType === 'JIBUN' ? baseAddress : '')),
+        roadAddress: text(raw.roadAddress || (queryAddressType === 'ROAD' ? baseAddress : '')),
+        lookupAddress: text(raw.lookupAddress || baseAddress),
+        bcode: text(raw.bcode),
+        sido: text(raw.sido || admin.sido),
+        sigungu: text(raw.sigungu || admin.sigungu),
+        bname: text(raw.bname || admin.bname),
+        buildingName: text(raw.buildingName),
+        zonecode: text(raw.zonecode),
+        apartment: text(raw.apartment),
+        autoJibunAddress: text(raw.autoJibunAddress),
+        autoRoadAddress: text(raw.autoRoadAddress),
+        addressType: text(raw.addressType || queryAddressType)
+      };
+
+      var params = { action:'fetchPublicPropertyBySearchResult' };
+      Object.keys(picked).forEach(function(k){ params[k] = picked[k]; });
+      params.queryAddress = picked.lookupAddress || picked.jibunAddress || picked.autoJibunAddress || picked.roadAddress || '';
+      params.queryAddressType = queryAddressType;
+
+      var data = await jsonpLookupCall(params);
+      if(!(data && data.ok)){
+        throw new Error((data && (data.error || data.message)) || '조회 실패');
+      }
+      lastLookupResult = data;
+      return data;
+    }
+
+
+        function rawAddressValue_(raw, keys){
+      raw = raw || {};
+      for(var i=0;i<keys.length;i++){
+        var k = keys[i];
+        var v = raw[k];
+        if(v != null && String(v).trim()) return String(v).trim();
+      }
+      return '';
+    }
+
+    function looksRoadAddress_(addr){
+      var s = String(addr || '').trim();
+      return /(?:로|길)\s*\d/.test(s);
+    }
+
+    function buildPickedFromListingRaw_(){
+      if(!selectedListing) return null;
+      var raw = selectedListing.raw || {};
+
+      var lookupAddress = rawAddressValue_(raw, [
+        'lookupAddress','queryAddress','address','jibunAddress','roadAddress'
+      ]) || text(selectedListing.address);
+
+      var jibunAddress = rawAddressValue_(raw, [
+        'jibunAddress','autoJibunAddress','addressJibun','jibun_address'
+      ]);
+
+      var roadAddress = rawAddressValue_(raw, [
+        'roadAddress','autoRoadAddress','addressRoad','road_address'
+      ]);
+
+      var addressType = rawAddressValue_(raw, [
+        'queryAddressType','addressType','address_type'
+      ]);
+
+      if(!addressType){
+        addressType = looksRoadAddress_(lookupAddress || roadAddress) ? 'ROAD' : 'JIBUN';
+      }
+
+      if(!jibunAddress && addressType === 'JIBUN') jibunAddress = lookupAddress;
+      if(!roadAddress && addressType === 'ROAD') roadAddress = lookupAddress;
+
+      var bcode = rawAddressValue_(raw, [
+        'bcode','bCode','법정동코드','legalDongCode','bjdongCd','bjDongCd'
+      ]);
+
+      var sigungu = rawAddressValue_(raw, [
+        'sigungu','sigunGu','sigunguName','시군구'
+      ]);
+      var sido = rawAddressValue_(raw, [
+        'sido','siDo','sidoName','시도'
+      ]);
+      var bname = rawAddressValue_(raw, [
+        'bname','beopjeongdong','법정동','dongName'
+      ]);
+
+      var zonecode = rawAddressValue_(raw, [
+        'zonecode','zoneCode','postcode','postCode','우편번호'
+      ]);
+
+      var buildingName = rawAddressValue_(raw, [
+        'buildingName','building_name','건물명'
+      ]);
+
+      var apartment = rawAddressValue_(raw, [
+        'apartment','isApartment'
+      ]);
+
+      var picked = {
+        jibunAddress: jibunAddress,
+        roadAddress: roadAddress,
+        lookupAddress: lookupAddress,
+        bcode: bcode,
+        sido: sido,
+        sigungu: sigungu,
+        bname: bname,
+        buildingName: buildingName,
+        zonecode: zonecode,
+        apartment: apartment,
+        autoJibunAddress: rawAddressValue_(raw, ['autoJibunAddress']),
+        autoRoadAddress: rawAddressValue_(raw, ['autoRoadAddress']),
+        addressType: addressType
+      };
+
+      if(!picked.lookupAddress) return null;
+      return picked;
+    }
+
+    async function runLookupLikeOriginal_(){
+      var picked = buildPickedFromListingRaw_();
+      if(!picked){
+        throw new Error('주소 데이터 없음 · 다시 버튼을 눌러주세요');
+      }
+
+      var params = { action:'fetchPublicPropertyBySearchResult' };
+      Object.keys(picked).forEach(function(k){ params[k] = picked[k]; });
+      params.queryAddress = picked.lookupAddress || picked.jibunAddress || picked.autoJibunAddress || picked.roadAddress || '';
+      params.queryAddressType = (picked.jibunAddress || picked.autoJibunAddress) ? 'JIBUN' : 'ROAD';
+
+      var res = await jsonpLookupCall(params);
+      if(!(res && res.ok)){
+        throw new Error('조회 실패 · 다시 버튼을 눌러주세요');
+      }
+      lastLookupResult = res;
+      return res;
+    }
+
+    function openAddressSearchForInfoImage_(initialQuery){
+      return new Promise(function(resolve, reject){
+        try{
+          new daum.Postcode({
+            q: String(initialQuery || '').trim(),
+            autoClose: true,
+            oncomplete:function(data){
+              var picked = {
+                jibunAddress: data.jibunAddress || data.autoJibunAddress || '',
+                roadAddress: data.roadAddress || data.autoRoadAddress || '',
+                lookupAddress: (data.jibunAddress || data.autoJibunAddress || data.roadAddress || data.autoRoadAddress || ''),
+                bcode: data.bcode || '',
+                sido: data.sido || '',
+                sigungu: data.sigungu || '',
+                bname: data.bname || '',
+                buildingName: data.buildingName || '',
+                zonecode: data.zonecode || '',
+                apartment: data.apartment || '',
+                autoJibunAddress: data.autoJibunAddress || '',
+                autoRoadAddress: data.autoRoadAddress || '',
+                addressType: data.addressType || ''
+              };
+              resolve(picked);
+            },
+            onclose:function(state){
+              if(state === 'FORCE_CLOSE') reject(new Error('주소 선택 취소'));
+            }
+          }).open({ q: initialQuery || '' });
+        }catch(e){
+          reject(e);
+        }
+      });
+    }
+
+    async function lookupByPickedForInfoImage_(picked){
+      var params = { action:'fetchPublicPropertyBySearchResult' };
+      Object.keys(picked || {}).forEach(function(k){ params[k] = picked[k]; });
+      params.queryAddress = picked.lookupAddress || picked.jibunAddress || picked.autoJibunAddress || picked.roadAddress || '';
+      params.queryAddressType = (picked.jibunAddress || picked.autoJibunAddress) ? 'JIBUN' : 'ROAD';
+
+      var res = await jsonpLookupCall(params);
+      if(!(res && res.ok)){
+        throw new Error(((res && (res.error || res.message)) || '조회 실패') + ' · 다시 버튼을 눌러주세요');
+      }
+      lastLookupResult = res;
+      return res;
+    }
+
+    async function generateInfoImages(){
+      if(!selectedListing){
+        showToast('먼저 매물 선택');
+        return;
+      }
+
+      try{
+        lastLookupResult = null;
+        var picked = await openAddressSearchForInfoImage_(selectedListing.address || '');
+        setLoading(true, '건축물 조회 중');
+        await lookupByPickedForInfoImage_(picked);
+        setLoading(true, '주소 조회 후 이미지 생성 중');
+
+        var built = await buildLookupGeneratedAssets(lastLookupResult);
+        if(!built.length){
+          showToast('자료가 없어 넣을 이미지가 없습니다');
+          return;
+        }
+
+        var photoAssets = assets.filter(function(v){ return String(v.assetId).indexOf('info_') !== 0; });
+        var infoAssets = built.map(function(img, idx){
+          return {
+            assetId:'info_' + idx,
+            previewUrl:text(img && img.url),
+            selected:true,
+            paragraph:'p2',
+            isHero:false,
+            source:{
+              title: img.title,
+              url: img.url,
+              mimeType: text(img && img.mimeType) || 'image/jpeg',
+              kind:'generated_from_lookup'
+            }
+          };
+        });
+
+        assets = photoAssets.concat(infoAssets);
+        renderAssets();
+        showToast('정보 이미지 추가');
+      }catch(err){
+        if(err && err.message === '주소 선택 취소') return;
+        console.error(err);
+        showToast((err && err.message) || '조회 실패 · 다시 버튼을 눌러주세요');
+      }finally{
+        setLoading(false);
+      }
+    }
+
+    function collectDraftPayload(){
+      const hero = assets.find(function(v){ return !!v.isHero; });
+      return {
+        listingNumber: selectedListing ? selectedListing.listingNumber : '',
+        title: selectedListing ? selectedListing.title : '',
+        address: selectedListing ? selectedListing.address : '',
+        heroAssetId: hero ? hero.assetId : '',
+        selectedAssetIdsJson: JSON.stringify(assets.map(function(v){ return v.assetId; })),
+        assetOrderJson: JSON.stringify(assets.map(function(v){ return v.assetId; })),
+        assetParagraphMapJson: JSON.stringify(assets.reduce(function(acc, item){
+          acc[item.assetId] = item.paragraph || 'p1';
+          return acc;
+        }, {})),
+        assetTypeMapJson: JSON.stringify(assets.reduce(function(acc, item){
+          acc[item.assetId] = String(item.assetId).indexOf('info_') === 0 ? 'info_image' : 'photo';
+          return acc;
+        }, {})),
+        assetSourceMapJson: JSON.stringify(assets.reduce(function(acc, item){
+          acc[item.assetId] = item.source || item.previewUrl || '';
+          return acc;
+        }, {})),
+        selectedDate: selectedDate || '',
+        searchKeyword: text(els.searchInput.value),
+        status: 'draft'
+      };
+    }
+
+    function wait(ms){
+      return new Promise(function(resolve){
+        setTimeout(resolve, ms);
+      });
+    }
+
+    function maskAddressForBlog(address){
+      var s = text(address);
+      if(!s) return '';
+      return s.replace(/(\d+)(-\d+)?$/,'').trim();
+    }
+
+    function buildAssetType(item){
+      if(item && item.source && item.source.kind === 'generated_from_lookup') return 'basic_info';
+      return 'photo';
+    }
+
+    function buildAssetSource(item){
+      if(item && item.source && item.source.kind) return item.source.kind;
+      return 'property_photo';
+    }
+
+    function buildSelectedAssetsForPayload(){
+      return assets
+        .filter(function(item){ return !!item.selected; })
+        .map(function(item, idx){
+          var sourceObj = (item && item.source && typeof item.source === 'object') ? item.source : {};
+          return {
+            assetId: text(item.assetId || ('asset_' + idx)),
+            selected: !!item.selected,
+            isHero: !!item.isHero,
+            paragraph: text(item.paragraph || 'p1'),
+            assetType: buildAssetType(item),
+            assetSource: buildAssetSource(item),
+            previewUrl: text(item.previewUrl || ''),
+            originalUrl: text(
+              sourceObj.originalUrl ||
+              sourceObj.url ||
+              sourceObj.heroUrl ||
+              sourceObj.lightUrl ||
+              sourceObj.thumbUrl ||
+              item.previewUrl ||
+              ''
+            ),
+            fileId: text(sourceObj.fileId || ''),
+            fileName: text(sourceObj.fileName || sourceObj.name || ''),
+            mimeType: text(sourceObj.mimeType || ''),
+            kind: text(sourceObj.kind || '')
+          };
+        });
+    }
+
+    function buildCreateBlogDraftPayload(){
+      if(!selectedListing){
+        throw new Error('먼저 매물을 선택해주세요.');
+      }
+
+      var directionText = text(els.aiDirectionInput && els.aiDirectionInput.value);
+      var selectedAssets = buildSelectedAssetsForPayload();
+      var hero = selectedAssets.find(function(item){ return !!item.isHero; });
+
+      if(!selectedAssets.length){
+        throw new Error('선택된 이미지가 없습니다.');
+      }
+      if(!hero){
+        throw new Error('대표 이미지가 없습니다.');
+      }
+
+      var assetOrder = selectedAssets.map(function(item){ return item.assetId; });
+      var selectedAssetIds = selectedAssets.map(function(item){ return item.assetId; });
+      var assetParagraphMap = {};
+      var assetTypeMap = {};
+      var assetSourceMap = {};
+
+      selectedAssets.forEach(function(item){
+        assetParagraphMap[item.assetId] = item.paragraph || 'p1';
+        assetTypeMap[item.assetId] = item.assetType || 'photo';
+        assetSourceMap[item.assetId] = item.assetSource || 'property_photo';
+      });
+
+      return {
+        action:'createBlogDraft',
+        blogDraft:{
+          listingNumber: text(selectedListing.listingNumber),
+          selectedDate: text(selectedDate || ''),
+          searchKeyword: text(els.searchInput && els.searchInput.value),
+          styleType: text(selectedAiStyle || '깔끔형'),
+          directionText: directionText,
+          status: 'asset_pending',
+          subStatus: 'init',
+          userAgent: navigator.userAgent || ''
+        },
+        listingSnapshot: Object.assign({}, selectedListing.raw || {}, {
+          listingNumber: text(selectedListing.listingNumber),
+          title: text(selectedListing.title),
+          address: text(selectedListing.address),
+          addressMasked: maskAddressForBlog(selectedListing.address),
+          dealType: text(selectedListing.dealType),
+          price: text(selectedListing.price),
+          deposit: text(selectedListing.deposit),
+          monthlyRent: text(selectedListing.monthlyRent),
+          pageUrl: text(selectedListing.raw && selectedListing.raw.pageUrl)
+        }),
+        assetBundle:{
+          sourceFolderHint:{
+            listingNumber: text(selectedListing.listingNumber)
+          },
+          basicInfoFolderName:'basic info',
+          blogAssetsFolderName:'blog assets',
+          heroAssetId: text(hero.assetId),
+          selectedAssetIds: selectedAssetIds,
+          assetOrder: assetOrder,
+          assetParagraphMap: assetParagraphMap,
+          assetTypeMap: assetTypeMap,
+          assetSourceMap: assetSourceMap,
+          assets: selectedAssets
+        },
+        clientMeta:{
+          createdFrom:'blog_publisher',
+          pageUrl: location.href,
+          viewportWidth: window.innerWidth || 0,
+          viewportHeight: window.innerHeight || 0
         }
       };
     }
+
+    function buildEditorMoveUrl(blogId, directionText){
+      return CONFIG.editorUrl
+        + '?blogId=' + encodeURIComponent(blogId)
+        + '&style=' + encodeURIComponent(text(selectedAiStyle || '깔끔형'))
+        + '&direction=' + encodeURIComponent(text(directionText || ''));
+    }
+
     function saveDraft(){
-      if(!state.blogId){ showToast('blogId가 없습니다'); return; }
-      const patch = buildPatch();
+      if(!selectedListing){
+        showToast('먼저 매물 선택');
+        return;
+      }
       setLoading(true, '임시저장 중');
-      fetchPostJson({ action:'saveBlogEditorDraft', blogId: state.blogId, patch: patch })
-        .then(function(data){
-          if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '임시저장 실패');
-          els.statusChip.textContent = '저장완료';
-          showToast('임시저장 완료');
-        })
-        .catch(function(err){ console.error(err); showToast('임시저장 실패'); })
-        .finally(function(){ setLoading(false); });
+      fetchPostJson({
+        action:'saveBlogDraft',
+        payload: collectDraftPayload()
+      })
+      .then(function(data){
+        if(!data || data.ok === false){
+          throw new Error((data && data.message) || '임시저장 실패');
+        }
+        showToast('임시저장 완료');
+      })
+      .catch(function(err){
+        console.error(err);
+        showToast((err && err.message) || '임시저장 실패');
+      })
+      .finally(function(){
+        setLoading(false);
+      });
     }
-    function markReady(){
-      if(!state.blogId){ showToast('blogId가 없습니다'); return; }
-      setLoading(true, '발행준비 저장 중');
-      fetchPostJson({ action:'markBlogReadyToPublish', blogId: state.blogId })
-        .then(function(data){
-          if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '발행준비 실패');
-          els.statusChip.textContent = '발행준비';
-          showToast('발행준비 완료');
-        })
-        .catch(function(err){ console.error(err); showToast('발행준비 실패'); })
-        .finally(function(){ setLoading(false); });
+
+    function openAiCallModal(){
+      if(els.publishPrepBtn.disabled) return;
+      els.aiCallModal.classList.add('show');
+      els.aiCallModal.setAttribute('aria-hidden', 'false');
+      syncAiStyleButtons();
+      document.body.style.overflow = 'hidden';
     }
-    function openEdit(key){}
-    function placeCaretAtEnd(el){
+
+    function closeAiCallModal(){
+      els.aiCallModal.classList.remove('show');
+      els.aiCallModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function syncAiStyleButtons(){
+      Array.prototype.forEach.call(els.aiStyleGrid.querySelectorAll('.ai-style-btn'), function(btn){
+        btn.classList.toggle('is-active', btn.getAttribute('data-style') === selectedAiStyle);
+      });
+    }
+
+    function submitAiCall(){
+      var directionText = text(els.aiDirectionInput && els.aiDirectionInput.value);
+      var payload = null;
+
       try{
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        range.collapse(false);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }catch(_){}
-    }
-    function normalizeEditableText(el){
-      return text((el && el.innerText) || '').replace(/\u00A0/g,' ');
-    }
-
-    function bindInlineEditors(){
-      function startInline(el){
-        if(!el) return;
-        el.classList.add('is-editing');
-        el.setAttribute('contenteditable','plaintext-only');
-        placeCaretAtEnd(el);
-      }
-      function endInline(el){
-        if(!el) return;
-        el.classList.remove('is-editing');
+        payload = buildCreateBlogDraftPayload();
+      }catch(err){
+        console.error(err);
+        showToast((err && err.message) || '페이로드 생성 실패');
+        return;
       }
 
-      els.titleDisplay.addEventListener('click', function(){ startInline(els.titleDisplay); });
-      els.titleDisplay.addEventListener('blur', function(){
-        const v = normalizeEditableText(els.titleDisplay) || '제목을 입력하세요.';
-        els.titleDisplay.textContent = v;
-        endInline(els.titleDisplay);
-      });
+      closeAiCallModal();
+      setLoading(true, '초안 생성중');
 
-      els.leadDisplay.addEventListener('click', function(){ startInline(els.leadDisplay); });
-      els.leadDisplay.addEventListener('blur', function(){
-        const v = normalizeEditableText(els.leadDisplay);
-        state.overviewParagraphs[0] = v;
-        if(state.sectionParagraphs.hero_intro){
-          if(state.sectionParagraphs.hero_intro.length){ state.sectionParagraphs.hero_intro[0] = v; }
-          else if(v){ state.sectionParagraphs.hero_intro = [v]; }
+      fetchPostJson(payload)
+        .then(function(data){
+          if(!data || data.ok === false){
+            throw new Error((data && data.message) || '초안 생성 실패');
+          }
+
+          var blogId = text(data.blogId);
+          if(!blogId){
+            throw new Error('blogId 없음');
+          }
+
+          els.loadingText.textContent = 'GPT 호출 중';
+
+          return fetchPostJson({
+            action:'callBlogDraftAi',
+            blogId: blogId
+          }).then(function(aiData){
+            if(!aiData || aiData.ok === false){
+              throw new Error((aiData && aiData.message) || 'GPT 호출 실패');
+            }
+
+            var moveUrl = buildEditorMoveUrl(blogId, directionText);
+            els.loadingText.textContent = '에디터로 이동 중';
+
+            return wait(5000).then(function(){
+              location.href = moveUrl;
+            });
+          });
+        })
+        .catch(function(err){
+          console.error(err);
+          setLoading(false);
+          showToast((err && err.message) || 'AI 호출 실패');
+        });
+    }
+
+    function goRelativeDate(offset){
+      const base = selectedDate ? new Date(selectedDate + 'T00:00:00') : new Date();
+      base.setDate(base.getDate() + offset);
+      selectedDate = formatDateKeyFromTs(base.getTime());
+      const nextMonth = getCurrentMonthKeyFromDate(selectedDate);
+      if(nextMonth !== calendarCurrentMonth){
+        calendarCurrentMonth = nextMonth;
+        fetchCalendarOverviewOnly();
+      }else{
+        renderDateMetaLine();
+        applyFiltersAndRenderListings();
+      }
+    }
+
+    function bindSliderBar(){
+      if(!els.listingSliderWrap || !els.listingSliderBarHit) return;
+      function update(){
+        const wrap = els.listingSliderWrap;
+        const hit = els.listingSliderBarHit;
+        const scrollWidth = wrap.scrollWidth || 0;
+        const clientWidth = wrap.clientWidth || 0;
+        const maxScroll = Math.max(0, scrollWidth - clientWidth);
+
+        if(scrollWidth <= clientWidth + 2){
+          hit.style.width = '100%';
+          hit.style.transform = 'translateY(-50%) translateX(0)';
+          return;
         }
-        els.leadDisplay.textContent = v || '도입 문구를 입력하세요.';
-        els.leadDisplay.classList.toggle('is-empty', !v);
-        renderImages(state.row || {});
-        endInline(els.leadDisplay);
+
+        const thumbWidthPx = Math.max(36, (clientWidth / scrollWidth) * clientWidth);
+        const maxTravelPx = Math.max(0, clientWidth - thumbWidthPx);
+        const leftPx = maxScroll > 0 ? (wrap.scrollLeft / maxScroll) * maxTravelPx : 0;
+
+        hit.style.width = thumbWidthPx + 'px';
+        hit.style.transform = 'translateY(-50%) translateX(' + leftPx + 'px)';
+      }
+      els.listingSliderWrap.addEventListener('scroll', update, {passive:true});
+      window.addEventListener('resize', update);
+      bindSliderBar._update = update;
+    }
+
+    function bindSliderBarDrag(){
+      const wrap = els.listingSliderWrap;
+      const track = els.listingSliderTrack;
+      const trackHit = els.listingSliderTrackHit;
+      const thumb = els.listingSliderBarHit;
+      if(!wrap || !track || !trackHit || !thumb) return;
+
+      function maxScroll(){
+        return Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+      }
+
+      function syncFromClientX(clientX){
+        const trackRect = track.getBoundingClientRect();
+        const thumbWidth = thumb.offsetWidth || 0;
+        const usable = Math.max(1, trackRect.width - thumbWidth);
+        let left = clientX - trackRect.left - (thumbWidth / 2);
+        left = Math.max(0, Math.min(usable, left));
+        const ratio = usable > 0 ? (left / usable) : 0;
+        wrap.scrollLeft = ratio * maxScroll();
+        if(bindSliderBar._update) bindSliderBar._update();
+      }
+
+      let draggingTrack = false;
+      function onTrackDown(e){
+        if(window.innerWidth <= 860) return;
+        if(e.pointerType === 'mouse' && e.button !== 0) return;
+        draggingTrack = true;
+        syncFromClientX(e.clientX);
+        try{ trackHit.setPointerCapture(e.pointerId); }catch(err){}
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      function onTrackMove(e){
+        if(!draggingTrack) return;
+        syncFromClientX(e.clientX);
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      function onTrackUp(e){
+        if(!draggingTrack) return;
+        draggingTrack = false;
+        try{ trackHit.releasePointerCapture(e.pointerId); }catch(err){}
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      trackHit.addEventListener('pointerdown', onTrackDown);
+      trackHit.addEventListener('pointermove', onTrackMove);
+      trackHit.addEventListener('pointerup', onTrackUp);
+      trackHit.addEventListener('pointercancel', onTrackUp);
+      trackHit.addEventListener('lostpointercapture', onTrackUp);
+
+      let draggingThumb = false;
+      function onThumbDown(e){
+        if(window.innerWidth <= 860) return;
+        if(e.pointerType === 'mouse' && e.button !== 0) return;
+        draggingThumb = true;
+        thumb.style.cursor = 'grabbing';
+        try{ thumb.setPointerCapture(e.pointerId); }catch(err){}
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      function onThumbMove(e){
+        if(!draggingThumb) return;
+        syncFromClientX(e.clientX);
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      function onThumbUp(e){
+        if(!draggingThumb) return;
+        draggingThumb = false;
+        thumb.style.cursor = 'grab';
+        try{ thumb.releasePointerCapture(e.pointerId); }catch(err){}
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      thumb.addEventListener('pointerdown', onThumbDown);
+      thumb.addEventListener('pointermove', onThumbMove);
+      thumb.addEventListener('pointerup', onThumbUp);
+      thumb.addEventListener('pointercancel', onThumbUp);
+      thumb.addEventListener('lostpointercapture', onThumbUp);
+    }
+
+    function bindEvents(){
+      els.goStatusBtn.addEventListener('click', function(){
+        location.href = CONFIG.statusUrl;
       });
-
-      els.ctaLabelDisplay.addEventListener('click', function(){ startInline(els.ctaLabelDisplay); });
-      els.ctaLabelDisplay.addEventListener('blur', function(){
-        const v = normalizeEditableText(els.ctaLabelDisplay) || '문의하기';
-        els.ctaLabelDisplay.textContent = v;
-        endInline(els.ctaLabelDisplay);
+      els.prevDateBtn.addEventListener('click', function(){ goRelativeDate(-1); });
+      els.nextDateBtn.addEventListener('click', function(){ goRelativeDate(1); });
+      els.datePickerBtn.addEventListener('click', openCalendarModal);
+      els.calendarBackBtn.addEventListener('click', closeCalendarModal);
+      els.calendarModal.addEventListener('click', function(e){
+        if(e.target === els.calendarModal) closeCalendarModal();
       });
-
-      els.ctaTextDisplay.addEventListener('click', function(){ startInline(els.ctaTextDisplay); });
-      els.ctaTextDisplay.addEventListener('blur', function(){
-        const v = normalizeEditableText(els.ctaTextDisplay);
-        els.ctaTextDisplay.textContent = v || '문의 문구를 입력하세요.';
-        els.ctaTextDisplay.classList.toggle('is-empty', !v);
-        endInline(els.ctaTextDisplay);
+      els.calendarPrevBtn.addEventListener('click', function(){ moveCalendarMonth(-1); });
+      els.calendarNextBtn.addEventListener('click', function(){ moveCalendarMonth(1); });
+      els.searchInput.addEventListener('input', function(){
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(applyFiltersAndRenderListings, 220);
       });
-
-      document.addEventListener('click', function(e){
-        const p = e.target.closest('.paragraph.editable');
-        if(!p) return;
-        startInline(p);
+      els.generateInfoImageBtn.addEventListener('click', generateInfoImages);
+      els.draftSaveBtn.addEventListener('click', saveDraft);
+      els.publishPrepBtn.addEventListener('click', openAiCallModal);
+      els.aiStyleGrid.addEventListener('click', function(e){
+        var btn = e.target.closest('.ai-style-btn');
+        if(!btn) return;
+        selectedAiStyle = btn.getAttribute('data-style') || '깔끔형';
+        syncAiStyleButtons();
       });
-
-      document.addEventListener('blur', function(e){
-        const p = e.target.closest && e.target.closest('.paragraph.editable');
-        if(!p) return;
-        const key = p.getAttribute('data-edit-key');
-        const idx = Number(p.getAttribute('data-edit-idx'));
-        const value = normalizeEditableText(p);
-        if(!state.sectionParagraphs[key]) state.sectionParagraphs[key] = [];
-        state.sectionParagraphs[key][idx] = value;
-        p.textContent = value || '내용을 입력하세요.';
-        p.classList.toggle('is-empty', !value);
-        if(key === 'hero_intro' && idx === 0){
-          els.leadDisplay.textContent = value || '도입 문구를 입력하세요.';
-          els.leadDisplay.classList.toggle('is-empty', !value);
-          state.overviewParagraphs[0] = value;
-        }
-        endInline(p);
-      }, true);
-
-      els.tagEditBtn.addEventListener('click', function(){
-        const joined = prompt('해시태그를 쉼표로 구분해서 입력하세요.', state.tags.join(', '));
-        if(joined == null) return;
-        state.tags = joined.split(',').map(text).filter(Boolean).map(v => v.startsWith('#') ? v : ('#' + v));
-        renderTags();
+      els.aiCallCancelBtn.addEventListener('click', closeAiCallModal);
+      els.aiCallConfirmBtn.addEventListener('click', submitAiCall);
+      els.aiCallModal.addEventListener('click', function(e){
+        if(e.target === els.aiCallModal) closeAiCallModal();
+      });
+      els.imageViewerClose.addEventListener('click', closeImageViewer);
+      els.imageViewer.addEventListener('click', function(e){
+        if(e.target === els.imageViewer) closeImageViewer();
+      });
+      els.paragraphPickerClose.addEventListener('click', closeParagraphPicker);
+      els.paragraphPicker.addEventListener('click', function(e){
+        if(e.target === els.paragraphPicker) closeParagraphPicker();
+      });
+      document.addEventListener('keydown', function(e){
+        if(e.key === 'Escape' && els.imageViewer.classList.contains('show')) closeImageViewer();
+        if(e.key === 'Escape' && els.paragraphPicker.classList.contains('show')) closeParagraphPicker();
+        if(e.key === 'Escape' && els.aiCallModal.classList.contains('show')) closeAiCallModal();
       });
     }
 
-
-    els.backBtn.addEventListener('click', function(){ if(document.referrer) history.back(); else location.href = CONFIG.listUrl; });
-    els.saveBtn.addEventListener('click', saveDraft);
-    els.publishBtn.addEventListener('click', markReady);
-
-    bindInlineEditors();
-    loadDraft();
+    bindEvents();
+    bindSliderBar();
+    bindSliderBarDrag();
+    selectedDate = formatDateKeyFromTs(Date.now());
+    calendarCurrentMonth = firstDayOfMonthKey(selectedDate);
+    renderDateMetaLine();
+    fetchAdminItems();
   </script>
 </body>
 </html>

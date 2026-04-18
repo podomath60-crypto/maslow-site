@@ -121,29 +121,6 @@
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:120;min-width:180px;max-width:calc(100% - 40px);padding:13px 16px;border-radius:14px;background:rgba(17,24,39,.92);color:#fff;font-size:14px;font-weight:800;line-height:1.45;text-align:center;opacity:0;pointer-events:none;transition:opacity .18s ease}
     .toast.show{opacity:1}
 
-
-
-    .debug-panel{
-      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:130;
-      width:min(92vw,720px);max-height:min(68vh,720px);overflow:auto;
-      padding:16px 18px;border-radius:22px;
-      background:rgba(17,24,39,.94);color:#e5eefc;border:1px solid rgba(148,163,184,.28);
-      box-shadow:0 24px 60px rgba(15,23,42,.38);backdrop-filter:blur(10px);
-    }
-    .debug-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
-    .debug-panel-title{font-size:15px;font-weight:900;letter-spacing:-0.03em}
-    .debug-panel-sub{font-size:12px;font-weight:800;color:#94a3b8}
-    .debug-panel-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .debug-chip{
-      display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 12px;
-      border-radius:999px;background:rgba(15,124,255,.16);border:1px solid rgba(96,165,250,.38);
-      color:#dbeafe;font-size:12px;font-weight:900;white-space:nowrap
-    }
-    .debug-pre{
-      margin:0;padding:14px 15px;border-radius:16px;background:rgba(2,6,23,.44);border:1px solid rgba(148,163,184,.18);
-      font-size:13px;line-height:1.7;font-weight:700;white-space:pre-wrap;word-break:break-word;
-    }
-
     @media (max-width: 900px){
       .figure img{max-width:100%}
       .title{font-size:31px}
@@ -241,21 +218,6 @@
     </div>
   </div>
 
-
-  <div class="debug-panel" id="debugPanel" aria-live="polite">
-    <div class="debug-panel-head">
-      <div>
-        <div class="debug-panel-title">사진 배열 / 저장 payload 로그</div>
-        <div class="debug-panel-sub" id="debugPanelMeta">초기 로딩 대기중</div>
-      </div>
-      <div class="debug-panel-actions">
-        <button type="button" class="debug-chip" id="debugRefreshBtn">새로고침</button>
-        <button type="button" class="debug-chip" id="debugCopyBtn">복사</button>
-      </div>
-    </div>
-    <pre class="debug-pre" id="debugPre">아직 로그가 없습니다.</pre>
-  </div>
-
   <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-panel">
       <div class="spinner"></div>
@@ -301,11 +263,6 @@
       tagWrap: document.getElementById('tagWrap'),
       footerNote: document.getElementById('footerNote'),
       tagEditBtn: document.getElementById('tagEditBtn'),
-      debugPanel: document.getElementById('debugPanel'),
-      debugPanelMeta: document.getElementById('debugPanelMeta'),
-      debugPre: document.getElementById('debugPre'),
-      debugRefreshBtn: document.getElementById('debugRefreshBtn'),
-      debugCopyBtn: document.getElementById('debugCopyBtn'),
       loadingOverlay: document.getElementById('loadingOverlay'),
       loadingText: document.getElementById('loadingText'),
       toast: document.getElementById('toast')
@@ -338,40 +295,13 @@
       els.toast.classList.add('show');
       clearTimeout(showToast._timer);
       showToast._timer = setTimeout(function(){ els.toast.classList.remove('show'); }, 1800);
-    }
-    function getDebugSnapshot(){
-      const normalized = normalizeImageLayout(state.imageLayout || {});
-      const displaySections = {};
-      getDynamicSectionOrder().forEach(function(key, idx){
-        displaySections['Section ' + (idx + 1)] = Array.isArray(normalized.sections[key])
-          ? normalized.sections[key]
-          : [];
-      });
+    });
       return {
         blogId: text(state.blogId),
         hero: text(normalized.hero),
         sections: displaySections
       };
     }
-    function updateDebugPanel(reason){
-      if(!els.debugPre) return;
-      const snapshot = getDebugSnapshot();
-      const stamp = new Date();
-      const hh = String(stamp.getHours()).padStart(2,'0');
-      const mm = String(stamp.getMinutes()).padStart(2,'0');
-      const ss = String(stamp.getSeconds()).padStart(2,'0');
-      els.debugPanelMeta.textContent = (reason || '갱신') + ' · ' + hh + ':' + mm + ':' + ss;
-      els.debugPre.textContent = JSON.stringify(snapshot, null, 2);
-    }
-    function copyDebugPanel(){
-      const textToCopy = els.debugPre ? els.debugPre.textContent : '';
-      if(!textToCopy) return;
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(textToCopy)
-          .then(function(){ showToast('배열 로그 복사됨'); })
-          .catch(function(){ showToast('복사 실패'); });
-        return;
-      }
       const ta = document.createElement('textarea');
       ta.value = textToCopy;
       document.body.appendChild(ta);
@@ -488,7 +418,6 @@
       });
       return out;
     }
-
 
     function normalizeImageLayout(layout){
       const sectionOrder = getDynamicSectionOrder();
@@ -831,7 +760,6 @@ function getSectionImagesMap(row){
       renderImages(row);
       renderThumbs();
       renderTags();
-      updateDebugPanel('초안 렌더');
     }
 
     function buildMinimalRow(){
@@ -906,24 +834,12 @@ function getSectionImagesMap(row){
       };
     }
 
-    function showSaveRequestPayload(){
-      if(!els.debugPre) return;
-      const payload = buildSaveRequestPayload();
-      const stamp = new Date();
-      const hh = String(stamp.getHours()).padStart(2,'0');
-      const mm = String(stamp.getMinutes()).padStart(2,'0');
-      const ss = String(stamp.getSeconds()).padStart(2,'0');
-      els.debugPanelMeta.textContent = '임시저장 payload · ' + hh + ':' + mm + ':' + ss;
-      els.debugPre.textContent = JSON.stringify(payload, null, 2);
-    }
-
     function saveDraft(){
       if(!state.blogId){
         showToast('blogId가 없습니다');
         return;
       }
       const requestPayload = buildSaveRequestPayload();
-      showSaveRequestPayload();
       setLoading(true, '임시저장 중');
       fetchPostJson(requestPayload)
         .then(function(data){
@@ -976,7 +892,6 @@ function getSectionImagesMap(row){
     function normalizeEditableText(el){
       return text((el && el.innerText) || '').replace(/\u00A0/g,' ');
     }
-
 
     function smoothFollowMovedFigure(sectionKey, idx){
       setTimeout(function(){
@@ -1048,7 +963,6 @@ function getSectionImagesMap(row){
               state.row.imageLayoutJson = JSON.stringify(state.imageLayout || {});
             }
             renderImages(state.row || {});
-            updateDebugPanel('사진 이동');
             let nextSectionKey = currentSectionKey;
             let nextIdx = currentIdx;
             const sectionOrder = getDynamicSectionOrder();
@@ -1121,15 +1035,7 @@ function getSectionImagesMap(row){
           return v.startsWith('#') ? v : ('#' + v);
         });
         renderTags();
-      });
-
-      if(els.debugRefreshBtn){
-        els.debugRefreshBtn.addEventListener('click', function(){
-          updateDebugPanel('수동 새로고침');
-        });
-      }
-      if(els.debugCopyBtn){
-        els.debugCopyBtn.addEventListener('click', copyDebugPanel);
+      }););
       }
     }
 
@@ -1141,7 +1047,6 @@ function getSectionImagesMap(row){
     els.publishBtn.addEventListener('click', markReady);
 
     bindInlineEditors();
-    updateDebugPanel('초기 대기');
     loadDraft();
   </script>
 </body>

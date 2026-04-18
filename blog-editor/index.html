@@ -121,6 +121,8 @@
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:120;min-width:180px;max-width:calc(100% - 40px);padding:13px 16px;border-radius:14px;background:rgba(17,24,39,.92);color:#fff;font-size:14px;font-weight:800;line-height:1.45;text-align:center;opacity:0;pointer-events:none;transition:opacity .18s ease}
     .toast.show{opacity:1}
 
+
+
     @media (max-width: 900px){
       .figure img{max-width:100%}
       .title{font-size:31px}
@@ -218,6 +220,7 @@
     </div>
   </div>
 
+
   <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-panel">
       <div class="spinner"></div>
@@ -295,22 +298,8 @@
       els.toast.classList.add('show');
       clearTimeout(showToast._timer);
       showToast._timer = setTimeout(function(){ els.toast.classList.remove('show'); }, 1800);
-    });
-      return {
-        blogId: text(state.blogId),
-        hero: text(normalized.hero),
-        sections: displaySections
-      };
     }
-      const ta = document.createElement('textarea');
-      ta.value = textToCopy;
-      document.body.appendChild(ta);
-      ta.select();
-      try{ document.execCommand('copy'); showToast('배열 로그 복사됨'); }
-      catch(_){ showToast('복사 실패'); }
-      document.body.removeChild(ta);
-    }
-    function fetchPostJson(payload){
+        function fetchPostJson(payload){
       return fetch(CONFIG.adminListUrl, {
         method:'POST',
         mode:'cors',
@@ -418,6 +407,7 @@
       });
       return out;
     }
+
 
     function normalizeImageLayout(layout){
       const sectionOrder = getDynamicSectionOrder();
@@ -834,7 +824,7 @@ function getSectionImagesMap(row){
       };
     }
 
-    function saveDraft(){
+        function saveDraft(){
       if(!state.blogId){
         showToast('blogId가 없습니다');
         return;
@@ -892,6 +882,7 @@ function getSectionImagesMap(row){
     function normalizeEditableText(el){
       return text((el && el.innerText) || '').replace(/\u00A0/g,' ');
     }
+
 
     function smoothFollowMovedFigure(sectionKey, idx){
       setTimeout(function(){
@@ -1035,7 +1026,9 @@ function getSectionImagesMap(row){
           return v.startsWith('#') ? v : ('#' + v);
         });
         renderTags();
-      }););
+      });
+
+        });
       }
     }
 

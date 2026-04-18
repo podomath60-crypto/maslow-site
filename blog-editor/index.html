@@ -390,7 +390,6 @@
       const order = getLiveSectionOrder();
       const out = { hero:'', sections:{} };
       order.forEach(function(key){ out.sections[key] = []; });
-
       const src = parseJson(layout || '{}', {});
       if(src && typeof src === 'object'){
         out.hero = text(src.hero || '');
@@ -400,30 +399,6 @@
         });
       }
       return out;
-    }
-
-    function mapParagraphToLiveSectionKey(paragraph){
-      const order = getLiveSectionOrder();
-      const p = text(paragraph).toLowerCase();
-      if(!order.length) return '';
-
-      const exactMap = {
-        p1: 1,
-        p2: 2,
-        p3: 2,
-        p4: 5,
-        p5: 5,
-        p6: 6,
-        p7: 7,
-        p8: 7,
-        p9: 8
-      };
-
-      if (Object.prototype.hasOwnProperty.call(exactMap, p)) {
-        const idx = exactMap[p];
-        return text(order[idx] || order[0]);
-      }
-      return text(order[0] || '');
     }
 
     function hasMeaningfulImageLayout(layoutLike){
@@ -444,6 +419,17 @@
       const layout = normalizeImageLayout({});
       const order = getLiveSectionOrder();
 
+      function mapParagraphToSectionKey(paragraph){
+        const p = text(paragraph).toLowerCase();
+        if (p === 'p1') return text(order[1] || order[0] || '');
+        if (p === 'p2' || p === 'p3') return text(order[2] || order[1] || order[0] || '');
+        if (p === 'p4' || p === 'p5') return text(order[5] || order[4] || order[0] || '');
+        if (p === 'p6') return text(order[6] || order[5] || order[0] || '');
+        if (p === 'p7' || p === 'p8') return text(order[7] || order[6] || order[0] || '');
+        if (p === 'p9') return text(order[8] || order[7] || order[0] || '');
+        return text(order[0] || '');
+      }
+
       infos.forEach(function(info){
         const id = text(info && info.assetId);
         if(!id) return;
@@ -458,10 +444,7 @@
 
         let sectionKey = sectionKeyDirect;
         if(!sectionKey || !Object.prototype.hasOwnProperty.call(layout.sections, sectionKey)){
-          sectionKey = mapParagraphToLiveSectionKey(paragraph);
-        }
-        if(!sectionKey){
-          sectionKey = text(order[0] || '');
+          sectionKey = mapParagraphToSectionKey(paragraph);
         }
         if(!sectionKey) return;
 
@@ -486,10 +469,8 @@
       return layout;
     }
 
-
-
-
     function buildAssetMapFromRow(row){
+
       const infos = parseJson(row.infoImageFilesJson || '[]', []);
       const snaps = parseJson(row.assetSnapshotJson || '[]', []);
       const snapById = {};
@@ -617,9 +598,18 @@
       const map = {};
       let hero = null;
 
-      const fallbackOrder = getLiveSectionOrder();
+      const sectionKeys = (state.sectionBlocks || []).map(function(sec){ return text(sec.sectionKey); }).filter(Boolean);
+      const fallbackOrder = sectionKeys.filter(function(k){ return k !== 'hero_intro'; });
 
-      
+      function mapParagraphToSectionKey(paragraph){
+        const p = text(paragraph).toLowerCase();
+        if(p === 'p1') return 'property_overview';
+        if(p === 'p2' || p === 'p3') return 'location_context';
+        if(p === 'p4' || p === 'p5') return 'building_and_usage';
+        if(p === 'p6') return 'strengths_summary';
+        if(p === 'p7' || p === 'p8' || p === 'p9') return 'detailed_note';
+        return '';
+      }
 
       infos.forEach(function(info){
         const id = text(info && info.assetId);
@@ -804,7 +794,6 @@
         infoImageFilesJson: '[]',
         assetSnapshotJson: '[]',
         heroImageUrl: '',
-        imageLayoutJson: '',
         styleType: text(getParam('style'))
       };
     }
@@ -864,6 +853,9 @@
       fetchPostJson({ action:'saveBlogEditorDraft', blogId: state.blogId, patch: patch })
         .then(function(data){
           if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '임시저장 실패');
+          if(state.row){
+            state.row.imageLayoutJson = patch.imageLayoutJson;
+          }
           els.statusChip.textContent = '저장완료';
           showToast('임시저장 완료');
         })
@@ -973,10 +965,13 @@
             const currentSectionKey = fig.getAttribute('data-section-key');
             const currentIdx = Number(fig.getAttribute('data-idx'));
             const direction = mv.getAttribute('data-move');
-            if(!state.imageLayout){
-              state.imageLayout = buildImageLayoutFromMap(getSectionImagesMap(state.row || {}));
+            if(!state.imageLayout || !hasMeaningfulImageLayout(state.imageLayout)){
+              state.imageLayout = buildInitialImageLayoutFromRow(state.row || {});
             }
             moveImageInLayout(currentSectionKey, currentIdx, direction);
+            if(state.row){
+              state.row.imageLayoutJson = JSON.stringify(state.imageLayout || {});
+            }
             renderImages(state.row || {});
             let nextSectionKey = currentSectionKey;
             let nextIdx = currentIdx;

@@ -879,8 +879,22 @@ function getSectionImagesMap(row){
     }
 
     function buildPatch(){
+      const sectionBlocks = serializeSectionBlocksForSave();
       return {
-        imageLayoutJson: JSON.stringify(normalizeImageLayout(state.imageLayout || {}))
+        draftTitle: text(els.titleDisplay.textContent),
+        seoTitle: text(els.titleDisplay.textContent),
+        bodyText: sectionBlocksToBodyTextForSave(sectionBlocks),
+        bodyHtml: sectionBlocksToBodyHtmlForSave(sectionBlocks),
+        paragraphTextJson: sectionBlocksToParagraphTextJsonForSave(sectionBlocks),
+        sectionStructureJson: sectionBlocks,
+        imageLayoutJson: JSON.stringify(normalizeImageLayout(state.imageLayout || {})),
+        hashtagsJson: state.tags,
+        thumbnailTextJson: state.thumbs,
+        ctaText: text(els.ctaTextDisplay.textContent),
+        ctaJson: {
+          label: text(els.ctaLabelDisplay.textContent),
+          text: text(els.ctaTextDisplay.textContent)
+        }
       };
     }
 

@@ -340,10 +340,17 @@
       showToast._timer = setTimeout(function(){ els.toast.classList.remove('show'); }, 1800);
     }
     function getDebugSnapshot(){
+      const normalized = normalizeImageLayout(state.imageLayout || {});
+      const displaySections = {};
+      getDynamicSectionOrder().forEach(function(key, idx){
+        displaySections['Section ' + (idx + 1)] = Array.isArray(normalized.sections[key])
+          ? normalized.sections[key]
+          : [];
+      });
       return {
         blogId: text(state.blogId),
-        hero: text(state.imageLayout && state.imageLayout.hero),
-        sections: normalizeImageLayout(state.imageLayout || {}).sections
+        hero: text(normalized.hero),
+        sections: displaySections
       };
     }
     function updateDebugPanel(reason){
@@ -396,8 +403,8 @@
       if(Array.isArray(stored) && stored.length){
         return stored.map(function(sec, idx){
           return {
-            sectionKey: text(sec && (sec.sectionKey || sec.key)) || ('section_' + idx),
-            heading: text(sec && sec.heading) || '섹션',
+            sectionKey: 'section_' + (idx + 1),
+            heading: text(sec && sec.heading) || ('Section ' + (idx + 1)),
             paragraphs: Array.isArray(sec && sec.paragraphs)
               ? sec.paragraphs.map(function(v){ return text(v); })
               : []
@@ -407,10 +414,37 @@
       return [];
     }
 
+    function getDynamicSectionOrder(){
+      return (state.sectionBlocks || []).map(function(sec, idx){
+        return text(sec && sec.sectionKey) || ('section_' + (idx + 1));
+      }).filter(Boolean);
+    }
+
+    function getSectionLabelByKey(sectionKey){
+      const order = getDynamicSectionOrder();
+      const idx = order.indexOf(text(sectionKey));
+      return idx >= 0 ? ('Section ' + (idx + 1)) : text(sectionKey);
+    }
+
+    function getSectionKeyFromLegacyParagraph(paragraph){
+      const order = getDynamicSectionOrder();
+      const count = order.length;
+      if(!count) return '';
+      const p = text(paragraph).toLowerCase();
+      let n = 1;
+      if(p === 'p1') n = 1;
+      else if(p === 'p2' || p === 'p3') n = 2;
+      else if(p === 'p4' || p === 'p5') n = 3;
+      else if(p === 'p6') n = 4;
+      else if(p === 'p7' || p === 'p8' || p === 'p9') n = 5;
+      n = Math.max(1, Math.min(n, count));
+      return 'section_' + n;
+    }
+
     function serializeSectionBlocksForSave(){
       return (state.sectionBlocks || []).map(function(sec, idx){
         return {
-          sectionKey: text(sec && sec.sectionKey) || ('section_' + idx),
+          sectionKey: text(sec && sec.sectionKey) || ('section_' + (idx + 1)),
           heading: text(sec && sec.heading),
           paragraphs: Array.isArray(sec && sec.paragraphs)
             ? sec.paragraphs.map(function(v){ return text(v); })
@@ -456,26 +490,15 @@
     }
 
 
-    const SECTION_ORDER = [
-      'hero_intro',
-      'property_overview',
-      'location_context',
-      'basic_specs',
-      'pricing_and_deal',
-      'building_and_usage',
-      'strengths_summary',
-      'detailed_note',
-      'closing_cta'
-    ];
-
     function normalizeImageLayout(layout){
+      const sectionOrder = getDynamicSectionOrder();
       const out = { hero:'', sections:{} };
-      SECTION_ORDER.forEach(function(key){ out.sections[key] = []; });
+      sectionOrder.forEach(function(key){ out.sections[key] = []; });
       const src = parseJson(layout || '{}', {});
       if(src && typeof src === 'object'){
         out.hero = text(src.hero || '');
         const sections = src.sections || {};
-        SECTION_ORDER.forEach(function(key){
+        sectionOrder.forEach(function(key){
           out.sections[key] = Array.isArray(sections[key]) ? sections[key].map(text).filter(Boolean) : [];
         });
       }
@@ -485,7 +508,7 @@
     function hasMeaningfulImageLayout(layoutLike){
       const layout = normalizeImageLayout(layoutLike);
       if (text(layout.hero)) return true;
-      return SECTION_ORDER.some(function(key){
+      return getDynamicSectionOrder().some(function(key){
         return Array.isArray(layout.sections[key]) && layout.sections[key].length > 0;
       });
     }
@@ -497,18 +520,8 @@
       snaps.forEach(function(s){ snapById[text(s.assetId)] = s || {}; });
 
       const layout = normalizeImageLayout({});
-      const sectionKeys = (state.sectionBlocks || []).map(function(sec){ return text(sec.sectionKey); }).filter(Boolean);
-      const fallbackOrder = sectionKeys.filter(function(k){ return k !== 'hero_intro'; });
-
-      function mapParagraphToSectionKey(paragraph){
-        const p = text(paragraph).toLowerCase();
-        if(p === 'p1') return 'property_overview';
-        if(p === 'p2' || p === 'p3') return 'location_context';
-        if(p === 'p4' || p === 'p5') return 'building_and_usage';
-        if(p === 'p6') return 'strengths_summary';
-        if(p === 'p7' || p === 'p8' || p === 'p9') return 'detailed_note';
-        return '';
-      }
+      const sectionKeys = getDynamicSectionOrder();
+      const fallbackOrder = sectionKeys.slice();
 
       infos.forEach(function(info){
         const id = text(info && info.assetId);
@@ -522,7 +535,10 @@
           layout.hero = id;
         }
 
-        let sectionKey = sectionKeyDirect || mapParagraphToSectionKey(paragraph);
+        let sectionKey = /^section_\d+$/i.test(sectionKeyDirect)
+          ? sectionKeyDirect.toLowerCase()
+          : getSectionKeyFromLegacyParagraph(paragraph);
+
         if(!sectionKey && fallbackOrder.length){
           sectionKey = fallbackOrder[0];
         }
@@ -532,7 +548,6 @@
         layout.sections[sectionKey].push(id);
       });
 
-      // distribute a bit if one section is overloaded and others are empty
       const allKeys = fallbackOrder.slice();
       const emptyKeys = allKeys.filter(function(k){ return !(layout.sections[k] && layout.sections[k].length); });
       const richKeys = allKeys.filter(function(k){ return layout.sections[k] && layout.sections[k].length > 1; });
@@ -551,7 +566,7 @@
       return layout;
     }
 
-    function buildAssetMapFromRow(row){
+function buildAssetMapFromRow(row){
       const infos = parseJson(row.infoImageFilesJson || '[]', []);
       const snaps = parseJson(row.assetSnapshotJson || '[]', []);
       const snapById = {};
@@ -586,6 +601,7 @@
 
     function moveImageInLayout(sectionKey, idx, direction){
       if(!state.imageLayout) return;
+      const sectionOrder = getDynamicSectionOrder();
       const key = text(sectionKey);
       const sections = state.imageLayout.sections || {};
       if(!Array.isArray(sections[key])) return;
@@ -593,7 +609,7 @@
       idx = Number(idx);
       if(!(idx >= 0 && idx < arr.length)) return;
 
-      const secIndex = SECTION_ORDER.indexOf(key);
+      const secIndex = sectionOrder.indexOf(key);
       if(secIndex < 0) return;
 
       if(direction === 'up'){
@@ -602,7 +618,7 @@
           arr[idx - 1] = arr[idx];
           arr[idx] = tmp;
         }else if(secIndex > 0){
-          const prevKey = SECTION_ORDER[secIndex - 1];
+          const prevKey = sectionOrder[secIndex - 1];
           const moved = arr.shift();
           if(!Array.isArray(sections[prevKey])) sections[prevKey] = [];
           sections[prevKey].push(moved);
@@ -612,8 +628,8 @@
           var tmp2 = arr[idx + 1];
           arr[idx + 1] = arr[idx];
           arr[idx] = tmp2;
-        }else if(secIndex < SECTION_ORDER.length - 1){
-          const nextKey = SECTION_ORDER[secIndex + 1];
+        }else if(secIndex < sectionOrder.length - 1){
+          const nextKey = sectionOrder[secIndex + 1];
           const moved2 = arr.pop();
           if(!Array.isArray(sections[nextKey])) sections[nextKey] = [];
           sections[nextKey].unshift(moved2);
@@ -621,7 +637,7 @@
       }
     }
 
-    function getSectionImagesMap(row){
+function getSectionImagesMap(row){
       if(state.imageLayout){
         const assetMap = buildAssetMapFromRow(row || {});
         const bySection = {};
@@ -644,18 +660,8 @@
       const map = {};
       let hero = null;
 
-      const sectionKeys = (state.sectionBlocks || []).map(function(sec){ return text(sec.sectionKey); }).filter(Boolean);
-      const fallbackOrder = sectionKeys.filter(function(k){ return k !== 'hero_intro'; });
-
-      function mapParagraphToSectionKey(paragraph){
-        const p = text(paragraph).toLowerCase();
-        if(p === 'p1') return 'property_overview';
-        if(p === 'p2' || p === 'p3') return 'location_context';
-        if(p === 'p4' || p === 'p5') return 'building_and_usage';
-        if(p === 'p6') return 'strengths_summary';
-        if(p === 'p7' || p === 'p8' || p === 'p9') return 'detailed_note';
-        return '';
-      }
+      const sectionKeys = getDynamicSectionOrder();
+      const fallbackOrder = sectionKeys.slice();
 
       infos.forEach(function(info){
         const id = text(info && info.assetId);
@@ -666,7 +672,9 @@
 
         const sectionKeyDirect = text(info && (info.sectionKey || info.section_key));
         const paragraph = text(info && info.paragraph) || text(snap && snap.paragraph);
-        let sectionKey = sectionKeyDirect || mapParagraphToSectionKey(paragraph);
+        let sectionKey = /^section_\d+$/i.test(sectionKeyDirect)
+          ? sectionKeyDirect.toLowerCase()
+          : getSectionKeyFromLegacyParagraph(paragraph);
 
         const asset = {
           assetId: id,
@@ -759,7 +767,7 @@
         const images = uniqueAssets(imgMap.bySection[secKey] || []);
         const imageHtml = images.map(function(asset, idx){ return renderFigure(asset, secKey, idx, images.length); }).join('');
         return '<section class="block">'
-          + '<div class="section-kicker">SECTION</div>'
+          + '<div class="section-kicker">' + esc(getSectionLabelByKey(secKey)) + '</div>'
           + '<h2 class="section-title editable" contenteditable="plaintext-only" spellcheck="false" data-section-heading="' + esc(secKey) + '">' + esc(text(sec.heading) || '섹션') + '</h2>'
           + (imageHtml ? '<div class="section-image-stack">' + imageHtml + '</div>' : '')
           + '<div class="paragraphs">' + renderParagraphList(paras, secKey) + '</div>'
@@ -1024,13 +1032,14 @@
             updateDebugPanel('사진 이동');
             let nextSectionKey = currentSectionKey;
             let nextIdx = currentIdx;
-            const orderIdx = SECTION_ORDER.indexOf(String(currentSectionKey));
+            const sectionOrder = getDynamicSectionOrder();
+            const orderIdx = sectionOrder.indexOf(String(currentSectionKey));
             const secArr = (((state.imageLayout || {}).sections || {})[currentSectionKey] || []);
             if(direction === 'up'){
               if(currentIdx > 0){
                 nextIdx = currentIdx - 1;
               }else if(orderIdx > 0){
-                nextSectionKey = SECTION_ORDER[orderIdx - 1];
+                nextSectionKey = sectionOrder[orderIdx - 1];
                 nextIdx = ((((state.imageLayout || {}).sections || {})[nextSectionKey] || []).length - 1);
               }else{
                 nextIdx = 0;
@@ -1039,8 +1048,8 @@
               if(currentIdx < secArr.length){
                 nextIdx = Math.min(currentIdx + 1, ((((state.imageLayout || {}).sections || {})[currentSectionKey] || []).length - 1));
               }
-              if(currentIdx >= secArr.length - 1 && orderIdx < SECTION_ORDER.length - 1){
-                nextSectionKey = SECTION_ORDER[orderIdx + 1];
+              if(currentIdx >= secArr.length - 1 && orderIdx < sectionOrder.length - 1){
+                nextSectionKey = sectionOrder[orderIdx + 1];
                 nextIdx = 0;
               }
             }

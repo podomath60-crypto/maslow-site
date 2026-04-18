@@ -289,12 +289,7 @@
     function splitParagraphs(bodyText){ return text(bodyText).split(/\n{2,}/).map(s=>s.trim()).filter(Boolean); }
     function bodyTextToHtml(bodyText){ return splitParagraphs(bodyText).map(p => '<p>' + esc(p).replace(/\n/g,'<br>') + '</p>').join('\n'); }
     function toDirectImageUrl(url){
-      const s = text(url);
-      let m = s.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      if(m && m[1]) return 'https://drive.google.com/uc?export=view&id=' + m[1];
-      m = s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-      if(m && m[1]) return 'https://drive.google.com/uc?export=view&id=' + m[1];
-      return s;
+      return text(url);
     }
     function makeDealPrice(row){
       const deal = text(row.dealTypeSnapshot || row.dealType);
@@ -428,17 +423,17 @@
       const snaps = parseJson(row.assetSnapshotJson || '[]', []);
       const infos = parseJson(row.infoImageFilesJson || '[]', []);
       const byId = {};
-      infos.forEach(a => { byId[text(a.assetId)] = a; });
-      return snaps.map(function(s){
-        const id = text(s.assetId);
-        const saved = byId[id] || {};
+      snaps.forEach(function(s){ byId[text(s.assetId)] = s; });
+      return infos.map(function(info){
+        const id = text(info.assetId);
+        const snap = byId[id] || {};
         return {
           assetId:id,
-          type:text(saved.assetType || s.assetType),
-          paragraph:text(saved.paragraph || s.paragraph || 'p1'),
-          isHero:!!s.isHero,
-          url: toDirectImageUrl(saved.url || s.previewUrl || s.originalUrl || ''),
-          sourceLabel: text(saved.assetSource || s.assetSource)
+          type:text(info.assetType || snap.assetType),
+          paragraph:text(info.paragraph || snap.paragraph || 'p1'),
+          isHero: !!snap.isHero || !!info.isHero,
+          url: text(info.url || info.previewUrl || info.originalUrl || ''),
+          sourceLabel: text(info.assetSource || snap.assetSource)
         };
       }).filter(v => !!v.url);
     }
@@ -479,7 +474,7 @@
     }
     function renderImages(row){
       const grouped = groupAssets(row);
-      const hero = grouped.hero;
+      const hero = text(row.heroImageUrl) ? { url: text(row.heroImageUrl) } : grouped.hero;
       if(hero){
         els.heroBox.classList.remove('empty');
         els.heroBox.style.backgroundImage = 'url("' + hero.url.replace(/"/g, '%22') + '")';

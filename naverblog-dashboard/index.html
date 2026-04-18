@@ -229,12 +229,7 @@
     }
 
     function getStatusText(item){
-      const status = text(item.displayStatus);
-      if(status === '예약발행중'){
-        const when = formatScheduledAt(item.scheduledAt);
-        return when ? ('예약발행중 · ' + when) : '예약발행중';
-      }
-      return status;
+      return text(item.displayStatus);
     }
 
     function renderAction(item){
@@ -248,7 +243,8 @@
       }
 
       if(status === '예약발행중'){
-        return '<div class="btn disabled">예약중</div>';
+        const when = formatScheduledAt(item.scheduledAt);
+        return '<div class="btn disabled">' + esc(when ? ('예약중 · ' + when) : '예약중') + '</div>';
       }
 
       return '<a class="btn primary" href="' + esc(item.editorUrl) + '" target="_blank" rel="noopener noreferrer">검수하기</a>';

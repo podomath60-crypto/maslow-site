@@ -144,7 +144,8 @@
       </div>
       <div class="top-right">
         <button type="button" class="btn" id="saveBtn">임시저장</button>
-        <button type="button" class="btn primary" id="publishBtn">발행준비</button>
+        <button type="button" class="btn" id="scheduleBtn">예약발행</button>
+        <button type="button" class="btn primary" id="publishBtn">발행</button>
       </div>
     </div>
 
@@ -247,6 +248,7 @@
     const els = {
       backBtn: document.getElementById('backBtn'),
       saveBtn: document.getElementById('saveBtn'),
+      scheduleBtn: document.getElementById('scheduleBtn'),
       publishBtn: document.getElementById('publishBtn'),
       statusChip: document.getElementById('statusChip'),
       heroBox: document.getElementById('heroBox'),
@@ -692,6 +694,7 @@
         infoImageFilesJson: '[]',
         assetSnapshotJson: '[]',
         heroImageUrl: '',
+        imageLayoutJson: '{}',
         styleType: text(getParam('style'))
       };
     }
@@ -742,15 +745,23 @@
     }
 
     function saveDraft(){
-      if(!state.blogId){
-        showToast('blogId가 없습니다');
-        return;
-      }
+      saveCurrentDraft_('임시저장 중', '저장완료')
+        .then(function(){
+          showToast('임시저장 완료');
+        })
+        .catch(function(err){
+          console.error(err);
+          showToast((err && err.message) || '임시저장 실패');
+        });
+    }
       const patch = buildPatch();
       setLoading(true, '임시저장 중');
       fetchPostJson({ action:'saveBlogEditorDraft', blogId: state.blogId, patch: patch })
         .then(function(data){
           if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '임시저장 실패');
+          if(state.row){
+            state.row.imageLayoutJson = JSON.stringify(state.imageLayout || {});
+          }
           els.statusChip.textContent = '저장완료';
           showToast('임시저장 완료');
         })
@@ -763,21 +774,72 @@
         });
     }
 
-    function markReady(){
+    function saveCurrentDraft_(loadingLabel, doneMessage){
       if(!state.blogId){
         showToast('blogId가 없습니다');
-        return;
+        return Promise.reject(new Error('blogId가 없습니다'));
       }
+      const patch = buildPatch();
+      setLoading(true, loadingLabel || '저장 중');
+      return fetchPostJson({ action:'saveBlogEditorDraft', blogId: state.blogId, patch: patch })
+        .then(function(data){
+          if(!data || data.ok === false){
+            throw new Error((data && (data.message || data.error)) || '저장 실패');
+          }
+          if(state.row){
+            state.row.imageLayoutJson = JSON.stringify(state.imageLayout || {});
+          }
+          if(doneMessage){
+            els.statusChip.textContent = doneMessage;
+          }
+          return data;
+        })
+        .finally(function(){
+          setLoading(false);
+        });
+    }
+
+    function handleSchedulePublish(){
+      saveCurrentDraft_('예약발행 상태 저장 중', '예약발행 준비')
+        .then(function(){
+          showToast('예약발행 로직은 아직 연결 전입니다');
+        })
+        .catch(function(err){
+          console.error(err);
+          showToast((err && err.message) || '예약발행 저장 실패');
+        });
+    }
+
+    function handlePublish(){
+      saveCurrentDraft_('발행 상태 저장 중', '발행 준비')
+        .then(function(){
+          showToast('발행 로직은 아직 연결 전입니다');
+        })
+        .catch(function(err){
+          console.error(err);
+          showToast((err && err.message) || '발행 저장 실패');
+        });
+    }
+      const patch = buildPatch();
       setLoading(true, '발행준비 저장 중');
-      fetchPostJson({ action:'markBlogReadyToPublish', blogId: state.blogId })
+      fetchPostJson({ action:'saveBlogEditorDraft', blogId: state.blogId, patch: patch })
+        .then(function(saveRes){
+          if(!saveRes || saveRes.ok === false){
+            throw new Error((saveRes && (saveRes.message || saveRes.error)) || '발행준비 전 저장 실패');
+          }
+          return fetchPostJson({ action:'markBlogReadyToPublish', blogId: state.blogId });
+        })
         .then(function(data){
           if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '발행준비 실패');
+          if(state.row){
+            state.row.imageLayoutJson = JSON.stringify(state.imageLayout || {});
+          }
           els.statusChip.textContent = '발행준비';
           showToast('발행준비 완료');
         })
         .catch(function(err){
           console.error(err);
-          showToast('발행준비 실패');
+          showToast((err && err.message) || '발행준비 실패');
         })
         .finally(function(){
           setLoading(false);
@@ -944,7 +1006,8 @@
       else location.href = CONFIG.listUrl;
     });
     els.saveBtn.addEventListener('click', saveDraft);
-    els.publishBtn.addEventListener('click', markReady);
+    els.scheduleBtn.addEventListener('click', handleSchedulePublish);
+    els.publishBtn.addEventListener('click', handlePublish);
 
     bindInlineEditors();
     loadDraft();

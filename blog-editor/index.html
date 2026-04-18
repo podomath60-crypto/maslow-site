@@ -669,15 +669,30 @@
         .finally(function(){ setLoading(false); });
     }
     function buildPatch(){
-      const ordered = getSectionMeta(state.row || {}).reduce(function(acc, sec){ return acc.concat(state.sectionParagraphs[sec.key] || []); }, []);
+      const sectionStructure = (state.sectionBlocks || []).map(function(sec, idx){
+        return {
+          sectionKey: text(sec && sec.key) || ('section_' + idx),
+          heading: text(sec && sec.heading) || '섹션',
+          paragraphs: Array.isArray(sec && sec.paragraphs)
+            ? sec.paragraphs.map(function(v){ return text(v); }).filter(Boolean)
+            : []
+        };
+      }).filter(function(sec){
+        return text(sec.heading) || (sec.paragraphs && sec.paragraphs.length);
+      });
+
+      const ordered = sectionStructure.reduce(function(acc, sec){
+        return acc.concat(sec.paragraphs || []);
+      }, []);
       const bodyText = ordered.join('\n\n');
+
       return {
         draftTitle: text(els.titleDisplay.textContent),
         seoTitle: text(els.titleDisplay.textContent),
         bodyText: bodyText,
         bodyHtml: bodyTextToHtml(bodyText),
         paragraphTextJson: ordered,
-        sectionStructureJson: parseJson((state.row && state.row.sectionStructureJson) || '[]', []),
+        sectionStructureJson: sectionStructure,
         hashtagsJson: state.tags,
         thumbnailTextJson: state.thumbs,
         ctaText: text(els.ctaTextDisplay.textContent),

@@ -476,9 +476,45 @@
       });
       return uniqueAssets(out);
     }
+    const FACTORY_PHOTO_TYPE_LABELS = {
+      p1: '외관전경',
+      p2: '마당/야드',
+      p3: '진입로/출입구',
+      p4: '내부전경',
+      p5: '작업공간',
+      p6: '설비/장비',
+      p7: '창고/적재공간',
+      p8: '사무/편의공간',
+      p9: '기타'
+    };
+    const COMMERCIAL_PHOTO_TYPE_LABELS = {
+      p1: '건물외관',
+      p2: '전면/출입구',
+      p3: '주변환경',
+      p4: '내부전경',
+      p5: '메인공간',
+      p6: '룸/구획공간',
+      p7: '업무/설비공간',
+      p8: '편의공간',
+      p9: '기타'
+    };
+    function getPhotoTypeLabels(row){
+      return getTeamType(row) === 'commercial'
+        ? COMMERCIAL_PHOTO_TYPE_LABELS
+        : FACTORY_PHOTO_TYPE_LABELS;
+    }
+    function getCaptionTextForAsset(asset, row){
+      if(!asset) return '';
+      if(text(asset.type) === 'basic_info') return '기본정보';
+      const labels = getPhotoTypeLabels(row || state.row || {});
+      const paragraphKey = text(asset.paragraph || 'p1');
+      return text(labels[paragraphKey] || labels.p1 || '');
+    }
     function renderFigure(asset, caption){
       if(!asset || !asset.url) return '';
-      return '<div class="figure"><img src="' + esc(asset.url) + '" alt="이미지" /><div class="figcap">' + esc(caption || '본문 이미지') + '</div></div>';
+      return '<div class="figure"><img src="' + esc(asset.url) + '" alt="이미지" />'
+        + (text(caption) ? '<div class="figcap">' + esc(caption) + '</div>' : '')
+        + '</div>';
     }
     function renderImages(row){
       const grouped = groupAssets(row);
@@ -497,9 +533,8 @@
       const renderedSections = sections.map(function(sec){
         const paras = state.sectionParagraphs[sec.key] || [];
         const images = getSectionImages(sec, grouped);
-        const imageHtml = images.map(function(asset, idx){
-          const cap = asset.isHero ? '대표 이미지' : (asset.paragraph ? asset.paragraph.toUpperCase() + ' 이미지' : '본문 이미지');
-          return renderFigure(asset, cap + (idx === 0 ? '' : '')); 
+        const imageHtml = images.map(function(asset){
+          return renderFigure(asset, getCaptionTextForAsset(asset, row));
         }).join('');
         return '<section class="block">'
           + '<div class="section-kicker">SECTION</div>'
@@ -514,7 +549,7 @@
         + '<div class="section-kicker">BASIC INFO</div>'
         + '<h2 class="section-title">기본 정보</h2>'
         + '<div class="section-image-stack">'
-        + grouped.basic.map(function(asset, idx){ return renderFigure(asset, '기본정보 이미지 ' + (idx + 1)); }).join('')
+        + grouped.basic.map(function(asset){ return renderFigure(asset, getCaptionTextForAsset(asset, row)); }).join('')
         + '</div>'
         + '</section>'
       ) : '';

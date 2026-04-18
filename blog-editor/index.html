@@ -233,7 +233,8 @@
       cta: { label:'', text:'' },
       bodyParagraphs: [],
       overviewParagraphs: [],
-      sectionParagraphs: {}
+      sectionParagraphs: {},
+      sectionBlocks: []
     };
 
     const els = {
@@ -408,6 +409,39 @@
       }
       return out;
     }
+    function buildSectionBlocksFromRow(row){
+      const fromJson = parseJson(row && row.sectionStructureJson || '[]', []);
+      if(Array.isArray(fromJson) && fromJson.length){
+        const cleaned = fromJson.map(function(sec, idx){
+          const key = text(sec && sec.sectionKey) || ('section_' + idx);
+          const heading = text(sec && sec.heading) || '섹션';
+          const paragraphs = Array.isArray(sec && sec.paragraphs)
+            ? sec.paragraphs.map(function(v){ return text(v); }).filter(Boolean)
+            : [];
+          return { key:key, heading:heading, paragraphs:paragraphs };
+        }).filter(function(sec){
+          return text(sec.heading) || (sec.paragraphs && sec.paragraphs.length);
+        });
+        if(cleaned.length) return cleaned;
+      }
+
+      const fallbackSections = getSectionMeta(row || {});
+      const fallbackParagraphs = distributeParagraphs(state.bodyParagraphs, fallbackSections);
+      return fallbackSections.map(function(sec){
+        return {
+          key: sec.key,
+          heading: sec.heading,
+          paragraphs: (fallbackParagraphs[sec.key] || []).map(function(v){ return text(v); }).filter(Boolean)
+        };
+      });
+    }
+    function syncSectionParagraphsFromBlocks(){
+      const out = {};
+      (state.sectionBlocks || []).forEach(function(sec){
+        out[text(sec.key)] = Array.isArray(sec.paragraphs) ? sec.paragraphs.slice() : [];
+      });
+      state.sectionParagraphs = out;
+    }
     function renderParagraphList(list, key){
       return (list || []).map(function(p, idx){
         const displayText = formatDisplayText(p);
@@ -529,17 +563,21 @@
         els.heroBox.textContent='대표 이미지 없음';
       }
 
-      const sections = getSectionMeta(row);
-      const renderedSections = sections.map(function(sec){
-        const paras = state.sectionParagraphs[sec.key] || [];
-        const images = getSectionImages(sec, grouped);
+      const fallbackMeta = getSectionMeta(row || {});
+      const fallbackByKey = {};
+      fallbackMeta.forEach(function(sec){ fallbackByKey[sec.key] = sec; });
+      const renderedSections = (state.sectionBlocks || []).map(function(sec, secIdx){
+        const secKey = text(sec.key) || ('section_' + secIdx);
+        const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
+        const meta = fallbackByKey[secKey] || { key: secKey, slots: [], min: 0 };
+        const images = getSectionImages(meta, grouped);
         const imageHtml = images.map(function(asset){
           return renderFigure(asset, getCaptionTextForAsset(asset, row));
         }).join('');
         return '<section class="block">'
           + '<div class="section-kicker">SECTION</div>'
-          + '<h2 class="section-title">' + esc(sec.heading) + '</h2>'
-          + '<div class="paragraphs">' + renderParagraphList(paras, sec.key) + '</div>'
+          + '<h2 class="section-title">' + esc(text(sec.heading) || '섹션') + '</h2>'
+          + '<div class="paragraphs">' + renderParagraphList(paras, secKey) + '</div>'
           + (imageHtml ? '<div class="section-image-stack">' + imageHtml + '</div>' : '')
           + '</section>';
       }).join('');
@@ -564,10 +602,8 @@
       state.tags = parseJson(row.hashtagsJson || '[]', []).map(text).filter(Boolean);
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
-      state.sectionParagraphs = distributeParagraphs(state.bodyParagraphs, getSectionMeta(row));
-      if(state.sectionParagraphs.hero_intro && state.overviewParagraphs[0]){
-        state.sectionParagraphs.hero_intro = [state.overviewParagraphs[0]].concat(state.sectionParagraphs.hero_intro || []);
-      }
+      state.sectionBlocks = buildSectionBlocksFromRow(row);
+      syncSectionParagraphsFromBlocks();
 
       els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
       els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');
@@ -714,10 +750,13 @@
       els.leadDisplay.addEventListener('blur', function(){
         const v = normalizeEditableText(els.leadDisplay);
         state.overviewParagraphs[0] = v;
-        if(state.sectionParagraphs.hero_intro){
-          if(state.sectionParagraphs.hero_intro.length){ state.sectionParagraphs.hero_intro[0] = v; }
-          else if(v){ state.sectionParagraphs.hero_intro = [v]; }
+        const heroBlock = (state.sectionBlocks || []).find(function(sec){ return text(sec.key) === 'hero_intro'; });
+        if(heroBlock){
+          if(!Array.isArray(heroBlock.paragraphs)) heroBlock.paragraphs = [];
+          if(heroBlock.paragraphs.length){ heroBlock.paragraphs[0] = v; }
+          else if(v){ heroBlock.paragraphs = [v]; }
         }
+        syncSectionParagraphsFromBlocks();
         els.leadDisplay.textContent = v || '도입 문구를 입력하세요.';
         els.leadDisplay.classList.toggle('is-empty', !v);
         renderImages(state.row || {});
@@ -751,11 +790,15 @@
         const key = p.getAttribute('data-edit-key');
         const idx = Number(p.getAttribute('data-edit-idx'));
         const value = normalizeEditableText(p);
-        if(!state.sectionParagraphs[key]) state.sectionParagraphs[key] = [];
-        state.sectionParagraphs[key][idx] = value;
+        const block = (state.sectionBlocks || []).find(function(sec){ return text(sec.key) === text(key); });
+        if(block){
+          if(!Array.isArray(block.paragraphs)) block.paragraphs = [];
+          block.paragraphs[idx] = value;
+        }
+        syncSectionParagraphsFromBlocks();
         p.textContent = value || '내용을 입력하세요.';
         p.classList.toggle('is-empty', !value);
-        if(key === 'hero_intro' && idx === 0){
+        if(text(key) === 'hero_intro' && idx === 0){
           els.leadDisplay.textContent = value || '도입 문구를 입력하세요.';
           els.leadDisplay.classList.toggle('is-empty', !value);
           state.overviewParagraphs[0] = value;

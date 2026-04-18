@@ -65,7 +65,7 @@
     .paragraph.is-empty{color:#98a1ad}
     .figure{margin:22px 0 26px}
     .figure img{width:100%;max-width:680px;display:block;margin:0 auto;border-radius:22px;border:1px solid #ebeff5;background:#f0f4f8}
-    .figcap{margin-top:8px;font-size:12px;color:#85909d;font-weight:800}
+    .figcap{display:none !important}
     .section-image-stack{display:grid;gap:18px;margin:18px 0 10px}
     .section-kicker{margin:0 0 8px;font-size:12px;font-weight:900;color:#7d8794;letter-spacing:.08em;text-transform:uppercase}
     .basic-info-block{margin-top:44px;padding-top:6px}
@@ -378,28 +378,66 @@
       const map = {};
       let hero = null;
 
+      const sectionKeys = (state.sectionBlocks || []).map(function(sec){ return text(sec.sectionKey); }).filter(Boolean);
+      const fallbackOrder = sectionKeys.filter(function(k){ return k !== 'hero_intro'; });
+
+      function mapParagraphToSectionKey(paragraph){
+        const p = text(paragraph).toLowerCase();
+        if(p === 'p1') return 'property_overview';
+        if(p === 'p2' || p === 'p3') return 'location_context';
+        if(p === 'p4' || p === 'p5') return 'building_and_usage';
+        if(p === 'p6') return 'strengths_summary';
+        if(p === 'p7' || p === 'p8' || p === 'p9') return 'detailed_note';
+        return '';
+      }
+
       infos.forEach(function(info){
         const id = text(info && info.assetId);
         const snap = snapById[id] || {};
-        const secKey = text(info && (info.sectionKey || info.section_key));
         const isHero = !!(info && info.isHero) || !!snap.isHero;
         const url = text(info && (info.url || info.previewUrl || info.originalUrl));
         if(!url) return;
+
+        const sectionKeyDirect = text(info && (info.sectionKey || info.section_key));
+        const paragraph = text(info && info.paragraph) || text(snap && snap.paragraph);
+        let sectionKey = sectionKeyDirect || mapParagraphToSectionKey(paragraph);
+
         const asset = {
           assetId: id,
           url: url,
-          caption: text(info && (info.caption || info.sourceLabel || '')),
           isHero: isHero
         };
+
         if(isHero && !hero) hero = asset;
-        if(secKey){
-          if(!map[secKey]) map[secKey] = [];
-          map[secKey].push(asset);
+
+        if(!sectionKey && fallbackOrder.length){
+          sectionKey = fallbackOrder[0];
+        }
+        if(sectionKey){
+          if(!map[sectionKey]) map[sectionKey] = [];
+          map[sectionKey].push(asset);
+        }
+      });
+
+      // Rebalance: if images are concentrated in one section while others are empty,
+      // spread extras across empty sections in section order.
+      const allKeys = fallbackOrder.slice();
+      const emptyKeys = allKeys.filter(function(k){ return !(map[k] && map[k].length); });
+      const richKeys = allKeys.filter(function(k){ return map[k] && map[k].length > 1; });
+
+      emptyKeys.forEach(function(emptyKey){
+        for(var i=0; i<richKeys.length; i++){
+          var richKey = richKeys[i];
+          if(map[richKey] && map[richKey].length > 1){
+            var moved = map[richKey].pop();
+            map[emptyKey] = [moved];
+            break;
+          }
         }
       });
 
       return {
-        hero: text(row.heroImageUrl) ? { url: text(row.heroImageUrl), caption:'', isHero:true } : hero,
+        hero: text(row.heroImageUrl) ? { url: text(row.heroImageUrl), isHero:true } : hero,
         bySection: map
       };
     }
@@ -416,10 +454,7 @@
 
     function renderFigure(asset){
       if(!asset || !asset.url) return '';
-      const caption = text(asset.caption);
-      return '<div class="figure"><img src="' + esc(asset.url) + '" alt="이미지" />'
-        + (caption ? '<div class="figcap">' + esc(caption) + '</div>' : '')
-        + '</div>';
+      return '<div class="figure"><img src="' + esc(asset.url) + '" alt="이미지" /></div>';
     }
 
     function renderParagraphList(list, sectionKey){

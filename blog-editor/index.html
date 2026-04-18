@@ -691,9 +691,10 @@
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
       state.sectionBlocks = buildSectionBlocksFromRow(row);
-      state.imageLayout = text(row.imageLayoutJson || '')
-  ? normalizeImageLayout(row.imageLayoutJson)
-  : buildImageLayoutFromMap(getSectionImagesMap(row));
+      state.imageLayout =
+  text(row.imageLayoutJson || '') && text(row.imageLayoutJson || '') !== '{}'
+    ? normalizeImageLayout(row.imageLayoutJson)
+    : null;
 
       els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
       els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');

@@ -1197,14 +1197,40 @@ function getSectionImagesMap(row){
     function smoothFollowMovedFigure(sectionKey, idx){
       setTimeout(function(){
         try{
-          const selector = '.figure[data-section-key="' + String(sectionKey).replace(/"/g,'\\"') + '"][data-idx="' + String(idx) + '"]';
+          const selector = '.figure[data-section-key="' + String(sectionKey).replace(/"/g,'\"') + '"][data-idx="' + String(idx) + '"]';
           const fig = document.querySelector(selector);
           if(!fig) return;
+
           const rect = fig.getBoundingClientRect();
-          const targetTop = window.scrollY + rect.top - 90;
-          window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
-        }catch(_){}
-      }, 30);
+          const targetTop = Math.max(0, window.scrollY + rect.top - 90);
+          const startTop = window.scrollY;
+          const distance = targetTop - startTop;
+          const duration = 1100;
+
+          if(Math.abs(distance) < 2) return;
+
+          const startTime = performance.now();
+
+          function easeInOutCubic(t){
+            return t < 0.5
+              ? 4 * t * t * t
+              : 1 - Math.pow(-2 * t + 2, 3) / 2;
+          }
+
+          function step(now){
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = easeInOutCubic(progress);
+            window.scrollTo(0, startTop + distance * eased);
+
+            if(progress < 1){
+              requestAnimationFrame(step);
+            }
+          }
+
+          requestAnimationFrame(step);
+        }catch(_){ }
+      }, 40);
     }
 
     function bindInlineEditors(){

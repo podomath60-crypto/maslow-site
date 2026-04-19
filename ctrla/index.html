@@ -9,34 +9,75 @@
       --bg:#f5f7fb;
       --paper:#ffffff;
       --ink:#16181d;
+      --muted:#6b7280;
       --line:#e7ecf2;
+      --blue:#0f7cff;
+      --blue-soft:#eef5ff;
       --shadow:0 18px 38px rgba(15,23,42,.08);
       --page:920px;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;scroll-behavior:smooth}
     body{min-width:0}
-    .page{min-height:100vh;padding:18px 0 72px}
-    .top-mini{max-width:var(--page);margin:0 auto 10px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .brand-toggle{border:none;background:transparent;color:#111318;font-size:17px;font-weight:950;letter-spacing:-0.04em;padding:4px 2px;user-select:none}
-    .helper{font-size:12px;color:#7d8794;font-weight:800;user-select:none}
-    .shell{max-width:var(--page);margin:0 auto;padding:0 14px}
-    .paper{background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;overflow:hidden}
+    button,input,textarea{font:inherit}
+    button{cursor:pointer;border:none;background:none}
+    input,textarea{outline:none}
+    .page{min-height:100vh;padding:0 0 72px}
+    .topbar{
+      position:sticky;top:0;z-index:40;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:12px 16px;
+      background:rgba(245,247,251,.9);
+      backdrop-filter:blur(12px);
+      border-bottom:1px solid rgba(231,236,242,.9);
+    }
+    .top-left,.top-right{display:flex;align-items:center;gap:10px;min-width:0}
+    .btn{
+      min-height:42px;padding:0 14px;border-radius:14px;border:1px solid var(--line);
+      background:#fff;color:var(--ink);font-size:14px;font-weight:900;letter-spacing:-0.03em;
+      box-shadow:0 8px 20px rgba(15,23,42,.04)
+    }
+    .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+    .chip{
+      display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 12px;
+      border-radius:999px;background:var(--blue-soft);border:1px solid #cfe2ff;color:var(--blue);
+      font-size:12px;font-weight:900;white-space:nowrap
+    }
+    .shell{max-width:var(--page);margin:0 auto;padding:18px 14px 0}
+    .paper{
+      background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;overflow:hidden;
+    }
+    .hero{background:#eef2f7;aspect-ratio:16/9;background-position:center;background-size:cover}
+    .hero.empty{display:flex;align-items:center;justify-content:center;color:#8b95a1;font-size:15px;font-weight:800}
     .article{padding:26px 22px 34px}
-    .loading{min-height:140px;display:flex;align-items:center;justify-content:center;color:#7d8794;font-size:15px;font-weight:800}
-    .lead{margin:0 0 30px;font-size:20px;line-height:1.85;color:#2f3742;font-weight:700;word-break:keep-all;white-space:pre-line}
-    .lead.is-empty{display:none}
+    .meta-line{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;color:#7a8491;font-size:13px;font-weight:800}
+    .meta-pill{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;background:#f7f9fc;border:1px solid #e8edf4}
+    .title{margin:0;font-size:38px;line-height:1.24;font-weight:950;letter-spacing:-0.05em;word-break:keep-all}
+    .lead{margin:16px 0 0;font-size:20px;line-height:1.85;color:#2f3742;font-weight:700;word-break:keep-all;white-space:pre-line}
+    .lead.is-empty{color:#98a1ad}
+    .divider{height:1px;background:var(--line);margin:28px 0}
     .block{margin:0 0 72px}
-    .block:last-child{margin-bottom:0}
-    .section-kicker{margin:0 0 8px;font-size:12px;font-weight:900;color:#7d8794;letter-spacing:.08em;text-transform:uppercase}
     .section-title{margin:0 0 16px;font-size:34px;line-height:1.3;font-weight:950;letter-spacing:-0.04em;word-break:keep-all}
-    .section-image-stack{display:grid;gap:18px;margin:24px 0 28px}
-    .figure{margin:22px 0 26px}
-    .figure img{width:100%;max-width:680px;display:block;margin:0 auto;border-radius:22px;border:1px solid #ebeff5;background:#f0f4f8}
     .paragraphs{display:grid;gap:22px}
-    .paragraph{margin:0;font-size:19px;line-height:2.02;color:#2e3741;font-weight:500;word-break:keep-all;white-space:pre-line}
-    .basic-info-slider{margin:34px 0 14px;padding:18px;border-radius:24px;background:#fbfcff;border:1px solid #e9eef5;display:none}
-    .basic-info-slider.show{display:block}
+    .paragraph{
+      margin:0;font-size:19px;line-height:2.02;color:#2e3741;font-weight:500;word-break:keep-all;white-space:pre-line;
+    }
+    .paragraph.is-empty{color:#98a1ad}
+    .figure{margin:22px 0 26px;position:relative}
+    .figure img{width:100%;max-width:680px;display:block;margin:0 auto;border-radius:22px;border:1px solid #ebeff5;background:#f0f4f8}
+    .fig-move{
+      position:absolute;right:10px;bottom:10px;display:flex;gap:6px;z-index:2;
+    }
+    .fig-move-btn{
+      width:34px;height:34px;border-radius:999px;background:rgba(17,24,39,.92);color:#fff;
+      display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;
+      box-shadow:0 8px 16px rgba(15,23,42,.18);
+    }
+    .figcap{display:none !important}
+    .section-image-stack{display:grid;gap:18px;margin:24px 0 28px}
+    .section-kicker{margin:0 0 8px;font-size:12px;font-weight:900;color:#7d8794;letter-spacing:.08em;text-transform:uppercase}
+    .basic-info-block{margin-top:44px;padding-top:6px}
+    .basic-info-slider{margin:34px 0 14px;padding:18px;border-radius:24px;background:#fbfcff;border:1px solid #e9eef5}
     .basic-info-slider-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
     .basic-info-slider-title{margin:0;font-size:16px;font-weight:950;color:#1d2430;letter-spacing:-0.03em}
     .basic-info-slider-sub{font-size:12px;font-weight:800;color:#7d8794}
@@ -46,8 +87,7 @@
     .basic-info-card img{display:block;width:100%;height:188px;object-fit:cover;background:#f1f5f9}
     .basic-info-card-body{padding:10px 12px}
     .basic-info-card-label{font-size:13px;font-weight:900;color:#334155}
-    .info-strip{margin:30px 0;padding:18px 18px;border-radius:22px;background:#fbfcff;border:1px solid #e9eef5;display:none}
-    .info-strip.show{display:block}
+    .info-strip{margin:30px 0;padding:18px 18px;border-radius:22px;background:#fbfcff;border:1px solid #e9eef5}
     .info-strip-title{font-size:15px;font-weight:900;margin:0 0 10px;color:#1d2430}
     .thumb-lines{display:grid;gap:8px}
     .thumb-line{font-size:16px;font-weight:800;color:#334155}
@@ -56,34 +96,288 @@
     .cta-text{margin:0;font-size:16px;line-height:1.75;color:#475161;font-weight:700;white-space:pre-line}
     .hashtags{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px}
     .tag{display:inline-flex;align-items:center;min-height:34px;padding:0 12px;border-radius:999px;background:#eef5ff;border:1px solid #d5e6ff;color:#2369d9;font-size:13px;font-weight:900}
+    .footer-note{margin-top:28px;font-size:12px;color:#9aa3af;font-weight:800}
+
+    .editbox{display:none !important;margin-top:10px}
+    .editbox.show{display:none !important}
+    .textarea,.input{
+      width:100%;padding:14px 15px;border-radius:18px;border:1px solid #dce5ef;background:#fff;color:var(--ink);
+      font-size:15px;line-height:1.7;font-weight:700
+    }
+    .textarea{min-height:140px;resize:vertical}
+    .mini-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+    .mini-btn{min-height:38px;padding:0 12px;border-radius:12px;border:1px solid #dce5ef;background:#fff;color:var(--ink);font-size:13px;font-weight:900}
+    .mini-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+    .touch-hint{margin-top:8px;font-size:12px;color:#97a1ae;font-weight:800}
+    .editable{cursor:text}
+    .editable:hover{opacity:.98}
+    .editable.is-editing{
+      outline:2px solid rgba(15,124,255,.18);
+      border-radius:10px;
+      background:#f8fbff;
+    }
+
+    .floating-tools{
+      position:fixed;right:18px;bottom:18px;z-index:35;display:flex;flex-direction:column;gap:10px;
+    }
+    .fab{min-width:52px;min-height:52px;padding:0 14px;border-radius:16px;background:#fff;border:1px solid var(--line);box-shadow:0 14px 28px rgba(15,23,42,.1);font-size:13px;font-weight:900;color:#1a202c}
+
+    .loading-overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.74);backdrop-filter:blur(3px);padding:24px}
+    .loading-overlay.show{display:flex}
+    .loading-panel{display:grid;gap:12px;justify-items:center;text-align:center}
+    .spinner{width:66px;height:66px;border-radius:999px;border:5px solid #dae8ff;border-top-color:#0f7cff;animation:spin 1s linear infinite}
+    .loading-text{font-size:18px;font-weight:900;color:#257fe3;letter-spacing:-0.03em}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:120;min-width:180px;max-width:calc(100% - 40px);padding:13px 16px;border-radius:14px;background:rgba(17,24,39,.92);color:#fff;font-size:14px;font-weight:800;line-height:1.45;text-align:center;opacity:0;pointer-events:none;transition:opacity .18s ease}
+    .toast.show{opacity:1}
+
+    .naver-mark{
+      color:#16a34a;
+      font-weight:950;
+      margin-right:2px;
+    }
+
+    .publish-modal{
+      position:fixed;
+      inset:0;
+      z-index:140;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      background:rgba(15,23,42,.42);
+      backdrop-filter:blur(4px);
+    }
+    .publish-modal.show{
+      display:flex;
+    }
+    .publish-panel{
+      width:min(100%,520px);
+      background:#fff;
+      border:1px solid #e5ebf3;
+      border-radius:24px;
+      box-shadow:0 24px 60px rgba(15,23,42,.18);
+      padding:22px 18px 18px;
+    }
+    .publish-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:16px;
+    }
+    .publish-title{
+      margin:0;
+      font-size:22px;
+      line-height:1.25;
+      font-weight:950;
+      letter-spacing:-0.04em;
+    }
+    .publish-close{
+      width:38px;
+      height:38px;
+      border-radius:999px;
+      border:1px solid #dce5ef;
+      background:#fff;
+      color:#374151;
+      font-size:18px;
+      font-weight:900;
+    }
+
+    .publish-mode{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:14px;
+    }
+    .publish-mode-btn{
+      min-height:44px;
+      border-radius:14px;
+      border:1px solid #dce5ef;
+      background:#fff;
+      color:#111827;
+      font-size:14px;
+      font-weight:900;
+    }
+    .publish-mode-btn.active{
+      background:#0f7cff;
+      border-color:#0f7cff;
+      color:#fff;
+    }
+
+    .publish-form{
+      display:grid;
+      gap:12px;
+    }
+    .publish-label{
+      font-size:13px;
+      font-weight:900;
+      color:#475569;
+      margin:0 0 6px;
+    }
+    .publish-input{
+      width:100%;
+      min-height:46px;
+      padding:0 14px;
+      border-radius:14px;
+      border:1px solid #dce5ef;
+      background:#fff;
+      color:#111827;
+      font-size:14px;
+      font-weight:800;
+    }
+    .publish-row{
+      display:grid;
+      gap:12px;
+    }
+    .publish-scheduled-wrap{
+      display:none;
+    }
+    .publish-scheduled-wrap.show{
+      display:block;
+    }
+    .publish-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:8px;
+    }
+    .publish-submit{
+      min-height:44px;
+      padding:0 18px;
+      border-radius:14px;
+      background:#0f7cff;
+      color:#fff;
+      font-size:14px;
+      font-weight:900;
+    }
+    .publish-cancel{
+      min-height:44px;
+      padding:0 18px;
+      border-radius:14px;
+      background:#fff;
+      color:#111827;
+      border:1px solid #dce5ef;
+      font-size:14px;
+      font-weight:900;
+    }
+
+
+    /* ctrla minimal override */
+    .copy-mini-top{
+      max-width:var(--page);
+      margin:0 auto 10px;
+      padding:0 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .copy-mini-brand{
+      border:none;
+      background:transparent;
+      color:#111318;
+      font-size:17px;
+      font-weight:950;
+      letter-spacing:-0.04em;
+      padding:4px 2px;
+      user-select:none;
+    }
+    .copy-mini-help{
+      font-size:12px;
+      color:#7d8794;
+      font-weight:800;
+      user-select:none;
+    }
+    .topbar,
+    .hero,
+    .meta-line,
+    #titleDisplay,
+    .touch-hint,
+    .editbox,
+    .fig-move,
+    .floating-tools,
+    #footerNote,
+    #loadingOverlay,
+    #toast,
+    #publishModal{
+      display:none !important;
+    }
+    .block{
+      margin:0 0 110px !important;
+    }
+    .block:last-child{
+      margin-bottom:0 !important;
+    }
+
     @media (max-width: 900px){
-      .page{padding:12px 0 40px}
-      .shell{padding:0 10px}
-      .top-mini{padding:0 10px}
-      .article{padding:20px 16px 28px}
+      .figure img{max-width:100%}
+      .title{font-size:31px}
       .lead{font-size:18px;line-height:1.9}
       .section-title{font-size:30px}
       .paragraph{font-size:17px;line-height:1.92}
-      .helper{display:none}
+      .article{padding:20px 16px 28px}
+      .shell{padding:12px 10px 0}
+      .topbar{flex-wrap:wrap;align-items:flex-start}
+      .top-right{width:100%;justify-content:flex-end;flex-wrap:wrap}
+      .floating-tools{right:12px;bottom:14px}
     }
   </style>
 </head>
 <body>
   <div class="page">
-    <div class="top-mini">
-      <button type="button" class="brand-toggle" id="brandToggleBtn">Maslow</button>
-      <div class="helper">Ctrl+A → Ctrl+C → 네이버 붙여넣기</div>
+    <div class="topbar">
+      <div class="top-left">
+        <button type="button" class="btn" id="launcherBtn"><span class="naver-mark">N</span>발행기</button>
+        <button type="button" class="btn" id="dashboardBtn"><span class="naver-mark">N</span>현황판</button>
+        <div class="chip" id="statusChip">초안 로딩중</div>
+      </div>
+      <div class="top-right">
+        <button type="button" class="btn" id="saveBtn">임시저장</button>
+        <button type="button" class="btn primary" id="publishBtn">발행</button>
+      </div>
+    </div>
+
+    <div class="copy-mini-top">
+      <button type="button" class="copy-mini-brand" id="copyBackBtn">Maslow</button>
+      <div class="copy-mini-help">Ctrl+A → Ctrl+C</div>
     </div>
 
     <div class="shell">
       <article class="paper">
+        <div class="hero empty" id="heroBox">대표 이미지 없음</div>
         <div class="article">
-          <div class="loading" id="loadingText">복사용 본문을 불러오는 중입니다.</div>
+          <div class="meta-line">
+            <span class="meta-pill" id="metaListing">매물번호 -</span>
+            <span class="meta-pill" id="metaStatus">상태 -</span>
+            <span class="meta-pill" id="metaStyle">스타일 -</span>
+          </div>
 
-          <p class="lead is-empty" id="leadDisplay"></p>
+          <h1 class="title editable" id="titleDisplay">제목을 불러오는 중입니다.</h1>
+          <div class="editbox" id="titleEditBox">
+            <input type="text" class="input" id="titleInput" placeholder="제목 입력" />
+            <div class="mini-actions">
+              <button type="button" class="mini-btn" id="titleCancelBtn">취소</button>
+              <button type="button" class="mini-btn primary" id="titleSaveBtn">저장</button>
+            </div>
+          </div>
+
+          <p class="lead editable" id="leadDisplay">도입 문구를 불러오는 중입니다.</p>
+          <div class="editbox" id="leadEditBox">
+            <textarea class="textarea" id="leadInput" placeholder="도입 문구"></textarea>
+            <div class="mini-actions">
+              <button type="button" class="mini-btn" id="leadCancelBtn">취소</button>
+              <button type="button" class="mini-btn primary" id="leadSaveBtn">저장</button>
+            </div>
+          </div>
+
+          <div class="touch-hint">제목이나 문단을 터치하면 바로 수정할 수 있습니다.</div>
+
+          <div class="divider"></div>
+
           <div id="articleSections"></div>
 
-          <div class="basic-info-slider" id="basicInfoSlider">
+          <div class="basic-info-slider" id="basicInfoSlider" style="display:none;">
             <div class="basic-info-slider-head">
               <h3 class="basic-info-slider-title">기본정보 이미지</h3>
               <div class="basic-info-slider-sub">하단 고정 카드</div>
@@ -91,39 +385,118 @@
             <div class="basic-info-slider-track" id="basicInfoTrack"></div>
           </div>
 
-          <div class="info-strip" id="thumbStrip">
+          <div class="info-strip" id="thumbStrip" style="display:none;">
             <div class="info-strip-title">썸네일 문구</div>
             <div class="thumb-lines" id="thumbLines"></div>
           </div>
 
           <section class="cta">
-            <h3 class="cta-title" id="ctaLabelDisplay">문의하기</h3>
-            <p class="cta-text" id="ctaTextDisplay">문의 문구를 입력하세요.</p>
+            <h3 class="cta-title editable" id="ctaLabelDisplay">문의하기</h3>
+            <div class="editbox" id="ctaLabelEditBox">
+              <input type="text" class="input" id="ctaLabelInput" placeholder="CTA 라벨" />
+              <div class="mini-actions">
+                <button type="button" class="mini-btn" id="ctaLabelCancelBtn">취소</button>
+                <button type="button" class="mini-btn primary" id="ctaLabelSaveBtn">저장</button>
+              </div>
+            </div>
+
+            <p class="cta-text editable" id="ctaTextDisplay">문의 문구를 입력하세요.</p>
+            <div class="editbox" id="ctaTextEditBox">
+              <textarea class="textarea" id="ctaTextInput" placeholder="CTA 문구"></textarea>
+              <div class="mini-actions">
+                <button type="button" class="mini-btn" id="ctaTextCancelBtn">취소</button>
+                <button type="button" class="mini-btn primary" id="ctaTextSaveBtn">저장</button>
+              </div>
+            </div>
           </section>
 
           <div class="hashtags" id="tagWrap"></div>
+          <div class="footer-note" id="footerNote">blogId를 불러오는 중입니다.</div>
         </div>
       </article>
     </div>
+
+    <div class="floating-tools">
+      <button type="button" class="fab" id="tagEditBtn">태그수정</button>
+    </div>
+  </div>
+  <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-panel">
+      <div class="spinner"></div>
+      <div id="loadingText" class="loading-text">불러오는 중</div>
+    </div>
+  </div>
+  <div id="toast" class="toast"></div>
+
+  <div id="publishModal" class="publish-modal" aria-hidden="true">
+    <div class="publish-panel">
+      <div class="publish-head">
+        <h3 class="publish-title">네이버 발행 설정</h3>
+        <button type="button" class="publish-close" id="publishCloseBtn">✕</button>
+      </div>
+
+      <div class="publish-mode">
+        <button type="button" class="publish-mode-btn active" id="publishNowBtn">즉시발행</button>
+        <button type="button" class="publish-mode-btn" id="publishScheduledBtn">예약발행</button>
+      </div>
+
+      <div class="publish-form">
+        <div class="publish-scheduled-wrap" id="publishScheduledWrap">
+          <div class="publish-label">예약 날짜 / 시간</div>
+          <input type="datetime-local" class="publish-input" id="scheduledAtInput" />
+        </div>
+
+        <div class="publish-row">
+          <div>
+            <div class="publish-label">네이버 아이디</div>
+            <input type="text" class="publish-input" id="naverIdInput" placeholder="네이버 아이디" />
+          </div>
+          <div>
+            <div class="publish-label">네이버 비밀번호</div>
+            <input type="password" class="publish-input" id="naverPasswordInput" placeholder="네이버 비밀번호" />
+          </div>
+        </div>
+
+        <div class="publish-actions">
+          <button type="button" class="publish-cancel" id="publishCancelBtn">취소</button>
+          <button type="button" class="publish-submit" id="publishSubmitBtn">완료</button>
+        </div>
+      </div>
+    </div>
   </div>
 
+  
   <script>
     const CONFIG = {
-      adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec'
+      adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec',
+      launcherUrl: '/naverbloginput',
+      dashboardUrl: '/naverblog-dashboard'
     };
 
     const state = {
       blogId: '',
       row: null,
+      original: null,
       tags: [],
       thumbs: [],
       cta: { label:'', text:'' },
       sectionBlocks: [],
-      imageLayout: null
+      imageLayout: null,
+      publishMode: 'now'
     };
 
     const els = {
-      loadingText: document.getElementById('loadingText'),
+      copyBackBtn: document.getElementById('copyBackBtn'),
+      launcherBtn: document.getElementById('launcherBtn'),
+      dashboardBtn: document.getElementById('dashboardBtn'),
+      saveBtn: document.getElementById('saveBtn'),
+      publishBtn: document.getElementById('publishBtn'),
+      statusChip: document.getElementById('statusChip'),
+      heroBox: document.getElementById('heroBox'),
+      metaListing: document.getElementById('metaListing'),
+      metaStatus: document.getElementById('metaStatus'),
+      metaStyle: document.getElementById('metaStyle'),
+      titleDisplay: document.getElementById('titleDisplay'),
       leadDisplay: document.getElementById('leadDisplay'),
       articleSections: document.getElementById('articleSections'),
       basicInfoSlider: document.getElementById('basicInfoSlider'),
@@ -133,7 +506,21 @@
       ctaLabelDisplay: document.getElementById('ctaLabelDisplay'),
       ctaTextDisplay: document.getElementById('ctaTextDisplay'),
       tagWrap: document.getElementById('tagWrap'),
-      brandToggleBtn: document.getElementById('brandToggleBtn')
+      footerNote: document.getElementById('footerNote'),
+      tagEditBtn: document.getElementById('tagEditBtn'),
+      loadingOverlay: document.getElementById('loadingOverlay'),
+      loadingText: document.getElementById('loadingText'),
+      toast: document.getElementById('toast'),
+      publishModal: document.getElementById('publishModal'),
+      publishCloseBtn: document.getElementById('publishCloseBtn'),
+      publishCancelBtn: document.getElementById('publishCancelBtn'),
+      publishSubmitBtn: document.getElementById('publishSubmitBtn'),
+      publishNowBtn: document.getElementById('publishNowBtn'),
+      publishScheduledBtn: document.getElementById('publishScheduledBtn'),
+      publishScheduledWrap: document.getElementById('publishScheduledWrap'),
+      scheduledAtInput: document.getElementById('scheduledAtInput'),
+      naverIdInput: document.getElementById('naverIdInput'),
+      naverPasswordInput: document.getElementById('naverPasswordInput')
     };
 
     function text(v){ return String(v == null ? '' : v).trim(); }
@@ -153,6 +540,17 @@
       }
     }
     function getParam(name){ return new URLSearchParams(location.search).get(name) || ''; }
+    function setLoading(on, label){
+      els.loadingText.textContent = label || '불러오는 중';
+      els.loadingOverlay.classList.toggle('show', !!on);
+    }
+    function showToast(msg){
+      if(!msg) return;
+      els.toast.textContent = msg;
+      els.toast.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(function(){ els.toast.classList.remove('show'); }, 1800);
+    }
     function fetchPostJson(payload){
       return fetch(CONFIG.adminListUrl, {
         method:'POST',
@@ -164,9 +562,44 @@
         return res.json();
       });
     }
-    function formatDisplayText(v){
-      return text(v).replace(/\s*\/\s*/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+
+    function openPublishModal(){
+      state.publishMode = 'now';
+      syncPublishModeUi();
+      els.publishModal.classList.add('show');
+      els.publishModal.setAttribute('aria-hidden', 'false');
     }
+
+    function closePublishModal(){
+      els.publishModal.classList.remove('show');
+      els.publishModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function syncPublishModeUi(){
+      const isNow = state.publishMode === 'now';
+      els.publishNowBtn.classList.toggle('active', isNow);
+      els.publishScheduledBtn.classList.toggle('active', !isNow);
+      els.publishScheduledWrap.classList.toggle('show', !isNow);
+    }
+
+    function buildPublishRequestPayload(){
+      return {
+        action: 'saveBlogPublishRequest',
+        blogId: text(state.blogId),
+        publishPlatform: 'naver_blog',
+        publishMode: state.publishMode,
+        scheduledAt: state.publishMode === 'scheduled' ? text(els.scheduledAtInput.value) : '',
+        naverId: text(els.naverIdInput.value),
+        naverPassword: text(els.naverPasswordInput.value)
+      };
+    }
+    function formatDisplayText(v){
+      return text(v)
+        .replace(/\s*\/\s*/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
     function buildSectionBlocksFromRow(row){
       const stored = parseJson(row && row.sectionStructureJson || '[]', []);
       if(Array.isArray(stored) && stored.length){
@@ -174,22 +607,27 @@
           return {
             sectionKey: 'section_' + (idx + 1),
             heading: text(sec && sec.heading) || ('Section ' + (idx + 1)),
-            paragraphs: Array.isArray(sec && sec.paragraphs) ? sec.paragraphs.map(function(v){ return text(v); }) : []
+            paragraphs: Array.isArray(sec && sec.paragraphs)
+              ? sec.paragraphs.map(function(v){ return text(v); })
+              : []
           };
         });
       }
       return [];
     }
+
     function getDynamicSectionOrder(){
       return (state.sectionBlocks || []).map(function(sec, idx){
         return text(sec && sec.sectionKey) || ('section_' + (idx + 1));
       }).filter(Boolean);
     }
+
     function getSectionLabelByKey(sectionKey){
       const order = getDynamicSectionOrder();
       const idx = order.indexOf(text(sectionKey));
       return idx >= 0 ? ('Section ' + (idx + 1)) : text(sectionKey);
     }
+
     function getSectionKeyFromLegacyParagraph(paragraph){
       const order = getDynamicSectionOrder();
       const count = order.length;
@@ -204,6 +642,56 @@
       n = Math.max(1, Math.min(n, count));
       return 'section_' + n;
     }
+
+    function serializeSectionBlocksForSave(){
+      return (state.sectionBlocks || []).map(function(sec, idx){
+        return {
+          sectionKey: text(sec && sec.sectionKey) || ('section_' + (idx + 1)),
+          heading: text(sec && sec.heading),
+          paragraphs: Array.isArray(sec && sec.paragraphs)
+            ? sec.paragraphs.map(function(v){ return text(v); })
+            : []
+        };
+      }).filter(function(sec){
+        return sec.heading || sec.paragraphs.some(Boolean);
+      });
+    }
+    function sectionBlocksToBodyTextForSave(blocks){
+      return (blocks || []).map(function(sec){
+        const parts = [];
+        const heading = text(sec && sec.heading);
+        if(heading) parts.push(heading);
+        (Array.isArray(sec && sec.paragraphs) ? sec.paragraphs : []).forEach(function(p){
+          const v = text(p);
+          if(v) parts.push(v);
+        });
+        return parts.join('\n\n');
+      }).filter(Boolean).join('\n\n\n');
+    }
+    function sectionBlocksToBodyHtmlForSave(blocks){
+      return (blocks || []).map(function(sec){
+        const chunks = [];
+        const heading = text(sec && sec.heading);
+        if(heading) chunks.push('<h2>' + esc(heading) + '</h2>');
+        (Array.isArray(sec && sec.paragraphs) ? sec.paragraphs : []).forEach(function(p){
+          const v = text(p);
+          if(v) chunks.push('<p>' + esc(v).replace(/\n/g, '<br>') + '</p>');
+        });
+        return chunks.join('\n');
+      }).filter(Boolean).join('\n\n');
+    }
+    function sectionBlocksToParagraphTextJsonForSave(blocks){
+      const out = [];
+      (blocks || []).forEach(function(sec){
+        (Array.isArray(sec && sec.paragraphs) ? sec.paragraphs : []).forEach(function(p){
+          const v = text(p);
+          if(v) out.push(v);
+        });
+      });
+      return out;
+    }
+
+
     function normalizeImageLayout(layout){
       const sectionOrder = getDynamicSectionOrder();
       const out = { hero:'', sections:{} };
@@ -218,6 +706,7 @@
       }
       return out;
     }
+
     function hasMeaningfulImageLayout(layoutLike){
       const layout = normalizeImageLayout(layoutLike);
       if (text(layout.hero)) return true;
@@ -225,6 +714,8 @@
         return Array.isArray(layout.sections[key]) && layout.sections[key].length > 0;
       });
     }
+
+    
     function buildSavedAssetCollections_(row){
       const saved = parseJson(row && row.savedAssetFilesJson || '[]', []);
       const infos = parseJson(row && row.infoImageFilesJson || '[]', []);
@@ -259,6 +750,8 @@
         const asset = {
           assetId: id,
           url: text(file && (file.url || file.previewUrl || file.originalUrl)),
+          previewUrl: text(file && (file.previewUrl || file.url || file.originalUrl)),
+          originalUrl: text(file && (file.originalUrl || file.url || file.previewUrl)),
           isHero: !!(file && file.isHero) || !!snap.isHero,
           paragraph: text(file && file.paragraph) || text(snap && snap.paragraph),
           sectionKey: text(file && (file.sectionKey || file.section_key)),
@@ -271,8 +764,12 @@
         else photoAssets.push(asset);
       });
 
-      return { photos: photoAssets, basics: basicInfoAssets };
+      return {
+        photos: photoAssets,
+        basics: basicInfoAssets
+      };
     }
+
     function buildInitialImageLayoutFromRow(row){
       const saved = buildSavedAssetCollections_(row);
       const photos = saved.photos || [];
@@ -283,25 +780,47 @@
       photos.forEach(function(photo){
         const id = text(photo && photo.assetId);
         if(!id) return;
+
         if(photo.isHero && !layout.hero){
           layout.hero = id;
           return;
         }
+
         const sectionKeyDirect = text(photo && photo.sectionKey);
         const paragraph = text(photo && photo.paragraph);
+
         let sectionKey = /^section_\d+$/i.test(sectionKeyDirect)
           ? sectionKeyDirect.toLowerCase()
           : getSectionKeyFromLegacyParagraph(paragraph);
 
-        if(!sectionKey && fallbackOrder.length) sectionKey = fallbackOrder[0];
+        if(!sectionKey && fallbackOrder.length){
+          sectionKey = fallbackOrder[0];
+        }
         if(!sectionKey) return;
+
         layout.sections[sectionKey] = layout.sections[sectionKey] || [];
         layout.sections[sectionKey].push(id);
       });
 
+      const allKeys = fallbackOrder.slice();
+      const emptyKeys = allKeys.filter(function(k){ return !(layout.sections[k] && layout.sections[k].length); });
+      const richKeys = allKeys.filter(function(k){ return layout.sections[k] && layout.sections[k].length > 1; });
+
+      emptyKeys.forEach(function(emptyKey){
+        for (var i = 0; i < richKeys.length; i++) {
+          var richKey = richKeys[i];
+          if (layout.sections[richKey] && layout.sections[richKey].length > 1) {
+            var moved = layout.sections[richKey].pop();
+            layout.sections[emptyKey] = [moved];
+            break;
+          }
+        }
+      });
+
       return layout;
     }
-    function buildAssetMapFromRow(row){
+
+function buildAssetMapFromRow(row){
       const collections = buildSavedAssetCollections_(row);
       const map = {};
       (collections.photos || []).concat(collections.basics || []).forEach(function(asset){
@@ -310,47 +829,98 @@
       });
       return map;
     }
+
     function getBasicInfoAssets(row){
       const collections = buildSavedAssetCollections_(row);
       return uniqueAssets(collections.basics || []);
     }
-    function getSectionImagesMap(row){
+
+function getSectionImagesMap(row){
       const assetMap = buildAssetMapFromRow(row || {});
       const bySection = {};
 
       if(state.imageLayout){
         Object.keys((state.imageLayout.sections || {})).forEach(function(key){
           bySection[key] = (state.imageLayout.sections[key] || []).map(function(assetId){
-            return assetMap[text(assetId)] || null;
+            const asset = assetMap[text(assetId)] || null;
+            return asset && asset.assetType !== 'basic_info' ? asset : asset;
           }).filter(function(asset){
             return asset && asset.assetType !== 'basic_info' && asset.assetSource !== 'generated_from_lookup';
           });
         });
-        return { bySection: bySection };
+        const heroAsset = assetMap[text(state.imageLayout.hero)] || null;
+        return {
+          hero: text(row.heroImageUrl) ? { url: text(row.heroImageUrl), isHero:true } : heroAsset,
+          bySection: bySection
+        };
       }
 
       const photos = buildSavedAssetCollections_(row).photos || [];
+      let hero = null;
       const sectionKeys = getDynamicSectionOrder();
       const fallbackOrder = sectionKeys.slice();
 
       photos.forEach(function(photo){
         const id = text(photo && photo.assetId);
-        if(!id || !photo.url || photo.isHero) return;
+        if(!id || !photo.url) return;
+        if(photo.isHero && !hero){
+          hero = photo;
+          return;
+        }
+
         const sectionKeyDirect = text(photo && photo.sectionKey);
         const paragraph = text(photo && photo.paragraph);
         let sectionKey = /^section_\d+$/i.test(sectionKeyDirect)
           ? sectionKeyDirect.toLowerCase()
           : getSectionKeyFromLegacyParagraph(paragraph);
 
-        if(!sectionKey && fallbackOrder.length) sectionKey = fallbackOrder[0];
+        if(!sectionKey && fallbackOrder.length){
+          sectionKey = fallbackOrder[0];
+        }
         if(sectionKey){
           if(!bySection[sectionKey]) bySection[sectionKey] = [];
           bySection[sectionKey].push(photo);
         }
       });
 
-      return { bySection: bySection };
+      const allKeys = fallbackOrder.slice();
+      const emptyKeys = allKeys.filter(function(k){ return !(bySection[k] && bySection[k].length); });
+      const richKeys = allKeys.filter(function(k){ return bySection[k] && bySection[k].length > 1; });
+
+      emptyKeys.forEach(function(emptyKey){
+        for(var i=0; i<richKeys.length; i++){
+          var richKey = richKeys[i];
+          if(bySection[richKey] && bySection[richKey].length > 1){
+            var moved = bySection[richKey].pop();
+            bySection[emptyKey] = [moved];
+            break;
+          }
+        }
+      });
+
+      return {
+        hero: text(row.heroImageUrl) ? { url: text(row.heroImageUrl), isHero:true } : hero,
+        bySection: bySection
+      };
     }
+
+    function renderBasicInfoSlider(row){
+      const basics = getBasicInfoAssets(row || {});
+      if(!basics.length){
+        els.basicInfoSlider.style.display = 'none';
+        els.basicInfoTrack.innerHTML = '';
+        return;
+      }
+
+      els.basicInfoSlider.style.display = 'block';
+      els.basicInfoTrack.innerHTML = basics.map(function(asset, idx){
+        return '<div class="basic-info-card">'
+          + '<img src="' + esc(asset.url) + '" alt="기본정보 이미지 ' + (idx + 1) + '" />'
+          + '<div class="basic-info-card-body"><div class="basic-info-card-label">기본정보 ' + (idx + 1) + '</div></div>'
+          + '</div>';
+      }).join('');
+    }
+
     function uniqueAssets(list){
       const seen = {};
       return (list || []).filter(function(v){
@@ -360,40 +930,60 @@
         return true;
       });
     }
-    function renderFigure(asset, sectionKey, idx){
+
+    function renderFigure(asset, sectionKey, idx, total){
       if(!asset || !asset.url) return '';
-      return '<div class="figure" data-section-key="' + esc(text(sectionKey)) + '" data-idx="' + idx + '"><img src="' + esc(asset.url) + '" alt="이미지" /></div>';
+      return '<div class="figure" data-section-key="' + esc(text(sectionKey)) + '" data-idx="' + idx + '">'
+        + '<img src="' + esc(asset.url) + '" alt="이미지" />'
+        + '<div class="fig-move">'
+        +   '<button type="button" class="fig-move-btn" data-move="up">▲</button>'
+        +   '<button type="button" class="fig-move-btn" data-move="down">▼</button>'
+        + '</div>'
+        + '</div>';
     }
-    function renderParagraphList(list){
-      return (list || []).map(function(p){
+
+    function renderParagraphList(list, sectionKey){
+      return (list || []).map(function(p, idx){
         const displayText = formatDisplayText(p);
-        if(!text(displayText)) return '';
-        return '<p class="paragraph">' + esc(displayText) + '</p>';
-      }).filter(Boolean).join('');
-    }
-    function renderBasicInfoSlider(row){
-      const basics = getBasicInfoAssets(row || {});
-      if(!basics.length){
-        els.basicInfoSlider.classList.remove('show');
-        els.basicInfoTrack.innerHTML = '';
-        return;
-      }
-      els.basicInfoSlider.classList.add('show');
-      els.basicInfoTrack.innerHTML = basics.map(function(asset, idx){
-        return '<div class="basic-info-card"><img src="' + esc(asset.url) + '" alt="기본정보 이미지 ' + (idx + 1) + '" /><div class="basic-info-card-body"><div class="basic-info-card-label">기본정보 ' + (idx + 1) + '</div></div></div>';
+        const empty = !text(displayText);
+        return '<p class="paragraph editable' + (empty ? ' is-empty' : '') + '" contenteditable="plaintext-only" spellcheck="false" data-edit-key="' + esc(sectionKey) + '" data-edit-idx="' + idx + '">'
+          + (empty ? '내용을 입력하세요.' : esc(displayText))
+          + '</p>';
       }).join('');
     }
-    function renderThumbs(){
-      if(!state.thumbs.length){
-        els.thumbStrip.classList.remove('show');
-        els.thumbLines.innerHTML = '';
-        return;
+
+
+    function renderImages(row){
+      const imgMap = getSectionImagesMap(row);
+      const hero = imgMap.hero;
+
+      if(hero && hero.url){
+        els.heroBox.classList.remove('empty');
+        els.heroBox.style.backgroundImage = 'url("' + hero.url.replace(/"/g, '%22') + '")';
+        els.heroBox.textContent = '';
+      }else{
+        els.heroBox.classList.add('empty');
+        els.heroBox.style.backgroundImage = 'none';
+        els.heroBox.textContent = '대표 이미지 없음';
       }
-      els.thumbStrip.classList.add('show');
-      els.thumbLines.innerHTML = state.thumbs.map(function(v){
-        return '<div class="thumb-line">' + esc(v) + '</div>';
+
+      const renderedSections = (state.sectionBlocks || []).map(function(sec){
+        const secKey = text(sec.sectionKey);
+        const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
+        const images = uniqueAssets(imgMap.bySection[secKey] || []);
+        const imageHtml = images.map(function(asset, idx){ return renderFigure(asset, secKey, idx, images.length); }).join('');
+        return '<section class="block">'
+          + '<div class="section-kicker">' + esc(getSectionLabelByKey(secKey)) + '</div>'
+          + '<h2 class="section-title editable" contenteditable="plaintext-only" spellcheck="false" data-section-heading="' + esc(secKey) + '">' + esc(text(sec.heading) || '섹션') + '</h2>'
+          + (imageHtml ? '<div class="section-image-stack">' + imageHtml + '</div>' : '')
+          + '<div class="paragraphs">' + renderParagraphList(paras, secKey) + '</div>'
+          + '</section>';
       }).join('');
+
+      els.articleSections.innerHTML = renderedSections;
+      renderBasicInfoSlider(row);
     }
+
     function renderTags(){
       if(!state.tags.length){
         els.tagWrap.innerHTML = '';
@@ -403,48 +993,60 @@
         return '<span class="tag">' + esc(v) + '</span>';
       }).join('');
     }
-    function renderSections(row){
-      const imgMap = getSectionImagesMap(row);
-      const renderedSections = (state.sectionBlocks || []).map(function(sec){
-        const secKey = text(sec.sectionKey);
-        const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
-        const images = uniqueAssets(imgMap.bySection[secKey] || []);
-        const imageHtml = images.map(function(asset, idx){ return renderFigure(asset, secKey, idx); }).join('');
-        const paragraphHtml = renderParagraphList(paras);
-        return '<section class="block">'
-          + '<div class="section-kicker">' + esc(getSectionLabelByKey(secKey)) + '</div>'
-          + '<h2 class="section-title">' + esc(text(sec.heading) || '섹션') + '</h2>'
-          + (imageHtml ? '<div class="section-image-stack">' + imageHtml + '</div>' : '')
-          + (paragraphHtml ? '<div class="paragraphs">' + paragraphHtml + '</div>' : '')
-          + '</section>';
+
+    function renderThumbs(){
+      if(!state.thumbs.length){
+        els.thumbStrip.style.display = 'none';
+        els.thumbLines.innerHTML = '';
+        return;
+      }
+      els.thumbStrip.style.display = 'block';
+      els.thumbLines.innerHTML = state.thumbs.map(function(v){
+        return '<div class="thumb-line">' + esc(v) + '</div>';
       }).join('');
-      els.articleSections.innerHTML = renderedSections;
     }
+
     function renderAll(row){
       state.row = row;
+      state.original = JSON.parse(JSON.stringify(row));
       state.tags = parseJson(row.hashtagsJson || '[]', []).map(text).filter(Boolean);
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
       state.sectionBlocks = buildSectionBlocksFromRow(row);
-      state.imageLayout = hasMeaningfulImageLayout(row.imageLayoutJson) ? normalizeImageLayout(row.imageLayoutJson) : buildInitialImageLayoutFromRow(row);
+      state.imageLayout = hasMeaningfulImageLayout(row.imageLayoutJson)
+        ? normalizeImageLayout(row.imageLayoutJson)
+        : buildInitialImageLayoutFromRow(row);
+
+      els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
+      els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');
+      els.metaStatus.textContent = '상태 ' + ([text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '-');
+      els.metaStyle.textContent = '스타일 ' + (text(row.styleType) || '-');
+      els.footerNote.textContent = 'blogId: ' + (text(row.blogId) || state.blogId);
+
+      els.titleDisplay.textContent = text(row.draftTitle || parseJson(row.listingSnapshotJson || '{}', {}).title || '제목을 입력하세요.');
+      els.titleDisplay.classList.toggle('is-empty', !text(els.titleDisplay.textContent));
 
       const firstLead = (((state.sectionBlocks || [])[0] || {}).paragraphs || [])[0] || '';
       const lead = formatDisplayText(firstLead);
-      els.leadDisplay.textContent = lead || '';
+      els.leadDisplay.textContent = lead || '도입 문구를 입력하세요.';
       els.leadDisplay.classList.toggle('is-empty', !text(lead));
 
       els.ctaLabelDisplay.textContent = text(state.cta.label) || '문의하기';
       els.ctaTextDisplay.textContent = text(row.ctaText || state.cta.text) || '문의 문구를 입력하세요.';
+      els.ctaTextDisplay.classList.toggle('is-empty', !text(row.ctaText || state.cta.text));
 
-      renderSections(row);
-      renderBasicInfoSlider(row);
+      renderImages(row);
       renderThumbs();
       renderTags();
-      els.loadingText.style.display = 'none';
     }
+
     function buildMinimalRow(){
       return {
         blogId: state.blogId,
+        listingNumber: '',
+        status: 'editing',
+        subStatus: 'draft_generated',
+        draftTitle: '',
         sectionStructureJson: '[]',
         hashtagsJson: '[]',
         thumbnailTextJson: '[]',
@@ -452,33 +1054,397 @@
         ctaText: '',
         infoImageFilesJson: '[]',
         assetSnapshotJson: '[]',
-        heroImageUrl: ''
+        heroImageUrl: '',
+        styleType: text(getParam('style'))
       };
     }
+
     function loadDraft(){
       state.blogId = text(getParam('blogId'));
       if(!state.blogId){
         renderAll(buildMinimalRow());
+        showToast('blogId 없이 열렸습니다');
         return;
       }
+      setLoading(true, '초안 불러오는 중');
       fetchPostJson({ action:'getBlogDraftDetail', blogId: state.blogId })
         .then(function(data){
           const row = data && (data.row || data.blog || data.item);
           if(!row) throw new Error('초안 데이터 없음');
           renderAll(row);
+          showToast('블로그 초안을 불러왔습니다');
         })
         .catch(function(err){
           console.error(err);
           renderAll(buildMinimalRow());
-          els.loadingText.textContent = '복사용 본문 로드 실패';
-          els.loadingText.style.display = 'flex';
+          showToast('서버 초안 로드 실패');
+        })
+        .finally(function(){
+          setLoading(false);
         });
     }
 
-    els.brandToggleBtn.addEventListener('click', function(){
+    function buildPatch(){
+      const sectionBlocks = serializeSectionBlocksForSave();
+      return {
+        draftTitle: text(els.titleDisplay.textContent),
+        seoTitle: text(els.titleDisplay.textContent),
+        bodyText: sectionBlocksToBodyTextForSave(sectionBlocks),
+        bodyHtml: sectionBlocksToBodyHtmlForSave(sectionBlocks),
+        paragraphTextJson: sectionBlocksToParagraphTextJsonForSave(sectionBlocks),
+        sectionStructureJson: sectionBlocks,
+        imageLayoutJson: JSON.stringify(normalizeImageLayout(state.imageLayout || {})),
+        hashtagsJson: state.tags,
+        thumbnailTextJson: state.thumbs,
+        ctaText: text(els.ctaTextDisplay.textContent),
+        ctaJson: {
+          label: text(els.ctaLabelDisplay.textContent),
+          text: text(els.ctaTextDisplay.textContent)
+        }
+      };
+    }
+
+    function buildSaveRequestPayload(){
+      return {
+        action:'saveBlogEditorDraft',
+        blogId: text(state.blogId),
+        patch: buildPatch()
+      };
+    }
+
+    function saveDraftCore(showDoneToast){
+      const requestPayload = buildSaveRequestPayload();
+      return fetchPostJson(requestPayload).then(function(data){
+        if(!data || data.ok === false) throw new Error((data && (data.message || data.error)) || '임시저장 실패');
+        if(state.row){
+          state.row.imageLayoutJson = requestPayload.patch.imageLayoutJson;
+        }
+        if(showDoneToast){
+          els.statusChip.textContent = '저장완료';
+          showToast('임시저장 완료');
+        }
+        return data;
+      });
+    }
+
+    function saveDraft(){
+      if(!state.blogId){
+        showToast('blogId가 없습니다');
+        return;
+      }
+      setLoading(true, '임시저장 중');
+      saveDraftCore(true)
+        .catch(function(err){
+          console.error(err);
+          showToast('임시저장 실패');
+        })
+        .finally(function(){
+          setLoading(false);
+        });
+    }
+
+    function openPublishFlow(){
+      openPublishModal();
+    }
+
+    function submitPublishRequest(){
+      if(!state.blogId){
+        showToast('blogId가 없습니다');
+        return;
+      }
+
+      const payload = buildPublishRequestPayload();
+
+      if(!payload.naverId){
+        showToast('네이버 아이디를 입력하세요');
+        return;
+      }
+      if(!payload.naverPassword){
+        showToast('네이버 비밀번호를 입력하세요');
+        return;
+      }
+      if(payload.publishMode === 'scheduled' && !payload.scheduledAt){
+        showToast('예약 날짜와 시간을 선택하세요');
+        return;
+      }
+
+      setLoading(true, payload.publishMode === 'scheduled' ? '예약발행 저장 중' : '즉시발행 저장 중');
+
+      saveDraftCore(false)
+        .then(function(){
+          return fetchPostJson(payload);
+        })
+        .then(function(data){
+          if(!data || data.ok === false){
+            throw new Error((data && (data.message || data.error)) || '발행 요청 저장 실패');
+          }
+
+          els.statusChip.textContent = payload.publishMode === 'scheduled' ? '예약발행중' : '발행대기';
+          closePublishModal();
+          showToast(payload.publishMode === 'scheduled' ? '예약발행 저장 완료' : '즉시발행 요청 저장 완료');
+        })
+        .catch(function(err){
+          console.error(err);
+          showToast('발행 요청 저장 실패');
+        })
+        .finally(function(){
+          setLoading(false);
+        });
+    }
+
+    function startInline(el){
+      if(!el) return;
+      el.classList.add('is-editing');
+      el.setAttribute('contenteditable','plaintext-only');
+    }
+    function endInline(el){
+      if(!el) return;
+      el.classList.remove('is-editing');
+    }
+    function normalizeEditableText(el){
+      return text((el && el.innerText) || '').replace(/\u00A0/g,' ');
+    }
+
+
+
+    function moveImageInLayout(sectionKey, idx, direction){
+      const layout = normalizeImageLayout(state.imageLayout || {});
+      const order = getDynamicSectionOrder();
+      const currentKey = text(sectionKey);
+      const sectionIndex = order.indexOf(currentKey);
+      if(sectionIndex < 0) return;
+
+      layout.sections[currentKey] = Array.isArray(layout.sections[currentKey]) ? layout.sections[currentKey] : [];
+      const currentList = layout.sections[currentKey];
+      if(idx < 0 || idx >= currentList.length) return;
+
+      const movedAssetId = currentList[idx];
+      if(!movedAssetId) return;
+
+      if(direction === 'up'){
+        if(idx > 0){
+          const swap = currentList[idx - 1];
+          currentList[idx - 1] = movedAssetId;
+          currentList[idx] = swap;
+        }else if(sectionIndex > 0){
+          currentList.splice(idx, 1);
+          const prevKey = order[sectionIndex - 1];
+          layout.sections[prevKey] = Array.isArray(layout.sections[prevKey]) ? layout.sections[prevKey] : [];
+          layout.sections[prevKey].push(movedAssetId);
+        }
+      }else if(direction === 'down'){
+        if(idx < currentList.length - 1){
+          const swap = currentList[idx + 1];
+          currentList[idx + 1] = movedAssetId;
+          currentList[idx] = swap;
+        }else if(sectionIndex < order.length - 1){
+          currentList.splice(idx, 1);
+          const nextKey = order[sectionIndex + 1];
+          layout.sections[nextKey] = Array.isArray(layout.sections[nextKey]) ? layout.sections[nextKey] : [];
+          layout.sections[nextKey].unshift(movedAssetId);
+        }
+      }
+
+      state.imageLayout = layout;
+    }
+
+    function smoothFollowMovedFigure(sectionKey, idx){
+      setTimeout(function(){
+        try{
+          const selector = '.figure[data-section-key="' + String(sectionKey).replace(/"/g,'\"') + '"][data-idx="' + String(idx) + '"]';
+          const fig = document.querySelector(selector);
+          if(!fig) return;
+
+          const rect = fig.getBoundingClientRect();
+          const targetTop = Math.max(0, window.scrollY + rect.top - 90);
+          const startTop = window.scrollY;
+          const distance = targetTop - startTop;
+          const duration = 1100;
+
+          if(Math.abs(distance) < 2) return;
+
+          const startTime = performance.now();
+
+          function easeInOutCubic(t){
+            return t < 0.5
+              ? 4 * t * t * t
+              : 1 - Math.pow(-2 * t + 2, 3) / 2;
+          }
+
+          function step(now){
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = easeInOutCubic(progress);
+            window.scrollTo(0, startTop + distance * eased);
+
+            if(progress < 1){
+              requestAnimationFrame(step);
+            }
+          }
+
+          requestAnimationFrame(step);
+        }catch(_){ }
+      }, 40);
+    }
+
+    function bindInlineEditors(){
+      els.titleDisplay.addEventListener('click', function(){ startInline(els.titleDisplay); });
+      els.titleDisplay.addEventListener('blur', function(){
+        const v = normalizeEditableText(els.titleDisplay) || '제목을 입력하세요.';
+        els.titleDisplay.textContent = v;
+        endInline(els.titleDisplay);
+      });
+
+      els.leadDisplay.addEventListener('click', function(){ startInline(els.leadDisplay); });
+      els.leadDisplay.addEventListener('blur', function(){
+        const v = normalizeEditableText(els.leadDisplay);
+        const firstSec = (state.sectionBlocks || [])[0];
+        if(firstSec){
+          if(!Array.isArray(firstSec.paragraphs)) firstSec.paragraphs = [];
+          if(firstSec.paragraphs.length){
+            firstSec.paragraphs[0] = v;
+          }else if(v){
+            firstSec.paragraphs = [v];
+          }
+        }
+        els.leadDisplay.textContent = v || '도입 문구를 입력하세요.';
+        els.leadDisplay.classList.toggle('is-empty', !v);
+        renderImages(state.row || {});
+        endInline(els.leadDisplay);
+      });
+
+      els.ctaLabelDisplay.addEventListener('click', function(){ startInline(els.ctaLabelDisplay); });
+      els.ctaLabelDisplay.addEventListener('blur', function(){
+        const v = normalizeEditableText(els.ctaLabelDisplay) || '문의하기';
+        els.ctaLabelDisplay.textContent = v;
+        endInline(els.ctaLabelDisplay);
+      });
+
+      els.ctaTextDisplay.addEventListener('click', function(){ startInline(els.ctaTextDisplay); });
+      els.ctaTextDisplay.addEventListener('blur', function(){
+        const v = normalizeEditableText(els.ctaTextDisplay);
+        els.ctaTextDisplay.textContent = v || '문의 문구를 입력하세요.';
+        els.ctaTextDisplay.classList.toggle('is-empty', !v);
+        endInline(els.ctaTextDisplay);
+      });
+
+      document.addEventListener('click', function(e){
+        const mv = e.target.closest('[data-move]');
+        if(mv){
+          const fig = mv.closest('.figure');
+          if(fig){
+            const currentSectionKey = fig.getAttribute('data-section-key');
+            const currentIdx = Number(fig.getAttribute('data-idx'));
+            const direction = mv.getAttribute('data-move');
+            if(!state.imageLayout || !hasMeaningfulImageLayout(state.imageLayout)){
+              state.imageLayout = buildInitialImageLayoutFromRow(state.row || {});
+            }
+            moveImageInLayout(currentSectionKey, currentIdx, direction);
+            if(state.row){
+              state.row.imageLayoutJson = JSON.stringify(state.imageLayout || {});
+            }
+            renderImages(state.row || {});
+            let nextSectionKey = currentSectionKey;
+            let nextIdx = currentIdx;
+            const sectionOrder = getDynamicSectionOrder();
+            const orderIdx = sectionOrder.indexOf(String(currentSectionKey));
+            const secArr = (((state.imageLayout || {}).sections || {})[currentSectionKey] || []);
+            if(direction === 'up'){
+              if(currentIdx > 0){
+                nextIdx = currentIdx - 1;
+              }else if(orderIdx > 0){
+                nextSectionKey = sectionOrder[orderIdx - 1];
+                nextIdx = ((((state.imageLayout || {}).sections || {})[nextSectionKey] || []).length - 1);
+              }else{
+                nextIdx = 0;
+              }
+            }else{
+              if(currentIdx < secArr.length){
+                nextIdx = Math.min(currentIdx + 1, ((((state.imageLayout || {}).sections || {})[currentSectionKey] || []).length - 1));
+              }
+              if(currentIdx >= secArr.length - 1 && orderIdx < sectionOrder.length - 1){
+                nextSectionKey = sectionOrder[orderIdx + 1];
+                nextIdx = 0;
+              }
+            }
+            smoothFollowMovedFigure(nextSectionKey, nextIdx);
+          }
+          return;
+        }
+        const h = e.target.closest('.section-title.editable');
+        if(h){
+          startInline(h);
+          return;
+        }
+        const p = e.target.closest('.paragraph.editable');
+        if(p){
+          startInline(p);
+        }
+      });
+
+      document.addEventListener('blur', function(e){
+        const h = e.target.closest && e.target.closest('.section-title.editable');
+        if(h){
+          const key = text(h.getAttribute('data-section-heading'));
+          const value = normalizeEditableText(h) || '섹션';
+          const sec = (state.sectionBlocks || []).find(function(v){ return text(v.sectionKey) === key; });
+          if(sec) sec.heading = value;
+          h.textContent = value;
+          endInline(h);
+          return;
+        }
+
+        const p = e.target.closest && e.target.closest('.paragraph.editable');
+        if(!p) return;
+        const key = text(p.getAttribute('data-edit-key'));
+        const idx = Number(p.getAttribute('data-edit-idx'));
+        const value = normalizeEditableText(p);
+        const sec = (state.sectionBlocks || []).find(function(v){ return text(v.sectionKey) === key; });
+        if(sec){
+          if(!Array.isArray(sec.paragraphs)) sec.paragraphs = [];
+          sec.paragraphs[idx] = value;
+        }
+        p.textContent = value || '내용을 입력하세요.';
+        p.classList.toggle('is-empty', !value);
+        endInline(p);
+      }, true);
+
+      els.tagEditBtn.addEventListener('click', function(){
+        const joined = prompt('해시태그를 쉼표로 구분해서 입력하세요.', state.tags.join(', '));
+        if(joined == null) return;
+        state.tags = joined.split(',').map(text).filter(Boolean).map(function(v){
+          return v.startsWith('#') ? v : ('#' + v);
+        });
+        renderTags();
+      });
+    }
+
+    els.copyBackBtn.addEventListener('click', function(){
       history.back();
     });
+    els.launcherBtn.addEventListener('click', function(){
+      location.href = CONFIG.launcherUrl;
+    });
+    els.dashboardBtn.addEventListener('click', function(){
+      location.href = CONFIG.dashboardUrl;
+    });
+    els.saveBtn.addEventListener('click', saveDraft);
+    els.publishBtn.addEventListener('click', openPublishFlow);
 
+    els.publishCloseBtn.addEventListener('click', closePublishModal);
+    els.publishCancelBtn.addEventListener('click', closePublishModal);
+    els.publishNowBtn.addEventListener('click', function(){
+      state.publishMode = 'now';
+      syncPublishModeUi();
+    });
+    els.publishScheduledBtn.addEventListener('click', function(){
+      state.publishMode = 'scheduled';
+      syncPublishModeUi();
+    });
+    els.publishSubmitBtn.addEventListener('click', submitPublishRequest);
+
+    bindInlineEditors();
+    syncPublishModeUi();
     loadDraft();
   </script>
 </body>

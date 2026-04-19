@@ -90,6 +90,7 @@
     }
     .status.draft{background:#eff6ff;border-color:#cfe2ff;color:#2563eb}
     .status.scheduled{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
+    .status.publishing{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
     .status.published{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
 
     .listing{font-size:13px;color:#7b8491;font-weight:900;margin-bottom:8px}
@@ -222,18 +223,51 @@
       return y + '-' + m + '-' + day + ' ' + hh + ':' + mm;
     }
 
+    function getDashboardDisplayStatus(item){
+      const publishedUrl = text(item && item.publishedUrl);
+      const publishedAt = text(item && item.publishedAt);
+      const scheduledAt = text(item && item.scheduledAt);
+      const status = text(item && item.status);
+      const subStatus = text(item && item.subStatus);
+      const displayStatus = text(item && item.displayStatus);
+
+      if (publishedUrl || publishedAt || displayStatus === '발행완료') {
+        return '발행완료';
+      }
+
+      if (scheduledAt || displayStatus === '예약발행중') {
+        return '예약발행중';
+      }
+
+      if (
+        status === 'ready' ||
+        status === 'publishing' ||
+        status === 'publish_pending' ||
+        status === 'publish_requested' ||
+        subStatus === 'ready_to_publish' ||
+        subStatus === 'publishing' ||
+        subStatus === 'publish_waiting' ||
+        subStatus === 'publish_requested'
+      ) {
+        return '발행중';
+      }
+
+      return '임시저장중';
+    }
+
     function getStatusClass(status){
       if(status === '발행완료') return 'published';
       if(status === '예약발행중') return 'scheduled';
+      if(status === '발행중') return 'publishing';
       return 'draft';
     }
 
     function getStatusText(item){
-      return text(item.displayStatus);
+      return getDashboardDisplayStatus(item);
     }
 
     function renderAction(item){
-      const status = text(item.displayStatus);
+      const status = getDashboardDisplayStatus(item);
 
       if(status === '발행완료'){
         if(text(item.publishedUrl)){
@@ -245,6 +279,10 @@
       if(status === '예약발행중'){
         const when = formatScheduledAt(item.scheduledAt);
         return '<div class="btn disabled">' + esc(when ? ('예약중 · ' + when) : '예약중') + '</div>';
+      }
+
+      if(status === '발행중'){
+        return '<div class="btn disabled">발행중</div>';
       }
 
       return '<a class="btn primary" href="' + esc(item.editorUrl) + '" target="_blank" rel="noopener noreferrer">검수하기</a>';

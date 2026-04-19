@@ -303,16 +303,6 @@
     #publishModal{
       display:none !important;
     }
-    .copy-gap{
-      color:#ffffff !important;
-      font-size:18px !important;
-      line-height:1.9 !important;
-      font-weight:700 !important;
-      margin:0 !important;
-      white-space:pre-line !important;
-      user-select:none;
-      pointer-events:none;
-    }
 
     @media (max-width: 900px){
       .figure img{max-width:100%}
@@ -956,14 +946,14 @@ function getSectionImagesMap(row){
       }).join('');
     }
 
-    function buildInvisibleGapHtml(){
+    function buildCopyGapHtml(){
       return ''
-        + '<p class="copy-gap">☆</p>'
-        + '<p class="copy-gap">매</p>'
-        + '<p class="copy-gap">슬</p>'
-        + '<p class="copy-gap">로</p>'
-        + '<p class="copy-gap">우</p>'
-        + '<p class="copy-gap">☆</p>';
+        + '<p style="margin:0;color:#ffffff;">☆</p>'
+        + '<p style="margin:0;color:#ffffff;">매</p>'
+        + '<p style="margin:0;color:#ffffff;">슬</p>'
+        + '<p style="margin:0;color:#ffffff;">로</p>'
+        + '<p style="margin:0;color:#ffffff;">우</p>'
+        + '<p style="margin:0;color:#ffffff;">☆</p>';
     }
 
 
@@ -992,7 +982,7 @@ function getSectionImagesMap(row){
           + '<h2 class="section-title editable" contenteditable="plaintext-only" spellcheck="false" data-section-heading="' + esc(secKey) + '">' + esc(text(sec.heading) || '섹션') + '</h2>'
           + (imageHtml ? '<div class="section-image-stack">' + imageHtml + '</div>' : '')
           + '<div class="paragraphs">' + renderParagraphList(paras, secKey) + '</div>'
-          + (!isLast ? buildInvisibleGapHtml() : '')
+          + (!isLast ? buildCopyGapHtml() : '')
           + '</section>';
       }).join('');
 

@@ -2775,6 +2775,44 @@ async function buildLookupGeneratedAssets(lookupResult){
         });
     }
 
+    function applySavedAssetFilesToAssets(savedAssetFiles){
+      var byId = {};
+      (savedAssetFiles || []).forEach(function(row){
+        var assetId = text(row && row.assetId);
+        if(assetId) byId[assetId] = row;
+      });
+
+      assets = (assets || []).map(function(asset){
+        var saved = byId[text(asset && asset.assetId)];
+        if(!saved) return asset;
+
+        var nextPreviewUrl = text(saved.previewUrl || saved.url || asset.previewUrl || '');
+        var nextOriginalUrl = text(saved.originalUrl || saved.url || nextPreviewUrl);
+        var nextFileId = text(saved.fileId || '');
+        var nextFileName = text(saved.fileName || '');
+        var nextMimeType = text(saved.mimeType || (asset && asset.mimeType) || '');
+
+        return Object.assign({}, asset, {
+          previewUrl: nextPreviewUrl,
+          originalUrl: nextOriginalUrl,
+          fileId: nextFileId,
+          fileName: nextFileName,
+          mimeType: nextMimeType,
+          source: Object.assign({}, (asset && asset.source && typeof asset.source === 'object') ? asset.source : {}, {
+            fileId: nextFileId,
+            fileName: nextFileName,
+            mimeType: nextMimeType,
+            url: nextOriginalUrl,
+            originalUrl: nextOriginalUrl,
+            previewUrl: nextPreviewUrl,
+            lightUrl: nextPreviewUrl,
+            thumbUrl: nextPreviewUrl,
+            heroUrl: nextPreviewUrl
+          })
+        });
+      });
+    }
+
     function buildCreateBlogDraftPayload(){
       if(!selectedListing){
         throw new Error('먼저 매물을 선택해주세요.');
@@ -2930,6 +2968,9 @@ async function buildLookupGeneratedAssets(lookupResult){
           if(!blogId){
             throw new Error('blogId 없음');
           }
+
+          applySavedAssetFilesToAssets((data && data.savedAssetFiles) || []);
+          renderAssets();
 
           els.loadingText.textContent = 'GPT 호출 중';
 

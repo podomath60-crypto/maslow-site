@@ -303,11 +303,13 @@
     #publishModal{
       display:none !important;
     }
-    .block{
-      margin:0 0 110px !important;
-    }
-    .block:last-child{
-      margin-bottom:0 !important;
+    .copy-gap{
+      color:#ffffff !important;
+      font-size:4px !important;
+      line-height:1.65 !important;
+      margin:0 !important;
+      user-select:none;
+      pointer-events:none;
     }
 
     @media (max-width: 900px){
@@ -952,6 +954,15 @@ function getSectionImagesMap(row){
       }).join('');
     }
 
+    function buildInvisibleGapHtml(){
+      return ''
+        + '<p class="copy-gap">.</p>'
+        + '<p class="copy-gap">.</p>'
+        + '<p class="copy-gap">.</p>'
+        + '<p class="copy-gap">.</p>'
+        + '<p class="copy-gap">.</p>';
+    }
+
 
     function renderImages(row){
       const imgMap = getSectionImagesMap(row);
@@ -967,16 +978,18 @@ function getSectionImagesMap(row){
         els.heroBox.textContent = '대표 이미지 없음';
       }
 
-      const renderedSections = (state.sectionBlocks || []).map(function(sec){
+      const renderedSections = (state.sectionBlocks || []).map(function(sec, secIdx, secArr){
         const secKey = text(sec.sectionKey);
         const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
         const images = uniqueAssets(imgMap.bySection[secKey] || []);
         const imageHtml = images.map(function(asset, idx){ return renderFigure(asset, secKey, idx, images.length); }).join('');
+        const isLast = secIdx === secArr.length - 1;
         return '<section class="block">'
           + '<div class="section-kicker">' + esc(getSectionLabelByKey(secKey)) + '</div>'
           + '<h2 class="section-title editable" contenteditable="plaintext-only" spellcheck="false" data-section-heading="' + esc(secKey) + '">' + esc(text(sec.heading) || '섹션') + '</h2>'
           + (imageHtml ? '<div class="section-image-stack">' + imageHtml + '</div>' : '')
           + '<div class="paragraphs">' + renderParagraphList(paras, secKey) + '</div>'
+          + (!isLast ? buildInvisibleGapHtml() : '')
           + '</section>';
       }).join('');
 

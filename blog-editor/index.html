@@ -1152,6 +1152,48 @@ function getSectionImagesMap(row){
     }
 
 
+
+    function moveImageInLayout(sectionKey, idx, direction){
+      const layout = normalizeImageLayout(state.imageLayout || {});
+      const order = getDynamicSectionOrder();
+      const currentKey = text(sectionKey);
+      const sectionIndex = order.indexOf(currentKey);
+      if(sectionIndex < 0) return;
+
+      layout.sections[currentKey] = Array.isArray(layout.sections[currentKey]) ? layout.sections[currentKey] : [];
+      const currentList = layout.sections[currentKey];
+      if(idx < 0 || idx >= currentList.length) return;
+
+      const movedAssetId = currentList[idx];
+      if(!movedAssetId) return;
+
+      if(direction === 'up'){
+        if(idx > 0){
+          const swap = currentList[idx - 1];
+          currentList[idx - 1] = movedAssetId;
+          currentList[idx] = swap;
+        }else if(sectionIndex > 0){
+          currentList.splice(idx, 1);
+          const prevKey = order[sectionIndex - 1];
+          layout.sections[prevKey] = Array.isArray(layout.sections[prevKey]) ? layout.sections[prevKey] : [];
+          layout.sections[prevKey].push(movedAssetId);
+        }
+      }else if(direction === 'down'){
+        if(idx < currentList.length - 1){
+          const swap = currentList[idx + 1];
+          currentList[idx + 1] = movedAssetId;
+          currentList[idx] = swap;
+        }else if(sectionIndex < order.length - 1){
+          currentList.splice(idx, 1);
+          const nextKey = order[sectionIndex + 1];
+          layout.sections[nextKey] = Array.isArray(layout.sections[nextKey]) ? layout.sections[nextKey] : [];
+          layout.sections[nextKey].unshift(movedAssetId);
+        }
+      }
+
+      state.imageLayout = layout;
+    }
+
     function smoothFollowMovedFigure(sectionKey, idx){
       setTimeout(function(){
         try{

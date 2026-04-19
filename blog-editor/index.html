@@ -285,6 +285,7 @@
         <div class="chip" id="statusChip">초안 로딩중</div>
       </div>
       <div class="top-right">
+        <button type="button" class="btn" id="ctrlaBtn">CtrlA</button>
         <button type="button" class="btn" id="saveBtn">임시저장</button>
         <button type="button" class="btn primary" id="publishBtn">발행</button>
       </div>
@@ -417,7 +418,8 @@
     const CONFIG = {
       adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec',
       launcherUrl: '/naverbloginput',
-      dashboardUrl: '/naverblog-dashboard'
+      dashboardUrl: '/naverblog-dashboard',
+      ctrlaUrl: '/ctrla'
     };
 
     const state = {
@@ -435,6 +437,7 @@
     const els = {
       launcherBtn: document.getElementById('launcherBtn'),
       dashboardBtn: document.getElementById('dashboardBtn'),
+      ctrlaBtn: document.getElementById('ctrlaBtn'),
       saveBtn: document.getElementById('saveBtn'),
       publishBtn: document.getElementById('publishBtn'),
       statusChip: document.getElementById('statusChip'),
@@ -1370,6 +1373,17 @@ function getSectionImagesMap(row){
     });
     els.dashboardBtn.addEventListener('click', function(){
       location.href = CONFIG.dashboardUrl;
+    });
+    els.ctrlaBtn.addEventListener('click', function(){
+      const qs = new URLSearchParams(location.search);
+      const blogId = text(qs.get('blogId'));
+      const style = text(qs.get('style'));
+      const direction = text(qs.get('direction'));
+      const next = new URL(CONFIG.ctrlaUrl, location.origin);
+      if(blogId) next.searchParams.set('blogId', blogId);
+      if(style) next.searchParams.set('style', style);
+      if(direction) next.searchParams.set('direction', direction);
+      location.href = next.toString();
     });
     els.saveBtn.addEventListener('click', saveDraft);
     els.publishBtn.addEventListener('click', openPublishFlow);

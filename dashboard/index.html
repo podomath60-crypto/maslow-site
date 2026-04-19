@@ -49,6 +49,24 @@
       justify-content:flex-end;
       flex:1 1 auto;
       min-width:0;
+      gap:10px;
+    }
+    .topbar-publish-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:42px;
+      padding:0 14px;
+      border-radius:999px;
+      border:1px solid #cfe2ff;
+      background:#eef5ff;
+      color:#0f7cff;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-0.03em;
+      white-space:nowrap;
+      box-shadow:var(--shadow);
+      flex:0 0 auto;
     }
     .topbar-greeting{
       display:inline-flex;
@@ -608,6 +626,11 @@
       .panel-card{min-height:114px;padding:18px 16px 16px;border-radius:22px}
       .panel-title{font-size:24px}
       .topbar-greeting{font-size:13px}
+      .topbar-publish-btn{
+        min-height:38px;
+        padding:0 12px;
+        font-size:13px;
+      }
       .brand-icons{gap:8px}
       .brand-icon-link{
         width:38px;
@@ -1320,6 +1343,7 @@
           </div>
         </div>
         <div class="topbar-right">
+          <button type="button" id="goNaverBlogLauncherBtn" class="topbar-publish-btn">N발행하기</button>
           <div id="topbarGreeting" class="topbar-greeting"></div>
         </div>
       </div>
@@ -1534,6 +1558,7 @@
     const CONFIG = {
       adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec',
       adminEditUrl: '/admin',
+      launcherUrl: '/naverbloginput',
       listingsUrl: '/listings',
       listingLookupUrl: 'https://lookout-zeta.vercel.app',
       authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
@@ -1615,6 +1640,7 @@
     const toolbarMeta = document.getElementById('toolbarMeta');
     const searchInput = document.getElementById('searchInput');
     const topbarGreeting = document.getElementById('topbarGreeting');
+    const goNaverBlogLauncherBtn = document.getElementById('goNaverBlogLauncherBtn');
     const lockOverlay = document.getElementById('lockOverlay');
     const lockInput = document.getElementById('lockInput');
     const lockBtn = document.getElementById('lockBtn');
@@ -1630,6 +1656,11 @@
       location.href = CONFIG.adminEditUrl;
     });
 
+    if(goNaverBlogLauncherBtn){
+      goNaverBlogLauncherBtn.addEventListener('click', function(){
+        location.href = CONFIG.launcherUrl;
+      });
+    }
 
     let calendarCurrentMonth = '';
     let calendarSelectedDateKey = '';
@@ -2676,7 +2707,11 @@
         channelNaverBlog: text(raw.channelNaverBlog),
         channelHanbang: text(raw.channelHanbang),
         channelKakaoChannel: text(raw.channelKakaoChannel),
-        channelOwnSite: text(raw.channelOwnSite)
+        channelOwnSite: text(raw.channelOwnSite),
+
+        blogId: text(raw.blogId),
+        blogStatus: text(raw.blogStatus || raw.statusBlog || raw.blog_state || raw.publishStatus || raw.blogPublishStatus),
+        blogSubStatus: text(raw.blogSubStatus || raw.subStatusBlog || raw.blog_sub_status || raw.publishSubStatus || raw.blogPublishSubStatus)
       };
     }
 
@@ -3355,8 +3390,36 @@
       window.setTimeout(stopLoadingOverlay, 900);
     };
 
+    function isBlogPublishCompleted(item){
+      if(!item) return false;
+      const joined = [
+        text(item.blogStatus),
+        text(item.blogSubStatus)
+      ].join(' ').toLowerCase();
+      if(!joined) return false;
+      return [
+        '발행완료',
+        'published',
+        'publish_completed',
+        'publish_complete',
+        'completed'
+      ].some(function(token){
+        return joined.indexOf(token.toLowerCase()) > -1;
+      });
+    }
+
+    function canEnterBlogEditor(item){
+      return !isBlogPublishCompleted(item);
+    }
+
     window.editItem = function(listingNumber){
-      location.href = CONFIG.adminEditUrl + '?listingNumber=' + encodeURIComponent(listingNumber);
+      const decodedListingNumber = decodeURIComponent(String(listingNumber || ''));
+      const item = getItemByListingNumber(decodedListingNumber);
+      if(item && !canEnterBlogEditor(item)){
+        alert('발행완료 상태는 에디터에 들어갈 수 없습니다.');
+        return;
+      }
+      location.href = CONFIG.adminEditUrl + '?listingNumber=' + encodeURIComponent(decodedListingNumber);
     };
 
     window.markVisible = function(listingNumber){

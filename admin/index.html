@@ -5291,16 +5291,51 @@
       });
       return urls;
     }
-    function buildInfoRows(scopeSelector){
+    function extractRowValue(node){
+      if(!node) return '';
+      var parts = [];
+      var editableNodes = node.querySelectorAll('[contenteditable="true"]');
+      editableNodes.forEach(function(el){
+        var t = textOf(el);
+        if(t) parts.push(t);
+      });
+      var inputs = node.querySelectorAll('input, textarea, select');
+      inputs.forEach(function(el){
+        var v = String(el.value || '').trim();
+        if(v) parts.push(v + (el.dataset && el.dataset.unit === 'm2' ? '㎡' : (el.dataset && el.dataset.unit === 'pyeong' ? '평' : '')));
+      });
+      var chipRow = node.querySelector('.type-chip.active');
+      if(chipRow){
+        var chipText = textOf(chipRow);
+        if(chipText) parts.push(chipText);
+      }
+      if(!parts.length){
+        var clone = node.cloneNode(true);
+        clone.querySelectorAll('button, input, textarea, select').forEach(function(el){ el.remove(); });
+        var t = textOf(clone);
+        if(t) parts.push(t);
+      }
+      return parts.filter(function(v, idx, arr){ return v && arr.indexOf(v) === idx; }).join(' / ');
+    }
+
+    function findSectorByTitle(titleText){
+      var found = null;
+      document.querySelectorAll('.property-spec-sector-title').forEach(function(el){
+        if(!found && textOf(el) === titleText) found = el;
+      });
+      return found;
+    }
+
+    function buildInfoRowsByTitle(titleText){
       var rows = [];
-      var sector = document.querySelector(scopeSelector);
+      var sector = findSectorByTitle(titleText);
       if(!sector) return rows;
       var node = sector.nextElementSibling;
       while(node){
         if(node.classList && node.classList.contains('property-spec-sector-title')) break;
         if(node.classList && node.classList.contains('property-spec-row')){
           var label = textOf(node.querySelector('.property-spec-label'));
-          var value = textOf(node.querySelector('.property-spec-value'));
+          var value = extractRowValue(node.querySelector('.property-spec-value'));
           if(label || value) rows.push({label:label, value:value});
         }
         node = node.nextElementSibling;
@@ -5390,16 +5425,15 @@
       if(!page) return;
       var photos = getPhotoUrls();
       var hero = photos[0] || '';
-      var thumbs = photos.slice(1, 11);
+      var thumbs = photos.slice(1, 6);
       var deal = textOf(document.getElementById('topDealChip')) || '매물';
       var title = textOf(document.querySelector('.property-detail-title'));
       var address = textOf(document.getElementById('topAddress'));
       var price = textOf(document.getElementById('topPrice'));
       var summary = [];
       document.querySelectorAll('.summary-editable').forEach(function(el){ var t = textOf(el); if(t) summary.push(t); });
-      var basic = buildInfoRows('.property-spec-sector-title');
-      var factoryTitleNodes = document.querySelectorAll('.property-spec-sector-title');
-      var factory = factoryTitleNodes.length > 1 ? buildInfoRows('.property-spec-sector-title:nth-of-type(2)') : [];
+      var basic = buildInfoRowsByTitle('기본정보');
+      var factory = buildInfoRowsByTitle('공장특화정보');
       var requester = buildRequesterRows();
       var memo = textOf(document.querySelector('.memo-body'));
       var note = textOf(document.querySelector('.property-detail-note'));
@@ -5413,7 +5447,7 @@
       page.innerHTML = ''+
       '<div class="pdf-brand">Maslow Korea</div>'+
       '<div class="pdf-top">'+
-        '<div class="pdf-hero">'+(hero ? '<img crossorigin="anonymous" src="'+hero.replace(/"/g,'&quot;')+'">' : '')+'</div>'+
+        '<div class="pdf-hero">'+(hero ? '<img src="'+hero.replace(/"/g,'&quot;')+'">' : '')+'</div>'+
         '<div class="pdf-topcard">'+
           '<div class="pdf-badge">'+htmlEscape(deal)+'</div>'+
           '<h1 class="pdf-title">'+htmlEscape(title || '제목 없음')+'</h1>'+
@@ -5425,7 +5459,7 @@
         (summary.length ? summary.map(function(s){ return '<div class="pdf-summary-item">✔ '+htmlEscape(s)+'</div>'; }).join('') : '<div class="pdf-summary-item">요약 없음</div>')+
       '</div>'+
       '<div class="pdf-photo-grid">'+
-        thumbs.map(function(src){ return '<div class="pdf-thumb"><img crossorigin="anonymous" src="'+src.replace(/"/g,'&quot;')+'"></div>'; }).join('')+
+        thumbs.map(function(src){ return '<div class="pdf-thumb"><img src="'+src.replace(/"/g,'&quot;')+'"></div>'; }).join('')+
       '</div>'+
       '<div class="pdf-sections">'+
         '<div class="pdf-card"><h3 class="pdf-card-title">기본정보</h3><div class="pdf-info-grid">'+rowsHtml(basic)+'</div></div>'+

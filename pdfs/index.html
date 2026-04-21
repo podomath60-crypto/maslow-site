@@ -1,321 +1,359 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>전체매물 PDF 만들기</title>
-  <style>
-    :root{
-      --line:#e5e7eb;
-      --muted:#6b7280;
-      --blue:#0f7cff;
-      --bg:#f3f5f8;
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:#111;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif}
-    button,input,select{font:inherit}
-    button{cursor:pointer}
-    .page{max-width:1100px;margin:0 auto;padding:20px}
-    .topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;background:#fff;border-bottom:1px solid var(--line);padding:16px;position:sticky;top:0;z-index:20}
-    .field{display:grid;gap:6px;min-width:220px}
-    .field label{font-size:12px;font-weight:800;color:#4b5563}
-    .field input{height:42px;border:1px solid #d8dee8;border-radius:12px;padding:0 12px;background:#fff}
-    .actions{display:flex;gap:8px;flex-wrap:wrap}
-    .btn{height:42px;border-radius:12px;border:1px solid #dce6f1;background:#fff;color:#111;padding:0 14px;font-weight:800}
-    .btn.primary{background:#111827;border-color:#111827;color:#fff}
-    .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff}
-    .hint{font-size:12px;color:#6b7280;padding:8px 2px 0}
-    .status{padding:12px 2px;font-size:13px;color:#374151}
-    .preview-wrap{padding:18px}
-    .pdf-doc{display:grid;gap:18px}
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>전체매물 PDF 만들기</title>
+<style>
+  :root{--line:#e5e7eb;--bg:#f3f6fa;--text:#111827;--muted:#6b7280;--blue:#0f7cff;}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 16px 40px;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .title{font-size:24px;font-weight:900;letter-spacing:-0.04em;margin:0;}
+  .muted{font-size:13px;color:var(--muted);line-height:1.5;}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .btn{min-height:42px;padding:0 16px;border-radius:12px;border:1px solid #dce6f1;background:#fff;color:#111827;font-size:14px;font-weight:900;cursor:pointer;}
+  .btn.primary{background:#111827;border-color:#111827;color:#fff;}
+  .btn:disabled{opacity:.55;cursor:default}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 10px 24px rgba(15,23,42,.05);}
+  .status{font-size:14px;font-weight:800;line-height:1.6;white-space:pre-wrap;}
+  .preview-shell{margin-top:14px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;}
+  .preview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff;}
+  .preview-scroll{max-height:72vh;overflow:auto;background:#eef2f7;padding:18px;}
 
-    .pdfPrintPage{width:794px;min-height:1123px;margin:0 auto;background:#fff;color:#111;padding:38px 22px 18px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;box-shadow:0 10px 30px rgba(15,23,42,.08)}
-    .pdf-brand{font-size:18px;font-weight:900;letter-spacing:-0.03em;margin:0 0 12px;}
-    .pdf-top-grid{display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:start;}
-    .pdf-hero{width:100%;height:112px;border-radius:14px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;}
-    .pdf-hero img{width:100%;height:100%;object-fit:cover;display:block;}
-    .pdf-chip{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 12px;border-radius:999px;background:#0f7cff;color:#fff;font-size:12px;font-weight:900;margin:0 0 6px;}
-    .pdf-title{font-size:22px;line-height:1.14;font-weight:900;letter-spacing:-0.05em;margin:0 0 5px;word-break:keep-all;}
-    .pdf-address{font-size:12px;line-height:1.4;color:#4b5563;margin:0 0 5px;word-break:keep-all;}
-    .pdf-price{font-size:18px;line-height:1.2;font-weight:900;color:#d62828;margin:0 0 6px;word-break:keep-all;}
-    .pdf-summary{display:grid;gap:3px;margin:0;}
-    .pdf-summary-item{font-size:11px;line-height:1.35;color:#1f2937;word-break:keep-all;}
-    .pdf-thumb-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:7px;}
-    .pdf-thumb{aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;}
-    .pdf-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-    .pdf-two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:9px;align-items:start;}
-    .pdf-section{border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;break-inside:avoid;page-break-inside:avoid;}
-    .pdf-section + .pdf-section{margin-top:9px;}
-    .pdf-section-title{background:#f8fafc;padding:7px 10px;font-size:12px;font-weight:900;letter-spacing:-0.03em;}
-    .pdf-kv{display:grid;grid-template-columns:84px 1fr;}
-    .pdf-kv-row{display:contents;}
-    .pdf-kv-label,.pdf-kv-value{padding:4px 7px;border-top:1px solid #eef2f7;font-size:10.5px;line-height:1.32;word-break:break-word;}
-    .pdf-kv-label{background:#fcfcfd;color:#6b7280;font-weight:700;}
-    .pdf-kv-value{color:#111827;font-weight:500;}
-    .pdf-factory-table{width:100%;border-collapse:collapse;table-layout:fixed;}
-    .pdf-factory-table th,.pdf-factory-table td{border-top:1px solid #eef2f7;padding:4px 6px;font-size:10px;line-height:1.3;vertical-align:top;word-break:break-word;}
-    .pdf-factory-table th{width:19%;background:#fcfcfd;color:#6b7280;font-weight:700;text-align:left;}
-    .pdf-factory-table td{width:31%;color:#111827;font-weight:500;}
-    .pdf-memo-box{padding:7px 8px;font-size:10.5px;line-height:1.36;white-space:pre-wrap;min-height:54px;word-break:break-word;}
+  .pdf-page{width:794px;min-height:1123px;margin:0 auto 18px;background:#fff;color:#111;padding:38px 22px 18px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;}
+  .pdf-page:last-child{margin-bottom:0}
+  .pdf-brand{font-size:18px;font-weight:900;letter-spacing:-0.03em;margin:0 0 12px;}
+  .pdf-top-grid{display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:start;}
+  .pdf-hero{width:100%;height:112px;border-radius:14px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;}
+  .pdf-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+  .pdf-chip{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 12px;border-radius:999px;background:#0f7cff;color:#fff;font-size:12px;font-weight:900;margin:0 0 6px;}
+  .pdf-title{font-size:22px;line-height:1.14;font-weight:900;letter-spacing:-0.05em;margin:0 0 5px;word-break:keep-all;}
+  .pdf-address{font-size:12px;line-height:1.4;color:#4b5563;margin:0 0 5px;word-break:keep-all;}
+  .pdf-price{font-size:18px;line-height:1.2;font-weight:900;color:#d62828;margin:0 0 6px;word-break:keep-all;}
+  .pdf-summary{display:grid;gap:3px;margin:0;}
+  .pdf-summary-item{font-size:11px;line-height:1.35;color:#1f2937;word-break:keep-all;}
+  .pdf-thumb-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:7px;}
+  .pdf-thumb{aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;}
+  .pdf-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .pdf-two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:9px;align-items:start;}
+  .pdf-section{border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;break-inside:avoid;}
+  .pdf-section + .pdf-section{margin-top:9px;}
+  .pdf-section-title{background:#f8fafc;padding:7px 10px;font-size:12px;font-weight:900;letter-spacing:-0.03em;}
+  .pdf-kv{display:grid;grid-template-columns:84px 1fr;}
+  .pdf-kv-row{display:contents;}
+  .pdf-kv-label,.pdf-kv-value{padding:4px 7px;border-top:1px solid #eef2f7;font-size:10.5px;line-height:1.32;word-break:break-word;}
+  .pdf-kv-label{background:#fcfcfd;color:#6b7280;font-weight:700;}
+  .pdf-kv-value{color:#111827;font-weight:500;}
+  .pdf-factory-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  .pdf-factory-table th,.pdf-factory-table td{border-top:1px solid #eef2f7;padding:4px 6px;font-size:10px;line-height:1.3;vertical-align:top;word-break:break-word;}
+  .pdf-factory-table th{width:19%;background:#fcfcfd;color:#6b7280;font-weight:700;text-align:left;}
+  .pdf-factory-table td{width:31%;color:#111827;font-weight:500;}
+  .pdf-memo-box{padding:7px 8px;font-size:10.5px;line-height:1.36;white-space:pre-wrap;min-height:54px;word-break:break-word;}
 
-    @media (max-width:860px){
-      .page{padding:0}
-      .topbar{position:static;border-radius:0}
-      .preview-wrap{padding:10px}
-      .pdfPrintPage{transform:scale(.72);transform-origin:top center;margin-bottom:-300px;box-shadow:none}
-      .pdf-top-grid{grid-template-columns:1fr}.pdf-hero{height:140px}.pdf-two-col{grid-template-columns:1fr}
-    }
-    @media print{
-      body{background:#fff}
-      .topbar,.status,.hint{display:none !important}
-      .preview-wrap{padding:0}
-      .pdf-doc{gap:0}
-      .pdfPrintPage{box-shadow:none;margin:0;page-break-after:always;break-after:page}
-      .pdfPrintPage:last-child{page-break-after:auto;break-after:auto}
-      @page{size:A4 portrait;margin:12mm 8mm 8mm;}
-    }
-  </style>
+  @media (max-width:860px){
+    .wrap{padding:18px 12px 28px;}
+    .title{font-size:20px;}
+    .preview-scroll{padding:10px;}
+    .pdf-page{transform:scale(.72);transform-origin:top center;margin-bottom:-300px;}
+  }
+</style>
 </head>
 <body>
-  <div class="page">
-    <div class="topbar">
-      <div class="field" style="flex:1 1 320px;">
-        <label>GAS URL</label>
-        <input id="gasUrlInput" type="text" placeholder="https://script.google.com/macros/s/.../exec">
-      </div>
-      <div class="actions">
-        <button class="btn" id="loadAllBtn">전체매물 만들기</button>
-        <button class="btn" id="loadSkBtn">상가팀 PDF</button>
-        <button class="btn" id="loadMkBtn">공장팀 PDF</button>
-        <button class="btn primary" id="printBtn">PDF 저장</button>
-      </div>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <h1 class="title">전체매물 PDF 만들기</h1>
+      <div class="muted">아까 단건 PDF 레이아웃 그대로 유지하고, 매물당 1페이지씩 이어붙여 저장합니다.</div>
     </div>
-    <div class="preview-wrap">
-      <div class="hint">아까 단건 PDF 페이지의 출력 레이아웃 그대로, 매물당 1페이지씩 붙이는 버전.</div>
-      <div class="status" id="statusText">대기중</div>
-      <div class="pdf-doc" id="pdfDoc"></div>
+    <div class="actions">
+      <button type="button" class="btn" id="buildAllBtn">전체매물 PDF</button>
+      <button type="button" class="btn" id="buildSkBtn">상가팀 PDF</button>
+      <button type="button" class="btn" id="buildMkBtn">공장팀 PDF</button>
+      <button type="button" class="btn primary" id="printBtn" disabled>PDF 저장</button>
     </div>
   </div>
 
-  <script>
-    (function(){
-      var statusEl = document.getElementById('statusText');
-      var docEl = document.getElementById('pdfDoc');
-      var gasInput = document.getElementById('gasUrlInput');
-      var STORAGE_KEY = 'maslow_bulk_pdf_gas_url';
-      gasInput.value = localStorage.getItem(STORAGE_KEY) || '';
-      gasInput.addEventListener('change', function(){ localStorage.setItem(STORAGE_KEY, gasInput.value.trim()); });
-      gasInput.addEventListener('blur', function(){ localStorage.setItem(STORAGE_KEY, gasInput.value.trim()); });
+  <div class="panel">
+    <div class="status" id="statusBox">준비됨</div>
+  </div>
 
-      function setStatus(msg){ statusEl.textContent = msg; }
-      function text(v){ return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
-      function htmlEscape(s){ return String(s||'').replace(/[&<>"']/g, function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]; }); }
-      function nl2br(s){ return htmlEscape(String(s||'')).replace(/\n/g,'<br>'); }
-      function cleanAddress(s){ return String(s||'').replace(/(^|\s)(검색|조회)(?=\s|$)/g, ' ').replace(/\s+/g,' ').trim(); }
-      function pick(obj){
-        for(var i=1;i<arguments.length;i++){
-          var key = arguments[i];
-          if(obj && obj[key] != null && String(obj[key]).trim() !== '') return String(obj[key]).trim();
-        }
-        return '';
+  <div class="preview-shell">
+    <div class="preview-head">
+      <strong style="font-size:16px;letter-spacing:-0.03em;">미리보기</strong>
+      <span class="muted" id="countText">0 page</span>
+    </div>
+    <div class="preview-scroll">
+      <div id="pagesRoot"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
+  var statusBox = document.getElementById('statusBox');
+  var countText = document.getElementById('countText');
+  var pagesRoot = document.getElementById('pagesRoot');
+  var printBtn = document.getElementById('printBtn');
+  var currentMeta = { mode: 'all', count: 0 };
+
+  function setStatus(text){ statusBox.textContent = text; }
+  function htmlEscape(v){ return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function nl2br(v){ return htmlEscape(v == null ? '' : v).replace(/\n/g,'<br>'); }
+  function safeText(v){ return String(v == null ? '' : v).trim(); }
+  function cleanAddress(v){ return safeText(v).replace(/\s*(검색|조회)\s*$/g,'').trim(); }
+  function parseJsonArray(v){ try{ var a = typeof v === 'string' ? JSON.parse(v || '[]') : v; return Array.isArray(a) ? a : []; }catch(e){ return []; } }
+  function fetchGas(payload){
+    return fetch(GAS_URL, {
+      method:'POST',
+      body: JSON.stringify(payload),
+      headers:{'Content-Type':'text/plain;charset=utf-8'}
+    }).then(function(r){ return r.json(); });
+  }
+  function teamOf(listingNumber){
+    var s = safeText(listingNumber).toUpperCase();
+    if(s.indexOf('SK') === 0) return 'sk';
+    if(s.indexOf('MK') === 0) return 'mk';
+    return 'other';
+  }
+  function formatMeasure(m2, py){
+    var a = safeText(m2), b = safeText(py), parts = [];
+    if(a) parts.push(a + '㎡');
+    if(b) parts.push(b + '평');
+    return parts.join(' / ');
+  }
+  function getDealType(item){
+    var deal = safeText(item.dealType);
+    if(deal === '매매' || deal === '임대') return deal;
+    var listing = safeText(item.listingNumber).toUpperCase();
+    if(listing.indexOf('SK') === 0 || listing.indexOf('MK') === 0) return deal || '';
+    return deal || '';
+  }
+  function getPriceText(item){
+    var deal = getDealType(item);
+    var sale = safeText(item.price || item.salePrice);
+    var deposit = safeText(item.deposit);
+    var monthly = safeText(item.monthlyRent);
+    var maintenance = safeText(item.maintenanceFee);
+    if(deal === '매매') return sale ? ('매매가 ' + sale) : '';
+    if(deal === '임대'){
+      var arr = [];
+      if(deposit || monthly) arr.push('보증금 ' + deposit + (monthly ? ' / 월세 ' + monthly : ''));
+      if(maintenance) arr.push('관리비 ' + maintenance);
+      return arr.join(' · ');
+    }
+    return sale || [deposit, monthly, maintenance].filter(Boolean).join(' / ');
+  }
+  function getImageUrls(item){
+    var photos = parseJsonArray(item.photoUrlsJson);
+    var urls = photos.map(function(p){
+      return safeText((p && (p.originalUrl || p.url || p.lightUrl || p.heroUrl)) || '');
+    }).filter(Boolean);
+    return { hero: urls[0] || '', thumbs: urls.slice(1, 6) };
+  }
+  function buildKv(rows, emptyText){
+    if(!rows.length) return '<div style="padding:10px 12px;font-size:12px;color:#6b7280;">'+ htmlEscape(emptyText || '표시할 내용이 없습니다.') +'</div>';
+    return '<div class="pdf-kv">' + rows.map(function(pair){
+      return '<div class="pdf-kv-row"><div class="pdf-kv-label">'+ htmlEscape(pair[0]) +'</div><div class="pdf-kv-value">'+ nl2br(pair[1]) +'</div></div>';
+    }).join('') + '</div>';
+  }
+  function buildFactoryTable(rows){
+    if(!rows.length) return '<div style="padding:10px 12px;font-size:12px;color:#6b7280;">공장특화정보가 없습니다.</div>';
+    var html = '<table class="pdf-factory-table"><tbody>';
+    for(var i=0;i<rows.length;i+=2){
+      var left = rows[i] || ['',''];
+      var right = rows[i+1] || ['',''];
+      html += '<tr>'
+        + '<th>'+ htmlEscape(left[0]) +'</th><td>'+ nl2br(left[1]) +'</td>'
+        + '<th>'+ htmlEscape(right[0]) +'</th><td>'+ nl2br(right[1]) +'</td>'
+        + '</tr>';
+    }
+    html += '</tbody></table>';
+    return html;
+  }
+  function basicRowsOf(item){
+    return [
+      ['소재지', cleanAddress(item.address)],
+      ['거래형태', getDealType(item)],
+      ['매매가 / 임대가', getPriceText(item)],
+      ['사용승인일', item.approvalDate],
+      ['대지면적', formatMeasure(item.landAreaM2, item.landAreaPy)],
+      ['건축면적', formatMeasure(item.buildingAreaM2, item.buildingAreaPy)],
+      ['연면적', formatMeasure(item.totalFloorAreaM2, item.totalFloorAreaPy)],
+      ['전용면적', formatMeasure(item.exclusiveAreaM2, item.exclusiveAreaPy)],
+      ['용도지역', item.zoning],
+      ['매물종류', item.propertyType],
+      ['건축물 구성', item.buildingComposition],
+      ['주차대수', item.parkingCount],
+      ['출입구 방향', item.entranceDirection],
+      ['입주가능일', item.moveInDate],
+      ['건물 층수', item.floorInfo],
+      ['화장실', item.restroomInfo],
+      ['관리비', item.maintenanceFee],
+      ['매물번호', item.listingNumber]
+    ].filter(function(row){ return safeText(row[1]); });
+  }
+  function factoryRowsOf(item){
+    return [
+      ['층고', item.ceilingHeight],
+      ['크레인', item.crane],
+      ['호이스트', item.hoist],
+      ['전력', item.powerCapacity],
+      ['주요 설비', item.mainFacilities],
+      ['추천 업종', item.recommendedUse],
+      ['업종 제한', item.restrictedUse],
+      ['진입로 폭', item.roadWidth],
+      ['도어폭', item.doorWidth],
+      ['대형차 진입', item.truckAccess],
+      ['상하차 가능', item.loadingAvailable],
+      ['사무동 포함', item.officeIncluded],
+      ['야드 크기', item.yardSize],
+      ['즉시 가동', item.readyToOperate]
+    ];
+  }
+  function requesterRowsOf(item){
+    return [
+      ['의뢰인명', item.requesterName],
+      ['연락처', item.requesterPhone],
+      ['의뢰 구분', item.requesterType],
+      ['비고', item.requesterNote]
+    ].filter(function(row){ return safeText(row[1]); });
+  }
+  function buildPageHtml(item){
+    var imgs = getImageUrls(item);
+    var thumbsHtml = imgs.thumbs.map(function(url){ return '<div class="pdf-thumb"><img src="'+ htmlEscape(url) +'" alt=""></div>'; }).join('');
+    var summaries = [item.summary1, item.summary2, item.summary3].map(safeText).filter(Boolean).slice(0,3);
+    return ''
+      + '<div class="pdf-page">'
+      + '<div class="pdf-brand">Maslow Korea</div>'
+      + '<div class="pdf-top-grid">'
+      + '  <div>'
+      + '    <div class="pdf-hero">' + (imgs.hero ? '<img src="'+ htmlEscape(imgs.hero) +'" alt="대표사진">' : '') + '</div>'
+      +      (thumbsHtml ? '<div class="pdf-thumb-grid">'+ thumbsHtml +'</div>' : '')
+      + '  </div>'
+      + '  <div>'
+      +      (getDealType(item) ? '<div class="pdf-chip">'+ htmlEscape(getDealType(item)) +'</div>' : '')
+      + '    <h1 class="pdf-title">'+ htmlEscape(safeText(item.title) || '제목 미입력') +'</h1>'
+      +      (cleanAddress(item.address) ? '<p class="pdf-address">'+ htmlEscape(cleanAddress(item.address)) +'</p>' : '')
+      +      (getPriceText(item) ? '<p class="pdf-price">'+ htmlEscape(getPriceText(item)) +'</p>' : '')
+      + '    <div class="pdf-summary">'
+      +        (summaries.length ? summaries.map(function(t){ return '<div class="pdf-summary-item">✔ '+ htmlEscape(t) +'</div>'; }).join('') : '<div class="pdf-summary-item">요약 없음</div>')
+      + '    </div>'
+      + '  </div>'
+      + '</div>'
+      + '<div class="pdf-two-col">'
+      + '  <div class="pdf-section"><div class="pdf-section-title">기본정보</div>'+ buildKv(basicRowsOf(item)) +'</div>'
+      + '  <div>'
+      + '    <div class="pdf-section"><div class="pdf-section-title">공장특화정보</div>'+ buildFactoryTable(factoryRowsOf(item)) +'</div>'
+      + '    <div class="pdf-section"><div class="pdf-section-title">의뢰인 정보</div>'+ buildKv(requesterRowsOf(item), '의뢰인 정보가 없습니다.') +'</div>'
+      + '  </div>'
+      + '</div>'
+      + '<div class="pdf-section"><div class="pdf-section-title">MEMO</div><div class="pdf-memo-box">'+ nl2br(item.memo || '') +'</div></div>'
+      + '</div>';
+  }
+  function waitForImages(doc, cb){
+    var imgs = Array.prototype.slice.call(doc.images || []);
+    if(!imgs.length){ cb(); return; }
+    var left = imgs.length; var done = false;
+    function finish(){ if(done) return; done = true; cb(); }
+    function check(){ left -= 1; if(left <= 0) finish(); }
+    imgs.forEach(function(img){
+      if(img.complete) return check();
+      img.addEventListener('load', check, {once:true});
+      img.addEventListener('error', check, {once:true});
+    });
+    setTimeout(finish, 5000);
+  }
+  function printCurrentPages(){
+    var html = pagesRoot.innerHTML;
+    if(!html){ return; }
+    var title = currentMeta.mode === 'sk' ? 'SK_매물_PDF' : currentMeta.mode === 'mk' ? 'MK_매물_PDF' : '전체매물_PDF';
+    var w = window.open('', '_blank');
+    if(!w){ alert('팝업이 차단되어 있습니다. 팝업 허용 후 다시 시도해주세요.'); return; }
+    var doc = w.document;
+    doc.open();
+    doc.write('<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>'+ htmlEscape(title) +'</title><style>'
+      + '@page{size:A4 portrait;margin:12mm 8mm 8mm;} html,body{margin:0;padding:0;background:#fff;color:#111;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;} '
+      + 'body{print-color-adjust:exact;-webkit-print-color-adjust:exact;} '
+      + '.pdf-page{width:auto;min-height:auto;background:#fff;color:#111;padding:0 0 0 0;box-sizing:border-box;break-after:page;page-break-after:always;} '
+      + '.pdf-page:last-child{break-after:auto;page-break-after:auto;} '
+      + '.pdf-brand{font-size:18px;font-weight:900;letter-spacing:-0.03em;margin:0 0 12px;} '
+      + '.pdf-top-grid{display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:start;} '
+      + '.pdf-hero{width:100%;height:112px;border-radius:14px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;} '
+      + '.pdf-hero img{width:100%;height:100%;object-fit:cover;display:block;} '
+      + '.pdf-chip{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 12px;border-radius:999px;background:#0f7cff;color:#fff;font-size:12px;font-weight:900;margin:0 0 6px;} '
+      + '.pdf-title{font-size:22px;line-height:1.14;font-weight:900;letter-spacing:-0.05em;margin:0 0 5px;word-break:keep-all;} '
+      + '.pdf-address{font-size:12px;line-height:1.4;color:#4b5563;margin:0 0 5px;word-break:keep-all;} '
+      + '.pdf-price{font-size:18px;line-height:1.2;font-weight:900;color:#d62828;margin:0 0 6px;word-break:keep-all;} '
+      + '.pdf-summary{display:grid;gap:3px;margin:0;} '
+      + '.pdf-summary-item{font-size:11px;line-height:1.35;color:#1f2937;word-break:keep-all;} '
+      + '.pdf-thumb-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:7px;} '
+      + '.pdf-thumb{aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;} '
+      + '.pdf-thumb img{width:100%;height:100%;object-fit:cover;display:block;} '
+      + '.pdf-two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:9px;align-items:start;} '
+      + '.pdf-section{border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;break-inside:avoid;} '
+      + '.pdf-section + .pdf-section{margin-top:9px;} '
+      + '.pdf-section-title{background:#f8fafc;padding:7px 10px;font-size:12px;font-weight:900;letter-spacing:-0.03em;} '
+      + '.pdf-kv{display:grid;grid-template-columns:84px 1fr;} '
+      + '.pdf-kv-row{display:contents;} '
+      + '.pdf-kv-label,.pdf-kv-value{padding:4px 7px;border-top:1px solid #eef2f7;font-size:10.5px;line-height:1.32;word-break:break-word;} '
+      + '.pdf-kv-label{background:#fcfcfd;color:#6b7280;font-weight:700;} '
+      + '.pdf-kv-value{color:#111827;font-weight:500;} '
+      + '.pdf-factory-table{width:100%;border-collapse:collapse;table-layout:fixed;} '
+      + '.pdf-factory-table th,.pdf-factory-table td{border-top:1px solid #eef2f7;padding:4px 6px;font-size:10px;line-height:1.3;vertical-align:top;word-break:break-word;} '
+      + '.pdf-factory-table th{width:19%;background:#fcfcfd;color:#6b7280;font-weight:700;text-align:left;} '
+      + '.pdf-factory-table td{width:31%;color:#111827;font-weight:500;} '
+      + '.pdf-memo-box{padding:7px 8px;font-size:10.5px;line-height:1.36;white-space:pre-wrap;min-height:54px;word-break:break-word;} '
+      + '</style></head><body>'+ html +'</body></html>');
+    doc.close();
+    waitForImages(doc, function(){ setTimeout(function(){ try{ doc.title = title; }catch(e){} w.focus(); w.print(); }, 260); });
+  }
+  function disableButtons(flag){
+    Array.prototype.forEach.call(document.querySelectorAll('.actions .btn'), function(btn){ if(btn !== printBtn) btn.disabled = !!flag; });
+  }
+  async function buildMode(mode){
+    disableButtons(true);
+    printBtn.disabled = true;
+    pagesRoot.innerHTML = '';
+    currentMeta.mode = mode;
+    currentMeta.count = 0;
+    countText.textContent = '0 page';
+    try{
+      setStatus('목록 불러오는 중...');
+      var listRes = await fetchGas({ action:'listAdminProperties' });
+      if(!listRes || listRes.ok === false) throw new Error((listRes && listRes.message) || '목록 조회 실패');
+      var items = Array.isArray(listRes.items) ? listRes.items : [];
+      items = items.filter(function(it){ return safeText(it.listingNumber); });
+      if(mode === 'sk') items = items.filter(function(it){ return teamOf(it.listingNumber) === 'sk'; });
+      if(mode === 'mk') items = items.filter(function(it){ return teamOf(it.listingNumber) === 'mk'; });
+      setStatus('대상 매물 ' + items.length + '건 정리 중...');
+      var pages = [];
+      for(var i=0;i<items.length;i++){
+        var listingNumber = safeText(items[i].listingNumber);
+        setStatus('매물 불러오는 중...\n' + (i+1) + ' / ' + items.length + '\n' + listingNumber);
+        var detailRes = await fetchGas({ action:'getPropertyEditorByListingNumber', listingNumber: listingNumber });
+        if(!detailRes || detailRes.ok === false || !detailRes.item){ continue; }
+        pages.push(buildPageHtml(detailRes.item));
       }
-      function parseJsonArray(raw){
-        if(Array.isArray(raw)) return raw;
-        if(!raw) return [];
-        try{ var v = JSON.parse(raw); return Array.isArray(v) ? v : []; }catch(e){ return []; }
-      }
-      function findPhotoUrls(item){
-        var arr = parseJsonArray(item.photoUrlsJson);
-        var urls = [];
-        arr.forEach(function(p){
-          if(!p) return;
-          if(typeof p === 'string') urls.push(p);
-          else urls.push(p.lightUrl || p.thumbnailUrl || p.url || p.originalUrl || '');
-        });
-        urls = urls.filter(Boolean);
-        var hero = urls[0] || '';
-        return { hero: hero, thumbs: urls.slice(1,6) };
-      }
-      function getDealType(item){
-        var d = pick(item, 'dealType');
-        if(d.indexOf('매매') > -1 && d.indexOf('임대') === -1) return '매매';
-        if(d.indexOf('임대') > -1 && d.indexOf('매매') === -1) return '임대';
-        return d.replace(/\s+/g,' ').trim();
-      }
-      function buildPrice(item){
-        var deal = getDealType(item);
-        var price = '';
-        if(deal === '임대'){
-          var deposit = pick(item, 'deposit');
-          var monthly = pick(item, 'monthlyRent', 'price');
-          var fee = pick(item, 'maintenanceFee');
-          var parts = [];
-          if(deposit) parts.push('보증금 ' + deposit);
-          if(monthly) parts.push('월세 ' + monthly);
-          if(fee) parts.push('관리비 ' + fee);
-          price = parts.join(' / ');
-        } else {
-          price = pick(item, 'salePrice', 'price');
-        }
-        return price;
-      }
-      function measurePair(item, m2Key, pyKey){
-        var m2 = pick(item, m2Key);
-        var py = pick(item, pyKey);
-        var parts = [];
-        if(m2) parts.push(m2 + '㎡');
-        if(py) parts.push(py + '평');
-        return parts.join(' / ');
-      }
-      function basicRows(item){
-        return [
-          ['소재지', cleanAddress(pick(item,'address'))],
-          ['거래형태', getDealType(item)],
-          ['매매가 / 임대가', buildPrice(item)],
-          ['사용승인일', pick(item,'approvalDate')],
-          ['대지면적', measurePair(item,'landAreaM2','landAreaPy')],
-          ['건축면적', measurePair(item,'buildingAreaM2','buildingAreaPy')],
-          ['연면적', measurePair(item,'totalFloorAreaM2','totalFloorAreaPy')],
-          ['전용면적', measurePair(item,'exclusiveAreaM2','exclusiveAreaPy')],
-          ['용도지역', pick(item,'zoning')],
-          ['매물종류', pick(item,'propertyType')],
-          ['건축물 구성', pick(item,'buildingComposition')],
-          ['주차대수', pick(item,'parkingCount')],
-          ['출입구 방향', pick(item,'entranceDirection')],
-          ['입주가능일', pick(item,'moveInDate')],
-          ['건물 층수', pick(item,'floorInfo')],
-          ['화장실', pick(item,'restroomInfo')],
-          ['관리비', pick(item,'maintenanceFee')],
-          ['매물번호', pick(item,'listingNumber')]
-        ].filter(function(pair){ return text(pair[0]); });
-      }
-      function factoryRows(item){
-        return [
-          ['층고', pick(item,'ceilingHeight')],
-          ['크레인', pick(item,'crane')],
-          ['호이스트', pick(item,'hoist')],
-          ['전력', pick(item,'powerCapacity')],
-          ['주요 설비', pick(item,'mainFacilities','mainEquipment')],
-          ['추천 업종', pick(item,'recommendedUse','recommendedIndustry')],
-          ['업종 제한', pick(item,'restrictedUse','industryRestriction')],
-          ['진입로 폭', pick(item,'roadWidth')],
-          ['도어폭', pick(item,'doorWidth')],
-          ['대형차 진입', pick(item,'truckAccess','largeTruckAccess')],
-          ['상하차 가능', pick(item,'loadingAvailable')],
-          ['사무동 포함', pick(item,'officeIncluded')],
-          ['야드 크기', pick(item,'yardSize')],
-          ['즉시 가동', pick(item,'readyToOperate')]
-        ];
-      }
-      function requesterRows(item){
-        return [
-          ['의뢰인명', pick(item,'requesterName')],
-          ['연락처', pick(item,'requesterPhone')],
-          ['의뢰 구분', pick(item,'requesterType')],
-          ['비고', pick(item,'requesterNote')]
-        ];
-      }
-      function summaries(item){
-        return [pick(item,'summary1'), pick(item,'summary2'), pick(item,'summary3')].filter(Boolean).slice(0,3);
-      }
-      function buildKv(rows, emptyText){
-        if(!rows.length) return '<div style="padding:10px 12px;font-size:12px;color:#6b7280;">'+ htmlEscape(emptyText || '표시할 내용이 없습니다.') +'</div>';
-        return '<div class="pdf-kv">' + rows.map(function(pair){
-          return '<div class="pdf-kv-row"><div class="pdf-kv-label">'+ htmlEscape(pair[0]) +'</div><div class="pdf-kv-value">'+ nl2br(pair[1] || '') +'</div></div>';
-        }).join('') + '</div>';
-      }
-      function buildFactoryTable(rows){
-        if(!rows.length) return '<div style="padding:10px 12px;font-size:12px;color:#6b7280;">공장특화정보가 없습니다.</div>';
-        var html = '<table class="pdf-factory-table"><tbody>';
-        for(var i=0;i<rows.length;i+=2){
-          var left = rows[i] || ['',''];
-          var right = rows[i+1] || ['',''];
-          html += '<tr>'
-            + '<th>'+ htmlEscape(left[0]) +'</th><td>'+ nl2br(left[1] || '') +'</td>'
-            + '<th>'+ htmlEscape(right[0]) +'</th><td>'+ nl2br(right[1] || '') +'</td>'
-            + '</tr>';
-        }
-        html += '</tbody></table>';
-        return html;
-      }
-      function buildCard(item){
-        var imgs = findPhotoUrls(item);
-        var deal = getDealType(item);
-        var title = pick(item,'title') || '제목 미입력';
-        var address = cleanAddress(pick(item,'address'));
-        var price = buildPrice(item);
-        var memo = pick(item,'memo');
-        var thumbsHtml = imgs.thumbs.map(function(url){ return '<div class="pdf-thumb"><img src="'+ htmlEscape(url) +'" alt=""></div>'; }).join('');
-        var summaryHtml = summaries(item).length ? summaries(item).map(function(t){ return '<div class="pdf-summary-item">✔ ' + htmlEscape(t) + '</div>'; }).join('') : '<div class="pdf-summary-item">요약 없음</div>';
-        return ''
-          + '<div class="pdfPrintPage">'
-          + '<div class="pdf-brand">Maslow Korea</div>'
-          + '<div class="pdf-top-grid">'
-          + '  <div>'
-          + '    <div class="pdf-hero">' + (imgs.hero ? '<img src="'+ htmlEscape(imgs.hero) +'" alt="대표사진">' : '') + '</div>'
-          +      (thumbsHtml ? '<div class="pdf-thumb-grid">'+ thumbsHtml +'</div>' : '')
-          + '  </div>'
-          + '  <div>'
-          +      (deal ? '<div class="pdf-chip">'+ htmlEscape(deal) +'</div>' : '')
-          + '    <h1 class="pdf-title">'+ htmlEscape(title) +'</h1>'
-          +      (address ? '<p class="pdf-address">'+ htmlEscape(address) +'</p>' : '')
-          +      (price ? '<p class="pdf-price">'+ htmlEscape(price) +'</p>' : '')
-          + '    <div class="pdf-summary">'+ summaryHtml +'</div>'
-          + '  </div>'
-          + '</div>'
-          + '<div class="pdf-two-col">'
-          + '  <div class="pdf-section"><div class="pdf-section-title">기본정보</div>'+ buildKv(basicRows(item)) +'</div>'
-          + '  <div>'
-          + '    <div class="pdf-section"><div class="pdf-section-title">공장특화정보</div>'+ buildFactoryTable(factoryRows(item)) +'</div>'
-          + '    <div class="pdf-section"><div class="pdf-section-title">의뢰인 정보</div>'+ buildKv(requesterRows(item), '의뢰인 정보가 없습니다.') +'</div>'
-          + '  </div>'
-          + '</div>'
-          + '<div class="pdf-section"><div class="pdf-section-title">MEMO</div><div class="pdf-memo-box">'+ nl2br(memo || '') +'</div></div>'
-          + '</div>';
-      }
-      async function postAction(action, payload){
-        var url = gasInput.value.trim();
-        if(!url) throw new Error('GAS URL이 없습니다.');
-        var form = new URLSearchParams();
-        form.set('action', action);
-        Object.keys(payload || {}).forEach(function(k){
-          var v = payload[k];
-          form.set(k, v == null ? '' : String(v));
-        });
-        var res = await fetch(url, {
-          method:'POST',
-          headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
-          body: form.toString()
-        });
-        if(!res.ok) throw new Error('요청 실패: ' + res.status);
-        return await res.json();
-      }
-      async function loadAndBuild(filter){
-        setStatus('목록 불러오는 중...');
-        docEl.innerHTML = '';
-        var data = await postAction('listAdminProperties', {});
-        if(!data || !data.ok) throw new Error(data && (data.error || data.message) || '목록 로드 실패');
-        var items = Array.isArray(data.items) ? data.items : [];
-        items = items.filter(function(item){
-          var ln = text(item.listingNumber).toUpperCase();
-          if(!ln) return false;
-          if(filter === 'SK') return ln.indexOf('SK') === 0;
-          if(filter === 'MK') return ln.indexOf('MK') === 0;
-          return true;
-        });
-        setStatus('페이지 만드는 중... 총 ' + items.length + '건');
-        var html = items.map(buildCard).join('');
-        docEl.innerHTML = html || '<div style="padding:40px 20px;background:#fff;border-radius:16px;text-align:center;color:#6b7280;">해당 매물이 없습니다.</div>';
-        setStatus('완료: ' + items.length + '건');
-        var prefix = filter === 'SK' ? '상가팀' : (filter === 'MK' ? '공장팀' : '전체매물');
-        document.title = prefix + '_매물_PDF';
-        window.scrollTo({top:0,behavior:'smooth'});
-      }
-      document.getElementById('loadAllBtn').addEventListener('click', function(){ loadAndBuild('ALL').catch(function(err){ setStatus('오류: ' + err.message); }); });
-      document.getElementById('loadSkBtn').addEventListener('click', function(){ loadAndBuild('SK').catch(function(err){ setStatus('오류: ' + err.message); }); });
-      document.getElementById('loadMkBtn').addEventListener('click', function(){ loadAndBuild('MK').catch(function(err){ setStatus('오류: ' + err.message); }); });
-      document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
-    })();
-  </script>
+      pagesRoot.innerHTML = pages.join('');
+      currentMeta.count = pages.length;
+      countText.textContent = pages.length + ' page';
+      printBtn.disabled = !pages.length;
+      setStatus('완료\n총 ' + pages.length + '건 페이지 생성');
+    }catch(err){
+      setStatus('오류\n' + String(err && err.message ? err.message : err));
+    }finally{
+      disableButtons(false);
+    }
+  }
+
+  document.getElementById('buildAllBtn').addEventListener('click', function(){ buildMode('all'); });
+  document.getElementById('buildSkBtn').addEventListener('click', function(){ buildMode('sk'); });
+  document.getElementById('buildMkBtn').addEventListener('click', function(){ buildMode('mk'); });
+  printBtn.addEventListener('click', printCurrentPages);
+})();
+</script>
 </body>
 </html>

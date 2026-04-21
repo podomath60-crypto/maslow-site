@@ -65,7 +65,7 @@
   <div class="topbar">
     <div>
       <h1 class="title">전체매물 PDF 만들기</h1>
-      <div class="muted">아까 단건 PDF 레이아웃 그대로 유지하고, 매물당 1페이지씩 이어붙여 저장합니다.</div>
+      <div class="muted">단건 PDF 페이지 레이아웃 그대로 유지하고, 매물당 1페이지씩 이어붙여 저장합니다.</div>
     </div>
     <div class="actions">
       <button type="button" class="btn" id="buildAllBtn">전체매물 PDF</button>
@@ -147,10 +147,20 @@
     return sale || [deposit, monthly, maintenance].filter(Boolean).join(' / ');
   }
   function getImageUrls(item){
+    function pickUrl(p){
+      if(!p) return '';
+      if(typeof p === 'string') return safeText(p);
+      return safeText(p.originalUrl || p.url || p.lightUrl || p.heroUrl || p.thumbUrl || p.thumbnailUrl || p.src || '');
+    }
     var photos = parseJsonArray(item.photoUrlsJson);
-    var urls = photos.map(function(p){
-      return safeText((p && (p.originalUrl || p.url || p.lightUrl || p.heroUrl)) || '');
-    }).filter(Boolean);
+    if(!photos.length && Array.isArray(item.photos)) photos = item.photos;
+    var urls = photos.map(pickUrl).filter(Boolean);
+    if(!urls.length){
+      ['heroUrl','heroImage','imageUrl','photoUrl'].forEach(function(k){
+        var v = safeText(item[k]);
+        if(v && urls.indexOf(v) === -1) urls.push(v);
+      });
+    }
     return { hero: urls[0] || '', thumbs: urls.slice(1, 6) };
   }
   function buildKv(rows, emptyText){
@@ -333,9 +343,14 @@
       for(var i=0;i<items.length;i++){
         var listingNumber = safeText(items[i].listingNumber);
         setStatus('매물 불러오는 중...\n' + (i+1) + ' / ' + items.length + '\n' + listingNumber);
-        var detailRes = await fetchGas({ action:'getPropertyEditorByListingNumber', listingNumber: listingNumber });
-        if(!detailRes || detailRes.ok === false || !detailRes.item){ continue; }
-        pages.push(buildPageHtml(detailRes.item));
+        var detailRes = await fetchGas({ action:'getPropertyByListingNumber', listingNumber: listingNumber });
+        if(!detailRes || detailRes.ok === false){ continue; }
+        var detailItem = detailRes.item || detailRes.data || detailRes.property || detailRes.result || detailRes;
+        if(!detailItem || !safeText(detailItem.listingNumber || listingNumber)){
+          detailItem = Object.assign({}, items[i], detailItem || {}, { listingNumber: listingNumber });
+        }
+        if(!detailItem) continue;
+        pages.push(buildPageHtml(detailItem));
       }
       pagesRoot.innerHTML = pages.join('');
       currentMeta.count = pages.length;

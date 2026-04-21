@@ -5658,7 +5658,7 @@
   const pdfCloseBtn = document.getElementById('pdfCloseBtn');
   const pdfDownloadBtn = document.getElementById('pdfDownloadBtn');
   const pdfSheet = document.getElementById('pdfSheet');
-  if (!pdfBtn || !pdfModal || !pdfSheet || !window.html2canvas || !(window.jspdf && window.jspdf.jsPDF)) return;
+  if (!pdfBtn || !pdfModal || !pdfSheet) return;
 
   const safeText = (value, fallback='') => {
     const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
@@ -5806,6 +5806,10 @@
   };
   const downloadPdf = async () => {
     buildPdf();
+    if (!window.html2canvas || !(window.jspdf && window.jspdf.jsPDF)) {
+      alert('PDF 라이브러리를 아직 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.');
+      return;
+    }
     const prevTransform = pdfSheet.style.transform;
     const prevMarginBottom = pdfSheet.style.marginBottom;
     pdfSheet.style.transform = 'none';

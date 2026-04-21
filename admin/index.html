@@ -5416,43 +5416,16 @@
 
       document.getElementById('pdfCloseBtn').addEventListener('click', function(){ overlay.classList.remove('show'); });
       overlay.addEventListener('click', function(e){ if(e.target === overlay) overlay.classList.remove('show'); });
-      document.getElementById('pdfDownloadBtn').addEventListener('click', function(){ downloadPdf(); });
-      document.getElementById('pdfPreviewBtn').addEventListener('click', async function(){ await renderPdfPreview(); overlay.classList.add('show'); });
+      document.getElementById('pdfDownloadBtn').addEventListener('click', downloadPdf);
+      document.getElementById('pdfPreviewBtn').addEventListener('click', function(){ renderPdfPreview(); overlay.classList.add('show'); });
     }
 
-    async function imageSrcToPdfSafe(src){
-      if(!src) return '';
-      if(/^data:/i.test(src)) return src;
-      try{
-        var res = await fetch(src);
-        var blob = await res.blob();
-        return await new Promise(function(resolve){
-          var reader = new FileReader();
-          reader.onloadend = function(){ resolve(reader.result || src); };
-          reader.onerror = function(){ resolve(src); };
-          reader.readAsDataURL(blob);
-        });
-      }catch(err){
-        return src;
-      }
-    }
-
-    async function buildPdfSafePhotoSet(photos){
-      var safe = [];
-      for(var i=0;i<photos.length;i++){
-        safe.push(await imageSrcToPdfSafe(photos[i]));
-      }
-      return safe;
-    }
-
-    async function renderPdfPreview(){
+    function renderPdfPreview(){
       var page = document.getElementById('pdfPage');
       if(!page) return;
-      page.innerHTML = '<div class="pdf-loading" style="padding:40px;text-align:center;font-size:16px;font-weight:800;color:#64748b;">PDF 미리보기 준비중...</div>';
       var photos = getPhotoUrls();
-      var safePhotos = await buildPdfSafePhotoSet(photos.slice(0, 6));
-      var hero = safePhotos[0] || '';
-      var thumbs = safePhotos.slice(1, 6);
+      var hero = photos[0] || '';
+      var thumbs = photos.slice(1, 6);
       var deal = textOf(document.getElementById('topDealChip')) || '매물';
       var title = textOf(document.querySelector('.property-detail-title'));
       var address = textOf(document.getElementById('topAddress'));
@@ -5497,31 +5470,12 @@
       '</div>';
     }
 
-
-    function waitForPdfImages(container){
-      var imgs = Array.prototype.slice.call(container.querySelectorAll('img'));
-      if(!imgs.length) return Promise.resolve();
-      return Promise.all(imgs.map(function(img){
-        return new Promise(function(resolve){
-          function done(){ resolve(); }
-          if(img.complete && img.naturalWidth > 0){
-            return resolve();
-          }
-          var timer = setTimeout(done, 2500);
-          img.addEventListener('load', function(){ clearTimeout(timer); done(); }, {once:true});
-          img.addEventListener('error', function(){ clearTimeout(timer); done(); }, {once:true});
-        });
-      }));
-    }
-
     async function downloadPdf(){
       try{
-        await renderPdfPreview();
+        renderPdfPreview();
         await ensurePdfLibraries();
         var page = document.getElementById('pdfPage');
-        await waitForPdfImages(page);
-        await new Promise(function(resolve){ requestAnimationFrame(function(){ requestAnimationFrame(resolve); }); });
-        var canvas = await window.html2canvas(page, {scale:2, useCORS:true, allowTaint:false, backgroundColor:'#ffffff', imageTimeout:0});
+        var canvas = await window.html2canvas(page, {scale:2, useCORS:true, allowTaint:false, backgroundColor:'#ffffff'});
         var img = canvas.toDataURL('image/jpeg', 0.98);
         var jsPDF = window.jspdf.jsPDF;
         var pdf = new jsPDF('p', 'pt', 'a4');

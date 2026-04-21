@@ -1,0 +1,638 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>전체매물 PDF 만들기</title>
+  <style>
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --line:#dfe6ee;
+      --text:#111318;
+      --muted:#6b7280;
+      --blue:#0f7cff;
+      --pink:#d94f86;
+      --shadow:0 12px 28px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;padding:0;background:var(--bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;
+      letter-spacing:-0.02em;
+    }
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .app{
+      width:min(1120px, calc(100% - 24px));
+      margin:18px auto 36px;
+    }
+    .toolbar{
+      position:sticky; top:0; z-index:30;
+      display:flex; flex-wrap:wrap; gap:10px;
+      align-items:center; padding:14px; border:1px solid var(--line);
+      border-radius:22px; background:rgba(255,255,255,.92); backdrop-filter:blur(10px);
+      box-shadow:var(--shadow);
+    }
+    .toolbar-title{
+      min-width:100%; font-size:24px; font-weight:900; line-height:1.2; margin-bottom:2px;
+    }
+    .toolbar-sub{
+      min-width:100%; font-size:13px; color:var(--muted); line-height:1.6; margin-top:-2px; margin-bottom:6px;
+    }
+    .field{
+      display:grid; gap:6px; min-width:min(440px, 100%);
+      flex:1 1 420px;
+    }
+    .label{
+      font-size:12px; font-weight:800; color:var(--muted);
+    }
+    .gas-input{
+      width:100%; min-height:44px; padding:0 14px; border-radius:14px;
+      border:1px solid var(--line); background:#fff;
+    }
+    .actions{display:flex; gap:8px; flex-wrap:wrap}
+    .btn{
+      min-height:44px; padding:0 16px; border-radius:14px; border:1px solid var(--line);
+      background:#fff; color:var(--text); font-weight:900; box-shadow:0 4px 10px rgba(15,23,42,.04);
+    }
+    .btn.primary{background:var(--blue); border-color:var(--blue); color:#fff;}
+    .btn.sk{background:#fff5f9; border-color:#f1c7d8; color:#b9376d;}
+    .btn.mk{background:#f5f9ff; border-color:#c9ddff; color:#0f58c9;}
+    .btn.print{background:#111318; border-color:#111318; color:#fff;}
+    .btn:disabled{opacity:.5; cursor:not-allowed}
+    .status{
+      margin:12px 4px 0; font-size:14px; color:#475569; font-weight:700; white-space:pre-wrap;
+    }
+    .count{
+      margin:10px 4px 0; font-size:14px; color:#111318; font-weight:900;
+    }
+    .pages-wrap{
+      margin-top:18px; display:grid; gap:18px;
+    }
+    .page{
+      width:210mm; min-height:297mm;
+      margin:0 auto;
+      background:#fff;
+      color:#111318;
+      box-shadow:0 10px 24px rgba(15,23,42,.08);
+      padding:13mm 12mm 10mm;
+      page-break-after:always;
+      break-after:page;
+      overflow:hidden;
+    }
+    .brand{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-bottom:8px;
+    }
+    .brand-name{
+      font-size:18px; font-weight:900; letter-spacing:-0.03em;
+    }
+    .brand-listing{
+      font-size:13px; color:#475569; font-weight:800;
+    }
+    .hero-wrap{
+      display:grid; grid-template-columns:1.2fr .8fr; gap:10px; align-items:start;
+      margin-bottom:8px;
+    }
+    .hero{
+      width:100%; height:70mm; object-fit:cover; border-radius:14px; background:#eef2f7; border:1px solid #edf2f7;
+      display:block;
+    }
+    .hero-empty{
+      width:100%; height:70mm; border-radius:14px; border:1px dashed #d9e2ec; background:#f8fafc;
+      display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:14px; font-weight:800;
+    }
+    .thumbs{
+      display:grid; grid-template-columns:repeat(2, 1fr); gap:6px;
+    }
+    .thumb, .thumb-empty{
+      width:100%; height:16.4mm; border-radius:10px; background:#eef2f7; border:1px solid #edf2f7; object-fit:cover;
+      display:block;
+    }
+    .thumb-empty{
+      display:flex; align-items:center; justify-content:center; color:#c1cad5; font-size:11px; font-weight:800;
+    }
+    .head{
+      display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:start; margin:4px 0 8px;
+    }
+    .deal-chip{
+      min-height:28px; padding:4px 11px; border-radius:999px; background:#0f7cff; color:#fff;
+      font-size:13px; font-weight:900; display:inline-flex; align-items:center; justify-content:center;
+    }
+    .title-block{min-width:0}
+    .title{
+      font-size:24px; line-height:1.18; font-weight:900; margin:0 0 4px; word-break:keep-all;
+    }
+    .address{
+      font-size:13px; line-height:1.45; color:#475569; font-weight:700; word-break:keep-all;
+    }
+    .price{
+      text-align:right;
+    }
+    .price-main{
+      font-size:28px; line-height:1.1; font-weight:900; color:#ff3c3c; word-break:keep-all;
+    }
+    .price-sub{
+      margin-top:3px; font-size:12px; line-height:1.45; color:#475569; font-weight:800; white-space:pre-wrap;
+    }
+    .summary{
+      background:#eef6ff; border:1px solid #d9eaff; border-radius:14px; padding:9px 12px; margin:0 0 8px;
+    }
+    .summary-title{
+      font-size:13px; font-weight:900; margin-bottom:6px;
+    }
+    .summary ul{margin:0; padding:0; list-style:none; display:grid; gap:4px;}
+    .summary li{font-size:13px; line-height:1.5; font-weight:700; color:#1f2937;}
+    .grid{
+      display:grid; grid-template-columns:1.05fr .95fr; gap:10px; align-items:start;
+    }
+    .section{
+      border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#fff;
+    }
+    .section-title{
+      min-height:34px; padding:8px 12px; background:#f8fafc; border-bottom:1px solid var(--line);
+      font-size:14px; font-weight:900;
+    }
+    table{width:100%; border-collapse:collapse; table-layout:fixed}
+    .kv td, .kv th{
+      border-top:1px solid #edf2f7; padding:6px 8px; vertical-align:top;
+      font-size:12px; line-height:1.45;
+    }
+    .kv tr:first-child td, .kv tr:first-child th{border-top:none;}
+    .kv th{
+      width:28%; text-align:left; color:#64748b; font-weight:800; background:#fbfcfd;
+    }
+    .kv td{
+      color:#111318; font-weight:700; word-break:break-word;
+    }
+    .factory-2col td, .factory-2col th{
+      border-top:1px solid #edf2f7; padding:6px 8px; vertical-align:top; font-size:12px; line-height:1.4;
+    }
+    .factory-2col tr:first-child td, .factory-2col tr:first-child th{border-top:none;}
+    .factory-2col th{
+      width:18%; text-align:left; color:#64748b; font-weight:800; background:#fbfcfd;
+    }
+    .factory-2col td{
+      width:32%; color:#111318; font-weight:700; word-break:break-word;
+    }
+    .memo{
+      margin-top:8px; border:1px solid #f1dd79; background:#fff7bf; border-radius:14px; padding:10px 12px;
+    }
+    .memo-title{
+      font-size:13px; font-weight:900; color:#6b5500; margin-bottom:6px;
+    }
+    .memo-body{
+      min-height:26mm;
+      font-size:12px; line-height:1.52; color:#5b4a00; font-weight:700; white-space:pre-wrap; word-break:break-word;
+    }
+    .empty-text{color:#c1cad5; font-weight:700}
+    @media (max-width:900px){
+      .app{width:min(100%, calc(100% - 16px)); margin:10px auto 24px;}
+      .toolbar{padding:12px; border-radius:18px;}
+      .toolbar-title{font-size:20px;}
+      .field{min-width:100%;}
+      .actions{width:100%;}
+      .btn{flex:1 1 calc(50% - 8px); min-width:140px;}
+      .pages-wrap{margin-top:14px;}
+      .page{
+        width:100%;
+        min-height:auto;
+        padding:14px;
+      }
+      .hero-wrap{grid-template-columns:1fr; gap:8px;}
+      .thumbs{grid-template-columns:repeat(5, 1fr);}
+      .head{grid-template-columns:1fr; gap:6px;}
+      .price{text-align:left;}
+      .grid{grid-template-columns:1fr;}
+    }
+    @media print{
+      body{background:#fff;}
+      .app{width:auto; margin:0;}
+      .toolbar,.status,.count{display:none !important;}
+      .pages-wrap{margin-top:0; gap:0;}
+      .page{
+        width:210mm; min-height:297mm; margin:0; box-shadow:none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="toolbar">
+      <div class="toolbar-title">매물 PDF 일괄 만들기</div>
+      <div class="toolbar-sub">전체 / 상가팀(SK) / 공장팀(MK) 버튼을 누르면 매물당 1페이지씩 붙인 인쇄용 PDF 페이지를 만든다.</div>
+      <label class="field">
+        <span class="label">GAS URL</span>
+        <input id="gasUrl" class="gas-input" type="text" value="https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec" />
+      </label>
+      <div class="actions">
+        <button class="btn primary" id="buildAllBtn">전체매물 PDF</button>
+        <button class="btn sk" id="buildSkBtn">상가팀 PDF</button>
+        <button class="btn mk" id="buildMkBtn">공장팀 PDF</button>
+        <button class="btn print" id="printBtn" disabled>PDF 저장</button>
+      </div>
+    </div>
+    <div id="status" class="status">대기중</div>
+    <div id="count" class="count"></div>
+    <div id="pages" class="pages-wrap"></div>
+  </div>
+
+  <script>
+    (function(){
+      var statusEl = document.getElementById('status');
+      var countEl = document.getElementById('count');
+      var pagesEl = document.getElementById('pages');
+      var gasUrlEl = document.getElementById('gasUrl');
+      var printBtn = document.getElementById('printBtn');
+      var buildAllBtn = document.getElementById('buildAllBtn');
+      var buildSkBtn = document.getElementById('buildSkBtn');
+      var buildMkBtn = document.getElementById('buildMkBtn');
+      var lastBuildLabel = '';
+
+      var FACTORY_FIELDS = [
+        '층고','크레인','호이스트','전력','주요 설비','추천 업종','업종 제한',
+        '진입로 폭','도어폭','대형차 진입','상하차 가능','사무동 포함','야드 크기','즉시 가동'
+      ];
+
+      var BASIC_FIELDS = [
+        ['소재지', 'address'],
+        ['사용승인일', 'approvalDate'],
+        ['대지면적', 'landArea'],
+        ['건축면적', 'buildingArea'],
+        ['연면적', 'totalFloorArea'],
+        ['전용면적', 'exclusiveArea'],
+        ['용도지역', 'zoning'],
+        ['매물종류', 'propertyType'],
+        ['건축물 구성', 'buildingComposition'],
+        ['주차대수', 'parkingCount'],
+        ['출입구 방향', 'entranceDirection'],
+        ['입주가능일', 'moveInDate'],
+        ['건물 층수', 'floorInfo'],
+        ['화장실', 'restroomInfo'],
+        ['관리비', 'maintenanceFee'],
+        ['매물번호', 'listingNumber']
+      ];
+
+      function setBusy(isBusy){
+        [buildAllBtn, buildSkBtn, buildMkBtn].forEach(function(btn){
+          btn.disabled = !!isBusy;
+        });
+      }
+
+      function setStatus(text){
+        statusEl.textContent = text || '';
+      }
+
+      function safeText(v){
+        if(v === null || v === undefined) return '';
+        return String(v).trim();
+      }
+
+      function noTagText(v){
+        var txt = safeText(v).replace(/<br\s*\/?>/gi, '\n');
+        var div = document.createElement('div');
+        div.innerHTML = txt;
+        return safeText(div.textContent || div.innerText || '').replace(/\n{3,}/g, '\n\n');
+      }
+
+      function stripAddressJunk(v){
+        return noTagText(v)
+          .replace(/\s*(검색|조회)\s*$/g, '')
+          .replace(/\s+(검색|조회)(\s+|$)/g, ' ')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      }
+
+      function parseJsonMaybe(v, fallback){
+        if(Array.isArray(v)) return v;
+        var text = safeText(v);
+        if(!text) return fallback;
+        try{ return JSON.parse(text); }catch(e){ return fallback; }
+      }
+
+      function getPhotoList(item){
+        var list = [];
+        var raw = parseJsonMaybe(item.photoUrlsJson, []);
+        if(Array.isArray(raw)){
+          raw.forEach(function(p){
+            if(!p) return;
+            var url = safeText(p.url || p.originalUrl || p.thumbUrl || p.heroUrl);
+            if(url) list.push(url);
+          });
+        }
+        if(!list.length){
+          ['heroUrl','photoUrl','imageUrl'].forEach(function(k){
+            var u = safeText(item[k]);
+            if(u) list.push(u);
+          });
+        }
+        return list.filter(Boolean);
+      }
+
+      function prefixOf(item){
+        return safeText(item.listingNumber).toUpperCase().slice(0,2);
+      }
+
+      function getDealType(item){
+        var t = safeText(item.dealType);
+        if(t === '매매' || t === '임대') return t;
+        if(safeText(item.salePrice)) return '매매';
+        if(safeText(item.deposit) || safeText(item.monthlyRent)) return '임대';
+        return t || '-';
+      }
+
+      function formatMeasureLine(main, sub, mainUnit, subUnit){
+        var a = safeText(main);
+        var b = safeText(sub);
+        var left = a ? (a + mainUnit) : '';
+        var right = b ? (b + subUnit) : '';
+        if(left && right) return left + ' / ' + right;
+        return left || right || '';
+      }
+
+      function normalizeItem(item){
+        var photos = getPhotoList(item);
+        var dealType = getDealType(item);
+        var address = stripAddressJunk(item.address);
+        var priceMain = '';
+        var priceSub = [];
+
+        if(dealType === '매매'){
+          priceMain = safeText(item.salePrice || item.price) || '-';
+        } else if(dealType === '임대'){
+          priceMain = safeText(item.deposit) || '-';
+          if(safeText(item.monthlyRent)) priceSub.push('월세 ' + safeText(item.monthlyRent));
+          if(safeText(item.maintenanceFee)) priceSub.push('관리비 ' + safeText(item.maintenanceFee));
+        } else {
+          priceMain = safeText(item.price || item.salePrice || item.deposit) || '-';
+          if(safeText(item.monthlyRent)) priceSub.push('월세 ' + safeText(item.monthlyRent));
+        }
+
+        var basic = {
+          title: noTagText(item.title),
+          address: address,
+          dealType: dealType,
+          priceMain: priceMain,
+          priceSub: priceSub.join('\n'),
+          listingNumber: safeText(item.listingNumber),
+          approvalDate: safeText(item.approvalDate),
+          landArea: formatMeasureLine(item.landAreaM2, item.landAreaPy, '㎡', '평'),
+          buildingArea: formatMeasureLine(item.buildingAreaM2, item.buildingAreaPy, '㎡', '평'),
+          totalFloorArea: formatMeasureLine(item.totalFloorAreaM2, item.totalFloorAreaPy, '㎡', '평'),
+          exclusiveArea: formatMeasureLine(item.exclusiveAreaM2, item.exclusiveAreaPy, '㎡', '평'),
+          zoning: safeText(item.zoning),
+          propertyType: safeText(item.propertyType),
+          buildingComposition: safeText(item.buildingComposition),
+          parkingCount: safeText(item.parkingCount),
+          entranceDirection: safeText(item.entranceDirection),
+          moveInDate: safeText(item.moveInDate),
+          floorInfo: safeText(item.floorInfo),
+          restroomInfo: safeText(item.restroomInfo),
+          maintenanceFee: safeText(item.maintenanceFee)
+        };
+
+        var summary = [item.summary1, item.summary2, item.summary3]
+          .map(noTagText)
+          .filter(Boolean);
+
+        var factory = {
+          '층고': safeText(item.ceilingHeight),
+          '크레인': safeText(item.crane),
+          '호이스트': safeText(item.hoist),
+          '전력': safeText(item.powerCapacity),
+          '주요 설비': safeText(item.mainFacilities || item.mainEquipment),
+          '추천 업종': safeText(item.recommendedUse || item.recommendedIndustry),
+          '업종 제한': safeText(item.restrictedUse || item.industryRestriction),
+          '진입로 폭': safeText(item.roadWidth),
+          '도어폭': safeText(item.doorWidth),
+          '대형차 진입': safeText(item.truckAccess || item.largeTruckAccess),
+          '상하차 가능': safeText(item.loadingAvailable),
+          '사무동 포함': safeText(item.officeIncluded),
+          '야드 크기': safeText(item.yardSize),
+          '즉시 가동': safeText(item.readyToOperate)
+        };
+
+        var requester = {
+          name: safeText(item.requesterName),
+          phone: safeText(item.requesterPhone),
+          requestType: safeText(item.requesterType),
+          note: safeText(item.requesterNote)
+        };
+
+        return {
+          raw: item,
+          listingNumber: basic.listingNumber,
+          prefix: prefixOf(item),
+          photos: photos,
+          basic: basic,
+          summary: summary,
+          factory: factory,
+          requester: requester,
+          memo: noTagText(item.memo)
+        };
+      }
+
+      function esc(s){
+        return String(s || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function buildBasicRows(basic){
+        return BASIC_FIELDS.map(function(pair){
+          var label = pair[0];
+          var key = pair[1];
+          var value = esc(basic[key] || '');
+          return '<tr><th>' + esc(label) + '</th><td>' + (value || '<span class="empty-text"></span>') + '</td></tr>';
+        }).join('');
+      }
+
+      function buildFactoryRows(factory){
+        var html = '';
+        for(var i=0;i<FACTORY_FIELDS.length;i+=2){
+          var leftKey = FACTORY_FIELDS[i];
+          var rightKey = FACTORY_FIELDS[i+1] || '';
+          html += '<tr>'
+            + '<th>' + esc(leftKey) + '</th><td>' + esc(factory[leftKey] || '') + '</td>'
+            + (rightKey ? '<th>' + esc(rightKey) + '</th><td>' + esc(factory[rightKey] || '') + '</td>' : '<th></th><td></td>')
+            + '</tr>';
+        }
+        return html;
+      }
+
+      function buildRequesterRows(req){
+        return [
+          ['의뢰인명', req.name],
+          ['연락처', req.phone],
+          ['의뢰 구분', req.requestType],
+          ['비고', req.note]
+        ].map(function(row){
+          return '<tr><th>' + esc(row[0]) + '</th><td>' + esc(row[1] || '') + '</td></tr>';
+        }).join('');
+      }
+
+      function buildSummary(summary){
+        if(!summary.length){
+          return '<li class="empty-text">요약 없음</li>';
+        }
+        return summary.slice(0,3).map(function(t){
+          return '<li>✔ ' + esc(t) + '</li>';
+        }).join('');
+      }
+
+      function buildThumbs(photos){
+        var rest = photos.slice(1,6);
+        var out = '';
+        for(var i=0;i<5;i++){
+          var src = rest[i];
+          if(src){
+            out += '<img class="thumb" src="' + esc(src) + '" alt="">';
+          }else{
+            out += '<div class="thumb-empty">사진</div>';
+          }
+        }
+        return out;
+      }
+
+      function buildPage(item, idx, total, label){
+        var hero = item.photos[0];
+        return ''
+          + '<section class="page">'
+          + '  <div class="brand">'
+          + '    <div class="brand-name">Maslow Korea</div>'
+          + '    <div class="brand-listing">' + esc(label) + ' · ' + esc(item.listingNumber || (idx + 1)) + ' · ' + esc(String(idx + 1) + '/' + String(total)) + '</div>'
+          + '  </div>'
+          + '  <div class="hero-wrap">'
+          +        (hero ? '<img class="hero" src="' + esc(hero) + '" alt="">' : '<div class="hero-empty">대표사진 없음</div>')
+          + '    <div class="thumbs">' + buildThumbs(item.photos) + '</div>'
+          + '  </div>'
+          + '  <div class="head">'
+          + '    <div class="deal-chip">' + esc(item.basic.dealType || '-') + '</div>'
+          + '    <div class="title-block">'
+          + '      <h1 class="title">' + esc(item.basic.title || '-') + '</h1>'
+          + '      <div class="address">' + esc(item.basic.address || '-') + '</div>'
+          + '    </div>'
+          + '    <div class="price">'
+          + '      <div class="price-main">' + esc(item.basic.priceMain || '-') + '</div>'
+          + '      <div class="price-sub">' + esc(item.basic.priceSub || '') + '</div>'
+          + '    </div>'
+          + '  </div>'
+          + '  <div class="summary">'
+          + '    <div class="summary-title">추천 매물 3줄 요약</div>'
+          + '    <ul>' + buildSummary(item.summary) + '</ul>'
+          + '  </div>'
+          + '  <div class="grid">'
+          + '    <div class="section">'
+          + '      <div class="section-title">기본정보</div>'
+          + '      <table class="kv">' + buildBasicRows(item.basic) + '</table>'
+          + '    </div>'
+          + '    <div>'
+          + '      <div class="section" style="margin-bottom:8px;">'
+          + '        <div class="section-title">공장특화정보</div>'
+          + '        <table class="factory-2col">' + buildFactoryRows(item.factory) + '</table>'
+          + '      </div>'
+          + '      <div class="section">'
+          + '        <div class="section-title">의뢰인 정보</div>'
+          + '        <table class="kv">' + buildRequesterRows(item.requester) + '</table>'
+          + '      </div>'
+          + '    </div>'
+          + '  </div>'
+          + '  <div class="memo">'
+          + '    <div class="memo-title">📌 MEMO</div>'
+          + '    <div class="memo-body">' + esc(item.memo || '') + '</div>'
+          + '  </div>'
+          + '</section>';
+      }
+
+      function doPost(url, payload){
+        return fetch(url, {
+          method:'POST',
+          body: JSON.stringify(payload),
+          headers:{'Content-Type':'text/plain;charset=utf-8'}
+        }).then(function(res){
+          return res.json();
+        });
+      }
+
+      function getFilteredItems(items, mode){
+        return items.filter(function(item){
+          var prefix = prefixOf(item);
+          if(mode === 'SK') return prefix === 'SK';
+          if(mode === 'MK') return prefix === 'MK';
+          return true;
+        });
+      }
+
+      async function build(mode){
+        var gasUrl = safeText(gasUrlEl.value);
+        if(!gasUrl){
+          setStatus('GAS URL이 비어있다.');
+          return;
+        }
+        setBusy(true);
+        pagesEl.innerHTML = '';
+        countEl.textContent = '';
+        printBtn.disabled = true;
+
+        var label = mode === 'SK' ? '상가팀 매물 PDF' : mode === 'MK' ? '공장팀 매물 PDF' : '전체매물 PDF';
+        lastBuildLabel = label;
+        try{
+          setStatus(label + ' 목록 불러오는 중...');
+          var listRes = await doPost(gasUrl, { action:'listAdminProperties' });
+          var items = Array.isArray(listRes && listRes.items) ? listRes.items : [];
+          var filtered = getFilteredItems(items, mode)
+            .filter(function(it){ return safeText(it.listingNumber); })
+            .sort(function(a,b){
+              return safeText(a.listingNumber).localeCompare(safeText(b.listingNumber), 'ko');
+            });
+
+          if(!filtered.length){
+            setStatus('대상 매물이 없다.');
+            return;
+          }
+
+          countEl.textContent = '총 ' + filtered.length + '개 매물';
+          setStatus('페이지 만드는 중...');
+          var html = '';
+          filtered.forEach(function(row, idx){
+            html += buildPage(normalizeItem(row), idx, filtered.length, label);
+          });
+          pagesEl.innerHTML = html;
+          setStatus('완료. 아래 내용을 확인하고 "PDF 저장"을 누르면 된다.');
+          printBtn.disabled = false;
+
+          setTimeout(function(){
+            try{ document.title = label; }catch(e){}
+          }, 0);
+        } catch(err){
+          console.error(err);
+          setStatus('실패: ' + (err && err.message ? err.message : String(err)));
+        } finally{
+          setBusy(false);
+        }
+      }
+
+      buildAllBtn.addEventListener('click', function(){ build('ALL'); });
+      buildSkBtn.addEventListener('click', function(){ build('SK'); });
+      buildMkBtn.addEventListener('click', function(){ build('MK'); });
+
+      printBtn.addEventListener('click', function(){
+        var pages = document.querySelectorAll('.page');
+        if(!pages.length){
+          setStatus('먼저 페이지를 만들어라.');
+          return;
+        }
+        try{
+          document.title = lastBuildLabel || '매물 PDF';
+        }catch(e){}
+        window.print();
+      });
+    })();
+  </script>
+</body>
+</html>

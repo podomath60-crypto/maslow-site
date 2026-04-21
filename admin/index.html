@@ -1123,6 +1123,29 @@
         width:78px;
         height:78px;
       }
+      #pdfPreviewBtn{
+        border-radius:12px;
+      }
+      .editor-head-left{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:0;
+      }
+      .editor-head-left #adminHomeBtn{
+        margin-bottom:8px;
+      }
+      #pdfPreviewBtn{
+        min-width:auto;
+        min-height:30px;
+        padding:0 10px;
+        border-radius:10px;
+        font-size:12px;
+        line-height:1;
+        font-weight:800;
+      }
+      .editor-head{
+        align-items:flex-start;
+      }
     }
 
     .property-office-box{background:#fff5f8;border:1px solid #f6cddd;}
@@ -5279,7 +5302,7 @@
     if(!adminBtn || !adminBtn.parentNode) return;
     var btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'head-btn';
+    btn.className = 'head-btn pdf-head-btn';
     btn.id = 'pdfPreviewBtn';
     btn.textContent = 'PDF';
     btn.addEventListener('click', openPdfPreview);

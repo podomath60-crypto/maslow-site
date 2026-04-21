@@ -1879,375 +1879,6 @@
       }
     }
 
-    .pdf-preview-btn{
-      min-width:auto;
-      padding:0 14px;
-    }
-    .pdf-modal{
-      position:fixed;
-      inset:0;
-      z-index:1000;
-      display:none;
-      background:rgba(15,23,42,.42);
-      backdrop-filter:blur(4px);
-      -webkit-backdrop-filter:blur(4px);
-      align-items:center;
-      justify-content:center;
-      padding:20px;
-    }
-    .pdf-modal.show{display:flex;}
-    .pdf-modal-panel{
-      width:min(1100px, 100%);
-      max-height:calc(100vh - 40px);
-      background:#f5f7fb;
-      border-radius:26px;
-      box-shadow:0 24px 60px rgba(15,23,42,.24);
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-    }
-    .pdf-modal-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding:14px 16px;
-      background:#fff;
-      border-bottom:1px solid #e7edf4;
-    }
-    .pdf-modal-title{
-      font-size:17px;
-      font-weight:900;
-      color:#111318;
-      letter-spacing:-0.03em;
-    }
-    .pdf-modal-actions{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
-    .pdf-modal-btn{
-      width:auto;
-      min-height:40px;
-      padding:0 14px;
-      border-radius:12px;
-      border:1px solid #dce6f1;
-      background:#fff;
-      color:#111318;
-      font-size:14px;
-      font-weight:800;
-      box-shadow:0 4px 12px rgba(15,23,42,.04);
-    }
-    .pdf-modal-btn.primary{
-      border-color:#0f7cff;
-      background:#0f7cff;
-      color:#fff;
-      box-shadow:0 8px 18px rgba(15,124,255,.18);
-    }
-    .pdf-modal-body{
-      flex:1 1 auto;
-      overflow:auto;
-      padding:24px;
-      display:flex;
-      justify-content:center;
-      align-items:flex-start;
-    }
-    .pdf-sheet{
-      width:794px;
-      min-height:1123px;
-      background:#fff;
-      color:#111318;
-      padding:18px;
-      border-radius:10px;
-      box-shadow:0 10px 30px rgba(15,23,42,.10);
-      transform-origin:top center;
-    }
-    .pdf-sheet-inner{
-      width:100%;
-      min-height:1087px;
-      border:1px solid #e5ebf2;
-      border-radius:22px;
-      padding:18px;
-      background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .pdf-topbar{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-    }
-    .pdf-brand-block{
-      min-width:0;
-      flex:1 1 auto;
-      display:grid;
-      gap:4px;
-    }
-    .pdf-brand{
-      font-size:11px;
-      line-height:1.3;
-      color:#6f7c8b;
-      font-weight:900;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-    }
-    .pdf-badge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      width:max-content;
-      min-height:24px;
-      padding:0 10px;
-      border-radius:999px;
-      background:#eef5ff;
-      color:#0f7cff;
-      font-size:11px;
-      font-weight:900;
-      letter-spacing:-0.02em;
-    }
-    .pdf-title{
-      margin:0;
-      font-size:22px;
-      line-height:1.22;
-      font-weight:900;
-      color:#202227;
-      letter-spacing:-0.05em;
-      word-break:keep-all;
-    }
-    .pdf-subline{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .pdf-address{
-      margin:0;
-      font-size:11px;
-      line-height:1.5;
-      color:#67707b;
-      font-weight:700;
-      letter-spacing:-0.02em;
-      word-break:keep-all;
-      flex:1 1 auto;
-    }
-    .pdf-price-box{
-      flex:0 0 210px;
-      border:1px solid #d9e7fb;
-      background:#f7fbff;
-      border-radius:16px;
-      padding:12px 14px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      gap:6px;
-      min-height:74px;
-    }
-    .pdf-price-label{
-      font-size:10px;
-      line-height:1.3;
-      color:#6f7c8b;
-      font-weight:900;
-      letter-spacing:.06em;
-    }
-    .pdf-price-value{
-      font-size:20px;
-      line-height:1.2;
-      color:#ff3c3c;
-      font-weight:900;
-      letter-spacing:-0.04em;
-      white-space:pre-wrap;
-      word-break:keep-all;
-    }
-    .pdf-hero-card{
-      border-radius:18px;
-      overflow:hidden;
-      background:#eef2f7;
-      border:1px solid #e5ebf2;
-      min-height:210px;
-      max-height:210px;
-      position:relative;
-    }
-    .pdf-hero-card img{
-      width:100%;
-      height:210px;
-      object-fit:cover;
-      display:block;
-    }
-    .pdf-hero-empty{
-      min-height:210px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
-      text-align:center;
-      font-size:14px;
-      line-height:1.6;
-      color:#8a94a3;
-      font-weight:800;
-    }
-    .pdf-content-grid{
-      display:grid;
-      grid-template-columns:1.2fr .8fr;
-      gap:10px;
-      align-items:start;
-      flex:1 1 auto;
-    }
-    .pdf-col{
-      display:grid;
-      gap:10px;
-      min-width:0;
-    }
-    .pdf-card{
-      border:1px solid #e5ebf2;
-      border-radius:16px;
-      background:#fff;
-      padding:12px;
-      min-width:0;
-    }
-    .pdf-card-title{
-      margin:0 0 8px;
-      font-size:12px;
-      line-height:1.3;
-      color:#202227;
-      font-weight:900;
-      letter-spacing:-0.03em;
-    }
-    .pdf-summary-list{
-      margin:0;
-      padding:0;
-      list-style:none;
-      display:grid;
-      gap:5px;
-    }
-    .pdf-summary-list li{
-      position:relative;
-      padding-left:14px;
-      font-size:11px;
-      line-height:1.45;
-      color:#2f3338;
-      font-weight:700;
-      letter-spacing:-0.02em;
-      word-break:keep-all;
-    }
-    .pdf-summary-list li::before{
-      content:"•";
-      position:absolute;
-      left:0;
-      top:0;
-      color:#0f7cff;
-      font-weight:900;
-    }
-    .pdf-info-grid{
-      display:grid;
-      grid-template-columns:80px 1fr 80px 1fr;
-      gap:5px 8px;
-      align-items:start;
-    }
-    .pdf-info-label{
-      font-size:10px;
-      line-height:1.45;
-      color:#7b8794;
-      font-weight:800;
-      letter-spacing:-0.02em;
-    }
-    .pdf-info-value{
-      font-size:10.5px;
-      line-height:1.42;
-      color:#202227;
-      font-weight:700;
-      letter-spacing:-0.02em;
-      word-break:break-word;
-      white-space:pre-wrap;
-      min-height:13px;
-    }
-    .pdf-contact-grid{
-      display:grid;
-      grid-template-columns:68px 1fr;
-      gap:5px 8px;
-      align-items:start;
-    }
-    .pdf-memo-box{
-      min-height:88px;
-      border-radius:12px;
-      background:#fffbe8;
-      border:1px solid #f2e19a;
-      padding:8px 9px;
-      font-size:10.5px;
-      line-height:1.45;
-      color:#5b4a00;
-      font-weight:700;
-      white-space:pre-wrap;
-      word-break:break-word;
-    }
-    .pdf-thumbs-grid{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:6px;
-    }
-    .pdf-thumb-item{
-      width:100%;
-      aspect-ratio:1 / 1;
-      border-radius:10px;
-      overflow:hidden;
-      background:#eef2f7;
-      border:1px solid #e5ebf2;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .pdf-thumb-item img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
-    }
-    .pdf-thumb-empty{
-      grid-column:1 / -1;
-      font-size:10px;
-      line-height:1.5;
-      color:#8a94a3;
-      font-weight:700;
-    }
-    .pdf-footer{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:10px;
-      padding-top:8px;
-      border-top:1px dashed #dbe4ef;
-      margin-top:auto;
-    }
-    .pdf-footer-note{
-      font-size:9.5px;
-      line-height:1.5;
-      color:#8a94a3;
-      font-weight:700;
-      letter-spacing:-0.01em;
-    }
-    .pdf-footer-brand{
-      font-size:11px;
-      line-height:1.4;
-      color:#111318;
-      font-weight:900;
-      letter-spacing:-0.02em;
-      text-align:right;
-    }
-    @media (max-width:860px){
-      .pdf-modal{padding:12px;}
-      .pdf-modal-panel{border-radius:22px;max-height:calc(100vh - 24px);}
-      .pdf-modal-head{padding:12px;}
-      .pdf-modal-title{font-size:15px;}
-      .pdf-modal-actions{gap:6px;}
-      .pdf-modal-btn{min-height:36px;padding:0 12px;font-size:13px;}
-      .pdf-modal-body{padding:12px;justify-content:flex-start;}
-      .pdf-sheet{transform-origin:top center;}
-    }
-
-
   </style>
   <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
@@ -2257,7 +1888,6 @@
       <div class="editor-head">
         <div class="editor-head-left">
           <button type="button" class="head-btn admin-home-btn" id="adminHomeBtn">관리자홈</button>
-          <button type="button" class="head-btn" id="pdfPreviewBtn">PDF</button>
         </div>
         <div class="editor-head-center">매물입력기</div>
         <div class="editor-head-right">
@@ -5621,370 +5251,215 @@
     })();
   </script>
 
-  <div id="pdfPreviewModal" class="pdf-modal" aria-hidden="true">
-    <div class="pdf-modal-panel">
-      <div class="pdf-modal-head">
-        <div class="pdf-modal-title">PDF 미리보기</div>
-        <div class="pdf-modal-actions">
-          <button type="button" class="pdf-modal-btn" id="pdfCloseBtn">닫기</button>
-          <button type="button" class="pdf-modal-btn primary" id="pdfDownloadBtn">PDF 다운로드</button>
-        </div>
-      </div>
-      <div class="pdf-modal-body">
-        <div id="pdfSheet" class="pdf-sheet">
-          <div class="pdf-sheet-inner">
-            <div class="pdf-topbar">
-              <div class="pdf-brand-block">
-                <div class="pdf-brand">MASLOW KOREA</div>
-                <div id="pdfDealBadge" class="pdf-badge">매물 브리프</div>
-                <h1 id="pdfTitle" class="pdf-title">매물 제목</h1>
-                <div class="pdf-subline">
-                  <p id="pdfAddress" class="pdf-address"></p>
-                </div>
-              </div>
-              <div class="pdf-price-box">
-                <div class="pdf-price-label">PRICE</div>
-                <div id="pdfPrice" class="pdf-price-value"></div>
-              </div>
-            </div>
-
-            <div id="pdfHeroCard" class="pdf-hero-card">
-              <div id="pdfHeroEmpty" class="pdf-hero-empty">대표사진을 추가하면 여기에 들어옵니다.</div>
-              <img id="pdfHeroImage" alt="PDF 대표사진" crossorigin="anonymous" referrerpolicy="no-referrer" style="display:none;" />
-            </div>
-
-            <div class="pdf-content-grid">
-              <div class="pdf-col">
-                <div class="pdf-card">
-                  <h3 class="pdf-card-title">핵심 요약</h3>
-                  <ul id="pdfSummaryList" class="pdf-summary-list"></ul>
-                </div>
-
-                <div class="pdf-card">
-                  <h3 class="pdf-card-title">표시 정보 전체</h3>
-                  <div id="pdfInfoGrid" class="pdf-info-grid"></div>
-                </div>
-              </div>
-
-              <div class="pdf-col">
-                <div class="pdf-card">
-                  <h3 class="pdf-card-title">의뢰인 정보</h3>
-                  <div id="pdfRequesterGrid" class="pdf-contact-grid"></div>
-                </div>
-
-                <div class="pdf-card">
-                  <h3 class="pdf-card-title">메모</h3>
-                  <div id="pdfMemo" class="pdf-memo-box"></div>
-                </div>
-
-                <div class="pdf-card">
-                  <h3 class="pdf-card-title">추가 사진</h3>
-                  <div id="pdfThumbsGrid" class="pdf-thumbs-grid"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="pdf-footer">
-              <div class="pdf-footer-note">본 문서는 매물 검토용 요약 페이지입니다.</div>
-              <div class="pdf-footer-brand">Maslow Korea</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-(function(){
-  function onReady(fn){
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', fn, { once: true });
-    } else {
-      fn();
-    }
-  }
-
-  function textOf(el){
-    return el ? String(el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim() : '';
-  }
-
-  function multilineOf(el){
-    if (!el) return '';
-    return String(el.innerText || el.textContent || '')
-      .replace(/ /g, ' ')
-      .replace(/
-/g, '')
-      .replace(/[ 	]+/g, ' ')
-      .replace(/
-{3,}/g, '
-
-')
-      .trim();
-  }
-
-  function bgUrlOf(el){
-    if (!el) return '';
-    var bg = (el.style && el.style.backgroundImage) || window.getComputedStyle(el).backgroundImage || '';
-    var match = String(bg).match(/url\((["']?)(.*?)\\1\)/i);
-    return match ? match[2] : '';
-  }
-
-  function fieldValueFromRow(row){
-    if (!row) return '';
-    var valueRoot = row.querySelector('.property-spec-value');
-    if (!valueRoot) return '';
-
-    var measure = valueRoot.querySelector('.measure-field');
-    if (measure) {
-      var lines = [];
-      measure.querySelectorAll('.measure-line').forEach(function(line){
-        var parts = [];
-        line.querySelectorAll('input, .measure-unit, .measure-sep').forEach(function(node){
-          if (node.tagName === 'INPUT') {
-            if (String(node.value || '').trim()) parts.push(String(node.value).trim());
-          } else {
-            var t = textOf(node);
-            if (t) parts.push(t);
-          }
-        });
-        var joined = parts.join(' ').trim();
-        if (joined) lines.push(joined);
-      });
-      return lines.join(' / ');
-    }
-
-    var typeRow = valueRoot.querySelector('.type-chip-row');
-    if (typeRow) {
-      var active = typeRow.querySelector('.type-chip.active');
-      return textOf(active) || textOf(typeRow.querySelector('.type-chip-placeholder'));
-    }
-
-    var editable = valueRoot.querySelector('[contenteditable="true"]');
-    if (editable) return multilineOf(editable);
-
-    var inputs = valueRoot.querySelectorAll('input');
-    if (inputs.length) {
-      return Array.from(inputs).map(function(input){ return String(input.value || '').trim(); }).filter(Boolean).join(' / ');
-    }
-
-    return multilineOf(valueRoot);
-  }
-
-  function buildGrid(targetId, rows){
-    var target = document.getElementById(targetId);
-    if (!target) return;
-    target.innerHTML = '';
-    rows.forEach(function(item){
-      var row = document.createElement('div');
-      row.className = 'pdf-kv';
-      var k = document.createElement('div');
-      k.className = 'pdf-k';
-      k.textContent = item.label;
-      var v = document.createElement('div');
-      v.className = 'pdf-v';
-      v.textContent = item.value || '-';
-      row.appendChild(k);
-      row.appendChild(v);
-      target.appendChild(row);
-    });
-  }
-
-  function collectPropertyRows(){
-    return Array.from(document.querySelectorAll('.property-spec-row')).map(function(row){
-      return {
-        label: textOf(row.querySelector('.property-spec-label')).replace(/^\*\s*/, ''),
-        value: fieldValueFromRow(row)
-      };
-    }).filter(function(item){
-      return item.label;
-    });
-  }
-
-  function collectRequesterRows(){
-    return Array.from(document.querySelectorAll('.requester-row')).map(function(row){
-      return {
-        label: textOf(row.querySelector('.requester-label')),
-        value: multilineOf(row.querySelector('.requester-value'))
-      };
-    }).filter(function(item){
-      return item.label;
-    });
-  }
-
-  function collectPhotos(){
-    var urls = [];
-    var hero = document.getElementById('heroImage');
-    var heroSrc = hero && hero.getAttribute('src') ? hero.getAttribute('src').trim() : '';
-    if (heroSrc && !heroSrc.startsWith('data:,')) urls.push(heroSrc);
-
-    document.querySelectorAll('.photo-thumb-img').forEach(function(node){
-      var url = bgUrlOf(node);
-      if (url && urls.indexOf(url) === -1) urls.push(url);
-    });
-
-    return urls;
-  }
-
-  function preloadImages(root){
-    var imgs = Array.from(root.querySelectorAll('img')).filter(function(img){ return !!img.src; });
-    return Promise.all(imgs.map(function(img){
-      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-      return new Promise(function(resolve){
-        img.onload = function(){ resolve(); };
-        img.onerror = function(){ resolve(); };
-      });
-    }));
-  }
-
-  onReady(function(){
-    var pdfBtn = document.getElementById('pdfPreviewBtn');
-    var pdfModal = document.getElementById('pdfPreviewModal');
-    var pdfCloseBtn = document.getElementById('pdfCloseBtn');
-    var pdfDownloadBtn = document.getElementById('pdfDownloadBtn');
-    var pdfSheet = document.getElementById('pdfSheet');
-    var pdfHeroImage = document.getElementById('pdfHeroImage');
-    var pdfHeroEmpty = document.getElementById('pdfHeroEmpty');
-    var pdfThumbsGrid = document.getElementById('pdfThumbsGrid');
-    var pdfSummaryList = document.getElementById('pdfSummaryList');
-    var pdfMemo = document.getElementById('pdfMemo');
-    if (!pdfBtn || !pdfModal || !pdfSheet) return;
-
-    function fitSheet(){
-      var body = pdfModal.querySelector('.pdf-modal-body');
-      if (!body) return;
-      var available = Math.max(320, body.clientWidth - 24);
-      var scale = Math.min(1, available / 794);
-      pdfSheet.style.transform = 'scale(' + scale + ')';
-      pdfSheet.style.transformOrigin = 'top center';
-      pdfSheet.style.marginBottom = ((1123 * scale) - 1123) + 'px';
-    }
-
-    function buildPdf(){
-      var deal = textOf(document.getElementById('topDealChip')) || '매물 브리프';
-      var title = multilineOf(document.querySelector('.property-detail-title')) || '매물 제목';
-      var address = textOf(document.getElementById('topAddress')) || multilineOf(document.getElementById('addressField'));
-      var price = textOf(document.getElementById('topPrice')) || fieldValueFromRow(document.getElementById('priceField') ? document.getElementById('priceField').closest('.property-spec-row') : null);
-      document.getElementById('pdfDealBadge').textContent = deal;
-      document.getElementById('pdfTitle').textContent = title;
-      document.getElementById('pdfAddress').textContent = address || '-';
-      document.getElementById('pdfPrice').textContent = price || '-';
-
-      if (pdfSummaryList) {
-        pdfSummaryList.innerHTML = '';
-        var summaryNodes = Array.from(document.querySelectorAll('.summary-editable'));
-        var summaries = summaryNodes.map(function(node){ return multilineOf(node); }).filter(Boolean);
-        if (!summaries.length) summaries = ['요약이 없습니다.'];
-        summaries.forEach(function(text){
-          var li = document.createElement('li');
-          li.textContent = text;
-          pdfSummaryList.appendChild(li);
-        });
-      }
-
-      buildGrid('pdfInfoGrid', collectPropertyRows());
-      buildGrid('pdfRequesterGrid', collectRequesterRows());
-      if (pdfMemo) pdfMemo.textContent = multilineOf(document.querySelector('.memo-body')) || '-';
-
-      var photos = collectPhotos();
-      if (pdfHeroImage && pdfHeroEmpty) {
-        if (photos.length) {
-          pdfHeroImage.src = photos[0];
-          pdfHeroImage.style.display = 'block';
-          pdfHeroEmpty.style.display = 'none';
-        } else {
-          pdfHeroImage.removeAttribute('src');
-          pdfHeroImage.style.display = 'none';
-          pdfHeroEmpty.style.display = 'flex';
+  <script>
+  (function(){
+    function textOf(el){ return el ? String(el.innerText || el.textContent || '').replace(/\s+/g,' ').trim() : ''; }
+    function htmlEscape(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function loadScript(src){
+      return new Promise(function(resolve, reject){
+        var existing = document.querySelector('script[src="'+src+'"]');
+        if(existing){
+          if(existing.dataset.loaded === '1'){ resolve(); return; }
+          existing.addEventListener('load', function(){ existing.dataset.loaded='1'; resolve(); }, {once:true});
+          existing.addEventListener('error', reject, {once:true});
+          return;
         }
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.onload = function(){ s.dataset.loaded='1'; resolve(); };
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    function ensurePdfLibraries(){
+      var jobs = [];
+      if(!window.html2canvas){ jobs.push(loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')); }
+      if(!(window.jspdf && window.jspdf.jsPDF)){ jobs.push(loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')); }
+      return Promise.all(jobs);
+    }
+    function getPhotoUrls(){
+      var urls = [];
+      var hero = document.getElementById('heroImage');
+      var heroSrc = hero && hero.getAttribute('src') ? hero.getAttribute('src').trim() : '';
+      if(heroSrc) urls.push(heroSrc);
+      var thumbs = document.querySelectorAll('.photo-thumb-img');
+      thumbs.forEach(function(el){
+        var bg = el.style.backgroundImage || '';
+        var m = bg.match(/url\((['"]?)(.*?)\1\)/);
+        if(m && m[2] && urls.indexOf(m[2]) === -1) urls.push(m[2]);
+      });
+      return urls;
+    }
+    function buildInfoRows(scopeSelector){
+      var rows = [];
+      var sector = document.querySelector(scopeSelector);
+      if(!sector) return rows;
+      var node = sector.nextElementSibling;
+      while(node){
+        if(node.classList && node.classList.contains('property-spec-sector-title')) break;
+        if(node.classList && node.classList.contains('property-spec-row')){
+          var label = textOf(node.querySelector('.property-spec-label'));
+          var value = textOf(node.querySelector('.property-spec-value'));
+          if(label || value) rows.push({label:label, value:value});
+        }
+        node = node.nextElementSibling;
       }
+      return rows;
+    }
+    function buildRequesterRows(){
+      var rows = [];
+      document.querySelectorAll('.requester-row').forEach(function(row){
+        var label = textOf(row.querySelector('.requester-label'));
+        var value = textOf(row.querySelector('.requester-value'));
+        if(label || value) rows.push({label:label, value:value});
+      });
+      return rows;
+    }
+    function ensurePdfUi(){
+      if(document.getElementById('pdfPreviewBtn')) return;
+      var adminBtn = document.getElementById('adminHomeBtn');
+      if(adminBtn && adminBtn.parentNode){
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'head-btn';
+        btn.id = 'pdfPreviewBtn';
+        btn.textContent = 'PDF';
+        adminBtn.insertAdjacentElement('afterend', btn);
+      }
+      var style = document.createElement('style');
+      style.textContent = ''+
+      '.pdf-preview-overlay{position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.44);display:none;align-items:center;justify-content:center;padding:18px;}'+
+      '.pdf-preview-overlay.show{display:flex;}'+
+      '.pdf-preview-shell{width:min(1180px,100%);height:min(92vh,100%);background:#fff;border-radius:24px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(15,23,42,.24);}'+
+      '.pdf-preview-topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid #e6ebf1;background:#fff;}'+
+      '.pdf-preview-actions{display:flex;gap:8px;flex-wrap:wrap;}'+
+      '.pdf-action-btn{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid #dce6f1;background:#fff;color:#111;font-size:14px;font-weight:800;cursor:pointer;}'+
+      '.pdf-action-btn.primary{background:#111318;color:#fff;border-color:#111318;}'+
+      '.pdf-preview-body{flex:1 1 auto;overflow:auto;background:#eef2f7;padding:22px;}'+
+      '.pdf-page{width:794px;min-height:1123px;margin:0 auto;background:#fff;color:#111318;box-shadow:0 18px 40px rgba(15,23,42,.12);padding:28px 28px 26px;box-sizing:border-box;}'+
+      '.pdf-brand{font-size:15px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#111318;margin-bottom:10px;}'+
+      '.pdf-top{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;align-items:start;margin-bottom:14px;}'+
+      '.pdf-hero{width:100%;height:160px;border-radius:18px;overflow:hidden;background:#eef2f7;border:1px solid #e7edf5;}'+
+      '.pdf-hero img{width:100%;height:100%;object-fit:cover;}'+
+      '.pdf-topcard{border:1px solid #e7edf5;border-radius:18px;padding:14px 15px;background:#fbfcfe;min-height:160px;}'+
+      '.pdf-badge{display:inline-flex;align-items:center;min-height:28px;padding:0 12px;border-radius:999px;background:#111318;color:#fff;font-size:12px;font-weight:900;margin-bottom:10px;}'+
+      '.pdf-title{font-size:23px;line-height:1.2;font-weight:900;letter-spacing:-.04em;margin:0 0 8px;word-break:keep-all;}'+
+      '.pdf-address{font-size:12px;line-height:1.5;color:#5b6470;margin:0 0 8px;word-break:keep-all;}'+
+      '.pdf-price{font-size:21px;line-height:1.25;font-weight:900;color:#e53935;letter-spacing:-.04em;white-space:pre-line;}'+
+      '.pdf-summary{display:grid;grid-template-columns:1fr;gap:6px;margin:0 0 14px;}'+
+      '.pdf-summary-item{border:1px solid #e7edf5;background:#fbfcfe;border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.55;font-weight:700;word-break:keep-all;}'+
+      '.pdf-photo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:0 0 14px;}'+
+      '.pdf-thumb{aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#eef2f7;border:1px solid #e7edf5;}'+
+      '.pdf-thumb img{width:100%;height:100%;object-fit:cover;}'+
+      '.pdf-sections{display:grid;grid-template-columns:1fr 1fr;gap:12px;}'+
+      '.pdf-card{border:1px solid #e7edf5;border-radius:16px;padding:12px 13px;background:#fff;break-inside:avoid;}'+
+      '.pdf-card.full{grid-column:1 / -1;}'+
+      '.pdf-card-title{font-size:13px;font-weight:900;letter-spacing:-.02em;margin:0 0 8px;color:#111318;}'+
+      '.pdf-info-grid{display:grid;grid-template-columns:108px 1fr;gap:6px 10px;}'+
+      '.pdf-label{font-size:11px;line-height:1.5;color:#7a8491;font-weight:800;word-break:keep-all;}'+
+      '.pdf-value{font-size:11px;line-height:1.5;color:#111318;font-weight:700;white-space:pre-wrap;word-break:break-word;}'+
+      '.pdf-memo{font-size:11px;line-height:1.6;color:#111318;font-weight:700;white-space:pre-wrap;min-height:56px;word-break:break-word;}'+
+      '@media (max-width:860px){.pdf-preview-body{padding:10px;}.pdf-page{transform-origin:top center;transform:scale(.47);margin:0 auto -590px;}.pdf-preview-shell{height:100vh;border-radius:0;}.pdf-preview-overlay{padding:0;}}';
+      document.head.appendChild(style);
 
-      if (pdfThumbsGrid) {
-        pdfThumbsGrid.innerHTML = '';
-        photos.slice(1).forEach(function(url){
-          var item = document.createElement('div');
-          item.className = 'pdf-thumb-item';
-          var img = document.createElement('img');
-          img.src = url;
-          img.alt = '추가사진';
-          img.crossOrigin = 'anonymous';
-          img.referrerPolicy = 'no-referrer';
-          item.appendChild(img);
-          pdfThumbsGrid.appendChild(item);
-        });
-      }
+      var overlay = document.createElement('div');
+      overlay.className = 'pdf-preview-overlay';
+      overlay.id = 'pdfPreviewModal';
+      overlay.innerHTML = ''+
+      '<div class="pdf-preview-shell">'+
+        '<div class="pdf-preview-topbar">'+
+          '<strong style="font-size:15px;">PDF 미리보기</strong>'+
+          '<div class="pdf-preview-actions">'+
+            '<button type="button" class="pdf-action-btn" id="pdfCloseBtn">닫기</button>'+
+            '<button type="button" class="pdf-action-btn primary" id="pdfDownloadBtn">PDF 다운로드</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="pdf-preview-body"><div class="pdf-page" id="pdfPage"></div></div>'+
+      '</div>';
+      document.body.appendChild(overlay);
+
+      document.getElementById('pdfCloseBtn').addEventListener('click', function(){ overlay.classList.remove('show'); });
+      overlay.addEventListener('click', function(e){ if(e.target === overlay) overlay.classList.remove('show'); });
+      document.getElementById('pdfDownloadBtn').addEventListener('click', downloadPdf);
+      document.getElementById('pdfPreviewBtn').addEventListener('click', function(){ renderPdfPreview(); overlay.classList.add('show'); });
     }
 
-    async function openPreview(){
-      buildPdf();
-      pdfModal.classList.add('show');
-      pdfModal.setAttribute('aria-hidden', 'false');
-      fitSheet();
-      await preloadImages(pdfSheet);
-      fitSheet();
-    }
+    function renderPdfPreview(){
+      var page = document.getElementById('pdfPage');
+      if(!page) return;
+      var photos = getPhotoUrls();
+      var hero = photos[0] || '';
+      var thumbs = photos.slice(1, 11);
+      var deal = textOf(document.getElementById('topDealChip')) || '매물';
+      var title = textOf(document.querySelector('.property-detail-title'));
+      var address = textOf(document.getElementById('topAddress'));
+      var price = textOf(document.getElementById('topPrice'));
+      var summary = [];
+      document.querySelectorAll('.summary-editable').forEach(function(el){ var t = textOf(el); if(t) summary.push(t); });
+      var basic = buildInfoRows('.property-spec-sector-title');
+      var factoryTitleNodes = document.querySelectorAll('.property-spec-sector-title');
+      var factory = factoryTitleNodes.length > 1 ? buildInfoRows('.property-spec-sector-title:nth-of-type(2)') : [];
+      var requester = buildRequesterRows();
+      var memo = textOf(document.querySelector('.memo-body'));
+      var note = textOf(document.querySelector('.property-detail-note'));
 
-    function closePreview(){
-      pdfModal.classList.remove('show');
-      pdfModal.setAttribute('aria-hidden', 'true');
+      function rowsHtml(rows){
+        return rows.filter(function(r){ return r.label || r.value; }).map(function(r){
+          return '<div class="pdf-label">'+htmlEscape(r.label)+'</div><div class="pdf-value">'+htmlEscape(r.value || '-')+'</div>';
+        }).join('');
+      }
+
+      page.innerHTML = ''+
+      '<div class="pdf-brand">Maslow Korea</div>'+
+      '<div class="pdf-top">'+
+        '<div class="pdf-hero">'+(hero ? '<img crossorigin="anonymous" src="'+hero.replace(/"/g,'&quot;')+'">' : '')+'</div>'+
+        '<div class="pdf-topcard">'+
+          '<div class="pdf-badge">'+htmlEscape(deal)+'</div>'+
+          '<h1 class="pdf-title">'+htmlEscape(title || '제목 없음')+'</h1>'+
+          '<p class="pdf-address">'+htmlEscape(address)+'</p>'+
+          '<div class="pdf-price">'+htmlEscape(price)+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="pdf-summary">'+
+        (summary.length ? summary.map(function(s){ return '<div class="pdf-summary-item">✔ '+htmlEscape(s)+'</div>'; }).join('') : '<div class="pdf-summary-item">요약 없음</div>')+
+      '</div>'+
+      '<div class="pdf-photo-grid">'+
+        thumbs.map(function(src){ return '<div class="pdf-thumb"><img crossorigin="anonymous" src="'+src.replace(/"/g,'&quot;')+'"></div>'; }).join('')+
+      '</div>'+
+      '<div class="pdf-sections">'+
+        '<div class="pdf-card"><h3 class="pdf-card-title">기본정보</h3><div class="pdf-info-grid">'+rowsHtml(basic)+'</div></div>'+
+        '<div class="pdf-card"><h3 class="pdf-card-title">공장특화정보</h3><div class="pdf-info-grid">'+rowsHtml(factory)+'</div></div>'+
+        '<div class="pdf-card"><h3 class="pdf-card-title">의뢰인 정보</h3><div class="pdf-info-grid">'+rowsHtml(requester)+'</div></div>'+
+        '<div class="pdf-card"><h3 class="pdf-card-title">상단 메모 / 안내</h3><div class="pdf-memo">'+htmlEscape(note || '-')+'</div></div>'+
+        '<div class="pdf-card full"><h3 class="pdf-card-title">MEMO</h3><div class="pdf-memo">'+htmlEscape(memo || '-')+'</div></div>'+
+      '</div>';
     }
 
     async function downloadPdf(){
-      buildPdf();
-      if (!window.html2canvas || !(window.jspdf && window.jspdf.jsPDF)) {
-        alert('PDF 라이브러리를 불러오지 못했습니다. 다시 시도해주세요.');
-        return;
-      }
-      var prevTransform = pdfSheet.style.transform;
-      var prevOrigin = pdfSheet.style.transformOrigin;
-      var prevMarginBottom = pdfSheet.style.marginBottom;
-      pdfSheet.style.transform = 'none';
-      pdfSheet.style.transformOrigin = 'top center';
-      pdfSheet.style.marginBottom = '0';
-      try {
-        await preloadImages(pdfSheet);
-        var canvas = await window.html2canvas(pdfSheet, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: '#ffffff',
-          imageTimeout: 15000
-        });
-        var imgData = canvas.toDataURL('image/jpeg', 0.96);
-        var pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
-        pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
-        var listing = textOf(document.getElementById('listingNumberField')) || '매물';
-        pdf.save(listing + '_매물요약.pdf');
-      } catch (err) {
+      try{
+        renderPdfPreview();
+        await ensurePdfLibraries();
+        var page = document.getElementById('pdfPage');
+        var canvas = await window.html2canvas(page, {scale:2, useCORS:true, allowTaint:false, backgroundColor:'#ffffff'});
+        var img = canvas.toDataURL('image/jpeg', 0.98);
+        var jsPDF = window.jspdf.jsPDF;
+        var pdf = new jsPDF('p', 'pt', 'a4');
+        pdf.addImage(img, 'JPEG', 0, 0, 595.28, 841.89);
+        pdf.save('매물.pdf');
+      }catch(err){
         console.error(err);
         alert('PDF 생성 중 오류가 발생했습니다.');
-      } finally {
-        pdfSheet.style.transform = prevTransform;
-        pdfSheet.style.transformOrigin = prevOrigin;
-        pdfSheet.style.marginBottom = prevMarginBottom;
-        if (pdfModal.classList.contains('show')) fitSheet();
       }
     }
 
-    pdfBtn.addEventListener('click', function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      openPreview();
-    });
-    if (pdfCloseBtn) pdfCloseBtn.addEventListener('click', closePreview);
-    if (pdfDownloadBtn) pdfDownloadBtn.addEventListener('click', downloadPdf);
-    pdfModal.addEventListener('click', function(e){
-      if (e.target === pdfModal) closePreview();
-    });
-    window.addEventListener('resize', function(){
-      if (pdfModal.classList.contains('show')) fitSheet();
-    });
-  });
-})();
-</script>
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', ensurePdfUi);
+    }else{
+      ensurePdfUi();
+    }
+  })();
+  </script>
 
 </body>
 </html>

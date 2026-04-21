@@ -1879,6 +1879,335 @@
       }
     }
 
+
+    .pdf-preview-btn{
+      min-width:auto;
+      padding:0 14px;
+    }
+    .pdf-modal{
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      display:none;
+      background:rgba(15,23,42,.42);
+      backdrop-filter:blur(4px);
+      -webkit-backdrop-filter:blur(4px);
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .pdf-modal.show{display:flex;}
+    .pdf-modal-panel{
+      width:min(1080px, 100%);
+      max-height:calc(100vh - 40px);
+      background:#f5f7fb;
+      border-radius:26px;
+      box-shadow:0 24px 60px rgba(15,23,42,.24);
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+    .pdf-modal-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 16px;
+      background:#fff;
+      border-bottom:1px solid #e7edf4;
+    }
+    .pdf-modal-title{
+      font-size:17px;
+      font-weight:900;
+      color:#111318;
+      letter-spacing:-0.03em;
+    }
+    .pdf-modal-actions{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .pdf-modal-btn{
+      width:auto;
+      min-height:40px;
+      padding:0 14px;
+      border-radius:12px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#111318;
+      font-size:14px;
+      font-weight:800;
+      box-shadow:0 4px 12px rgba(15,23,42,.04);
+    }
+    .pdf-modal-btn.primary{
+      border-color:#0f7cff;
+      background:#0f7cff;
+      color:#fff;
+      box-shadow:0 8px 18px rgba(15,124,255,.18);
+    }
+    .pdf-modal-body{
+      flex:1 1 auto;
+      overflow:auto;
+      padding:24px;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+    }
+    .pdf-sheet{
+      width:794px;
+      min-height:1123px;
+      background:#fff;
+      color:#111318;
+      padding:28px;
+      border-radius:10px;
+      box-shadow:0 10px 30px rgba(15,23,42,.10);
+    }
+    .pdf-sheet-inner{
+      width:100%;
+      min-height:1067px;
+      border:1px solid #e5ebf2;
+      border-radius:24px;
+      padding:26px;
+      background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+    .pdf-sheet-topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+    }
+    .pdf-sheet-brand{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+      flex:1 1 auto;
+    }
+    .pdf-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:max-content;
+      min-height:30px;
+      padding:0 12px;
+      border-radius:999px;
+      background:#eef5ff;
+      color:#0f7cff;
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:-0.02em;
+    }
+    .pdf-title{
+      margin:0;
+      font-size:30px;
+      line-height:1.2;
+      font-weight:900;
+      color:#202227;
+      letter-spacing:-0.05em;
+      word-break:keep-all;
+    }
+    .pdf-address{
+      margin:0;
+      font-size:15px;
+      line-height:1.55;
+      color:#67707b;
+      font-weight:700;
+      letter-spacing:-0.02em;
+      word-break:keep-all;
+    }
+    .pdf-price-box{
+      flex:0 0 230px;
+      border:1px solid #d9e7fb;
+      background:#f7fbff;
+      border-radius:20px;
+      padding:16px 18px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:8px;
+      min-height:110px;
+    }
+    .pdf-price-label{
+      font-size:12px;
+      line-height:1.4;
+      color:#6f7c8b;
+      font-weight:900;
+      letter-spacing:.04em;
+    }
+    .pdf-price-value{
+      font-size:28px;
+      line-height:1.2;
+      color:#ff3c3c;
+      font-weight:900;
+      letter-spacing:-0.05em;
+      white-space:pre-wrap;
+      word-break:keep-all;
+    }
+    .pdf-main-grid{
+      display:grid;
+      grid-template-columns:1.7fr 1fr;
+      gap:18px;
+      align-items:start;
+    }
+    .pdf-hero-card{
+      border-radius:28px;
+      overflow:hidden;
+      background:#eef2f7;
+      border:1px solid #e5ebf2;
+      min-height:454px;
+      position:relative;
+    }
+    .pdf-hero-card img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      aspect-ratio:1.2 / 1;
+      display:block;
+    }
+    .pdf-hero-empty{
+      min-height:454px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      text-align:center;
+      font-size:18px;
+      line-height:1.6;
+      color:#8a94a3;
+      font-weight:800;
+    }
+    .pdf-side-col{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      min-width:0;
+    }
+    .pdf-summary-card,
+    .pdf-info-card,
+    .pdf-thumb-card{
+      border:1px solid #e5ebf2;
+      border-radius:22px;
+      background:#fff;
+      padding:18px;
+    }
+    .pdf-card-title{
+      margin:0 0 12px;
+      font-size:15px;
+      line-height:1.3;
+      color:#202227;
+      font-weight:900;
+      letter-spacing:-0.03em;
+    }
+    .pdf-summary-list{
+      margin:0;
+      padding:0;
+      list-style:none;
+      display:grid;
+      gap:10px;
+    }
+    .pdf-summary-list li{
+      position:relative;
+      padding-left:18px;
+      font-size:14px;
+      line-height:1.6;
+      color:#2f3338;
+      font-weight:700;
+      letter-spacing:-0.02em;
+      word-break:keep-all;
+    }
+    .pdf-summary-list li::before{
+      content:"•";
+      position:absolute;
+      left:0;
+      top:0;
+      color:#0f7cff;
+      font-weight:900;
+    }
+    .pdf-info-grid{
+      display:grid;
+      grid-template-columns:88px 1fr;
+      gap:8px 10px;
+      align-items:start;
+    }
+    .pdf-info-label{
+      font-size:12px;
+      line-height:1.5;
+      color:#7b8794;
+      font-weight:800;
+      letter-spacing:-0.02em;
+    }
+    .pdf-info-value{
+      font-size:13px;
+      line-height:1.55;
+      color:#202227;
+      font-weight:700;
+      letter-spacing:-0.02em;
+      word-break:keep-all;
+      white-space:pre-wrap;
+    }
+    .pdf-thumbs-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+    }
+    .pdf-thumb-item{
+      width:100%;
+      aspect-ratio:1 / 1;
+      border-radius:14px;
+      overflow:hidden;
+      background:#eef2f7;
+      border:1px solid #e5ebf2;
+      background-size:cover;
+      background-position:center;
+      background-repeat:no-repeat;
+    }
+    .pdf-thumb-empty{
+      font-size:13px;
+      line-height:1.6;
+      color:#8a94a3;
+      font-weight:700;
+    }
+    .pdf-footer{
+      margin-top:auto;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:16px;
+      padding-top:10px;
+      border-top:1px dashed #dbe4ef;
+    }
+    .pdf-footer-note{
+      font-size:11px;
+      line-height:1.6;
+      color:#8a94a3;
+      font-weight:700;
+      letter-spacing:-0.01em;
+    }
+    .pdf-footer-brand{
+      font-size:13px;
+      line-height:1.5;
+      color:#111318;
+      font-weight:900;
+      letter-spacing:-0.02em;
+      text-align:right;
+    }
+    @media (max-width:860px){
+      .pdf-preview-btn{padding:0 12px;}
+      .pdf-modal{padding:12px;}
+      .pdf-modal-panel{border-radius:22px;max-height:calc(100vh - 24px);}
+      .pdf-modal-head{padding:12px 12px;}
+      .pdf-modal-title{font-size:15px;}
+      .pdf-modal-actions{gap:6px;}
+      .pdf-modal-btn{min-height:36px;padding:0 12px;font-size:13px;}
+      .pdf-modal-body{padding:12px;justify-content:flex-start;}
+      .pdf-sheet{transform-origin:top center;}
+    }
+
   </style>
   <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
@@ -1888,6 +2217,7 @@
       <div class="editor-head">
         <div class="editor-head-left">
           <button type="button" class="head-btn admin-home-btn" id="adminHomeBtn">관리자홈</button>
+          <button type="button" class="head-btn" id="pdfPreviewBtn">PDF</button>
         </div>
         <div class="editor-head-center">매물입력기</div>
         <div class="editor-head-right">
@@ -5250,5 +5580,264 @@
 
     })();
   </script>
+
+  <div id="pdfPreviewModal" class="pdf-modal" aria-hidden="true">
+    <div class="pdf-modal-panel">
+      <div class="pdf-modal-head">
+        <div class="pdf-modal-title">PDF 미리보기</div>
+        <div class="pdf-modal-actions">
+          <button type="button" class="pdf-modal-btn" id="pdfCloseBtn">닫기</button>
+          <button type="button" class="pdf-modal-btn primary" id="pdfDownloadBtn">PDF 다운로드</button>
+        </div>
+      </div>
+      <div class="pdf-modal-body">
+        <div id="pdfSheet" class="pdf-sheet">
+          <div class="pdf-sheet-inner">
+            <div class="pdf-sheet-topbar">
+              <div class="pdf-sheet-brand">
+                <div id="pdfDealBadge" class="pdf-badge">매물 브리프</div>
+                <h1 id="pdfTitle" class="pdf-title">매물 제목</h1>
+                <p id="pdfAddress" class="pdf-address"></p>
+              </div>
+              <div class="pdf-price-box">
+                <div class="pdf-price-label">PRICE</div>
+                <div id="pdfPrice" class="pdf-price-value"></div>
+              </div>
+            </div>
+
+            <div class="pdf-main-grid">
+              <div id="pdfHeroCard" class="pdf-hero-card">
+                <div id="pdfHeroEmpty" class="pdf-hero-empty">대표사진을 추가하면 여기에 크게 들어옵니다.</div>
+                <img id="pdfHeroImage" alt="PDF 대표사진" style="display:none;" />
+              </div>
+
+              <div class="pdf-side-col">
+                <div class="pdf-summary-card">
+                  <h3 class="pdf-card-title">핵심 요약</h3>
+                  <ul id="pdfSummaryList" class="pdf-summary-list"></ul>
+                </div>
+
+                <div class="pdf-info-card">
+                  <h3 class="pdf-card-title">기본 정보</h3>
+                  <div class="pdf-info-grid">
+                    <div class="pdf-info-label">매물번호</div>
+                    <div id="pdfListingNumber" class="pdf-info-value"></div>
+                    <div class="pdf-info-label">매물종류</div>
+                    <div id="pdfPropertyType" class="pdf-info-value"></div>
+                    <div class="pdf-info-label">사용승인일</div>
+                    <div id="pdfApprovalDate" class="pdf-info-value"></div>
+                    <div class="pdf-info-label">면적</div>
+                    <div id="pdfAreaSummary" class="pdf-info-value"></div>
+                  </div>
+                </div>
+
+                <div class="pdf-thumb-card">
+                  <h3 class="pdf-card-title">추가 사진</h3>
+                  <div id="pdfThumbsGrid" class="pdf-thumbs-grid"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pdf-footer">
+              <div class="pdf-footer-note">본 문서는 매물 검토용 요약 페이지입니다.</div>
+              <div class="pdf-footer-brand">Maslow Korea Realty</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  const pdfBtn = document.getElementById('pdfPreviewBtn');
+  const pdfModal = document.getElementById('pdfPreviewModal');
+  const pdfCloseBtn = document.getElementById('pdfCloseBtn');
+  const pdfDownloadBtn = document.getElementById('pdfDownloadBtn');
+  const pdfSheet = document.getElementById('pdfSheet');
+  if (!pdfBtn || !pdfModal || !pdfSheet || !window.html2canvas || !(window.jspdf && window.jspdf.jsPDF)) return;
+
+  const safeText = (value, fallback='') => {
+    const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+    return text || fallback;
+  };
+  const safeMultiline = (value, fallback='') => {
+    const text = String(value == null ? '' : value).replace(/ /g, ' ').replace(/[ 	]+/g, ' ').replace(/
+{3,}/g, '
+
+').trim();
+    return text || fallback;
+  };
+  const getTextByLabel = (labelText) => {
+    const rows = Array.from(document.querySelectorAll('.property-spec-row'));
+    const row = rows.find((el) => {
+      const label = el.querySelector('.property-spec-label');
+      return safeText(label ? label.innerText : '').replace(/^\*\s*/, '') === labelText;
+    });
+    if (!row) return '';
+    const valueEl = row.querySelector('.property-spec-value');
+    return safeMultiline(valueEl ? valueEl.innerText : '');
+  };
+  const getMeasureSummary = () => {
+    const rows = Array.from(document.querySelectorAll('.property-spec-row'));
+    const targets = [
+      ['대지면적', '대지'],
+      ['연면적', '연면적'],
+      ['전용면적', '전용']
+    ];
+    const parts = [];
+    targets.forEach(([labelText, prefix]) => {
+      const row = rows.find((el) => {
+        const label = el.querySelector('.property-spec-label');
+        return safeText(label ? label.innerText : '').replace(/^\*\s*/, '') === labelText;
+      });
+      if (!row) return;
+      const inputs = row.querySelectorAll('.measure-input');
+      const m2 = safeText(inputs[0] ? inputs[0].value : '');
+      const py = safeText(inputs[1] ? inputs[1].value : '');
+      const seg = [];
+      if (m2) seg.push(m2 + '㎡');
+      if (py) seg.push(py + '평');
+      if (seg.length) parts.push(prefix + ' ' + seg.join(' / '));
+    });
+    return parts.join('
+');
+  };
+  const buildPdf = () => {
+    const title = safeText(document.querySelector('.property-detail-title')?.innerText, '매물 제목 입력');
+    const address = safeText(document.getElementById('topAddress')?.innerText);
+    const price = safeMultiline(document.getElementById('topPrice')?.innerText, '가격 정보 없음');
+    const dealType = safeText(document.getElementById('topDealChip')?.innerText, '매물 브리프');
+    const heroSrc = safeText(document.getElementById('heroImage')?.getAttribute('src'));
+    const titleEl = document.getElementById('pdfTitle');
+    const addressEl = document.getElementById('pdfAddress');
+    const priceEl = document.getElementById('pdfPrice');
+    const badgeEl = document.getElementById('pdfDealBadge');
+    const heroImg = document.getElementById('pdfHeroImage');
+    const heroEmpty = document.getElementById('pdfHeroEmpty');
+    const summaryList = document.getElementById('pdfSummaryList');
+    const thumbsGrid = document.getElementById('pdfThumbsGrid');
+
+    if (titleEl) titleEl.textContent = title;
+    if (addressEl) addressEl.textContent = address || '주소 정보 없음';
+    if (priceEl) priceEl.textContent = price;
+    if (badgeEl) badgeEl.textContent = dealType || '매물 브리프';
+
+    if (heroImg && heroEmpty) {
+      if (heroSrc) {
+        heroImg.src = heroSrc;
+        heroImg.style.display = 'block';
+        heroEmpty.style.display = 'none';
+      } else {
+        heroImg.removeAttribute('src');
+        heroImg.style.display = 'none';
+        heroEmpty.style.display = 'flex';
+      }
+    }
+
+    if (summaryList) {
+      summaryList.innerHTML = '';
+      const items = Array.from(document.querySelectorAll('.summary-editable'))
+        .map((el) => safeMultiline(el.innerText))
+        .filter(Boolean)
+        .slice(0, 3);
+      if (!items.length) items.push('요약 내용을 입력하면 이곳에 자동으로 정리됩니다.');
+      items.forEach((text) => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        summaryList.appendChild(li);
+      });
+    }
+
+    const assign = (id, value, fallback='-') => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = safeMultiline(value, fallback);
+    };
+    assign('pdfListingNumber', document.getElementById('listingNumberField')?.innerText);
+    assign('pdfPropertyType', getTextByLabel('매물종류'));
+    assign('pdfApprovalDate', getTextByLabel('사용승인일'));
+    assign('pdfAreaSummary', getMeasureSummary());
+
+    if (thumbsGrid) {
+      thumbsGrid.innerHTML = '';
+      const thumbs = Array.from(document.querySelectorAll('.photo-thumb-img'))
+        .map((el) => el.style.backgroundImage)
+        .filter(Boolean);
+      const extraThumbs = thumbs.slice(1, 7);
+      if (!extraThumbs.length) {
+        const empty = document.createElement('div');
+        empty.className = 'pdf-thumb-empty';
+        empty.textContent = '추가 사진이 없으면 대표사진 중심으로 깔끔하게 출력됩니다.';
+        empty.style.gridColumn = '1 / -1';
+        thumbsGrid.appendChild(empty);
+      } else {
+        extraThumbs.forEach((bg) => {
+          const item = document.createElement('div');
+          item.className = 'pdf-thumb-item';
+          item.style.backgroundImage = bg;
+          thumbsGrid.appendChild(item);
+        });
+      }
+    }
+  };
+
+  const fitPdfSheet = () => {
+    const body = pdfModal.querySelector('.pdf-modal-body');
+    if (!body) return;
+    const panelWidth = body.clientWidth - 8;
+    const baseWidth = 794;
+    const scale = Math.min(1, panelWidth / baseWidth);
+    pdfSheet.style.transform = 'scale(' + scale + ')';
+    pdfSheet.style.marginBottom = ((1123 * scale) - 1123) + 'px';
+  };
+
+  const openPdfPreview = () => {
+    buildPdf();
+    pdfModal.classList.add('show');
+    pdfModal.setAttribute('aria-hidden', 'false');
+    fitPdfSheet();
+  };
+  const closePdfPreview = () => {
+    pdfModal.classList.remove('show');
+    pdfModal.setAttribute('aria-hidden', 'true');
+  };
+  const downloadPdf = async () => {
+    buildPdf();
+    const prevTransform = pdfSheet.style.transform;
+    const prevMarginBottom = pdfSheet.style.marginBottom;
+    pdfSheet.style.transform = 'none';
+    pdfSheet.style.marginBottom = '0';
+    try {
+      const canvas = await window.html2canvas(pdfSheet, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
+      pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
+      const listing = safeText(document.getElementById('listingNumberField')?.innerText, '매물');
+      pdf.save(listing + '_매물요약.pdf');
+    } catch (err) {
+      console.error(err);
+      alert('PDF 생성 중 오류가 났습니다. 다시 시도해주세요.');
+    } finally {
+      pdfSheet.style.transform = prevTransform;
+      pdfSheet.style.marginBottom = prevMarginBottom;
+      fitPdfSheet();
+    }
+  };
+
+  pdfBtn.addEventListener('click', openPdfPreview);
+  pdfCloseBtn && pdfCloseBtn.addEventListener('click', closePdfPreview);
+  pdfDownloadBtn && pdfDownloadBtn.addEventListener('click', downloadPdf);
+  pdfModal.addEventListener('click', (e) => { if (e.target === pdfModal) closePdfPreview(); });
+  window.addEventListener('resize', () => { if (pdfModal.classList.contains('show')) fitPdfSheet(); });
+})();
+</script>
+
 </body>
 </html>

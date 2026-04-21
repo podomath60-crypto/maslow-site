@@ -5700,237 +5700,287 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 (function(){
-  function ready(fn){
+  function onReady(fn){
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', fn, { once:true });
+      document.addEventListener('DOMContentLoaded', fn, { once: true });
     } else {
       fn();
     }
   }
 
-  ready(function(){
-    const pdfBtn = document.getElementById('pdfPreviewBtn');
-    const pdfModal = document.getElementById('pdfPreviewModal');
-    const pdfCloseBtn = document.getElementById('pdfCloseBtn');
-    const pdfDownloadBtn = document.getElementById('pdfDownloadBtn');
-    const pdfSheet = document.getElementById('pdfSheet');
-    if (!pdfBtn || !pdfModal || !pdfSheet) return;
+  function textOf(el){
+    return el ? String(el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim() : '';
+  }
 
-    const safeText = (value, fallback='') => {
-      const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
-      return text || fallback;
-    };
-
-    const safeMultiline = (value, fallback='') => {
-      const text = String(value == null ? '' : value)
-        .replace(/ /g, ' ')
-        .replace(/[ 	]+/g, ' ')
-        .replace(/
+  function multilineOf(el){
+    if (!el) return '';
+    return String(el.innerText || el.textContent || '')
+      .replace(/ /g, ' ')
+      .replace(/
+/g, '')
+      .replace(/[ 	]+/g, ' ')
+      .replace(/
 {3,}/g, '
 
 ')
-        .trim();
-      return text || fallback;
-    };
+      .trim();
+  }
 
-    const getThumbUrl = (bg) => {
-      if (!bg) return '';
-      const match = String(bg).match(/url\((['"]?)(.*?)\)/i);
-      return match ? match[2] : '';
-    };
+  function bgUrlOf(el){
+    if (!el) return '';
+    var bg = (el.style && el.style.backgroundImage) || window.getComputedStyle(el).backgroundImage || '';
+    var match = String(bg).match(/url\((["']?)(.*?)\\1\)/i);
+    return match ? match[2] : '';
+  }
 
-    const collectPropertyRows = () => {
-      const rows = Array.from(document.querySelectorAll('.property-spec-row'));
-      const result = [];
-      rows.forEach((row) => {
-        const label = safeText(row.querySelector('.property-spec-label')?.innerText).replace(/^\*\s*/, '');
-        const valueEl = row.querySelector('.property-spec-value');
-        const value = safeMultiline(valueEl ? valueEl.innerText : '');
-        if (!label) return;
-        result.push([label, value || '-']);
+  function fieldValueFromRow(row){
+    if (!row) return '';
+    var valueRoot = row.querySelector('.property-spec-value');
+    if (!valueRoot) return '';
+
+    var measure = valueRoot.querySelector('.measure-field');
+    if (measure) {
+      var lines = [];
+      measure.querySelectorAll('.measure-line').forEach(function(line){
+        var parts = [];
+        line.querySelectorAll('input, .measure-unit, .measure-sep').forEach(function(node){
+          if (node.tagName === 'INPUT') {
+            if (String(node.value || '').trim()) parts.push(String(node.value).trim());
+          } else {
+            var t = textOf(node);
+            if (t) parts.push(t);
+          }
+        });
+        var joined = parts.join(' ').trim();
+        if (joined) lines.push(joined);
       });
-      return result;
-    };
+      return lines.join(' / ');
+    }
 
-    const collectRequesterRows = () => {
-      return Array.from(document.querySelectorAll('.requester-row')).map((row) => {
-        const label = safeText(row.querySelector('.requester-label')?.innerText);
-        const value = safeMultiline(row.querySelector('.requester-value')?.innerText, '-');
-        return [label, value];
-      }).filter(([label]) => !!label);
-    };
+    var typeRow = valueRoot.querySelector('.type-chip-row');
+    if (typeRow) {
+      var active = typeRow.querySelector('.type-chip.active');
+      return textOf(active) || textOf(typeRow.querySelector('.type-chip-placeholder'));
+    }
 
-    const renderPairs = (targetId, pairs, emptyText='-') => {
-      const wrap = document.getElementById(targetId);
-      if (!wrap) return;
-      wrap.innerHTML = '';
-      if (!pairs.length) {
-        const label = document.createElement('div');
-        label.className = 'pdf-info-label';
-        label.textContent = '정보';
-        const value = document.createElement('div');
-        value.className = 'pdf-info-value';
-        value.textContent = emptyText;
-        wrap.appendChild(label);
-        wrap.appendChild(value);
-        return;
-      }
-      pairs.forEach(([labelText, valueText]) => {
-        const label = document.createElement('div');
-        label.className = 'pdf-info-label';
-        label.textContent = labelText;
-        const value = document.createElement('div');
-        value.className = 'pdf-info-value';
-        value.textContent = safeMultiline(valueText, '-');
-        wrap.appendChild(label);
-        wrap.appendChild(value);
+    var editable = valueRoot.querySelector('[contenteditable="true"]');
+    if (editable) return multilineOf(editable);
+
+    var inputs = valueRoot.querySelectorAll('input');
+    if (inputs.length) {
+      return Array.from(inputs).map(function(input){ return String(input.value || '').trim(); }).filter(Boolean).join(' / ');
+    }
+
+    return multilineOf(valueRoot);
+  }
+
+  function buildGrid(targetId, rows){
+    var target = document.getElementById(targetId);
+    if (!target) return;
+    target.innerHTML = '';
+    rows.forEach(function(item){
+      var row = document.createElement('div');
+      row.className = 'pdf-kv';
+      var k = document.createElement('div');
+      k.className = 'pdf-k';
+      k.textContent = item.label;
+      var v = document.createElement('div');
+      v.className = 'pdf-v';
+      v.textContent = item.value || '-';
+      row.appendChild(k);
+      row.appendChild(v);
+      target.appendChild(row);
+    });
+  }
+
+  function collectPropertyRows(){
+    return Array.from(document.querySelectorAll('.property-spec-row')).map(function(row){
+      return {
+        label: textOf(row.querySelector('.property-spec-label')).replace(/^\*\s*/, ''),
+        value: fieldValueFromRow(row)
+      };
+    }).filter(function(item){
+      return item.label;
+    });
+  }
+
+  function collectRequesterRows(){
+    return Array.from(document.querySelectorAll('.requester-row')).map(function(row){
+      return {
+        label: textOf(row.querySelector('.requester-label')),
+        value: multilineOf(row.querySelector('.requester-value'))
+      };
+    }).filter(function(item){
+      return item.label;
+    });
+  }
+
+  function collectPhotos(){
+    var urls = [];
+    var hero = document.getElementById('heroImage');
+    var heroSrc = hero && hero.getAttribute('src') ? hero.getAttribute('src').trim() : '';
+    if (heroSrc && !heroSrc.startsWith('data:,')) urls.push(heroSrc);
+
+    document.querySelectorAll('.photo-thumb-img').forEach(function(node){
+      var url = bgUrlOf(node);
+      if (url && urls.indexOf(url) === -1) urls.push(url);
+    });
+
+    return urls;
+  }
+
+  function preloadImages(root){
+    var imgs = Array.from(root.querySelectorAll('img')).filter(function(img){ return !!img.src; });
+    return Promise.all(imgs.map(function(img){
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise(function(resolve){
+        img.onload = function(){ resolve(); };
+        img.onerror = function(){ resolve(); };
       });
-    };
+    }));
+  }
 
-    const buildPdf = () => {
-      const title = safeText(document.querySelector('.property-detail-title')?.innerText, '매물 제목 입력');
-      const address = safeText(document.getElementById('topAddress')?.innerText, '주소 정보 없음');
-      const price = safeMultiline(document.getElementById('topPrice')?.innerText, '가격 정보 없음');
-      const dealType = safeText(document.getElementById('topDealChip')?.innerText, '매물 브리프');
-      const heroSrc = safeText(document.getElementById('heroImage')?.getAttribute('src'));
+  onReady(function(){
+    var pdfBtn = document.getElementById('pdfPreviewBtn');
+    var pdfModal = document.getElementById('pdfPreviewModal');
+    var pdfCloseBtn = document.getElementById('pdfCloseBtn');
+    var pdfDownloadBtn = document.getElementById('pdfDownloadBtn');
+    var pdfSheet = document.getElementById('pdfSheet');
+    var pdfHeroImage = document.getElementById('pdfHeroImage');
+    var pdfHeroEmpty = document.getElementById('pdfHeroEmpty');
+    var pdfThumbsGrid = document.getElementById('pdfThumbsGrid');
+    var pdfSummaryList = document.getElementById('pdfSummaryList');
+    var pdfMemo = document.getElementById('pdfMemo');
+    if (!pdfBtn || !pdfModal || !pdfSheet) return;
 
+    function fitSheet(){
+      var body = pdfModal.querySelector('.pdf-modal-body');
+      if (!body) return;
+      var available = Math.max(320, body.clientWidth - 24);
+      var scale = Math.min(1, available / 794);
+      pdfSheet.style.transform = 'scale(' + scale + ')';
+      pdfSheet.style.transformOrigin = 'top center';
+      pdfSheet.style.marginBottom = ((1123 * scale) - 1123) + 'px';
+    }
+
+    function buildPdf(){
+      var deal = textOf(document.getElementById('topDealChip')) || '매물 브리프';
+      var title = multilineOf(document.querySelector('.property-detail-title')) || '매물 제목';
+      var address = textOf(document.getElementById('topAddress')) || multilineOf(document.getElementById('addressField'));
+      var price = textOf(document.getElementById('topPrice')) || fieldValueFromRow(document.getElementById('priceField') ? document.getElementById('priceField').closest('.property-spec-row') : null);
+      document.getElementById('pdfDealBadge').textContent = deal;
       document.getElementById('pdfTitle').textContent = title;
-      document.getElementById('pdfAddress').textContent = address;
-      document.getElementById('pdfPrice').textContent = price;
-      document.getElementById('pdfDealBadge').textContent = dealType || '매물 브리프';
+      document.getElementById('pdfAddress').textContent = address || '-';
+      document.getElementById('pdfPrice').textContent = price || '-';
 
-      const heroImg = document.getElementById('pdfHeroImage');
-      const heroEmpty = document.getElementById('pdfHeroEmpty');
-      if (heroSrc) {
-        heroImg.src = heroSrc;
-        heroImg.style.display = 'block';
-        heroEmpty.style.display = 'none';
-      } else {
-        heroImg.removeAttribute('src');
-        heroImg.style.display = 'none';
-        heroEmpty.style.display = 'flex';
-      }
-
-      const summaryList = document.getElementById('pdfSummaryList');
-      summaryList.innerHTML = '';
-      const summaryItems = Array.from(document.querySelectorAll('.summary-editable'))
-        .map((el) => safeMultiline(el.innerText))
-        .filter(Boolean)
-        .slice(0, 3);
-      if (!summaryItems.length) summaryItems.push('요약 내용을 입력하면 이곳에 자동으로 정리됩니다.');
-      summaryItems.forEach((text) => {
-        const li = document.createElement('li');
-        li.textContent = text;
-        summaryList.appendChild(li);
-      });
-
-      renderPairs('pdfInfoGrid', collectPropertyRows(), '표시되는 정보가 없습니다.');
-      renderPairs('pdfRequesterGrid', collectRequesterRows(), '의뢰인 정보가 없습니다.');
-
-      const memoText = safeMultiline(document.querySelector('.memo-body')?.innerText, '메모 없음');
-      document.getElementById('pdfMemo').textContent = memoText;
-
-      const thumbsGrid = document.getElementById('pdfThumbsGrid');
-      thumbsGrid.innerHTML = '';
-      const thumbUrls = Array.from(document.querySelectorAll('.photo-thumb-img'))
-        .map((el) => getThumbUrl(el.style.backgroundImage))
-        .filter(Boolean);
-      const extraThumbs = thumbUrls.slice(1, 10);
-      if (!extraThumbs.length) {
-        const empty = document.createElement('div');
-        empty.className = 'pdf-thumb-empty';
-        empty.textContent = '추가 사진이 없으면 대표사진만 출력됩니다.';
-        thumbsGrid.appendChild(empty);
-      } else {
-        extraThumbs.forEach((src, idx) => {
-          const item = document.createElement('div');
-          item.className = 'pdf-thumb-item';
-          const img = document.createElement('img');
-          img.alt = '추가 사진 ' + (idx + 1);
-          img.crossOrigin = 'anonymous';
-          img.referrerPolicy = 'no-referrer';
-          img.src = src;
-          item.appendChild(img);
-          thumbsGrid.appendChild(item);
+      if (pdfSummaryList) {
+        pdfSummaryList.innerHTML = '';
+        var summaryNodes = Array.from(document.querySelectorAll('.summary-editable'));
+        var summaries = summaryNodes.map(function(node){ return multilineOf(node); }).filter(Boolean);
+        if (!summaries.length) summaries = ['요약이 없습니다.'];
+        summaries.forEach(function(text){
+          var li = document.createElement('li');
+          li.textContent = text;
+          pdfSummaryList.appendChild(li);
         });
       }
-    };
 
-    const preloadPdfImages = async () => {
-      const images = Array.from(pdfSheet.querySelectorAll('img')).filter((img) => img.getAttribute('src'));
-      await Promise.all(images.map((img) => new Promise((resolve) => {
-        if (img.complete && img.naturalWidth > 0) return resolve();
-        const done = () => resolve();
-        img.addEventListener('load', done, { once:true });
-        img.addEventListener('error', done, { once:true });
-      })));
-    };
+      buildGrid('pdfInfoGrid', collectPropertyRows());
+      buildGrid('pdfRequesterGrid', collectRequesterRows());
+      if (pdfMemo) pdfMemo.textContent = multilineOf(document.querySelector('.memo-body')) || '-';
 
-    const fitPdfSheet = () => {
-      const body = pdfModal.querySelector('.pdf-modal-body');
-      if (!body) return;
-      const panelWidth = Math.max(320, body.clientWidth - 8);
-      const scale = Math.min(1, panelWidth / 794);
-      pdfSheet.style.transform = 'scale(' + scale + ')';
-      pdfSheet.style.marginBottom = ((1123 * scale) - 1123) + 'px';
-    };
+      var photos = collectPhotos();
+      if (pdfHeroImage && pdfHeroEmpty) {
+        if (photos.length) {
+          pdfHeroImage.src = photos[0];
+          pdfHeroImage.style.display = 'block';
+          pdfHeroEmpty.style.display = 'none';
+        } else {
+          pdfHeroImage.removeAttribute('src');
+          pdfHeroImage.style.display = 'none';
+          pdfHeroEmpty.style.display = 'flex';
+        }
+      }
 
-    const openPdfPreview = async () => {
+      if (pdfThumbsGrid) {
+        pdfThumbsGrid.innerHTML = '';
+        photos.slice(1).forEach(function(url){
+          var item = document.createElement('div');
+          item.className = 'pdf-thumb-item';
+          var img = document.createElement('img');
+          img.src = url;
+          img.alt = '추가사진';
+          img.crossOrigin = 'anonymous';
+          img.referrerPolicy = 'no-referrer';
+          item.appendChild(img);
+          pdfThumbsGrid.appendChild(item);
+        });
+      }
+    }
+
+    async function openPreview(){
       buildPdf();
       pdfModal.classList.add('show');
       pdfModal.setAttribute('aria-hidden', 'false');
-      fitPdfSheet();
-      await preloadPdfImages();
-      fitPdfSheet();
-    };
+      fitSheet();
+      await preloadImages(pdfSheet);
+      fitSheet();
+    }
 
-    const closePdfPreview = () => {
+    function closePreview(){
       pdfModal.classList.remove('show');
       pdfModal.setAttribute('aria-hidden', 'true');
-    };
+    }
 
-    const downloadPdf = async () => {
+    async function downloadPdf(){
       buildPdf();
       if (!window.html2canvas || !(window.jspdf && window.jspdf.jsPDF)) {
-        alert('PDF 라이브러리를 아직 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.');
+        alert('PDF 라이브러리를 불러오지 못했습니다. 다시 시도해주세요.');
         return;
       }
-      const prevTransform = pdfSheet.style.transform;
-      const prevMarginBottom = pdfSheet.style.marginBottom;
+      var prevTransform = pdfSheet.style.transform;
+      var prevOrigin = pdfSheet.style.transformOrigin;
+      var prevMarginBottom = pdfSheet.style.marginBottom;
       pdfSheet.style.transform = 'none';
+      pdfSheet.style.transformOrigin = 'top center';
       pdfSheet.style.marginBottom = '0';
       try {
-        await preloadPdfImages();
-        const canvas = await window.html2canvas(pdfSheet, {
+        await preloadImages(pdfSheet);
+        var canvas = await window.html2canvas(pdfSheet, {
           scale: 2,
           useCORS: true,
           allowTaint: false,
-          imageTimeout: 15000,
-          backgroundColor: '#ffffff'
+          backgroundColor: '#ffffff',
+          imageTimeout: 15000
         });
-        const imgData = canvas.toDataURL('image/jpeg', 0.96);
-        const pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
+        var imgData = canvas.toDataURL('image/jpeg', 0.96);
+        var pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
         pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
-        const listing = safeText(document.getElementById('listingNumberField')?.innerText, '매물');
+        var listing = textOf(document.getElementById('listingNumberField')) || '매물';
         pdf.save(listing + '_매물요약.pdf');
       } catch (err) {
         console.error(err);
-        alert('PDF 생성 중 오류가 났습니다. 다시 시도해주세요.');
+        alert('PDF 생성 중 오류가 발생했습니다.');
       } finally {
         pdfSheet.style.transform = prevTransform;
+        pdfSheet.style.transformOrigin = prevOrigin;
         pdfSheet.style.marginBottom = prevMarginBottom;
-        fitPdfSheet();
+        if (pdfModal.classList.contains('show')) fitSheet();
       }
-    };
+    }
 
-    pdfBtn.addEventListener('click', openPdfPreview);
-    if (pdfCloseBtn) pdfCloseBtn.addEventListener('click', closePdfPreview);
+    pdfBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      openPreview();
+    });
+    if (pdfCloseBtn) pdfCloseBtn.addEventListener('click', closePreview);
     if (pdfDownloadBtn) pdfDownloadBtn.addEventListener('click', downloadPdf);
     pdfModal.addEventListener('click', function(e){
-      if (e.target === pdfModal) closePdfPreview();
+      if (e.target === pdfModal) closePreview();
     });
     window.addEventListener('resize', function(){
-      if (pdfModal.classList.contains('show')) fitPdfSheet();
+      if (pdfModal.classList.contains('show')) fitSheet();
     });
   });
 })();

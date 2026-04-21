@@ -5653,6 +5653,217 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 (function(){
+  function ready(fn){
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fn, { once:true });
+    } else {
+      fn();
+    }
+  }
+
+  ready(function(){
+    const pdfBtn = document.getElementById('pdfPreviewBtn');
+    const pdfModal = document.getElementById('pdfPreviewModal');
+    const pdfCloseBtn = document.getElementById('pdfCloseBtn');
+    const pdfDownloadBtn = document.getElementById('pdfDownloadBtn');
+    const pdfSheet = document.getElementById('pdfSheet');
+    if (!pdfBtn || !pdfModal || !pdfSheet) return;
+
+    const safeText = (value, fallback='') => {
+      const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+      return text || fallback;
+    };
+
+    const safeMultiline = (value, fallback='') => {
+      const text = String(value == null ? '' : value)
+        .replace(/\u00A0/g, ' ')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+      return text || fallback;
+    };
+
+    const getTextByLabel = (labelText) => {
+      const rows = Array.from(document.querySelectorAll('.property-spec-row'));
+      const row = rows.find((el) => {
+        const label = el.querySelector('.property-spec-label');
+        return safeText(label ? label.innerText : '').replace(/^\*\s*/, '') === labelText;
+      });
+      if (!row) return '';
+      const valueEl = row.querySelector('.property-spec-value');
+      return safeMultiline(valueEl ? valueEl.innerText : '');
+    };
+
+    const getMeasureSummary = () => {
+      const rows = Array.from(document.querySelectorAll('.property-spec-row'));
+      const targets = [
+        ['대지면적', '대지'],
+        ['연면적', '연면적'],
+        ['전용면적', '전용']
+      ];
+      const parts = [];
+      targets.forEach(([labelText, prefix]) => {
+        const row = rows.find((el) => {
+          const label = el.querySelector('.property-spec-label');
+          return safeText(label ? label.innerText : '').replace(/^\*\s*/, '') === labelText;
+        });
+        if (!row) return;
+        const inputs = row.querySelectorAll('.measure-input');
+        const m2 = safeText(inputs[0] ? inputs[0].value : '');
+        const py = safeText(inputs[1] ? inputs[1].value : '');
+        const seg = [];
+        if (m2) seg.push(m2 + '㎡');
+        if (py) seg.push(py + '평');
+        if (seg.length) parts.push(prefix + ' ' + seg.join(' / '));
+      });
+      return parts.join('\n');
+    };
+
+    const buildPdf = () => {
+      const title = safeText(document.querySelector('.property-detail-title')?.innerText, '매물 제목 입력');
+      const address = safeText(document.getElementById('topAddress')?.innerText);
+      const price = safeMultiline(document.getElementById('topPrice')?.innerText, '가격 정보 없음');
+      const dealType = safeText(document.getElementById('topDealChip')?.innerText, '매물 브리프');
+      const heroSrc = safeText(document.getElementById('heroImage')?.getAttribute('src'));
+
+      const titleEl = document.getElementById('pdfTitle');
+      const addressEl = document.getElementById('pdfAddress');
+      const priceEl = document.getElementById('pdfPrice');
+      const badgeEl = document.getElementById('pdfDealBadge');
+      const heroImg = document.getElementById('pdfHeroImage');
+      const heroEmpty = document.getElementById('pdfHeroEmpty');
+      const summaryList = document.getElementById('pdfSummaryList');
+      const thumbsGrid = document.getElementById('pdfThumbsGrid');
+
+      if (titleEl) titleEl.textContent = title;
+      if (addressEl) addressEl.textContent = address || '주소 정보 없음';
+      if (priceEl) priceEl.textContent = price;
+      if (badgeEl) badgeEl.textContent = dealType || '매물 브리프';
+
+      if (heroImg && heroEmpty) {
+        if (heroSrc) {
+          heroImg.src = heroSrc;
+          heroImg.style.display = 'block';
+          heroEmpty.style.display = 'none';
+        } else {
+          heroImg.removeAttribute('src');
+          heroImg.style.display = 'none';
+          heroEmpty.style.display = 'flex';
+        }
+      }
+
+      if (summaryList) {
+        summaryList.innerHTML = '';
+        const items = Array.from(document.querySelectorAll('.summary-editable'))
+          .map((el) => safeMultiline(el.innerText))
+          .filter(Boolean)
+          .slice(0, 3);
+        if (!items.length) items.push('요약 내용을 입력하면 이곳에 자동으로 정리됩니다.');
+        items.forEach((text) => {
+          const li = document.createElement('li');
+          li.textContent = text;
+          summaryList.appendChild(li);
+        });
+      }
+
+      const assign = (id, value, fallback='-') => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = safeMultiline(value, fallback);
+      };
+      assign('pdfListingNumber', document.getElementById('listingNumberField')?.innerText);
+      assign('pdfPropertyType', getTextByLabel('매물종류'));
+      assign('pdfApprovalDate', getTextByLabel('사용승인일'));
+      assign('pdfAreaSummary', getMeasureSummary());
+
+      if (thumbsGrid) {
+        thumbsGrid.innerHTML = '';
+        const thumbs = Array.from(document.querySelectorAll('.photo-thumb-img'))
+          .map((el) => el.style.backgroundImage)
+          .filter(Boolean);
+        const extraThumbs = thumbs.slice(1, 7);
+        if (!extraThumbs.length) {
+          const empty = document.createElement('div');
+          empty.className = 'pdf-thumb-empty';
+          empty.textContent = '추가 사진이 없으면 대표사진 중심으로 깔끔하게 출력됩니다.';
+          empty.style.gridColumn = '1 / -1';
+          thumbsGrid.appendChild(empty);
+        } else {
+          extraThumbs.forEach((bg) => {
+            const item = document.createElement('div');
+            item.className = 'pdf-thumb-item';
+            item.style.backgroundImage = bg;
+            thumbsGrid.appendChild(item);
+          });
+        }
+      }
+    };
+
+    const fitPdfSheet = () => {
+      const body = pdfModal.querySelector('.pdf-modal-body');
+      if (!body) return;
+      const panelWidth = Math.max(320, body.clientWidth - 8);
+      const scale = Math.min(1, panelWidth / 794);
+      pdfSheet.style.transform = 'scale(' + scale + ')';
+      pdfSheet.style.marginBottom = ((1123 * scale) - 1123) + 'px';
+    };
+
+    const openPdfPreview = () => {
+      buildPdf();
+      pdfModal.classList.add('show');
+      pdfModal.setAttribute('aria-hidden', 'false');
+      fitPdfSheet();
+    };
+
+    const closePdfPreview = () => {
+      pdfModal.classList.remove('show');
+      pdfModal.setAttribute('aria-hidden', 'true');
+    };
+
+    const downloadPdf = async () => {
+      buildPdf();
+      if (!window.html2canvas || !(window.jspdf && window.jspdf.jsPDF)) {
+        alert('PDF 라이브러리를 아직 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.');
+        return;
+      }
+      const prevTransform = pdfSheet.style.transform;
+      const prevMarginBottom = pdfSheet.style.marginBottom;
+      pdfSheet.style.transform = 'none';
+      pdfSheet.style.marginBottom = '0';
+      try {
+        const canvas = await window.html2canvas(pdfSheet, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff'
+        });
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
+        pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
+        const listing = safeText(document.getElementById('listingNumberField')?.innerText, '매물');
+        pdf.save(listing + '_매물요약.pdf');
+      } catch (err) {
+        console.error(err);
+        alert('PDF 생성 중 오류가 났습니다. 다시 시도해주세요.');
+      } finally {
+        pdfSheet.style.transform = prevTransform;
+        pdfSheet.style.marginBottom = prevMarginBottom;
+        fitPdfSheet();
+      }
+    };
+
+    pdfBtn.addEventListener('click', openPdfPreview);
+    if (pdfCloseBtn) pdfCloseBtn.addEventListener('click', closePdfPreview);
+    if (pdfDownloadBtn) pdfDownloadBtn.addEventListener('click', downloadPdf);
+    pdfModal.addEventListener('click', function(e){
+      if (e.target === pdfModal) closePdfPreview();
+    });
+    window.addEventListener('resize', function(){
+      if (pdfModal.classList.contains('show')) fitPdfSheet();
+    });
+  });
+})();
+</script>
+<script>
+(function(){
   const pdfBtn = document.getElementById('pdfPreviewBtn');
   const pdfModal = document.getElementById('pdfPreviewModal');
   const pdfCloseBtn = document.getElementById('pdfCloseBtn');

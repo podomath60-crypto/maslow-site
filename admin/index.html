@@ -5416,16 +5416,43 @@
 
       document.getElementById('pdfCloseBtn').addEventListener('click', function(){ overlay.classList.remove('show'); });
       overlay.addEventListener('click', function(e){ if(e.target === overlay) overlay.classList.remove('show'); });
-      document.getElementById('pdfDownloadBtn').addEventListener('click', downloadPdf);
-      document.getElementById('pdfPreviewBtn').addEventListener('click', function(){ renderPdfPreview(); overlay.classList.add('show'); });
+      document.getElementById('pdfDownloadBtn').addEventListener('click', function(){ downloadPdf(); });
+      document.getElementById('pdfPreviewBtn').addEventListener('click', async function(){ await renderPdfPreview(); overlay.classList.add('show'); });
     }
 
-    function renderPdfPreview(){
+    async function imageSrcToPdfSafe(src){
+      if(!src) return '';
+      if(/^data:/i.test(src)) return src;
+      try{
+        var res = await fetch(src);
+        var blob = await res.blob();
+        return await new Promise(function(resolve){
+          var reader = new FileReader();
+          reader.onloadend = function(){ resolve(reader.result || src); };
+          reader.onerror = function(){ resolve(src); };
+          reader.readAsDataURL(blob);
+        });
+      }catch(err){
+        return src;
+      }
+    }
+
+    async function buildPdfSafePhotoSet(photos){
+      var safe = [];
+      for(var i=0;i<photos.length;i++){
+        safe.push(await imageSrcToPdfSafe(photos[i]));
+      }
+      return safe;
+    }
+
+    async function renderPdfPreview(){
       var page = document.getElementById('pdfPage');
       if(!page) return;
+      page.innerHTML = '<div class="pdf-loading" style="padding:40px;text-align:center;font-size:16px;font-weight:800;color:#64748b;">PDF 미리보기 준비중...</div>';
       var photos = getPhotoUrls();
-      var hero = photos[0] || '';
-      var thumbs = photos.slice(1, 6);
+      var safePhotos = await buildPdfSafePhotoSet(photos.slice(0, 6));
+      var hero = safePhotos[0] || '';
+      var thumbs = safePhotos.slice(1, 6);
       var deal = textOf(document.getElementById('topDealChip')) || '매물';
       var title = textOf(document.querySelector('.property-detail-title'));
       var address = textOf(document.getElementById('topAddress'));
@@ -5459,7 +5486,7 @@
         (summary.length ? summary.map(function(s){ return '<div class="pdf-summary-item">✔ '+htmlEscape(s)+'</div>'; }).join('') : '<div class="pdf-summary-item">요약 없음</div>')+
       '</div>'+
       '<div class="pdf-photo-grid">'+
-        thumbs.map(function(src){ return '<div class="pdf-thumb"><img crossorigin="anonymous" src="'+src.replace(/"/g,'&quot;')+'"></div>'; }).join('')+
+        thumbs.map(function(src){ return '<div class="pdf-thumb"><img src="'+src.replace(/"/g,'&quot;')+'"></div>'; }).join('')+
       '</div>'+
       '<div class="pdf-sections">'+
         '<div class="pdf-card"><h3 class="pdf-card-title">기본정보</h3><div class="pdf-info-grid">'+rowsHtml(basic)+'</div></div>'+
@@ -5489,7 +5516,7 @@
 
     async function downloadPdf(){
       try{
-        renderPdfPreview();
+        await renderPdfPreview();
         await ensurePdfLibraries();
         var page = document.getElementById('pdfPage');
         await waitForPdfImages(page);

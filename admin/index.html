@@ -5251,249 +5251,268 @@
     })();
   </script>
 
-  <script>
-  (function(){
-    function textOf(el){ return el ? String(el.innerText || el.textContent || '').replace(/\s+/g,' ').trim() : ''; }
-    function htmlEscape(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-    function loadScript(src){
-      return new Promise(function(resolve, reject){
-        var existing = document.querySelector('script[src="'+src+'"]');
-        if(existing){
-          if(existing.dataset.loaded === '1'){ resolve(); return; }
-          existing.addEventListener('load', function(){ existing.dataset.loaded='1'; resolve(); }, {once:true});
-          existing.addEventListener('error', reject, {once:true});
-          return;
+<script>
+(function(){
+  function textOf(el){ return el ? String(el.innerText || el.textContent || '').replace(/\s+/g,' ').trim() : ''; }
+  function htmlEscape(s){ return String(s||'').replace(/[&<>\"']/g, function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]; }); }
+  function nl2br(s){ return htmlEscape(String(s||'')).replace(/\n/g,'<br>'); }
+  function bgUrl(el){
+    if(!el) return '';
+    var bg = el.style.backgroundImage || window.getComputedStyle(el).backgroundImage || '';
+    var m = bg.match(/url\(["']?(.*?)["']?\)/);
+    return m ? m[1] : '';
+  }
+  function ensurePdfButton(){
+    if(document.getElementById('pdfPreviewBtn')) return;
+    var adminBtn = document.getElementById('adminHomeBtn');
+    if(!adminBtn || !adminBtn.parentNode) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'head-btn';
+    btn.id = 'pdfPreviewBtn';
+    btn.textContent = 'PDF';
+    btn.addEventListener('click', openPdfPreview);
+    adminBtn.insertAdjacentElement('afterend', btn);
+  }
+
+  function ensurePdfModal(){
+    if(document.getElementById('pdfPreviewModal')) return;
+    var style = document.createElement('style');
+    style.textContent = '\n'
+      + '#pdfPreviewModal{position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.56);display:none;align-items:center;justify-content:center;padding:20px;}\n'
+      + '#pdfPreviewModal.show{display:flex;}\n'
+      + '.pdf-preview-shell{width:min(920px,100%);max-height:100%;display:flex;flex-direction:column;background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 24px 60px rgba(15,23,42,.28);}\n'
+      + '.pdf-preview-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #e5e7eb;background:#fff;}\n'
+      + '.pdf-preview-actions{display:flex;gap:8px;flex-wrap:wrap;}\n'
+      + '.pdf-preview-btn{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid #dce6f1;background:#fff;color:#111;font-size:14px;font-weight:800;}\n'
+      + '.pdf-preview-btn.primary{background:#111827;color:#fff;border-color:#111827;}\n'
+      + '.pdf-preview-scroll{flex:1 1 auto;overflow:auto;background:#eef2f7;padding:18px;}\n'
+      + '#pdfPrintPage{width:794px;min-height:1123px;margin:0 auto;background:#fff;color:#111;padding:24px 24px 18px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;}\n'
+      + '.pdf-brand{font-size:18px;font-weight:900;letter-spacing:-0.03em;margin:0 0 14px;}\n'
+      + '.pdf-top-grid{display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:start;}\n'
+      + '.pdf-hero{width:100%;height:180px;border-radius:16px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;}\n'
+      + '.pdf-hero img{width:100%;height:100%;object-fit:cover;display:block;}\n'
+      + '.pdf-chip{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 12px;border-radius:999px;background:#0f7cff;color:#fff;font-size:12px;font-weight:900;margin:0 0 8px;}\n'
+      + '.pdf-title{font-size:28px;line-height:1.18;font-weight:900;letter-spacing:-0.05em;margin:0 0 8px;word-break:keep-all;}\n'
+      + '.pdf-address{font-size:14px;line-height:1.55;color:#4b5563;margin:0 0 8px;word-break:keep-all;}\n'
+      + '.pdf-price{font-size:22px;line-height:1.35;font-weight:900;color:#d62828;margin:0 0 10px;word-break:keep-all;}\n'
+      + '.pdf-summary{display:grid;gap:6px;margin:0;}\n'
+      + '.pdf-summary-item{font-size:13px;line-height:1.55;color:#1f2937;word-break:keep-all;}\n'
+      + '.pdf-thumb-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:12px;}\n'
+      + '.pdf-thumb{aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;}\n'
+      + '.pdf-thumb img{width:100%;height:100%;object-fit:cover;display:block;}\n'
+      + '.pdf-section{margin-top:14px;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;}\n'
+      + '.pdf-section-title{background:#f8fafc;padding:8px 12px;font-size:13px;font-weight:900;letter-spacing:-0.03em;}\n'
+      + '.pdf-kv{display:grid;grid-template-columns:110px 1fr;}\n'
+      + '.pdf-kv-row{display:contents;}\n'
+      + '.pdf-kv-label,.pdf-kv-value{padding:7px 10px;border-top:1px solid #eef2f7;font-size:12px;line-height:1.5;word-break:break-word;}\n'
+      + '.pdf-kv-label{background:#fcfcfd;color:#6b7280;font-weight:700;}\n'
+      + '.pdf-kv-value{color:#111827;font-weight:500;}\n'
+      + '.pdf-two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}\n'
+      + '.pdf-memo{white-space:pre-wrap;min-height:90px;}\n'
+      + '@media (max-width:860px){#pdfPreviewModal{padding:0}.pdf-preview-shell{width:100%;height:100%;max-height:none;border-radius:0}.pdf-preview-scroll{padding:10px}#pdfPrintPage{transform:scale(.72);transform-origin:top center;margin-bottom:-300px}.pdf-top-grid{grid-template-columns:1fr}.pdf-hero{height:150px}}\n'
+      + '@media print{body *{visibility:hidden !important;} .pdf-print-root, .pdf-print-root *{visibility:visible !important;} .pdf-print-root{position:absolute;left:0;top:0;width:794px;background:#fff;} @page{size:A4 portrait;margin:0;} }';
+    document.head.appendChild(style);
+
+    var modal = document.createElement('div');
+    modal.id = 'pdfPreviewModal';
+    modal.innerHTML = ''
+      + '<div class="pdf-preview-shell">'
+      + '  <div class="pdf-preview-top">'
+      + '    <strong style="font-size:16px;letter-spacing:-0.03em;">PDF 미리보기</strong>'
+      + '    <div class="pdf-preview-actions">'
+      + '      <button type="button" class="pdf-preview-btn" id="pdfPreviewCloseBtn">닫기</button>'
+      + '      <button type="button" class="pdf-preview-btn primary" id="pdfPreviewDownloadBtn">PDF 저장</button>'
+      + '    </div>'
+      + '  </div>'
+      + '  <div class="pdf-preview-scroll"><div id="pdfPrintPage"></div></div>'
+      + '</div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function(e){ if(e.target === modal) closePdfPreview(); });
+    document.getElementById('pdfPreviewCloseBtn').addEventListener('click', closePdfPreview);
+    document.getElementById('pdfPreviewDownloadBtn').addEventListener('click', printPdfPage);
+  }
+
+  function collectRowsBetween(startTitle, endTitle){
+    var titles = Array.prototype.slice.call(document.querySelectorAll('.property-spec-sector-title'));
+    var startIdx = titles.findIndex(function(t){ return textOf(t) === startTitle; });
+    if(startIdx < 0) return [];
+    var start = titles[startIdx];
+    var stop = null;
+    if(endTitle){
+      stop = titles.slice(startIdx+1).find(function(t){ return textOf(t) === endTitle; }) || null;
+    }
+    var rows = [];
+    var node = start.nextElementSibling;
+    while(node && node !== stop){
+      if(node.classList && node.classList.contains('property-spec-row')){
+        var labelEl = node.querySelector('.property-spec-label');
+        var valueEl = node.querySelector('.property-spec-value');
+        var label = textOf(labelEl).replace(/^\*/,'').trim();
+        var value = '';
+        var measure = valueEl && valueEl.querySelector('.measure-field');
+        if(measure){
+          var m2 = measure.querySelector('[data-unit="m2"]');
+          var py = measure.querySelector('[data-unit="pyeong"]');
+          var m2v = m2 ? String(m2.value || '').trim() : '';
+          var pyv = py ? String(py.value || '').trim() : '';
+          var parts = [];
+          if(m2v) parts.push(m2v + '㎡');
+          if(pyv) parts.push(pyv + '평');
+          value = parts.join(' / ');
+        } else {
+          var inputs = valueEl ? Array.prototype.slice.call(valueEl.querySelectorAll('input, textarea')) : [];
+          if(inputs.length){
+            value = inputs.map(function(inp){ return String(inp.value || '').trim(); }).filter(Boolean).join(' / ');
+          }
+          if(!value) value = textOf(valueEl);
         }
-        var s = document.createElement('script');
-        s.src = src;
-        s.async = true;
-        s.onload = function(){ s.dataset.loaded='1'; resolve(); };
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-    function ensurePdfLibraries(){
-      var jobs = [];
-      if(!window.html2canvas){ jobs.push(loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')); }
-      if(!(window.jspdf && window.jspdf.jsPDF)){ jobs.push(loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')); }
-      return Promise.all(jobs);
-    }
-    function getPhotoUrls(){
-      var urls = [];
-      var hero = document.getElementById('heroImage');
-      var heroSrc = hero && hero.getAttribute('src') ? hero.getAttribute('src').trim() : '';
-      if(heroSrc) urls.push(heroSrc);
-      var thumbs = document.querySelectorAll('.photo-thumb-img');
-      thumbs.forEach(function(el){
-        var bg = el.style.backgroundImage || '';
-        var m = bg.match(/url\((['"]?)(.*?)\1\)/);
-        if(m && m[2] && urls.indexOf(m[2]) === -1) urls.push(m[2]);
-      });
-      return urls;
-    }
-    function extractRowValue(node){
-      if(!node) return '';
-      var parts = [];
-      var editableNodes = node.querySelectorAll('[contenteditable="true"]');
-      editableNodes.forEach(function(el){
-        var t = textOf(el);
-        if(t) parts.push(t);
-      });
-      var inputs = node.querySelectorAll('input, textarea, select');
-      inputs.forEach(function(el){
-        var v = String(el.value || '').trim();
-        if(v) parts.push(v + (el.dataset && el.dataset.unit === 'm2' ? '㎡' : (el.dataset && el.dataset.unit === 'pyeong' ? '평' : '')));
-      });
-      var chipRow = node.querySelector('.type-chip.active');
-      if(chipRow){
-        var chipText = textOf(chipRow);
-        if(chipText) parts.push(chipText);
+        if(label && value) rows.push([label, value]);
       }
-      if(!parts.length){
-        var clone = node.cloneNode(true);
-        clone.querySelectorAll('button, input, textarea, select').forEach(function(el){ el.remove(); });
-        var t = textOf(clone);
-        if(t) parts.push(t);
-      }
-      return parts.filter(function(v, idx, arr){ return v && arr.indexOf(v) === idx; }).join(' / ');
+      node = node.nextElementSibling;
     }
+    return rows;
+  }
 
-    function findSectorByTitle(titleText){
-      var found = null;
-      document.querySelectorAll('.property-spec-sector-title').forEach(function(el){
-        if(!found && textOf(el) === titleText) found = el;
-      });
-      return found;
-    }
+  function collectRequesterRows(){
+    return Array.prototype.slice.call(document.querySelectorAll('.requester-row')).map(function(row){
+      var label = textOf(row.querySelector('.requester-label'));
+      var value = textOf(row.querySelector('.requester-value'));
+      return label && value ? [label, value] : null;
+    }).filter(Boolean);
+  }
 
-    function buildInfoRowsByTitle(titleText){
-      var rows = [];
-      var sector = findSectorByTitle(titleText);
-      if(!sector) return rows;
-      var node = sector.nextElementSibling;
-      while(node){
-        if(node.classList && node.classList.contains('property-spec-sector-title')) break;
-        if(node.classList && node.classList.contains('property-spec-row')){
-          var label = textOf(node.querySelector('.property-spec-label'));
-          var value = extractRowValue(node.querySelector('.property-spec-value'));
-          if(label || value) rows.push({label:label, value:value});
-        }
-        node = node.nextElementSibling;
-      }
-      return rows;
-    }
-    function buildRequesterRows(){
-      var rows = [];
-      document.querySelectorAll('.requester-row').forEach(function(row){
-        var label = textOf(row.querySelector('.requester-label'));
-        var value = textOf(row.querySelector('.requester-value'));
-        if(label || value) rows.push({label:label, value:value});
-      });
-      return rows;
-    }
-    function ensurePdfUi(){
-      if(document.getElementById('pdfPreviewBtn')) return;
-      var adminBtn = document.getElementById('adminHomeBtn');
-      if(adminBtn && adminBtn.parentNode){
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'head-btn';
-        btn.id = 'pdfPreviewBtn';
-        btn.textContent = 'PDF';
-        adminBtn.insertAdjacentElement('afterend', btn);
-      }
-      var style = document.createElement('style');
-      style.textContent = ''+
-      '.pdf-preview-overlay{position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.44);display:none;align-items:center;justify-content:center;padding:18px;}'+
-      '.pdf-preview-overlay.show{display:flex;}'+
-      '.pdf-preview-shell{width:min(1180px,100%);height:min(92vh,100%);background:#fff;border-radius:24px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(15,23,42,.24);}'+
-      '.pdf-preview-topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid #e6ebf1;background:#fff;}'+
-      '.pdf-preview-actions{display:flex;gap:8px;flex-wrap:wrap;}'+
-      '.pdf-action-btn{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid #dce6f1;background:#fff;color:#111;font-size:14px;font-weight:800;cursor:pointer;}'+
-      '.pdf-action-btn.primary{background:#111318;color:#fff;border-color:#111318;}'+
-      '.pdf-preview-body{flex:1 1 auto;overflow:auto;background:#eef2f7;padding:22px;}'+
-      '.pdf-page{width:794px;min-height:1123px;margin:0 auto;background:#fff;color:#111318;box-shadow:0 18px 40px rgba(15,23,42,.12);padding:28px 28px 26px;box-sizing:border-box;}'+
-      '.pdf-brand{font-size:15px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#111318;margin-bottom:10px;}'+
-      '.pdf-top{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;align-items:start;margin-bottom:14px;}'+
-      '.pdf-hero{width:100%;height:160px;border-radius:18px;overflow:hidden;background:#eef2f7;border:1px solid #e7edf5;}'+
-      '.pdf-hero img{width:100%;height:100%;object-fit:cover;}'+
-      '.pdf-topcard{border:1px solid #e7edf5;border-radius:18px;padding:14px 15px;background:#fbfcfe;min-height:160px;}'+
-      '.pdf-badge{display:inline-flex;align-items:center;min-height:28px;padding:0 12px;border-radius:999px;background:#111318;color:#fff;font-size:12px;font-weight:900;margin-bottom:10px;}'+
-      '.pdf-title{font-size:23px;line-height:1.2;font-weight:900;letter-spacing:-.04em;margin:0 0 8px;word-break:keep-all;}'+
-      '.pdf-address{font-size:12px;line-height:1.5;color:#5b6470;margin:0 0 8px;word-break:keep-all;}'+
-      '.pdf-price{font-size:21px;line-height:1.25;font-weight:900;color:#e53935;letter-spacing:-.04em;white-space:pre-line;}'+
-      '.pdf-summary{display:grid;grid-template-columns:1fr;gap:6px;margin:0 0 14px;}'+
-      '.pdf-summary-item{border:1px solid #e7edf5;background:#fbfcfe;border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.55;font-weight:700;word-break:keep-all;}'+
-      '.pdf-photo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:0 0 14px;}'+
-      '.pdf-thumb{aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#eef2f7;border:1px solid #e7edf5;}'+
-      '.pdf-thumb img{width:100%;height:100%;object-fit:cover;}'+
-      '.pdf-sections{display:grid;grid-template-columns:1fr 1fr;gap:12px;}'+
-      '.pdf-card{border:1px solid #e7edf5;border-radius:16px;padding:12px 13px;background:#fff;break-inside:avoid;}'+
-      '.pdf-card.full{grid-column:1 / -1;}'+
-      '.pdf-card-title{font-size:13px;font-weight:900;letter-spacing:-.02em;margin:0 0 8px;color:#111318;}'+
-      '.pdf-info-grid{display:grid;grid-template-columns:108px 1fr;gap:6px 10px;}'+
-      '.pdf-label{font-size:11px;line-height:1.5;color:#7a8491;font-weight:800;word-break:keep-all;}'+
-      '.pdf-value{font-size:11px;line-height:1.5;color:#111318;font-weight:700;white-space:pre-wrap;word-break:break-word;}'+
-      '.pdf-memo{font-size:11px;line-height:1.6;color:#111318;font-weight:700;white-space:pre-wrap;min-height:56px;word-break:break-word;}'+
-      '@media (max-width:860px){.pdf-preview-body{padding:10px;}.pdf-page{transform-origin:top center;transform:scale(.47);margin:0 auto -590px;}.pdf-preview-shell{height:100vh;border-radius:0;}.pdf-preview-overlay{padding:0;}}';
-      document.head.appendChild(style);
+  function buildKv(rows){
+    if(!rows.length) return '<div style="padding:10px 12px;font-size:12px;color:#6b7280;">표시할 내용이 없습니다.</div>';
+    return '<div class="pdf-kv">' + rows.map(function(pair){
+      return '<div class="pdf-kv-row"><div class="pdf-kv-label">'+ htmlEscape(pair[0]) +'</div><div class="pdf-kv-value">'+ nl2br(pair[1]) +'</div></div>';
+    }).join('') + '</div>';
+  }
 
-      var overlay = document.createElement('div');
-      overlay.className = 'pdf-preview-overlay';
-      overlay.id = 'pdfPreviewModal';
-      overlay.innerHTML = ''+
-      '<div class="pdf-preview-shell">'+
-        '<div class="pdf-preview-topbar">'+
-          '<strong style="font-size:15px;">PDF 미리보기</strong>'+
-          '<div class="pdf-preview-actions">'+
-            '<button type="button" class="pdf-action-btn" id="pdfCloseBtn">닫기</button>'+
-            '<button type="button" class="pdf-action-btn primary" id="pdfDownloadBtn">PDF 다운로드</button>'+
-          '</div>'+
-        '</div>'+
-        '<div class="pdf-preview-body"><div class="pdf-page" id="pdfPage"></div></div>'+
-      '</div>';
-      document.body.appendChild(overlay);
+  function getImageUrls(){
+    var hero = document.getElementById('heroImage');
+    var heroSrc = hero && hero.getAttribute('src') ? hero.getAttribute('src') : '';
+    var thumbs = Array.prototype.slice.call(document.querySelectorAll('.photo-thumb-img')).map(function(el){ return bgUrl(el); }).filter(Boolean);
+    return { hero: heroSrc, thumbs: thumbs.slice(0,5) };
+  }
 
-      document.getElementById('pdfCloseBtn').addEventListener('click', function(){ overlay.classList.remove('show'); });
-      overlay.addEventListener('click', function(e){ if(e.target === overlay) overlay.classList.remove('show'); });
-      document.getElementById('pdfDownloadBtn').addEventListener('click', downloadPdf);
-      document.getElementById('pdfPreviewBtn').addEventListener('click', function(){ renderPdfPreview(); overlay.classList.add('show'); });
-    }
+  function buildPdfHtml(){
+    var imgs = getImageUrls();
+    var deal = textOf(document.getElementById('topDealChip'));
+    var title = textOf(document.querySelector('.property-detail-title'));
+    var address = textOf(document.getElementById('topAddress'));
+    var price = textOf(document.getElementById('topPrice'));
+    var summaries = Array.prototype.slice.call(document.querySelectorAll('.summary-editable')).map(function(el){ return textOf(el); }).filter(Boolean).slice(0,3);
+    var basicRows = collectRowsBetween('기본정보', '공장특화정보');
+    var factoryRows = collectRowsBetween('공장특화정보', null);
+    var requesterRows = collectRequesterRows();
+    var topMemo = textOf(document.querySelector('.property-detail-note'));
+    var memo = textOf(document.querySelector('.memo-body'));
 
-    function renderPdfPreview(){
-      var page = document.getElementById('pdfPage');
-      if(!page) return;
-      var photos = getPhotoUrls();
-      var hero = photos[0] || '';
-      var thumbs = photos.slice(1, 6);
-      var deal = textOf(document.getElementById('topDealChip')) || '매물';
-      var title = textOf(document.querySelector('.property-detail-title'));
-      var address = textOf(document.getElementById('topAddress'));
-      var price = textOf(document.getElementById('topPrice'));
-      var summary = [];
-      document.querySelectorAll('.summary-editable').forEach(function(el){ var t = textOf(el); if(t) summary.push(t); });
-      var basic = buildInfoRowsByTitle('기본정보');
-      var factory = buildInfoRowsByTitle('공장특화정보');
-      var requester = buildRequesterRows();
-      var memo = textOf(document.querySelector('.memo-body'));
-      var note = textOf(document.querySelector('.property-detail-note'));
+    var thumbsHtml = imgs.thumbs.map(function(url){ return '<div class="pdf-thumb"><img src="'+ htmlEscape(url) +'" alt=""></div>'; }).join('');
 
-      function rowsHtml(rows){
-        return rows.filter(function(r){ return r.label || r.value; }).map(function(r){
-          return '<div class="pdf-label">'+htmlEscape(r.label)+'</div><div class="pdf-value">'+htmlEscape(r.value || '-')+'</div>';
-        }).join('');
-      }
+    return ''
+      + '<div class="pdf-brand">Maslow Korea</div>'
+      + '<div class="pdf-top-grid">'
+      + '  <div>'
+      + '    <div class="pdf-hero">' + (imgs.hero ? '<img src="'+ htmlEscape(imgs.hero) +'" alt="대표사진">' : '') + '</div>'
+      +      (thumbsHtml ? '<div class="pdf-thumb-grid">'+ thumbsHtml +'</div>' : '')
+      + '  </div>'
+      + '  <div>'
+      +      (deal ? '<div class="pdf-chip">'+ htmlEscape(deal) +'</div>' : '')
+      + '    <h1 class="pdf-title">'+ htmlEscape(title || '제목 미입력') +'</h1>'
+      +      (address ? '<p class="pdf-address">'+ htmlEscape(address) +'</p>' : '')
+      +      (price ? '<p class="pdf-price">'+ htmlEscape(price) +'</p>' : '')
+      + '    <div class="pdf-summary">'
+      +        (summaries.length ? summaries.map(function(t){ return '<div class="pdf-summary-item">✔ '+ htmlEscape(t) +'</div>'; }).join('') : '<div class="pdf-summary-item">요약 없음</div>')
+      + '    </div>'
+      + '  </div>'
+      + '</div>'
+      + '<div class="pdf-two-col">'
+      + '  <div class="pdf-section"><div class="pdf-section-title">기본정보</div>'+ buildKv(basicRows) +'</div>'
+      + '  <div class="pdf-section"><div class="pdf-section-title">공장특화정보</div>'+ buildKv(factoryRows) +'</div>'
+      + '</div>'
+      + '<div class="pdf-two-col">'
+      + '  <div class="pdf-section"><div class="pdf-section-title">의뢰인 정보</div>'+ buildKv(requesterRows) +'</div>'
+      + '  <div>'
+      + '    <div class="pdf-section"><div class="pdf-section-title">상단 메모</div><div class="pdf-kv-value pdf-memo">'+ nl2br(topMemo || '') +'</div></div>'
+      + '    <div class="pdf-section"><div class="pdf-section-title">MEMO</div><div class="pdf-kv-value pdf-memo">'+ nl2br(memo || '') +'</div></div>'
+      + '  </div>'
+      + '</div>';
+  }
 
-      page.innerHTML = ''+
-      '<div class="pdf-brand">Maslow Korea</div>'+
-      '<div class="pdf-top">'+
-        '<div class="pdf-hero">'+(hero ? '<img src="'+hero.replace(/"/g,'&quot;')+'">' : '')+'</div>'+
-        '<div class="pdf-topcard">'+
-          '<div class="pdf-badge">'+htmlEscape(deal)+'</div>'+
-          '<h1 class="pdf-title">'+htmlEscape(title || '제목 없음')+'</h1>'+
-          '<p class="pdf-address">'+htmlEscape(address)+'</p>'+
-          '<div class="pdf-price">'+htmlEscape(price)+'</div>'+
-        '</div>'+
-      '</div>'+
-      '<div class="pdf-summary">'+
-        (summary.length ? summary.map(function(s){ return '<div class="pdf-summary-item">✔ '+htmlEscape(s)+'</div>'; }).join('') : '<div class="pdf-summary-item">요약 없음</div>')+
-      '</div>'+
-      '<div class="pdf-photo-grid">'+
-        thumbs.map(function(src){ return '<div class="pdf-thumb"><img src="'+src.replace(/"/g,'&quot;')+'"></div>'; }).join('')+
-      '</div>'+
-      '<div class="pdf-sections">'+
-        '<div class="pdf-card"><h3 class="pdf-card-title">기본정보</h3><div class="pdf-info-grid">'+rowsHtml(basic)+'</div></div>'+
-        '<div class="pdf-card"><h3 class="pdf-card-title">공장특화정보</h3><div class="pdf-info-grid">'+rowsHtml(factory)+'</div></div>'+
-        '<div class="pdf-card"><h3 class="pdf-card-title">의뢰인 정보</h3><div class="pdf-info-grid">'+rowsHtml(requester)+'</div></div>'+
-        '<div class="pdf-card"><h3 class="pdf-card-title">상단 메모 / 안내</h3><div class="pdf-memo">'+htmlEscape(note || '-')+'</div></div>'+
-        '<div class="pdf-card full"><h3 class="pdf-card-title">MEMO</h3><div class="pdf-memo">'+htmlEscape(memo || '-')+'</div></div>'+
-      '</div>';
-    }
+  function openPdfPreview(){
+    ensurePdfModal();
+    var page = document.getElementById('pdfPrintPage');
+    page.innerHTML = buildPdfHtml();
+    document.getElementById('pdfPreviewModal').classList.add('show');
+  }
+  function closePdfPreview(){
+    var modal = document.getElementById('pdfPreviewModal');
+    if(modal) modal.classList.remove('show');
+  }
 
-    async function downloadPdf(){
-      try{
-        renderPdfPreview();
-        await ensurePdfLibraries();
-        var page = document.getElementById('pdfPage');
-        var canvas = await window.html2canvas(page, {scale:2, useCORS:true, allowTaint:false, backgroundColor:'#ffffff'});
-        var img = canvas.toDataURL('image/jpeg', 0.98);
-        var jsPDF = window.jspdf.jsPDF;
-        var pdf = new jsPDF('p', 'pt', 'a4');
-        pdf.addImage(img, 'JPEG', 0, 0, 595.28, 841.89);
-        pdf.save('매물.pdf');
-      }catch(err){
-        console.error(err);
-        alert('PDF 생성 중 오류가 발생했습니다.');
-      }
-    }
+  function waitForImages(doc, cb){
+    var imgs = Array.prototype.slice.call(doc.images || []);
+    if(!imgs.length){ cb(); return; }
+    var left = imgs.length;
+    var done = false;
+    function finish(){ if(done) return; done = true; cb(); }
+    function check(){ left -= 1; if(left <= 0) finish(); }
+    imgs.forEach(function(img){
+      if(img.complete) return check();
+      img.addEventListener('load', check, {once:true});
+      img.addEventListener('error', check, {once:true});
+    });
+    setTimeout(finish, 2500);
+  }
 
-    if(document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', ensurePdfUi);
-    }else{
-      ensurePdfUi();
-    }
-  })();
-  </script>
+  function printPdfPage(){
+    var html = buildPdfHtml();
+    var w = window.open('', '_blank');
+    if(!w){ alert('팝업이 차단되어 있습니다. 팝업 허용 후 다시 시도해주세요.'); return; }
+    var doc = w.document;
+    doc.open();
+    doc.write('<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Maslow Korea PDF</title><style>'
+      + '@page{size:A4 portrait;margin:10mm;} html,body{margin:0;padding:0;background:#fff;color:#111;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;} '
+      + 'body{print-color-adjust:exact;-webkit-print-color-adjust:exact;} '
+      + '#pdfPrintPage{width:auto;min-height:auto;background:#fff;color:#111;padding:0;box-sizing:border-box;} '
+      + '.pdf-brand{font-size:18px;font-weight:900;letter-spacing:-0.03em;margin:0 0 14px;} '
+      + '.pdf-top-grid{display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:start;} '
+      + '.pdf-hero{width:100%;height:180px;border-radius:16px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;} '
+      + '.pdf-hero img{width:100%;height:100%;object-fit:cover;display:block;} '
+      + '.pdf-chip{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 12px;border-radius:999px;background:#0f7cff;color:#fff;font-size:12px;font-weight:900;margin:0 0 8px;} '
+      + '.pdf-title{font-size:28px;line-height:1.18;font-weight:900;letter-spacing:-0.05em;margin:0 0 8px;word-break:keep-all;} '
+      + '.pdf-address{font-size:14px;line-height:1.55;color:#4b5563;margin:0 0 8px;word-break:keep-all;} '
+      + '.pdf-price{font-size:22px;line-height:1.35;font-weight:900;color:#d62828;margin:0 0 10px;word-break:keep-all;} '
+      + '.pdf-summary{display:grid;gap:6px;margin:0;} '
+      + '.pdf-summary-item{font-size:13px;line-height:1.55;color:#1f2937;word-break:keep-all;} '
+      + '.pdf-thumb-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:12px;} '
+      + '.pdf-thumb{aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;} '
+      + '.pdf-thumb img{width:100%;height:100%;object-fit:cover;display:block;} '
+      + '.pdf-section{margin-top:14px;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;break-inside:avoid;} '
+      + '.pdf-section-title{background:#f8fafc;padding:8px 12px;font-size:13px;font-weight:900;letter-spacing:-0.03em;} '
+      + '.pdf-kv{display:grid;grid-template-columns:110px 1fr;} '
+      + '.pdf-kv-row{display:contents;} '
+      + '.pdf-kv-label,.pdf-kv-value{padding:7px 10px;border-top:1px solid #eef2f7;font-size:12px;line-height:1.5;word-break:break-word;} '
+      + '.pdf-kv-label{background:#fcfcfd;color:#6b7280;font-weight:700;} '
+      + '.pdf-kv-value{color:#111827;font-weight:500;} '
+      + '.pdf-two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;} '
+      + '.pdf-memo{white-space:pre-wrap;min-height:90px;} '
+      + '</style></head><body><div id="pdfPrintPage">'+ html +'</div></body></html>');
+    doc.close();
+    waitForImages(doc, function(){
+      setTimeout(function(){ w.focus(); w.print(); }, 200);
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ ensurePdfButton(); ensurePdfModal(); });
+  } else {
+    ensurePdfButton(); ensurePdfModal();
+  }
+})();
+</script>
 
 </body>
 </html>

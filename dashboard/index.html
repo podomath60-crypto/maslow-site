@@ -1371,7 +1371,7 @@
       <section class="search-wrap">
         <div class="search-box">
           <span class="search-icon">🔎</span>
-          <input id="searchInput" class="search-input" type="text" placeholder="제목, 주소, 매물번호 검색" autocomplete="off" />
+          <input id="searchInput" class="search-input" type="search" name="mk_property_lookup_text_20260427" placeholder="제목, 주소, 매물번호 검색" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="search" readonly />
         </div>
       </section>
 
@@ -1637,6 +1637,7 @@
     let calendarCurrentNotice = null;
     let calendarCurrentDetail = null;
     let calendarThreadMap = {};
+    let calendarOverviewLoadedAll = false; // 캘린더 시트 전체 thread 캐시 로딩 여부
     let calendarEditingThreadItem = null;
     let calendarActiveEditCard = null;
     let calendarHistoryArmed = false;
@@ -1943,24 +1944,26 @@
         calendarHistoryArmed = true;
       }
 
-      const hasNotice = !!calendarCurrentNotice;
-      const hasThreadCache = Object.keys(calendarThreadMap || {}).length > 0;
+      function renderOpenedCalendar(){
+        if(!calendarSelectedDateKey || getCurrentMonthKeyFromDate(calendarSelectedDateKey) !== calendarCurrentMonth){
+          calendarSelectedDateKey = getTodayDateKey().slice(0, 7) === calendarCurrentMonth
+            ? getTodayDateKey()
+            : calendarCurrentMonth + '-01';
+        }
 
-      if(!hasNotice || !hasThreadCache){
-        alert('캘린더 초기 데이터가 아직 없습니다. 대시보드를 새로고침해 주세요.');
+        renderCalendarNotice();
+        calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
+        calendarMonthLabel.textContent = formatMonthLabel(calendarCurrentMonth);
+        renderCalendarGrid();
+        loadCalendarDateDetail(calendarSelectedDateKey);
+      }
+
+      if(!calendarOverviewLoadedAll){
+        loadCalendarOverview(calendarCurrentMonth, true).then(renderOpenedCalendar);
         return;
       }
 
-      if(!calendarSelectedDateKey || getCurrentMonthKeyFromDate(calendarSelectedDateKey) !== calendarCurrentMonth){
-        calendarSelectedDateKey = getTodayDateKey().slice(0, 7) === calendarCurrentMonth
-          ? getTodayDateKey()
-          : calendarCurrentMonth + '-01';
-      }
-
-      renderCalendarNotice();
-      calendarOverviewMap = buildLocalOverviewMapForMonth(calendarCurrentMonth);
-      renderCalendarGrid();
-      loadCalendarDateDetail(calendarSelectedDateKey);
+      renderOpenedCalendar();
     }
 
     function closeCalendarModal(fromPopstate){
@@ -1996,59 +1999,78 @@
       }
     }
 
-    function loadCalendarOverview(monthKey){
-      startCalendarInlineLoading();
+    function requestCalendarOverview(monthKey, preferAll){
+      const payload = { action: 'getCalendarOverview' };
+      if(!preferAll && monthKey){
+        payload.month = monthKey;
+      }
 
       return fetch(CONFIG.adminListUrl, {
         method: 'POST',
         mode: 'cors',
         headers: { 'Content-Type':'text/plain;charset=UTF-8' },
-        body: JSON.stringify({
-          action: 'getCalendarOverview',
-          month: monthKey
-        })
+        body: JSON.stringify(payload)
       })
       .then(function(res){
         if(!res.ok) throw new Error('캘린더 불러오기 실패: ' + res.status);
         return res.json();
-      })
-      .then(function(data){
-        if(!data || data.ok !== true){
-          throw new Error((data && data.message) || '캘린더 불러오기 실패');
+      });
+    }
+
+    function applyCalendarOverviewData(data, monthKey, loadedAll){
+      if(!data || data.ok !== true){
+        throw new Error((data && data.message) || '캘린더 불러오기 실패');
+      }
+
+      calendarCurrentMonth = monthKey || calendarCurrentMonth || getCurrentMonthKeyFromDate(getTodayDateKey());
+      calendarCurrentNotice = data.notice || null;
+      calendarOverviewMap = {};
+      calendarThreadMap = {};
+      calendarOverviewLoadedAll = !!loadedAll;
+
+      const rawThreadMap = (data && data.threadsByDate && typeof data.threadsByDate === 'object')
+        ? data.threadsByDate
+        : {};
+
+      Object.keys(rawThreadMap).forEach(function(dateKey){
+        calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
+          ? rawThreadMap[dateKey].slice().sort(function(a, b){
+              return (parseDateValue((b && (b.updatedAt || b.createdAt)) || '') || 0) - (parseDateValue((a && (a.updatedAt || a.createdAt)) || '') || 0);
+            })
+          : [];
+      });
+
+      (Array.isArray(data.days) ? data.days : []).forEach(function(day){
+        const dateKey = text(day.dateKey);
+        const localThreads = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
+        calendarOverviewMap[dateKey] = {
+          shoppingCount: Number(day.shoppingCount || 0),
+          factoryCount: Number(day.factoryCount || 0),
+          threadCount: localThreads.length || Number(day.threadCount || 0)
+        };
+        if(!calendarThreadMap[dateKey]){
+          calendarThreadMap[dateKey] = [];
         }
+      });
 
-        calendarCurrentMonth = monthKey;
-        calendarCurrentNotice = data.notice || null;
-        calendarOverviewMap = {};
-        calendarThreadMap = {};
+      renderCalendarNotice();
+      calendarMonthLabel.textContent = formatMonthLabel(calendarCurrentMonth);
+    }
 
-        const rawThreadMap = (data && data.threadsByDate && typeof data.threadsByDate === 'object')
-          ? data.threadsByDate
-          : {};
+    function loadCalendarOverview(monthKey, preferAll){
+      startCalendarInlineLoading();
 
-        Object.keys(rawThreadMap).forEach(function(dateKey){
-          calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
-            ? rawThreadMap[dateKey].slice().sort(function(a, b){
-                return (parseDateValue(b && b.createdAt) || 0) - (parseDateValue(a && a.createdAt) || 0);
-              })
-            : [];
-        });
-
-        (Array.isArray(data.days) ? data.days : []).forEach(function(day){
-          const dateKey = text(day.dateKey);
-          const localThreads = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
-          calendarOverviewMap[dateKey] = {
-            shoppingCount: Number(day.shoppingCount || 0),
-            factoryCount: Number(day.factoryCount || 0),
-            threadCount: localThreads.length || Number(day.threadCount || 0)
-          };
-          if(!calendarThreadMap[dateKey]){
-            calendarThreadMap[dateKey] = [];
-          }
-        });
-
-        renderCalendarNotice();
-        calendarMonthLabel.textContent = formatMonthLabel(monthKey);
+      return requestCalendarOverview(monthKey, !!preferAll)
+      .then(function(data){
+        applyCalendarOverviewData(data, monthKey, !!preferAll);
+      })
+      .catch(function(err){
+        if(preferAll){
+          return requestCalendarOverview(monthKey, false).then(function(data){
+            applyCalendarOverviewData(data, monthKey, false);
+          });
+        }
+        throw err;
       })
       .catch(function(err){
         console.error(err);
@@ -2576,11 +2598,49 @@
       if(teamToggleDesc) teamToggleDesc.textContent = nextMeta.desc;
     }
 
-    searchInput.addEventListener('input', function(e){
-      currentKeyword = String(e.target.value || '').trim().toLowerCase();
-      visibleCount = PAGE_SIZE;
-      renderDashboard();
-    });
+    function clearSearchAutofillValue(){
+      if(!searchInput) return;
+      searchInput.value = '';
+      currentKeyword = '';
+    }
+
+    if(searchInput){
+      clearSearchAutofillValue();
+
+      searchInput.addEventListener('focus', function(){
+        searchInput.removeAttribute('readonly');
+        if(!searchInput.dataset.userTouched){
+          clearSearchAutofillValue();
+        }
+      });
+
+      searchInput.addEventListener('mousedown', function(){
+        searchInput.removeAttribute('readonly');
+      });
+
+      searchInput.addEventListener('touchstart', function(){
+        searchInput.removeAttribute('readonly');
+      }, { passive:true });
+
+      searchInput.addEventListener('input', function(e){
+        searchInput.dataset.userTouched = '1';
+        currentKeyword = String(e.target.value || '').trim().toLowerCase();
+        visibleCount = PAGE_SIZE;
+        renderDashboard();
+      });
+
+      window.setTimeout(function(){
+        if(!searchInput.dataset.userTouched){
+          clearSearchAutofillValue();
+        }
+      }, 120);
+
+      window.setTimeout(function(){
+        if(!searchInput.dataset.userTouched){
+          clearSearchAutofillValue();
+        }
+      }, 650);
+    }
 
     document.querySelectorAll('.filter-chip').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -2899,6 +2959,7 @@
     }
 
     function fetchAdminItems(){
+      clearSearchAutofillValue();
       startLoadingOverlay();
 
       const today = getTodayDateKey();
@@ -2919,59 +2980,23 @@
           return res.json();
         }),
 
-        fetch(CONFIG.adminListUrl, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'text/plain;charset=UTF-8'
-          },
-          body: JSON.stringify({
-            action: 'getCalendarOverview',
-            month: monthKey
-          })
-        }).then(function(res){
-          if(!res.ok) throw new Error('캘린더 불러오기 실패: ' + res.status);
-          return res.json();
+        requestCalendarOverview(monthKey, true).then(function(data){
+          return { data: data, loadedAll: true };
+        }).catch(function(){
+          return requestCalendarOverview(monthKey, false).then(function(data){
+            return { data: data, loadedAll: false };
+          });
         })
       ])
       .then(function(results){
         const propertyData = results[0] || {};
-        const calendarData = results[1] || {};
+        const calendarResult = results[1] || {};
+        const calendarData = calendarResult.data || calendarResult;
 
         const items = Array.isArray(propertyData && propertyData.items) ? propertyData.items : [];
         rawItems = items.map(normalizeItem);
 
-        calendarCurrentMonth = monthKey;
-        calendarCurrentNotice = calendarData.notice || null;
-        calendarThreadMap = {};
-        calendarOverviewMap = {};
-
-        const rawThreadMap = (calendarData && calendarData.threadsByDate && typeof calendarData.threadsByDate === 'object')
-          ? calendarData.threadsByDate
-          : {};
-
-        Object.keys(rawThreadMap).forEach(function(dateKey){
-          calendarThreadMap[dateKey] = Array.isArray(rawThreadMap[dateKey])
-            ? rawThreadMap[dateKey].slice().sort(function(a, b){
-                return (parseDateValue((b && (b.updatedAt || b.createdAt)) || '') || 0) - (parseDateValue((a && (a.updatedAt || a.createdAt)) || '') || 0);
-              })
-            : [];
-        });
-
-        (Array.isArray(calendarData && calendarData.days) ? calendarData.days : []).forEach(function(day){
-          const dateKey = text(day && day.dateKey);
-          const localThreads = Array.isArray(calendarThreadMap[dateKey]) ? calendarThreadMap[dateKey] : [];
-
-          calendarOverviewMap[dateKey] = {
-            shoppingCount: Number(day && day.shoppingCount || 0),
-            factoryCount: Number(day && day.factoryCount || 0),
-            threadCount: localThreads.length
-          };
-
-          if(!calendarThreadMap[dateKey]){
-            calendarThreadMap[dateKey] = [];
-          }
-        });
+        applyCalendarOverviewData(calendarData, monthKey, calendarResult.loadedAll !== false);
 
         renderDashboard();
       })

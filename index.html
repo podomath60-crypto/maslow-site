@@ -2667,112 +2667,10 @@
       </div>
     </div>
 
-    <div class="property-grid">
-      <a class="property-card reveal delay-1" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
-        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=900&q=80');">
-          <div class="property-chip-wrap">
-            <span class="property-chip">매매</span>
-          </div>
-        </div>
-        <div class="property-body">
-          <h3>군산 국가산단 제조공장</h3>
-          <p class="property-price">78억</p>
-          <p class="property-meta"># 대형차 진입 가능</p>
-        </div>
-      </a>
-
-      <a class="property-card reveal delay-2" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
-        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=900&q=80');">
-          <div class="property-chip-wrap">
-            <span class="property-chip">임대</span>
-          </div>
-        </div>
-        <div class="property-body">
-          <h3>김포 물류형 창고시설</h3>
-          <p class="property-price">보 3억 / 월 2,700</p>
-          <p class="property-meta"># 상하차 동선 우수</p>
-        </div>
-      </a>
-
-      <a class="property-card reveal delay-3" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
-        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80');">
-          <div class="property-chip-wrap">
-            <span class="property-chip">매매</span>
-            <span class="property-chip">임대</span>
-          </div>
-        </div>
-        <div class="property-body">
-          <h3>화성 일반공업지역 공장</h3>
-          <p class="property-price">132억 / 임대 협의</p>
-          <p class="property-meta"># 야드 넓음</p>
-        </div>
-      </a>
-
-      <a class="property-card reveal delay-4" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
-        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1565793298595-6a879b1d9492?auto=format&fit=crop&w=900&q=80');">
-          <div class="property-chip-wrap">
-            <span class="property-chip">임대</span>
-          </div>
-        </div>
-        <div class="property-body">
-          <h3>평택 제조사무 복합동</h3>
-          <p class="property-price">월 1,450</p>
-          <p class="property-meta"># 사무동 포함</p>
-        </div>
-      </a>
-
-      <a class="property-card reveal delay-1" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
-        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=900&q=80');">
-          <div class="property-chip-wrap">
-            <span class="property-chip">매매</span>
-          </div>
-        </div>
-        <div class="property-body">
-          <h3>익산 신축 가능 부지형 공장</h3>
-          <p class="property-price">54억</p>
-          <p class="property-meta"># 분할 검토 가능</p>
-        </div>
-      </a>
-
-      <a class="property-card reveal delay-2" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
-        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=900&q=80');">
-          <div class="property-chip-wrap">
-            <span class="property-chip">매매</span>
-            <span class="property-chip">임대</span>
-          </div>
-        </div>
-        <div class="property-body">
-          <h3>천안 전자부품 공장동</h3>
-          <p class="property-price">96억 / 임대 협의</p>
-          <p class="property-meta"># 설비 반입 용이</p>
-        </div>
-      </a>
-
-      <a class="property-card reveal delay-3" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
-        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=900&q=80');">
-          <div class="property-chip-wrap">
-            <span class="property-chip">임대</span>
-          </div>
-        </div>
-        <div class="property-body">
-          <h3>시화 물류창고 단독동</h3>
-          <p class="property-price">보 2억 / 월 1,900</p>
-          <p class="property-meta"># 도크 확보</p>
-        </div>
-      </a>
-
-      <a class="property-card reveal delay-4" href="javascript:void(0)" onclick="openModal('propertyDetailModal')">
-        <div class="property-media" style="background-image:url('https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=900&q=80');">
-          <div class="property-chip-wrap">
-            <span class="property-chip">매매</span>
-          </div>
-        </div>
-        <div class="property-body">
-          <h3>부산 항만 접근형 창고</h3>
-          <p class="property-price">115억</p>
-          <p class="property-meta"># 항만 접근성 우수</p>
-        </div>
-      </a>
+    <div class="property-grid" id="homePropertyGrid">
+      <div style="grid-column:1/-1;padding:36px 20px;text-align:center;color:#67707b;font-size:16px;font-weight:700;">
+        매물 정보를 불러오는 중입니다.
+      </div>
     </div>
 
     <div class="property-cta reveal">
@@ -3948,6 +3846,203 @@ window.addEventListener('popstate', function(){
     document.addEventListener('DOMContentLoaded', bindMaslowDashboardTap_);
   }else{
     bindMaslowDashboardTap_();
+  }
+})();
+</script>
+
+
+<script>
+(function(){
+  var GAS_HOME_PROPERTY_URL = "https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec?action=listPublicProperties";
+  var HOME_PROPERTY_LIMIT = 4;
+  var HOME_PROPERTY_FALLBACK_IMAGE = "https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png";
+
+  function homeText_(value){
+    return String(value == null ? '' : value).trim();
+  }
+
+  function homeFirstNonEmpty_(){
+    for(var i = 0; i < arguments.length; i++){
+      var v = homeText_(arguments[i]);
+      if(v) return v;
+    }
+    return '';
+  }
+
+  function homeEscapeHtml_(value){
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function homeEscapeAttr_(value){
+    return homeEscapeHtml_(value).replace(/`/g, '&#96;');
+  }
+
+  function homeMaskAddress_(value){
+    var s = homeText_(value);
+    if(!s) return '';
+    s = s.replace(/\s*\([^)]*\)/g, '');
+    var parts = s.split(/\s+/).filter(Boolean);
+    while(parts.length && /\d/.test(parts[parts.length - 1])) parts.pop();
+    return parts.join(' ');
+  }
+
+  function homeParseJsonArray_(value){
+    if(Array.isArray(value)) return value.filter(Boolean);
+    var s = homeText_(value);
+    if(!s) return [];
+    try{
+      var parsed = JSON.parse(s);
+      if(Array.isArray(parsed)){
+        return parsed.map(function(item){
+          if(typeof item === 'string') return item;
+          return homeFirstNonEmpty_(item && item.url, item && item.lightUrl, item && item.thumbnailUrl, item && item.src);
+        }).filter(Boolean);
+      }
+    }catch(e){}
+    return [];
+  }
+
+  function homeBuildPhotos_(raw){
+    var direct = [];
+    if(Array.isArray(raw.photos)) direct = raw.photos;
+    else if(Array.isArray(raw.photoUrls)) direct = raw.photoUrls;
+    else direct = homeParseJsonArray_(raw.photoUrlsJson || raw.photosJson || raw.assetSnapshotJson);
+
+    direct = direct.map(function(item){
+      if(typeof item === 'string') return item;
+      return homeFirstNonEmpty_(item && item.url, item && item.lightUrl, item && item.thumbnailUrl, item && item.src);
+    }).filter(Boolean);
+
+    var hero = homeFirstNonEmpty_(raw.heroUrl, raw.thumbnailUrl, raw.image, raw.heroImageUrl);
+    if(hero && direct.indexOf(hero) === -1) direct.unshift(hero);
+    return direct;
+  }
+
+  function homeBuildPrice_(raw, basic){
+    var dealType = homeFirstNonEmpty_(raw.dealType, raw.chip, basic.dealType);
+    var priceDisplay = homeFirstNonEmpty_(raw.priceDisplay, raw.price, raw.basicPrice, basic.price);
+    if(priceDisplay) return priceDisplay;
+
+    var salePrice = homeFirstNonEmpty_(raw.salePrice, basic.salePrice);
+    var deposit = homeFirstNonEmpty_(raw.deposit, basic.deposit);
+    var monthlyRent = homeFirstNonEmpty_(raw.monthlyRent, basic.monthlyRent);
+
+    if(dealType.indexOf('임대') > -1){
+      if(deposit && monthlyRent) return '보 ' + deposit + ' / 월 ' + monthlyRent;
+      if(monthlyRent) return '월 ' + monthlyRent;
+      if(deposit) return '보 ' + deposit;
+    }
+    return salePrice;
+  }
+
+  function homeNormalizeProperty_(raw){
+    raw = raw || {};
+    var basic = raw.basic || {};
+    var factory = raw.factory || {};
+    var photos = homeBuildPhotos_(raw);
+    var summary = Array.isArray(raw.summary)
+      ? raw.summary.filter(Boolean)
+      : [raw.summary1, raw.summary2, raw.summary3].filter(Boolean);
+
+    return {
+      listingNumber: homeFirstNonEmpty_(raw.listingNumber, basic.listingNumber, raw.uid),
+      status: homeFirstNonEmpty_(raw.status, basic.status),
+      updatedAt: homeFirstNonEmpty_(raw.updatedAt, raw.aiFillUpdatedAt, basic.updatedAt, raw.createdAt, basic.createdAt),
+      chip: homeFirstNonEmpty_(raw.chip, raw.dealType, basic.dealType),
+      title: homeFirstNonEmpty_(raw.title, raw.propertyTitle, basic.title, basic.titleHint, basic.propertyType, '공장 매물'),
+      price: homeBuildPrice_(raw, basic),
+      point: homeFirstNonEmpty_(raw.cardMeta, raw.point, summary[0], factory.mainEquipment, factory.recommendedIndustry, raw.recommendedIndustry, raw.recommendedUse, basic.titleHint),
+      address: homeMaskAddress_(homeFirstNonEmpty_(raw.address, basic.address)),
+      image: photos[0] || HOME_PROPERTY_FALLBACK_IMAGE
+    };
+  }
+
+  function homeIsPublicFactory_(item){
+    if(!item) return false;
+    var status = homeText_(item.status).toLowerCase();
+    if(status && ['hidden','hide','비공개','삭제','deleted'].indexOf(status) > -1) return false;
+    var listingNumber = homeText_(item.listingNumber).toUpperCase();
+    return listingNumber.indexOf('MK-') === 0;
+  }
+
+  function homeTimeValue_(item){
+    var t = new Date(item.updatedAt || 0).getTime();
+    return isNaN(t) ? 0 : t;
+  }
+
+  function homeBuildChipHtml_(chipText){
+    var chips = homeText_(chipText).split('/').map(function(v){ return homeText_(v); }).filter(Boolean);
+    if(!chips.length) chips = ['공장'];
+    return chips.map(function(ch){
+      return '<span class="property-chip">' + homeEscapeHtml_(ch) + '</span>';
+    }).join('');
+  }
+
+  function homeRenderProperties_(items){
+    var grid = document.getElementById('homePropertyGrid');
+    if(!grid) return;
+
+    if(!items.length){
+      grid.innerHTML = '<div style="grid-column:1/-1;padding:36px 20px;text-align:center;color:#67707b;font-size:16px;font-weight:700;">현재 공개된 공장 매물이 없습니다.</div>';
+      return;
+    }
+
+    grid.innerHTML = items.map(function(item, idx){
+      var delay = (idx % 4) + 1;
+      var listingNumber = homeText_(item.listingNumber);
+      var click = listingNumber
+        ? "location.href='/listings?open=1&listingNumber=" + encodeURIComponent(listingNumber).replace(/'/g, '%27') + "'"
+        : "openModal('propertyDetailModal')";
+      var meta = item.point ? '# ' + item.point.replace(/^#\s*/, '') : (item.address ? '# ' + item.address : '');
+
+      return ''
+        + '<a class="property-card reveal delay-' + delay + ' in" href="javascript:void(0)" onclick="' + click + '">'
+        +   '<div class="property-media" style="background-image:url(\'' + homeEscapeAttr_(item.image) + '\');">'
+        +     '<div class="property-chip-wrap">' + homeBuildChipHtml_(item.chip) + '</div>'
+        +   '</div>'
+        +   '<div class="property-body">'
+        +     '<h3>' + homeEscapeHtml_(item.title) + '</h3>'
+        +     '<p class="property-price">' + homeEscapeHtml_(item.price || '가격 협의') + '</p>'
+        +     '<p class="property-meta">' + homeEscapeHtml_(meta) + '</p>'
+        +   '</div>'
+        + '</a>';
+    }).join('');
+  }
+
+  function loadHomeLatestFactoryProperties_(){
+    var grid = document.getElementById('homePropertyGrid');
+    if(!grid) return;
+
+    fetch(GAS_HOME_PROPERTY_URL, { method:'GET', cache:'no-store' })
+      .then(function(res){
+        if(!res.ok) throw new Error('property fetch failed: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        var rows = Array.isArray(data && data.items) ? data.items : [];
+        var items = rows
+          .map(homeNormalizeProperty_)
+          .filter(homeIsPublicFactory_)
+          .sort(function(a, b){ return homeTimeValue_(b) - homeTimeValue_(a); })
+          .slice(0, HOME_PROPERTY_LIMIT);
+
+        homeRenderProperties_(items);
+      })
+      .catch(function(err){
+        console.error(err);
+        grid.innerHTML = '<div style="grid-column:1/-1;padding:36px 20px;text-align:center;color:#67707b;font-size:16px;font-weight:700;">매물 정보를 불러오지 못했습니다.</div>';
+      });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', loadHomeLatestFactoryProperties_);
+  }else{
+    loadHomeLatestFactoryProperties_();
   }
 })();
 </script>

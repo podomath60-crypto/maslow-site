@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Threads 사고영상 수집</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg: #f4f4f2;
+      --card: #ffffff;
+      --text: #111111;
+      --muted: #7a7a7a;
+      --line: rgba(17,17,17,.08);
+      --shadow: 0 18px 40px rgba(0,0,0,.08);
+      --radius: 28px;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 16px 80px;
+    }
+
+    .hero {
+      padding: 10px 4px 24px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(34px, 6vw, 56px);
+      line-height: .94;
+      font-weight: 900;
+      letter-spacing: -0.06em;
+    }
+
+    .sub {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 15px;
+      letter-spacing: -0.03em;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .refresh {
+      appearance: none;
+      border: 0;
+      background: #111;
+      color: #fff;
+      border-radius: 999px;
+      padding: 13px 18px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      cursor: pointer;
+    }
+
+    .count {
+      margin-left: auto;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.7);
+      text-decoration: none;
+      color: inherit;
+      min-height: 245px;
+      display: block;
+      isolation: isolate;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 15% 18%, rgba(255,255,255,.75) 0, rgba(255,255,255,0) 26%),
+        radial-gradient(circle at 90% 10%, rgba(0,0,0,.06) 0, rgba(0,0,0,0) 22%),
+        linear-gradient(135deg, #101010 0%, #1b1b1b 36%, #2c2c2c 100%);
+      z-index: -2;
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      width: 240px;
+      height: 240px;
+      right: -70px;
+      bottom: -78px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.22), rgba(255,255,255,.03) 50%, transparent 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .card-inner {
+      min-height: 245px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      color: #fff;
+    }
+
+    .badge-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,.12);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.14);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #7cff9d;
+      box-shadow: 0 0 16px rgba(124,255,157,.8);
+      flex: 0 0 auto;
+    }
+
+    .scraped {
+      margin-left: auto;
+      color: rgba(255,255,255,.72);
+      font-size: 12px;
+      line-height: 1.3;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .card-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 22px 2px 18px;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      color: rgba(255,255,255,.66);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .headline {
+      margin-top: 10px;
+      font-size: clamp(28px, 7vw, 38px);
+      line-height: .95;
+      font-weight: 900;
+      letter-spacing: -0.06em;
+      word-break: keep-all;
+    }
+
+    .handle {
+      margin-top: 14px;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      opacity: .96;
+    }
+
+    .hint {
+      margin-top: 8px;
+      font-size: 14px;
+      color: rgba(255,255,255,.72);
+      letter-spacing: -0.03em;
+    }
+
+    .bottom {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: auto;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 16px;
+      border-radius: 999px;
+      background: #fff;
+      color: #111;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .url-mini {
+      min-width: 0;
+      color: rgba(255,255,255,.58);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .loading, .empty, .error {
+      padding: 90px 10px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .error { color: #b42318; }
+
+    @media (min-width: 760px) {
+      .wrap { padding-left: 22px; padding-right: 22px; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .card, .card-inner { min-height: 290px; }
+      .card-main { padding-top: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <h1 class="title">Threads<br>사고영상 수집</h1>
+      <div class="sub">댓글 없는 사고영상만 모아둔 화면입니다.</div>
+      <div class="topbar">
+        <button class="refresh" type="button" onclick="loadItems()">새로고침</button>
+        <div class="count" id="count">불러오는 중</div>
+      </div>
+    </section>
+
+    <section class="grid" id="list">
+      <div class="loading">불러오는 중...</div>
+    </section>
+  </main>
+
+  <script>
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
+    let ITEMS = [];
+
+    function esc(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function callGas(payload) {
+      return fetch(GAS_URL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.text())
+      .then(text => JSON.parse(text));
+    }
+
+    function toThreadsAppUrl(webUrl) {
+      const url = String(webUrl || '').trim();
+      const ua = navigator.userAgent || '';
+      const isAndroid = /Android/i.test(ua);
+      const isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+      if (isAndroid) {
+        const clean = url.replace(/^https?:\/\//, '');
+        return 'intent://' + clean + '#Intent;scheme=https;package=com.instagram.barcelona;end';
+      }
+
+      if (isIOS) {
+        return url;
+      }
+
+      return url;
+    }
+
+    function openThread(url) {
+      const target = toThreadsAppUrl(url);
+      window.location.href = target;
+    }
+
+    function normalizeAuthor(item) {
+      return item.author || item.username || item.handle || 'unknown';
+    }
+
+    function normalizeUrl(item) {
+      return item.replyUrl || item.url || item.threadUrl || '';
+    }
+
+    function normalizeTime(item) {
+      return item.scrapedAt || item.updatedAt || item.createdAt || '';
+    }
+
+    async function loadItems() {
+      const list = document.getElementById('list');
+      const count = document.getElementById('count');
+      count.textContent = '불러오는 중';
+      list.innerHTML = '<div class="loading">불러오는 중...</div>';
+
+      try {
+        const data = await callGas({ action: 'threads.list' });
+        if (!data || !data.ok) throw new Error((data && data.error) || '불러오기 실패');
+        ITEMS = Array.isArray(data.items) ? data.items : [];
+        render();
+      } catch (err) {
+        count.textContent = '오류';
+        list.innerHTML = '<div class="error">' + esc(err.message || err) + '</div>';
+      }
+    }
+
+    function render() {
+      const list = document.getElementById('list');
+      const count = document.getElementById('count');
+      count.textContent = ITEMS.length + '건';
+
+      if (!ITEMS.length) {
+        list.innerHTML = '<div class="empty">확인할 사고영상이 없습니다.</div>';
+        return;
+      }
+
+      list.innerHTML = ITEMS.map(item => {
+        const author = normalizeAuthor(item);
+        const url = normalizeUrl(item);
+        const time = normalizeTime(item);
+
+        return `
+          <a class="card" href="javascript:void(0)" onclick="openThread('${esc(url)}')">
+            <div class="card-inner">
+              <div class="badge-row">
+                <div class="badge"><span class="dot"></span>댓글 없는 사고영상</div>
+                <div class="scraped">${esc(time)}</div>
+              </div>
+
+              <div class="card-main">
+                <div class="eyebrow">THREADS ACCIDENT VIDEO</div>
+                <div class="headline">댓글 없는<br>사고영상</div>
+                <div class="handle">@${esc(author)}</div>
+                <div class="hint">누르면 Threads로 바로 이동</div>
+              </div>
+
+              <div class="bottom">
+                <div class="pill">Threads 열기</div>
+                <div class="url-mini">${esc(url)}</div>
+              </div>
+            </div>
+          </a>
+        `;
+      }).join('');
+    }
+
+    loadItems();
+  </script>
+</body>
+</html>

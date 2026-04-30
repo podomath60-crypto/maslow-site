@@ -32,7 +32,35 @@
     }
 
     .hero {
+      position: relative;
       padding: 10px 4px 24px;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .hero-text {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .refresh {
+      appearance: none;
+      border: 0;
+      background: #111;
+      color: #fff;
+      border-radius: 999px;
+      padding: 11px 15px;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      cursor: pointer;
+      white-space: nowrap;
+      flex: 0 0 auto;
+      box-shadow: 0 8px 18px rgba(0,0,0,.12);
     }
 
     .title {
@@ -53,21 +81,7 @@
     .topbar {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-top: 22px;
-    }
-
-    .refresh {
-      appearance: none;
-      border: 0;
-      background: #111;
-      color: #fff;
-      border-radius: 999px;
-      padding: 13px 18px;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      cursor: pointer;
+      margin-top: 14px;
     }
 
     .count {
@@ -262,10 +276,14 @@
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1 class="title">Threads<br>사고영상 수집</h1>
-      <div class="sub">댓글 없는 사고영상만 모아둔 화면입니다.</div>
-      <div class="topbar">
+      <div class="hero-top">
+        <div class="hero-text">
+          <h1 class="title">Threads<br>사고영상 수집</h1>
+          <div class="sub">댓글 없는 사고영상만 모아둔 화면입니다.</div>
+        </div>
         <button class="refresh" type="button" onclick="loadItems()">새로고침</button>
+      </div>
+      <div class="topbar">
         <div class="count" id="count">불러오는 중</div>
       </div>
     </section>

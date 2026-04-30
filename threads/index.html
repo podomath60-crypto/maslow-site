@@ -101,6 +101,7 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 18px;
+      overflow: hidden;
     }
 
     .card {
@@ -115,6 +116,7 @@
       display: block;
       isolation: isolate;
       cursor: pointer;
+      max-width: 100%;
     }
 
     .card.no-reply::before {
@@ -417,6 +419,36 @@
       color: #fff;
     }
 
+    @media (max-width: 520px) {
+      .wrap {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .card,
+      .card-inner {
+        min-height: 235px;
+      }
+
+      .bottom {
+        gap: 8px;
+      }
+
+      .pill {
+        min-height: 42px;
+        padding: 0 14px;
+      }
+
+      .memo-btn {
+        min-height: 34px;
+        padding: 0 11px;
+      }
+
+      .url-mini {
+        display: none;
+      }
+    }
+
     @media (min-width: 760px) {
       .wrap { padding-left: 22px; padding-right: 22px; }
       .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -436,7 +468,7 @@
         <button class="refresh" type="button" onclick="loadItems()">새로고침</button>
       </div>
       <div class="topbar">
-        <div class="legend">최신순 · 댓글 없는 영상 우선</div>
+        <div class="legend" id="noReplyCount">댓글 없는 영상 0건</div>
         <div class="count" id="count">불러오는 중</div>
       </div>
     </section>
@@ -553,7 +585,10 @@
     function render() {
       const list = document.getElementById('list');
       const count = document.getElementById('count');
+      const noReplyCount = ITEMS.filter(item => !hasOwnerReply(item)).length;
       count.textContent = ITEMS.length + '건';
+      const noReplyEl = document.getElementById('noReplyCount');
+      if (noReplyEl) noReplyEl.textContent = '댓글 없는 영상 ' + noReplyCount + '건';
 
       if (!ITEMS.length) {
         list.innerHTML = '<div class="empty">확인할 사고영상이 없습니다.</div>';

@@ -962,6 +962,7 @@
     <span>바로가기</span>
   </a>
 
+
   <script>
     (function(){
       function setText(selector, text, index){
@@ -985,6 +986,192 @@
         }
       }
 
+      function bindLangButtons(){
+        var cn = document.querySelector('.js-lang-cn');
+        if(cn){
+          cn.onclick = function(e){
+            e.preventDefault();
+            setChinese();
+          };
+        }
+
+        var ko = document.querySelector('.js-lang-ko');
+        if(ko){
+          ko.onclick = function(e){
+            e.preventDefault();
+            setKorean();
+          };
+        }
+      }
+
+      function setKorean(){
+        document.documentElement.lang = 'ko';
+
+        var langBtn = document.querySelector('.lang');
+        if(langBtn) langBtn.textContent = '🇰🇷';
+
+        document.title = 'Maslow Factory Market';
+
+        var metaDesc = document.querySelector('meta[name="description"]');
+        if(metaDesc) metaDesc.setAttribute('content', '산업용 중장비, 제조설비, 공장설비 매물거래 플랫폼');
+
+        var ogTitle = document.querySelector('meta[property="og:title"]');
+        if(ogTitle) ogTitle.setAttribute('content', 'Maslow Factory Market');
+
+        var ogDesc = document.querySelector('meta[property="og:description"]');
+        if(ogDesc) ogDesc.setAttribute('content', '산업용 중장비, 제조설비, 공장설비 매물거래 플랫폼');
+
+        // 드롭다운: 현재 한국어 상태에서는 중국어 선택지가 보임
+        var firstLang = document.querySelector('.lang-menu a:first-child');
+        if(firstLang){
+          firstLang.className = 'js-lang-cn';
+          firstLang.innerHTML = '<span>🇨🇳</span><b>중국</b>';
+          firstLang.setAttribute('href', '#');
+        }
+        setText('.lang-menu a b', '일본', 1);
+        setText('.lang-menu a b', '베트남', 2);
+        setText('.lang-menu a b', '글로벌', 3);
+
+        // Header
+        setText('.nav a', '매물검색', 0);
+        setText('.nav a', '설비팔기', 1);
+        setText('.nav a', '인기매물', 2);
+        setText('.nav a', '거래안내', 3);
+
+        // Hero
+        setText('.hero-copy h1', '산업설비 매물을\n한 번에 비교하세요');
+        setText('.hero-copy p', '중장비, 제조설비, 공작기계, 물류설비, 공장정리 매물을 한 곳에서 검색하고 상담합니다.');
+
+        // Desktop sell
+        setText('.sell-desktop .section-head h2', '설비를 팔고 싶다면');
+        setText('.sell-desktop .section-head p', '단품 매각부터 공장 전체 설비 정리까지 상담할 수 있습니다.');
+
+        var koSellTitles = ['단품 등록', '공장정리', '현장확인', '공장 연동'];
+        var koSellTexts = [
+          '사진과 기본 정보로 빠르게 설비를 등록합니다.',
+          '폐업, 이전, 라인 교체 매물을 일괄 상담합니다.',
+          '가동상태와 사진 정보를 확인해 신뢰도를 높입니다.',
+          '공장 부동산과 내부 설비를 함께 보여줍니다.'
+        ];
+        var koSellLinks = ['등록하기', '상담하기', '신청하기', '패키지 등록'];
+
+        document.querySelectorAll('.sell-desktop .sell-item, .sell-mobile .sell-item').forEach(function(card, i){
+          var idx = i % 4;
+          var h3 = card.querySelector('h3');
+          var p = card.querySelector('p');
+          var a = card.querySelector('a');
+          if(h3) h3.textContent = koSellTitles[idx];
+          if(p) p.textContent = koSellTexts[idx];
+          if(a) a.textContent = koSellLinks[idx];
+        });
+
+        // Search
+        setText('.search-title h2', '모델·설비 검색');
+        setText('.search-title span', '전체 등록 산업매물 18,420건');
+        setPlaceholder('.filter-grid input', '검색어를 입력하세요. 예: 지게차 3톤, CNC, 콤프레샤');
+
+        setOption(0,0,'카테고리');
+        setOption(0,1,'중장비');
+        setOption(0,2,'공작기계');
+        setOption(0,3,'제조라인');
+        setOption(0,4,'물류설비');
+        setOption(0,5,'전기·동력설비');
+
+        setOption(1,0,'지역');
+        setOption(1,1,'전북');
+        setOption(1,2,'충남');
+        setOption(1,3,'경기');
+        setOption(1,4,'경남');
+        setOption(1,5,'전국');
+
+        setOption(2,0,'가격');
+        setOption(2,1,'1천만원 이하');
+        setOption(2,2,'1천~3천만원');
+        setOption(2,3,'3천~1억원');
+        setOption(2,4,'가격협의');
+
+        setText('.filter-grid button', '검색');
+
+        setText('.quick-row strong', '추천테마');
+        var koQuick = ['공장정리 매물', '가동확인 설비', '지게차', 'CNC·MCT', '식품포장기', '물류창고 설비'];
+        document.querySelectorAll('.quick-row a').forEach(function(a, i){
+          if(koQuick[i]) a.textContent = koQuick[i];
+        });
+
+        // Product list
+        setText('.main-head h2', 'Maslow 추천매물');
+        setText('.sorts a', '최신순', 0);
+        setText('.sorts a', '가격낮은순', 1);
+        setText('.sorts a', '조회순', 2);
+
+        var koProductTitles = [
+          '3톤 디젤 지게차 즉시사용 가능',
+          'CNC 선반 제조공장 이전 매각',
+          '식품 포장라인 일괄 매각',
+          '스크류 콤프레샤 50HP',
+          '자동 컨베이어 라인 12m',
+          '산업용 로봇팔 자동화 셀'
+        ];
+        var koProductSpecs = [
+          '2018년식 · 전북 익산 · 운송상담',
+          '경기 화성 · 가동영상 보유',
+          '충남 천안 · 포장기/컨베이어 포함',
+          '전북 군산 · 유지관리 이력 보유',
+          '경남 김해 · 분해상차 협의',
+          '충북 청주 · 제어반 포함'
+        ];
+        var koProductPrices = ['1,250만원', '협의', '3,800만원', '680만원', '920만원', '2,400만원'];
+
+        document.querySelectorAll('.product-card').forEach(function(card, i){
+          var title = card.querySelector('.title');
+          var spec = card.querySelector('.spec');
+          var price = card.querySelector('.price');
+          if(title && koProductTitles[i]) title.textContent = koProductTitles[i];
+          if(spec && koProductSpecs[i]) spec.textContent = koProductSpecs[i];
+          if(price && koProductPrices[i]) price.textContent = koProductPrices[i];
+        });
+
+        var koLabels = [
+          ['인증','중장비'],
+          ['추천','공작기계'],
+          ['일괄','제조라인'],
+          ['급매','동력설비'],
+          ['확인','물류설비'],
+          ['신규','로봇설비']
+        ];
+        document.querySelectorAll('.product-card').forEach(function(card, i){
+          var labels = card.querySelectorAll('.label span');
+          if(labels[0] && koLabels[i]) labels[0].textContent = koLabels[i][0];
+          if(labels[1] && koLabels[i]) labels[1].textContent = koLabels[i][1];
+        });
+
+        // Mobile sell
+        setText('.sell-mobile .section-head h2', '설비를 팔고 싶다면');
+        setText('.sell-mobile .section-head p', '단품 매각부터 공장 전체 설비 정리까지 상담할 수 있습니다.');
+
+        // Side
+        setText('.banner h3', '공장정리\n일괄 매각');
+        setText('.banner p', '이전·폐업·라인교체로 나온 설비를 한 번에 등록하고 상담하세요.');
+        setText('.rank h3', '인기 검색 순위');
+
+        var koRanks = ['지게차 3톤', 'CNC 선반', '콤프레샤', '컨베이어', '식품포장기'];
+        document.querySelectorAll('.rank a').forEach(function(a, i){
+          var b = a.querySelector('b') || document.createElement('b');
+          b.textContent = String(i + 1);
+          a.innerHTML = '';
+          a.appendChild(b);
+          a.appendChild(document.createTextNode(' ' + koRanks[i]));
+        });
+
+        // Footer and bottom
+        setText('.foot h2', 'Maslow Factory Market');
+        setText('.foot p', '산업용 중장비, 제조설비, 공장설비, 공장 매물을 연결하는 매물거래 플랫폼입니다.');
+        setText('.mobile-bottom span', '설비 등록·매각 상담', 0);
+        setText('.mobile-bottom span', '바로가기', 1);
+
+        bindLangButtons();
+      }
+
       function setChinese(){
         document.documentElement.lang = 'zh-CN';
 
@@ -1002,16 +1189,10 @@
         var ogDesc = document.querySelector('meta[property="og:description"]');
         if(ogDesc) ogDesc.setAttribute('content', '工业重型设备、制造设备、工厂设备交易平台');
 
-        // Header
-        setText('.nav a', '设备搜索', 0);
-        setText('.nav a', '出售设备', 1);
-        setText('.nav a', '热门设备', 2);
-        setText('.nav a', '交易指南', 3);
-
-        // Language dropdown labels
+        // 드롭다운: 현재 중국어 상태에서는 한국어 선택지가 보임
         var firstLang = document.querySelector('.lang-menu a:first-child');
         if(firstLang){
-          firstLang.classList.remove('js-lang-cn');
+          firstLang.className = 'js-lang-ko';
           firstLang.innerHTML = '<span>🇰🇷</span><b>韩国</b>';
           firstLang.setAttribute('href', '#');
         }
@@ -1019,29 +1200,37 @@
         setText('.lang-menu a b', '越南', 2);
         setText('.lang-menu a b', '全球', 3);
 
+        // Header
+        setText('.nav a', '设备搜索', 0);
+        setText('.nav a', '出售设备', 1);
+        setText('.nav a', '热门设备', 2);
+        setText('.nav a', '交易指南', 3);
+
         // Hero
         setText('.hero-copy h1', '工业设备货源\n一站式比较');
         setText('.hero-copy p', '重型设备、制造设备、机床、物流设备、工厂清算货源，都可以在这里搜索并咨询。');
 
-        // Desktop sell section
+        // Sell
         setText('.sell-desktop .section-head h2', '想出售设备？');
         setText('.sell-desktop .section-head p', '从单台设备出售到整厂设备清算，都可以咨询。');
 
-        var desktopSellTitles = ['单台设备登记', '工厂清算', '现场确认', '工厂联动'];
-        var desktopSellTexts = [
+        var cnSellTitles = ['单台设备登记', '工厂清算', '现场确认', '工厂联动'];
+        var cnSellTexts = [
           '上传照片和基本信息，即可快速登记设备。',
           '针对停业、搬迁、产线更换的设备进行整批咨询。',
           '确认运行状态和照片信息，提高交易可信度。',
           '可将工厂房产和内部设备一起展示。'
         ];
-        var desktopSellLinks = ['登记设备', '咨询', '申请确认', '套餐登记'];
-        document.querySelectorAll('.sell-desktop .sell-item').forEach(function(card, i){
+        var cnSellLinks = ['登记设备', '咨询', '申请确认', '套餐登记'];
+
+        document.querySelectorAll('.sell-desktop .sell-item, .sell-mobile .sell-item').forEach(function(card, i){
+          var idx = i % 4;
           var h3 = card.querySelector('h3');
           var p = card.querySelector('p');
           var a = card.querySelector('a');
-          if(h3) h3.textContent = desktopSellTitles[i] || h3.textContent;
-          if(p) p.textContent = desktopSellTexts[i] || p.textContent;
-          if(a) a.textContent = desktopSellLinks[i] || a.textContent;
+          if(h3) h3.textContent = cnSellTitles[idx];
+          if(p) p.textContent = cnSellTexts[idx];
+          if(a) a.textContent = cnSellLinks[idx];
         });
 
         // Search
@@ -1071,10 +1260,11 @@
 
         setText('.filter-grid button', '搜索');
 
-        var quick = document.querySelectorAll('.quick-row a');
-        var quickTexts = ['工厂清算货源', '已确认运行设备', '叉车', 'CNC·MCT', '食品包装机', '物流仓储设备'];
-        quickTexts.forEach(function(t, i){ if(quick[i]) quick[i].textContent = t; });
         setText('.quick-row strong', '推荐主题');
+        var cnQuick = ['工厂清算货源', '已确认运行设备', '叉车', 'CNC·MCT', '食品包装机', '物流仓储设备'];
+        document.querySelectorAll('.quick-row a').forEach(function(a, i){
+          if(cnQuick[i]) a.textContent = cnQuick[i];
+        });
 
         // Product list
         setText('.main-head h2', 'Maslow 推荐货源');
@@ -1082,7 +1272,7 @@
         setText('.sorts a', '价格从低到高', 1);
         setText('.sorts a', '浏览量', 2);
 
-        var productTitles = [
+        var cnProductTitles = [
           '3吨柴油叉车 可立即使用',
           'CNC车床 制造工厂搬迁出售',
           '食品包装产线整批出售',
@@ -1090,7 +1280,7 @@
           '12米自动输送线',
           '工业机器人自动化单元'
         ];
-        var productSpecs = [
+        var cnProductSpecs = [
           '2018年 · 全北益山 · 可咨询运输',
           '京畿华城 · 有运行视频',
           '忠南天安 · 含包装机/输送线',
@@ -1098,18 +1288,18 @@
           '庆南金海 · 可协商拆卸装车',
           '忠北清州 · 含控制柜'
         ];
-        var productPrices = ['1,250万韩元', '面议', '3,800万韩元', '680万韩元', '920万韩元', '2,400万韩元'];
+        var cnProductPrices = ['1,250万韩元', '面议', '3,800万韩元', '680万韩元', '920万韩元', '2,400万韩元'];
 
         document.querySelectorAll('.product-card').forEach(function(card, i){
           var title = card.querySelector('.title');
           var spec = card.querySelector('.spec');
           var price = card.querySelector('.price');
-          if(title) title.textContent = productTitles[i] || title.textContent;
-          if(spec) spec.textContent = productSpecs[i] || spec.textContent;
-          if(price) price.textContent = productPrices[i] || price.textContent;
+          if(title && cnProductTitles[i]) title.textContent = cnProductTitles[i];
+          if(spec && cnProductSpecs[i]) spec.textContent = cnProductSpecs[i];
+          if(price && cnProductPrices[i]) price.textContent = cnProductPrices[i];
         });
 
-        var labelTexts = [
+        var cnLabels = [
           ['认证','重型设备'],
           ['推荐','机床'],
           ['整批','制造产线'],
@@ -1119,60 +1309,43 @@
         ];
         document.querySelectorAll('.product-card').forEach(function(card, i){
           var labels = card.querySelectorAll('.label span');
-          if(labels[0]) labels[0].textContent = labelTexts[i][0];
-          if(labels[1]) labels[1].textContent = labelTexts[i][1];
+          if(labels[0] && cnLabels[i]) labels[0].textContent = cnLabels[i][0];
+          if(labels[1] && cnLabels[i]) labels[1].textContent = cnLabels[i][1];
         });
 
-        // Mobile sell section
+        // Mobile sell
         setText('.sell-mobile .section-head h2', '想出售设备？');
         setText('.sell-mobile .section-head p', '从单台设备出售到整厂设备清算，都可以咨询。');
-
-        document.querySelectorAll('.sell-mobile .sell-item').forEach(function(card, i){
-          var h3 = card.querySelector('h3');
-          var p = card.querySelector('p');
-          var a = card.querySelector('a');
-          if(h3) h3.textContent = desktopSellTitles[i] || h3.textContent;
-          if(p) p.textContent = desktopSellTexts[i] || p.textContent;
-          if(a) a.textContent = desktopSellLinks[i] || a.textContent;
-        });
 
         // Side
         setText('.banner h3', '工厂清算\n整批出售');
         setText('.banner p', '搬迁、停业、产线更换产生的设备，可以一次性登记并咨询。');
         setText('.rank h3', '热门搜索排行');
 
-        var ranks = ['叉车 3吨', 'CNC车床', '空压机', '输送线', '食品包装机'];
+        var cnRanks = ['叉车 3吨', 'CNC车床', '空压机', '输送线', '食品包装机'];
         document.querySelectorAll('.rank a').forEach(function(a, i){
-          var b = a.querySelector('b');
+          var b = a.querySelector('b') || document.createElement('b');
+          b.textContent = String(i + 1);
           a.innerHTML = '';
-          if(b){
-            a.appendChild(b);
-          }else{
-            b = document.createElement('b');
-            b.textContent = String(i + 1);
-            a.appendChild(b);
-          }
-          a.appendChild(document.createTextNode(' ' + ranks[i]));
+          a.appendChild(b);
+          a.appendChild(document.createTextNode(' ' + cnRanks[i]));
         });
 
-        // Footer and mobile bottom
+        // Footer and bottom
         setText('.foot h2', 'Maslow Factory Market');
         setText('.foot p', '连接工业重型设备、制造设备、工厂设备和工厂货源的交易平台。');
         setText('.mobile-bottom span', '设备登记·出售咨询', 0);
         setText('.mobile-bottom span', '立即咨询', 1);
+
+        bindLangButtons();
       }
 
       document.addEventListener('DOMContentLoaded', function(){
-        var cn = document.querySelector('.js-lang-cn');
-        if(cn){
-          cn.addEventListener('click', function(e){
-            e.preventDefault();
-            setChinese();
-          });
-        }
+        bindLangButtons();
       });
     })();
   </script>
+
 
 </body>
 </html>

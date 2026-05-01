@@ -96,14 +96,63 @@
       color:#3c434d;
     }
     .nav a:hover{color:#000}
+    .lang-wrap{
+      position:relative;
+      flex:0 0 auto;
+      z-index:200;
+    }
     .lang{
+      width:38px;
+      height:38px;
       border:0;
       background:transparent;
       font-size:24px;
       padding:0;
       cursor:pointer;
       line-height:1;
-      flex:0 0 auto;
+      display:grid;
+      place-items:center;
+    }
+    .lang-menu{
+      position:absolute;
+      top:44px;
+      right:0;
+      min-width:138px;
+      padding:7px;
+      background:rgba(255,255,255,.98);
+      border:1px solid #e2e6ec;
+      box-shadow:0 16px 42px rgba(21,30,44,.14);
+      opacity:0;
+      visibility:hidden;
+      transform:translateY(-6px);
+      transition:.16s ease;
+    }
+    .lang-wrap:hover .lang-menu,
+    .lang-wrap:focus-within .lang-menu{
+      opacity:1;
+      visibility:visible;
+      transform:translateY(0);
+    }
+    .lang-menu a{
+      height:39px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:0 10px;
+      color:#20252c;
+      font-size:14px;
+      font-weight:850;
+    }
+    .lang-menu a:hover{
+      background:#f2f4f7;
+    }
+    .lang-menu span{
+      font-size:21px;
+      line-height:1;
+    }
+    .lang-menu b{
+      font-size:14px;
+      font-weight:850;
     }
 
     .hero{
@@ -638,6 +687,35 @@
         display:none;
       }
     }
+  
+    .sell-top-section{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:26px 20px 0;
+    }
+    .sell-top-inner{
+      background:transparent;
+    }
+    .sell-top-section .main-head{
+      margin-bottom:14px;
+    }
+    .sell-top-section .wide-list{
+      grid-template-columns:repeat(4,1fr);
+    }
+
+    @media (max-width:900px){
+      .sell-top-section{
+        padding:22px 12px 0;
+      }
+      .sell-top-section .wide-list{
+        grid-template-columns:repeat(2, minmax(0,1fr));
+        gap:10px;
+      }
+      .sell-top-section .main-head{
+        padding:0 6px;
+      }
+    }
+
   </style>
 </head>
 
@@ -652,7 +730,15 @@
         <a href="#rank">인기매물</a>
         <a href="#guide">거래안내</a>
       </nav>
-      <button class="lang" type="button" aria-label="언어">🇰🇷</button>
+      <div class="lang-wrap">
+        <button class="lang" type="button" aria-label="언어 선택">🇰🇷</button>
+        <div class="lang-menu">
+          <a href="#"><span>🇨🇳</span><b>중국</b></a>
+          <a href="#"><span>🇯🇵</span><b>일본</b></a>
+          <a href="#"><span>🇻🇳</span><b>베트남</b></a>
+          <a href="#"><span>🌐</span><b>글로벌</b></a>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -665,6 +751,36 @@
       <div class="hero-photo"></div>
     </div>
   </section>
+
+  
+      <section class="sell-top-section" id="sell">
+        <div class="sell-top-inner"><div class="main-head">
+          <h2>설비를 팔고 싶다면</h2>
+        </div>
+        <div class="wide-list">
+          <article class="mini-card">
+            <h3>단품 등록</h3>
+            <p>사진과 기본 정보로 빠르게 설비를 등록합니다.</p>
+            <a href="#">등록하기</a>
+          </article>
+          <article class="mini-card">
+            <h3>공장정리</h3>
+            <p>폐업, 이전, 라인 교체 매물을 일괄 상담합니다.</p>
+            <a href="#">상담하기</a>
+          </article>
+          <article class="mini-card">
+            <h3>현장확인</h3>
+            <p>가동상태와 사진 정보를 확인해 신뢰도를 높입니다.</p>
+            <a href="#">신청하기</a>
+          </article>
+          <article class="mini-card">
+            <h3>공장 연동</h3>
+            <p>공장 부동산과 내부 설비를 함께 보여줍니다.</p>
+            <a href="#">패키지 등록</a>
+          </article>
+        </div>
+      </div></section>
+
 
   <section class="search-area" id="market">
     <div class="search-box">
@@ -835,34 +951,6 @@
           </div>
         </article>
       </div>
-
-      <section class="more-section" id="sell">
-        <div class="main-head">
-          <h2>설비를 팔고 싶다면</h2>
-        </div>
-        <div class="wide-list">
-          <article class="mini-card">
-            <h3>단품 등록</h3>
-            <p>사진과 기본 정보로 빠르게 설비를 등록합니다.</p>
-            <a href="#">등록하기</a>
-          </article>
-          <article class="mini-card">
-            <h3>공장정리</h3>
-            <p>폐업, 이전, 라인 교체 매물을 일괄 상담합니다.</p>
-            <a href="#">상담하기</a>
-          </article>
-          <article class="mini-card">
-            <h3>현장확인</h3>
-            <p>가동상태와 사진 정보를 확인해 신뢰도를 높입니다.</p>
-            <a href="#">신청하기</a>
-          </article>
-          <article class="mini-card">
-            <h3>공장 연동</h3>
-            <p>공장 부동산과 내부 설비를 함께 보여줍니다.</p>
-            <a href="#">패키지 등록</a>
-          </article>
-        </div>
-      </section>
     </section>
 
     <aside class="side">

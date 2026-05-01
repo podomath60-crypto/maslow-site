@@ -1009,7 +1009,12 @@
         setText('.nav a', '交易指南', 3);
 
         // Language dropdown labels
-        setText('.lang-menu a b', '中国', 0);
+        var firstLang = document.querySelector('.lang-menu a:first-child');
+        if(firstLang){
+          firstLang.classList.remove('js-lang-cn');
+          firstLang.innerHTML = '<span>🇰🇷</span><b>韩国</b>';
+          firstLang.setAttribute('href', '#');
+        }
         setText('.lang-menu a b', '日本', 1);
         setText('.lang-menu a b', '越南', 2);
         setText('.lang-menu a b', '全球', 3);

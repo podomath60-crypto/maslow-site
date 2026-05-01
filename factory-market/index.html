@@ -719,7 +719,7 @@
       <div class="lang-wrap">
         <button class="lang" type="button" aria-label="언어 선택">🇰🇷</button>
         <div class="lang-menu">
-          <a href="#"><span>🇨🇳</span><b>중국</b></a>
+          <a href="#" class="js-lang-cn"><span>🇨🇳</span><b>中国</b></a>
           <a href="#"><span>🇯🇵</span><b>일본</b></a>
           <a href="#"><span>🇻🇳</span><b>베트남</b></a>
           <a href="#"><span>🌐</span><b>글로벌</b></a>
@@ -752,12 +752,12 @@
         <a href="#">등록하기</a>
       </article>
       <article class="sell-item">
-        <h3>공장 정리</h3>
+        <h3>공장정리</h3>
         <p>폐업, 이전, 라인 교체 매물을 일괄 상담합니다.</p>
         <a href="#">상담하기</a>
       </article>
       <article class="sell-item">
-        <h3>현장 확인 인증</h3>
+        <h3>현장확인</h3>
         <p>가동상태와 사진 정보를 확인해 신뢰도를 높입니다.</p>
         <a href="#">신청하기</a>
       </article>
@@ -916,12 +916,12 @@
           <a href="#">등록하기</a>
         </article>
         <article class="sell-item">
-          <h3>공장 정리</h3>
+          <h3>공장정리</h3>
           <p>폐업, 이전, 라인 교체 매물을 일괄 상담합니다.</p>
           <a href="#">상담하기</a>
         </article>
         <article class="sell-item">
-          <h3>현장 확인 인증</h3>
+          <h3>현장확인</h3>
           <p>가동상태와 사진 정보를 확인해 신뢰도를 높입니다.</p>
           <a href="#">신청하기</a>
         </article>
@@ -961,5 +961,213 @@
     <span>설비 등록·매각 상담</span>
     <span>바로가기</span>
   </a>
+
+  <script>
+    (function(){
+      function setText(selector, text, index){
+        var nodes = document.querySelectorAll(selector);
+        if(index === undefined){
+          nodes.forEach(function(el){ el.textContent = text; });
+        }else if(nodes[index]){
+          nodes[index].textContent = text;
+        }
+      }
+
+      function setPlaceholder(selector, text){
+        var el = document.querySelector(selector);
+        if(el) el.setAttribute('placeholder', text);
+      }
+
+      function setOption(selectIndex, optionIndex, text){
+        var selects = document.querySelectorAll('select');
+        if(selects[selectIndex] && selects[selectIndex].options[optionIndex]){
+          selects[selectIndex].options[optionIndex].textContent = text;
+        }
+      }
+
+      function setChinese(){
+        document.documentElement.lang = 'zh-CN';
+
+        var langBtn = document.querySelector('.lang');
+        if(langBtn) langBtn.textContent = '🇨🇳';
+
+        document.title = 'Maslow Factory Market | 工业设备交易平台';
+
+        var metaDesc = document.querySelector('meta[name="description"]');
+        if(metaDesc) metaDesc.setAttribute('content', '工业重型设备、制造设备、工厂设备交易平台');
+
+        var ogTitle = document.querySelector('meta[property="og:title"]');
+        if(ogTitle) ogTitle.setAttribute('content', 'Maslow Factory Market');
+
+        var ogDesc = document.querySelector('meta[property="og:description"]');
+        if(ogDesc) ogDesc.setAttribute('content', '工业重型设备、制造设备、工厂设备交易平台');
+
+        // Header
+        setText('.nav a', '设备搜索', 0);
+        setText('.nav a', '出售设备', 1);
+        setText('.nav a', '热门设备', 2);
+        setText('.nav a', '交易指南', 3);
+
+        // Language dropdown labels
+        setText('.lang-menu a b', '中国', 0);
+        setText('.lang-menu a b', '日本', 1);
+        setText('.lang-menu a b', '越南', 2);
+        setText('.lang-menu a b', '全球', 3);
+
+        // Hero
+        setText('.hero-copy h1', '工业设备货源\n一站式比较');
+        setText('.hero-copy p', '重型设备、制造设备、机床、物流设备、工厂清算货源，都可以在这里搜索并咨询。');
+
+        // Desktop sell section
+        setText('.sell-desktop .section-head h2', '想出售设备？');
+        setText('.sell-desktop .section-head p', '从单台设备出售到整厂设备清算，都可以咨询。');
+
+        var desktopSellTitles = ['单台设备登记', '工厂清算', '现场确认', '工厂联动'];
+        var desktopSellTexts = [
+          '上传照片和基本信息，即可快速登记设备。',
+          '针对停业、搬迁、产线更换的设备进行整批咨询。',
+          '确认运行状态和照片信息，提高交易可信度。',
+          '可将工厂房产和内部设备一起展示。'
+        ];
+        var desktopSellLinks = ['登记设备', '咨询', '申请确认', '套餐登记'];
+        document.querySelectorAll('.sell-desktop .sell-item').forEach(function(card, i){
+          var h3 = card.querySelector('h3');
+          var p = card.querySelector('p');
+          var a = card.querySelector('a');
+          if(h3) h3.textContent = desktopSellTitles[i] || h3.textContent;
+          if(p) p.textContent = desktopSellTexts[i] || p.textContent;
+          if(a) a.textContent = desktopSellLinks[i] || a.textContent;
+        });
+
+        // Search
+        setText('.search-title h2', '型号·设备搜索');
+        setText('.search-title span', '已登记工业设备 18,420 件');
+        setPlaceholder('.filter-grid input', '请输入关键词，例如：3吨叉车、CNC、空压机');
+
+        setOption(0,0,'类别');
+        setOption(0,1,'重型设备');
+        setOption(0,2,'机床');
+        setOption(0,3,'制造产线');
+        setOption(0,4,'物流设备');
+        setOption(0,5,'电力·动力设备');
+
+        setOption(1,0,'地区');
+        setOption(1,1,'全北');
+        setOption(1,2,'忠南');
+        setOption(1,3,'京畿');
+        setOption(1,4,'庆南');
+        setOption(1,5,'全国');
+
+        setOption(2,0,'价格');
+        setOption(2,1,'1千万韩元以下');
+        setOption(2,2,'1千万~3千万韩元');
+        setOption(2,3,'3千万~1亿韩元');
+        setOption(2,4,'价格面议');
+
+        setText('.filter-grid button', '搜索');
+
+        var quick = document.querySelectorAll('.quick-row a');
+        var quickTexts = ['工厂清算货源', '已确认运行设备', '叉车', 'CNC·MCT', '食品包装机', '物流仓储设备'];
+        quickTexts.forEach(function(t, i){ if(quick[i]) quick[i].textContent = t; });
+        setText('.quick-row strong', '推荐主题');
+
+        // Product list
+        setText('.main-head h2', 'Maslow 推荐货源');
+        setText('.sorts a', '最新', 0);
+        setText('.sorts a', '价格从低到高', 1);
+        setText('.sorts a', '浏览量', 2);
+
+        var productTitles = [
+          '3吨柴油叉车 可立即使用',
+          'CNC车床 制造工厂搬迁出售',
+          '食品包装产线整批出售',
+          '螺杆空压机 50HP',
+          '12米自动输送线',
+          '工业机器人自动化单元'
+        ];
+        var productSpecs = [
+          '2018年 · 全北益山 · 可咨询运输',
+          '京畿华城 · 有运行视频',
+          '忠南天安 · 含包装机/输送线',
+          '全北群山 · 有维护记录',
+          '庆南金海 · 可协商拆卸装车',
+          '忠北清州 · 含控制柜'
+        ];
+        var productPrices = ['1,250万韩元', '面议', '3,800万韩元', '680万韩元', '920万韩元', '2,400万韩元'];
+
+        document.querySelectorAll('.product-card').forEach(function(card, i){
+          var title = card.querySelector('.title');
+          var spec = card.querySelector('.spec');
+          var price = card.querySelector('.price');
+          if(title) title.textContent = productTitles[i] || title.textContent;
+          if(spec) spec.textContent = productSpecs[i] || spec.textContent;
+          if(price) price.textContent = productPrices[i] || price.textContent;
+        });
+
+        var labelTexts = [
+          ['认证','重型设备'],
+          ['推荐','机床'],
+          ['整批','制造产线'],
+          ['急售','动力设备'],
+          ['确认','物流设备'],
+          ['新货','机器人设备']
+        ];
+        document.querySelectorAll('.product-card').forEach(function(card, i){
+          var labels = card.querySelectorAll('.label span');
+          if(labels[0]) labels[0].textContent = labelTexts[i][0];
+          if(labels[1]) labels[1].textContent = labelTexts[i][1];
+        });
+
+        // Mobile sell section
+        setText('.sell-mobile .section-head h2', '想出售设备？');
+        setText('.sell-mobile .section-head p', '从单台设备出售到整厂设备清算，都可以咨询。');
+
+        document.querySelectorAll('.sell-mobile .sell-item').forEach(function(card, i){
+          var h3 = card.querySelector('h3');
+          var p = card.querySelector('p');
+          var a = card.querySelector('a');
+          if(h3) h3.textContent = desktopSellTitles[i] || h3.textContent;
+          if(p) p.textContent = desktopSellTexts[i] || p.textContent;
+          if(a) a.textContent = desktopSellLinks[i] || a.textContent;
+        });
+
+        // Side
+        setText('.banner h3', '工厂清算\n整批出售');
+        setText('.banner p', '搬迁、停业、产线更换产生的设备，可以一次性登记并咨询。');
+        setText('.rank h3', '热门搜索排行');
+
+        var ranks = ['叉车 3吨', 'CNC车床', '空压机', '输送线', '食品包装机'];
+        document.querySelectorAll('.rank a').forEach(function(a, i){
+          var b = a.querySelector('b');
+          a.innerHTML = '';
+          if(b){
+            a.appendChild(b);
+          }else{
+            b = document.createElement('b');
+            b.textContent = String(i + 1);
+            a.appendChild(b);
+          }
+          a.appendChild(document.createTextNode(' ' + ranks[i]));
+        });
+
+        // Footer and mobile bottom
+        setText('.foot h2', 'Maslow Factory Market');
+        setText('.foot p', '连接工业重型设备、制造设备、工厂设备和工厂货源的交易平台。');
+        setText('.mobile-bottom span', '设备登记·出售咨询', 0);
+        setText('.mobile-bottom span', '立即咨询', 1);
+      }
+
+      document.addEventListener('DOMContentLoaded', function(){
+        var cn = document.querySelector('.js-lang-cn');
+        if(cn){
+          cn.addEventListener('click', function(e){
+            e.preventDefault();
+            setChinese();
+          });
+        }
+      });
+    })();
+  </script>
+
 </body>
 </html>

@@ -108,8 +108,29 @@
     }
     .divider:before,.divider:after{content:"";flex:1;height:1px;background:#eef2f7}
     .record-panel{
-      grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;
+      grid-column:1/3;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;
       background:#f8fafc;border:1px solid #e8edf5
+    }
+    .record-play-preview{
+      grid-column:3/4;
+      min-height:72px;
+      border:1px solid #e4e9f2;
+      border-radius:18px;
+      background:#fff;
+      color:#2563eb;
+      font-size:24px;
+      font-weight:800;
+      padding-left:3px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);
+      cursor:pointer;
+    }
+    .record-play-preview:disabled{
+      opacity:.36;
+      cursor:not-allowed;
+      color:#a5adba;
     }
     .rec-dot{width:13px;height:13px;border-radius:999px;background:#cbd5e1}
     .rec-dot.on{background:#ef4444;box-shadow:0 0 0 8px rgba(239,68,68,.12)}
@@ -388,7 +409,7 @@
     <section class="card input-card">
       <button class="upload-box" type="button" id="uploadBtn">
         <span class="upload-icon">⌕</span>
-        <span class="upload-text">음성 파일을 올려주세요</span>
+        <span class="upload-text">음성 파일을 선택하세요</span>
       </button>
       <input id="fileInput" class="hidden-input" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm" />
       <button class="refresh" type="button" id="resetBtn" aria-label="새로고침">↻</button>
@@ -405,6 +426,7 @@
           <div class="rec-sub">휴대폰이나 PC 마이크로 바로 녹음할 수 있습니다.</div>
         </div>
       </div>
+      <button class="record-play-preview" type="button" id="recordPlayBtn" aria-label="녹음한 음성 듣기" disabled>▶</button>
 
       <div class="actions">
         <button id="recordBtn" class="small-btn dark" type="button">녹음 시작</button>
@@ -455,6 +477,7 @@
     const clearBtn = document.getElementById("clearBtn");
     const fileName = document.getElementById("fileName");
     const recordBtn = document.getElementById("recordBtn");
+    const recordPlayBtn = document.getElementById("recordPlayBtn");
     const recDot = document.getElementById("recDot");
     const recMain = document.getElementById("recMain");
     const audioPlayer = document.getElementById("audioPlayer");
@@ -767,6 +790,7 @@
 
     function updateSaveRecordingButton(){
       saveRecordingBtn.disabled = !(selectedFile && sourceType === "recording");
+      recordPlayBtn.disabled = !(selectedFile && sourceType === "recording");
     }
 
     function writeString(view, offset, string){
@@ -954,6 +978,8 @@
       audioPlayer.style.display = "none";
       submitBtn.disabled = true;
       playBtn.disabled = true;
+      recordPlayBtn.disabled = true;
+      recordPlayBtn.textContent = "▶";
       saveRecordingBtn.disabled = true;
       resultText.value = "";
 
@@ -1041,6 +1067,8 @@
         };
 
         mediaRecorder.start();
+        recordPlayBtn.disabled = true;
+        recordPlayBtn.textContent = "▶";
         recording = true;
         recDot.classList.add("on");
         recMain.textContent = "녹음 중 00:00";
@@ -1086,6 +1114,7 @@
           audioPlayer.pause();
           audioPlayer.currentTime = 0;
           playBtn.textContent = "▶";
+        recordPlayBtn.textContent = "▶";
           return;
         }
 
@@ -1093,6 +1122,29 @@
         playBtn.textContent = "■";
       }catch(err){
         showToast("이 파일은 브라우저에서 바로 재생할 수 없습니다.");
+      }
+    });
+
+    recordPlayBtn.addEventListener("click", async () => {
+      if(!(selectedFile && sourceType === "recording") || !audioPlayer.src){
+        showToast("먼저 녹음해 주세요.");
+        return;
+      }
+
+      try{
+        if(!audioPlayer.paused){
+          audioPlayer.pause();
+          audioPlayer.currentTime = 0;
+          recordPlayBtn.textContent = "▶";
+          playBtn.textContent = "▶";
+          return;
+        }
+
+        await audioPlayer.play();
+        recordPlayBtn.textContent = "■";
+        playBtn.textContent = "■";
+      }catch(err){
+        showToast("녹음 파일을 재생할 수 없습니다.");
       }
     });
 
@@ -1128,6 +1180,7 @@
 
     audioPlayer.addEventListener("ended", () => {
       playBtn.textContent = "▶";
+      recordPlayBtn.textContent = "▶";
     });
 
     audioPlayer.addEventListener("pause", () => {

@@ -77,7 +77,7 @@
     .rec-dot.on{background:#ef4444;box-shadow:0 0 0 8px rgba(239,68,68,.12)}
     .rec-main{font-size:15px;font-weight:950;color:#273142}
     .rec-sub{margin-top:4px;font-size:12px;font-weight:700;color:#8a93a1}
-    .actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
     button{
       border:0;cursor:pointer;font-family:inherit;font-weight:950;letter-spacing:-.04em
     }
@@ -86,29 +86,20 @@
     .small-btn.danger{color:#fff;background:#ef4444}
     .small-btn.ghost{color:#596170;background:#eef2f7}
     .audio{grid-column:1/-1;width:100%;display:none}
-    .submit-row{
-      grid-column:1/-1;
-      display:grid;
-      grid-template-columns:118px 1fr;
-      gap:10px;
-      margin-top:18px;
-    }
-    .submit,.save-recording{
-      height:58px;
-      border-radius:19px;
-      box-shadow:0 18px 26px rgba(37,83,244,.20);
-      font-size:19px;
-    }
     .submit{
+      grid-column:1/-1;
+      height:58px;
+      margin-top:18px;
+      border-radius:19px;
       color:#fff;
       background:linear-gradient(180deg,#3b63ff,#2553f4);
+      box-shadow:0 18px 26px rgba(37,83,244,.20);
+      font-size:19px;
     }
     .save-recording{
       color:#2563eb;
       background:#eef4ff;
       border:1px solid #dbe7ff;
-      box-shadow:none;
-      font-size:16px;
     }
     .submit:disabled,.save-recording:disabled{
       opacity:.42;
@@ -215,15 +206,13 @@
 
       <div class="actions">
         <button id="recordBtn" class="small-btn dark" type="button">녹음 시작</button>
+        <button id="saveRecordingBtn" class="small-btn save-recording" type="button" disabled>녹음저장</button>
         <button id="clearBtn" class="small-btn ghost" type="button">초기화</button>
       </div>
 
       <audio id="audioPlayer" class="audio" controls></audio>
 
-      <div class="submit-row">
-        <button id="saveRecordingBtn" class="save-recording" type="button" disabled>녹음저장</button>
-        <button id="submitBtn" class="submit" type="button" disabled>텍스트 변환</button>
-      </div>
+      <button id="submitBtn" class="submit" type="button" disabled>텍스트 변환</button>
     </section>
 
     <section class="result-card">
@@ -279,7 +268,7 @@
       if(toastTimer) clearTimeout(toastTimer);
       toastTimer = setTimeout(() => {
         toast.classList.remove("show");
-      }, 2600);
+      }, 3600);
     }
 
     function isAllowedAudioFile(file){
@@ -295,6 +284,25 @@
 
     function updateSaveRecordingButton(){
       saveRecordingBtn.disabled = !(selectedFile && sourceType === "recording");
+    }
+
+    function isInAppBrowser(){
+      const ua = (navigator.userAgent || "").toLowerCase();
+      const patterns = [
+        "kakaotalk",
+        "instagram",
+        "fbav",
+        "fban",
+        "line/",
+        "naver(inapp",
+        "wv",
+        "; wv",
+        "daumapps",
+        "snapchat",
+        "micromessenger",
+        "webview"
+      ];
+      return patterns.some(v => ua.includes(v));
     }
 
     let selectedFile = null;
@@ -556,6 +564,14 @@
     audioPlayer.addEventListener("pause", () => {
       if(audioPlayer.currentTime === 0 || audioPlayer.ended){
         playBtn.textContent = "▶";
+      }
+    });
+
+    window.addEventListener("load", () => {
+      if(isInAppBrowser()){
+        setTimeout(() => {
+          showToast("인앱에서는 기능이 제한됩니다. 새 브라우저로 사용해주세요.");
+        }, 450);
       }
     });
 

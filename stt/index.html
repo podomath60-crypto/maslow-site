@@ -536,6 +536,39 @@
       tutorialNote.style.transform = "translateY(8px)";
     }
 
+    function easeInOutCubic(t){
+      return t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function animateTutorialScrollTo(targetY, duration = 900){
+      return new Promise(resolve => {
+        const startY = tutorialLockScrollY;
+        const distance = targetY - startY;
+        const startTime = performance.now();
+
+        function step(now){
+          const elapsed = now - startTime;
+          const progress = Math.min(1, elapsed / duration);
+          const eased = easeInOutCubic(progress);
+
+          tutorialLockScrollY = startY + distance * eased;
+          document.body.style.top = "-" + tutorialLockScrollY + "px";
+
+          if(progress < 1){
+            requestAnimationFrame(step);
+          }else{
+            tutorialLockScrollY = targetY;
+            document.body.style.top = "-" + tutorialLockScrollY + "px";
+            resolve();
+          }
+        }
+
+        requestAnimationFrame(step);
+      });
+    }
+
     async function scrollForTutorialTarget(target){
       const rect = target.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
@@ -544,11 +577,21 @@
         const absoluteTop = rect.top + tutorialLockScrollY;
         const targetScrollY = Math.max(0, absoluteTop - (vh / 2) + (rect.height / 2));
 
-        tutorialLockScrollY = targetScrollY;
-        document.body.style.top = "-" + tutorialLockScrollY + "px";
-
-        await wait(720);
+        await animateTutorialScrollTo(targetScrollY, 1050);
+        await wait(180);
       }
+    }
+
+    async function scrollForSubmitTutorial(target){
+      const rect = target.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      const absoluteTop = rect.top + tutorialLockScrollY;
+
+      /* 텍스트 변환 버튼이 화면 중간보다 살짝 위에 오도록 올림 */
+      const targetScrollY = Math.max(0, absoluteTop - (vh * 0.36));
+
+      await animateTutorialScrollTo(targetScrollY, 1050);
+      await wait(180);
     }
 
     let tutorialLockScrollY = 0;
@@ -639,7 +682,7 @@
       uploadBtn.classList.remove("tutorial-highlight-target");
       recordBtn.classList.remove("tutorial-highlight-target");
 
-      await scrollForTutorialTarget(submitBtn);
+      await scrollForSubmitTutorial(submitBtn);
 
       submitBtn.classList.add("tutorial-highlight-target");
       placeRing(tutorialRing1, submitBtn, 14, 12);

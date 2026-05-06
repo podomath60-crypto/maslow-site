@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>MASLOW AI 자막추출기</title>
+  <title>MASLOW 음성 텍스트 변환</title>
   <style>
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
@@ -35,7 +35,7 @@
       box-shadow:0 12px 23px rgba(37,99,235,.26);font-size:26px;font-weight:850;letter-spacing:-.05em
     }
     .card{
-      max-width:520px;margin:160px auto 0;padding:22px 14px 24px;border-radius:28px;
+      max-width:520px;margin:72px auto 0;padding:22px 14px 24px;border-radius:28px;
       background:rgba(255,255,255,.88);box-shadow:0 24px 54px rgba(37,99,235,.10);
       backdrop-filter:blur(12px)
     }
@@ -78,7 +78,7 @@
     .small-btn.ghost{color:#596170;background:#eef2f7}
     .audio{grid-column:1/-1;width:100%;display:none}
     .submit{
-      grid-column:1/-1;height:84px;border-radius:19px;color:#fff;background:linear-gradient(180deg,#3b63ff,#2553f4);
+      grid-column:1/-1;height:58px;margin-top:18px;border-radius:19px;color:#fff;background:linear-gradient(180deg,#3b63ff,#2553f4);
       box-shadow:0 18px 26px rgba(37,83,244,.20);font-size:21px
     }
     .submit:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
@@ -101,10 +101,37 @@
     .result-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
     .result-actions button{height:48px;border-radius:15px;color:#384152;background:#eef2f7;font-size:15px}
     .status{margin-top:12px;color:#8a93a1;font-size:12px;font-weight:800;letter-spacing:-.04em;text-align:center}
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:28px;
+      z-index:9999;
+      transform:translateX(-50%) translateY(16px);
+      min-width:min(360px, calc(100vw - 36px));
+      padding:14px 18px;
+      border-radius:16px;
+      background:rgba(17,24,39,.94);
+      color:#fff;
+      font-size:14px;
+      font-weight:850;
+      line-height:1.45;
+      text-align:center;
+      letter-spacing:-.04em;
+      box-shadow:0 18px 38px rgba(15,23,42,.24);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .22s ease, transform .22s ease;
+    }
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+    }
+
     @media(max-width:520px){
       .page{padding:30px 18px 48px}
       .hero{padding-top:46px}
-      .card{margin-top:150px}
+      .card{margin-top:72px}
       .input-card{grid-template-columns:1fr 108px}
       .upload-box,.refresh{min-height:92px}
       .title-row h1{font-size:27px}
@@ -114,7 +141,7 @@
       .subtitle{font-size:22px}
       .free{min-width:66px;height:42px;font-size:23px}
       .title-row h1{font-size:24px}
-      .card{margin-top:128px}
+      .card{margin-top:64px}
       .input-card{grid-template-columns:1fr 92px}
       .upload-text{font-size:17px}
     }
@@ -128,16 +155,16 @@
       <div class="subtitle">부동산 IT 서비스</div>
       <div class="title-row">
         <span class="free">Free</span>
-        <h1>AI 자막추출기</h1>
+        <h1>음성 텍스트 변환</h1>
       </div>
     </section>
 
     <section class="card input-card">
       <button class="upload-box" type="button" id="uploadBtn">
         <span class="upload-icon">⌕</span>
-        <span class="upload-text">음성·영상 파일을 선택하세요</span>
+        <span class="upload-text">음성 파일을 선택하세요</span>
       </button>
-      <input id="fileInput" class="hidden-input" type="file" accept="audio/*,video/*" />
+      <input id="fileInput" class="hidden-input" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm" />
       <button class="refresh" type="button" id="resetBtn">↻</button>
 
       <div id="fileName" class="file-name">선택된 파일이 없습니다.</div>
@@ -159,11 +186,11 @@
 
       <audio id="audioPlayer" class="audio" controls></audio>
 
-      <button id="submitBtn" class="submit" type="button" disabled>자막 추출</button>
+      <button id="submitBtn" class="submit" type="button" disabled>텍스트 변환</button>
     </section>
 
     <section class="result-card">
-      <div id="emptyBox" class="empty">음성이나 영상을 올리면 텍스트로 바꿀 수 있습니다.</div>
+      <div id="emptyBox" class="empty">음성 파일을 올리거나 녹음하면 텍스트로 변환할 수 있습니다.</div>
 
       <div id="resultBody" class="result-body">
         <div class="result-head">
@@ -179,6 +206,7 @@
       </div>
     </section>
   </main>
+  <div id="toast" class="toast"></div>
 
   <script>
     const STT_API_URL = "https://stt-api.maslowkorea.site/api/stt";
@@ -199,6 +227,32 @@
     const statusBox = document.getElementById("status");
     const copyBtn = document.getElementById("copyBtn");
     const txtBtn = document.getElementById("txtBtn");
+    const toast = document.getElementById("toast");
+
+    const ALLOWED_AUDIO_EXTS = [".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".webm"];
+
+    let toastTimer = null;
+
+    function showToast(message){
+      toast.textContent = message;
+      toast.classList.add("show");
+
+      if(toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2600);
+    }
+
+    function isAllowedAudioFile(file){
+      if(!file) return false;
+
+      const name = (file.name || "").toLowerCase();
+      const dotIndex = name.lastIndexOf(".");
+      const ext = dotIndex >= 0 ? name.slice(dotIndex) : "";
+
+      if(file.type && file.type.startsWith("audio/")) return true;
+      return ALLOWED_AUDIO_EXTS.includes(ext);
+    }
 
     let selectedFile = null;
     let sourceType = "";
@@ -268,7 +322,7 @@
       submitBtn.disabled = true;
       resultText.value = "";
 
-      setEmpty("음성이나 영상을 올리면 텍스트로 바꿀 수 있습니다.");
+      setEmpty("음성 파일을 올리거나 녹음하면 텍스트로 변환할 수 있습니다.");
     }
 
     uploadBtn.addEventListener("click", () => fileInput.click());
@@ -276,6 +330,15 @@
     fileInput.addEventListener("change", () => {
       const file = fileInput.files && fileInput.files[0];
       if(!file) return;
+
+      if(!isAllowedAudioFile(file)){
+        fileInput.value = "";
+        setReady(null, "");
+        fileName.textContent = "선택된 파일이 없습니다.";
+        showToast("오디오 파일만 업로드할 수 있습니다. mp3, wav, m4a 파일을 선택해 주세요.");
+        setEmpty("음성 파일을 올리거나 녹음하면 텍스트로 변환할 수 있습니다.");
+        return;
+      }
 
       if(audioUrl){
         URL.revokeObjectURL(audioUrl);
@@ -287,7 +350,7 @@
       fileName.textContent = file.name;
       resultText.value = "";
       setReady(file, "upload");
-      setEmpty("파일이 준비되었습니다. 자막 추출을 눌러주세요.");
+      setEmpty("파일이 준비되었습니다. 텍스트 변환을 눌러주세요.");
     });
 
     async function startRecording(){
@@ -336,7 +399,7 @@
           recording = false;
 
           setReady(file, "recording");
-          setEmpty("녹음이 준비되었습니다. 들어본 뒤 자막 추출을 눌러주세요.");
+          setEmpty("녹음이 준비되었습니다. 들어본 뒤 텍스트 변환을 눌러주세요.");
           stopStream();
         };
 
@@ -372,7 +435,7 @@
       else startRecording();
     });
 
-    resetBtn.addEventListener("click", resetAll);
+    resetBtn.addEventListener("click", () => window.location.reload());
     clearBtn.addEventListener("click", resetAll);
 
     submitBtn.addEventListener("click", async () => {
@@ -383,7 +446,7 @@
 
       submitBtn.disabled = true;
       submitBtn.textContent = "변환 중...";
-      setEmpty("음성을 텍스트로 바꾸고 있습니다.");
+      setEmpty("음성을 텍스트로 변환하고 있습니다.");
 
       const formData = new FormData();
       formData.append("file", selectedFile);
@@ -409,7 +472,7 @@
         setEmpty("잠시 후 다시 시도해 주세요.");
       }finally{
         submitBtn.disabled = false;
-        submitBtn.textContent = "자막 추출";
+        submitBtn.textContent = "텍스트 변환";
       }
     });
 

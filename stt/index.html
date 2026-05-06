@@ -449,8 +449,8 @@
         </div>
         <textarea id="resultText" class="result-text"></textarea>
         <div class="result-actions">
-          <button id="copyBtn" type="button">전체 복사</button>
-          <button id="txtBtn" type="button">텍스트 저장</button>
+          <button id="copyBtn" type="button">클립보드</button>
+          <button id="txtBtn" type="button">TXT 저장</button>
         </div>
         <div id="status" class="status">변환이 완료되었습니다.</div>
       </div>
@@ -1287,7 +1287,7 @@
       statusBox.textContent = "텍스트를 복사했습니다.";
     });
 
-    txtBtn.addEventListener("click", async () => {
+    txtBtn.addEventListener("click", () => {
       const text = resultText.value || "";
       if(!text.trim()){
         statusBox.textContent = "저장할 텍스트가 없습니다.";
@@ -1295,14 +1295,18 @@
         return;
       }
 
-      try{
-        await navigator.clipboard.writeText(text);
-        statusBox.textContent = "텍스트가 클립보드에 저장되었습니다.";
-        showToast("텍스트가 클립보드에 저장되었습니다.");
-      }catch(err){
-        statusBox.textContent = "클립보드 저장에 실패했습니다.";
-        showToast("클립보드 저장에 실패했습니다. 직접 선택해서 복사해 주세요.");
-      }
+      const blob = new Blob([text], { type:"text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "maslow-stt.txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      statusBox.textContent = "TXT 파일을 저장했습니다.";
+      showToast("TXT 파일을 저장했습니다.");
     });
   </script>
 </body>

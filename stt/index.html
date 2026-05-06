@@ -28,6 +28,11 @@
         radial-gradient(circle at 50% 10%, rgba(71,134,255,.12), transparent 34%),
         linear-gradient(180deg,#eff6ff 0%,#f7fbff 46%,#fff 100%);
     }
+    body.tutorial-lock{
+      overflow:hidden;
+      touch-action:none;
+      overscroll-behavior:none;
+    }
     .page{min-height:100vh;padding:34px 18px 58px}
     .hero{max-width:520px;margin:0 auto;padding-top:42px;text-align:center}
     .brand-en{
@@ -217,6 +222,18 @@
     .tutorial-ring.second.show{
       transform:rotate(3deg) scale(1);
     }
+    .tutorial-ring.green-ring{
+      border-color:rgba(198,255,88,.98);
+      border-radius:50% 46% 53% 47% / 48% 54% 46% 52%;
+      box-shadow:
+        0 0 0 9999px rgba(7,10,18,.42),
+        0 0 0 2px rgba(255,255,255,.22),
+        0 0 26px rgba(198,255,88,.55);
+      transform:rotate(-2deg) scale(.86);
+    }
+    .tutorial-ring.green-ring.show{
+      transform:rotate(-2deg) scale(1);
+    }
     .tutorial-note{
       position:absolute;
       left:50%;
@@ -246,11 +263,13 @@
       transform:translateY(0);
     }
     .tutorial-note.green{
-      width:min(430px, calc(100vw - 42px));
+      width:min(430px, calc(100vw - 40px));
       text-align:center;
       background:transparent;
       border:0;
       color:#c6ff58;
+      font-size:25px;
+      line-height:1.42;
       box-shadow:none;
       text-shadow:
         0 3px 18px rgba(28,87,0,.32),
@@ -313,8 +332,9 @@
         line-height:1.48;
       }
       .tutorial-note.green{
-        width:min(390px, calc(100vw - 34px));
-        font-size:21px;
+        width:min(390px, calc(100vw - 30px));
+        font-size:23px;
+        line-height:1.42;
       }
     }
     @media(max-width:380px){
@@ -492,23 +512,76 @@
       tutorialNote.style.transform = "translate(-50%, -50%) scale(.98)";
     }
 
+    function placeTutorialNoteBelow(target){
+      const rect = target.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const noteWidth = Math.min(430, vw - 40);
+
+      let left = rect.left + rect.width / 2 - noteWidth / 2;
+      left = Math.max(20, Math.min(vw - noteWidth - 20, left));
+
+      let top = rect.bottom + 18;
+      if(top + 125 > vh - 24){
+        top = Math.max(24, rect.top - 118);
+      }
+
+      tutorialNote.style.left = left + "px";
+      tutorialNote.style.top = top + "px";
+      tutorialNote.style.width = noteWidth + "px";
+      tutorialNote.style.transform = "translateY(8px)";
+    }
+
     async function scrollForTutorialTarget(target){
       const rect = target.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
 
       if(rect.top < 90 || rect.bottom > vh - 120){
-        target.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
+        const absoluteTop = rect.top + tutorialLockScrollY;
+        const targetScrollY = Math.max(0, absoluteTop - (vh / 2) + (rect.height / 2));
+
+        tutorialLockScrollY = targetScrollY;
+        document.body.style.top = "-" + tutorialLockScrollY + "px";
+
         await wait(720);
+      }
+    }
+
+    let tutorialLockScrollY = 0;
+
+    function lockTutorialScroll(){
+      tutorialLockScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      document.body.classList.add("tutorial-lock");
+      document.body.style.position = "fixed";
+      document.body.style.top = "-" + tutorialLockScrollY + "px";
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+    }
+
+    function unlockTutorialScroll(restoreTop = false){
+      document.body.classList.remove("tutorial-lock");
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+
+      if(restoreTop){
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
+      }else{
+        window.scrollTo(0, tutorialLockScrollY);
       }
     }
 
     function hideTutorialTargets(){
       uploadBtn.classList.remove("tutorial-highlight-target");
       recordBtn.classList.remove("tutorial-highlight-target");
-      tutorialRing1.classList.remove("show");
+      submitBtn.classList.remove("tutorial-highlight-target");
+      tutorialRing1.classList.remove("show", "green-ring");
       tutorialRing2.classList.remove("show");
       tutorialNote.classList.remove("show", "green");
       tutorialNote.style.transform = "";
@@ -521,10 +594,7 @@
       tutorialOverlay.setAttribute("aria-hidden", "true");
       localStorage.setItem(TUTORIAL_STORAGE_KEY, "1");
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
+      unlockTutorialScroll(true);
     }
 
     async function runTutorial(){
@@ -559,11 +629,22 @@
       tutorialNote.classList.remove("show");
       await wait(560);
 
-      tutorialOverlay.classList.add("final");
-      placeTutorialNoteCenter();
+      tutorialRing1.classList.remove("show");
+      tutorialRing2.classList.remove("show");
+      tutorialRing1.classList.add("green-ring");
+      uploadBtn.classList.remove("tutorial-highlight-target");
+      recordBtn.classList.remove("tutorial-highlight-target");
+
+      await scrollForTutorialTarget(submitBtn);
+
+      submitBtn.classList.add("tutorial-highlight-target");
+      placeRing(tutorialRing1, submitBtn, 14, 12);
+      placeTutorialNoteBelow(submitBtn);
+
+      tutorialRing1.classList.add("show");
       tutorialNote.textContent = "음성파일을 올리거나\n음성을 녹음하면\n바로 텍스트로 변환돼요.";
       tutorialNote.classList.add("show", "green");
-      await wait(3200);
+      await wait(3600);
 
       closeTutorial();
     }
@@ -571,6 +652,7 @@
     function openTutorial(){
       if(localStorage.getItem(TUTORIAL_STORAGE_KEY) === "1") return;
 
+      lockTutorialScroll();
       tutorialOverlay.classList.add("show");
       tutorialOverlay.setAttribute("aria-hidden", "false");
       tutorialStart.classList.add("show");
@@ -598,6 +680,10 @@
           if(tutorialRing2.classList.contains("show")){
             placeRing(tutorialRing2, recordBtn, 13, 10);
             if(tutorialNote.classList.contains("show") && !tutorialNote.classList.contains("green")) placeTutorialNoteNextTo(recordBtn, "right");
+          }
+          if(tutorialRing1.classList.contains("green-ring") && tutorialRing1.classList.contains("show")){
+            placeRing(tutorialRing1, submitBtn, 14, 12);
+            if(tutorialNote.classList.contains("show") && tutorialNote.classList.contains("green")) placeTutorialNoteBelow(submitBtn);
           }
         }
       });

@@ -486,6 +486,19 @@
       tutorialNote.style.transform = "translate(-50%, -50%) scale(.98)";
     }
 
+    async function scrollForTutorialTarget(target){
+      const rect = target.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+
+      if(rect.top < 90 || rect.bottom > vh - 120){
+        target.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+        await wait(720);
+      }
+    }
+
     function hideTutorialTargets(){
       uploadBtn.classList.remove("tutorial-highlight-target");
       recordBtn.classList.remove("tutorial-highlight-target");
@@ -501,6 +514,11 @@
       tutorialOverlay.classList.remove("show");
       tutorialOverlay.setAttribute("aria-hidden", "true");
       localStorage.setItem(TUTORIAL_STORAGE_KEY, "1");
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
     }
 
     async function runTutorial(){
@@ -517,6 +535,8 @@
 
       tutorialNote.classList.remove("show");
       await wait(520);
+
+      await scrollForTutorialTarget(recordBtn);
 
       recordBtn.classList.add("tutorial-highlight-target");
       placeRing(tutorialRing2, recordBtn, 13, 10);

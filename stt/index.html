@@ -421,6 +421,7 @@
     const ALLOWED_AUDIO_EXTS = [".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".webm"];
 
     let toastTimer = null;
+    const TUTORIAL_STORAGE_KEY = "maslowSttTutorialSeen";
 
     function showToast(message){
       toast.textContent = message;
@@ -458,7 +459,7 @@
       hideTutorialTargets();
       tutorialOverlay.classList.remove("show");
       tutorialOverlay.setAttribute("aria-hidden", "true");
-      localStorage.setItem("maslowSttTutorialSeen", "1");
+      localStorage.setItem(TUTORIAL_STORAGE_KEY, "1");
     }
 
     async function runTutorial(){
@@ -492,7 +493,7 @@
     }
 
     function openTutorial(){
-      if(localStorage.getItem("maslowSttTutorialSeen") === "1") return;
+      if(localStorage.getItem(TUTORIAL_STORAGE_KEY) === "1") return;
 
       tutorialOverlay.classList.add("show");
       tutorialOverlay.setAttribute("aria-hidden", "false");
@@ -902,7 +903,34 @@
       }
     });
 
+    let tutorialResetTapCount = 0;
+    let tutorialResetTapTimer = null;
+
+    function setupTutorialResetTap(){
+      document.addEventListener("touchend", () => {
+        tutorialResetTapCount += 1;
+
+        if(tutorialResetTapTimer) clearTimeout(tutorialResetTapTimer);
+
+        tutorialResetTapTimer = setTimeout(() => {
+          tutorialResetTapCount = 0;
+        }, 1800);
+
+        if(tutorialResetTapCount >= 7){
+          tutorialResetTapCount = 0;
+          clearTimeout(tutorialResetTapTimer);
+          localStorage.removeItem(TUTORIAL_STORAGE_KEY);
+          showToast("튜토리얼 기록을 초기화했습니다.\n페이지를 새로고침합니다.");
+
+          setTimeout(() => {
+            location.reload();
+          }, 900);
+        }
+      }, { passive:true });
+    }
+
     window.addEventListener("load", () => {
+      setupTutorialResetTap();
       setTimeout(openTutorial, 520);
 
       if(isInAppBrowser()){

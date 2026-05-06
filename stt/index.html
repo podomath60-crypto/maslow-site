@@ -167,6 +167,124 @@
       transform:translate(-50%, -50%) scale(1);
     }
 
+
+    .tutorial-overlay{
+      position:fixed;
+      inset:0;
+      z-index:9998;
+      background:rgba(7,10,18,.72);
+      backdrop-filter:blur(3px);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .24s ease;
+    }
+    .tutorial-overlay.show{
+      opacity:1;
+      pointer-events:auto;
+    }
+    .tutorial-stage{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+    }
+    .tutorial-ring{
+      position:absolute;
+      border:5px solid rgba(255,92,177,.96);
+      border-radius:44% 56% 50% 48% / 48% 45% 55% 52%;
+      box-shadow:
+        0 0 0 2px rgba(255,255,255,.22),
+        0 0 24px rgba(255,92,177,.42);
+      transform:rotate(-4deg) scale(.86);
+      opacity:0;
+      transition:opacity .28s ease, transform .42s cubic-bezier(.2,1,.2,1);
+      pointer-events:none;
+    }
+    .tutorial-ring.show{
+      opacity:1;
+      transform:rotate(-4deg) scale(1);
+    }
+    .tutorial-ring.second{
+      border-radius:53% 47% 46% 54% / 52% 55% 45% 48%;
+      transform:rotate(3deg) scale(.86);
+    }
+    .tutorial-ring.second.show{
+      transform:rotate(3deg) scale(1);
+    }
+    .tutorial-note{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:min(420px, calc(100vw - 44px));
+      transform:translate(-50%, -50%) scale(.96);
+      padding:22px 22px 20px;
+      border-radius:26px;
+      background:rgba(255,255,255,.96);
+      color:#1f2937;
+      text-align:center;
+      font-weight:950;
+      letter-spacing:-.06em;
+      line-height:1.55;
+      font-size:20px;
+      box-shadow:0 24px 72px rgba(0,0,0,.28);
+      opacity:0;
+      transition:opacity .28s ease, transform .28s ease;
+      pointer-events:none;
+    }
+    .tutorial-note.show{
+      opacity:1;
+      transform:translate(-50%, -50%) scale(1);
+    }
+    .tutorial-note.green{
+      background:linear-gradient(180deg, rgba(219,255,188,.98), rgba(188,255,144,.96));
+      border:2px solid rgba(114,214,60,.72);
+      color:#20410f;
+      box-shadow:0 26px 78px rgba(83,180,36,.26), 0 10px 32px rgba(0,0,0,.24);
+    }
+    .tutorial-start{
+      position:absolute;
+      left:50%;
+      bottom:34px;
+      transform:translateX(-50%);
+      width:min(360px, calc(100vw - 42px));
+      padding:15px 18px;
+      border-radius:18px;
+      background:rgba(255,255,255,.95);
+      color:#374151;
+      text-align:center;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-.05em;
+      box-shadow:0 18px 50px rgba(0,0,0,.24);
+      opacity:0;
+      transition:opacity .25s ease;
+    }
+    .tutorial-start.show{
+      opacity:1;
+    }
+    .tutorial-skip{
+      position:absolute;
+      right:18px;
+      top:calc(18px + env(safe-area-inset-top));
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      background:rgba(255,255,255,.18);
+      color:white;
+      border:1px solid rgba(255,255,255,.22);
+      font-size:24px;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      opacity:.94;
+    }
+    .tutorial-highlight-target{
+      position:relative;
+      z-index:9999;
+    }
+
     @media(max-width:520px){
       .page{padding:30px 18px 48px}
       .hero{padding-top:46px}
@@ -248,6 +366,15 @@
     </section>
   </main>
   <div id="toast" class="toast"></div>
+  <div id="tutorialOverlay" class="tutorial-overlay" aria-hidden="true">
+    <div class="tutorial-stage">
+      <div id="tutorialRing1" class="tutorial-ring"></div>
+      <div id="tutorialRing2" class="tutorial-ring second"></div>
+      <div id="tutorialNote" class="tutorial-note"></div>
+      <div id="tutorialStart" class="tutorial-start">화면을 터치하면 시작합니다</div>
+      <button id="tutorialSkip" class="tutorial-skip" type="button" aria-label="튜토리얼 닫기">×</button>
+    </div>
+  </div>
 
   <script>
     const STT_API_URL = "https://stt-api.sf-farm.store/api/stt";
@@ -271,6 +398,12 @@
     const copyBtn = document.getElementById("copyBtn");
     const txtBtn = document.getElementById("txtBtn");
     const toast = document.getElementById("toast");
+    const tutorialOverlay = document.getElementById("tutorialOverlay");
+    const tutorialRing1 = document.getElementById("tutorialRing1");
+    const tutorialRing2 = document.getElementById("tutorialRing2");
+    const tutorialNote = document.getElementById("tutorialNote");
+    const tutorialStart = document.getElementById("tutorialStart");
+    const tutorialSkip = document.getElementById("tutorialSkip");
 
     const ALLOWED_AUDIO_EXTS = [".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".webm"];
 
@@ -284,6 +417,94 @@
       toastTimer = setTimeout(() => {
         toast.classList.remove("show");
       }, 3600);
+    }
+
+
+    function wait(ms){
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function placeRing(ring, target, padX = 14, padY = 12){
+      const rect = target.getBoundingClientRect();
+      ring.style.left = (rect.left - padX) + "px";
+      ring.style.top = (rect.top - padY) + "px";
+      ring.style.width = (rect.width + padX * 2) + "px";
+      ring.style.height = (rect.height + padY * 2) + "px";
+    }
+
+    function hideTutorialTargets(){
+      uploadBtn.classList.remove("tutorial-highlight-target");
+      recordBtn.classList.remove("tutorial-highlight-target");
+      tutorialRing1.classList.remove("show");
+      tutorialRing2.classList.remove("show");
+      tutorialNote.classList.remove("show", "green");
+      tutorialStart.classList.remove("show");
+    }
+
+    function closeTutorial(){
+      hideTutorialTargets();
+      tutorialOverlay.classList.remove("show");
+      tutorialOverlay.setAttribute("aria-hidden", "true");
+      localStorage.setItem("maslowSttTutorialSeen", "1");
+    }
+
+    async function runTutorial(){
+      tutorialStart.classList.remove("show");
+
+      uploadBtn.classList.add("tutorial-highlight-target");
+      placeRing(tutorialRing1, uploadBtn, 16, 14);
+      tutorialRing1.classList.add("show");
+      tutorialNote.textContent = "음성파일을 선택해주세요";
+      tutorialNote.classList.add("show");
+      await wait(1450);
+
+      tutorialNote.classList.remove("show");
+      await wait(220);
+
+      recordBtn.classList.add("tutorial-highlight-target");
+      placeRing(tutorialRing2, recordBtn, 13, 10);
+      tutorialRing2.classList.add("show");
+      tutorialNote.textContent = "바로 녹음도 할 수 있어요";
+      tutorialNote.classList.add("show");
+      await wait(1450);
+
+      tutorialNote.classList.remove("show");
+      await wait(220);
+
+      tutorialNote.textContent = "음성파일을 올리거나\n음성을 녹음하면\n바로 텍스트로 변환돼요.";
+      tutorialNote.classList.add("show", "green");
+      await wait(1900);
+
+      closeTutorial();
+    }
+
+    function openTutorial(){
+      if(localStorage.getItem("maslowSttTutorialSeen") === "1") return;
+
+      tutorialOverlay.classList.add("show");
+      tutorialOverlay.setAttribute("aria-hidden", "false");
+      tutorialStart.classList.add("show");
+
+      let started = false;
+      const startOnce = () => {
+        if(started) return;
+        started = true;
+        tutorialOverlay.removeEventListener("click", startOnce);
+        runTutorial();
+      };
+
+      tutorialOverlay.addEventListener("click", startOnce);
+      tutorialSkip.addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeTutorial();
+      }, { once:true });
+
+      window.addEventListener("resize", () => {
+        if(tutorialOverlay.classList.contains("show")){
+          if(tutorialRing1.classList.contains("show")) placeRing(tutorialRing1, uploadBtn, 16, 14);
+          if(tutorialRing2.classList.contains("show")) placeRing(tutorialRing2, recordBtn, 13, 10);
+        }
+      });
     }
 
     function isAllowedAudioFile(file){
@@ -669,6 +890,8 @@
     });
 
     window.addEventListener("load", () => {
+      setTimeout(openTutorial, 520);
+
       if(isInAppBrowser()){
         setTimeout(() => {
           showToast("인앱에서는 기능이 제한됩니다.\n새 브라우저로 사용해주세요.");

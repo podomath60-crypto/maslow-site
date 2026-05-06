@@ -215,38 +215,40 @@
       position:absolute;
       left:50%;
       top:92px;
-      width:min(520px, calc(100vw - 52px));
-      transform:translateX(-50%) translateY(8px);
+      width:min(360px, calc(100vw - 48px));
+      transform:translateY(8px);
       padding:0;
       border-radius:0;
       background:transparent;
       color:#ffffff;
-      text-align:center;
+      text-align:left;
       font-weight:950;
       letter-spacing:-.065em;
-      line-height:1.58;
-      font-size:24px;
+      line-height:1.5;
+      font-size:22px;
       box-shadow:none;
       text-shadow:
-        0 3px 18px rgba(0,0,0,.45),
-        0 1px 3px rgba(0,0,0,.35);
+        0 3px 18px rgba(0,0,0,.48),
+        0 1px 3px rgba(0,0,0,.38);
       opacity:0;
-      transition:opacity .28s ease, transform .28s ease;
+      transition:opacity .32s ease, transform .32s ease;
       pointer-events:none;
       white-space:pre-line;
     }
     .tutorial-note.show{
       opacity:1;
-      transform:translateX(-50%) translateY(0);
+      transform:translateY(0);
     }
     .tutorial-note.green{
+      width:min(430px, calc(100vw - 42px));
+      text-align:center;
       background:transparent;
       border:0;
       color:#c6ff58;
       box-shadow:none;
       text-shadow:
-        0 3px 18px rgba(28,87,0,.30),
-        0 1px 3px rgba(0,0,0,.30);
+        0 3px 18px rgba(28,87,0,.32),
+        0 1px 3px rgba(0,0,0,.34);
     }
     .tutorial-start{
       position:absolute;
@@ -300,10 +302,13 @@
       .upload-box,.refresh,.play-preview{min-height:92px}
       .title-row h1{font-size:27px}
       .tutorial-note{
-        top:84px;
-        width:min(420px, calc(100vw - 36px));
+        width:min(330px, calc(100vw - 36px));
+        font-size:20px;
+        line-height:1.48;
+      }
+      .tutorial-note.green{
+        width:min(390px, calc(100vw - 34px));
         font-size:21px;
-        line-height:1.54;
       }
     }
     @media(max-width:380px){
@@ -446,12 +451,48 @@
       ring.style.height = (rect.height + padY * 2) + "px";
     }
 
+    function placeTutorialNoteNextTo(target, preferred = "right"){
+      const rect = target.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const noteWidth = Math.min(360, vw - 48);
+      const gap = 16;
+
+      let left;
+      if(preferred === "right" && rect.right + gap + noteWidth <= vw - 18){
+        left = rect.right + gap;
+      }else if(rect.left - gap - noteWidth >= 18){
+        left = rect.left - gap - noteWidth;
+      }else{
+        left = Math.max(20, Math.min(vw - noteWidth - 20, rect.left));
+      }
+
+      let top = rect.top + rect.height + 14;
+
+      if(top + 100 > vh - 26){
+        top = Math.max(24, rect.top - 86);
+      }
+
+      tutorialNote.style.left = left + "px";
+      tutorialNote.style.top = top + "px";
+      tutorialNote.style.width = noteWidth + "px";
+    }
+
+    function placeTutorialNoteCenter(){
+      const vw = window.innerWidth;
+      tutorialNote.style.left = "50%";
+      tutorialNote.style.top = "50%";
+      tutorialNote.style.width = Math.min(430, vw - 42) + "px";
+      tutorialNote.style.transform = "translate(-50%, -50%) scale(.98)";
+    }
+
     function hideTutorialTargets(){
       uploadBtn.classList.remove("tutorial-highlight-target");
       recordBtn.classList.remove("tutorial-highlight-target");
       tutorialRing1.classList.remove("show");
       tutorialRing2.classList.remove("show");
       tutorialNote.classList.remove("show", "green");
+      tutorialNote.style.transform = "";
       tutorialStart.classList.remove("show");
     }
 
@@ -467,27 +508,32 @@
 
       uploadBtn.classList.add("tutorial-highlight-target");
       placeRing(tutorialRing1, uploadBtn, 16, 14);
+      placeTutorialNoteNextTo(uploadBtn, "right");
       tutorialRing1.classList.add("show");
-      tutorialNote.textContent = "음성파일을 선택해주세요";
+      tutorialNote.style.transform = "translateY(8px)";
+      tutorialNote.textContent = "음성파일을\n선택해주세요";
       tutorialNote.classList.add("show");
-      await wait(1450);
+      await wait(2600);
 
       tutorialNote.classList.remove("show");
-      await wait(220);
+      await wait(520);
 
       recordBtn.classList.add("tutorial-highlight-target");
       placeRing(tutorialRing2, recordBtn, 13, 10);
+      placeTutorialNoteNextTo(recordBtn, "right");
       tutorialRing2.classList.add("show");
-      tutorialNote.textContent = "바로 녹음도 할 수 있어요";
+      tutorialNote.style.transform = "translateY(8px)";
+      tutorialNote.textContent = "또는 여기서\n바로 녹음할 수 있어요";
       tutorialNote.classList.add("show");
-      await wait(1450);
+      await wait(2700);
 
       tutorialNote.classList.remove("show");
-      await wait(220);
+      await wait(560);
 
+      placeTutorialNoteCenter();
       tutorialNote.textContent = "음성파일을 올리거나\n음성을 녹음하면\n바로 텍스트로 변환돼요.";
       tutorialNote.classList.add("show", "green");
-      await wait(1900);
+      await wait(3200);
 
       closeTutorial();
     }
@@ -515,8 +561,14 @@
 
       window.addEventListener("resize", () => {
         if(tutorialOverlay.classList.contains("show")){
-          if(tutorialRing1.classList.contains("show")) placeRing(tutorialRing1, uploadBtn, 16, 14);
-          if(tutorialRing2.classList.contains("show")) placeRing(tutorialRing2, recordBtn, 13, 10);
+          if(tutorialRing1.classList.contains("show")){
+            placeRing(tutorialRing1, uploadBtn, 16, 14);
+            if(tutorialNote.classList.contains("show") && !tutorialNote.classList.contains("green")) placeTutorialNoteNextTo(uploadBtn, "right");
+          }
+          if(tutorialRing2.classList.contains("show")){
+            placeRing(tutorialRing2, recordBtn, 13, 10);
+            if(tutorialNote.classList.contains("show") && !tutorialNote.classList.contains("green")) placeTutorialNoteNextTo(recordBtn, "right");
+          }
         }
       });
     }

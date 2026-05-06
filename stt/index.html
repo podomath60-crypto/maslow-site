@@ -34,6 +34,26 @@
       overscroll-behavior:none;
     }
     .page{min-height:100vh;padding:34px 18px 58px}
+    .tutorial-replay-btn{
+      position:fixed;
+      left:12px;
+      top:calc(10px + env(safe-area-inset-top));
+      z-index:1000;
+      padding:6px 8px;
+      border:0;
+      background:transparent;
+      color:#9aa3b2;
+      font-size:11px;
+      font-weight:850;
+      letter-spacing:-.04em;
+      line-height:1;
+      opacity:.72;
+      cursor:pointer;
+    }
+    .tutorial-replay-btn:active{
+      opacity:1;
+      transform:translateY(1px);
+    }
     .hero{max-width:520px;margin:0 auto;padding-top:42px;text-align:center}
     .brand-en{
       font-size:31px;line-height:1;font-weight:500;letter-spacing:.22em;text-indent:.22em;color:#2c7be5
@@ -354,6 +374,7 @@
 </head>
 <body>
   <main class="page">
+    <button id="tutorialReplayBtn" class="tutorial-replay-btn" type="button">튜토리얼</button>
     <section class="hero">
       <div class="brand-en">MASLOW</div>
       <div class="brand-ko">매슬로우</div>
@@ -452,6 +473,7 @@
     const tutorialNote = document.getElementById("tutorialNote");
     const tutorialStart = document.getElementById("tutorialStart");
     const tutorialSkip = document.getElementById("tutorialSkip");
+    const tutorialReplayBtn = document.getElementById("tutorialReplayBtn");
 
     const ALLOWED_AUDIO_EXTS = [".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".webm"];
 
@@ -607,6 +629,8 @@
     }
 
     function unlockTutorialScroll(restoreTop = false){
+      const finalY = restoreTop ? 0 : tutorialLockScrollY;
+
       document.body.classList.remove("tutorial-lock");
       document.body.style.position = "";
       document.body.style.top = "";
@@ -614,14 +638,7 @@
       document.body.style.right = "";
       document.body.style.width = "";
 
-      if(restoreTop){
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth"
-        });
-      }else{
-        window.scrollTo(0, tutorialLockScrollY);
-      }
+      window.scrollTo(0, finalY);
     }
 
     function hideTutorialTargets(){
@@ -635,12 +652,13 @@
       tutorialStart.classList.remove("show");
     }
 
-    function closeTutorial(){
+    async function closeTutorial(){
       hideTutorialTargets();
       tutorialOverlay.classList.remove("show", "intro", "final");
       tutorialOverlay.setAttribute("aria-hidden", "true");
       localStorage.setItem(TUTORIAL_STORAGE_KEY, "1");
 
+      await animateTutorialScrollTo(0, 1050);
       unlockTutorialScroll(true);
     }
 
@@ -696,8 +714,8 @@
       closeTutorial();
     }
 
-    function openTutorial(){
-      if(localStorage.getItem(TUTORIAL_STORAGE_KEY) === "1") return;
+    function openTutorial(force = false){
+      if(!force && localStorage.getItem(TUTORIAL_STORAGE_KEY) === "1") return;
 
       lockTutorialScroll();
       tutorialOverlay.classList.add("show", "intro");
@@ -1143,6 +1161,19 @@
         }
       }, { passive:true });
     }
+
+    tutorialReplayBtn.addEventListener("click", () => {
+      localStorage.removeItem(TUTORIAL_STORAGE_KEY);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+
+      setTimeout(() => {
+        openTutorial(true);
+      }, 720);
+    });
 
     window.addEventListener("load", () => {
       setupTutorialResetTap();

@@ -86,11 +86,35 @@
     .small-btn.danger{color:#fff;background:#ef4444}
     .small-btn.ghost{color:#596170;background:#eef2f7}
     .audio{grid-column:1/-1;width:100%;display:none}
-    .submit{
-      grid-column:1/-1;height:58px;margin-top:18px;border-radius:19px;color:#fff;background:linear-gradient(180deg,#3b63ff,#2553f4);
-      box-shadow:0 18px 26px rgba(37,83,244,.20);font-size:21px
+    .submit-row{
+      grid-column:1/-1;
+      display:grid;
+      grid-template-columns:118px 1fr;
+      gap:10px;
+      margin-top:18px;
     }
-    .submit:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
+    .submit,.save-recording{
+      height:58px;
+      border-radius:19px;
+      box-shadow:0 18px 26px rgba(37,83,244,.20);
+      font-size:19px;
+    }
+    .submit{
+      color:#fff;
+      background:linear-gradient(180deg,#3b63ff,#2553f4);
+    }
+    .save-recording{
+      color:#2563eb;
+      background:#eef4ff;
+      border:1px solid #dbe7ff;
+      box-shadow:none;
+      font-size:16px;
+    }
+    .submit:disabled,.save-recording:disabled{
+      opacity:.42;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
     .result-card{
       max-width:520px;margin:26px auto 0;padding:24px;border:1px dashed #d8dee8;border-radius:22px;background:rgba(255,255,255,.92)
     }
@@ -196,7 +220,10 @@
 
       <audio id="audioPlayer" class="audio" controls></audio>
 
-      <button id="submitBtn" class="submit" type="button" disabled>텍스트 변환</button>
+      <div class="submit-row">
+        <button id="saveRecordingBtn" class="save-recording" type="button" disabled>녹음저장</button>
+        <button id="submitBtn" class="submit" type="button" disabled>텍스트 변환</button>
+      </div>
     </section>
 
     <section class="result-card">
@@ -232,6 +259,7 @@
     const recMain = document.getElementById("recMain");
     const audioPlayer = document.getElementById("audioPlayer");
     const submitBtn = document.getElementById("submitBtn");
+    const saveRecordingBtn = document.getElementById("saveRecordingBtn");
     const emptyBox = document.getElementById("emptyBox");
     const resultBody = document.getElementById("resultBody");
     const resultText = document.getElementById("resultText");
@@ -263,6 +291,10 @@
 
       if(file.type && file.type.startsWith("audio/")) return true;
       return ALLOWED_AUDIO_EXTS.includes(ext);
+    }
+
+    function updateSaveRecordingButton(){
+      saveRecordingBtn.disabled = !(selectedFile && sourceType === "recording");
     }
 
     let selectedFile = null;
@@ -315,6 +347,7 @@
       sourceType = type || "";
       submitBtn.disabled = !selectedFile;
       playBtn.disabled = !selectedFile;
+      updateSaveRecordingButton();
     }
 
     function stopTimer(){
@@ -356,6 +389,7 @@
       audioPlayer.style.display = "none";
       submitBtn.disabled = true;
       playBtn.disabled = true;
+      saveRecordingBtn.disabled = true;
       resultText.value = "";
 
       setEmpty("음성 파일을 올리거나 녹음하면 텍스트로 변환할 수 있습니다.");
@@ -496,6 +530,24 @@
         showToast("이 파일은 브라우저에서 바로 재생할 수 없습니다.");
       }
     });
+
+    saveRecordingBtn.addEventListener("click", () => {
+      if(!(selectedFile && sourceType === "recording")){
+        showToast("저장할 녹음 파일이 없습니다.");
+        return;
+      }
+
+      const url = URL.createObjectURL(selectedFile);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = selectedFile.name || "maslow-recording.webm";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast("녹음 파일을 기기에 저장했습니다.");
+    });
+
 
     audioPlayer.addEventListener("ended", () => {
       playBtn.textContent = "▶";

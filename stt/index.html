@@ -270,6 +270,29 @@
       return m + ":" + s;
     }
 
+    function formatParagraphs(text){
+      if(!text) return "";
+
+      const normalized = String(text)
+        .replace(/\s+/g, " ")
+        .replace(/([.!?。！？]|(?:습니다|니다|어요|예요|에요|세요|까요|죠|다|요))\s+/g, "$1\n")
+        .trim();
+
+      const lines = normalized
+        .split(/\n+/)
+        .map(v => v.trim())
+        .filter(Boolean);
+
+      if(lines.length <= 2) return lines.join("\n\n");
+
+      const paragraphs = [];
+      for(let i = 0; i < lines.length; i += 2){
+        paragraphs.push(lines.slice(i, i + 2).join(" "));
+      }
+
+      return paragraphs.join("\n\n");
+    }
+
     function setEmpty(message){
       emptyBox.style.display = "flex";
       resultBody.style.display = "none";
@@ -464,7 +487,7 @@
           throw new Error((data && data.error) || "변환에 실패했습니다.");
         }
 
-        resultText.value = data.text || "";
+        resultText.value = formatParagraphs(data.text || "");
         emptyBox.style.display = "none";
         resultBody.style.display = "block";
         statusBox.textContent = "변환이 완료되었습니다.";

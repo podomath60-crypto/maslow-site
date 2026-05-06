@@ -183,6 +183,10 @@
       pointer-events:none;
       transition:opacity .24s ease;
     }
+    .tutorial-overlay.intro{
+      background:rgba(7,10,18,.38);
+      backdrop-filter:blur(1px);
+    }
     .tutorial-overlay.final{
       background:rgba(7,10,18,.32);
       backdrop-filter:blur(1px);
@@ -590,7 +594,7 @@
 
     function closeTutorial(){
       hideTutorialTargets();
-      tutorialOverlay.classList.remove("show", "final");
+      tutorialOverlay.classList.remove("show", "intro", "final");
       tutorialOverlay.setAttribute("aria-hidden", "true");
       localStorage.setItem(TUTORIAL_STORAGE_KEY, "1");
 
@@ -599,7 +603,7 @@
 
     async function runTutorial(){
       tutorialStart.classList.remove("show");
-      tutorialOverlay.classList.remove("final");
+      tutorialOverlay.classList.remove("intro", "final");
 
       uploadBtn.classList.add("tutorial-highlight-target");
       placeRing(tutorialRing1, uploadBtn, 16, 14);
@@ -653,7 +657,7 @@
       if(localStorage.getItem(TUTORIAL_STORAGE_KEY) === "1") return;
 
       lockTutorialScroll();
-      tutorialOverlay.classList.add("show");
+      tutorialOverlay.classList.add("show", "intro");
       tutorialOverlay.setAttribute("aria-hidden", "false");
       tutorialStart.classList.add("show");
 

@@ -39,7 +39,7 @@
       background:rgba(255,255,255,.88);box-shadow:0 24px 54px rgba(37,99,235,.10);
       backdrop-filter:blur(12px)
     }
-    .input-card{display:grid;grid-template-columns:1fr 110px;gap:12px}
+    .input-card{display:grid;grid-template-columns:1fr 54px 54px;gap:12px}
     .upload-box{
       display:flex;align-items:center;gap:16px;min-height:92px;padding:0 23px;border:1px solid #e4e9f2;
       border-radius:20px;background:#fff;text-align:left;cursor:pointer;
@@ -48,9 +48,18 @@
     .upload-icon{font-size:40px;line-height:1;color:#a5adba;transform:rotate(-12deg)}
     .upload-text{font-size:20px;font-weight:900;letter-spacing:-.07em;color:#a0a7b3}
     .hidden-input{display:none}
-    .refresh{
+    .refresh,.play-preview{
       min-height:92px;border:1px solid #e4e9f2;border-radius:20px;background:#fff;color:#737b88;
-      font-size:42px;font-weight:700;cursor:pointer
+      font-weight:800;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)
+    }
+    .refresh{font-size:36px}
+    .play-preview{font-size:24px;padding-left:3px;color:#2563eb}
+    .play-preview:disabled{
+      opacity:.36;
+      cursor:not-allowed;
+      color:#a5adba;
     }
     .file-name{
       grid-column:1/-1;min-height:18px;padding:0 4px;color:#7a8290;font-size:13px;text-align:center;word-break:break-all
@@ -132,8 +141,8 @@
       .page{padding:30px 18px 48px}
       .hero{padding-top:46px}
       .card{margin-top:72px}
-      .input-card{grid-template-columns:1fr 108px}
-      .upload-box,.refresh{min-height:92px}
+      .input-card{grid-template-columns:1fr 52px 52px}
+      .upload-box,.refresh,.play-preview{min-height:92px}
       .title-row h1{font-size:27px}
     }
     @media(max-width:380px){
@@ -142,7 +151,7 @@
       .free{min-width:66px;height:42px;font-size:23px}
       .title-row h1{font-size:24px}
       .card{margin-top:64px}
-      .input-card{grid-template-columns:1fr 92px}
+      .input-card{grid-template-columns:1fr 46px 46px}
       .upload-text{font-size:17px}
     }
   </style>
@@ -165,7 +174,8 @@
         <span class="upload-text">음성 파일을 선택하세요</span>
       </button>
       <input id="fileInput" class="hidden-input" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm" />
-      <button class="refresh" type="button" id="resetBtn">↻</button>
+      <button class="refresh" type="button" id="resetBtn" aria-label="새로고침">↻</button>
+      <button class="play-preview" type="button" id="playBtn" aria-label="선택한 음성 듣기" disabled>▶</button>
 
       <div id="fileName" class="file-name">선택된 파일이 없습니다.</div>
 
@@ -214,6 +224,7 @@
     const uploadBtn = document.getElementById("uploadBtn");
     const fileInput = document.getElementById("fileInput");
     const resetBtn = document.getElementById("resetBtn");
+    const playBtn = document.getElementById("playBtn");
     const clearBtn = document.getElementById("clearBtn");
     const fileName = document.getElementById("fileName");
     const recordBtn = document.getElementById("recordBtn");
@@ -303,6 +314,7 @@
       selectedFile = file;
       sourceType = type || "";
       submitBtn.disabled = !selectedFile;
+      playBtn.disabled = !selectedFile;
     }
 
     function stopTimer(){
@@ -343,6 +355,7 @@
       audioPlayer.removeAttribute("src");
       audioPlayer.style.display = "none";
       submitBtn.disabled = true;
+      playBtn.disabled = true;
       resultText.value = "";
 
       setEmpty("음성 파일을 올리거나 녹음하면 텍스트로 변환할 수 있습니다.");
@@ -368,12 +381,14 @@
         audioUrl = "";
       }
 
-      audioPlayer.removeAttribute("src");
+      audioUrl = URL.createObjectURL(file);
+      audioPlayer.src = audioUrl;
       audioPlayer.style.display = "none";
+
       fileName.textContent = file.name;
       resultText.value = "";
       setReady(file, "upload");
-      setEmpty("파일이 준비되었습니다. 텍스트 변환을 눌러주세요.");
+      setEmpty("파일이 준비되었습니다. ▶ 버튼으로 들어본 뒤 텍스트 변환을 눌러주세요.");
     });
 
     async function startRecording(){
@@ -412,7 +427,7 @@
 
           audioUrl = URL.createObjectURL(blob);
           audioPlayer.src = audioUrl;
-          audioPlayer.style.display = "block";
+          audioPlayer.style.display = "none";
 
           fileName.textContent = "녹음 파일이 준비되었습니다.";
           recDot.classList.remove("on");
@@ -422,7 +437,7 @@
           recording = false;
 
           setReady(file, "recording");
-          setEmpty("녹음이 준비되었습니다. 들어본 뒤 텍스트 변환을 눌러주세요.");
+          setEmpty("녹음이 준비되었습니다. ▶ 버튼으로 들어본 뒤 텍스트 변환을 눌러주세요.");
           stopStream();
         };
 
@@ -460,6 +475,37 @@
 
     resetBtn.addEventListener("click", () => window.location.reload());
     clearBtn.addEventListener("click", resetAll);
+
+    playBtn.addEventListener("click", async () => {
+      if(!audioPlayer.src){
+        showToast("먼저 음성 파일을 선택하거나 녹음해 주세요.");
+        return;
+      }
+
+      try{
+        if(!audioPlayer.paused){
+          audioPlayer.pause();
+          audioPlayer.currentTime = 0;
+          playBtn.textContent = "▶";
+          return;
+        }
+
+        await audioPlayer.play();
+        playBtn.textContent = "■";
+      }catch(err){
+        showToast("이 파일은 브라우저에서 바로 재생할 수 없습니다.");
+      }
+    });
+
+    audioPlayer.addEventListener("ended", () => {
+      playBtn.textContent = "▶";
+    });
+
+    audioPlayer.addEventListener("pause", () => {
+      if(audioPlayer.currentTime === 0 || audioPlayer.ended){
+        playBtn.textContent = "▶";
+      }
+    });
 
     submitBtn.addEventListener("click", async () => {
       if(!selectedFile){

@@ -5267,7 +5267,7 @@
       if (queryListingNumber) {
         history.pushState({ adminGuard: true }, '', location.href);
         window.addEventListener('popstate', function(){
-          location.href = '/listings';
+          location.href = '/dashboard';
         }, { once: true });
       }
 

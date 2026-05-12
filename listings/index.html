@@ -581,7 +581,8 @@
   window.__ignoreNextPopstate = false;
   window.__returnModalId = '';
 
-  function openModal(id){
+  function openModal(id, options){
+    options = options || {};
     const modal = document.getElementById(id);
     if (!modal) return;
     const currentActive = document.querySelector('.mk-modal.active');
@@ -602,7 +603,7 @@
     document.body.style.height = '100vh';
     window.__activeModalId = id;
     if (!alreadyOpen) {
-      history.pushState({ mkModal: true }, '');
+      history.pushState({ mkModal: true, modalId: id }, '', options.url || '');
       window.__modalHistoryOpen = true;
     }
   }
@@ -720,6 +721,35 @@
 
   function getAutoOpenListingNumber_(){
     return text(getQueryParam_('listingNumber'));
+  }
+
+  function buildPropertyListUrl_(){
+    try{
+      var url = new URL(window.location.href);
+      url.searchParams.delete('open');
+      url.searchParams.delete('listingNumber');
+      return url.pathname + url.search + url.hash;
+    }catch(e){
+      return window.location.pathname || '';
+    }
+  }
+
+  function buildPropertyModalUrl_(listingNumber){
+    try{
+      var url = new URL(window.location.href);
+      url.searchParams.set('open', '1');
+      url.searchParams.set('listingNumber', text(listingNumber));
+      return url.pathname + url.search + url.hash;
+    }catch(e){
+      return '?open=1&listingNumber=' + encodeURIComponent(text(listingNumber));
+    }
+  }
+
+  function preparePropertyModalHistoryBase_(){
+    if(!shouldAutoOpenProperty_()) return;
+    try{
+      history.replaceState({ mkList: true }, '', buildPropertyListUrl_());
+    }catch(e){}
   }
 
   function firstNonEmpty(){
@@ -1265,7 +1295,9 @@
     specialVisible = toggleFactoryRow('factoryRowReadyToOperate', 'detailFactoryReadyToOperate', item.readyToOperate) || specialVisible;
     var specialTitle = document.getElementById('factorySpecialSectionTitle');
     if(specialTitle) specialTitle.style.display = specialVisible ? 'block' : 'none';
-    openModal('propertyDetailModal');
+    openModal('propertyDetailModal', {
+      url: item.listingNumber ? buildPropertyModalUrl_(item.listingNumber) : ''
+    });
     requestAnimationFrame(function(){
       requestAnimationFrame(function(){
         bindSummaryTypingOnView_(lines);
@@ -1331,6 +1363,7 @@
 
     var listingNumber = getAutoOpenListingNumber_();
     if(!listingNumber) return Promise.resolve(false);
+    preparePropertyModalHistoryBase_();
 
     return openPropertyByListingNumber_(listingNumber).then(function(opened){
       if(opened) autoOpenHandled = true;

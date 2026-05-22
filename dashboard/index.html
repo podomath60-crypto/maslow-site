@@ -104,16 +104,23 @@
       background:#fff8e8;
     }
     .brand-icon-vfactory{
-      border-color:#d9f8a8;
-      background:#f4ffe6;
+      border:none;
+      background:transparent;
+      box-shadow:none;
       padding:0;
-      overflow:hidden;
+      overflow:visible;
+    }
+    .brand-icon-vfactory:hover{
+      box-shadow:none;
     }
     .brand-icon-vfactory img{
-      width:100%;
-      height:100%;
+      width:42px;
+      height:42px;
       object-fit:cover;
-      border-radius:13px;
+      border-radius:14px;
+      transform:scale(1.12);
+      transform-origin:center;
+      flex:0 0 auto;
     }
 
     .hero-spacer{height:18px}
@@ -630,6 +637,16 @@
       .brand-icon-link svg{
         width:23px;
         height:23px;
+      }
+      .brand-icon-vfactory{
+        padding:0;
+        overflow:hidden;
+      }
+      .brand-icon-vfactory img{
+        width:100%;
+        height:100%;
+        object-fit:cover;
+        border-radius:11px;
       }
       .search-box{width:min(220px,100%);min-height:54px;padding:0 16px}
       .search-box:focus-within{width:min(100%, 420px)}
@@ -1329,7 +1346,7 @@
                 <path d="M27 54V43.5c0-.83.67-1.5 1.5-1.5h3c.83 0 1.5.67 1.5 1.5V54" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round"/>
               </svg>
             </a>
-            <a href="https://www.maslow-vfactory.site" class="brand-icon-link brand-icon-vfactory" aria-label="영상 딸깍이로 이동">
+            <a href="https://www.maslow-vfactory.site" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-vfactory" aria-label="영상 딸깍이 새창으로 이동">
               <img src="https://www.maslow-vfactory.site/icons/icon-192.png" alt="영상 딸깍이">
             </a>
           </div>

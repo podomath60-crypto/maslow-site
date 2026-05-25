@@ -1427,6 +1427,9 @@
         <div id="channelModalTitle" class="channel-modal-title"><img id="channelModalFavicon" class="channel-modal-favicon" src="" alt=""><span id="channelModalTitleText">채널</span></div>
         <button type="button" class="channel-modal-close" onclick="closeChannelModal()">✕</button>
       </div>
+      <div id="youtubeVideoCreateBox" class="channel-links" style="display:none; margin:0 0 16px;">
+        <button type="button" class="channel-action-btn primary" style="width:100%; justify-content:center;" onclick="openVideoFactoryCreateForCurrentListing()">영상만들기</button>
+      </div>
       <div class="channel-status-row">
         <label class="channel-radio"><input type="radio" name="channelDoneState" value="done"> <span>Done</span></label>
         <label class="channel-radio"><input type="radio" name="channelDoneState" value="notYet"> <span>Not yet</span></label>
@@ -2854,6 +2857,7 @@
       const link1 = document.getElementById('channelLink1');
       const link2 = document.getElementById('channelLink2');
       const link3 = document.getElementById('channelLink3');
+      const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
       const radios = document.querySelectorAll('input[name="channelDoneState"]');
       const item = getItemByListingNumber(listingNumber);
       const state = item ? getChannelStateByItem(item, channelKey) : { done:false, links:['','',''] };
@@ -2869,6 +2873,7 @@
       if(link1) link1.value = state.links[0] || '';
       if(link2) link2.value = state.links[1] || '';
       if(link3) link3.value = state.links[2] || '';
+      if(youtubeVideoCreateBox) youtubeVideoCreateBox.style.display = channelKey === 'youtube' ? 'grid' : 'none';
       radios.forEach(function(radio){
         radio.checked = (state.done && radio.value === 'done') || (!state.done && radio.value === 'notYet');
       });
@@ -2877,7 +2882,9 @@
 
     function closeChannelModal(){
       const modal = document.getElementById('channelModal');
+      const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
       if(modal) modal.classList.remove('show');
+      if(youtubeVideoCreateBox) youtubeVideoCreateBox.style.display = 'none';
       channelModalListingNumber = '';
       channelModalChannelKey = '';
     }
@@ -3236,6 +3243,17 @@
 
     function buildPreviewUrl(listingNumber){
       return CONFIG.listingsUrl + '?listingNumber=' + encodeURIComponent(listingNumber) + '&open=1';
+    }
+
+    function openVideoFactoryCreateForCurrentListing(){
+      const listingNumber = decodeURIComponent(String(channelModalListingNumber || ''));
+      if(!listingNumber){
+        alert('매물을 찾지 못했습니다.');
+        return;
+      }
+      const sourceUrl = new URL(buildPreviewUrl(listingNumber), window.location.origin).toString();
+      const targetUrl = 'https://www.maslow-vfactory.site/create?sourceUrl=' + encodeURIComponent(sourceUrl);
+      window.open(targetUrl, '_blank', 'noopener');
     }
 
     function getItemByListingNumber(listingNumber){

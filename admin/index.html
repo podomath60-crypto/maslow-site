@@ -595,6 +595,39 @@
       color:#0f7cff;
       box-shadow:0 4px 12px rgba(15,124,255,.08);
     }
+    .naver-map-link-row{
+      display:none;
+      padding:0 12px 18px;
+      margin-top:-2px;
+    }
+    .naver-map-link-row.show{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .naver-map-link-btn{
+      width:auto;
+      min-height:38px;
+      padding:0 14px;
+      border-radius:999px;
+      font-size:14px;
+      font-weight:800;
+      border:1px solid #c8e0ff;
+      background:#f4f9ff;
+      color:#0f7cff;
+      box-shadow:0 4px 12px rgba(15,124,255,.06);
+    }
+    .naver-map-link-caption{
+      min-width:0;
+      flex:1 1 220px;
+      font-size:13px;
+      line-height:1.55;
+      color:#67707b;
+      font-weight:700;
+      word-break:keep-all;
+    }
     .address-mini-btn.is-loading{
       opacity:.65;
       pointer-events:none;
@@ -1965,6 +1998,10 @@
 
         <div class="property-specs">
           <div class="property-spec-sector-title">기본정보</div>
+          <div id="naverMapLinkRow" class="naver-map-link-row" aria-hidden="true">
+            <button type="button" id="naverMapLinkBtn" class="naver-map-link-btn">네이버 지도에서 보기</button>
+            <div id="naverMapLinkCaption" class="naver-map-link-caption"></div>
+          </div>
 
           <div class="property-spec-row"><div class="property-spec-label">* 소재지</div><div class="property-spec-value"><div class="address-inline-row"><div id="addressField" class="property-spec-value editable address-input-wrap" contenteditable="true" data-placeholder="입력"></div><button type="button" id="addressSearchBtn" class="address-mini-btn search">검색</button><button type="button" id="addressLookupBtn" class="address-mini-btn lookup">조회</button></div></div></div>
           <div class="property-spec-row"><div class="property-spec-label">* 거래형태</div><div class="property-spec-value"><div id="dealTypeRow" class="type-chip-row"><button type="button" class="type-chip" data-deal="매매">매매</button><button type="button" class="type-chip" data-deal="임대">임대</button><span id="dealTypePlaceholder" class="type-chip-placeholder">선택</span></div></div></div>
@@ -2125,6 +2162,9 @@
       var addressField = document.getElementById('addressField');
       var addressSearchBtn = document.getElementById('addressSearchBtn');
       var addressLookupBtn = document.getElementById('addressLookupBtn');
+      var naverMapLinkRow = document.getElementById('naverMapLinkRow');
+      var naverMapLinkBtn = document.getElementById('naverMapLinkBtn');
+      var naverMapLinkCaption = document.getElementById('naverMapLinkCaption');
       var priceField = document.getElementById('priceField');
       var topAddress = document.getElementById('topAddress');
       var topPrice = document.getElementById('topPrice');
@@ -2274,6 +2314,51 @@
       var selectedAddressSearchData = null;
       var CREATOR_CACHE_KEY = 'MK_CREATOR_INITIAL_V1';
       var CREATOR_NAME_CACHE_KEY = 'MK_CREATOR_NAME_V1';
+
+      function getCurrentAddressForMap_(){
+        var fromSearch = selectedAddressSearchData ? firstNonEmpty_(
+          selectedAddressSearchData.jibunAddress,
+          selectedAddressSearchData.autoJibunAddress,
+          selectedAddressSearchData.roadAddress,
+          selectedAddressSearchData.autoRoadAddress,
+          selectedAddressSearchData.lookupAddress
+        ) : '';
+
+        return firstNonEmpty_(
+          fromSearch,
+          plainText(addressField),
+          plainText(topAddress)
+        );
+      }
+
+      function getNaverMapSearchUrl_(){
+        var address = getCurrentAddressForMap_();
+        if(!address) return '';
+        return 'https://map.naver.com/p/search/' + encodeURIComponent(address);
+      }
+
+      function renderNaverMapLink_(){
+        if(!naverMapLinkRow || !naverMapLinkBtn) return;
+        var address = getCurrentAddressForMap_();
+        var hasAddress = !!address;
+
+        naverMapLinkRow.classList.toggle('show', hasAddress);
+        naverMapLinkRow.setAttribute('aria-hidden', hasAddress ? 'false' : 'true');
+        naverMapLinkBtn.disabled = !hasAddress;
+
+        if(naverMapLinkCaption){
+          naverMapLinkCaption.textContent = hasAddress ? address : '';
+        }
+      }
+
+      function openNaverMapLink_(){
+        var url = getNaverMapSearchUrl_();
+        if(!url){
+          showToast('주소를 먼저 입력해주세요.');
+          return;
+        }
+        window.open(url, '_blank', 'noopener');
+      }
 
       function getCreatorMap_(){
         return [
@@ -3373,6 +3458,7 @@
         topAddress.classList.toggle('is-hidden', !hasAddress);
         topPrice.classList.toggle('is-hidden', !hasPrice);
         topDivider.classList.toggle('is-hidden', !(hasAddress || hasPrice));
+        renderNaverMapLink_();
       }
 
       function setDealType(type){
@@ -5091,6 +5177,12 @@
         });
       }
 
+      if(naverMapLinkBtn){
+        naverMapLinkBtn.addEventListener('click', function(){
+          openNaverMapLink_();
+        });
+      }
+
 
       function runDraftCleanupAndRestart_(){
         try{
@@ -5104,6 +5196,7 @@
           tempUploadSeq = 0;
           photoList = [];
           ledgerList = [];
+          selectedAddressSearchData = null;
           clearRentPriceState_();
           currentPhotoIndex = 0;
           document.querySelectorAll('[contenteditable="true"]').forEach(function(el){ el.innerHTML = ''; });

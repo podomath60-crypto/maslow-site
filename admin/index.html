@@ -2024,7 +2024,7 @@
         <div class="property-detail-chip-row">
           <div id="topDealChip" class="property-detail-chip is-placeholder" data-placeholder="거래형태"></div>
           <div class="top-chip-actions">
-            <button type="button" id="publicShareBtn" class="property-detail-share-btn" onclick="sharePublicListingFromEditor_()" aria-label="공개 매물 링크 공유">
+            <button type="button" id="publicShareBtn" class="property-detail-share-btn" aria-label="공개 매물 링크 공유">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M14 5.5L20 5.5L20 11.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                 <path d="M10 14L20 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -2232,6 +2232,7 @@
       var topPriceValue = document.getElementById('topPriceValue');
       var topPriceSub = document.getElementById('topPriceSub');
       var topDealChip = document.getElementById('topDealChip');
+      var publicShareBtn = document.getElementById('publicShareBtn');
       var dealTypeRow = document.getElementById('dealTypeRow');
       var dealTypePlaceholder = document.getElementById('dealTypePlaceholder');
       var maintenanceFeeField = document.getElementById('maintenanceFeeField');
@@ -3290,68 +3291,74 @@
         }, 1800);
       }
 
+      var CONFIG = window.CONFIG || {};
+      CONFIG.listingsUrl = CONFIG.listingsUrl || '/listings';
+
+      function text(value){
+        return String(value == null ? '' : value).trim();
+      }
+
       function getCurrentListingNumberForShare_(){
         return String(listingNumber || plainText(listingNumberField) || '').trim();
       }
 
-      function buildPublicListingShareUrl_(){
-        var currentListingNumber = getCurrentListingNumberForShare_();
-        if(!currentListingNumber) return '';
-        return 'https://maslowkorea.site/listings?listingNumber=' + encodeURIComponent(currentListingNumber) + '&open=1';
+      function buildPreviewUrl(listingNumber){
+        return CONFIG.listingsUrl + '?listingNumber=' + encodeURIComponent(listingNumber) + '&open=1';
       }
 
-      function copyTextToClipboard_(value){
-        var textValue = String(value || '');
-        if(navigator.clipboard && navigator.clipboard.writeText){
-          return navigator.clipboard.writeText(textValue);
-        }
-        return new Promise(function(resolve, reject){
-          try{
-            var ta = document.createElement('textarea');
-            ta.value = textValue;
-            ta.setAttribute('readonly', '');
-            ta.style.position = 'fixed';
-            ta.style.left = '-9999px';
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            if(ta.parentNode) ta.parentNode.removeChild(ta);
-            resolve();
-          }catch(e){
-            reject(e);
-          }
-        });
+      function getItemByListingNumber(listingNumber){
+        var key = text(listingNumber);
+        var current = text(getCurrentListingNumberForShare_());
+        if(!key || key !== current) return null;
+        return {
+          title: plainText(document.querySelector('.property-detail-title')),
+          address: plainText(topAddress) || plainText(addressField)
+        };
       }
 
-      async function sharePublicListingFromEditor_(){
-        var shareUrl = buildPublicListingShareUrl_();
-        if(!shareUrl){
-          showToast('매물번호 없음');
-          return;
-        }
-        var title = plainText(document.querySelector('.property-detail-title')) || 'Maslow Korea 공개 매물';
-        var address = plainText(topAddress) || plainText(addressField);
-        var shareText = title + (address ? ('\n' + address) : '');
+      async function sharePreview(listingNumber){
+        var decoded = decodeURIComponent(String(listingNumber || ''));
+        var item = getItemByListingNumber(decoded);
+        var url = buildPreviewUrl(decoded);
+        var title = text(item && item.title) || '매물 공유';
+        var shareText = title + '\n' + (text(item && item.address) || '');
         try{
           if(navigator.share){
             await navigator.share({
               title: title,
               text: shareText,
-              url: shareUrl
+              url: url
             });
             return;
           }
-          await copyTextToClipboard_(shareUrl);
-          showToast('공개 매물 링크 복사됨');
+          if(navigator.clipboard && navigator.clipboard.writeText){
+            await navigator.clipboard.writeText(url);
+            alert('공유 링크를 복사했습니다. 카카오톡에 붙여넣어 주세요.');
+            return;
+          }
+          window.prompt('공유 링크를 복사하세요.', url);
         }catch(err){
           if(err && err.name === 'AbortError') return;
+          console.error(err);
           try{
-            await copyTextToClipboard_(shareUrl);
-            showToast('공개 매물 링크 복사됨');
-          }catch(copyErr){
-            showToast('링크 공유 실패');
-          }
+            window.prompt('공유 링크를 복사하세요.', url);
+          }catch(e){}
         }
+      }
+
+      window.sharePreview = sharePreview;
+
+      if(publicShareBtn){
+        publicShareBtn.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          var currentListingNumber = getCurrentListingNumberForShare_();
+          if(!currentListingNumber){
+            showToast('매물번호 없음');
+            return;
+          }
+          sharePreview(currentListingNumber);
+        });
       }
 
       function plainText(el){

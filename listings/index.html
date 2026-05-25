@@ -831,6 +831,11 @@
     if (!s) return '';
     s = s.replace(/\s*\([^)]*\)/g, '');
     var parts = s.split(/\s+/).filter(Boolean);
+    for (var i = 0; i < parts.length; i++) {
+      if (/(읍|면|동|리)$/.test(parts[i])) {
+        return parts.slice(0, i + 1).join(' ');
+      }
+    }
     while (parts.length && /\d/.test(parts[parts.length - 1])) parts.pop();
     return parts.join(' ');
   }

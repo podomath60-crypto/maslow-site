@@ -416,15 +416,15 @@
       flex:0 0 auto;
       white-space:nowrap;
     }
-    .property-detail-chip-actions{
+    .top-chip-actions{
       display:flex;
       align-items:center;
       justify-content:flex-end;
-      gap:8px;
+      gap:10px;
       width:auto;
       flex:0 0 auto;
     }
-    .property-share-btn{
+    .property-detail-share-btn{
       display:inline-flex;
       align-items:center;
       justify-content:center;
@@ -442,11 +442,15 @@
       box-shadow:0 6px 14px rgba(15,23,42,.05);
       white-space:nowrap;
     }
-    .property-share-btn svg{
+    .property-detail-share-btn svg{
       display:block;
       width:16px;
       height:16px;
       flex:0 0 16px;
+    }
+    .property-detail-share-btn .share-label{
+      display:inline-block;
+      width:auto;
     }
     .property-specs .property-spec-sector-title:first-child{
       border-top:none;
@@ -1049,15 +1053,15 @@
         padding:0 4px;
         font-size:12px;
       }
-      .property-detail-chip-actions{
-        gap:6px;
+      .top-chip-actions{
+        gap:8px;
       }
-      .property-share-btn{
+      .property-detail-share-btn{
         min-height:32px;
         padding:0 10px;
         font-size:12px;
       }
-      .property-share-btn svg{
+      .property-detail-share-btn svg{
         width:15px;
         height:15px;
         flex-basis:15px;
@@ -2019,14 +2023,14 @@
 
         <div class="property-detail-chip-row">
           <div id="topDealChip" class="property-detail-chip is-placeholder" data-placeholder="거래형태"></div>
-          <div class="property-detail-chip-actions">
-            <button type="button" id="publicListingShareBtn" class="property-share-btn" aria-label="공개 매물 링크 공유">
+          <div class="top-chip-actions">
+            <button type="button" id="publicShareBtn" class="property-detail-share-btn" onclick="sharePublicListingFromEditor_()" aria-label="공개 매물 링크 공유">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M14 5.5L20 5.5L20 11.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                 <path d="M10 14L20 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                 <path d="M19 14V18C19 19.1046 18.1046 20 17 20H6C4.89543 20 4 19.1046 4 18V7C4 5.89543 4.89543 5 6 5H10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
               </svg>
-              <span>공유</span>
+              <span class="share-label">공유</span>
             </button>
             <button type="button" id="inlineResetBtn" class="inline-reset-btn">🧹초기화</button>
           </div>
@@ -2199,7 +2203,6 @@
       var STORAGE_KEY = 'MK_PROPERTY_INPUT_DRAFT_V6';
       var DEFAULT_HERO = 'https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png';
       var PERSIST_MS = 180;
-      var PUBLIC_PROPERTY_LIST_BASE_URL = 'https://maslowkorea.site/';
 
       var heroImage = document.getElementById('heroImage');
       var heroEmptyState = document.getElementById('heroEmptyState');
@@ -2237,7 +2240,6 @@
       var teamSelectShoppingBtn = document.getElementById('teamSelectShoppingBtn');
       var teamSelectFactoryBtn = document.getElementById('teamSelectFactoryBtn');
       var inlineResetBtn = document.getElementById('inlineResetBtn');
-      var publicListingShareBtn = document.getElementById('publicListingShareBtn');
       var draftSaveBtn = document.getElementById('draftSaveBtn');
       var draftCleanBtn = document.getElementById('draftCleanBtn');
       var statusToggleBtn = document.getElementById('statusToggleBtn');
@@ -3295,24 +3297,18 @@
       function buildPublicListingShareUrl_(){
         var currentListingNumber = getCurrentListingNumberForShare_();
         if(!currentListingNumber) return '';
-        try{
-          var url = new URL(PUBLIC_PROPERTY_LIST_BASE_URL);
-          url.searchParams.set('open', '1');
-          url.searchParams.set('listingNumber', currentListingNumber);
-          return url.href;
-        }catch(e){
-          return 'https://maslowkorea.site/?open=1&listingNumber=' + encodeURIComponent(currentListingNumber);
-        }
+        return 'https://maslowkorea.site/listings?listingNumber=' + encodeURIComponent(currentListingNumber) + '&open=1';
       }
 
-      function copyTextToClipboard_(text){
+      function copyTextToClipboard_(value){
+        var textValue = String(value || '');
         if(navigator.clipboard && navigator.clipboard.writeText){
-          return navigator.clipboard.writeText(text);
+          return navigator.clipboard.writeText(textValue);
         }
         return new Promise(function(resolve, reject){
           try{
             var ta = document.createElement('textarea');
-            ta.value = text;
+            ta.value = textValue;
             ta.setAttribute('readonly', '');
             ta.style.position = 'fixed';
             ta.style.left = '-9999px';
@@ -3321,33 +3317,39 @@
             document.execCommand('copy');
             if(ta.parentNode) ta.parentNode.removeChild(ta);
             resolve();
-          }catch(err){
-            reject(err);
+          }catch(e){
+            reject(e);
           }
         });
       }
 
-      async function sharePublicListingLink_(){
-        var url = buildPublicListingShareUrl_();
-        if(!url){
+      async function sharePublicListingFromEditor_(){
+        var shareUrl = buildPublicListingShareUrl_();
+        if(!shareUrl){
           showToast('매물번호 없음');
           return;
         }
         var title = plainText(document.querySelector('.property-detail-title')) || 'Maslow Korea 공개 매물';
+        var address = plainText(topAddress) || plainText(addressField);
+        var shareText = title + (address ? ('\n' + address) : '');
         try{
           if(navigator.share){
-            await navigator.share({ title: title, text: title, url: url });
+            await navigator.share({
+              title: title,
+              text: shareText,
+              url: shareUrl
+            });
             return;
           }
-          await copyTextToClipboard_(url);
+          await copyTextToClipboard_(shareUrl);
           showToast('공개 매물 링크 복사됨');
         }catch(err){
           if(err && err.name === 'AbortError') return;
           try{
-            await copyTextToClipboard_(url);
+            await copyTextToClipboard_(shareUrl);
             showToast('공개 매물 링크 복사됨');
           }catch(copyErr){
-            showToast('공유 실패');
+            showToast('링크 공유 실패');
           }
         }
       }
@@ -5338,12 +5340,6 @@
         }catch(e){
           showToast('청소 실패');
         }
-      }
-
-      if(publicListingShareBtn){
-        publicListingShareBtn.addEventListener('click', function(){
-          sharePublicListingLink_();
-        });
       }
 
       if(inlineResetBtn){

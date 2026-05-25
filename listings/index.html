@@ -123,6 +123,11 @@
     }
     .property-detail-note{display:none}
     .property-detail-chip{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 22px;border-radius:999px;background:#1f96ff;color:#fff;font-size:22px;font-weight:800;line-height:1;box-shadow:0 8px 20px rgba(31,150,255,.20);margin-bottom:18px;width:auto}
+    .property-detail-chip-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .property-detail-share-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #dce6f1;background:#fff;color:#111318;font-size:14px;font-weight:800;line-height:1;box-shadow:0 8px 20px rgba(15,23,42,.06);width:auto;flex:0 0 auto}
+    .property-detail-share-btn svg{display:block;width:18px;height:18px;flex:0 0 18px}
+    .property-detail-share-btn .share-label{display:inline-block;width:auto;white-space:nowrap}
+    .property-detail-share-btn.is-hidden{display:none !important}
     .property-detail-title{margin:0 0 14px;font-size:56px;line-height:1.08;font-weight:900;color:#202227;letter-spacing:-0.05em}
     .property-detail-address{margin:0 0 28px;font-size:24px;line-height:1.5;color:#43484e;letter-spacing:-0.03em}
     .property-detail-divider{height:1px;background:#dfdfdf;margin:0 0 30px}
@@ -218,6 +223,9 @@
       .property-detail-photo-btn.next{right:8px}
       .property-detail-note{font-size:12px;margin-bottom:18px}
       .property-detail-chip{min-height:34px;padding:0 18px;font-size:18px;margin-bottom:14px}
+      .property-detail-chip-row{margin-bottom:14px;gap:10px}
+      .property-detail-share-btn{min-height:34px;padding:0 12px;font-size:12px}
+      .property-detail-share-btn svg{width:16px;height:16px;flex-basis:16px}
       .property-detail-title{font-size:34px;margin-bottom:10px}
       .property-detail-address{font-size:18px;margin-bottom:20px}
       .property-detail-divider{margin-bottom:22px}
@@ -330,7 +338,17 @@
         </div>
         <p class="property-detail-note"></p>
 
-        <div id="detailChip" class="property-detail-chip">매매</div>
+        <div class="property-detail-chip-row">
+          <div id="detailChip" class="property-detail-chip">매매</div>
+          <button type="button" id="detailShareBtn" class="property-detail-share-btn" onclick="shareCurrentPropertyDetail_()" aria-label="매물 링크 공유">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 5.5L20 5.5L20 11.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M10 14L20 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M19 14V18C19 19.1046 18.1046 20 17 20H6C4.89543 20 4 19.1046 4 18V7C4 5.89543 4.89543 5 6 5H10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span class="share-label">공유</span>
+          </button>
+        </div>
         <h3 id="detailTitle" class="property-detail-title">군산 국가산단 인근 제조형 공장 매매</h3>
         <p id="detailAddress" class="property-detail-address">전라북도 군산시 오식도동</p>
 
@@ -553,6 +571,7 @@
   let filteredPropertyItems = [];
   let currentDetailPhotos = [];
   let currentDetailPhotoIndex = 0;
+  let currentDetailItem = null;
   let adminPinchCount = 0;
   let adminPinchLastAt = 0;
   let adminPinchCardKey = '';
@@ -624,6 +643,7 @@
     }
     const hadOpenModal = !!activeModal;
     document.querySelectorAll('.mk-modal').forEach(m => m.classList.remove('active'));
+    currentDetailItem = null;
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
     document.body.style.height = '';
@@ -742,6 +762,51 @@
       return url.pathname + url.search + url.hash;
     }catch(e){
       return '?open=1&listingNumber=' + encodeURIComponent(text(listingNumber));
+    }
+  }
+
+  function getPropertyShareUrl_(listingNumber){
+    var listing = text(listingNumber);
+    if (!listing) return '';
+    try{
+      return new URL(buildPropertyModalUrl_(listing), window.location.origin).href;
+    }catch(e){
+      return buildPropertyModalUrl_(listing);
+    }
+  }
+
+  function syncDetailShareButton_(){
+    var btn = document.getElementById('detailShareBtn');
+    if(!btn) return;
+    var shareUrl = getPropertyShareUrl_(currentDetailItem && currentDetailItem.listingNumber);
+    btn.classList.toggle('is-hidden', !shareUrl);
+    if (shareUrl) btn.setAttribute('data-share-url', shareUrl);
+    else btn.removeAttribute('data-share-url');
+  }
+
+  async function shareCurrentPropertyDetail_(){
+    var shareUrl = getPropertyShareUrl_(currentDetailItem && currentDetailItem.listingNumber);
+    if(!shareUrl){
+      showToast('공유할 링크가 없습니다.');
+      return;
+    }
+    var shareTitle = text(currentDetailItem && currentDetailItem.title) || 'Maslow Korea 공개 매물';
+    var shareText = shareTitle;
+    try{
+      if (navigator.share) {
+        await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+        return;
+      }
+      await copyText(shareUrl);
+      showToast('매물 링크를 복사했습니다.');
+    }catch(err){
+      if (err && err.name === 'AbortError') return;
+      try{
+        await copyText(shareUrl);
+        showToast('매물 링크를 복사했습니다.');
+      }catch(copyErr){
+        showToast('링크 공유 중 문제가 발생했습니다.');
+      }
     }
   }
 
@@ -1249,6 +1314,7 @@
   function openPropertyItem_(item){
     clearSummaryTyping_();
     if(!item) return false;
+    currentDetailItem = item;
     currentDetailPhotos = Array.isArray(item.photos) && item.photos.length ? item.photos.slice() : [item.image || 'https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png'];
     currentDetailPhotoIndex = 0;
     renderDetailPhotoCarousel();
@@ -1278,6 +1344,7 @@
     setText('detailSpecFloorInfo', item.floorInfo);
     setText('detailSpecRestroom', item.restroom);
     setText('detailSpecMaintenanceFee', item.maintenanceFee);
+    syncDetailShareButton_();
     var specialVisible = false;
     specialVisible = toggleFactoryRow('factoryRowCeiling', 'detailFactoryCeiling', item.ceilingHeight) || specialVisible;
     specialVisible = toggleFactoryRow('factoryRowCrane', 'detailFactoryCrane', item.crane) || specialVisible;

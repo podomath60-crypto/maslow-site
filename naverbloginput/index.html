@@ -1402,6 +1402,12 @@
       els.loadingOverlay.classList.toggle('show', !!on);
     }
 
+    function wait(ms){
+      return new Promise(function(resolve){
+        setTimeout(resolve, ms);
+      });
+    }
+
     function normalizeItem(item, idx){
       const photoList = safeJsonParse(item && item.photoUrlsJson || '[]', []) || [];
       let firstPhoto = '';

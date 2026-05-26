@@ -2871,7 +2871,7 @@ async function buildLookupGeneratedAssets(lookupResult){
       fetchPostJson(payload)
         .then(function(data){
           if(!data || data.ok === false){
-            throw new Error((data && data.message) || '초안 생성 실패');
+            throw new Error((data && (data.message || data.error)) || '초안 생성 실패');
           }
 
           var blogId = text(data.blogId);
@@ -2882,14 +2882,14 @@ async function buildLookupGeneratedAssets(lookupResult){
           applySavedAssetFilesToAssets((data && data.savedAssetFiles) || []);
           renderAssets();
 
-          els.loadingText.textContent = 'GPT 호출 중';
+          els.loadingText.textContent = 'DGX 호출 중';
 
           return fetchPostJson({
             action:'callBlogDraftAi',
             blogId: blogId
           }).then(function(aiData){
             if(!aiData || aiData.ok === false){
-              throw new Error((aiData && aiData.message) || 'GPT 호출 실패');
+              throw new Error((aiData && (aiData.message || aiData.error)) || 'DGX 호출 실패');
             }
 
             var moveUrl = buildEditorMoveUrl(blogId, directionText);

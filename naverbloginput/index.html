@@ -2695,79 +2695,6 @@ async function buildLookupGeneratedAssets(lookupResult){
       }
     }
 
-    function buildSelectedAssetsForPayload(){
-      return assets
-        .filter(function(item){ return !!item.selected; })
-        .map(function(item, idx){
-          var sourceObj = (item && item.source && typeof item.source === 'object') ? item.source : {};
-          var assetType = buildAssetType(item);
-          var assetSource = buildAssetSource(item);
-          var targetGroup = (assetType === 'basic_info') ? 'basic_info' : 'photo';
-
-          return {
-            assetId: text(item.assetId || ('asset_' + idx)),
-            selected: !!item.selected,
-            isHero: !!item.isHero,
-            paragraph: text(item.paragraph || 'p1'),
-            assetType: assetType,
-            assetSource: assetSource,
-            targetGroup: targetGroup,
-            previewUrl: text(item.previewUrl || ''),
-            originalUrl: text(
-              sourceObj.originalUrl ||
-              sourceObj.url ||
-              sourceObj.heroUrl ||
-              sourceObj.lightUrl ||
-              sourceObj.thumbUrl ||
-              item.previewUrl ||
-              ''
-            ),
-            fileId: text(sourceObj.fileId || ''),
-            fileName: text(sourceObj.fileName || sourceObj.name || ''),
-            mimeType: text(sourceObj.mimeType || ''),
-            kind: text(sourceObj.kind || '')
-          };
-        });
-    }
-
-    function applySavedAssetFilesToAssets(savedAssetFiles){
-      var byId = {};
-      (savedAssetFiles || []).forEach(function(row){
-        var assetId = text(row && row.assetId);
-        if(assetId) byId[assetId] = row;
-      });
-
-      assets = (assets || []).map(function(asset){
-        var saved = byId[text(asset && asset.assetId)];
-        if(!saved) return asset;
-
-        var nextPreviewUrl = text(saved.previewUrl || saved.url || asset.previewUrl || '');
-        var nextOriginalUrl = text(saved.originalUrl || saved.url || nextPreviewUrl);
-        var nextFileId = text(saved.fileId || '');
-        var nextFileName = text(saved.fileName || '');
-        var nextMimeType = text(saved.mimeType || (asset && asset.mimeType) || '');
-
-        return Object.assign({}, asset, {
-          previewUrl: nextPreviewUrl,
-          originalUrl: nextOriginalUrl,
-          fileId: nextFileId,
-          fileName: nextFileName,
-          mimeType: nextMimeType,
-          source: Object.assign({}, (asset && asset.source && typeof asset.source === 'object') ? asset.source : {}, {
-            fileId: nextFileId,
-            fileName: nextFileName,
-            mimeType: nextMimeType,
-            url: nextOriginalUrl,
-            originalUrl: nextOriginalUrl,
-            previewUrl: nextPreviewUrl,
-            lightUrl: nextPreviewUrl,
-            thumbUrl: nextPreviewUrl,
-            heroUrl: nextPreviewUrl
-          })
-        });
-      });
-    }
-
     function buildCreateBlogDraftPayload(){
       if(!selectedListing){
         throw new Error('먼저 매물을 선택해주세요.');
@@ -2851,6 +2778,26 @@ async function buildLookupGeneratedAssets(lookupResult){
         + '?blogId=' + encodeURIComponent(blogId)
         + '&style=' + encodeURIComponent(text(selectedAiStyle || '깔끔형'))
         + '&direction=' + encodeURIComponent(text(directionText || ''));
+    }
+
+    function openAiCallModal(){
+      if(els.publishPrepBtn.disabled) return;
+      els.aiCallModal.classList.add('show');
+      els.aiCallModal.setAttribute('aria-hidden', 'false');
+      syncAiStyleButtons();
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeAiCallModal(){
+      els.aiCallModal.classList.remove('show');
+      els.aiCallModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function syncAiStyleButtons(){
+      Array.prototype.forEach.call(els.aiStyleGrid.querySelectorAll('.ai-style-btn'), function(btn){
+        btn.classList.toggle('is-active', btn.getAttribute('data-style') === selectedAiStyle);
+      });
     }
 
     function submitAiCall(){

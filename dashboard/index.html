@@ -1430,6 +1430,9 @@
       <div id="youtubeVideoCreateBox" class="channel-links" style="display:none; margin:0 0 16px;">
         <button type="button" class="channel-action-btn primary" style="width:100%; justify-content:center;" onclick="openVideoFactoryCreateForCurrentListing()">영상만들기</button>
       </div>
+      <div id="naverBlogCreateBox" class="channel-links" style="display:none; margin:0 0 16px;">
+        <button type="button" class="channel-action-btn primary" style="width:100%; justify-content:center; gap:6px; border-color:#19ce60; background:#19ce60; color:#fff;" onclick="openNaverBlogInputForCurrentListing()"><span style="font-weight:1000;color:#fff;">N</span><span>블로그 발행하기</span></button>
+      </div>
       <div class="channel-status-row">
         <label class="channel-radio"><input type="radio" name="channelDoneState" value="done"> <span>Done</span></label>
         <label class="channel-radio"><input type="radio" name="channelDoneState" value="notYet"> <span>Not yet</span></label>
@@ -1570,6 +1573,7 @@
       adminListUrl: 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec',
       adminEditUrl: '/admin',
       listingsUrl: '/listings',
+      naverBlogInputUrl: '/naverbloginput',
       listingLookupUrl: 'https://lookout-zeta.vercel.app',
       authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
     };
@@ -2858,6 +2862,7 @@
       const link2 = document.getElementById('channelLink2');
       const link3 = document.getElementById('channelLink3');
       const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
+      const naverBlogCreateBox = document.getElementById('naverBlogCreateBox');
       const radios = document.querySelectorAll('input[name="channelDoneState"]');
       const item = getItemByListingNumber(listingNumber);
       const state = item ? getChannelStateByItem(item, channelKey) : { done:false, links:['','',''] };
@@ -2874,6 +2879,7 @@
       if(link2) link2.value = state.links[1] || '';
       if(link3) link3.value = state.links[2] || '';
       if(youtubeVideoCreateBox) youtubeVideoCreateBox.style.display = channelKey === 'youtube' ? 'grid' : 'none';
+      if(naverBlogCreateBox) naverBlogCreateBox.style.display = channelKey === 'naverBlog' ? 'grid' : 'none';
       radios.forEach(function(radio){
         radio.checked = (state.done && radio.value === 'done') || (!state.done && radio.value === 'notYet');
       });
@@ -2883,8 +2889,10 @@
     function closeChannelModal(){
       const modal = document.getElementById('channelModal');
       const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
+      const naverBlogCreateBox = document.getElementById('naverBlogCreateBox');
       if(modal) modal.classList.remove('show');
       if(youtubeVideoCreateBox) youtubeVideoCreateBox.style.display = 'none';
+      if(naverBlogCreateBox) naverBlogCreateBox.style.display = 'none';
       channelModalListingNumber = '';
       channelModalChannelKey = '';
     }
@@ -3254,6 +3262,32 @@
       const sourceUrl = new URL(buildPreviewUrl(listingNumber), window.location.origin).toString();
       const targetUrl = 'https://www.maslow-vfactory.site/create?sourceUrl=' + encodeURIComponent(sourceUrl);
       window.open(targetUrl, '_blank', 'noopener');
+    }
+
+    function formatDateKeyForBlogInput(value){
+      const ts = parseDateValue(value);
+      if(!ts) return '';
+      const d = new Date(ts);
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function openNaverBlogInputForCurrentListing(){
+      const listingNumber = decodeURIComponent(String(channelModalListingNumber || ''));
+      if(!listingNumber){
+        alert('매물을 찾지 못했습니다.');
+        return;
+      }
+
+      const item = getItemByListingNumber(listingNumber);
+      const targetUrl = new URL(CONFIG.naverBlogInputUrl || '/naverbloginput', window.location.origin);
+      targetUrl.searchParams.set('listingNumber', listingNumber);
+
+      const dateKey = item ? formatDateKeyForBlogInput(item.createdAt) : '';
+      if(dateKey){
+        targetUrl.searchParams.set('date', dateKey);
+      }
+
+      location.href = targetUrl.pathname + targetUrl.search;
     }
 
     function getItemByListingNumber(listingNumber){

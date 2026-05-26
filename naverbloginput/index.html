@@ -1281,6 +1281,10 @@
     let activeParagraphPickerAssetId = '';
     let selectedAiStyle = '깔끔형';
 
+    const initialParams = new URLSearchParams(location.search);
+    const initialListingNumberParam = text(initialParams.get('listingNumber'));
+    const initialDateParam = text(initialParams.get('date'));
+
     const els = {
       goStatusBtn: document.getElementById('goStatusBtn'),
       prevDateBtn: document.getElementById('prevDateBtn'),
@@ -1520,6 +1524,9 @@
       let items = selectedDate ? getLocalCalendarPropertiesByDate(selectedDate) : rawItems.slice();
       if(keyword){
         items = items.filter(function(item){ return matchesKeyword(item, keyword); });
+        if(!items.length && selectedDate){
+          items = rawItems.slice().filter(function(item){ return matchesKeyword(item, keyword); });
+        }
       }
       renderListingSlider(items);
     }
@@ -3171,8 +3178,11 @@ async function buildLookupGeneratedAssets(lookupResult){
     bindEvents();
     bindSliderBar();
     bindSliderBarDrag();
-    selectedDate = formatDateKeyFromTs(Date.now());
+    selectedDate = initialDateParam || formatDateKeyFromTs(Date.now());
     calendarCurrentMonth = firstDayOfMonthKey(selectedDate);
+    if(initialListingNumberParam){
+      els.searchInput.value = initialListingNumberParam;
+    }
     renderDateMetaLine();
     fetchAdminItems();
   </script>

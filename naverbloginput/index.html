@@ -1163,15 +1163,14 @@
     </div>
 
     <div class="bottom-bar">
-      <button type="button" class="bottom-btn" id="draftSaveBtn">임시저장</button>
-      <button type="button" class="bottom-btn primary" id="publishPrepBtn" disabled>AI호출</button>
+      <button type="button" class="bottom-btn primary" id="publishPrepBtn" disabled>DGX 호출</button>
     </div>
   </div>
 
 
   <div id="aiCallModal" class="ai-call-modal" aria-hidden="true">
     <div class="ai-call-dialog">
-      <h3 class="ai-call-title">AI호출 설정</h3>
+      <h3 class="ai-call-title">DGX 호출 설정</h3>
       <p class="ai-call-sub">글스타일을 고르고, 원하면 글방향도 적어주세요.</p>
       <div class="ai-call-form">
         <div class="ai-call-field">
@@ -1308,7 +1307,6 @@
       selectedCountChip: document.getElementById('selectedCountChip'),
       heroCountChip: document.getElementById('heroCountChip'),
       generateInfoImageBtn: document.getElementById('generateInfoImageBtn'),
-      draftSaveBtn: document.getElementById('draftSaveBtn'),
       publishPrepBtn: document.getElementById('publishPrepBtn'),
       aiCallModal: document.getElementById('aiCallModal'),
       aiStyleGrid: document.getElementById('aiStyleGrid'),
@@ -1794,7 +1792,6 @@
       const hasListing = !!selectedListing;
       const selectedCount = assets.filter(function(v){ return !!v.selected; }).length;
       const hasHero = assets.some(function(v){ return !!v.isHero; });
-      els.draftSaveBtn.disabled = !hasListing;
       els.publishPrepBtn.disabled = !(hasListing && selectedCount > 0 && hasHero);
     }
 
@@ -2698,55 +2695,6 @@ async function buildLookupGeneratedAssets(lookupResult){
       }
     }
 
-    function collectDraftPayload(){
-      const hero = assets.find(function(v){ return !!v.isHero; });
-      return {
-        listingNumber: selectedListing ? selectedListing.listingNumber : '',
-        title: selectedListing ? selectedListing.title : '',
-        address: selectedListing ? selectedListing.address : '',
-        heroAssetId: hero ? hero.assetId : '',
-        selectedAssetIdsJson: JSON.stringify(assets.map(function(v){ return v.assetId; })),
-        assetOrderJson: JSON.stringify(assets.map(function(v){ return v.assetId; })),
-        assetParagraphMapJson: JSON.stringify(assets.reduce(function(acc, item){
-          acc[item.assetId] = item.paragraph || 'p1';
-          return acc;
-        }, {})),
-        assetTypeMapJson: JSON.stringify(assets.reduce(function(acc, item){
-          acc[item.assetId] = String(item.assetId).indexOf('info_') === 0 ? 'info_image' : 'photo';
-          return acc;
-        }, {})),
-        assetSourceMapJson: JSON.stringify(assets.reduce(function(acc, item){
-          acc[item.assetId] = item.source || item.previewUrl || '';
-          return acc;
-        }, {})),
-        selectedDate: selectedDate || '',
-        searchKeyword: text(els.searchInput.value),
-        status: 'draft'
-      };
-    }
-
-    function wait(ms){
-      return new Promise(function(resolve){
-        setTimeout(resolve, ms);
-      });
-    }
-
-    function maskAddressForBlog(address){
-      var s = text(address);
-      if(!s) return '';
-      return s.replace(/(\d+)(-\d+)?$/,'').trim();
-    }
-
-    function buildAssetType(item){
-      if(item && item.source && item.source.kind === 'generated_from_lookup') return 'basic_info';
-      return 'photo';
-    }
-
-    function buildAssetSource(item){
-      if(item && item.source && item.source.kind) return item.source.kind;
-      return 'property_photo';
-    }
-
     function buildSelectedAssetsForPayload(){
       return assets
         .filter(function(item){ return !!item.selected; })
@@ -2903,51 +2851,6 @@ async function buildLookupGeneratedAssets(lookupResult){
         + '?blogId=' + encodeURIComponent(blogId)
         + '&style=' + encodeURIComponent(text(selectedAiStyle || '깔끔형'))
         + '&direction=' + encodeURIComponent(text(directionText || ''));
-    }
-
-    function saveDraft(){
-      if(!selectedListing){
-        showToast('먼저 매물 선택');
-        return;
-      }
-      setLoading(true, '임시저장 중');
-      fetchPostJson({
-        action:'saveBlogDraft',
-        payload: collectDraftPayload()
-      })
-      .then(function(data){
-        if(!data || data.ok === false){
-          throw new Error((data && data.message) || '임시저장 실패');
-        }
-        showToast('임시저장 완료');
-      })
-      .catch(function(err){
-        console.error(err);
-        showToast((err && err.message) || '임시저장 실패');
-      })
-      .finally(function(){
-        setLoading(false);
-      });
-    }
-
-    function openAiCallModal(){
-      if(els.publishPrepBtn.disabled) return;
-      els.aiCallModal.classList.add('show');
-      els.aiCallModal.setAttribute('aria-hidden', 'false');
-      syncAiStyleButtons();
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeAiCallModal(){
-      els.aiCallModal.classList.remove('show');
-      els.aiCallModal.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-    }
-
-    function syncAiStyleButtons(){
-      Array.prototype.forEach.call(els.aiStyleGrid.querySelectorAll('.ai-style-btn'), function(btn){
-        btn.classList.toggle('is-active', btn.getAttribute('data-style') === selectedAiStyle);
-      });
     }
 
     function submitAiCall(){
@@ -3147,7 +3050,6 @@ async function buildLookupGeneratedAssets(lookupResult){
         searchTimer = setTimeout(applyFiltersAndRenderListings, 220);
       });
       els.generateInfoImageBtn.addEventListener('click', generateInfoImages);
-      els.draftSaveBtn.addEventListener('click', saveDraft);
       els.publishPrepBtn.addEventListener('click', openAiCallModal);
       els.aiStyleGrid.addEventListener('click', function(e){
         var btn = e.target.closest('.ai-style-btn');

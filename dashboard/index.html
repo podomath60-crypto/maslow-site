@@ -3287,7 +3287,7 @@
         targetUrl.searchParams.set('date', dateKey);
       }
 
-      location.href = targetUrl.pathname + targetUrl.search;
+      window.open(targetUrl.pathname + targetUrl.search, '_blank', 'noopener');
     }
 
     function getItemByListingNumber(listingNumber){

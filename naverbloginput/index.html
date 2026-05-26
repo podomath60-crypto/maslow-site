@@ -2695,6 +2695,14 @@ async function buildLookupGeneratedAssets(lookupResult){
       }
     }
 
+
+
+    function maskAddressForBlog(address){
+      var s = text(address);
+      if(!s) return '';
+      return s.replace(/(\d+)(-\d+)?$/,'').trim();
+    }
+
     function buildAssetType(item){
       if(item && item.source && item.source.kind === 'generated_from_lookup') return 'basic_info';
       return 'photo';
@@ -2739,7 +2747,6 @@ async function buildLookupGeneratedAssets(lookupResult){
           };
         });
     }
-
 
     function buildCreateBlogDraftPayload(){
       if(!selectedListing){

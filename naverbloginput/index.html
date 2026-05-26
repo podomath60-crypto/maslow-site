@@ -2695,6 +2695,52 @@ async function buildLookupGeneratedAssets(lookupResult){
       }
     }
 
+    function buildAssetType(item){
+      if(item && item.source && item.source.kind === 'generated_from_lookup') return 'basic_info';
+      return 'photo';
+    }
+
+    function buildAssetSource(item){
+      if(item && item.source && item.source.kind) return item.source.kind;
+      return 'property_photo';
+    }
+
+    function buildSelectedAssetsForPayload(){
+      return assets
+        .filter(function(item){ return !!item.selected; })
+        .map(function(item, idx){
+          var sourceObj = (item && item.source && typeof item.source === 'object') ? item.source : {};
+          var assetType = buildAssetType(item);
+          var assetSource = buildAssetSource(item);
+          var targetGroup = (assetType === 'basic_info') ? 'basic_info' : 'photo';
+
+          return {
+            assetId: text(item.assetId || ('asset_' + idx)),
+            selected: !!item.selected,
+            isHero: !!item.isHero,
+            paragraph: text(item.paragraph || 'p1'),
+            assetType: assetType,
+            assetSource: assetSource,
+            targetGroup: targetGroup,
+            previewUrl: text(item.previewUrl || ''),
+            originalUrl: text(
+              sourceObj.originalUrl ||
+              sourceObj.url ||
+              sourceObj.heroUrl ||
+              sourceObj.lightUrl ||
+              sourceObj.thumbUrl ||
+              item.previewUrl ||
+              ''
+            ),
+            fileId: text(sourceObj.fileId || ''),
+            fileName: text(sourceObj.fileName || sourceObj.name || ''),
+            mimeType: text(sourceObj.mimeType || ''),
+            kind: text(sourceObj.kind || '')
+          };
+        });
+    }
+
+
     function buildCreateBlogDraftPayload(){
       if(!selectedListing){
         throw new Error('먼저 매물을 선택해주세요.');

@@ -915,6 +915,8 @@ function getSectionImagesMap(row){
     function renderImages(row){
       const imgMap = getSectionImagesMap(row);
       const hero = imgMap.hero;
+      const assetMap = buildAssetMapFromRow(row || {});
+      const layoutSections = ((state.imageLayout || {}).sections || {});
 
       if(hero && hero.url){
         els.heroBox.classList.remove('empty');
@@ -929,7 +931,12 @@ function getSectionImagesMap(row){
       const renderedSections = (state.sectionBlocks || []).map(function(sec){
         const secKey = text(sec.sectionKey);
         const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
-        const images = uniqueAssets(imgMap.bySection[secKey] || []);
+        const imageIds = Array.isArray(layoutSections[secKey]) ? layoutSections[secKey] : [];
+        const images = uniqueAssets(imageIds.map(function(assetId){
+          return assetMap[text(assetId)] || null;
+        }).filter(function(asset){
+          return asset && asset.assetType !== 'basic_info' && asset.assetSource !== 'generated_from_lookup';
+        }));
         const imageHtml = images.map(function(asset, idx){ return renderFigure(asset, secKey, idx, images.length); }).join('');
         return '<section class="block">'
           + '<div class="section-kicker">' + esc(getSectionLabelByKey(secKey)) + '</div>'

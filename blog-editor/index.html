@@ -999,8 +999,10 @@ function getSectionImagesMap(row){
         return;
       }
       els.thumbStrip.style.display = 'block';
-      els.thumbLines.innerHTML = state.thumbs.map(function(v){
-        return '<div class="thumb-line">' + esc(v) + '</div>';
+      els.thumbLines.innerHTML = state.thumbs.map(function(v, idx){
+        return '<div class="thumb-line editable" contenteditable="plaintext-only" spellcheck="false" data-thumb-idx="' + idx + '">'
+          + esc(v)
+          + '</div>';
       }).join('');
     }
 
@@ -1380,10 +1382,27 @@ function getSectionImagesMap(row){
         const p = e.target.closest('.paragraph.editable');
         if(p){
           startInline(p);
+          return;
+        }
+        const thumb = e.target.closest('.thumb-line.editable');
+        if(thumb){
+          startInline(thumb);
         }
       });
 
       document.addEventListener('blur', function(e){
+        const thumb = e.target.closest && e.target.closest('.thumb-line.editable');
+        if(thumb){
+          const idx = Number(thumb.getAttribute('data-thumb-idx'));
+          const value = normalizeEditableText(thumb);
+          if(Number.isFinite(idx) && idx >= 0){
+            state.thumbs[idx] = value;
+          }
+          thumb.textContent = value;
+          endInline(thumb);
+          return;
+        }
+
         const h = e.target.closest && e.target.closest('.section-title.editable');
         if(h){
           const key = text(h.getAttribute('data-section-heading'));

@@ -915,6 +915,9 @@ function getSectionImagesMap(row){
     function renderImages(row){
       const imgMap = getSectionImagesMap(row);
       const hero = imgMap.hero;
+      console.log('[PHOTO_RENDER_CHECK] row.imageLayoutJson =', row && row.imageLayoutJson);
+      console.log('[PHOTO_RENDER_CHECK] state.imageLayout =', state.imageLayout);
+      console.log('[PHOTO_RENDER_CHECK] assetMap keys =', Object.keys(buildAssetMapFromRow(row || {})));
       const assetMap = buildAssetMapFromRow(row || {});
       const layoutSections = ((state.imageLayout || {}).sections || {});
 

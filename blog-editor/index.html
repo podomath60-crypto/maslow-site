@@ -334,6 +334,7 @@
           </div>
 
           <div class="info-strip" id="thumbStrip" style="display:none;">
+            <div class="info-strip-title">썸네일 문구</div>
             <div class="thumb-lines" id="thumbLines"></div>
           </div>
 
@@ -421,8 +422,6 @@
       ctrlaUrl: '/ctrla'
     };
 
-    const HARD_CODED_CTA_LABEL = '문의하기 010-5407-0444';
-
     const state = {
       blogId: '',
       row: null,
@@ -434,6 +433,8 @@
       imageLayout: null,
       publishMode: 'now'
     };
+
+    const HARD_CODED_CTA_LABEL = '문의하기 010-5407-0444';
 
     const els = {
       launcherBtn: document.getElementById('launcherBtn'),
@@ -1258,8 +1259,7 @@ function getSectionImagesMap(row){
 
       els.ctaLabelDisplay.addEventListener('click', function(){ startInline(els.ctaLabelDisplay); });
       els.ctaLabelDisplay.addEventListener('blur', function(){
-        const v = HARD_CODED_CTA_LABEL;
-        els.ctaLabelDisplay.textContent = v;
+        els.ctaLabelDisplay.textContent = HARD_CODED_CTA_LABEL;
         endInline(els.ctaLabelDisplay);
       });
 

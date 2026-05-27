@@ -982,9 +982,15 @@ function getSectionImagesMap(row){
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
       state.sectionBlocks = buildSectionBlocksFromRow(row);
+      const isUserEditedLayoutState =
+        row.isUserEdited === true ||
+        String(row.isUserEdited).toLowerCase() === 'true' ||
+        text(row.status) === 'editing' ||
+        text(row.subStatus) === 'user_editing' ||
+        !!text(row.lastEditedAt);
       state.imageLayout = hasRawImageLayout(row.imageLayoutJson)
         ? normalizeImageLayout(row.imageLayoutJson)
-        : buildInitialImageLayoutFromRow(row);
+        : (isUserEditedLayoutState ? normalizeImageLayout({}) : buildInitialImageLayoutFromRow(row));
 
       els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
       els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');

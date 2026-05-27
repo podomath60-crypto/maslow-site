@@ -473,7 +473,7 @@
     const HARD_CODED_LEAD_TEXT = '안녕하세요.\n매슬로우 박성연 공인중개사입니다.\n\n제가 직접 확인한 매물입니다.\n사진과 핵심 조건을 알기 쉽게 정리해드릴게요.';
 
     function buildCopyGapLines(count){
-      const words = ['☆', '매', '슬', '로', '우', '☆'];
+      const words = ['☆', '매', '슬', '로', '우'];
       let out = '';
       for(let i = 0; i < count; i++){
         out += '<p class="copy-gap-line">' + esc(words[i % words.length]) + '</p>';

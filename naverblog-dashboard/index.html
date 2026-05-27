@@ -112,6 +112,23 @@
       display:block;
       pointer-events:none;
     }
+    .trash-btn:disabled{
+      cursor:default;
+      opacity:.92;
+    }
+    .trash-spinner{
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.42);
+      border-top-color:#fff;
+      animation:trashSpin .72s linear infinite;
+      display:block;
+      pointer-events:none;
+    }
+    @keyframes trashSpin{
+      to{transform:rotate(360deg)}
+    }
     .body{padding:18px 18px 18px}
     .meta{
       display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -391,10 +408,19 @@
       return '<div class="thumb">' + deleteButton + '대표사진 없음</div>';
     }
 
-    function deleteDashboardItem(blogId){
+    function deleteDashboardItem(blogId, buttonEl){
       const id = text(blogId);
       if(!id) return;
       if(!confirm('이 작업을 현황판에서 숨길까요?')) return;
+
+      const btn = buttonEl || null;
+      const originalHtml = btn ? btn.innerHTML : '';
+      if(btn){
+        btn.disabled = true;
+        btn.setAttribute('aria-label', '삭제 중');
+        btn.setAttribute('title', '삭제 중');
+        btn.innerHTML = '<span class="trash-spinner" aria-hidden="true"></span>';
+      }
 
       fetchPostJson({
         action: 'deleteBlogDashboardItem',
@@ -405,6 +431,12 @@
       })
       .catch(function(err){
         console.error(err);
+        if(btn){
+          btn.disabled = false;
+          btn.setAttribute('aria-label', '현황판에서 숨기기');
+          btn.setAttribute('title', '현황판에서 숨기기');
+          btn.innerHTML = originalHtml;
+        }
         alert((err && err.message) || '삭제 실패');
       });
     }
@@ -470,7 +502,7 @@
       if(deleteBtn){
         e.preventDefault();
         e.stopPropagation();
-        deleteDashboardItem(deleteBtn.getAttribute('data-blog-id'));
+        deleteDashboardItem(deleteBtn.getAttribute('data-blog-id'), deleteBtn);
       }
     });
 

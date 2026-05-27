@@ -789,36 +789,61 @@ function buildAssetMapFromRow(row){
       return map;
     }
 
+    function buildSectionPhotoIndexMapFromRow(row){
+      const saved = parseJson(row && row.savedAssetFilesJson || '[]', []);
+      const infos = parseJson(row && row.infoImageFilesJson || '[]', []);
+      const snaps = parseJson(row && row.assetSnapshotJson || '[]', []);
+      const snapById = {};
+      snaps.forEach(function(s){ snapById[text(s.assetId)] = s || {}; });
 
-    function buildSectionPhotoAliasMapFromRow(row){
-      const collections = buildSavedAssetCollections_(row || {});
-      const photos = collections.photos || [];
+      const infoIdMap = {};
+      infos.forEach(function(info){
+        const id = text(info && info.assetId);
+        if(id) infoIdMap[id] = true;
+      });
+
       const map = {};
+      let photoIndex = 0;
 
-      photos.forEach(function(asset, idx){
-        if(!asset) return;
+      (saved || []).forEach(function(file){
+        const id = text(file && file.assetId);
+        const snap = snapById[id] || {};
+        const assetType = text(file && file.assetType) || text(snap && snap.assetType);
+        const assetSource = text(file && file.assetSource) || text(snap && snap.assetSource);
+        const kind = text(file && file.kind) || text(snap && snap.kind);
+        const targetGroup = text(file && file.targetGroup) || text(snap && snap.targetGroup);
+        const isBasicInfo =
+          infoIdMap[id] ||
+          targetGroup === 'basic_info' ||
+          assetType === 'basic_info' ||
+          assetSource === 'generated_from_lookup' ||
+          kind === 'generated_from_lookup';
 
-        const id = text(asset.assetId);
-        const url = text(asset.url);
-        const previewUrl = text(asset.previewUrl);
-        const originalUrl = text(asset.originalUrl);
+        const url = text(file && (file.url || file.previewUrl || file.originalUrl));
+        if(!url || isBasicInfo) return;
 
-        if(id) map[id] = asset;
-        map['photo_' + idx] = asset;
-        if(url) map[url] = asset;
-        if(previewUrl) map[previewUrl] = asset;
-        if(originalUrl) map[originalUrl] = asset;
+        map['photo_' + photoIndex] = {
+          assetId: id || ('photo_' + photoIndex),
+          url: url,
+          previewUrl: text(file && (file.previewUrl || file.url || file.originalUrl)),
+          originalUrl: text(file && (file.originalUrl || file.url || file.previewUrl)),
+          isHero: !!(file && file.isHero) || !!snap.isHero,
+          paragraph: text(file && file.paragraph) || text(snap && snap.paragraph),
+          sectionKey: text(file && (file.sectionKey || file.section_key)),
+          assetType: assetType,
+          assetSource: assetSource,
+          kind: kind
+        };
+        photoIndex += 1;
       });
 
       return map;
     }
 
-    function resolveSectionLayoutAsset(assetId, assetMap, aliasMap){
+    function resolveSectionLayoutAsset(assetId, assetMap, photoIndexMap){
       const key = text(assetId);
       if(!key) return null;
-      if(assetMap && assetMap[key]) return assetMap[key];
-      if(aliasMap && aliasMap[key]) return aliasMap[key];
-      return null;
+      return (assetMap && assetMap[key]) || (photoIndexMap && photoIndexMap[key]) || null;
     }
 
     function getBasicInfoAssets(row){
@@ -951,7 +976,7 @@ function getSectionImagesMap(row){
       console.log('[PHOTO_RENDER_CHECK] state.imageLayout =', state.imageLayout);
       console.log('[PHOTO_RENDER_CHECK] assetMap keys =', Object.keys(buildAssetMapFromRow(row || {})));
       const assetMap = buildAssetMapFromRow(row || {});
-      const aliasMap = buildSectionPhotoAliasMapFromRow(row || {});
+      const photoIndexMap = buildSectionPhotoIndexMapFromRow(row || {});
       const layoutSections = ((state.imageLayout || {}).sections || {});
 
       if(hero && hero.url){
@@ -969,7 +994,7 @@ function getSectionImagesMap(row){
         const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
         const imageIds = Array.isArray(layoutSections[secKey]) ? layoutSections[secKey] : [];
         const images = uniqueAssets(imageIds.map(function(assetId){
-          return resolveSectionLayoutAsset(assetId, assetMap, aliasMap);
+          return resolveSectionLayoutAsset(assetId, assetMap, photoIndexMap);
         }).filter(function(asset){
           return asset && asset.assetType !== 'basic_info' && asset.assetSource !== 'generated_from_lookup';
         }));

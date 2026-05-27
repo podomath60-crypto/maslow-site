@@ -149,6 +149,7 @@
     .status.aiQueued{background:#f8fafc;border-color:#cbd5e1;color:#475569}
     .status.aiRunning{background:#eef5ff;border-color:#bfdbfe;color:#1d4ed8}
     .status.aiDone{background:#f5f3ff;border-color:#ddd6fe;color:#6d28d9}
+    .status.editing{background:#ecfeff;border-color:#a5f3fc;color:#0e7490}
     .status.error{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
 
     .listing{font-size:13px;color:#7b8491;font-weight:900;margin-bottom:8px}
@@ -300,9 +301,6 @@
       const subStatus = text(item && item.subStatus);
       const displayStatus = text(item && item.displayStatus);
       const errorMessage = text(item && item.errorMessage);
-      const draftTitle = text(item && item.title);
-      const aiProvider = text(item && item.aiProvider);
-      const lastAiCalledAt = text(item && item.lastAiCalledAt);
 
       if (publishedUrl || publishedAt || displayStatus === '발행완료') {
         return '발행완료';
@@ -310,6 +308,24 @@
 
       if (scheduledAt || displayStatus === '예약발행중') {
         return '예약발행중';
+      }
+
+      if (
+        displayStatus === '발행중' ||
+        status === 'ready' ||
+        status === 'publishing' ||
+        status === 'publish_pending' ||
+        status === 'publish_requested' ||
+        subStatus === 'ready_to_publish' ||
+        subStatus === 'publishing' ||
+        subStatus === 'publish_waiting' ||
+        subStatus === 'publish_requested'
+      ) {
+        return '발행중';
+      }
+
+      if (displayStatus === 'EDITING' || status === 'editing' || subStatus === 'user_editing') {
+        return 'EDITING';
       }
 
       if (displayStatus === '실패' || status === 'ai_error' || subStatus === 'dgx_qwen_failed' || errorMessage) {
@@ -320,8 +336,7 @@
         displayStatus === 'DGX DONE' ||
         status === 'ai_done' ||
         subStatus === 'draft_generated' ||
-        subStatus === 'dgx_done' ||
-        (aiProvider && lastAiCalledAt && draftTitle)
+        subStatus === 'dgx_done'
       ) {
         return 'DGX DONE';
       }
@@ -346,19 +361,6 @@
         return 'DGX 대기중';
       }
 
-      if (
-        status === 'ready' ||
-        status === 'publishing' ||
-        status === 'publish_pending' ||
-        status === 'publish_requested' ||
-        subStatus === 'ready_to_publish' ||
-        subStatus === 'publishing' ||
-        subStatus === 'publish_waiting' ||
-        subStatus === 'publish_requested'
-      ) {
-        return '발행중';
-      }
-
       return '임시저장중';
     }
 
@@ -369,6 +371,7 @@
       if(status === 'DGX 대기중') return 'aiQueued';
       if(status === 'DGX 진행중') return 'aiRunning';
       if(status === 'DGX DONE') return 'aiDone';
+      if(status === 'EDITING') return 'editing';
       if(status === '실패') return 'error';
       return 'draft';
     }
@@ -387,7 +390,15 @@
         return '<div class="btn disabled">발행완료</div>';
       }
 
-      return '<a class="btn primary" href="' + esc(item.editorUrl) + '" target="_blank" rel="noopener noreferrer">검수하기</a>';
+      if(status === 'EDITING'){
+        return '<a class="btn primary" href="' + esc(item.editorUrl) + '" target="_blank" rel="noopener noreferrer">수정/검수하기</a>';
+      }
+
+      if(status === 'DGX DONE'){
+        return '<a class="btn primary" href="' + esc(item.editorUrl) + '" target="_blank" rel="noopener noreferrer">검수하기</a>';
+      }
+
+      return '<a class="btn primary" href="' + esc(item.editorUrl) + '" target="_blank" rel="noopener noreferrer">수정/검수하기</a>';
     }
 
 

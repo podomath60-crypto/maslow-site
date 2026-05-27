@@ -2730,8 +2730,7 @@ async function buildLookupGeneratedAssets(lookupResult){
 
           return {
             assetId: text(item.assetId || ('asset_' + idx)),
-            selected: !!item.selected,
-            isHero: !!item.isHero,
+            selected: true,
             paragraph: text(item.paragraph || 'p1'),
             assetType: assetType,
             assetSource: assetSource,
@@ -2799,7 +2798,7 @@ async function buildLookupGeneratedAssets(lookupResult){
 
       var directionText = text(els.aiDirectionInput && els.aiDirectionInput.value);
       var selectedAssets = buildSelectedAssetsForPayload();
-      var hero = selectedAssets.find(function(item){ return !!item.isHero; });
+      var hero = assets.find(function(item){ return !!item.isHero; });
 
       if(!selectedAssets.length){
         throw new Error('선택된 이미지가 없습니다.');

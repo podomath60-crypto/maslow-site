@@ -262,6 +262,40 @@
       font-weight:900;
     }
 
+    .image-layout-debug-panel{
+      position:fixed;
+      left:10px;
+      top:74px;
+      z-index:130;
+      width:320px;
+      max-width:calc(100vw - 20px);
+      max-height:62vh;
+      overflow:auto;
+      padding:10px 10px 12px;
+      border:1px solid #dce5ef;
+      border-radius:12px;
+      background:rgba(255,255,255,.96);
+      box-shadow:0 10px 24px rgba(15,23,42,.10);
+      font-size:11px;
+      line-height:1.45;
+      color:#111827;
+      white-space:pre-wrap;
+      word-break:break-all;
+    }
+    .image-layout-debug-title{
+      margin:0 0 6px;
+      font-size:12px;
+      font-weight:950;
+      color:#0f172a;
+      letter-spacing:-0.03em;
+    }
+    .image-layout-debug-body{
+      margin:0;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      white-space:pre-wrap;
+      word-break:break-all;
+    }
+
     @media (max-width: 900px){
       .figure img{max-width:100%}
       .title{font-size:31px}
@@ -289,6 +323,11 @@
         <button type="button" class="btn" id="saveBtn">임시저장</button>
         <button type="button" class="btn primary" id="publishBtn">발행</button>
       </div>
+    </div>
+
+    <div class="image-layout-debug-panel" id="imageLayoutDebugPanel">
+      <div class="image-layout-debug-title">row.imageLayoutJson 받은 원문</div>
+      <pre class="image-layout-debug-body" id="imageLayoutDebug">아직 로드 전</pre>
     </div>
 
     <div class="shell">
@@ -456,6 +495,7 @@
       ctaTextDisplay: document.getElementById('ctaTextDisplay'),
       tagWrap: document.getElementById('tagWrap'),
       footerNote: document.getElementById('footerNote'),
+      imageLayoutDebug: document.getElementById('imageLayoutDebug'),
       tagEditBtn: document.getElementById('tagEditBtn'),
       loadingOverlay: document.getElementById('loadingOverlay'),
       loadingText: document.getElementById('loadingText'),
@@ -971,6 +1011,9 @@ function getSectionImagesMap(row){
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
       state.sectionBlocks = buildSectionBlocksFromRow(row);
+      if(els.imageLayoutDebug){
+        els.imageLayoutDebug.textContent = row.imageLayoutJson == null ? '(null)' : String(row.imageLayoutJson);
+      }
       state.imageLayout = hasMeaningfulImageLayout(row.imageLayoutJson)
         ? normalizeImageLayout(row.imageLayoutJson)
         : buildInitialImageLayoutFromRow(row);

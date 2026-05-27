@@ -664,60 +664,6 @@
       });
     }
 
-    function hasRawImageLayout(layoutLike){
-      const src = parseJson(layoutLike || '{}', {});
-      if(!src || typeof src !== 'object') return false;
-      if(text(src.hero)) return true;
-      const sections = src.sections || {};
-      return Object.keys(sections).some(function(key){
-        return Array.isArray(sections[key]) && sections[key].map(text).filter(Boolean).length > 0;
-      });
-    }
-
-
-    function hasSectionImageLayout(layoutLike){
-      const src = parseJson(layoutLike || '{}', {});
-      if(!src || typeof src !== 'object') return false;
-      const sections = src.sections || {};
-      return Object.keys(sections).some(function(key){
-        return Array.isArray(sections[key]) && sections[key].map(text).filter(Boolean).length > 0;
-      });
-    }
-
-    function getRawImageLayoutFromRow(row){
-      const raw = parseJson(row && row.imageLayoutJson || '{}', {});
-      return raw && typeof raw === 'object' ? raw : {};
-    }
-
-    function getLayoutSectionsForRender(row){
-      const stateSections = ((state.imageLayout || {}).sections || {});
-      const stateHasImages = Object.keys(stateSections).some(function(key){
-        return Array.isArray(stateSections[key]) && stateSections[key].map(text).filter(Boolean).length > 0;
-      });
-      if(stateHasImages) return stateSections;
-
-      const raw = getRawImageLayoutFromRow(row || {});
-      const rawSections = raw.sections || {};
-      const rawHasImages = Object.keys(rawSections).some(function(key){
-        return Array.isArray(rawSections[key]) && rawSections[key].map(text).filter(Boolean).length > 0;
-      });
-      return rawHasImages ? rawSections : stateSections;
-    }
-
-    function getImageLayoutForSave(){
-      const current = state.imageLayout || {};
-      if(hasSectionImageLayout(current) || text(current.hero)){
-        return current;
-      }
-
-      const raw = getRawImageLayoutFromRow(state.row || {});
-      if(hasRawImageLayout(raw)){
-        return raw;
-      }
-
-      return current;
-    }
-
     
     function buildSavedAssetCollections_(row){
       const saved = parseJson(row && row.savedAssetFilesJson || '[]', []);
@@ -831,63 +777,6 @@ function buildAssetMapFromRow(row){
         if(id) map[id] = asset;
       });
       return map;
-    }
-
-    function buildSectionPhotoIndexMapFromRow(row){
-      const saved = parseJson(row && row.savedAssetFilesJson || '[]', []);
-      const infos = parseJson(row && row.infoImageFilesJson || '[]', []);
-      const snaps = parseJson(row && row.assetSnapshotJson || '[]', []);
-      const snapById = {};
-      snaps.forEach(function(s){ snapById[text(s.assetId)] = s || {}; });
-
-      const infoIdMap = {};
-      infos.forEach(function(info){
-        const id = text(info && info.assetId);
-        if(id) infoIdMap[id] = true;
-      });
-
-      const map = {};
-      let photoIndex = 0;
-
-      (saved || []).forEach(function(file){
-        const id = text(file && file.assetId);
-        const snap = snapById[id] || {};
-        const assetType = text(file && file.assetType) || text(snap && snap.assetType);
-        const assetSource = text(file && file.assetSource) || text(snap && snap.assetSource);
-        const kind = text(file && file.kind) || text(snap && snap.kind);
-        const targetGroup = text(file && file.targetGroup) || text(snap && snap.targetGroup);
-        const isBasicInfo =
-          infoIdMap[id] ||
-          targetGroup === 'basic_info' ||
-          assetType === 'basic_info' ||
-          assetSource === 'generated_from_lookup' ||
-          kind === 'generated_from_lookup';
-
-        const url = text(file && (file.url || file.previewUrl || file.originalUrl));
-        if(!url || isBasicInfo) return;
-
-        map['photo_' + photoIndex] = {
-          assetId: id || ('photo_' + photoIndex),
-          url: url,
-          previewUrl: text(file && (file.previewUrl || file.url || file.originalUrl)),
-          originalUrl: text(file && (file.originalUrl || file.url || file.previewUrl)),
-          isHero: !!(file && file.isHero) || !!snap.isHero,
-          paragraph: text(file && file.paragraph) || text(snap && snap.paragraph),
-          sectionKey: text(file && (file.sectionKey || file.section_key)),
-          assetType: assetType,
-          assetSource: assetSource,
-          kind: kind
-        };
-        photoIndex += 1;
-      });
-
-      return map;
-    }
-
-    function resolveSectionLayoutAsset(assetId, assetMap, photoIndexMap){
-      const key = text(assetId);
-      if(!key) return null;
-      return (assetMap && assetMap[key]) || (photoIndexMap && photoIndexMap[key]) || null;
     }
 
     function getBasicInfoAssets(row){
@@ -1016,12 +905,6 @@ function getSectionImagesMap(row){
     function renderImages(row){
       const imgMap = getSectionImagesMap(row);
       const hero = imgMap.hero;
-      console.log('[PHOTO_RENDER_CHECK] row.imageLayoutJson =', row && row.imageLayoutJson);
-      console.log('[PHOTO_RENDER_CHECK] state.imageLayout =', state.imageLayout);
-      console.log('[PHOTO_RENDER_CHECK] assetMap keys =', Object.keys(buildAssetMapFromRow(row || {})));
-      const assetMap = buildAssetMapFromRow(row || {});
-      const photoIndexMap = buildSectionPhotoIndexMapFromRow(row || {});
-      const layoutSections = getLayoutSectionsForRender(row || {});
 
       if(hero && hero.url){
         els.heroBox.classList.remove('empty');
@@ -1036,12 +919,7 @@ function getSectionImagesMap(row){
       const renderedSections = (state.sectionBlocks || []).map(function(sec){
         const secKey = text(sec.sectionKey);
         const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
-        const imageIds = Array.isArray(layoutSections[secKey]) ? layoutSections[secKey] : [];
-        const images = uniqueAssets(imageIds.map(function(assetId){
-          return resolveSectionLayoutAsset(assetId, assetMap, photoIndexMap);
-        }).filter(function(asset){
-          return asset && asset.assetType !== 'basic_info' && asset.assetSource !== 'generated_from_lookup';
-        }));
+        const images = uniqueAssets(imgMap.bySection[secKey] || []);
         const imageHtml = images.map(function(asset, idx){ return renderFigure(asset, secKey, idx, images.length); }).join('');
         return '<section class="block">'
           + '<div class="section-kicker">' + esc(getSectionLabelByKey(secKey)) + '</div>'
@@ -1084,15 +962,9 @@ function getSectionImagesMap(row){
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
       state.sectionBlocks = buildSectionBlocksFromRow(row);
-      const isUserEditedLayoutState =
-        row.isUserEdited === true ||
-        String(row.isUserEdited).toLowerCase() === 'true' ||
-        text(row.status) === 'editing' ||
-        text(row.subStatus) === 'user_editing' ||
-        !!text(row.lastEditedAt);
-      state.imageLayout = hasRawImageLayout(row.imageLayoutJson)
+      state.imageLayout = hasMeaningfulImageLayout(row.imageLayoutJson)
         ? normalizeImageLayout(row.imageLayoutJson)
-        : (isUserEditedLayoutState ? normalizeImageLayout({}) : buildInitialImageLayoutFromRow(row));
+        : buildInitialImageLayoutFromRow(row);
 
       els.statusChip.textContent = [text(row.status), text(row.subStatus)].filter(Boolean).join(' / ') || '초안 편집';
       els.metaListing.textContent = '매물번호 ' + (text(row.listingNumber) || '-');
@@ -1170,7 +1042,7 @@ function getSectionImagesMap(row){
         bodyHtml: sectionBlocksToBodyHtmlForSave(sectionBlocks),
         paragraphTextJson: sectionBlocksToParagraphTextJsonForSave(sectionBlocks),
         sectionStructureJson: sectionBlocks,
-        imageLayoutJson: JSON.stringify(getImageLayoutForSave()),
+        imageLayoutJson: JSON.stringify(normalizeImageLayout(state.imageLayout || {})),
         hashtagsJson: state.tags,
         thumbnailTextJson: state.thumbs,
         ctaText: text(els.ctaTextDisplay.textContent),
@@ -1414,9 +1286,7 @@ function getSectionImagesMap(row){
             const currentIdx = Number(fig.getAttribute('data-idx'));
             const direction = mv.getAttribute('data-move');
             if(!state.imageLayout || !hasMeaningfulImageLayout(state.imageLayout)){
-              state.imageLayout = hasRawImageLayout(state.row && state.row.imageLayoutJson)
-                ? normalizeImageLayout(state.row.imageLayoutJson)
-                : buildInitialImageLayoutFromRow(state.row || {});
+              state.imageLayout = buildInitialImageLayoutFromRow(state.row || {});
             }
             moveImageInLayout(currentSectionKey, currentIdx, direction);
             if(state.row){

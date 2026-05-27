@@ -2926,22 +2926,43 @@ async function buildLookupGeneratedAssets(lookupResult){
           applySavedAssetFilesToAssets((data && data.savedAssetFiles) || []);
           renderAssets();
 
-          els.loadingText.textContent = 'DGX 호출 중';
+          els.loadingText.textContent = 'DGX 요청 접수 중';
 
-          return fetchPostJson({
+          var aiPayload = {
             action:'callBlogDraftAi',
             blogId: blogId
-          }).then(function(aiData){
-            if(!aiData || aiData.ok === false){
-              throw new Error((aiData && (aiData.message || aiData.error)) || 'DGX 호출 실패');
+          };
+
+          var sent = false;
+          try{
+            if(navigator && typeof navigator.sendBeacon === 'function'){
+              sent = navigator.sendBeacon(
+                CONFIG.adminListUrl,
+                new Blob([JSON.stringify(aiPayload)], { type:'text/plain;charset=UTF-8' })
+              );
             }
+          }catch(beaconErr){
+            console.error(beaconErr);
+            sent = false;
+          }
 
-            var moveUrl = buildEditorMoveUrl(blogId, directionText);
-            els.loadingText.textContent = '에디터로 이동 중';
-
-            return wait(5000).then(function(){
-              location.href = moveUrl;
+          if(!sent){
+            fetch(CONFIG.adminListUrl, {
+              method:'POST',
+              mode:'cors',
+              headers:{ 'Content-Type':'text/plain;charset=UTF-8' },
+              body: JSON.stringify(aiPayload),
+              keepalive: true
+            }).catch(function(fetchErr){
+              console.error(fetchErr);
             });
+          }
+
+          var moveUrl = CONFIG.statusUrl + '?blogId=' + encodeURIComponent(blogId);
+          els.loadingText.textContent = 'DGX 요청 접수됨 · 현황판으로 이동 중';
+
+          return wait(500).then(function(){
+            location.href = moveUrl;
           });
         })
         .catch(function(err){

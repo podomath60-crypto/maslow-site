@@ -467,6 +467,8 @@
       dashboardUrl: '/naverblog-dashboard'
     };
 
+    const HARD_CODED_CTA_LABEL = '문의하기 010.5407.0444';
+
     const state = {
       blogId: '',
       row: null,
@@ -1001,22 +1003,15 @@ function getSectionImagesMap(row){
     }
 
     function renderThumbs(){
-      if(!state.thumbs.length){
-        els.thumbStrip.style.display = 'none';
-        els.thumbLines.innerHTML = '';
-        return;
-      }
-      els.thumbStrip.style.display = 'block';
-      els.thumbLines.innerHTML = state.thumbs.map(function(v){
-        return '<div class="thumb-line">' + esc(v) + '</div>';
-      }).join('');
+      els.thumbStrip.style.display = 'none';
+      els.thumbLines.innerHTML = '';
     }
 
     function renderAll(row){
       state.row = row;
       state.original = JSON.parse(JSON.stringify(row));
       state.tags = parseJson(row.hashtagsJson || '[]', []).map(text).filter(Boolean);
-      state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
+      state.thumbs = [];
       state.cta = parseJson(row.ctaJson || '{}', {});
       state.sectionBlocks = buildSectionBlocksFromRow(row);
       state.imageLayout = hasMeaningfulImageLayout(row.imageLayoutJson)
@@ -1037,7 +1032,7 @@ function getSectionImagesMap(row){
       els.leadDisplay.textContent = lead || '도입 문구를 입력하세요.';
       els.leadDisplay.classList.toggle('is-empty', !text(lead));
 
-      els.ctaLabelDisplay.textContent = text(state.cta.label) || '문의하기';
+      els.ctaLabelDisplay.textContent = HARD_CODED_CTA_LABEL;
       els.ctaTextDisplay.textContent = text(row.ctaText || state.cta.text) || '문의 문구를 입력하세요.';
       els.ctaTextDisplay.classList.toggle('is-empty', !text(row.ctaText || state.cta.text));
 
@@ -1101,10 +1096,10 @@ function getSectionImagesMap(row){
         sectionStructureJson: sectionBlocks,
         imageLayoutJson: JSON.stringify(normalizeImageLayout(state.imageLayout || {})),
         hashtagsJson: state.tags,
-        thumbnailTextJson: state.thumbs,
+        thumbnailTextJson: [],
         ctaText: text(els.ctaTextDisplay.textContent),
         ctaJson: {
-          label: text(els.ctaLabelDisplay.textContent),
+          label: HARD_CODED_CTA_LABEL,
           text: text(els.ctaTextDisplay.textContent)
         }
       };
@@ -1321,8 +1316,7 @@ function getSectionImagesMap(row){
 
       els.ctaLabelDisplay.addEventListener('click', function(){ startInline(els.ctaLabelDisplay); });
       els.ctaLabelDisplay.addEventListener('blur', function(){
-        const v = normalizeEditableText(els.ctaLabelDisplay) || '문의하기';
-        els.ctaLabelDisplay.textContent = v;
+        els.ctaLabelDisplay.textContent = HARD_CODED_CTA_LABEL;
         endInline(els.ctaLabelDisplay);
       });
 

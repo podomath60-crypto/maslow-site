@@ -789,6 +789,38 @@ function buildAssetMapFromRow(row){
       return map;
     }
 
+    function buildSectionPhotoAliasMapFromRow(row){
+      const collections = buildSavedAssetCollections_(row || {});
+      const photos = collections.photos || [];
+      const map = {};
+
+      photos.forEach(function(asset, idx){
+        if(!asset) return;
+
+        const id = text(asset.assetId);
+        const url = text(asset.url);
+        const previewUrl = text(asset.previewUrl);
+        const originalUrl = text(asset.originalUrl);
+
+        if(id) map[id] = asset;
+        map['photo_' + idx] = asset;
+        map['photo_' + (idx + 1)] = asset;
+        if(url) map[url] = asset;
+        if(previewUrl) map[previewUrl] = asset;
+        if(originalUrl) map[originalUrl] = asset;
+      });
+
+      return map;
+    }
+
+    function resolveSectionLayoutAsset(assetId, assetMap, aliasMap){
+      const key = text(assetId);
+      if(!key) return null;
+      if(assetMap && assetMap[key]) return assetMap[key];
+      if(aliasMap && aliasMap[key]) return aliasMap[key];
+      return null;
+    }
+
     function getBasicInfoAssets(row){
       const collections = buildSavedAssetCollections_(row);
       return uniqueAssets(collections.basics || []);
@@ -919,6 +951,7 @@ function getSectionImagesMap(row){
       console.log('[PHOTO_RENDER_CHECK] state.imageLayout =', state.imageLayout);
       console.log('[PHOTO_RENDER_CHECK] assetMap keys =', Object.keys(buildAssetMapFromRow(row || {})));
       const assetMap = buildAssetMapFromRow(row || {});
+      const aliasMap = buildSectionPhotoAliasMapFromRow(row || {});
       const layoutSections = ((state.imageLayout || {}).sections || {});
 
       if(hero && hero.url){
@@ -936,7 +969,7 @@ function getSectionImagesMap(row){
         const paras = Array.isArray(sec.paragraphs) ? sec.paragraphs : [];
         const imageIds = Array.isArray(layoutSections[secKey]) ? layoutSections[secKey] : [];
         const images = uniqueAssets(imageIds.map(function(assetId){
-          return assetMap[text(assetId)] || null;
+          return resolveSectionLayoutAsset(assetId, assetMap, aliasMap);
         }).filter(function(asset){
           return asset && asset.assetType !== 'basic_info' && asset.assetSource !== 'generated_from_lookup';
         }));

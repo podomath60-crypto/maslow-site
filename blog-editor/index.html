@@ -488,34 +488,6 @@
         return fallback;
       }
     }
-
-    function parseImageLayoutObject(layoutLike){
-      let v = layoutLike;
-      for(var i = 0; i < 3; i++){
-        if(v == null || v === '') return {};
-        if(typeof v === 'object') return v || {};
-        if(typeof v !== 'string') return {};
-        let s = v.trim();
-        if(!s) return {};
-        if((s[0] === "'" && s[s.length - 1] === "'") || (s[0] === '"' && s[s.length - 1] === '"')){
-          try{
-            const once = JSON.parse(s);
-            v = once;
-            continue;
-          }catch(_){
-            s = s.slice(1, -1);
-          }
-        }
-        try{
-          const parsed = JSON.parse(s);
-          v = parsed;
-          continue;
-        }catch(_){
-          return {};
-        }
-      }
-      return (v && typeof v === 'object') ? v : {};
-    }
     function getParam(name){ return new URLSearchParams(location.search).get(name) || ''; }
     function setLoading(on, label){
       els.loadingText.textContent = label || '불러오는 중';
@@ -673,21 +645,12 @@
       const sectionOrder = getDynamicSectionOrder();
       const out = { hero:'', sections:{} };
       sectionOrder.forEach(function(key){ out.sections[key] = []; });
-
-      const src = parseImageLayoutObject(layout);
+      const src = parseJson(layout || '{}', {});
       if(src && typeof src === 'object'){
         out.hero = text(src.hero || '');
-        const sections = (src.sections && typeof src.sections === 'object') ? src.sections : {};
-
+        const sections = src.sections || {};
         sectionOrder.forEach(function(key){
           out.sections[key] = Array.isArray(sections[key]) ? sections[key].map(text).filter(Boolean) : [];
-        });
-
-        Object.keys(sections).forEach(function(key){
-          if(!Array.isArray(sections[key])) return;
-          if(!Object.prototype.hasOwnProperty.call(out.sections, key)){
-            out.sections[key] = sections[key].map(text).filter(Boolean);
-          }
         });
       }
       return out;
@@ -696,20 +659,63 @@
     function hasMeaningfulImageLayout(layoutLike){
       const layout = normalizeImageLayout(layoutLike);
       if (text(layout.hero)) return true;
-      const sections = layout.sections || {};
-      return Object.keys(sections).some(function(key){
-        return Array.isArray(sections[key]) && sections[key].length > 0;
+      return getDynamicSectionOrder().some(function(key){
+        return Array.isArray(layout.sections[key]) && layout.sections[key].length > 0;
       });
     }
 
     function hasRawImageLayout(layoutLike){
-      const src = parseImageLayoutObject(layoutLike);
+      const src = parseJson(layoutLike || '{}', {});
       if(!src || typeof src !== 'object') return false;
       if(text(src.hero)) return true;
-      const sections = (src.sections && typeof src.sections === 'object') ? src.sections : {};
+      const sections = src.sections || {};
       return Object.keys(sections).some(function(key){
         return Array.isArray(sections[key]) && sections[key].map(text).filter(Boolean).length > 0;
       });
+    }
+
+
+    function hasSectionImageLayout(layoutLike){
+      const src = parseJson(layoutLike || '{}', {});
+      if(!src || typeof src !== 'object') return false;
+      const sections = src.sections || {};
+      return Object.keys(sections).some(function(key){
+        return Array.isArray(sections[key]) && sections[key].map(text).filter(Boolean).length > 0;
+      });
+    }
+
+    function getRawImageLayoutFromRow(row){
+      const raw = parseJson(row && row.imageLayoutJson || '{}', {});
+      return raw && typeof raw === 'object' ? raw : {};
+    }
+
+    function getLayoutSectionsForRender(row){
+      const stateSections = ((state.imageLayout || {}).sections || {});
+      const stateHasImages = Object.keys(stateSections).some(function(key){
+        return Array.isArray(stateSections[key]) && stateSections[key].map(text).filter(Boolean).length > 0;
+      });
+      if(stateHasImages) return stateSections;
+
+      const raw = getRawImageLayoutFromRow(row || {});
+      const rawSections = raw.sections || {};
+      const rawHasImages = Object.keys(rawSections).some(function(key){
+        return Array.isArray(rawSections[key]) && rawSections[key].map(text).filter(Boolean).length > 0;
+      });
+      return rawHasImages ? rawSections : stateSections;
+    }
+
+    function getImageLayoutForSave(){
+      const current = state.imageLayout || {};
+      if(hasSectionImageLayout(current) || text(current.hero)){
+        return current;
+      }
+
+      const raw = getRawImageLayoutFromRow(state.row || {});
+      if(hasRawImageLayout(raw)){
+        return raw;
+      }
+
+      return current;
     }
 
     
@@ -1015,12 +1021,7 @@ function getSectionImagesMap(row){
       console.log('[PHOTO_RENDER_CHECK] assetMap keys =', Object.keys(buildAssetMapFromRow(row || {})));
       const assetMap = buildAssetMapFromRow(row || {});
       const photoIndexMap = buildSectionPhotoIndexMapFromRow(row || {});
-      const stateLayoutSections = ((state.imageLayout || {}).sections || {});
-      const rawLayoutSections = ((parseImageLayoutObject(row && row.imageLayoutJson) || {}).sections || {});
-      const stateLayoutHasSectionImages = Object.keys(stateLayoutSections).some(function(key){
-        return Array.isArray(stateLayoutSections[key]) && stateLayoutSections[key].length > 0;
-      });
-      const layoutSections = stateLayoutHasSectionImages ? stateLayoutSections : rawLayoutSections;
+      const layoutSections = getLayoutSectionsForRender(row || {});
 
       if(hero && hero.url){
         els.heroBox.classList.remove('empty');
@@ -1169,7 +1170,7 @@ function getSectionImagesMap(row){
         bodyHtml: sectionBlocksToBodyHtmlForSave(sectionBlocks),
         paragraphTextJson: sectionBlocksToParagraphTextJsonForSave(sectionBlocks),
         sectionStructureJson: sectionBlocks,
-        imageLayoutJson: JSON.stringify(state.imageLayout || {}),
+        imageLayoutJson: JSON.stringify(getImageLayoutForSave()),
         hashtagsJson: state.tags,
         thumbnailTextJson: state.thumbs,
         ctaText: text(els.ctaTextDisplay.textContent),
@@ -1413,7 +1414,9 @@ function getSectionImagesMap(row){
             const currentIdx = Number(fig.getAttribute('data-idx'));
             const direction = mv.getAttribute('data-move');
             if(!state.imageLayout || !hasMeaningfulImageLayout(state.imageLayout)){
-              state.imageLayout = buildInitialImageLayoutFromRow(state.row || {});
+              state.imageLayout = hasRawImageLayout(state.row && state.row.imageLayoutJson)
+                ? normalizeImageLayout(state.row.imageLayoutJson)
+                : buildInitialImageLayoutFromRow(state.row || {});
             }
             moveImageInLayout(currentSectionKey, currentIdx, direction);
             if(state.row){

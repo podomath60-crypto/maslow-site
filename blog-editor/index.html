@@ -656,6 +656,17 @@
       return out;
     }
 
+
+    function hasRawImageLayout(layoutLike){
+      const src = parseJson(layoutLike || '{}', {});
+      if(!src || typeof src !== 'object') return false;
+      if(text(src.hero)) return true;
+      const sections = src.sections || {};
+      return Object.keys(sections).some(function(key){
+        return Array.isArray(sections[key]) && sections[key].map(text).filter(Boolean).length > 0;
+      });
+    }
+
     function hasMeaningfulImageLayout(layoutLike){
       const layout = normalizeImageLayout(layoutLike);
       if (text(layout.hero)) return true;
@@ -962,7 +973,7 @@ function getSectionImagesMap(row){
       state.thumbs = parseJson(row.thumbnailTextJson || '[]', []).map(text).filter(Boolean);
       state.cta = parseJson(row.ctaJson || '{}', {});
       state.sectionBlocks = buildSectionBlocksFromRow(row);
-      state.imageLayout = hasMeaningfulImageLayout(row.imageLayoutJson)
+      state.imageLayout = hasRawImageLayout(row.imageLayoutJson)
         ? normalizeImageLayout(row.imageLayoutJson)
         : buildInitialImageLayoutFromRow(row);
 

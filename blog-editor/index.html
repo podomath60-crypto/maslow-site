@@ -482,7 +482,16 @@
       if(v == null || v === '') return fallback;
       if(typeof v === 'object') return v;
       try{
-        const x = JSON.parse(v);
+        let x = JSON.parse(v);
+        if(typeof x === 'string'){
+          const s = x.trim();
+          const looksJson =
+            (s.charAt(0) === '{' && s.charAt(s.length - 1) === '}') ||
+            (s.charAt(0) === '[' && s.charAt(s.length - 1) === ']');
+          if(looksJson){
+            x = JSON.parse(s);
+          }
+        }
         return x == null ? fallback : x;
       }catch(e){
         return fallback;

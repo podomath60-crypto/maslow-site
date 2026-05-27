@@ -789,6 +789,7 @@ function buildAssetMapFromRow(row){
       return map;
     }
 
+
     function buildSectionPhotoAliasMapFromRow(row){
       const collections = buildSavedAssetCollections_(row || {});
       const photos = collections.photos || [];
@@ -804,7 +805,6 @@ function buildAssetMapFromRow(row){
 
         if(id) map[id] = asset;
         map['photo_' + idx] = asset;
-        map['photo_' + (idx + 1)] = asset;
         if(url) map[url] = asset;
         if(previewUrl) map[previewUrl] = asset;
         if(originalUrl) map[originalUrl] = asset;

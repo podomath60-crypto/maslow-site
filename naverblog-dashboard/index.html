@@ -77,11 +77,40 @@
       box-shadow:var(--shadow);
     }
     .thumb{
+      position:relative;
       width:100%;
       aspect-ratio:16/9;
       background:#eef2f7 center/cover no-repeat;
       display:flex;align-items:center;justify-content:center;
       color:#97a1ae;font-size:14px;font-weight:900;
+    }
+    .refresh-btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:6px;
+      min-height:42px;padding:0 16px;border-radius:999px;
+      background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);
+      color:var(--ink);font-size:14px;font-weight:900;white-space:nowrap;
+    }
+    .trash-btn{
+      position:absolute;
+      top:8px;
+      right:8px;
+      z-index:2;
+      width:30px;
+      height:30px;
+      border-radius:999px;
+      background:rgba(17,24,39,.72);
+      color:#fff;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 8px 18px rgba(15,23,42,.20);
+      line-height:1;
+    }
+    .trash-btn svg{
+      width:15px;
+      height:15px;
+      display:block;
+      pointer-events:none;
     }
     .body{padding:18px 18px 18px}
     .meta{
@@ -100,6 +129,10 @@
     .status.scheduled{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
     .status.publishing{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
     .status.published{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
+    .status.aiQueued{background:#f8fafc;border-color:#dbe3ec;color:#475569}
+    .status.aiRunning{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
+    .status.aiDone{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}
+    .status.error{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
 
     .listing{font-size:13px;color:#7b8491;font-weight:900;margin-bottom:8px}
     .card-title{
@@ -167,6 +200,7 @@
         </div>
         <div class="head-right">
           <a class="top-action-btn" href="/naverbloginput"><span class="n">N</span>발행하기</a>
+          <button type="button" class="refresh-btn" id="refreshBtn">새로고침</button>
           <div class="count" id="countBox">불러오는 중</div>
         </div>
       </div>
@@ -184,6 +218,7 @@
     };
 
     const els = {
+      refreshBtn: document.getElementById('refreshBtn'),
       countBox: document.getElementById('countBox'),
       loadingBox: document.getElementById('loadingBox'),
       emptyBox: document.getElementById('emptyBox'),
@@ -242,6 +277,7 @@
       const status = text(item && item.status);
       const subStatus = text(item && item.subStatus);
       const displayStatus = text(item && item.displayStatus);
+      const errorMessage = text(item && item.errorMessage);
 
       if (publishedUrl || publishedAt || displayStatus === '발행완료') {
         return '발행완료';
@@ -249,6 +285,42 @@
 
       if (scheduledAt || displayStatus === '예약발행중') {
         return '예약발행중';
+      }
+
+      if (
+        displayStatus === '실패' ||
+        status === 'ai_error' ||
+        subStatus === 'dgx_error' ||
+        errorMessage
+      ) {
+        return '실패';
+      }
+
+      if (
+        displayStatus === 'DGX DONE' ||
+        status === 'ai_done' ||
+        subStatus === 'dgx_done'
+      ) {
+        return 'DGX DONE';
+      }
+
+      if (
+        displayStatus === 'DGX 진행중' ||
+        status === 'ai_pending' ||
+        status === 'ai_running' ||
+        subStatus === 'dgx_calling' ||
+        subStatus === 'calling_dgx_qwen'
+      ) {
+        return 'DGX 진행중';
+      }
+
+      if (
+        status === 'asset_done' ||
+        status === 'ai_queued' ||
+        subStatus === 'asset_saved' ||
+        subStatus === 'ai_queued'
+      ) {
+        return 'DGX 대기중';
       }
 
       if (
@@ -271,6 +343,10 @@
       if(status === '발행완료') return 'published';
       if(status === '예약발행중') return 'scheduled';
       if(status === '발행중') return 'publishing';
+      if(status === 'DGX 대기중') return 'aiQueued';
+      if(status === 'DGX 진행중') return 'aiRunning';
+      if(status === 'DGX DONE') return 'aiDone';
+      if(status === '실패') return 'error';
       return 'draft';
     }
 
@@ -291,6 +367,53 @@
       return '<a class="btn primary" href="' + esc(item.editorUrl) + '" target="_blank" rel="noopener noreferrer">검수하기</a>';
     }
 
+    function trashIconSvg(){
+      return '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">'
+        + '<path d="M9 3h6l1 2h4v2H4V5h4l1-2Z" fill="currentColor"/>'
+        + '<path d="M6 9h12l-1 11H7L6 9Z" fill="currentColor"/>'
+        + '</svg>';
+    }
+
+    function renderThumb(item){
+      const thumb = text(item && item.heroImageUrl);
+      const deleteButton = '<button type="button" class="trash-btn" data-action="delete" data-blog-id="' + esc(item.blogId) + '" title="현황판에서 숨기기" aria-label="현황판에서 숨기기">' + trashIconSvg() + '</button>';
+      if(thumb){
+        return '<div class="thumb" style="background-image:url('' + thumb.replace(/'/g, '%27') + '')">' + deleteButton + '</div>';
+      }
+      return '<div class="thumb">' + deleteButton + '대표사진 없음</div>';
+    }
+
+    function deleteDashboardItem(blogId){
+      const id = text(blogId);
+      if(!id) return;
+      if(!confirm('이 작업을 현황판에서 숨길까요?')) return;
+      fetchPostJson({
+        action: 'deleteBlogDashboardItem',
+        blogId: id
+      })
+      .then(function(data){
+        if(!data || data.ok === false){
+          throw new Error((data && (data.message || data.error)) || '삭제 실패');
+        }
+        els.refreshBtn.addEventListener('click', load);
+
+    els.grid.addEventListener('click', function(e){
+      const deleteBtn = e.target.closest('[data-action="delete"]');
+      if(deleteBtn){
+        e.preventDefault();
+        e.stopPropagation();
+        deleteDashboardItem(deleteBtn.getAttribute('data-blog-id'));
+      }
+    });
+
+    load();
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) || '삭제 실패');
+      });
+    }
+
     function renderCard(item){
       const thumb = text(item.heroImageUrl);
       const thumbHtml = thumb
@@ -303,7 +426,7 @@
         +   '<div class="body">'
         +     '<div class="meta">'
         +       '<div class="date">' + esc(formatDate(item.createdAt)) + '</div>'
-        +       '<div class="status ' + getStatusClass(item.displayStatus) + '">' + esc(getStatusText(item)) + '</div>'
+        +       '<div class="status ' + getStatusClass(getStatusText(item)) + '">' + esc(getStatusText(item)) + '</div>'
         +     '</div>'
         +     '<div class="listing">' + esc(text(item.listingNumber) || '-') + '</div>'
         +     '<h2 class="card-title">' + esc(text(item.title) || '제목 없음') + '</h2>'
@@ -331,6 +454,10 @@
     }
 
     function load(){
+      els.loadingBox.style.display = 'block';
+      els.loadingBox.textContent = '블로그 리스트를 불러오는 중입니다.';
+      els.emptyBox.style.display = 'none';
+      els.countBox.textContent = '불러오는 중';
       fetchPostJson({
         action: 'listBlogDashboard',
         siteOrigin: CONFIG.siteOrigin
@@ -345,6 +472,17 @@
         els.countBox.textContent = '오류';
       });
     }
+
+    els.refreshBtn.addEventListener('click', load);
+
+    els.grid.addEventListener('click', function(e){
+      const deleteBtn = e.target.closest('[data-action="delete"]');
+      if(deleteBtn){
+        e.preventDefault();
+        e.stopPropagation();
+        deleteDashboardItem(deleteBtn.getAttribute('data-blog-id'));
+      }
+    });
 
     load();
   </script>

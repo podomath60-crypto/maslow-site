@@ -62,6 +62,12 @@
       color:#fff;font-size:14px;font-weight:900;white-space:nowrap;
     }
     .top-action-btn .n{font-weight:950}
+    .refresh-btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:6px;
+      min-height:42px;padding:0 16px;border-radius:999px;
+      background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);
+      color:var(--ink);font-size:14px;font-weight:900;white-space:nowrap;
+    }
 
     .grid{
       display:grid;
@@ -83,12 +89,6 @@
       background:#eef2f7 center/cover no-repeat;
       display:flex;align-items:center;justify-content:center;
       color:#97a1ae;font-size:14px;font-weight:900;
-    }
-    .refresh-btn{
-      display:inline-flex;align-items:center;justify-content:center;gap:6px;
-      min-height:42px;padding:0 16px;border-radius:999px;
-      background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);
-      color:var(--ink);font-size:14px;font-weight:900;white-space:nowrap;
     }
     .trash-btn{
       position:absolute;
@@ -129,9 +129,9 @@
     .status.scheduled{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
     .status.publishing{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
     .status.published{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
-    .status.aiQueued{background:#f8fafc;border-color:#dbe3ec;color:#475569}
-    .status.aiRunning{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
-    .status.aiDone{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}
+    .status.aiQueued{background:#f8fafc;border-color:#cbd5e1;color:#475569}
+    .status.aiRunning{background:#eef5ff;border-color:#bfdbfe;color:#1d4ed8}
+    .status.aiDone{background:#f5f3ff;border-color:#ddd6fe;color:#6d28d9}
     .status.error{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
 
     .listing{font-size:13px;color:#7b8491;font-weight:900;margin-bottom:8px}
@@ -241,6 +241,11 @@
       }).then(function(res){
         if(!res.ok) throw new Error('요청 실패: ' + res.status);
         return res.json();
+      }).then(function(data){
+        if(data && data.ok === false){
+          throw new Error((data && (data.message || data.error)) || '요청 실패');
+        }
+        return data;
       });
     }
 
@@ -278,6 +283,9 @@
       const subStatus = text(item && item.subStatus);
       const displayStatus = text(item && item.displayStatus);
       const errorMessage = text(item && item.errorMessage);
+      const draftTitle = text(item && item.title);
+      const aiProvider = text(item && item.aiProvider);
+      const lastAiCalledAt = text(item && item.lastAiCalledAt);
 
       if (publishedUrl || publishedAt || displayStatus === '발행완료') {
         return '발행완료';
@@ -287,19 +295,16 @@
         return '예약발행중';
       }
 
-      if (
-        displayStatus === '실패' ||
-        status === 'ai_error' ||
-        subStatus === 'dgx_error' ||
-        errorMessage
-      ) {
+      if (displayStatus === '실패' || status === 'ai_error' || subStatus === 'dgx_qwen_failed' || errorMessage) {
         return '실패';
       }
 
       if (
         displayStatus === 'DGX DONE' ||
         status === 'ai_done' ||
-        subStatus === 'dgx_done'
+        subStatus === 'draft_generated' ||
+        subStatus === 'dgx_done' ||
+        (aiProvider && lastAiCalledAt && draftTitle)
       ) {
         return 'DGX DONE';
       }
@@ -308,13 +313,14 @@
         displayStatus === 'DGX 진행중' ||
         status === 'ai_pending' ||
         status === 'ai_running' ||
-        subStatus === 'dgx_calling' ||
-        subStatus === 'calling_dgx_qwen'
+        subStatus === 'calling_dgx_qwen' ||
+        subStatus === 'dgx_calling'
       ) {
         return 'DGX 진행중';
       }
 
       if (
+        displayStatus === 'DGX 대기중' ||
         status === 'asset_done' ||
         status === 'ai_queued' ||
         subStatus === 'asset_saved' ||
@@ -367,6 +373,7 @@
       return '<a class="btn primary" href="' + esc(item.editorUrl) + '" target="_blank" rel="noopener noreferrer">검수하기</a>';
     }
 
+
     function trashIconSvg(){
       return '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">'
         + '<path d="M9 3h6l1 2h4v2H4V5h4l1-2Z" fill="currentColor"/>'
@@ -376,9 +383,10 @@
 
     function renderThumb(item){
       const thumb = text(item && item.heroImageUrl);
-      const deleteButton = '<button type="button" class="trash-btn" data-action="delete" data-blog-id="' + esc(item.blogId) + '" title="현황판에서 숨기기" aria-label="현황판에서 숨기기">' + trashIconSvg() + '</button>';
+      const blogId = text(item && item.blogId);
+      const deleteButton = '<button type="button" class="trash-btn" data-action="delete" data-blog-id="' + esc(blogId) + '" title="현황판에서 숨기기" aria-label="현황판에서 숨기기">' + trashIconSvg() + '</button>';
       if(thumb){
-        return '<div class="thumb" style="background-image:url('' + thumb.replace(/'/g, '%27') + '')">' + deleteButton + '</div>';
+        return '<div class="thumb" style="background-image:url(\'' + thumb.replace(/'/g, '%27') + '\')">' + deleteButton + '</div>';
       }
       return '<div class="thumb">' + deleteButton + '대표사진 없음</div>';
     }
@@ -387,26 +395,13 @@
       const id = text(blogId);
       if(!id) return;
       if(!confirm('이 작업을 현황판에서 숨길까요?')) return;
+
       fetchPostJson({
         action: 'deleteBlogDashboardItem',
         blogId: id
       })
-      .then(function(data){
-        if(!data || data.ok === false){
-          throw new Error((data && (data.message || data.error)) || '삭제 실패');
-        }
-        els.refreshBtn.addEventListener('click', load);
-
-    els.grid.addEventListener('click', function(e){
-      const deleteBtn = e.target.closest('[data-action="delete"]');
-      if(deleteBtn){
-        e.preventDefault();
-        e.stopPropagation();
-        deleteDashboardItem(deleteBtn.getAttribute('data-blog-id'));
-      }
-    });
-
-    load();
+      .then(function(){
+        load();
       })
       .catch(function(err){
         console.error(err);
@@ -415,10 +410,7 @@
     }
 
     function renderCard(item){
-      const thumb = text(item.heroImageUrl);
-      const thumbHtml = thumb
-        ? '<div class="thumb" style="background-image:url(\'' + thumb.replace(/'/g, '%27') + '\')"></div>'
-        : '<div class="thumb">대표사진 없음</div>';
+      const thumbHtml = renderThumb(item);
 
       return ''
         + '<article class="card">'
@@ -454,10 +446,6 @@
     }
 
     function load(){
-      els.loadingBox.style.display = 'block';
-      els.loadingBox.textContent = '블로그 리스트를 불러오는 중입니다.';
-      els.emptyBox.style.display = 'none';
-      els.countBox.textContent = '불러오는 중';
       fetchPostJson({
         action: 'listBlogDashboard',
         siteOrigin: CONFIG.siteOrigin
@@ -473,7 +461,9 @@
       });
     }
 
-    els.refreshBtn.addEventListener('click', load);
+    if(els.refreshBtn){
+      els.refreshBtn.addEventListener('click', load);
+    }
 
     els.grid.addEventListener('click', function(e){
       const deleteBtn = e.target.closest('[data-action="delete"]');

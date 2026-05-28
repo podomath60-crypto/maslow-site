@@ -543,6 +543,21 @@
     };
 
     function text(v){ return String(v == null ? '' : v).trim(); }
+    function isEditorPlaceholderText_(v){
+      const value = String(v == null ? '' : v).replace(/\u00A0/g, ' ').trim();
+      return value === '내용을 입력하세요' || value === '내용을 입력하세요.';
+    }
+    function cleanEditorPlaceholderText_(v){
+      return isEditorPlaceholderText_(v) ? '' : String(v == null ? '' : v);
+    }
+    function forceRemoveEditorPlaceholders_(){
+      document.querySelectorAll('.paragraph.editable').forEach(function(el){
+        if(isEditorPlaceholderText_(el.textContent || el.innerText || '')){
+          el.textContent = '';
+          el.classList.add('is-empty');
+        }
+      });
+    }
     function esc(v){
       return String(v == null ? '' : v).replace(/[&<>"']/g, function(s){
         return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'})[s];
@@ -963,10 +978,10 @@ function getSectionImagesMap(row){
 
     function renderParagraphList(list, sectionKey){
       return (list || []).map(function(p, idx){
-        const displayText = formatDisplayText(p);
+        const displayText = cleanEditorPlaceholderText_(formatDisplayText(p));
         const empty = !text(displayText);
         return '<p class="paragraph editable' + (empty ? ' is-empty' : '') + '" contenteditable="plaintext-only" spellcheck="false" data-edit-key="' + esc(sectionKey) + '" data-edit-idx="' + idx + '">'
-          + (empty ? '내용을 입력하세요.' : esc(displayText))
+          + (empty ? '' : esc(displayText))
           + '</p>';
       }).join('');
     }
@@ -1006,6 +1021,7 @@ function getSectionImagesMap(row){
       }).join('');
 
       els.articleSections.innerHTML = renderedSections;
+      forceRemoveEditorPlaceholders_();
       renderBasicInfoSlider(row);
     }
 
@@ -1408,13 +1424,14 @@ function getSectionImagesMap(row){
         if(!p) return;
         const key = text(p.getAttribute('data-edit-key'));
         const idx = Number(p.getAttribute('data-edit-idx'));
-        const value = normalizeEditableText(p);
+        let value = normalizeEditableText(p);
+        if(isEditorPlaceholderText_(value)) value = '';
         const sec = (state.sectionBlocks || []).find(function(v){ return text(v.sectionKey) === key; });
         if(sec){
           if(!Array.isArray(sec.paragraphs)) sec.paragraphs = [];
           sec.paragraphs[idx] = value;
         }
-        p.textContent = value || '내용을 입력하세요.';
+        p.textContent = value;
         p.classList.toggle('is-empty', !value);
         endInline(p);
       }, true);

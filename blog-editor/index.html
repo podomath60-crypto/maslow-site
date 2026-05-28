@@ -647,7 +647,7 @@
           sectionKey: text(sec && sec.sectionKey) || ('section_' + (idx + 1)),
           heading: text(sec && sec.heading),
           paragraphs: Array.isArray(sec && sec.paragraphs)
-            ? sec.paragraphs.map(function(v){ return text(v); })
+            ? sec.paragraphs.map(function(v){ return cleanEditorPlaceholderText_(v); })
             : []
         };
       }).filter(function(sec){
@@ -1208,6 +1208,12 @@ function getSectionImagesMap(row){
       return text((el && el.innerText) || '').replace(/\u00A0/g,' ');
     }
 
+    function cleanEditorPlaceholderText_(v){
+      const value = text(v);
+      if(value === '내용을 입력하세요' || value === '내용을 입력하세요.') return '';
+      return value;
+    }
+
 
 
     function moveImageInLayout(sectionKey, idx, direction){
@@ -1418,7 +1424,7 @@ function getSectionImagesMap(row){
         if(!p) return;
         const key = text(p.getAttribute('data-edit-key'));
         const idx = Number(p.getAttribute('data-edit-idx'));
-        const value = normalizeEditableText(p);
+        const value = cleanEditorPlaceholderText_(normalizeEditableText(p));
         const sec = (state.sectionBlocks || []).find(function(v){ return text(v.sectionKey) === key; });
         if(sec){
           if(!Array.isArray(sec.paragraphs)) sec.paragraphs = [];

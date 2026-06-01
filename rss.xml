@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>매슬로우 코리아</title>
+    <link>https://www.maslowkorea.site/</link>
+    <description>공장·산업용 부동산 전문 중개, 공장 매물보기, 음성 텍스트 변환 도구 정보를 제공하는 매슬로우 코리아 공식 사이트입니다.</description>
+    <language>ko</language>
+    <lastBuildDate>Mon, 01 Jun 2026 00:00:00 +0900</lastBuildDate>
+    <ttl>1440</ttl>
+
+    <item>
+      <title>공장·산업용 부동산 전문 중개 | 매슬로우 코리아</title>
+      <link>https://www.maslowkorea.site/</link>
+      <guid isPermaLink="true">https://www.maslowkorea.site/</guid>
+      <description>매슬로우 코리아는 공장, 창고, 제조시설, 물류시설 등 산업용 부동산 매물을 전문으로 다룹니다. 군산·전북을 주요 기반으로 입지, 용도, 층고, 전기, 진입도로, 야드 조건을 정리해 정확한 매물 판단을 돕습니다.</description>
+      <pubDate>Mon, 01 Jun 2026 00:00:00 +0900</pubDate>
+    </item>
+
+    <item>
+      <title>공장 매물보기 | 공장·산업용 부동산 매물 - 매슬로우 코리아</title>
+      <link>https://www.maslowkorea.site/listings</link>
+      <guid isPermaLink="true">https://www.maslowkorea.site/listings</guid>
+      <description>공장, 창고, 제조시설, 물류시설 등 산업용 부동산 매물을 확인하세요. 임대·매매 조건, 입지, 면적, 층고, 전기, 진입도로, 야드 정보를 정리해 제공합니다.</description>
+      <pubDate>Mon, 01 Jun 2026 00:00:00 +0900</pubDate>
+    </item>
+
+    <item>
+      <title>음성 텍스트 변환 STT 도구 | 매슬로우 코리아</title>
+      <link>https://www.maslowkorea.site/stt</link>
+      <guid isPermaLink="true">https://www.maslowkorea.site/stt</guid>
+      <description>매슬로우 코리아의 STT 도구는 음성 파일을 텍스트로 변환해 회의록, 상담 기록, 현장 메모 정리에 활용할 수 있는 음성 인식 도구입니다.</description>
+      <pubDate>Mon, 01 Jun 2026 00:00:00 +0900</pubDate>
+    </item>
+  </channel>
+</rss>

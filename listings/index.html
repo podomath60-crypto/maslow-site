@@ -358,17 +358,11 @@
   <header class="header" id="siteHeader">
     <div class="header-inner">
       <div class="header-left">
-        <button class="menu-trigger" aria-label="menu" onclick="openMenu()"><span></span></button>
+        <button class="menu-trigger" aria-label="menu"><span></span></button>
         <a href="/" class="logo-text"><strong>Maslow Korea</strong></a>
       </div>
 
-      <nav class="nav">
-        <a href="index-5.html#services">One-stop</a>
-        <a href="index-5.html#lifecycle">Life Cycle</a>
-        <a href="index-5.html#process">Process</a>
-        <a href="index-5.html#media">Guide</a>
-        <a href="index-5.html#contact">Contact</a>
-      </nav>
+      <nav class="nav" aria-hidden="true"></nav>
 
       <div class="header-right">
         <div class="lang">KR / EN</div>
@@ -404,16 +398,17 @@
   <a class="mobile-float-call" href="javascript:void(0)" onclick="window.location.href='tel:01054070444'">📞</a>
   <a class="mobile-float-kakao" href="http://pf.kakao.com/_mNURX/chat" target="_blank" rel="noopener">talk</a>
 
-  <div id="menuPanel" class="menu-panel" onclick="closeMenu(event)">
-    <div class="menu-drawer" onclick="event.stopPropagation()">
-      <div class="menu-head"><strong>Maslow Korea</strong><button class="menu-close" onclick="forceCloseMenu()">✕</button></div>
+  <div id="menuPanel" class="menu-panel">
+    <div class="menu-drawer">
+      <div class="menu-head">
+        <strong>바로가기</strong>
+        <button class="menu-close" onclick="closeMenu()">✕</button>
+      </div>
       <div class="menu-list">
-        <a class="menu-link primary" href="index-5.html">홈으로</a>
-        <a class="menu-link" href="index-5.html#services">One-stop</a>
-        <a class="menu-link" href="index-5.html#lifecycle">Life Cycle</a>
-        <a class="menu-link" href="index-5.html#process">Process</a>
-        <a class="menu-link" href="index-5.html#media">Guide</a>
-        <a class="menu-link" href="index-5.html#contact">Contact</a>
+        <a class="menu-link primary" href="https://maslowkorea.net/" target="_blank" rel="noopener">🔺️매물보기</a>
+        <a class="menu-link" href="https://youtube.com/channel/UCyrcwTip7AWhMd3Kzg77PKA?si=Fu3pBerL9sa5g23q" target="_blank" rel="noopener">▪️유튜브</a>
+        <a class="menu-link" href="https://m.blog.naver.com/maslow_love" target="_blank" rel="noopener">▪️블로그</a>
+        <a class="menu-link" href="/">▪️대표인사말</a>
       </div>
     </div>
   </div>
@@ -615,7 +610,7 @@
             <p> 매슬로우 코리아 <br> 
             명칭 : 매슬로우공인중개사사무소  <br>
             소재지 : 전북 군산시 대학로 342 26빌딩<br>
-            등록번호 : 52130-2025-0005<br>
+            등록번호 : 52130-2025-00005<br>
             연락처 : 010-5407-0444<br>
             대표 : 박성연</p>
           </div>
@@ -690,9 +685,22 @@
     lastY = y;
   }, { passive:true });
 
-  function openMenu(){ document.getElementById('menuPanel').classList.add('active'); }
-  function closeMenu(e){ if(e && e.target !== document.getElementById('menuPanel')) return; document.getElementById('menuPanel').classList.remove('active'); }
-  function forceCloseMenu(){ document.getElementById('menuPanel').classList.remove('active'); }
+  function openMenu(){
+    document.getElementById('menuPanel').classList.add('active');
+  }
+
+  function closeMenu(){
+    document.getElementById('menuPanel').classList.remove('active');
+  }
+
+  document.querySelector('.menu-trigger')?.addEventListener('click', function(e){
+    e.preventDefault();
+    openMenu();
+  });
+
+  document.getElementById('menuPanel')?.addEventListener('click', function(e){
+    if (e.target === this) closeMenu();
+  });
 
   window.__savedScrollY = 0;
   window.__modalHistoryOpen = false;

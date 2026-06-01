@@ -1,0 +1,38 @@
+# Maslow Korea / 매슬로우 코리아
+
+Maslow Korea is a Korean real estate brand focused on factory and industrial real estate. The site also provides a public STT tool.
+
+매슬로우 코리아는 공장, 창고, 제조시설, 물류시설 등 산업용 부동산 매물을 전문으로 다루는 브랜드입니다. 군산·전북을 주요 기반으로 하되, 특정 지역에만 한정하지 않고 공장·산업용 부동산의 입지, 용도, 층고, 전기, 진입도로, 야드 조건을 중심으로 매물을 정리합니다.
+
+## Public pages
+
+- https://www.maslowkorea.site/ — Official homepage for Maslow Korea. Core topic: factory and industrial real estate brokerage.
+- https://www.maslowkorea.site/listings — Public factory and industrial real estate listings.
+- https://www.maslowkorea.site/stt — Public speech-to-text tool for transcription.
+
+## Core real estate topics
+
+- 공장 부동산 / factory real estate
+- 산업용 부동산 / industrial real estate
+- 공장 매매 / factory sale
+- 공장 임대 / factory lease
+- 창고 임대 / warehouse lease
+- 제조시설 / manufacturing facilities
+- 물류시설 / logistics facilities
+- 산업단지 공장 / industrial complex factory properties
+- 군산·전북 주요 기반 / Gunsan and Jeonbuk as primary operating areas
+
+## Industrial property evaluation criteria
+
+- 입지 / location
+- 용도지역 / zoning and permitted use
+- 층고 / ceiling height
+- 전기 용량 / electrical capacity
+- 진입도로 / access road
+- 야드 / yard space
+- 하역 동선 / loading and logistics flow
+- 건축물대장 / building registry
+
+## Indexing policy
+
+Only the homepage, listings page, and STT page are intended for public indexing. Admin, dashboard, editor, input, internal preview, and unpublished commercial-real-estate pages are not intended for search indexing.

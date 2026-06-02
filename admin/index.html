@@ -3765,9 +3765,100 @@
         }
       }
 
+      function isDataImageUrl_(value){
+        return String(value || '').indexOf('data:image/') === 0;
+      }
+
+      function getSafeRemotePhotoUrl_(item){
+        if(!item) return '';
+        var candidates = [
+          item.url,
+          item.serverUrl,
+          item.remoteUrl,
+          item.driveUrl,
+          item.originalUrl,
+          item.thumbnailUrl
+        ];
+        for(var i = 0; i < candidates.length; i++){
+          var url = String(candidates[i] || '').trim();
+          if(url && url !== DEFAULT_HERO && !isDataImageUrl_(url)){
+            return url;
+          }
+        }
+        return '';
+      }
+
+      function stripMosaicLocalFieldsFromPhoto_(item){
+        if(!item || typeof item !== 'object') return null;
+
+        var remoteUrl = getSafeRemotePhotoUrl_(item);
+        var url = String(item.url || '').trim();
+        var hasAnyLocalImage = isDataImageUrl_(url) ||
+          isDataImageUrl_(item.dataUrl) ||
+          isDataImageUrl_(item.localDataUrl) ||
+          isDataImageUrl_(item.uploadDataUrl);
+        var isMosaicMarked = String(item.editType || '').toLowerCase() === 'mosaic';
+
+        if((hasAnyLocalImage || isMosaicMarked) && !remoteUrl){
+          return null;
+        }
+        if(!remoteUrl && (!url || url === DEFAULT_HERO || isDataImageUrl_(url))){
+          return null;
+        }
+
+        var copy = {};
+        Object.keys(item).forEach(function(key){
+          if(key === 'dataUrl' || key === 'localDataUrl' || key === 'uploadDataUrl') return;
+          if(key === 'editType' && isMosaicMarked) return;
+          if(key === 'editedAt' && isMosaicMarked) return;
+          copy[key] = item[key];
+        });
+
+        if(remoteUrl){
+          copy.url = remoteUrl;
+        }
+
+        if(!copy.url || copy.url === DEFAULT_HERO || isDataImageUrl_(copy.url)){
+          return null;
+        }
+        return copy;
+      }
+
+      function sanitizePhotoListForLocalDraft_(list){
+        var arr = Array.isArray(list) ? list : [];
+        var out = [];
+        arr.forEach(function(item){
+          var cleaned = stripMosaicLocalFieldsFromPhoto_(item);
+          if(cleaned) out.push(cleaned);
+        });
+        return out;
+      }
+
+      function sanitizeMosaicLocalDraftStorage_(){
+        try{
+          var raw = localStorage.getItem(STORAGE_KEY);
+          if(!raw) return;
+          var data = JSON.parse(raw);
+          if(!data || typeof data !== 'object') return;
+
+          var before = JSON.stringify(data.photoList || []);
+          data.photoList = sanitizePhotoListForLocalDraft_(data.photoList);
+          data.currentPhotoIndex = data.photoList.length
+            ? Math.min(Math.max(parseInt(data.currentPhotoIndex || 0, 10), 0), data.photoList.length - 1)
+            : 0;
+          var after = JSON.stringify(data.photoList || []);
+
+          if(before !== after){
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          }
+        }catch(e){
+          try{ localStorage.removeItem(STORAGE_KEY); }catch(_err){}
+        }
+      }
+
       function clearMosaicLocalCache_(){
         try{ clearTimeout(saveTimer); }catch(e){}
-        sanitizeStoredDraftMosaicOnly_();
+        sanitizeMosaicLocalDraftStorage_();
       }
 
       function blockMosaicLocalCacheUntilReload_(){
@@ -3834,15 +3925,21 @@
         if(item.url && String(item.url).indexOf('data:') === 0){
           return Promise.resolve(item.url);
         }
-        if(item.dataUrl && String(item.dataUrl).indexOf('data:') === 0){
-          return Promise.resolve(item.dataUrl);
+        if(!getSafeRemotePhotoUrl_(item)){
+          if(item.dataUrl && String(item.dataUrl).indexOf('data:') === 0){
+            return Promise.resolve(item.dataUrl);
+          }
+          if(item.localDataUrl && String(item.localDataUrl).indexOf('data:') === 0){
+            return Promise.resolve(item.localDataUrl);
+          }
+          if(item.uploadDataUrl && String(item.uploadDataUrl).indexOf('data:') === 0){
+            return Promise.resolve(item.uploadDataUrl);
+          }
         }
-        if(item.localDataUrl && String(item.localDataUrl).indexOf('data:') === 0){
-          return Promise.resolve(item.localDataUrl);
-        }
-        if(item.uploadDataUrl && String(item.uploadDataUrl).indexOf('data:') === 0){
-          return Promise.resolve(item.uploadDataUrl);
-        }
+
+        delete item.dataUrl;
+        delete item.localDataUrl;
+        delete item.uploadDataUrl;
 
         var currentListingNumber = getCurrentListingNumberForMosaic_();
         var tempKey = item.tempKey || '';
@@ -5635,76 +5732,8 @@
         });
       }
 
-      function isMosaicLocalDataUrl_(value){
-        return String(value || '').indexOf('data:image/') === 0;
-      }
-
-      function hasMosaicLocalTrace_(item){
-        if(!item) return false;
-        if(String(item.editType || '') === 'mosaic') return true;
-        if(isMosaicLocalDataUrl_(item.url)) return true;
-        if(isMosaicLocalDataUrl_(item.dataUrl)) return true;
-        if(isMosaicLocalDataUrl_(item.localDataUrl)) return true;
-        if(isMosaicLocalDataUrl_(item.uploadDataUrl)) return true;
-        return false;
-      }
-
-      function stripMosaicLocalFieldsFromPhoto_(item){
-        if(!item) return null;
-        var url = String(item.url || '');
-        if(!url || url === DEFAULT_HERO) return null;
-        if(hasMosaicLocalTrace_(item)) return null;
-
-        var copy = Object.assign({}, item);
-        delete copy.dataUrl;
-        delete copy.localDataUrl;
-        delete copy.uploadDataUrl;
-        delete copy.editedAt;
-        delete copy.editType;
-        return copy;
-      }
-
       function getRealPhotoList(list){
-        return (Array.isArray(list) ? list : []).map(function(item){
-          return stripMosaicLocalFieldsFromPhoto_(item);
-        }).filter(function(item){
-          return !!item;
-        });
-      }
-
-      function sanitizeStoredDraftMosaicOnly_(){
-        try{
-          var raw = localStorage.getItem(STORAGE_KEY);
-          if(!raw) return;
-          var data = JSON.parse(raw);
-          if(!data || typeof data !== 'object') return;
-
-          var originalPhotos = Array.isArray(data.photoList) ? data.photoList : [];
-          var cleanedPhotos = getRealPhotoList(originalPhotos);
-          var changed = cleanedPhotos.length !== originalPhotos.length;
-
-          if(!changed){
-            for(var i = 0; i < originalPhotos.length; i++){
-              var before = originalPhotos[i] || {};
-              var after = cleanedPhotos[i] || {};
-              if(before.dataUrl || before.localDataUrl || before.uploadDataUrl || before.editType || before.editedAt){
-                changed = true;
-                break;
-              }
-              if(String(before.url || '') !== String(after.url || '')){
-                changed = true;
-                break;
-              }
-            }
-          }
-
-          if(!changed) return;
-          data.photoList = cleanedPhotos;
-          data.currentPhotoIndex = cleanedPhotos.length ? Math.min(Number(data.currentPhotoIndex || 0), cleanedPhotos.length - 1) : 0;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        }catch(e){
-          try{ localStorage.removeItem(STORAGE_KEY); }catch(_e){}
-        }
+        return sanitizePhotoListForLocalDraft_(list);
       }
 
       function getDraftPayload(){
@@ -5727,14 +5756,10 @@
 
       function saveDraftState(manual){
         try{
-          if(mosaicCacheClearUntilReload){
-            sanitizeStoredDraftMosaicOnly_();
-            if(manual) showToast('모자이크 임시흔적 비움');
-            return;
-          }
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(getDraftPayload()));
-          sanitizeStoredDraftMosaicOnly_();
-          if(manual) showToast('저장됨');
+          var payload = getDraftPayload();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+          sanitizeMosaicLocalDraftStorage_();
+          if(manual) showToast(mosaicCacheClearUntilReload ? '모자이크 임시흔적 제거됨' : '저장됨');
         }catch(e){
           console.error('draft save failed', e);
           if(manual) showToast('저장 실패');
@@ -5816,6 +5841,7 @@
 
       function restoreDraftState(){
         try{
+          sanitizeMosaicLocalDraftStorage_();
           var raw = localStorage.getItem(STORAGE_KEY);
           if(!raw) return;
           var data = JSON.parse(raw);
@@ -6031,7 +6057,7 @@
         updateDraftSaveBtnByKeyboardState_();
       }, 250);
 
-      sanitizeStoredDraftMosaicOnly_();
+      sanitizeMosaicLocalDraftStorage_();
 
       var queryListingNumber = String(getQueryParam_('listingNumber') || '').trim();
 

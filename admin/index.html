@@ -2574,7 +2574,7 @@
           fileKind: kind,
           tempKey: item.tempKey,
           fileName: item.name || '',
-          dataUrl: item.url || '',
+          dataUrl: item.uploadDataUrl || item.dataUrl || item.localDataUrl || item.url || '',
           pageUrl: location.href,
           userAgent: navigator.userAgent,
           uploadedAt: item.uploadedAt || new Date().toISOString()
@@ -3751,6 +3751,50 @@
         return item && item.url ? item.url : '';
       }
 
+      function getCurrentListingNumberForMosaic_(){
+        var currentListingNumber = listingNumber || plainText(listingNumberField) || '';
+        if(!currentListingNumber){
+          assignListingNumber();
+          currentListingNumber = listingNumber || plainText(listingNumberField) || '';
+        }
+        return currentListingNumber;
+      }
+
+      function fetchMosaicSourceDataUrl_(item){
+        if(!item) return Promise.reject(new Error('사진 정보가 없습니다.'));
+        if(item.url && String(item.url).indexOf('data:') === 0){
+          return Promise.resolve(item.url);
+        }
+        if(item.dataUrl && String(item.dataUrl).indexOf('data:') === 0){
+          return Promise.resolve(item.dataUrl);
+        }
+        if(item.localDataUrl && String(item.localDataUrl).indexOf('data:') === 0){
+          return Promise.resolve(item.localDataUrl);
+        }
+        if(item.uploadDataUrl && String(item.uploadDataUrl).indexOf('data:') === 0){
+          return Promise.resolve(item.uploadDataUrl);
+        }
+
+        var currentListingNumber = getCurrentListingNumberForMosaic_();
+        var tempKey = item.tempKey || '';
+        if(!currentListingNumber) return Promise.reject(new Error('listingNumber가 없습니다.'));
+        if(!tempKey) return Promise.reject(new Error('tempKey가 없습니다.'));
+
+        return fetchJsonFromGas_({
+          action: 'getPropertyPhotoDataUrl',
+          listingNumber: currentListingNumber,
+          tempKey: tempKey
+        }).then(function(result){
+          if(!result || !result.ok || !result.dataUrl){
+            throw new Error((result && (result.message || result.error)) || '사진 원본 조회 실패');
+          }
+          item.dataUrl = result.dataUrl;
+          item.localDataUrl = result.dataUrl;
+          item.uploadDataUrl = result.dataUrl;
+          return result.dataUrl;
+        });
+      }
+
       function drawCoverImageToMosaicCanvas_(img){
         if(!mosaicCanvas || !mosaicCtx || !heroImage) return;
         var rect = heroImage.getBoundingClientRect();
@@ -3773,34 +3817,52 @@
 
       function prepareMosaicCanvas_(){
         if(!mosaicMode || !mosaicCanvas || !mosaicCtx || !photoList.length) return;
-        var src = getMosaicSourceUrl_();
-        if(!src){
+
+        var item = photoList[currentPhotoIndex];
+        if(!item){
           setMosaicMode_(false);
           return;
         }
+
+        var startTempKey = item.tempKey || '';
         mosaicReady = false;
         mosaicCanvas.classList.remove('active');
-        var img = new Image();
-        if(src.indexOf('data:') !== 0){
-          img.crossOrigin = 'anonymous';
-        }
-        img.onload = function(){
-          try{
-            drawCoverImageToMosaicCanvas_(img);
-            mosaicCanvas.toDataURL('image/jpeg', 0.72);
-            mosaicReady = true;
-            mosaicCanvas.classList.add('active');
-          }catch(err){
+        showToast('사진 원본 불러오는 중');
+
+        fetchMosaicSourceDataUrl_(item)
+          .then(function(src){
+            if(!mosaicMode) return;
+            if(!photoList[currentPhotoIndex] || (startTempKey && photoList[currentPhotoIndex].tempKey !== startTempKey)) return;
+            if(!src){
+              throw new Error('사진 원본이 없습니다.');
+            }
+
+            var img = new Image();
+            img.onload = function(){
+              try{
+                if(!mosaicMode) return;
+                if(!photoList[currentPhotoIndex] || (startTempKey && photoList[currentPhotoIndex].tempKey !== startTempKey)) return;
+                drawCoverImageToMosaicCanvas_(img);
+                mosaicCanvas.toDataURL('image/jpeg', 0.72);
+                mosaicReady = true;
+                mosaicCanvas.classList.add('active');
+              }catch(err){
+                console.error(err);
+                setMosaicMode_(false);
+                showToast('모자이크 준비 실패');
+              }
+            };
+            img.onerror = function(){
+              setMosaicMode_(false);
+              showToast('사진을 불러오지 못했습니다');
+            };
+            img.src = src;
+          })
+          .catch(function(err){
             console.error(err);
             setMosaicMode_(false);
-            showToast('기존 저장 사진은 다시 올린 뒤 모자이크할 수 있습니다');
-          }
-        };
-        img.onerror = function(){
-          setMosaicMode_(false);
-          showToast('사진을 불러오지 못했습니다');
-        };
-        img.src = src;
+            showToast('사진 원본 조회 실패');
+          });
       }
 
       function updateMosaicCursor_(clientX, clientY, pointerType){
@@ -3862,6 +3924,9 @@
           return;
         }
         item.url = dataUrl;
+        item.dataUrl = dataUrl;
+        item.localDataUrl = dataUrl;
+        item.uploadDataUrl = dataUrl;
         item.editedAt = new Date().toISOString();
         item.editType = 'mosaic';
         renderHero();

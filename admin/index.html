@@ -3767,7 +3767,7 @@
 
       function clearMosaicLocalCache_(){
         try{ clearTimeout(saveTimer); }catch(e){}
-        try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+        sanitizeStoredDraftMosaicOnly_();
       }
 
       function blockMosaicLocalCacheUntilReload_(){
@@ -5635,10 +5635,76 @@
         });
       }
 
+      function isMosaicLocalDataUrl_(value){
+        return String(value || '').indexOf('data:image/') === 0;
+      }
+
+      function hasMosaicLocalTrace_(item){
+        if(!item) return false;
+        if(String(item.editType || '') === 'mosaic') return true;
+        if(isMosaicLocalDataUrl_(item.url)) return true;
+        if(isMosaicLocalDataUrl_(item.dataUrl)) return true;
+        if(isMosaicLocalDataUrl_(item.localDataUrl)) return true;
+        if(isMosaicLocalDataUrl_(item.uploadDataUrl)) return true;
+        return false;
+      }
+
+      function stripMosaicLocalFieldsFromPhoto_(item){
+        if(!item) return null;
+        var url = String(item.url || '');
+        if(!url || url === DEFAULT_HERO) return null;
+        if(hasMosaicLocalTrace_(item)) return null;
+
+        var copy = Object.assign({}, item);
+        delete copy.dataUrl;
+        delete copy.localDataUrl;
+        delete copy.uploadDataUrl;
+        delete copy.editedAt;
+        delete copy.editType;
+        return copy;
+      }
+
       function getRealPhotoList(list){
-        return (Array.isArray(list) ? list : []).filter(function(item){
-          return item && item.url && item.url !== DEFAULT_HERO;
+        return (Array.isArray(list) ? list : []).map(function(item){
+          return stripMosaicLocalFieldsFromPhoto_(item);
+        }).filter(function(item){
+          return !!item;
         });
+      }
+
+      function sanitizeStoredDraftMosaicOnly_(){
+        try{
+          var raw = localStorage.getItem(STORAGE_KEY);
+          if(!raw) return;
+          var data = JSON.parse(raw);
+          if(!data || typeof data !== 'object') return;
+
+          var originalPhotos = Array.isArray(data.photoList) ? data.photoList : [];
+          var cleanedPhotos = getRealPhotoList(originalPhotos);
+          var changed = cleanedPhotos.length !== originalPhotos.length;
+
+          if(!changed){
+            for(var i = 0; i < originalPhotos.length; i++){
+              var before = originalPhotos[i] || {};
+              var after = cleanedPhotos[i] || {};
+              if(before.dataUrl || before.localDataUrl || before.uploadDataUrl || before.editType || before.editedAt){
+                changed = true;
+                break;
+              }
+              if(String(before.url || '') !== String(after.url || '')){
+                changed = true;
+                break;
+              }
+            }
+          }
+
+          if(!changed) return;
+          data.photoList = cleanedPhotos;
+          data.currentPhotoIndex = cleanedPhotos.length ? Math.min(Number(data.currentPhotoIndex || 0), cleanedPhotos.length - 1) : 0;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }catch(e){
+          try{ localStorage.removeItem(STORAGE_KEY); }catch(_e){}
+        }
       }
 
       function getDraftPayload(){
@@ -5662,11 +5728,12 @@
       function saveDraftState(manual){
         try{
           if(mosaicCacheClearUntilReload){
-            localStorage.removeItem(STORAGE_KEY);
-            if(manual) showToast('로컬 임시저장 비움');
+            sanitizeStoredDraftMosaicOnly_();
+            if(manual) showToast('모자이크 임시흔적 비움');
             return;
           }
           localStorage.setItem(STORAGE_KEY, JSON.stringify(getDraftPayload()));
+          sanitizeStoredDraftMosaicOnly_();
           if(manual) showToast('저장됨');
         }catch(e){
           console.error('draft save failed', e);
@@ -5963,6 +6030,8 @@
         resetKeyboardViewportBase_();
         updateDraftSaveBtnByKeyboardState_();
       }, 250);
+
+      sanitizeStoredDraftMosaicOnly_();
 
       var queryListingNumber = String(getQueryParam_('listingNumber') || '').trim();
 

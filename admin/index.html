@@ -2391,6 +2391,13 @@
       var photoList = [];
       var currentPhotoIndex = 0;
       var ledgerList = [];
+      var mosaicCtx = mosaicCanvas ? mosaicCanvas.getContext('2d') : null;
+      var mosaicMode = false;
+      var mosaicReady = false;
+      var mosaicDrawing = false;
+      var mosaicBrushSize = 44;
+      var mosaicPixelSize = 12;
+      var mosaicCommitTimer = null;
       var selectedDealType = '';
       var dragPhotoIndex = null;
       var touchHoldTimer = null;

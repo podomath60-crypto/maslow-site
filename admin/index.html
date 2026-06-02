@@ -2441,6 +2441,7 @@
       var mosaicMaxHistory = 20;
       var mosaicBrushSize = 44;
       var mosaicPixelSize = 12;
+      var mosaicCacheClearUntilReload = false;
       var selectedDealType = '';
       var dragPhotoIndex = null;
       var touchHoldTimer = null;
@@ -3764,6 +3765,16 @@
         }
       }
 
+      function clearMosaicLocalCache_(){
+        try{ clearTimeout(saveTimer); }catch(e){}
+        try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+      }
+
+      function blockMosaicLocalCacheUntilReload_(){
+        mosaicCacheClearUntilReload = true;
+        clearMosaicLocalCache_();
+      }
+
       function resetMosaicCanvas_(){
         mosaicDrawing = false;
         mosaicReady = false;
@@ -4031,24 +4042,37 @@
         mosaicSaving = true;
         updateMosaicButtons_();
 
+        var prevUrl = item.url || '';
+        var prevDataUrl = item.dataUrl || '';
+        var prevLocalDataUrl = item.localDataUrl || '';
+        var prevUploadDataUrl = item.uploadDataUrl || '';
+        var prevEditedAt = item.editedAt || '';
+        var prevEditType = item.editType || '';
+
         item.url = dataUrl;
         item.dataUrl = dataUrl;
         item.localDataUrl = dataUrl;
         item.uploadDataUrl = dataUrl;
         item.editedAt = new Date().toISOString();
         item.editType = 'mosaic';
-        renderHero();
-        queueSave();
 
         uploadTempFileToServer_('photo', item)
           .then(function(){
             showToast('모자이크 저장됨');
+            blockMosaicLocalCacheUntilReload_();
             mosaicMode = false;
             document.body.classList.remove('mosaic-mode-on');
+            renderHero();
             resetMosaicCanvas_();
           })
           .catch(function(err){
             console.error(err);
+            item.url = prevUrl;
+            item.dataUrl = prevDataUrl;
+            item.localDataUrl = prevLocalDataUrl;
+            item.uploadDataUrl = prevUploadDataUrl;
+            item.editedAt = prevEditedAt;
+            item.editType = prevEditType;
             showToast('모자이크 저장 실패');
             mosaicSaving = false;
             updateMosaicButtons_();
@@ -4090,6 +4114,12 @@
           if(mosaicDrawing){ finish(e); }
         });
       }
+
+      window.addEventListener('pagehide', function(){
+        if(mosaicMode || mosaicDirty || mosaicSaving || mosaicCacheClearUntilReload){
+          blockMosaicLocalCacheUntilReload_();
+        }
+      });
 
       function readFiles(files, cb){
         Array.prototype.forEach.call(files || [], function(file){
@@ -5631,6 +5661,11 @@
 
       function saveDraftState(manual){
         try{
+          if(mosaicCacheClearUntilReload){
+            localStorage.removeItem(STORAGE_KEY);
+            if(manual) showToast('로컬 임시저장 비움');
+            return;
+          }
           localStorage.setItem(STORAGE_KEY, JSON.stringify(getDraftPayload()));
           if(manual) showToast('저장됨');
         }catch(e){
@@ -5862,6 +5897,18 @@
         return window.innerHeight || 0;
       }
 
+      function isKeyboardTargetFocused_(){
+        var el = document.activeElement;
+        if(!el || el === document.body || el === document.documentElement) return false;
+
+        var tag = String(el.tagName || '').toLowerCase();
+        if(tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+        if(el.isContentEditable) return true;
+        if(el.closest && el.closest('[contenteditable="true"]')) return true;
+
+        return false;
+      }
+
       function resetKeyboardViewportBase_(){
         if(window.innerWidth > 860){
           showDraftSaveBtnByKeyboard_();
@@ -5884,7 +5931,10 @@
         }
 
         var diff = keyboardBaseViewportHeight - currentHeight;
-        if(diff > 160){
+
+        // 주소창/하단바/디바이스 viewport 변화만으로 서버저장 버튼이 사라지지 않게 한다.
+        // 실제 입력칸 또는 contenteditable에 포커스가 있을 때만 키보드 숨김 처리를 허용한다.
+        if(isKeyboardTargetFocused_() && diff > 160){
           hideDraftSaveBtnByKeyboard_();
         }else{
           showDraftSaveBtnByKeyboard_();

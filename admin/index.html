@@ -3765,92 +3765,15 @@
         }
       }
 
-      function isDataImageUrl_(value){
-        return String(value || '').indexOf('data:image/') === 0;
-      }
-
-      function getSafeRemotePhotoUrl_(item){
-        if(!item) return '';
-        var candidates = [
-          item.url,
-          item.serverUrl,
-          item.remoteUrl,
-          item.driveUrl,
-          item.originalUrl,
-          item.thumbnailUrl
-        ];
-        for(var i = 0; i < candidates.length; i++){
-          var url = String(candidates[i] || '').trim();
-          if(url && url !== DEFAULT_HERO && !isDataImageUrl_(url)){
-            return url;
-          }
-        }
-        return '';
-      }
-
-      function stripMosaicLocalFieldsFromPhoto_(item){
-        if(!item || typeof item !== 'object') return null;
-
-        var remoteUrl = getSafeRemotePhotoUrl_(item);
-        var url = String(item.url || '').trim();
-        var hasAnyLocalImage = isDataImageUrl_(url) ||
-          isDataImageUrl_(item.dataUrl) ||
-          isDataImageUrl_(item.localDataUrl) ||
-          isDataImageUrl_(item.uploadDataUrl);
-        var isMosaicMarked = String(item.editType || '').toLowerCase() === 'mosaic';
-
-        if((hasAnyLocalImage || isMosaicMarked) && !remoteUrl){
-          return null;
-        }
-        if(!remoteUrl && (!url || url === DEFAULT_HERO || isDataImageUrl_(url))){
-          return null;
-        }
-
-        var copy = {};
-        Object.keys(item).forEach(function(key){
-          if(key === 'dataUrl' || key === 'localDataUrl' || key === 'uploadDataUrl') return;
-          if(key === 'editType' && isMosaicMarked) return;
-          if(key === 'editedAt' && isMosaicMarked) return;
-          copy[key] = item[key];
-        });
-
-        if(remoteUrl){
-          copy.url = remoteUrl;
-        }
-
-        if(!copy.url || copy.url === DEFAULT_HERO || isDataImageUrl_(copy.url)){
-          return null;
-        }
-        return copy;
-      }
-
-      function sanitizePhotoListForLocalDraft_(list){
-        var arr = Array.isArray(list) ? list : [];
-        var out = [];
-        arr.forEach(function(item){
-          var cleaned = stripMosaicLocalFieldsFromPhoto_(item);
-          if(cleaned) out.push(cleaned);
-        });
-        return out;
-      }
-
-      function sanitizeMosaicLocalDraftStorage_(){
+      function clearStoredDraftPhotosOnly_(){
         try{
           var raw = localStorage.getItem(STORAGE_KEY);
           if(!raw) return;
           var data = JSON.parse(raw);
           if(!data || typeof data !== 'object') return;
-
-          var before = JSON.stringify(data.photoList || []);
-          data.photoList = sanitizePhotoListForLocalDraft_(data.photoList);
-          data.currentPhotoIndex = data.photoList.length
-            ? Math.min(Math.max(parseInt(data.currentPhotoIndex || 0, 10), 0), data.photoList.length - 1)
-            : 0;
-          var after = JSON.stringify(data.photoList || []);
-
-          if(before !== after){
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-          }
+          data.photoList = [];
+          data.currentPhotoIndex = 0;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }catch(e){
           try{ localStorage.removeItem(STORAGE_KEY); }catch(_err){}
         }
@@ -3858,7 +3781,7 @@
 
       function clearMosaicLocalCache_(){
         try{ clearTimeout(saveTimer); }catch(e){}
-        sanitizeMosaicLocalDraftStorage_();
+        clearStoredDraftPhotosOnly_();
       }
 
       function blockMosaicLocalCacheUntilReload_(){
@@ -3925,21 +3848,15 @@
         if(item.url && String(item.url).indexOf('data:') === 0){
           return Promise.resolve(item.url);
         }
-        if(!getSafeRemotePhotoUrl_(item)){
-          if(item.dataUrl && String(item.dataUrl).indexOf('data:') === 0){
-            return Promise.resolve(item.dataUrl);
-          }
-          if(item.localDataUrl && String(item.localDataUrl).indexOf('data:') === 0){
-            return Promise.resolve(item.localDataUrl);
-          }
-          if(item.uploadDataUrl && String(item.uploadDataUrl).indexOf('data:') === 0){
-            return Promise.resolve(item.uploadDataUrl);
-          }
+        if(item.dataUrl && String(item.dataUrl).indexOf('data:') === 0){
+          return Promise.resolve(item.dataUrl);
         }
-
-        delete item.dataUrl;
-        delete item.localDataUrl;
-        delete item.uploadDataUrl;
+        if(item.localDataUrl && String(item.localDataUrl).indexOf('data:') === 0){
+          return Promise.resolve(item.localDataUrl);
+        }
+        if(item.uploadDataUrl && String(item.uploadDataUrl).indexOf('data:') === 0){
+          return Promise.resolve(item.uploadDataUrl);
+        }
 
         var currentListingNumber = getCurrentListingNumberForMosaic_();
         var tempKey = item.tempKey || '';
@@ -5733,17 +5650,16 @@
       }
 
       function getRealPhotoList(list){
-        return sanitizePhotoListForLocalDraft_(list);
+        return [];
       }
 
       function getDraftPayload(){
-        var realPhotos = getRealPhotoList(photoList);
         return {
           selectedDealType: selectedDealType,
           listingStatus: listingStatus,
           listingNumber: listingNumber,
-          currentPhotoIndex: realPhotos.length ? Math.min(currentPhotoIndex, realPhotos.length - 1) : 0,
-          photoList: realPhotos,
+          currentPhotoIndex: 0,
+          photoList: [],
           ledgerList: Array.isArray(ledgerList) ? ledgerList : [],
           editables: serializeEditables(),
           measures: serializeMeasures(),
@@ -5757,9 +5673,11 @@
       function saveDraftState(manual){
         try{
           var payload = getDraftPayload();
+          payload.photoList = [];
+          payload.currentPhotoIndex = 0;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-          sanitizeMosaicLocalDraftStorage_();
-          if(manual) showToast(mosaicCacheClearUntilReload ? '모자이크 임시흔적 제거됨' : '저장됨');
+          clearStoredDraftPhotosOnly_();
+          if(manual) showToast('저장됨');
         }catch(e){
           console.error('draft save failed', e);
           if(manual) showToast('저장 실패');
@@ -5841,7 +5759,6 @@
 
       function restoreDraftState(){
         try{
-          sanitizeMosaicLocalDraftStorage_();
           var raw = localStorage.getItem(STORAGE_KEY);
           if(!raw) return;
           var data = JSON.parse(raw);
@@ -5852,9 +5769,9 @@
             selectedListingPrefix = String(listingNumber || '').trim().toUpperCase().indexOf('SK-') === 0 ? 'SK'
               : (String(listingNumber || '').trim().toUpperCase().indexOf('MK-') === 0 ? 'MK' : '');
             tempSessionKey = data.tempSessionKey || tempSessionKey || '';
-            photoList = getRealPhotoList(data.photoList);
+            photoList = [];
             ledgerList = Array.isArray(data.ledgerList) ? data.ledgerList : [];
-            currentPhotoIndex = photoList.length ? Math.min(Math.max(parseInt(data.currentPhotoIndex || 0, 10), 0), photoList.length - 1) : 0;
+            currentPhotoIndex = 0;
             restoreMeasures(data.measures || {});
             restoreEditables(data.editables || {});
             rentPriceState = data.rentPriceState || { deposit: '', monthly: '' };
@@ -6057,7 +5974,7 @@
         updateDraftSaveBtnByKeyboardState_();
       }, 250);
 
-      sanitizeMosaicLocalDraftStorage_();
+      clearStoredDraftPhotosOnly_();
 
       var queryListingNumber = String(getQueryParam_('listingNumber') || '').trim();
 

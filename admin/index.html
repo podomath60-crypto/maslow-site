@@ -225,6 +225,44 @@
       border-color:#fb923c;
       color:#fff;
     }
+    .photo-add-btn.mosaic-btn.is-saving{
+      opacity:.88;
+      pointer-events:none;
+    }
+    .photo-add-btn.mosaic-btn.is-saving::before{
+      content:"";
+      display:inline-block;
+      width:13px;
+      height:13px;
+      margin-right:7px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.55);
+      border-top-color:#fff;
+      vertical-align:-2px;
+      animation:mosaicSpin .72s linear infinite;
+    }
+    .photo-add-btn.mosaic-undo-btn{
+      display:none;
+      min-height:34px;
+      padding:0 10px;
+      border-color:#e5e7eb;
+      background:#fff;
+      color:#6b7280;
+      font-size:12px;
+      font-weight:800;
+    }
+    .photo-add-btn.mosaic-undo-btn.show{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .photo-add-btn.mosaic-undo-btn:disabled{
+      opacity:.38;
+      pointer-events:none;
+    }
+    @keyframes mosaicSpin{
+      to{ transform:rotate(360deg); }
+    }
     .property-mosaic-canvas{
       position:absolute;
       left:0;
@@ -2064,6 +2102,7 @@
           <div class="property-photo-controls">
             <button type="button" class="photo-add-btn" id="heroAddBtn">사진 추가</button>
             <button type="button" class="photo-add-btn mosaic-btn" id="mosaicToggleBtn">모자이크</button>
+            <button type="button" class="photo-add-btn mosaic-undo-btn" id="mosaicUndoBtn" disabled>되돌리기</button>
             <div class="photo-nav">
               <button type="button" id="prevPhotoBtn">‹</button>
               <button type="button" id="nextPhotoBtn">›</button>
@@ -2266,6 +2305,7 @@
       var photoInput = document.getElementById('photoInput');
       var heroAddBtn = document.getElementById('heroAddBtn');
       var mosaicToggleBtn = document.getElementById('mosaicToggleBtn');
+      var mosaicUndoBtn = document.getElementById('mosaicUndoBtn');
       var deleteCurrentPhotoBtn = document.getElementById('deleteCurrentPhotoBtn');
       var prevPhotoBtn = document.getElementById('prevPhotoBtn');
       var nextPhotoBtn = document.getElementById('nextPhotoBtn');
@@ -2395,9 +2435,12 @@
       var mosaicMode = false;
       var mosaicReady = false;
       var mosaicDrawing = false;
+      var mosaicDirty = false;
+      var mosaicSaving = false;
+      var mosaicHistory = [];
+      var mosaicMaxHistory = 20;
       var mosaicBrushSize = 44;
       var mosaicPixelSize = 12;
-      var mosaicCommitTimer = null;
       var selectedDealType = '';
       var dragPhotoIndex = null;
       var touchHoldTimer = null;
@@ -3707,13 +3750,26 @@
         reader.readAsDataURL(file);
       }
 
+      function updateMosaicButtons_(){
+        if(mosaicToggleBtn){
+          mosaicToggleBtn.classList.toggle('active', mosaicMode);
+          mosaicToggleBtn.classList.toggle('is-saving', mosaicSaving);
+          mosaicToggleBtn.setAttribute('aria-pressed', mosaicMode ? 'true' : 'false');
+          mosaicToggleBtn.disabled = !!mosaicSaving;
+          mosaicToggleBtn.textContent = mosaicSaving ? '저장중' : (mosaicMode ? '모자이크 저장' : '모자이크');
+        }
+        if(mosaicUndoBtn){
+          mosaicUndoBtn.classList.toggle('show', mosaicMode);
+          mosaicUndoBtn.disabled = !mosaicMode || mosaicSaving || !mosaicHistory.length;
+        }
+      }
+
       function resetMosaicCanvas_(){
         mosaicDrawing = false;
         mosaicReady = false;
-        if(mosaicCommitTimer){
-          clearTimeout(mosaicCommitTimer);
-          mosaicCommitTimer = null;
-        }
+        mosaicDirty = false;
+        mosaicSaving = false;
+        mosaicHistory = [];
         if(mosaicCanvas){
           mosaicCanvas.classList.remove('active');
           if(mosaicCtx){
@@ -3724,26 +3780,28 @@
           mosaicCursor.style.display = 'none';
           mosaicCursor.style.transform = 'translate3d(-9999px,-9999px,0)';
         }
+        updateMosaicButtons_();
       }
 
       function setMosaicMode_(on){
         var next = !!on;
+        if(mosaicSaving) return;
         if(next && !photoList.length){
           showToast('사진을 먼저 올려주세요');
           return;
         }
         mosaicMode = next;
-        if(mosaicToggleBtn){
-          mosaicToggleBtn.classList.toggle('active', mosaicMode);
-          mosaicToggleBtn.setAttribute('aria-pressed', mosaicMode ? 'true' : 'false');
-        }
         document.body.classList.toggle('mosaic-mode-on', mosaicMode);
+        updateMosaicButtons_();
         if(!mosaicMode){
           resetMosaicCanvas_();
           return;
         }
+        mosaicDirty = false;
+        mosaicHistory = [];
+        updateMosaicButtons_();
         prepareMosaicCanvas_();
-        showToast('사진 위를 문지르면 모자이크가 적용됩니다');
+        showToast('사진 위를 문지른 뒤 모자이크 저장을 누르세요');
       }
 
       function getMosaicSourceUrl_(){
@@ -3846,6 +3904,7 @@
                 mosaicCanvas.toDataURL('image/jpeg', 0.72);
                 mosaicReady = true;
                 mosaicCanvas.classList.add('active');
+                updateMosaicButtons_();
               }catch(err){
                 console.error(err);
                 setMosaicMode_(false);
@@ -3911,18 +3970,67 @@
         mosaicCtx.imageSmoothingEnabled = true;
       }
 
-      function commitMosaicToCurrentPhoto_(){
+      function pushMosaicHistory_(){
+        if(!mosaicCanvas || !mosaicReady) return;
+        try{
+          mosaicHistory.push(mosaicCanvas.toDataURL('image/jpeg', 0.9));
+          if(mosaicHistory.length > mosaicMaxHistory){
+            mosaicHistory.shift();
+          }
+          updateMosaicButtons_();
+        }catch(err){
+          console.error(err);
+        }
+      }
+
+      function restoreMosaicCanvasFromDataUrl_(dataUrl, done){
+        if(!dataUrl || !mosaicCanvas || !mosaicCtx) return;
+        var img = new Image();
+        img.onload = function(){
+          mosaicCtx.clearRect(0, 0, mosaicCanvas.width || 0, mosaicCanvas.height || 0);
+          mosaicCtx.drawImage(img, 0, 0, mosaicCanvas.width || 1, mosaicCanvas.height || 1);
+          if(typeof done === 'function') done();
+        };
+        img.onerror = function(){
+          showToast('되돌리기 실패');
+        };
+        img.src = dataUrl;
+      }
+
+      function undoMosaicStroke_(){
+        if(!mosaicMode || mosaicSaving || !mosaicHistory.length){
+          showToast('되돌릴 모자이크가 없습니다');
+          return;
+        }
+        var prevDataUrl = mosaicHistory.pop();
+        restoreMosaicCanvasFromDataUrl_(prevDataUrl, function(){
+          mosaicDirty = mosaicHistory.length > 0;
+          updateMosaicButtons_();
+          showToast('되돌림');
+        });
+      }
+
+      function saveMosaicToCurrentPhoto_(){
+        if(!mosaicMode || mosaicSaving) return;
         if(!mosaicCanvas || !mosaicReady || !photoList[currentPhotoIndex]) return;
+        if(!mosaicDirty){
+          showToast('저장할 모자이크가 없습니다');
+          setMosaicMode_(false);
+          return;
+        }
         var item = photoList[currentPhotoIndex];
         var dataUrl = '';
         try{
           dataUrl = mosaicCanvas.toDataURL('image/jpeg', 0.9);
         }catch(err){
           console.error(err);
-          showToast('이 사진은 다시 올린 뒤 모자이크할 수 있습니다');
-          setMosaicMode_(false);
+          showToast('모자이크 이미지 생성 실패');
           return;
         }
+
+        mosaicSaving = true;
+        updateMosaicButtons_();
+
         item.url = dataUrl;
         item.dataUrl = dataUrl;
         item.localDataUrl = dataUrl;
@@ -3931,22 +4039,20 @@
         item.editType = 'mosaic';
         renderHero();
         queueSave();
+
         uploadTempFileToServer_('photo', item)
-          .then(function(){ showToast('모자이크 반영됨'); })
+          .then(function(){
+            showToast('모자이크 저장됨');
+            mosaicMode = false;
+            document.body.classList.remove('mosaic-mode-on');
+            resetMosaicCanvas_();
+          })
           .catch(function(err){
             console.error(err);
-            showToast('모자이크 전송 실패');
+            showToast('모자이크 저장 실패');
+            mosaicSaving = false;
+            updateMosaicButtons_();
           });
-      }
-
-      function scheduleMosaicCommit_(){
-        if(mosaicCommitTimer){
-          clearTimeout(mosaicCommitTimer);
-        }
-        mosaicCommitTimer = setTimeout(function(){
-          mosaicCommitTimer = null;
-          commitMosaicToCurrentPhoto_();
-        }, 120);
       }
 
       function bindMosaicEvents_(){
@@ -3955,6 +4061,9 @@
           if(!mosaicMode || !mosaicReady) return;
           e.preventDefault();
           mosaicDrawing = true;
+          pushMosaicHistory_();
+          mosaicDirty = true;
+          updateMosaicButtons_();
           try{ mosaicCanvas.setPointerCapture(e.pointerId); }catch(err){}
           updateMosaicCursor_(e.clientX, e.clientY, e.pointerType);
           applyMosaicAt_(e.clientX, e.clientY);
@@ -3972,7 +4081,7 @@
           e.preventDefault();
           mosaicDrawing = false;
           try{ mosaicCanvas.releasePointerCapture(e.pointerId); }catch(err){}
-          scheduleMosaicCommit_();
+          updateMosaicButtons_();
         }
         mosaicCanvas.addEventListener('pointerup', finish);
         mosaicCanvas.addEventListener('pointercancel', finish);
@@ -4278,7 +4387,16 @@
       heroAddBtn.addEventListener('click', function(){ setMosaicMode_(false); photoInput.click(); });
       if(mosaicToggleBtn){
         mosaicToggleBtn.addEventListener('click', function(){
-          setMosaicMode_(!mosaicMode);
+          if(mosaicMode){
+            saveMosaicToCurrentPhoto_();
+            return;
+          }
+          setMosaicMode_(true);
+        });
+      }
+      if(mosaicUndoBtn){
+        mosaicUndoBtn.addEventListener('click', function(){
+          undoMosaicStroke_();
         });
       }
       bindMosaicEvents_();

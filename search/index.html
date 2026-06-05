@@ -393,9 +393,11 @@
       var raw = (item && item.raw) ? item.raw : item || {};
       var parts = [];
 
-      var platArea = formatSquareMeter(raw.platArea || (item && item.platArea));
-      var archArea = formatSquareMeter(raw.archArea || (item && item.archArea));
-      var totArea = formatSquareMeter(raw.totArea || (item && item.totArea));
+      // 건축물대장 표제부 원본 필드 기준
+      // platArea = 대지면적, archArea = 건축면적, totArea = 연면적
+      var platArea = formatSquareMeter(raw.platArea);
+      var archArea = formatSquareMeter(raw.archArea);
+      var totArea = formatSquareMeter(raw.totArea);
 
       if(platArea) parts.push('대지면적 ' + platArea);
       if(archArea) parts.push('건축면적 ' + archArea);

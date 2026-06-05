@@ -1232,6 +1232,66 @@
       if(v.length !== 8) return String(v || '').trim();
       return v.slice(0,4)+'.'+v.slice(4,6)+'.'+v.slice(6,8);
     }
+
+
+    function normalizeUseAprDayInput(v){
+      var raw = String(v == null ? '' : v).trim();
+      if(!raw){
+        return { ok:false, message:'사용승인일을 입력하세요.', value:'', display:'' };
+      }
+
+      // 2011.03.23 / 2011-03-23 / 2011/03/23 / 2011 03 23 / 20110323 모두 허용
+      var parts = raw.match(/\d+/g) || [];
+      var y = '', m = '', d = '';
+
+      if(parts.length >= 3){
+        y = parts[0];
+        m = parts[1];
+        d = parts[2];
+      } else {
+        var digits = raw.replace(/\D/g, '');
+        if(digits.length === 8){
+          y = digits.slice(0, 4);
+          m = digits.slice(4, 6);
+          d = digits.slice(6, 8);
+        } else if(digits.length === 6){
+          // 혹시 110323처럼 넣은 경우는 2011-03-23으로 보정하지 않음. 오입력 방지.
+          return { ok:false, message:'사용승인일은 예: 2011.03.23 또는 20110323 형식으로 입력하세요.', value:'', display:raw };
+        } else {
+          return { ok:false, message:'사용승인일은 예: 2011.03.23 또는 20110323 형식으로 입력하세요.', value:'', display:raw };
+        }
+      }
+
+      if(y.length !== 4){
+        return { ok:false, message:'연도는 4자리로 입력하세요. 예: 2011.03.23', value:'', display:raw };
+      }
+
+      m = String(Number(m));
+      d = String(Number(d));
+      if(m === 'NaN' || d === 'NaN'){
+        return { ok:false, message:'월/일을 확인하세요. 예: 2011.03.23', value:'', display:raw };
+      }
+
+      var yy = Number(y), mm = Number(m), dd = Number(d);
+      if(!isFinite(yy) || !isFinite(mm) || !isFinite(dd) || yy < 1800 || yy > 2200 || mm < 1 || mm > 12 || dd < 1 || dd > 31){
+        return { ok:false, message:'사용승인일 날짜를 확인하세요. 예: 2011.03.23', value:'', display:raw };
+      }
+
+      var dt = new Date(yy, mm - 1, dd);
+      if(dt.getFullYear() !== yy || dt.getMonth() !== mm - 1 || dt.getDate() !== dd){
+        return { ok:false, message:'존재하지 않는 날짜입니다. 예: 2011.03.23', value:'', display:raw };
+      }
+
+      var mm2 = String(mm).padStart(2, '0');
+      var dd2 = String(dd).padStart(2, '0');
+      return {
+        ok:true,
+        value:String(yy) + mm2 + dd2,
+        display:String(yy) + '.' + mm2 + '.' + dd2,
+        raw:raw
+      };
+    }
+
     function formatArea(v){
       if(v == null || v === '') return '';
       var n = Number(v);

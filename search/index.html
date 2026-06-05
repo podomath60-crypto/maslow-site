@@ -590,6 +590,19 @@
     @media (min-width:1180px){
       .page{padding-left:332px;}
     }
+    @media (max-width:1179px){
+      .log-panel{
+        position:relative;
+        width:auto;
+        height:220px;
+        left:auto;
+        top:auto;
+        bottom:auto;
+        z-index:1;
+        border-right:none;
+        border-bottom:1px solid rgba(255,255,255,.10);
+      }
+    }
 
     @media (max-width:980px){
       .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -965,20 +978,6 @@
     }
 
 
-    @media (max-width:1179px){
-      .log-panel{
-        position:relative;
-        width:auto;
-        height:220px;
-        left:auto;
-        top:auto;
-        bottom:auto;
-        z-index:1;
-        border-right:none;
-        border-bottom:1px solid rgba(255,255,255,.10);
-      }
-    }
-
   </style>
 </head>
 <body>
@@ -1093,7 +1092,7 @@
     </div>
   </div>
 
-  <script src="./bjdong-codes.js"></script>
+  <script src="/search/bjdong-codes.js" onerror="document.write('<script src=&quot;./bjdong-codes.js&quot;><\/script>')"></script>
   <script>
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
     var picked = null;
@@ -1290,62 +1289,6 @@
         .replaceAll("'",'&#39;');
     }
 
-    function addLog(message, type){
-      if(!els.logList) return;
-      var now = new Date();
-      var hh = String(now.getHours()).padStart(2, '0');
-      var mm = String(now.getMinutes()).padStart(2, '0');
-      var ss = String(now.getSeconds()).padStart(2, '0');
-      var line = document.createElement('div');
-      line.className = 'log-line' + (type ? ' ' + type : '');
-      line.innerHTML = '<span class="log-time">[' + hh + ':' + mm + ':' + ss + ']</span>' + escapeHtml(message || '');
-      els.logList.appendChild(line);
-      els.logList.scrollTop = els.logList.scrollHeight;
-    }
-
-    function clearLogs(){
-      if(els.logList) els.logList.innerHTML = '';
-      addLog('로그 초기화');
-    }
-
-    function normalizeUseAprDayInput(value){
-      var original = String(value == null ? '' : value).trim();
-      if(!original){
-        return { ok:false, value:'', message:'사용승인일이 비어 있습니다.' };
-      }
-
-      var digits = original.replace(/\D/g, '');
-      var y = '', m = '', d = '';
-
-      if(/^\d{8}$/.test(digits)){
-        y = digits.slice(0, 4);
-        m = digits.slice(4, 6);
-        d = digits.slice(6, 8);
-      }else{
-        var parts = original.match(/\d+/g) || [];
-        if(parts.length >= 3 && parts[0].length === 4){
-          y = parts[0];
-          m = parts[1].padStart(2, '0');
-          d = parts[2].padStart(2, '0');
-        }
-      }
-
-      var normalized = y + m + d;
-      if(!/^\d{8}$/.test(normalized)){
-        return { ok:false, value:digits, message:'사용승인일을 20200115 또는 2020-1-15처럼 입력하세요.' };
-      }
-
-      var yy = Number(y);
-      var mm = Number(m);
-      var dd = Number(d);
-      var dt = new Date(yy, mm - 1, dd);
-      if(dt.getFullYear() !== yy || dt.getMonth() !== mm - 1 || dt.getDate() !== dd){
-        return { ok:false, value:normalized, message:'존재하지 않는 날짜입니다: ' + original };
-      }
-
-      return { ok:true, value:normalized, display:y + '-' + m + '-' + d };
-    }
-
 
     function getMapQuery(){
       if(!picked) return '';
@@ -1500,9 +1443,15 @@
       var items = getBjdongItems();
       var q = normalizeSearchText(els.dongSearchInput && els.dongSearchInput.value);
       if(els.dongDataNote){
-        els.dongDataNote.textContent = '내장 법정동 ' + items.length.toLocaleString('ko-KR') + '건';
+        els.dongDataNote.textContent = items.length
+          ? ('내장 법정동 ' + items.length.toLocaleString('ko-KR') + '건')
+          : '법정동 데이터 로드 실패';
       }
       if(!els.dongResultList) return;
+      if(!items.length){
+        els.dongResultList.innerHTML = '<div class="dong-empty-msg">법정동 데이터 파일을 불러오지 못했습니다.<br>/search/bjdong-codes.js 배포 여부를 확인하세요.</div>';
+        return;
+      }
       if(!q){
         els.dongResultList.innerHTML = '<div class="dong-empty-msg">동 이름을 입력하세요.<br>예: 오식도동, 군산, 성수동</div>';
         return;
@@ -1546,7 +1495,6 @@
             picked.name ? ('선택법정동: ' + picked.name) : ''
           ], '\n');
           setStatus('사용승인일을 입력한 뒤 조회하세요.', '');
-          addLog('법정동 선택: ' + (picked.name || '') + ' / ' + (picked.bcode || ''), 'ok');
           renderMapLink();
           closeDongSearch();
         });

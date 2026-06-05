@@ -63,6 +63,7 @@
     .results{display:grid;gap:10px;margin-top:12px}
     .result-item{background:#fff;border:1px solid #dbeafe;border-radius:18px;padding:16px;display:grid;gap:12px;box-shadow:0 10px 28px rgba(37,99,235,.08)}
     .addr{font-size:19px;font-weight:950;line-height:1.45;word-break:keep-all}
+    .building-name{font-size:15px;font-weight:900;color:#111827;line-height:1.45}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
     .action-btn,.map-link{height:42px;padding:0 14px;border-radius:12px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
     .map-link{background:#03c75a;border-color:#03c75a;color:#fff}
@@ -85,6 +86,24 @@
     .loading-box{background:#fff;border:1px solid #dbeafe;border-radius:24px;padding:28px 30px;box-shadow:0 20px 80px rgba(37,99,235,.22);display:grid;justify-items:center;gap:14px}
     .spinner{width:54px;height:54px;border-radius:50%;border:6px solid #dbeafe;border-top-color:#2563eb;animation:spin .8s linear infinite}
     .loading-text{font-size:18px;font-weight:950;line-height:1.45;color:#111827}
+    .search-progress{width:min(420px,72vw);display:grid;gap:10px;margin-top:2px}
+    .progress-track{position:relative;height:18px;border-radius:999px;background:#e0ecff;border:1px solid #bfdbfe;overflow:hidden;box-shadow:inset 0 2px 5px rgba(37,99,235,.09)}
+    .progress-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:999px;background:linear-gradient(90deg,#60a5fa,#2563eb);animation:progressFill30 30s linear forwards}
+    .paper-lane{position:absolute;inset:0;overflow:hidden;border-radius:999px}
+    .paper{position:absolute;top:1px;left:-28px;width:18px;height:14px;border-radius:3px;background:#fff;border:1px solid #93c5fd;box-shadow:0 2px 5px rgba(37,99,235,.18);opacity:0;animation:paperFly 2.4s linear infinite}
+    .paper:before{content:"";position:absolute;left:3px;right:3px;top:4px;height:1px;background:#93c5fd;box-shadow:0 4px 0 #bfdbfe}
+    .paper.p2{animation-delay:.38s;top:2px}
+    .paper.p3{animation-delay:.76s;top:1px}
+    .paper.p4{animation-delay:1.14s;top:2px}
+    .paper.p5{animation-delay:1.52s;top:1px}
+    .progress-caption{font-size:12px;font-weight:800;color:#6b7280}
+    @keyframes progressFill30{from{width:0}to{width:100%}}
+    @keyframes paperFly{
+      0%{transform:translateX(0) translateY(0) rotate(0deg);opacity:0}
+      12%{opacity:1}
+      70%{opacity:.95}
+      100%{transform:translateX(440px) translateY(-10px) rotate(-22deg);opacity:0}
+    }
     @keyframes spin{to{transform:rotate(360deg)}}
     .lamp-burst{position:fixed;inset:0;z-index:50;pointer-events:none;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.08)}
     .lamp-burst.show{display:flex}
@@ -152,6 +171,19 @@
     <div class="loading-box">
       <div class="spinner" aria-hidden="true"></div>
       <div class="loading-text">딸깍비서가<br>열심히 찾아보고 있어요...</div>
+      <div class="search-progress" aria-hidden="true">
+        <div class="progress-track">
+          <div class="progress-fill"></div>
+          <div class="paper-lane">
+            <span class="paper p1"></span>
+            <span class="paper p2"></span>
+            <span class="paper p3"></span>
+            <span class="paper p4"></span>
+            <span class="paper p5"></span>
+          </div>
+        </div>
+        <div class="progress-caption">건축물대장 서류를 뒤져보는 중...</div>
+      </div>
     </div>
   </div>
 
@@ -203,6 +235,21 @@
     function setLoading(on){
       els.loading.classList.toggle('show', !!on);
       els.lookupBtn.disabled = !!on;
+
+      if(on){
+        var fill = els.loading.querySelector('.progress-fill');
+        var papers = els.loading.querySelectorAll('.paper');
+        if(fill){
+          fill.style.animation = 'none';
+          void fill.offsetWidth;
+          fill.style.animation = '';
+        }
+        Array.prototype.forEach.call(papers, function(paper){
+          paper.style.animation = 'none';
+          void paper.offsetWidth;
+          paper.style.animation = '';
+        });
+      }
     }
 
     function showLampBurst(){
@@ -374,18 +421,58 @@
       return addr ? 'https://map.naver.com/p/search/' + encodeURIComponent(addr) : '';
     }
 
-    function dedupeAddressItems(items){
-      var seen = {};
-      var out = [];
+
+    function getBuildingNameFromItem(item){
+      var raw = (item && item.raw) ? item.raw : item || {};
+      return String((item && item.buildingName) || raw.bldNm || '').trim();
+    }
+
+
+    function getRawFromItem(item){
+      return (item && item.raw) ? item.raw : item || {};
+    }
+
+
+
+    function getBuildingNameFromGroup(group){
+      var names = [];
+      (group.items || []).forEach(function(item){
+        var name = getBuildingNameFromItem(item);
+        if(name && names.indexOf(name) === -1) names.push(name);
+      });
+
+      if(!names.length) return '';
+      if(names.length === 1) {
+        var itemCount = (group.items || []).length;
+        return itemCount > 1 ? names[0] + ' 외 ' + (itemCount - 1) + '동' : names[0];
+      }
+
+      return names[0] + ' 외 ' + (names.length - 1) + '동';
+    }
+
+
+    function groupAddressItems(items){
+      var map = {};
+      var groups = [];
+
       (items || []).forEach(function(item){
         var addr = getAddressFromItem(item);
         if(!addr) return;
+
         var key = addr.replace(/\s+/g, '').toLowerCase();
-        if(seen[key]) return;
-        seen[key] = true;
-        out.push(item);
+        if(!map[key]){
+          map[key] = {
+            address: addr,
+            items: [],
+            naverMapUrl: getNaverMapUrl(item)
+          };
+          groups.push(map[key]);
+        }
+
+        map[key].items.push(item);
       });
-      return out;
+
+      return groups;
     }
 
     async function copyText(text){
@@ -403,20 +490,23 @@
       }
     }
 
-    function renderAddressResults(items){
+    function renderAddressResults(groups){
       els.results.innerHTML = '';
-      if(!items.length){
+      if(!groups.length){
         els.empty.style.display = 'block';
         els.empty.textContent = '일치하는 주소가 없습니다.';
         return;
       }
 
       els.empty.style.display = 'none';
-      els.results.innerHTML = items.map(function(item, idx){
-        var addr = getAddressFromItem(item);
-        var mapUrl = getNaverMapUrl(item);
+      els.results.innerHTML = groups.map(function(group, idx){
+        var addr = group.address || '';
+        var mapUrl = group.naverMapUrl || (addr ? 'https://map.naver.com/p/search/' + encodeURIComponent(addr) : '');
+        var buildingName = getBuildingNameFromGroup(group);
+
         return '<div class="result-item">' +
           '<div class="addr">' + escapeHtml(addr || '주소 없음') + '</div>' +
+          (buildingName ? '<div class="building-name">건물명: ' + escapeHtml(buildingName) + '</div>' : '') +
           '<div class="actions">' +
           '<button class="action-btn" type="button" data-copy-idx="' + idx + '">주소복사</button>' +
           (mapUrl ? '<a class="map-link" href="' + escapeHtml(mapUrl) + '" target="_blank" rel="noopener">네이버 지도로 조회</a>' : '') +
@@ -426,8 +516,8 @@
 
       Array.prototype.forEach.call(els.results.querySelectorAll('[data-copy-idx]'), function(btn){
         btn.addEventListener('click', function(){
-          var item = items[Number(btn.getAttribute('data-copy-idx'))];
-          var addr = getAddressFromItem(item);
+          var group = groups[Number(btn.getAttribute('data-copy-idx'))];
+          var addr = group && group.address;
           if(addr) copyText(addr);
         });
       });
@@ -475,17 +565,17 @@
         }
 
         var rawItems = getResultItems(res).filter(function(item){ return !!getAddressFromItem(item); });
-        var items = dedupeAddressItems(rawItems);
+        var groups = groupAddressItems(rawItems);
 
-        if(!items.length){
+        if(!groups.length){
           setStatus('일치하는 주소가 없습니다.', 'err');
         }else{
-          setStatus('조회 완료 · ' + items.length + '건', 'ok');
+          setStatus('조회 완료 · ' + groups.length + '건', 'ok');
           showLampBurst();
         }
 
-        addLog('조회 완료: 원본 ' + rawItems.length + '건 / 중복 제거 ' + items.length + '건');
-        renderAddressResults(items);
+        addLog('조회 완료: 원본 ' + rawItems.length + '건 / 주소 그룹 ' + groups.length + '건');
+        renderAddressResults(groups);
       }catch(e){
         addLog('조회 실패: ' + (e && e.message ? e.message : String(e)));
         setStatus('조회 실패 · ' + (e && e.message ? e.message : String(e)), 'err');

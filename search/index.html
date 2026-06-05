@@ -520,6 +520,77 @@
     }
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
+
+
+    .log-panel{
+      position:fixed;
+      left:0;
+      top:0;
+      bottom:0;
+      width:320px;
+      z-index:70;
+      background:#0f172a;
+      color:#dbe7ff;
+      border-right:1px solid rgba(255,255,255,.10);
+      display:flex;
+      flex-direction:column;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    }
+    .log-head{
+      flex:0 0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 12px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .log-title{
+      font-size:13px;
+      line-height:1.2;
+      font-weight:900;
+      color:#ffffff;
+      letter-spacing:-0.03em;
+    }
+    .log-clear-btn{
+      flex:0 0 auto;
+      min-height:28px;
+      padding:0 9px;
+      border-radius:8px;
+      background:rgba(255,255,255,.08);
+      color:#cbd5e1;
+      font-size:11px;
+      font-weight:900;
+    }
+    .log-list{
+      flex:1 1 auto;
+      overflow:auto;
+      padding:10px 10px 14px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .log-line{
+      white-space:pre-wrap;
+      word-break:break-word;
+      font-size:11px;
+      line-height:1.55;
+      color:#cbd5e1;
+      padding-bottom:8px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .log-time{
+      color:#93c5fd;
+      font-weight:900;
+      margin-right:4px;
+    }
+    .log-line.err{color:#fecaca}
+    .log-line.ok{color:#bbf7d0}
+    .log-line.warn{color:#fde68a}
+    @media (min-width:1180px){
+      .page{padding-left:332px;}
+    }
+
     @media (max-width:980px){
       .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .field-grid,.item-fields{grid-template-columns:1fr}
@@ -894,9 +965,31 @@
     }
 
 
+    @media (max-width:1179px){
+      .log-panel{
+        position:relative;
+        width:auto;
+        height:220px;
+        left:auto;
+        top:auto;
+        bottom:auto;
+        z-index:1;
+        border-right:none;
+        border-bottom:1px solid rgba(255,255,255,.10);
+      }
+    }
+
   </style>
 </head>
 <body>
+  <aside id="logPanel" class="log-panel" aria-label="조회 로그">
+    <div class="log-head">
+      <div class="log-title">조회 로그</div>
+      <button id="logClearBtn" class="log-clear-btn" type="button">지우기</button>
+    </div>
+    <div id="logList" class="log-list"></div>
+  </aside>
+
   <div class="page">
     <div class="wrap">
       <div class="hero">
@@ -926,7 +1019,7 @@
               </button>
             </div>
             <div class="dong-condition-row">
-              <input id="useAprDayInput" class="dong-date-input" type="date" aria-label="사용승인일" />
+              <input id="useAprDayInput" class="dong-date-input" type="text" inputmode="numeric" placeholder="사용승인일 예: 20200115 / 2020-1-15" aria-label="사용승인일" autocomplete="off" />
             </div>
             <button id="lookupBtn" class="lookup-btn" type="button">조회</button>
           </div>
@@ -1000,7 +1093,7 @@
     </div>
   </div>
 
-  <script src="/search/bjdong-codes.js" onerror="document.write('<script src=&quot;./bjdong-codes.js&quot;><\/script>')"></script>
+  <script src="./bjdong-codes.js"></script>
   <script>
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
     var picked = null;
@@ -1035,7 +1128,9 @@
       dongSearchInput: document.getElementById('dongSearchInput'),
       dongResultList: document.getElementById('dongResultList'),
       dongCloseBtn: document.getElementById('dongCloseBtn'),
-      dongDataNote: document.getElementById('dongDataNote')
+      dongDataNote: document.getElementById('dongDataNote'),
+      logList: document.getElementById('logList'),
+      logClearBtn: document.getElementById('logClearBtn')
     };
 
     var SOURCE_CONFIG = {
@@ -1195,6 +1290,62 @@
         .replaceAll("'",'&#39;');
     }
 
+    function addLog(message, type){
+      if(!els.logList) return;
+      var now = new Date();
+      var hh = String(now.getHours()).padStart(2, '0');
+      var mm = String(now.getMinutes()).padStart(2, '0');
+      var ss = String(now.getSeconds()).padStart(2, '0');
+      var line = document.createElement('div');
+      line.className = 'log-line' + (type ? ' ' + type : '');
+      line.innerHTML = '<span class="log-time">[' + hh + ':' + mm + ':' + ss + ']</span>' + escapeHtml(message || '');
+      els.logList.appendChild(line);
+      els.logList.scrollTop = els.logList.scrollHeight;
+    }
+
+    function clearLogs(){
+      if(els.logList) els.logList.innerHTML = '';
+      addLog('로그 초기화');
+    }
+
+    function normalizeUseAprDayInput(value){
+      var original = String(value == null ? '' : value).trim();
+      if(!original){
+        return { ok:false, value:'', message:'사용승인일이 비어 있습니다.' };
+      }
+
+      var digits = original.replace(/\D/g, '');
+      var y = '', m = '', d = '';
+
+      if(/^\d{8}$/.test(digits)){
+        y = digits.slice(0, 4);
+        m = digits.slice(4, 6);
+        d = digits.slice(6, 8);
+      }else{
+        var parts = original.match(/\d+/g) || [];
+        if(parts.length >= 3 && parts[0].length === 4){
+          y = parts[0];
+          m = parts[1].padStart(2, '0');
+          d = parts[2].padStart(2, '0');
+        }
+      }
+
+      var normalized = y + m + d;
+      if(!/^\d{8}$/.test(normalized)){
+        return { ok:false, value:digits, message:'사용승인일을 20200115 또는 2020-1-15처럼 입력하세요.' };
+      }
+
+      var yy = Number(y);
+      var mm = Number(m);
+      var dd = Number(d);
+      var dt = new Date(yy, mm - 1, dd);
+      if(dt.getFullYear() !== yy || dt.getMonth() !== mm - 1 || dt.getDate() !== dd){
+        return { ok:false, value:normalized, message:'존재하지 않는 날짜입니다: ' + original };
+      }
+
+      return { ok:true, value:normalized, display:y + '-' + m + '-' + d };
+    }
+
 
     function getMapQuery(){
       if(!picked) return '';
@@ -1297,6 +1448,7 @@
         });
 
         script.src = GAS_URL + '?' + q.toString();
+        addLog('GAS 요청 시작: action=' + (params.action || '') + ', bcode=' + (params.bcode || '') + ', useAprDay=' + (params.useAprDay || ''));
         document.body.appendChild(script);
 
         timer = setTimeout(function(){
@@ -1304,7 +1456,7 @@
           done = true;
           cleanup();
           reject(new Error('JSONP 타임아웃'));
-        }, 15000);
+        }, 30000);
       });
     }
 
@@ -1348,15 +1500,9 @@
       var items = getBjdongItems();
       var q = normalizeSearchText(els.dongSearchInput && els.dongSearchInput.value);
       if(els.dongDataNote){
-        els.dongDataNote.textContent = items.length
-          ? ('내장 법정동 ' + items.length.toLocaleString('ko-KR') + '건')
-          : '법정동 데이터 로드 실패';
+        els.dongDataNote.textContent = '내장 법정동 ' + items.length.toLocaleString('ko-KR') + '건';
       }
       if(!els.dongResultList) return;
-      if(!items.length){
-        els.dongResultList.innerHTML = '<div class="dong-empty-msg">법정동 데이터 파일을 불러오지 못했습니다.<br>/search/bjdong-codes.js 배포 여부를 확인하세요.</div>';
-        return;
-      }
       if(!q){
         els.dongResultList.innerHTML = '<div class="dong-empty-msg">동 이름을 입력하세요.<br>예: 오식도동, 군산, 성수동</div>';
         return;
@@ -1400,6 +1546,7 @@
             picked.name ? ('선택법정동: ' + picked.name) : ''
           ], '\n');
           setStatus('사용승인일을 입력한 뒤 조회하세요.', '');
+          addLog('법정동 선택: ' + (picked.name || '') + ' / ' + (picked.bcode || ''), 'ok');
           renderMapLink();
           closeDongSearch();
         });
@@ -2015,12 +2162,16 @@
           return;
         }
 
-        var useAprDay = String((els.useAprDayInput && els.useAprDayInput.value) || '').replace(/\D/g, '');
-        if(useAprDay.length !== 8){
-          setStatus('사용승인일을 선택해주세요.', 'err');
+        var normalizedDate = normalizeUseAprDayInput(els.useAprDayInput && els.useAprDayInput.value);
+        if(!normalizedDate.ok){
+          setStatus(normalizedDate.message, 'err');
+          addLog('날짜 정규화 실패: ' + normalizedDate.message, 'err');
           if(els.useAprDayInput) els.useAprDayInput.focus();
           return;
         }
+        var useAprDay = normalizedDate.value;
+        if(els.useAprDayInput) els.useAprDayInput.value = normalizedDate.display;
+        addLog('날짜 정규화: ' + normalizedDate.display + ' → ' + useAprDay, 'ok');
 
         setLoading(true);
         setStatus('', '');
@@ -2034,20 +2185,27 @@
         };
 
         var res = await jsonpCall(params);
+        addLog('GAS 응답 수신: ok=' + !!(res && res.ok) + ', message=' + ((res && (res.message || res.error)) || ''), (res && res.ok) ? 'ok' : 'err');
         if(!(res && res.ok)){
-          setStatus((res && res.message) ? res.message : '조회 실패 · 서버가 혼잡합니다. 다시 조회 버튼을 눌러주세요.', 'err');
+          var failMsg = (res && (res.message || res.error)) ? (res.message || res.error) : '조회 실패 · 서버 응답 없음';
+          setStatus(failMsg, 'err');
+          addLog('조회 실패 상세: ' + failMsg, 'err');
           return;
         }
 
         if(!(((res.apis || {}).title || {}).items || []).length){
           setStatus('일치하는 건축물이 없습니다.', 'err');
+          addLog('일치 결과 0건', 'warn');
         }else{
           setStatus('조회 완료 · ' + (((res.apis || {}).title || {}).items || []).length + '건', '');
+          addLog('조회 완료: ' + (((res.apis || {}).title || {}).items || []).length + '건', 'ok');
         }
 
         renderResult(res);
       }catch(e){
-        setStatus('조회 실패 · 서버가 혼잡합니다. 다시 조회 버튼을 눌러주세요.', 'err');
+        var msg = e && e.message ? e.message : String(e);
+        setStatus('조회 실패 · ' + msg, 'err');
+        addLog('조회 예외: ' + msg, 'err');
       }finally{
         setLoading(false);
       }
@@ -2070,6 +2228,10 @@
     if(els.useAprDayInput){
       els.useAprDayInput.addEventListener('keydown', function(e){
         if(e.key === 'Enter') lookup();
+      });
+      els.useAprDayInput.addEventListener('blur', function(){
+        var n = normalizeUseAprDayInput(els.useAprDayInput.value);
+        if(n.ok) els.useAprDayInput.value = n.display;
       });
     }
 
@@ -2096,6 +2258,12 @@
       });
     }
 
+    if(els.logClearBtn){
+      els.logClearBtn.addEventListener('click', function(){ clearLogs(); });
+    }
+
+    addLog('프론트 로드 완료');
+    addLog('법정동 데이터: ' + getBjdongItems().length.toLocaleString('ko-KR') + '건');
     renderAddressDisplay();
     renderMapLink();
   </script>

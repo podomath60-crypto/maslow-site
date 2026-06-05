@@ -63,8 +63,6 @@
     .results{display:grid;gap:10px;margin-top:12px}
     .result-item{background:#fff;border:1px solid #dbeafe;border-radius:18px;padding:16px;display:grid;gap:12px;box-shadow:0 10px 28px rgba(37,99,235,.08)}
     .addr{font-size:19px;font-weight:950;line-height:1.45;word-break:keep-all}
-    .building-name{font-size:15px;font-weight:900;color:#111827;line-height:1.45}
-    .area-meta{font-size:14px;font-weight:800;color:#4b5563;line-height:1.45}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
     .action-btn,.map-link{height:42px;padding:0 14px;border-radius:12px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
     .map-link{background:#03c75a;border-color:#03c75a;color:#fff}
@@ -376,36 +374,6 @@
       return addr ? 'https://map.naver.com/p/search/' + encodeURIComponent(addr) : '';
     }
 
-    function formatSquareMeter(v){
-      if(v == null || v === '') return '';
-      var n = Number(v);
-      if(!isFinite(n) || n <= 0) return '';
-      var rounded = Math.round(n * 100) / 100;
-      return rounded.toLocaleString('ko-KR') + '㎡';
-    }
-
-    function getBuildingNameFromItem(item){
-      var raw = (item && item.raw) ? item.raw : item || {};
-      return String((item && item.buildingName) || raw.bldNm || '').trim();
-    }
-
-    function getAreaMetaFromItem(item){
-      var raw = (item && item.raw) ? item.raw : item || {};
-      var parts = [];
-
-      // 건축물대장 표제부 원본 필드 기준
-      // platArea = 대지면적, archArea = 건축면적, totArea = 연면적
-      var platArea = formatSquareMeter(raw.platArea);
-      var archArea = formatSquareMeter(raw.archArea);
-      var totArea = formatSquareMeter(raw.totArea);
-
-      if(platArea) parts.push('대지면적 ' + platArea);
-      if(archArea) parts.push('건축면적 ' + archArea);
-      if(totArea) parts.push('연면적 ' + totArea);
-
-      return parts.join(' · ');
-    }
-
     function dedupeAddressItems(items){
       var seen = {};
       var out = [];
@@ -447,12 +415,8 @@
       els.results.innerHTML = items.map(function(item, idx){
         var addr = getAddressFromItem(item);
         var mapUrl = getNaverMapUrl(item);
-        var buildingName = getBuildingNameFromItem(item);
-        var areaMeta = getAreaMetaFromItem(item);
         return '<div class="result-item">' +
           '<div class="addr">' + escapeHtml(addr || '주소 없음') + '</div>' +
-          (buildingName ? '<div class="building-name">건물명: ' + escapeHtml(buildingName) + '</div>' : '') +
-          (areaMeta ? '<div class="area-meta">' + escapeHtml(areaMeta) + '</div>' : '') +
           '<div class="actions">' +
           '<button class="action-btn" type="button" data-copy-idx="' + idx + '">주소복사</button>' +
           (mapUrl ? '<a class="map-link" href="' + escapeHtml(mapUrl) + '" target="_blank" rel="noopener">네이버 지도로 조회</a>' : '') +

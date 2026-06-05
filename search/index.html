@@ -1,1382 +1,148 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Maslow 매물조회기</title>
-
-  <link rel="icon" type="image/jpeg" href="https://cdn.imweb.me/thumbnail/20260410/12d82d40b1745.jpg" />
-  <link rel="shortcut icon" href="https://cdn.imweb.me/thumbnail/20260410/12d82d40b1745.jpg" />
-  <link rel="apple-touch-icon" href="https://cdn.imweb.me/thumbnail/20260410/12d82d40b1745.jpg" />
-
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="매슬로우 - 건축물대장 동조회기" />
-  <meta property="og:description" content="부동산 IT 서비스 · 무료 건축물대장 동조회기" />
-  <meta property="og:image" content="https://cdn.imweb.me/thumbnail/20260410/e2d5bcd79cb3e.jpg" />
-  <meta property="og:locale" content="ko_KR" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="매슬로우 - 건축물대장 동조회기" />
-  <meta name="twitter:description" content="부동산 IT 서비스 · 무료 건축물대장 동조회기" />
-  <meta name="twitter:image" content="https://cdn.imweb.me/thumbnail/20260410/e2d5bcd79cb3e.jpg" />
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>건축물대장 주소 찾기</title>
+  <meta name="description" content="법정동과 사용승인일로 건축물 주소를 찾는 조회기" />
   <style>
-    :root{
-      --text:#101828;
-      --muted:#667085;
-      --line:#e6ebf2;
-      --blue:#2164ff;
-      --blue-soft:#eef4ff;
-      --shadow:0 18px 42px rgba(15,23,42,.08);
-    }
     *{box-sizing:border-box}
-    html,body{
-      margin:0;padding:0;background:#fff;color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;
-      letter-spacing:-0.02em;
-    }
-    button{font:inherit;border:none;background:none;cursor:pointer}
-    .page{
-      min-height:100vh;
-      background:#fff;
-      padding:12px 12px 56px;
-    }
-    .wrap{
-      width:100%;
-      max-width:1120px;
-      margin:0 auto;
-    }
-
-    .hero{
-      position:relative;
-      overflow:hidden;
-      min-height:760px;
-      border-radius:34px;
-      border:1px solid var(--line);
-      background:linear-gradient(180deg,#edf5ff 0%,#dcecff 100%);
-      box-shadow:var(--shadow);
-    }
-    .hero:before{
-      content:"";
-      position:absolute;
-      left:-2%;
-      top:0;
-      width:42%;
-      height:100%;
-      background:rgba(255,255,255,.16);
-      clip-path:polygon(10% 0,100% 0,78% 100%,0 100%);
-    }
-    .hero:after{
-      content:"";
-      position:absolute;
-      right:-12%;
-      bottom:-6%;
-      width:88%;
-      height:78%;
-      background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,.18));
-      clip-path:polygon(34% 0,100% 0,100% 100%,0 100%);
-    }
-
-    .brand{
-      position:relative;
-      z-index:5;
-      text-align:center;
-      padding:54px 24px 286px;
-    }
-    .brand-en{
-      margin:0 0 12px;
-      font-size:54px;
-      line-height:1;
-      font-weight:900;
-      letter-spacing:.14em;
-      color:#1970ff;
-      text-transform:uppercase;
-    }
-    .brand-ko{
-      margin:0;
-      font-size:120px;
-      line-height:.96;
-      font-weight:1000;
-      letter-spacing:-0.085em;
-      color:#05070b;
-    }
-    .brand-sub{
-      display:block;
-      margin:20px 0 0;
-      font-size:34px;
-      line-height:1.18;
-      font-weight:900;
-      letter-spacing:-0.05em;
-      color:#6a7d98;
-    }
-    .service-line{
-      margin-top:18px;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-    .free-chip{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-height:42px;
-      padding:0 20px;
-      border-radius:999px;
-      background:linear-gradient(180deg,#2d78ff 0%,#1f67f1 100%);
-      color:#fff;
-      font-size:28px;
-      line-height:1;
-      font-weight:900;
-      letter-spacing:-0.04em;
-      box-shadow:0 12px 22px rgba(33,100,255,.18);
-    }
-    .service-title{
-      font-size:38px;
-      line-height:1.15;
-      font-weight:900;
-      letter-spacing:-0.055em;
-      color:#4f6280;
-    }
-
-    .search-panel{
-      position:absolute;
-      left:50%;
-      bottom:32px;
-      transform:translateX(-50%);
-      width:min(88%, 940px);
-      z-index:6;
-      padding:14px;
-      border-radius:30px;
-      background:rgba(255,255,255,.80);
-      backdrop-filter:blur(10px);
-      -webkit-backdrop-filter:blur(10px);
-      box-shadow:0 22px 40px rgba(33,100,255,.12);
-      border:1px solid rgba(255,255,255,.75);
-    }
-    .search-row{
-      display:flex;
-      flex-direction:column;
-      align-items:stretch;
-      gap:12px;
-      width:100%;
-    }
-    .search-top-row{
-      display:flex;
-      align-items:stretch;
-      gap:12px;
-      width:100%;
-    }
-    .search-shell{
-      flex:1 1 auto;
-      min-width:0;
-      min-height:96px;
-      padding:16px 20px;
-      border-radius:24px;
-      border:1px solid #e5eaf2;
-      background:#fff;
-      display:flex;
-      align-items:flex-start;
-      gap:14px;
-      cursor:pointer;
-    }
-    .search-shell.locked{
-      cursor:default;
-      background:#f8fafc;
-    }
-    .search-icon{
-      width:28px;height:28px;flex:0 0 auto;opacity:.42;margin-top:6px;
-    }
-    .address-display{
-      flex:1 1 auto;
-      min-width:0;
-      min-height:56px;
-      display:flex;
-      align-items:flex-start;
-      justify-content:center;
-      flex-direction:column;
-      font-size:24px;
-      line-height:1.38;
-      font-weight:700;
-      color:var(--text);
-      white-space:pre-wrap;
-      word-break:break-word;
-    }
-    .address-display.placeholder{
-      color:#adb5c2;
-      font-weight:800;
-    }
-    .dong-condition-row{
-      display:grid;
-      grid-template-columns:1fr;
-      gap:8px;
-      width:100%;
-    }
-    .dong-date-input{
-      width:100%;
-      min-height:64px;
-      padding:0 20px;
-      border-radius:20px;
-      border:1px solid #e5eaf2;
-      background:#fff;
-      color:#111827;
-      font-size:22px;
-      line-height:1;
-      font-weight:800;
-      letter-spacing:-0.03em;
-      outline:none;
-    }
-    .dong-date-input:focus{
-      border-color:#2164ff;
-      box-shadow:0 0 0 4px rgba(33,100,255,.10);
-    }
-    .dong-date-input::placeholder{
-      color:#adb5c2;
-      font-weight:800;
-    }
-    .refresh-address-btn{
-      flex:0 0 auto;
-      width:96px;
-      min-width:96px;
-      min-height:96px;
-      border-radius:24px;
-      border:1px solid #dfe6f0;
-      background:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-shadow:0 8px 18px rgba(15,23,42,.04);
-    }
-    .refresh-address-btn:hover{
-      background:#f8fafc;
-    }
-    .lookup-btn{
-      width:100%;
-      min-height:76px;
-      padding:0 22px;
-      border-radius:24px;
-      background:linear-gradient(180deg,#4a78ff 0%,#215ef5 100%);
-      color:#fff;
-      font-size:32px;
-      line-height:1;
-      font-weight:900;
-      letter-spacing:-0.05em;
-      box-shadow:0 16px 28px rgba(33,100,255,.22);
-    }
-    .picked-line{
-      min-height:22px;
-      margin-top:10px;
-      padding:0 6px;
-      white-space:pre-wrap;
-      text-align:left;
-      font-size:14px;
-      line-height:1.65;
-      color:#516173;
-      font-weight:700;
-    }
-    .status{
-      min-height:18px;
-      margin-top:6px;
-      padding:0 6px;
-      font-size:13px;
-      font-weight:900;
-    }
-    .status.ok{color:#0f9d58}
-    .status.err{color:#d93025}
-
-    .dong-modal{display:none;position:fixed;inset:0;z-index:90;background:rgba(15,23,42,.42);padding:18px;align-items:flex-start;justify-content:center;overflow:auto;}
-    .dong-modal.show{display:flex}
-    .dong-panel{width:min(720px,100%);margin-top:56px;background:#fff;border:1px solid #e6ebf2;border-radius:26px;box-shadow:0 24px 60px rgba(15,23,42,.18);overflow:hidden;}
-    .dong-panel-head{padding:18px 18px 12px;border-bottom:1px solid #eef2f7;}
-    .dong-panel-title{margin:0 0 12px;font-size:22px;line-height:1.2;font-weight:1000;letter-spacing:-0.05em;color:#111827;}
-    .dong-search-input{width:100%;min-height:58px;padding:0 16px;border-radius:18px;border:1px solid #dfe6f0;background:#fff;color:#111827;font-size:20px;line-height:1;font-weight:850;outline:none;}
-    .dong-search-input:focus{border-color:#2164ff;box-shadow:0 0 0 4px rgba(33,100,255,.10);}
-    .dong-result-list{max-height:430px;overflow:auto;padding:8px;display:grid;gap:6px;}
-    .dong-result-btn{width:100%;min-height:58px;padding:10px 12px;border-radius:16px;background:#fff;border:1px solid #edf2f7;text-align:left;}
-    .dong-result-btn:hover{background:#f8fbff;border-color:#d9e5ff}
-    .dong-result-name{font-size:16px;line-height:1.35;font-weight:900;color:#111827;word-break:keep-all;}
-    .dong-result-code{margin-top:4px;font-size:12px;line-height:1.2;font-weight:800;color:#667085;}
-    .dong-empty-msg{padding:30px 12px;text-align:center;color:#667085;font-size:14px;line-height:1.6;font-weight:800;}
-    .dong-panel-foot{display:flex;justify-content:space-between;gap:10px;padding:12px 18px 18px;border-top:1px solid #eef2f7;}
-    .dong-foot-note{color:#667085;font-size:12px;line-height:1.55;font-weight:800;}
-    .dong-close-btn{flex:0 0 auto;min-width:74px;min-height:42px;padding:0 16px;border-radius:14px;background:#f1f5f9;color:#334155;font-size:14px;font-weight:900;}
-
-    .summary-grid{
-      display:none;
-      grid-template-columns:repeat(4,minmax(0,1fr));
-      gap:12px;
-      margin:18px 0 16px;
-    }
-    .sum-card{
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:24px;
-      padding:18px 16px;
-      box-shadow:0 10px 24px rgba(15,23,42,.04);
-    }
-    .sum-label{
-      margin-bottom:10px;
-      font-size:12px;
-      color:var(--muted);
-      font-weight:800;
-    }
-    .sum-value{
-      font-size:24px;
-      line-height:1.15;
-      font-weight:900;
-      letter-spacing:-0.045em;
-      word-break:break-word;
-    }
-
-    .section{
-      display:none;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:30px;
-      padding:20px;
-      box-shadow:var(--shadow);
-      margin-bottom:16px;
-    }
-    .section-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:14px;
-    }
-    .section-title{
-      margin:0;
-      font-size:24px;
-      line-height:1.18;
-      font-weight:900;
-      letter-spacing:-0.045em;
-    }
-    .section-chip{
-      display:inline-flex;
-      align-items:center;
-      min-height:30px;
-      padding:0 10px;
-      border-radius:999px;
-      background:var(--blue-soft);
-      color:var(--blue);
-      border:1px solid #d9e5ff;
-      font-size:12px;
-      font-weight:900;
-    }
-    .field-grid{
-      display:block;
-    }
-    .field{
-      min-height:88px;
-      padding:14px 15px;
-      border-radius:20px;
-      background:#fbfcfe;
-      border:1px solid #edf1f6;
-    }
-    .field-label{
-      margin-bottom:8px;
-      font-size:13px;
-      color:var(--muted);
-      font-weight:800;
-    }
-    .field-value{
-      font-size:17px;
-      line-height:1.65;
-      color:#1f2937;
-      font-weight:700;
-      white-space:pre-wrap;
-      word-break:keep-all;
-    }
-
-    .source-stack{display:grid;gap:14px}
-    .source-card{
-      border:1px solid var(--line);
-      border-radius:24px;
-      padding:18px;
-      background:#fff;
-    }
-    .source-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:12px;
-    }
-    .source-title{
-      margin:0;
-      font-size:20px;
-      line-height:1.25;
-      font-weight:900;
-      letter-spacing:-0.03em;
-    }
-    .source-meta{
-      margin:4px 0 0;
-      font-size:13px;
-      color:var(--muted);
-      font-weight:700;
-    }
-    .source-badge{
-      display:inline-flex;
-      align-items:center;
-      min-height:30px;
-      padding:0 10px;
-      border-radius:999px;
-      background:#f7f9fc;
-      border:1px solid #e4e9f1;
-      color:#475569;
-      font-size:12px;
-      font-weight:900;
-    }
-    .source-items{display:grid;gap:12px}
-    .item-card{
-      border:1px solid #edf2f8;
-      border-radius:20px;
-      padding:14px;
-      background:#fff;
-    }
-    .item-title{
-      margin:0 0 10px;
-      font-size:15px;
-      font-weight:900;
-      color:#374151;
-    }
-    .item-fields{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:10px;
-    }
-    .mini-field{
-      min-height:72px;
-      padding:10px 12px;
-      border-radius:16px;
-      background:#f8fafc;
-      border:1px solid #edf2f7;
-    }
-    .mini-label{
-      margin-bottom:6px;
-      font-size:12px;
-      color:var(--muted);
-      font-weight:800;
-    }
-    .mini-value{
-      font-size:14px;
-      line-height:1.6;
-      color:#1f2937;
-      font-weight:700;
-      white-space:pre-wrap;
-      word-break:keep-all;
-    }
-
-    .empty{
-      border:1px dashed #d7e1ec;
-      background:#fff;
-      border-radius:24px;
-      padding:32px 18px;
-      text-align:center;
-      color:#6b7280;
-      font-size:15px;
-      line-height:1.7;
-      font-weight:700;
-      margin-top:18px;
-    }
-    .loading{
-      display:none;
-      position:fixed;
-      inset:0;
-      background:rgba(255,255,255,.62);
-      backdrop-filter:blur(2px);
-      -webkit-backdrop-filter:blur(2px);
-      z-index:100;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
-    }
+    body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f8fb;color:#111827}
+    button,input{font:inherit}
+    .page{min-height:100vh;display:grid;grid-template-columns:320px minmax(0,1fr)}
+    .log-panel{background:#111827;color:#d1d5db;padding:18px;overflow:auto;max-height:100vh;position:sticky;top:0}
+    .log-title{font-size:15px;font-weight:800;color:#fff;margin-bottom:10px}
+    .log-box{font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-all}
+    .main{padding:34px 20px 60px}
+    .wrap{max-width:760px;margin:0 auto}
+    .header{margin-bottom:22px}
+    .brand{font-size:13px;font-weight:800;letter-spacing:.08em;color:#6b7280;margin-bottom:6px}
+    h1{margin:0;font-size:30px;letter-spacing:-.04em}
+    .desc{margin-top:8px;color:#6b7280;font-size:15px;line-height:1.5}
+    .search-area{display:grid;gap:10px;margin-bottom:18px}
+    .dong-btn{width:100%;min-height:58px;border:1px solid #d1d5db;background:#fff;border-radius:14px;text-align:left;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
+    .dong-btn strong{font-size:17px;font-weight:800;color:#111827}
+    .dong-btn span{font-size:13px;color:#6b7280}
+    .dong-placeholder{color:#9ca3af!important;font-weight:700!important}
+    .date-row{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:10px}
+    .date-input{height:56px;border:1px solid #d1d5db;background:#fff;border-radius:14px;padding:0 16px;font-size:18px;outline:none}
+    .date-input:focus{border-color:#111827}
+    .lookup-btn{height:56px;border:0;border-radius:14px;background:#111827;color:#fff;font-weight:900;cursor:pointer}
+    .lookup-btn:disabled{opacity:.55;cursor:not-allowed}
+    .hint{font-size:13px;color:#6b7280}
+    .status{min-height:22px;font-size:14px;font-weight:800;color:#374151;margin:14px 0}
+    .status.err{color:#dc2626}
+    .status.ok{color:#0f766e}
+    .results{display:grid;gap:10px;margin-top:12px}
+    .result-item{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;display:grid;gap:12px}
+    .addr{font-size:18px;font-weight:900;line-height:1.45;word-break:keep-all}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .action-btn,.map-link{height:42px;padding:0 14px;border-radius:11px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+    .map-link{background:#03c75a;border-color:#03c75a;color:#fff}
+    .empty{border:1px dashed #d1d5db;border-radius:16px;background:#fff;padding:20px;color:#6b7280;text-align:center;font-weight:700}
+    .modal{display:none;position:fixed;inset:0;background:rgba(17,24,39,.45);z-index:30;padding:18px;overflow:auto}
+    .modal.show{display:flex;align-items:flex-start;justify-content:center}
+    .modal-box{width:min(760px,100%);background:#fff;border-radius:18px;margin-top:24px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.22)}
+    .modal-head{padding:16px;border-bottom:1px solid #e5e7eb;display:grid;gap:10px}
+    .modal-title{font-size:18px;font-weight:900}
+    .dong-search{height:52px;border:1px solid #d1d5db;border-radius:13px;padding:0 14px;font-size:18px;outline:none}
+    .dong-list{max-height:58vh;overflow:auto;padding:8px}
+    .dong-item{width:100%;border:0;background:#fff;text-align:left;padding:13px 12px;border-radius:12px;cursor:pointer;display:grid;gap:4px}
+    .dong-item:hover{background:#f3f4f6}
+    .dong-name{font-weight:900;font-size:16px}
+    .dong-code{font-size:12px;color:#6b7280}
+    .modal-foot{padding:12px 16px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;gap:10px;align-items:center;color:#6b7280;font-size:13px}
+    .close-btn{border:1px solid #d1d5db;background:#fff;border-radius:10px;height:38px;padding:0 12px;font-weight:800;cursor:pointer}
+    .loading{display:none;position:fixed;inset:0;z-index:40;background:rgba(255,255,255,.62);align-items:center;justify-content:center;font-weight:900;color:#111827}
     .loading.show{display:flex}
-    .loading-panel{
-      min-width:240px;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:26px;
-      padding:26px 24px;
-      box-shadow:var(--shadow);
-      text-align:center;
-    }
-    .spinner{
-      width:52px;height:52px;
-      border-radius:999px;
-      border:4px solid #dbeafe;
-      border-top-color:var(--blue);
-      margin:0 auto 14px;
-      animation:spin 1s linear infinite;
-    }
-    .loading-text{
-      font-size:16px;
-      font-weight:900;
-      color:#111827;
-      letter-spacing:-0.03em;
-    }
-    @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-
-
-
-    .log-panel{
-      position:fixed;
-      left:0;
-      top:0;
-      bottom:0;
-      width:320px;
-      z-index:70;
-      background:#0f172a;
-      color:#dbe7ff;
-      border-right:1px solid rgba(255,255,255,.10);
-      display:flex;
-      flex-direction:column;
-      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    }
-    .log-head{
-      flex:0 0 auto;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:12px 12px;
-      border-bottom:1px solid rgba(255,255,255,.10);
-    }
-    .log-title{
-      font-size:13px;
-      line-height:1.2;
-      font-weight:900;
-      color:#ffffff;
-      letter-spacing:-0.03em;
-    }
-    .log-clear-btn{
-      flex:0 0 auto;
-      min-height:28px;
-      padding:0 9px;
-      border-radius:8px;
-      background:rgba(255,255,255,.08);
-      color:#cbd5e1;
-      font-size:11px;
-      font-weight:900;
-    }
-    .log-list{
-      flex:1 1 auto;
-      overflow:auto;
-      padding:10px 10px 14px;
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
-    .log-line{
-      white-space:pre-wrap;
-      word-break:break-word;
-      font-size:11px;
-      line-height:1.55;
-      color:#cbd5e1;
-      padding-bottom:8px;
-      border-bottom:1px solid rgba(255,255,255,.06);
-    }
-    .log-time{
-      color:#93c5fd;
-      font-weight:900;
-      margin-right:4px;
-    }
-    .log-line.err{color:#fecaca}
-    .log-line.ok{color:#bbf7d0}
-    .log-line.warn{color:#fde68a}
-    @media (min-width:1180px){
-      .page{padding-left:332px;}
-    }
-    @media (max-width:1179px){
-      .log-panel{
-        position:relative;
-        width:auto;
-        height:220px;
-        left:auto;
-        top:auto;
-        bottom:auto;
-        z-index:1;
-        border-right:none;
-        border-bottom:1px solid rgba(255,255,255,.10);
-      }
-    }
-
-    @media (max-width:980px){
-      .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .field-grid,.item-fields{grid-template-columns:1fr}
-      .brand-ko{font-size:92px}
-      .brand-sub{font-size:28px}
-      .service-title{font-size:30px}
-      .brand-en{font-size:42px}
-    }
-
-    @media (max-width:720px){
-      .page{
-        padding:0 0 44px;
-      }
-      .wrap{
-        max-width:none;
-      }
-      .hero{
-        min-height:570px;
-        border-radius:0;
-        border-left:none;
-        border-right:none;
-        box-shadow:none;
-      }
-      .brand{
-        padding:56px 18px 88px;
-      }
-      .brand-en{
-        font-size:26px;
-        letter-spacing:.12em;
-        margin-bottom:8px;
-      }
-      .brand-ko{
-        font-size:58px;
-      }
-      .brand-sub{
-        margin-top:12px;
-        font-size:18px;
-      }
-      .service-line{
-        margin-top:12px;
-        gap:8px;
-      }
-      .free-chip{
-        min-height:30px;
-        padding:0 12px;
-        font-size:18px;
-      }
-      .service-title{
-        font-size:22px;
-      }
-      .search-panel{
-        width:calc(100% - 24px);
-        bottom:16px;
-        padding:8px;
-        border-radius:22px;
-      }
-      .search-row{
-        gap:10px;
-      }
-      .search-top-row{
-        gap:8px;
-      }
-      .search-shell{
-        min-height:86px;
-        padding:14px 14px;
-        border-radius:18px;
-      }
-      .refresh-address-btn{
-        width:72px;
-        min-width:72px;
-        min-height:86px;
-        border-radius:18px;
-      }
-      .search-icon{
-        width:22px;
-        height:22px;
-        margin-top:4px;
-      }
-      .address-display{
-        font-size:15px;
-        line-height:1.45;
-        min-height:52px;
-      }
-      .dong-date-input{
-        min-height:52px;
-        padding:0 14px;
-        border-radius:18px;
-        font-size:16px;
-      }
-      .lookup-btn{
-        width:100%;
-        min-height:56px;
-        padding:0 14px;
-        border-radius:18px;
-        font-size:18px;
-      }
-      .summary-grid{
-        grid-template-columns:1fr 1fr;
-        padding:0 12px;
-      }
-      .section{
-        border-radius:24px;
-        padding:16px;
-        margin-left:12px;
-        margin-right:12px;
-      }
-      .section-title{
-        font-size:20px;
-      }
-      .empty{
-        margin:18px 12px 0;
-      }
-    }
-  
-    .result-stack{display:grid;gap:16px}
-    .result-block{border:1px solid var(--line);border-radius:24px;background:#fff;overflow:hidden}
-    .result-block-head{display:block;padding:14px 16px;border-bottom:1px solid var(--line);background:#f8fbff;color:#111827;font-size:18px;line-height:1.2;font-weight:900;letter-spacing:-0.03em}
-    .result-block-sub{padding:10px 16px 0;color:var(--muted);font-size:12px;font-weight:800}
-    .result-table-wrap{overflow-x:auto}
-    .result-table{width:100%;border-collapse:collapse;background:#fff}
-    .result-table th,.result-table td{padding:12px 14px;border-bottom:1px solid #edf1f6;font-size:15px;line-height:1.6;text-align:left;vertical-align:top;word-break:keep-all}
-    .result-table th{width:168px;background:#fbfcfe;color:#475467;font-weight:900}
-    .result-table td{color:#111827;font-weight:700;white-space:pre-wrap}
-    .result-table tr:last-child th,.result-table tr:last-child td{border-bottom:none}
-    .table-download-wrap{
-      padding:12px 14px 14px;
-      display:block;
-    }
-    .table-action-row{
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .table-download-btn,
-    .table-copy-btn{
-      display:block;
-      width:35%;
-      min-width:220px;
-      min-height:52px;
-      padding:0 18px;
-      margin:0;
-      border-radius:999px;
-      background:linear-gradient(180deg,#fbfeff 0%,#f3faff 100%);
-      border:1px solid #8fd3ff;
-      color:#1d4ed8;
-      font-size:15px;
-      line-height:52px;
-      text-align:center;
-      font-weight:900;
-      letter-spacing:-0.04em;
-      box-shadow:0 8px 20px rgba(56,189,248,.10);
-    }
-    .table-copy-btn{
-      border-color:#b9c8ff;
-      color:#2643a2;
-      background:linear-gradient(180deg,#fcfdff 0%,#f5f7ff 100%);
-    }
-    .table-download-note{
-      margin-top:8px;
-      font-size:11px;
-      line-height:1.5;
-      color:#667085;
-      font-weight:800;
-    }
-    @media (max-width:720px){
-      .result-block-head{display:block;font-size:16px;line-height:1.2;padding:12px 14px;color:#111827}
-      .result-table th,.result-table td{padding:10px 12px;font-size:14px}
-      .result-table th{width:116px}
-      .table-download-wrap{padding:10px 12px 12px}
-      .table-action-row{gap:8px}
-      .table-download-btn,.table-copy-btn{width:100%;min-width:0;min-height:48px;font-size:15px;border-radius:16px}
-    }
-
-    .map-link-section{
-      display:none;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:30px;
-      padding:18px;
-      box-shadow:var(--shadow);
-      margin:18px 0 16px;
-    }
-    .map-link-head{
-      display:block;
-      margin-bottom:12px;
-    }
-    .map-link-title{
-      margin:0;
-      font-size:22px;
-      line-height:1.18;
-      font-weight:900;
-      letter-spacing:-0.04em;
-      color:#111827;
-    }
-    .map-link-sub{
-      font-size:12px;
-      color:var(--muted);
-      font-weight:800;
-      line-height:1.5;
-    }
-    .map-link-btn{
-      display:block;
-      min-height:52px;
-      width:35%;
-      min-width:220px;
-      padding:0 18px;
-      margin:0 auto;
-      border-radius:999px;
-      background:linear-gradient(180deg,#fbfeff 0%,#f3faff 100%);
-      border:1px solid #8fd3ff;
-      color:#1d4ed8;
-      font-size:15px;
-      line-height:52px;
-      text-align:center;
-      font-weight:900;
-      letter-spacing:-0.04em;
-      box-shadow:0 8px 20px rgba(56,189,248,.10);
-    }
-    .map-link-btn[disabled]{
-      opacity:.45;
-      cursor:default;
-      pointer-events:none;
-    }
-    @media (max-width:720px){
-      .map-link-section{
-        border-radius:24px;
-        padding:14px;
-        margin-left:12px;
-        margin-right:12px;
-      }
-      .map-link-title{
-        font-size:18px;
-      }
-      .map-link-btn{
-        width:100%;
-        min-width:0;
-        min-height:48px;
-        font-size:15px;
-        border-radius:16px;
-      }
-    }
-
-    .export-tools{
-      display:none;
-      margin:0 0 16px;
-    }
-    .export-btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      width:100%;
-      min-height:64px;
-      padding:0 18px;
-      border-radius:22px;
-      background:linear-gradient(180deg,#2f7cff 0%,#195ef1 100%);
-      color:#fff;
-      font-size:20px;
-      line-height:1;
-      font-weight:900;
-      letter-spacing:-0.04em;
-      box-shadow:0 14px 26px rgba(33,100,255,.18);
-    }
-    .export-note{
-      margin-top:10px;
-      padding:0 6px;
-      font-size:12px;
-      line-height:1.6;
-      color:#667085;
-      font-weight:800;
-      text-align:left;
-    }
-
-    .capture-stage{
-      position:fixed;
-      left:-10000px;
-      top:0;
-      width:1200px;
-      pointer-events:none;
-      opacity:0;
-      z-index:-1;
-    }
-    .capture-sheet{
-      width:1080px;
-      background:#fff;
-      padding:18px;
-      color:#111827;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;
-    }
-    .capture-card{
-      border:1px solid #dfe7f3;
-      border-radius:20px;
-      overflow:hidden;
-      box-shadow:none;
-      background:#fff;
-    }
-    .capture-head{
-      padding:22px 24px 18px;
-      background:#f8fbff;
-      border-bottom:1px solid #dfe7f3;
-    }
-    .capture-brand{
-      display:none;
-    }
-    .capture-title{
-      margin:0;
-      font-size:40px;
-      line-height:1.15;
-      font-weight:1000;
-      letter-spacing:-0.06em;
-      color:#0f172a;
-    }
-    .capture-sub{
-      display:none;
-    }
-    .capture-body{
-      padding:0;
-      background:#fff;
-    }
-    .capture-table{
-      width:100%;
-      border-collapse:collapse;
-      table-layout:fixed;
-      background:#fff;
-    }
-    .capture-table th,
-    .capture-table td{
-      border-bottom:1px solid #e7edf5;
-      padding:18px 20px;
-      vertical-align:middle;
-      text-align:left;
-    }
-    .capture-table th{
-      width:190px;
-      background:#f8fbff;
-      color:#344054;
-      font-size:20px;
-      line-height:1.4;
-      font-weight:900;
-      letter-spacing:-0.03em;
-    }
-    .capture-table td{
-      color:#111827;
-      font-size:24px;
-      line-height:1.45;
-      font-weight:900;
-      letter-spacing:-0.04em;
-      word-break:keep-all;
-      white-space:pre-wrap;
-    }
-    .capture-table tr:last-child th,
-    .capture-table tr:last-child td{
-      border-bottom:none;
-    }
-    .capture-foot{
-      display:none;
-    }
-
-    @media (max-width:720px){
-      .export-tools{
-        margin:0 12px 16px;
-      }
-      .export-btn{
-        min-height:58px;
-        border-radius:18px;
-        font-size:17px;
-      }
-      .export-note{
-        font-size:11px;
-      }
-    }
-
-
+    @media(max-width:860px){.page{display:block}.log-panel{position:relative;max-height:190px}.main{padding:24px 14px 44px}.date-row{grid-template-columns:1fr}.lookup-btn{width:100%}h1{font-size:26px}}
   </style>
 </head>
 <body>
-  <aside id="logPanel" class="log-panel" aria-label="조회 로그">
-    <div class="log-head">
-      <div class="log-title">조회 로그</div>
-      <button id="logClearBtn" class="log-clear-btn" type="button">지우기</button>
-    </div>
-    <div id="logList" class="log-list"></div>
-  </aside>
-
   <div class="page">
-    <div class="wrap">
-      <div class="hero">
-        <div class="brand">
-          <div class="brand-en">MASLOW</div>
-          <h1 class="brand-ko">매슬로우</h1>
-          <div class="brand-sub">부동산 IT 서비스</div>
-          <div class="service-line">
-            <div class="free-chip">Free</div>
-            <div class="service-title">건축물대장 동조회기</div>
-          </div>
+    <aside class="log-panel">
+      <div class="log-title">조회 로그</div>
+      <div id="logBox" class="log-box"></div>
+    </aside>
+
+    <main class="main">
+      <div class="wrap">
+        <div class="header">
+          <div class="brand">MASLOW</div>
+          <h1>건축물 주소 찾기</h1>
+          <div class="desc">법정동과 사용승인일로 건축물대장 표제부를 조회해 주소만 찾습니다.</div>
         </div>
 
-        <div class="search-panel">
-          <div class="search-row">
-            <div class="search-top-row">
-              <div class="search-shell" id="addressSearchTrigger">
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <div id="addressDisplay" class="address-display placeholder">법정동을 검색하세요</div>
-              </div>
-              <button id="refreshAddressBtn" class="refresh-address-btn" type="button" aria-label="새로고침">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
-                  <path d="M20 4v6h-6M4 20v-6h6M6.5 9A7 7 0 0 1 18 6l2 4M18 15a7 7 0 0 1-11.5 3L4 14" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-            </div>
-            <div class="dong-condition-row">
-              <input id="useAprDayInput" class="dong-date-input" type="text" inputmode="numeric" placeholder="사용승인일 예: 20200115 / 2020-1-15" aria-label="사용승인일" autocomplete="off" />
-            </div>
+        <div class="search-area">
+          <button id="dongPickBtn" class="dong-btn" type="button">
+            <strong id="pickedDongText" class="dong-placeholder">법정동 검색</strong>
+            <span id="pickedDongCode">동 이름을 입력해 선택</span>
+          </button>
+          <div class="date-row">
+            <input id="useAprDayInput" class="date-input" type="text" inputmode="numeric" placeholder="사용승인일 예: 2011.12.02" autocomplete="off" />
             <button id="lookupBtn" class="lookup-btn" type="button">조회</button>
           </div>
-          <div id="pickedLine" class="picked-line"></div>
-          <div id="status" class="status"></div>
+          <div class="hint">날짜는 20111202, 2011.12.02, 2011-12-02, 2011/12/2처럼 입력해도 됩니다.</div>
         </div>
+
+        <div id="status" class="status"></div>
+        <div id="results" class="results"></div>
+        <div id="empty" class="empty">법정동과 사용승인일을 입력하면 주소가 표시됩니다.</div>
       </div>
-
-      <div id="summaryGrid" class="summary-grid">
-        <div class="sum-card"><div class="sum-label">소재지</div><div id="sumAddress" class="sum-value">-</div></div>
-        <div class="sum-card"><div class="sum-label">건물용도</div><div id="sumPurpose" class="sum-value">-</div></div>
-        <div class="sum-card"><div class="sum-label">연면적</div><div id="sumTotalArea" class="sum-value">-</div></div>
-        <div class="sum-card"><div class="sum-label">층수 / 층고</div><div id="sumFloorHeight" class="sum-value">-</div></div>
-      </div>
-
-
-      <div id="mapLinkSection" class="map-link-section">
-        <div class="map-link-head">
-          <div>
-            <h2 class="map-link-title">네이버 지도 보기</h2>
-            <div id="mapLinkCaption" class="map-link-sub">선택한 주소를 네이버 지도 검색 결과로 새창에서 엽니다.</div>
-          </div>
-        </div>
-        <button id="naverMapBtn" class="map-link-btn" type="button">네이버 지도에서 열기</button>
-      </div>
-
-      <div id="overviewSection" class="section">
-
-        <div class="section-head">
-          <h2 class="section-title">핵심 정리</h2>
-          <div class="section-chip">Summary</div>
-        </div>
-        <div id="overviewGrid" class="field-grid"></div>
-      </div>
-
-      <div id="sourcesSection" class="section">
-        <div class="section-head">
-          <h2 class="section-title">출처별 조회 항목</h2>
-          <div id="sourceCountChip" class="section-chip">0개 출처</div>
-        </div>
-        <div id="sourcesStack" class="source-stack"></div>
-      </div>
-
-      <div id="emptyState" class="empty">법정동을 검색하고 사용승인일을 입력한 뒤 조회하세요.</div>
-    </div>
+    </main>
   </div>
 
-
-  <div id="dongModal" class="dong-modal" aria-hidden="true">
-    <div class="dong-panel" role="dialog" aria-modal="true" aria-label="법정동 검색">
-      <div class="dong-panel-head">
-        <h2 class="dong-panel-title">법정동 검색</h2>
-        <input id="dongSearchInput" class="dong-search-input" type="search" placeholder="예: 오식도동, 군산, 성수동" autocomplete="off" />
+  <div id="dongModal" class="modal" aria-hidden="true">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="법정동 검색">
+      <div class="modal-head">
+        <div class="modal-title">법정동 검색</div>
+        <input id="dongSearchInput" class="dong-search" type="search" placeholder="예: 오식도동, 군산 오식도, 5213014700" autocomplete="off" />
       </div>
-      <div id="dongResultList" class="dong-result-list"></div>
-      <div class="dong-panel-foot">
-        <div id="dongDataNote" class="dong-foot-note">법정동명 또는 코드로 검색하세요.</div>
-        <button id="dongCloseBtn" class="dong-close-btn" type="button">닫기</button>
+      <div id="dongList" class="dong-list"></div>
+      <div class="modal-foot">
+        <div id="dongCountText">법정동 데이터를 불러오는 중입니다.</div>
+        <button id="dongCloseBtn" class="close-btn" type="button">닫기</button>
       </div>
     </div>
   </div>
 
-  <div id="captureStage" class="capture-stage">
-    <div id="captureSheet" class="capture-sheet"></div>
-  </div>
-
-  <div id="loading" class="loading">
-    <div class="loading-panel">
-      <div class="spinner"></div>
-      <div class="loading-text">공적자료 조회 중</div>
-    </div>
-  </div>
+  <div id="loading" class="loading">조회 중...</div>
 
   <script src="/search/bjdong-codes.js" onerror="document.write('<script src=&quot;./bjdong-codes.js&quot;><\/script>')"></script>
   <script>
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
     var picked = null;
-    var addressLocked = false;
 
     var els = {
-      addressSearchTrigger: document.getElementById('addressSearchTrigger'),
-      addressDisplay: document.getElementById('addressDisplay'),
-      refreshAddressBtn: document.getElementById('refreshAddressBtn'),
+      logBox: document.getElementById('logBox'),
+      dongPickBtn: document.getElementById('dongPickBtn'),
+      pickedDongText: document.getElementById('pickedDongText'),
+      pickedDongCode: document.getElementById('pickedDongCode'),
       useAprDayInput: document.getElementById('useAprDayInput'),
       lookupBtn: document.getElementById('lookupBtn'),
-      pickedLine: document.getElementById('pickedLine'),
       status: document.getElementById('status'),
-      loading: document.getElementById('loading'),
-      summaryGrid: document.getElementById('summaryGrid'),
-      sumAddress: document.getElementById('sumAddress'),
-      sumPurpose: document.getElementById('sumPurpose'),
-      sumTotalArea: document.getElementById('sumTotalArea'),
-      sumFloorHeight: document.getElementById('sumFloorHeight'),
-      mapLinkSection: document.getElementById('mapLinkSection'),
-      mapLinkCaption: document.getElementById('mapLinkCaption'),
-      naverMapBtn: document.getElementById('naverMapBtn'),
-      overviewSection: document.getElementById('overviewSection'),
-      overviewGrid: document.getElementById('overviewGrid'),
-      captureStage: document.getElementById('captureStage'),
-      captureSheet: document.getElementById('captureSheet'),
-      sourcesSection: document.getElementById('sourcesSection'),
-      sourcesStack: document.getElementById('sourcesStack'),
-      sourceCountChip: document.getElementById('sourceCountChip'),
-      emptyState: document.getElementById('emptyState'),
+      results: document.getElementById('results'),
+      empty: document.getElementById('empty'),
       dongModal: document.getElementById('dongModal'),
       dongSearchInput: document.getElementById('dongSearchInput'),
-      dongResultList: document.getElementById('dongResultList'),
+      dongList: document.getElementById('dongList'),
+      dongCountText: document.getElementById('dongCountText'),
       dongCloseBtn: document.getElementById('dongCloseBtn'),
-      dongDataNote: document.getElementById('dongDataNote'),
-      logList: document.getElementById('logList'),
-      logClearBtn: document.getElementById('logClearBtn')
+      loading: document.getElementById('loading')
     };
 
-    var SOURCE_CONFIG = {
-      title: {
-        label: '표제부',
-        fields: [
-          ['주소', function(v){ return firstNonEmpty(v.newPlatPlc, v.platPlc); }],
-          ['건물용도', function(v){ return firstNonEmpty(v.mainPurpsCdNm, v.etcPurps); }],
-          ['기타용도', function(v){ return v.etcPurps; }],
-          ['구조', function(v){ return firstNonEmpty(v.strctCdNm, v.etcStrct); }],
-          ['지붕', function(v){ return firstNonEmpty(v.roofCdNm, v.etcRoof); }],
-          ['대지면적', function(v){ return formatArea(v.platArea); }],
-          ['건축면적', function(v){ return formatArea(v.archArea); }],
-          ['연면적', function(v){ return formatArea(v.totArea); }],
-          ['용적률 산정 연면적', function(v){ return formatArea(v.vlRatEstmTotArea); }],
-          ['건폐율', function(v){ return formatPercent(v.bcRat); }],
-          ['용적률', function(v){ return formatPercent(v.vlRat); }],
-          ['사용승인일', function(v){ return formatDate(v.useAprDay); }],
-          ['허가일', function(v){ return formatDate(v.pmsDay); }],
-          ['착공일', function(v){ return formatDate(v.stcnsDay); }],
-          ['층수', function(v){ return buildFloorText(v); }],
-          ['층고', function(v){ return formatHeight(v.heit); }],
-          ['주차', function(v){ return buildParkingText(v); }]
-        ]
-      },
-      recap: {
-        label: '총괄표제부',
-        fields: [
-          ['대지면적', function(v){ return formatArea(v.platArea); }],
-          ['건축면적', function(v){ return formatArea(v.archArea); }],
-          ['연면적', function(v){ return formatArea(v.totArea); }],
-          ['건물용도', function(v){ return firstNonEmpty(v.mainPurpsCdNm, v.etcPurps); }],
-          ['주건축물 수', function(v){ return formatInt(v.mainBldCnt, '동'); }],
-          ['주차대수', function(v){ return formatInt(v.totPkngCnt, '대'); }]
-        ]
-      },
-      basis: {
-        label: '기본개요',
-        fields: [
-          ['주소', function(v){ return firstNonEmpty(v.newPlatPlc, v.platPlc); }],
-          ['용도지역', function(v){ return joinValues([v.jiyukCdNm, v.jiguCdNm, v.guyukCdNm], ' / '); }],
-          ['건물 ID', function(v){ return v.bldgId; }],
-          ['생성일', function(v){ return formatDate(v.crtnDay); }]
-        ]
-      },
-      flr: {
-        label: '층별개요',
-        perItemTitle: function(item){ return firstNonEmpty(item.flrNoNm, item.flrGbCdNm, '층 정보'); },
-        fields: [
-          ['층구분', function(v){ return firstNonEmpty(v.flrGbCdNm, v.flrNoNm); }],
-          ['용도', function(v){ return firstNonEmpty(v.mainPurpsCdNm, v.etcPurps); }],
-          ['기타용도', function(v){ return v.etcPurps; }],
-          ['구조', function(v){ return firstNonEmpty(v.strctCdNm, v.etcStrct); }],
-          ['면적', function(v){ return formatArea(v.area); }]
-        ]
-      },
-      atchJibun: { label: '부속지번', fields: [['부속지번', function(v){ return joinValues([v.platPlc, v.newPlatPlc], ' / '); }]] },
-      jijigu: { label: '지역지구구역', fields: [['지역/지구/구역', function(v){ return joinValues([v.jiyukCdNm, v.jiguCdNm, v.guyukCdNm, v.jijigu], ' / '); }]] },
-      exposPubuseArea: {
-        label: '전유공용면적',
-        fields: [
-          ['전유면적', function(v){ return formatArea(v.excluUseArea); }],
-          ['공용면적', function(v){ return formatArea(v.pubuseArea); }],
-          ['계약면적', function(v){ return formatArea(v.area); }]
-        ]
-      },
-      expos: { label: '전유부', fields: [['용도', function(v){ return firstNonEmpty(v.mainPurpsCdNm, v.etcPurps); }], ['면적', function(v){ return formatArea(v.area); }]] },
-      wclf: {
-        label: '오수정화시설',
-        fields: [
-          ['방식', function(v){ return firstNonEmpty(v.modeCdNm, v.etcMode); }],
-          ['기타방식', function(v){ return v.etcMode; }],
-          ['처리인원', function(v){ return formatInt(v.capaPsper, '인'); }],
-          ['처리용량', function(v){ return formatInt(v.capaLube, ''); }]
-        ]
-      },
-      hsprc: { label: '주택가격', fields: [['기준가격', function(v){ return v.housePc; }], ['공시기준일', function(v){ return formatDate(v.stdrYear); }]] }
-    };
-
-    function firstNonEmpty(){
-      for(var i=0;i<arguments.length;i++){
-        var v = arguments[i];
-        if(v == null) continue;
-        v = String(v).trim();
-        if(v) return v;
-      }
-      return '';
-    }
-    function joinValues(arr, sep){
-      sep = sep || ' / ';
-      var out = [];
-      (arr || []).forEach(function(v){
-        v = String(v == null ? '' : v).trim();
-        if(v && out.indexOf(v) === -1) out.push(v);
-      });
-      return out.join(sep);
-    }
-    function formatDate(v){
-      v = String(v == null ? '' : v).replace(/\D/g,'');
-      if(v.length !== 8) return String(v || '').trim();
-      return v.slice(0,4)+'.'+v.slice(4,6)+'.'+v.slice(6,8);
+    function nowText(){
+      var d = new Date();
+      return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
     }
 
-
-    function normalizeUseAprDayInput(v){
-      var raw = String(v == null ? '' : v).trim();
-      if(!raw){
-        return { ok:false, message:'사용승인일을 입력하세요.', value:'', display:'' };
-      }
-
-      // 2011.03.23 / 2011-03-23 / 2011/03/23 / 2011 03 23 / 20110323 모두 허용
-      var parts = raw.match(/\d+/g) || [];
-      var y = '', m = '', d = '';
-
-      if(parts.length >= 3){
-        y = parts[0];
-        m = parts[1];
-        d = parts[2];
-      } else {
-        var digits = raw.replace(/\D/g, '');
-        if(digits.length === 8){
-          y = digits.slice(0, 4);
-          m = digits.slice(4, 6);
-          d = digits.slice(6, 8);
-        } else if(digits.length === 6){
-          // 혹시 110323처럼 넣은 경우는 2011-03-23으로 보정하지 않음. 오입력 방지.
-          return { ok:false, message:'사용승인일은 예: 2011.03.23 또는 20110323 형식으로 입력하세요.', value:'', display:raw };
-        } else {
-          return { ok:false, message:'사용승인일은 예: 2011.03.23 또는 20110323 형식으로 입력하세요.', value:'', display:raw };
-        }
-      }
-
-      if(y.length !== 4){
-        return { ok:false, message:'연도는 4자리로 입력하세요. 예: 2011.03.23', value:'', display:raw };
-      }
-
-      m = String(Number(m));
-      d = String(Number(d));
-      if(m === 'NaN' || d === 'NaN'){
-        return { ok:false, message:'월/일을 확인하세요. 예: 2011.03.23', value:'', display:raw };
-      }
-
-      var yy = Number(y), mm = Number(m), dd = Number(d);
-      if(!isFinite(yy) || !isFinite(mm) || !isFinite(dd) || yy < 1800 || yy > 2200 || mm < 1 || mm > 12 || dd < 1 || dd > 31){
-        return { ok:false, message:'사용승인일 날짜를 확인하세요. 예: 2011.03.23', value:'', display:raw };
-      }
-
-      var dt = new Date(yy, mm - 1, dd);
-      if(dt.getFullYear() !== yy || dt.getMonth() !== mm - 1 || dt.getDate() !== dd){
-        return { ok:false, message:'존재하지 않는 날짜입니다. 예: 2011.03.23', value:'', display:raw };
-      }
-
-      var mm2 = String(mm).padStart(2, '0');
-      var dd2 = String(dd).padStart(2, '0');
-      return {
-        ok:true,
-        value:String(yy) + mm2 + dd2,
-        display:String(yy) + '.' + mm2 + '.' + dd2,
-        raw:raw
-      };
+    function addLog(msg){
+      els.logBox.textContent += '[' + nowText() + '] ' + msg + '\n';
+      els.logBox.scrollTop = els.logBox.scrollHeight;
     }
 
-
-
-    function addLog(message, level){
-      try{
-        if(!els || !els.logList) return;
-        var line = document.createElement('div');
-        var lv = String(level || '').trim();
-        line.className = 'log-line' + (lv ? ' ' + lv : '');
-
-        var time = document.createElement('span');
-        time.className = 'log-time';
-        var now = new Date();
-        time.textContent = '[' +
-          String(now.getHours()).padStart(2, '0') + ':' +
-          String(now.getMinutes()).padStart(2, '0') + ':' +
-          String(now.getSeconds()).padStart(2, '0') + '] ';
-
-        var text = document.createElement('span');
-        text.textContent = String(message == null ? '' : message);
-
-        line.appendChild(time);
-        line.appendChild(text);
-        els.logList.appendChild(line);
-        els.logList.scrollTop = els.logList.scrollHeight;
-      }catch(e){
-        // 로그 출력 실패가 조회 기능을 막지 않게 둔다.
-      }
-    }
-
-    function clearLogs(){
-      try{
-        if(els && els.logList) els.logList.innerHTML = '';
-      }catch(e){}
-    }
-
-    function formatArea(v){
-      if(v == null || v === '') return '';
-      var n = Number(v);
-      if(!isFinite(n)) return String(v).trim();
-      return numberText(n)+'㎡';
-    }
-    function formatPercent(v){
-      if(v == null || v === '') return '';
-      var n = Number(v);
-      if(!isFinite(n)) return String(v).trim();
-      return numberText(n)+'%';
-    }
-    function formatHeight(v){
-      if(v == null || v === '') return '';
-      var n = Number(v);
-      if(!isFinite(n) || n === 0) return '';
-      return numberText(n)+'m';
-    }
-    function formatInt(v, suffix){
-      if(v == null || v === '') return '';
-      var n = Number(v);
-      if(!isFinite(n)) return String(v).trim();
-      return String(Math.round(n)) + (suffix || '');
-    }
-    function numberText(n){
-      if(!isFinite(n)) return '';
-      if(Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
-      return (Math.round(n*100)/100).toString();
-    }
-    function buildFloorText(v){
-      var g = firstNonEmpty(v.grndFlrCnt);
-      var u = firstNonEmpty(v.ugrndFlrCnt);
-      if(!g && !u) return '';
-      return '지상 ' + (g || '0') + '층 / 지하 ' + (u || '0') + '층';
-    }
-    function buildParkingText(v){
-      var total = Number(firstNonEmpty(v.oudrAutoUtcnt, 0)) + Number(firstNonEmpty(v.indrAutoUtcnt, 0));
-      if(!isFinite(total) || total === 0) return '';
-      return String(total) + '대';
-    }
-    function setStatus(text, type){
-      els.status.textContent = text || '';
-      els.status.className = 'status' + (type ? ' ' + type : '');
-    }
-    function setLoading(isLoading){
-      els.loading.classList.toggle('show', !!isLoading);
-      els.lookupBtn.disabled = !!isLoading;
-    }
-    function escapeHtml(str){
-      return String(str == null ? '' : str)
+    function escapeHtml(v){
+      return String(v == null ? '' : v)
         .replaceAll('&','&amp;')
         .replaceAll('<','&lt;')
         .replaceAll('>','&gt;')
@@ -1384,931 +150,291 @@
         .replaceAll("'",'&#39;');
     }
 
-
-    function getMapQuery(){
-      if(!picked) return '';
-      return firstNonEmpty(picked.name, joinValues([picked.sido, picked.sigungu, picked.bname], ' '));
+    function setStatus(text, type){
+      els.status.textContent = text || '';
+      els.status.className = 'status' + (type ? ' ' + type : '');
     }
 
-    function getNaverMapUrl(){
-      var q = getMapQuery();
-      if(!q) return '';
-      return 'https://map.naver.com/p/search/' + encodeURIComponent(q);
+    function setLoading(on){
+      els.loading.classList.toggle('show', !!on);
+      els.lookupBtn.disabled = !!on;
     }
 
-    function renderMapLink(){
-      var q = getMapQuery();
-      if(!q){
-        els.mapLinkSection.style.display = 'none';
-        els.naverMapBtn.disabled = true;
-        els.mapLinkCaption.textContent = '선택한 주소를 네이버 지도 검색 결과로 새창에서 엽니다.';
+    function getBjdongItems(){
+      return Array.isArray(window.BJDONG_CODES) ? window.BJDONG_CODES : [];
+    }
+
+    function normalizeText(s){
+      return String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function normalizeUseAprDayInput(input){
+      var raw = String(input == null ? '' : input).trim();
+      if(!raw) return '';
+
+      var parts = raw.match(/\d+/g) || [];
+      if(parts.length >= 3){
+        var y = parts[0];
+        var m = parts[1];
+        var d = parts[2];
+        if(y.length === 4){
+          return y + String(m).padStart(2,'0') + String(d).padStart(2,'0');
+        }
+      }
+
+      var digits = raw.replace(/\D/g, '');
+      if(digits.length === 8) return digits;
+      return digits;
+    }
+
+    function formatDate8(v){
+      v = String(v || '');
+      if(v.length !== 8) return v;
+      return v.slice(0,4) + '-' + v.slice(4,6) + '-' + v.slice(6,8);
+    }
+
+    function openDongModal(){
+      els.dongModal.classList.add('show');
+      els.dongModal.setAttribute('aria-hidden','false');
+      els.dongSearchInput.value = '';
+      renderDongList();
+      setTimeout(function(){ els.dongSearchInput.focus(); }, 30);
+    }
+
+    function closeDongModal(){
+      els.dongModal.classList.remove('show');
+      els.dongModal.setAttribute('aria-hidden','true');
+    }
+
+    function renderPickedDong(){
+      if(picked){
+        els.pickedDongText.textContent = picked.name;
+        els.pickedDongText.classList.remove('dong-placeholder');
+        els.pickedDongCode.textContent = picked.code;
+      }else{
+        els.pickedDongText.textContent = '법정동 검색';
+        els.pickedDongText.classList.add('dong-placeholder');
+        els.pickedDongCode.textContent = '동 이름을 입력해 선택';
+      }
+    }
+
+    function renderDongList(){
+      var items = getBjdongItems();
+      var q = normalizeText(els.dongSearchInput.value);
+      els.dongCountText.textContent = '내장 법정동 ' + items.length.toLocaleString('ko-KR') + '건';
+
+      if(!items.length){
+        els.dongList.innerHTML = '<div class="empty">법정동 데이터 로드 실패</div>';
         return;
       }
-      els.mapLinkSection.style.display = 'block';
-      els.naverMapBtn.disabled = false;
-      els.mapLinkCaption.textContent = q;
-    }
 
-    function openNaverMap(){
-      var url = getNaverMapUrl();
-      if(!url) return;
-      window.open(url, '_blank', 'noopener');
-    }
-
-    function renderAddressDisplay(){
-      if(picked && picked.bcode){
-        els.addressDisplay.textContent = joinValues([
-          picked.sido,
-          picked.sigungu,
-          picked.bname
-        ], ' ');
-        els.addressDisplay.classList.remove('placeholder');
-      }else{
-        els.addressDisplay.textContent = '법정동을 검색하세요';
-        els.addressDisplay.classList.add('placeholder');
+      if(!q){
+        els.dongList.innerHTML = '<div class="empty">동 이름이나 코드를 입력하세요.</div>';
+        return;
       }
 
-      if(addressLocked){
-        els.addressSearchTrigger.classList.add('locked');
-      }else{
-        els.addressSearchTrigger.classList.remove('locked');
-      }
-    }
+      var qNoSpace = q.replace(/\s/g,'');
+      var matched = items.filter(function(item){
+        var name = normalizeText(item.name);
+        var bname = normalizeText(item.bname);
+        var sigungu = normalizeText(item.sigungu);
+        var code = String(item.code || '');
+        var compact = (name + bname + sigungu).replace(/\s/g,'');
+        return name.indexOf(q) !== -1 ||
+          bname.indexOf(q) !== -1 ||
+          sigungu.indexOf(q) !== -1 ||
+          code.indexOf(q) !== -1 ||
+          compact.indexOf(qNoSpace) !== -1;
+      }).slice(0, 80);
 
-    function resetAddressOnly(){
-      picked = null;
-      addressLocked = false;
-      renderAddressDisplay();
-      els.pickedLine.textContent = '';
-      if(els.useAprDayInput) els.useAprDayInput.value = '';
-      setStatus('', '');
-      els.summaryGrid.style.display = 'none';
-      els.mapLinkSection.style.display = 'none';
-      els.overviewSection.style.display = 'none';
-      els.sourcesSection.style.display = 'none';
-      els.emptyState.style.display = 'block';
-      window.lastResultData = null;
+      if(!matched.length){
+        els.dongList.innerHTML = '<div class="empty">검색 결과가 없습니다.</div>';
+        return;
+      }
+
+      els.dongList.innerHTML = matched.map(function(item, idx){
+        return '<button class="dong-item" type="button" data-idx="' + idx + '">' +
+          '<div class="dong-name">' + escapeHtml(item.name) + '</div>' +
+          '<div class="dong-code">' + escapeHtml(item.code) + '</div>' +
+          '</button>';
+      }).join('');
+
+      Array.prototype.forEach.call(els.dongList.querySelectorAll('.dong-item'), function(btn){
+        btn.addEventListener('click', function(){
+          picked = matched[Number(btn.getAttribute('data-idx'))];
+          renderPickedDong();
+          closeDongModal();
+          addLog('법정동 선택: ' + picked.name + ' / ' + picked.code);
+          setStatus('', '');
+        });
+      });
     }
 
     function jsonpCall(params){
       return new Promise(function(resolve, reject){
-        var cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-        var script = document.createElement('script');
-        var done = false;
+        var callbackName = 'lookupCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
         var timer = null;
+        var script = document.createElement('script');
+        params.callback = callbackName;
+        var query = Object.keys(params).map(function(k){
+          return encodeURIComponent(k) + '=' + encodeURIComponent(params[k] == null ? '' : String(params[k]));
+        }).join('&');
 
-        function cleanup(){
-          try{ delete window[cb]; }catch(e){}
-          if(timer) clearTimeout(timer);
+        window[callbackName] = function(data){
+          clearTimeout(timer);
+          try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
           if(script.parentNode) script.parentNode.removeChild(script);
-        }
-
-        window[cb] = function(payload){
-          if(done) return;
-          done = true;
-          cleanup();
-          resolve(payload);
+          resolve(data);
         };
 
         script.onerror = function(){
-          if(done) return;
-          done = true;
-          cleanup();
+          clearTimeout(timer);
+          try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
+          if(script.parentNode) script.parentNode.removeChild(script);
           reject(new Error('JSONP 요청 실패'));
         };
 
-        params.callback = cb;
-        params._ts = Date.now();
-
-        var q = new URLSearchParams();
-        Object.keys(params || {}).forEach(function(k){
-          q.set(k, params[k] == null ? '' : String(params[k]));
-        });
-
-        script.src = GAS_URL + '?' + q.toString();
-        addLog('GAS 요청 시작: action=' + (params.action || '') + ', bcode=' + (params.bcode || '') + ', useAprDay=' + (params.useAprDay || ''));
-        document.body.appendChild(script);
-
         timer = setTimeout(function(){
-          if(done) return;
-          done = true;
-          cleanup();
+          try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
+          if(script.parentNode) script.parentNode.removeChild(script);
           reject(new Error('JSONP 타임아웃'));
-        }, 30000);
+        }, 45000);
+
+        script.src = GAS_URL + '?' + query;
+        document.body.appendChild(script);
       });
     }
 
-
-    function getBjdongItems(){
-      var list = window.BJDONG_CODES || [];
-      return Array.isArray(list) ? list : [];
+    function getResultItems(res){
+      if(Array.isArray(res && res.items)) return res.items;
+      var titleItems = (((res || {}).apis || {}).title || {}).items;
+      return Array.isArray(titleItems) ? titleItems : [];
     }
 
-    function normalizeSearchText(v){
-      return String(v == null ? '' : v).trim().toLowerCase().replace(/\s+/g, ' ');
+    function getAddressFromItem(item){
+      return String((item && (item.address || item.roadAddress || item.jibunAddress || item.newPlatPlc || item.platPlc)) || '').trim();
     }
 
-    function splitDongName(name){
-      var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
-      return {
-        sido: parts[0] || '',
-        sigungu: parts.length >= 3 ? parts.slice(1, parts.length - 1).join(' ') : (parts[1] || ''),
-        bname: parts.length >= 2 ? parts[parts.length - 1] : ''
-      };
+    function getNaverMapUrl(item){
+      var direct = String((item && item.naverMapUrl) || '').trim();
+      if(direct) return direct;
+      var addr = getAddressFromItem(item);
+      return addr ? 'https://map.naver.com/p/search/' + encodeURIComponent(addr) : '';
     }
 
-    function openAddressSearch(initialQuery){
-      if(!els.dongModal) return;
-      els.dongModal.classList.add('show');
-      els.dongModal.setAttribute('aria-hidden', 'false');
-      if(els.dongSearchInput){
-        els.dongSearchInput.value = String(initialQuery || '');
-        setTimeout(function(){ els.dongSearchInput.focus(); }, 0);
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        setStatus('주소를 복사했습니다.', 'ok');
+        addLog('주소 복사: ' + text);
+      }catch(e){
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        setStatus('주소를 복사했습니다.', 'ok');
+        addLog('주소 복사: ' + text);
       }
-      renderDongResults();
     }
 
-    function closeDongSearch(){
-      if(!els.dongModal) return;
-      els.dongModal.classList.remove('show');
-      els.dongModal.setAttribute('aria-hidden', 'true');
-    }
-
-    function renderDongResults(){
-      var items = getBjdongItems();
-      var q = normalizeSearchText(els.dongSearchInput && els.dongSearchInput.value);
-      if(els.dongDataNote){
-        els.dongDataNote.textContent = items.length
-          ? ('내장 법정동 ' + items.length.toLocaleString('ko-KR') + '건')
-          : '법정동 데이터 로드 실패';
-      }
-      if(!els.dongResultList) return;
+    function renderAddressResults(items){
+      els.results.innerHTML = '';
       if(!items.length){
-        els.dongResultList.innerHTML = '<div class="dong-empty-msg">법정동 데이터 파일을 불러오지 못했습니다.<br>/search/bjdong-codes.js 배포 여부를 확인하세요.</div>';
+        els.empty.style.display = 'block';
+        els.empty.textContent = '일치하는 주소가 없습니다.';
         return;
       }
-      if(!q){
-        els.dongResultList.innerHTML = '<div class="dong-empty-msg">동 이름을 입력하세요.<br>예: 오식도동, 군산, 성수동</div>';
-        return;
-      }
-
-      var matched = items.filter(function(item){
-        var name = normalizeSearchText(item.name);
-        var code = String(item.code || '');
-        return name.indexOf(q) !== -1 || code.indexOf(q) !== -1;
-      }).slice(0, 80);
-
-      if(!matched.length){
-        els.dongResultList.innerHTML = '<div class="dong-empty-msg">검색 결과가 없습니다.</div>';
-        return;
-      }
-
-      els.dongResultList.innerHTML = matched.map(function(item, idx){
-        return '<button class="dong-result-btn" type="button" data-idx="' + idx + '">'
-          + '<div class="dong-result-name">' + escapeHtml(item.name) + '</div>'
-          + '<div class="dong-result-code">' + escapeHtml(item.code) + '</div>'
-          + '</button>';
+      els.empty.style.display = 'none';
+      els.results.innerHTML = items.map(function(item, idx){
+        var addr = getAddressFromItem(item);
+        var mapUrl = getNaverMapUrl(item);
+        return '<div class="result-item">' +
+          '<div class="addr">' + escapeHtml(addr || '주소 없음') + '</div>' +
+          '<div class="actions">' +
+          '<button class="action-btn" type="button" data-copy-idx="' + idx + '">주소복사</button>' +
+          (mapUrl ? '<a class="map-link" href="' + escapeHtml(mapUrl) + '" target="_blank" rel="noopener">네이버 지도로 조회</a>' : '') +
+          '</div>' +
+          '</div>';
       }).join('');
 
-      els.dongResultList.querySelectorAll('.dong-result-btn').forEach(function(btn){
+      Array.prototype.forEach.call(els.results.querySelectorAll('[data-copy-idx]'), function(btn){
         btn.addEventListener('click', function(){
-          var item = matched[Number(btn.getAttribute('data-idx'))];
-          if(!item) return;
-          var parts = splitDongName(item.name);
-          picked = {
-            bcode: String(item.code || ''),
-            name: item.name || '',
-            sido: item.sido || parts.sido,
-            sigungu: item.sigungu || parts.sigungu,
-            bname: item.bname || parts.bname,
-            lookupAddress: item.name || ''
-          };
-          addressLocked = true;
-          renderAddressDisplay();
-          els.pickedLine.textContent = joinValues([
-            picked.bcode ? ('법정동코드: ' + picked.bcode) : '',
-            picked.name ? ('선택법정동: ' + picked.name) : ''
-          ], '\n');
-          setStatus('사용승인일을 입력한 뒤 조회하세요.', '');
-          renderMapLink();
-          closeDongSearch();
+          var item = items[Number(btn.getAttribute('data-copy-idx'))];
+          var addr = getAddressFromItem(item);
+          if(addr) copyText(addr);
         });
       });
-    }
-
-    
-    function areaText(v){
-      if(v == null || v === '') return '-';
-      var n = Number(v);
-      if(!isFinite(n) || n <= 0) return '-';
-      var py = n / 3.305785;
-      return numberText(n) + '㎡ / ' + numberText(py) + '평';
-    }
-    function textOrDash(v){
-      v = String(v == null ? '' : v).trim();
-      return v || '-';
-    }
-    function uniqueNonEmpty(arr){
-      var out = [];
-      (arr || []).forEach(function(v){
-        v = String(v == null ? '' : v).trim();
-        if(v && out.indexOf(v) === -1) out.push(v);
-      });
-      return out;
-    }
-    function findPositive(items, key){
-      var best = null;
-      (items || []).forEach(function(it){
-        var n = Number(it && it[key]);
-        if(isFinite(n) && n > 0 && (best == null || n > best)) best = n;
-      });
-      return best;
-    }
-    function buildingSortKey(name){
-      var m = String(name || '').match(/(\d+)/);
-      return m ? parseInt(m[1],10) : 9999;
-    }
-    function floorSortKey(name){
-      var s = String(name || '').trim();
-      var m = s.match(/-?\d+/);
-      if(!m) return 9999;
-      return parseInt(m[0],10);
-    }
-    function joinAreaPurpose(area, purpose, struct){
-      var parts = [];
-      if(area && area !== '-') parts.push(area);
-      if(purpose && purpose !== '-') parts.push(purpose);
-      if(struct && struct !== '-') parts.push(struct);
-      return parts.length ? parts.join(' / ') : '-';
-    }
-
-    function getBuildingArchArea(buildingSource, flrItemsForBuilding){
-      var direct = Number(buildingSource && buildingSource.archArea);
-      if(isFinite(direct) && direct > 0) return direct;
-
-      var firstFloorArea = null;
-
-      (flrItemsForBuilding || []).forEach(function(f){
-        var floorName = String(f.flrNoNm || '').trim();
-        var floorGb = String(f.flrGbCdNm || '').trim();
-        var floorNo = String(f.flrNo == null ? '' : f.flrNo).trim();
-        var area = Number(f && f.area);
-
-        if(!isFinite(area) || area <= 0) return;
-
-        var isFirstFloor =
-          floorName === '1층' ||
-          (floorGb === '지상' && floorNo === '1');
-
-        if(isFirstFloor){
-          firstFloorArea = area;
-        }
-      });
-
-      return firstFloorArea;
-    }
-    function buildResultTable(rows){
-      return '<div class="result-table-wrap"><table class="result-table"><tbody>'
-        + rows.map(function(row){
-          return '<tr><th>' + escapeHtml(row[0]) + '</th><td>' + escapeHtml(row[1]) + '</td></tr>';
-        }).join('')
-        + '</tbody></table></div>';
-    }
-    function extractIntegratedData(data){
-      var apis = data.apis || {};
-      var titleItems = ((apis.title || {}).items || []).slice();
-      var recapItems = ((apis.recap || {}).items || []).slice();
-      var basisItems = ((apis.basis || {}).items || []).slice();
-      var jijiguItems = ((apis.jijigu || {}).items || []).slice();
-      var flrItems = ((apis.flr || {}).items || []).slice();
-      var titleFirst = ((apis.title || {}).firstItem || {});
-      var recapFirst = ((apis.recap || {}).firstItem || {});
-
-      var zoningParts = uniqueNonEmpty(
-        basisItems.map(function(it){ return it.jiyukCdNm; })
-          .concat(basisItems.map(function(it){ return it.jiguCdNm; }))
-          .concat(basisItems.map(function(it){ return it.guyukCdNm; }))
-          .concat(jijiguItems.map(function(it){ return it.jiyukCdNm; }))
-          .concat(jijiguItems.map(function(it){ return it.jiguCdNm; }))
-          .concat(jijiguItems.map(function(it){ return it.guyukCdNm; }))
-          .concat(jijiguItems.map(function(it){ return it.jijigu; }))
-      ).join(' / ');
-
-      var landArea = Number(recapFirst.platArea);
-      if(!isFinite(landArea) || landArea <= 0) landArea = findPositive(recapItems, 'platArea');
-      if(!isFinite(landArea) || landArea <= 0) landArea = findPositive(titleItems, 'platArea');
-
-      var archArea = Number(recapFirst.archArea);
-      if(!isFinite(archArea) || archArea <= 0) archArea = findPositive(recapItems, 'archArea');
-      if(!isFinite(archArea) || archArea <= 0) {
-        archArea = titleItems.reduce(function(sum, it){
-          var n = Number(it.archArea);
-          return sum + (isFinite(n) && n > 0 ? n : 0);
-        }, 0);
-      }
-
-      var totArea = Number(recapFirst.totArea);
-      if(!isFinite(totArea) || totArea <= 0) totArea = findPositive(recapItems, 'totArea');
-      if(!isFinite(totArea) || totArea <= 0) {
-        totArea = titleItems.reduce(function(sum, it){
-          var n = Number(it.totArea);
-          return sum + (isFinite(n) && n > 0 ? n : 0);
-        }, 0);
-      }
-
-      var mainCnt = titleItems.filter(function(it){ return String(it.mainAtchGbCd || '').trim() === '0'; }).length;
-      var atchCnt = titleItems.filter(function(it){ return String(it.mainAtchGbCd || '').trim() && String(it.mainAtchGbCd || '').trim() !== '0'; }).length;
-      if(!mainCnt && recapFirst.mainBldCnt) mainCnt = Number(recapFirst.mainBldCnt) || 0;
-      if(!atchCnt && recapFirst.atchBldCnt) atchCnt = Number(recapFirst.atchBldCnt) || 0;
-      var totalCnt = titleItems.length || (mainCnt + atchCnt);
-      var compText = '-';
-      if(totalCnt){
-        compText = '총 ' + totalCnt + '동';
-        if(mainCnt || atchCnt) compText += ' (주건축물 ' + (mainCnt || 0) + '동, 부속건축물 ' + (atchCnt || 0) + '동)';
-      }
-
-      var summaryRows = [
-        ['주소', firstNonEmpty(data.normalized && data.normalized.jibunAddress, data.address, titleFirst.platPlc, recapFirst.platPlc, '-')],
-        ['도로명주소', firstNonEmpty(data.normalized && data.normalized.roadAddress, titleFirst.newPlatPlc, recapFirst.newPlatPlc, '-')],
-        ['건축물구성', compText],
-        ['건물용도', firstNonEmpty(recapFirst.mainPurpsCdNm, titleFirst.mainPurpsCdNm, recapFirst.etcPurps, titleFirst.etcPurps, '-')],
-        ['용도지역', textOrDash(zoningParts)],
-        ['사용승인일', formatDate(firstNonEmpty(recapFirst.useAprDay, titleFirst.useAprDay)) || '-'],
-        ['대지면적', areaText(landArea)],
-        ['건축면적', areaText(archArea)],
-        ['연면적', areaText(totArea)],
-        ['건폐율', formatPercent(firstNonEmpty(recapFirst.bcRat, titleFirst.bcRat)) || '-'],
-        ['용적률', formatPercent(firstNonEmpty(recapFirst.vlRat, titleFirst.vlRat)) || '-'],
-        ['주차대수', (function(){
-          var n = Number(firstNonEmpty(recapFirst.totPkngCnt, ''));
-          return (isFinite(n) && n > 0) ? (String(Math.round(n)) + '대') : '-';
-        })()]
-      ];
-
-      var basisByPk = {};
-      basisItems.forEach(function(it){
-        var pk = String(it.mgmBldrgstPk || '').trim();
-        if(!pk) return;
-        if(!basisByPk[pk]) basisByPk[pk] = [];
-        basisByPk[pk].push(it);
-      });
-
-      var floorsByDong = {};
-      flrItems.forEach(function(it){
-        var dk = String(it.dongNm || '').trim();
-        if(!dk) return;
-        if(!floorsByDong[dk]) floorsByDong[dk] = [];
-        floorsByDong[dk].push(it);
-      });
-
-      var buildings = titleItems.slice().sort(function(a,b){
-        return buildingSortKey(a.dongNm) - buildingSortKey(b.dongNm);
-      }).map(function(it){
-        var pk = String(it.mgmBldrgstPk || '').trim();
-        var basisList = basisByPk[pk] || [];
-        var floorList = (floorsByDong[String(it.dongNm || '').trim()] || []).slice().sort(function(a,b){
-          return floorSortKey(a.flrNoNm || a.flrGbCdNm) - floorSortKey(b.flrNoNm || b.flrGbCdNm);
-        });
-        var isMainBuilding = String(it.mainAtchGbCd || '').trim() === '0';
-        var isResidentialApartmentDong = isMainBuilding && /공동주택|아파트/.test(
-          firstNonEmpty(it.mainPurpsCdNm, '') + ' ' + firstNonEmpty(it.etcPurps, '')
-        ) && /(\d+동)$/.test(firstNonEmpty(it.dongNm, ''));
-        var floorSummary = isResidentialApartmentDong
-          ? '-'
-          : (floorList.length ? floorList.map(function(f){
-              var fname = firstNonEmpty(f.flrNoNm, f.flrGbCdNm, '층정보');
-              var fpurpose = firstNonEmpty(f.mainPurpsCdNm, f.etcPurps, '-');
-              var fstruct = firstNonEmpty(f.strctCdNm, f.etcStrct, '-');
-              return fname + ': ' + joinAreaPurpose(areaText(f.area), fpurpose, fstruct);
-            }).join('\n') : '-');
-
-        var bRows = [
-          ['동명', firstNonEmpty(it.dongNm, '-')],
-          ['구분', firstNonEmpty(it.mainAtchGbCdNm, '-')],
-          ['용도', firstNonEmpty(it.mainPurpsCdNm, it.etcPurps, '-')],
-          ['구조', firstNonEmpty(it.strctCdNm, it.etcStrct, '-')],
-          ['지붕', firstNonEmpty(it.roofCdNm, it.etcRoof, '-')],
-          ['층수', buildFloorText(it) || '-'],
-          ['층고', formatHeight(it.heit) || '-'],
-          ['건축면적', areaText(getBuildingArchArea(it, floorList))],
-          ['연면적', areaText(it.totArea)],
-          ['사용승인일', formatDate(it.useAprDay) || '-'],
-          ['층별요약', floorSummary]
-        ];
-        return { title: firstNonEmpty(it.dongNm, '건물'), rows: bRows };
-      });
-
-      var hsprcItems = ((apis.hsprc || {}).items || []).slice();
-      var hsprcFirst = ((apis.hsprc || {}).firstItem || {});
-      var priceItem = hsprcItems.find(function(it){
-        return firstNonEmpty(it.stdrYear, it.housePc, it.pblntfPc, it.officialLandPrice);
-      }) || hsprcFirst || {};
-
-      var priceRows = [
-        ['기준연도', firstNonEmpty(formatDate(priceItem.stdrYear), priceItem.stdrYear, '-')],
-        ['공시가격', firstNonEmpty(priceItem.housePc, priceItem.pblntfPc, priceItem.officialLandPrice, '-')]
-      ];
-
-      return { summaryRows: summaryRows, buildings: buildings, priceRows: priceRows };
-    }
-
-
-    function maskJibunAddress(addr){
-      var s = String(addr == null ? '' : addr).replace(/\s+/g, ' ').trim();
-      if(!s) return '-';
-      s = s.replace(/\s산?\d+(?:-\d+)?(?:번지)?$/,'').trim();
-      return s || '-';
-    }
-
-    function buildExportRows(data, extracted){
-      var rows = [];
-      var base = extracted && extracted.summaryRows ? extracted.summaryRows.slice() : [];
-      base.forEach(function(row){
-        var label = row[0];
-        var value = row[1];
-        if(label === '주소'){
-          rows.push(['주소', maskJibunAddress(firstNonEmpty(
-            data && data.normalized && data.normalized.jibunAddress,
-            data && data.address,
-            value
-          ))]);
-        }else if(label === '도로명주소'){
-          rows.push(['도로명주소', maskJibunAddress(value)]);
-        }else{
-          rows.push([label, value]);
-        }
-      });
-      return rows;
-    }
-
-    function buildCaptureSheetHtml(data, extracted){
-      var rows = buildExportRows(data, extracted);
-      return ''
-        + '<div class="capture-card">'
-        +   '<div class="capture-head">'
-        +     '<h1 class="capture-title">부동산 기본정보</h1>'
-        +   '</div>'
-        +   '<div class="capture-body">'
-        +     '<table class="capture-table"><tbody>'
-        +       rows.map(function(row){
-                  return '<tr><th>' + escapeHtml(row[0]) + '</th><td>' + escapeHtml(row[1]) + '</td></tr>';
-                }).join('')
-        +     '</tbody></table>'
-        +   '</div>'
-        + '</div>';
-    }
-
-    function downloadBlob(blob, filename){
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function(){
-        URL.revokeObjectURL(url);
-        if(a.parentNode) a.parentNode.removeChild(a);
-      }, 100);
-    }
-
-    async function saveSummaryImage(){
-      if(!window.lastResultData){
-        setStatus('먼저 조회를 완료해주세요.', 'err');
-        return;
-      }
-      var extracted = extractIntegratedData(window.lastResultData);
-      return saveRowsAsImage('부동산 기본정보', extracted.summaryRows, 'maslow-summary.png');
-    }
-
-
-    function sanitizeRowsForImage(rows){
-      return (rows || []).map(function(row){
-        var label = row[0];
-        var value = row[1];
-        if(label === '주소' || label === '도로명주소'){
-          return [label, maskJibunAddress(value)];
-        }
-        return [label, value];
-      });
-    }
-
-    function buildRowsCopyText(title, rows){
-      var lines = [String(title || '부동산 기본정보').trim()];
-      (rows || []).forEach(function(row){
-        var label = String(row[0] == null ? '' : row[0]).trim();
-        var value = String(row[1] == null ? '' : row[1]).trim();
-        if(!label) return;
-        lines.push(label + ': ' + (value || '-'));
-      });
-      return lines.join('\n');
-    }
-
-    async function copyRowsText(title, rows){
-      if(!rows || !rows.length){
-        setStatus('복사할 내용이 없습니다.', 'err');
-        return;
-      }
-      try{
-        var text = buildRowsCopyText(title, rows);
-        if(navigator.clipboard && navigator.clipboard.writeText){
-          await navigator.clipboard.writeText(text);
-        }else{
-          var ta = document.createElement('textarea');
-          ta.value = text;
-          ta.setAttribute('readonly', '');
-          ta.style.position = 'fixed';
-          ta.style.left = '-9999px';
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          if(ta.parentNode) ta.parentNode.removeChild(ta);
-        }
-        setStatus('텍스트 복사 완료', 'ok');
-      }catch(err){
-        setStatus('텍스트 복사 실패', 'err');
-      }
-    }
-
-    async function saveRowsAsImage(title, rows, filename){
-      if(!rows || !rows.length){
-        setStatus('이미지 저장 실패', 'err');
-        return;
-      }
-
-      try{
-        setStatus('', '');
-
-        function splitLines(ctx, text, maxWidth){
-          var raw = String(text == null ? '' : text).split('\n');
-          var lines = [];
-          raw.forEach(function(block){
-            var words = block.split(' ');
-            var line = '';
-            for(var i=0;i<words.length;i++){
-              var test = line ? (line + ' ' + words[i]) : words[i];
-              if(ctx.measureText(test).width <= maxWidth){
-                line = test;
-              }else{
-                if(line) lines.push(line);
-                line = words[i];
-                while(ctx.measureText(line).width > maxWidth && line.length > 1){
-                  var cut = line.length - 1;
-                  while(cut > 1 && ctx.measureText(line.slice(0, cut)).width > maxWidth) cut--;
-                  lines.push(line.slice(0, cut));
-                  line = line.slice(cut);
-                }
-              }
-            }
-            lines.push(line || '');
-          });
-          return lines.length ? lines : [''];
-        }
-
-        function roundRect(ctx, x, y, w, h, r){
-          var radius = Math.min(r, w/2, h/2);
-          ctx.beginPath();
-          ctx.moveTo(x + radius, y);
-          ctx.arcTo(x + w, y, x + w, y + h, radius);
-          ctx.arcTo(x + w, y + h, x, y + h, radius);
-          ctx.arcTo(x, y + h, x, y, radius);
-          ctx.arcTo(x, y, x + w, y, radius);
-          ctx.closePath();
-        }
-
-        var safeRows = sanitizeRowsForImage(rows);
-        var dpr = 2;
-        var paddingLeft = 20;
-        var paddingRight = 12;
-        var paddingTop = 20;
-        var paddingBottom = 18;
-        var titleH = 58;
-        var labelW = 132;
-
-        var probe = document.createElement('canvas');
-        var pctx = probe.getContext('2d');
-
-        pctx.font = '900 17px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
-        var maxLabelW = labelW;
-        safeRows.forEach(function(row){
-          maxLabelW = Math.max(maxLabelW, Math.ceil(pctx.measureText(String(row[0] || '')).width) + 26);
-        });
-        labelW = maxLabelW;
-
-        pctx.font = '900 20px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
-        var valueW = 220;
-        safeRows.forEach(function(row){
-          String(row[1] == null ? '' : row[1]).split('\n').forEach(function(line){
-            valueW = Math.max(valueW, Math.ceil(pctx.measureText(line).width) + 34);
-          });
-        });
-        valueW = Math.min(valueW, 540);
-
-        var tableW = labelW + valueW;
-        var fullW = paddingLeft + tableW + paddingRight;
-
-        var rowHeights = [];
-        safeRows.forEach(function(row){
-          var lines = splitLines(pctx, row[1], valueW - 24);
-          var lineCount = Math.max(1, lines.length);
-          rowHeights.push(Math.max(52, 18 + lineCount * 24));
-        });
-
-        var totalRowsH = rowHeights.reduce(function(a,b){ return a+b; }, 0);
-        var fullH = paddingTop + titleH + totalRowsH + paddingBottom;
-
-        var canvas = document.createElement('canvas');
-        canvas.width = Math.ceil(fullW * dpr);
-        canvas.height = Math.ceil(fullH * dpr);
-
-        var ctx = canvas.getContext('2d');
-        ctx.scale(dpr, dpr);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, fullW, fullH);
-
-        ctx.strokeStyle = '#dfe7f3';
-        ctx.lineWidth = 1;
-        roundRect(ctx, 0.5, 0.5, fullW - 1, fullH - 1, 14);
-        ctx.stroke();
-
-        ctx.fillStyle = '#f8fbff';
-        roundRect(ctx, 0.5, 0.5, fullW - 1, titleH + 10, 14);
-        ctx.fillRect(1, titleH, fullW - 2, 10);
-        ctx.fill();
-
-        ctx.fillStyle = '#111827';
-        ctx.font = '900 24px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(title || '부동산 기본정보', paddingLeft, paddingTop + titleH / 2 - 2);
-
-        var startY = paddingTop + titleH;
-        var xLabel = paddingLeft;
-        var xValue = paddingLeft + labelW;
-
-        for(var i=0;i<safeRows.length;i++){
-          var row = safeRows[i];
-          var rh = rowHeights[i];
-          var y = startY;
-
-          ctx.fillStyle = '#f8fbff';
-          ctx.fillRect(xLabel, y, labelW, rh);
-
-          ctx.strokeStyle = '#e7edf5';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(xLabel, y);
-          ctx.lineTo(xLabel + tableW, y);
-          ctx.stroke();
-
-          ctx.beginPath();
-          ctx.moveTo(xValue, y);
-          ctx.lineTo(xValue, y + rh);
-          ctx.stroke();
-
-          ctx.fillStyle = '#344054';
-          ctx.font = '900 17px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(String(row[0] || ''), xLabel + 14, y + rh / 2);
-
-          ctx.fillStyle = '#111827';
-          ctx.font = '900 20px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
-          ctx.textBaseline = 'top';
-          var lines = splitLines(ctx, row[1], valueW - 24);
-          var textY = y + 14;
-          lines.forEach(function(line){
-            ctx.fillText(String(line || ''), xValue + 14, textY);
-            textY += 24;
-          });
-
-          startY += rh;
-        }
-
-        ctx.beginPath();
-        ctx.moveTo(xLabel, startY);
-        ctx.lineTo(xLabel + tableW, startY);
-        ctx.strokeStyle = '#e7edf5';
-        ctx.stroke();
-
-        canvas.toBlob(function(blob){
-          if(!blob){
-            setStatus('이미지 저장 실패', 'err');
-            return;
-          }
-          downloadBlob(blob, filename || 'maslow-summary.png');
-        }, 'image/png');
-      }catch(err){
-        setStatus('이미지 저장 실패', 'err');
-      }
-    }
-
-    function buildOverviewCards(data){
-      var extracted = extractIntegratedData(data);
-      var html = '<div class="result-stack">';
-      html += '<div class="result-block">'
-        + '<div class="result-block-head">통합요약 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">총괄표제부값</span></div>'
-        + buildResultTable(extracted.summaryRows)
-        + '<div class="table-download-wrap">'
-        + '<div class="table-action-row">'
-        + '<button class="table-download-btn" data-kind="summary" data-title="부동산 기본정보">⬇️ 이미지 내려받기</button>'
-        + '<button class="table-copy-btn" data-copy-kind="summary" data-title="부동산 기본정보">📋 텍스트 복사</button>'
-        + '</div>'
-        + '<div class="table-download-note">주소가 있으면 뒤 숫자는 보이지 않게 저장됩니다.</div>'
-        + '</div>'
-        + '</div>';
-
-      extracted.buildings.forEach(function(b){
-        html += '<div class="result-block">'
-          + '<div class="result-block-head">' + escapeHtml(b.title) + '</div>'
-          + buildResultTable(b.rows)
-          + '<div class="table-download-wrap">'
-          + '<div class="table-action-row">'
-          + '<button class="table-download-btn" data-kind="building" data-title="' + escapeHtml(b.title) + '">⬇️ 이미지 내려받기</button>'
-          + '<button class="table-copy-btn" data-copy-kind="building" data-title="' + escapeHtml(b.title) + '">📋 텍스트 복사</button>'
-          + '</div>'
-          + '<div class="table-download-note">주소가 있으면 뒤 숫자는 보이지 않게 저장됩니다.</div>'
-          + '</div>'
-          + '</div>';
-      });
-
-      html += '<div class="result-block">'
-        + '<div class="result-block-head">공시지가 주택 가격 조회</div>'
-        + '<div class="table-download-wrap">'
-        + '<div class="table-action-row">'
-        + '<button class="table-download-btn" data-kind="price-link" data-title="공시지가 주택 가격 조회">조회하기</button>'
-        + '</div>'
-        + '</div>'
-        + '</div>';
-
-      html += '</div>';
-      els.overviewGrid.innerHTML = html;
-
-      document.querySelectorAll('.table-download-btn').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          var kind = btn.getAttribute('data-kind');
-          var title = btn.getAttribute('data-title') || '부동산 기본정보';
-
-          if(kind === 'summary'){
-            saveRowsAsImage(title, extracted.summaryRows, 'maslow-summary.png');
-            return;
-          }
-          if(kind === 'price-link'){
-            window.open('https://www.realtyprice.kr/notice/m/main/main.do', '_blank', 'noopener');
-            return;
-          }
-
-          var found = extracted.buildings.find(function(b){
-            return b.title === title;
-          });
-          if(found){
-            saveRowsAsImage(title, found.rows, title + '.png');
-          }
-        });
-      });
-
-      document.querySelectorAll('.table-copy-btn').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          var kind = btn.getAttribute('data-copy-kind');
-          var title = btn.getAttribute('data-title') || '부동산 기본정보';
-
-          if(kind === 'summary'){
-            copyRowsText(title, extracted.summaryRows);
-            return;
-          }
-
-          var found = extracted.buildings.find(function(b){
-            return b.title === title;
-          });
-          if(found){
-            copyRowsText(title, found.rows);
-          }
-        });
-      });
-    }
-
-    function buildSourceCard(key, source){
-      return '';
-    }
-
-    function renderResult(data){
-      window.lastResultData = data;
-      els.emptyState.style.display = 'none';
-      els.summaryGrid.style.display = 'none';
-      renderMapLink();
-      els.overviewSection.style.display = 'block';
-      els.sourcesSection.style.display = 'none';
-      buildOverviewCards(data);
     }
 
     async function lookup(){
+      if(!picked || !picked.code){
+        openDongModal();
+        return;
+      }
+
+      var rawDate = els.useAprDayInput.value;
+      var useAprDay = normalizeUseAprDayInput(rawDate);
+      addLog('날짜 정규화: ' + rawDate + ' → ' + useAprDay);
+
+      if(useAprDay.length !== 8){
+        setStatus('사용승인일을 8자리 날짜로 입력해주세요.', 'err');
+        els.useAprDayInput.focus();
+        return;
+      }
+
+      els.useAprDayInput.value = formatDate8(useAprDay);
+      setStatus('', '');
+      setLoading(true);
+
+      var params = {
+        action: 'fetchBuildingsByDongAndUseAprDay',
+        bcode: picked.code,
+        sido: picked.sido || '',
+        sigungu: picked.sigungu || '',
+        bname: picked.bname || '',
+        useAprDay: useAprDay
+      };
+
+      addLog('GAS 요청 시작: action=' + params.action + ', bcode=' + params.bcode + ', useAprDay=' + params.useAprDay);
+
       try{
-        if(!picked || !picked.bcode){
-          openAddressSearch('');
-          return;
-        }
-
-        var normalizedDate = normalizeUseAprDayInput(els.useAprDayInput && els.useAprDayInput.value);
-        if(!normalizedDate.ok){
-          setStatus(normalizedDate.message, 'err');
-          addLog('날짜 정규화 실패: ' + normalizedDate.message, 'err');
-          if(els.useAprDayInput) els.useAprDayInput.focus();
-          return;
-        }
-        var useAprDay = normalizedDate.value;
-        if(els.useAprDayInput) els.useAprDayInput.value = normalizedDate.display;
-        addLog('날짜 정규화: ' + normalizedDate.display + ' → ' + useAprDay, 'ok');
-
-        setLoading(true);
-        setStatus('', '');
-        var params = {
-          action:'fetchBuildingsByDongAndUseAprDay',
-          bcode: picked.bcode,
-          sido: picked.sido || '',
-          sigungu: picked.sigungu || '',
-          bname: picked.bname || '',
-          useAprDay: useAprDay
-        };
-
         var res = await jsonpCall(params);
-        addLog('GAS 응답 수신: ok=' + !!(res && res.ok) + ', message=' + ((res && (res.message || res.error)) || ''), (res && res.ok) ? 'ok' : 'err');
+        addLog('GAS 응답 수신: ok=' + !!(res && res.ok) + ', message=' + ((res && (res.message || res.error)) || ''));
+
         if(!(res && res.ok)){
-          var failMsg = (res && (res.message || res.error)) ? (res.message || res.error) : '조회 실패 · 서버 응답 없음';
-          setStatus(failMsg, 'err');
-          addLog('조회 실패 상세: ' + failMsg, 'err');
+          setStatus((res && (res.message || res.error)) || '조회 실패', 'err');
+          renderAddressResults([]);
           return;
         }
 
-        if(!(((res.apis || {}).title || {}).items || []).length){
-          setStatus('일치하는 건축물이 없습니다.', 'err');
-          addLog('일치 결과 0건', 'warn');
+        var items = getResultItems(res).filter(function(item){ return !!getAddressFromItem(item); });
+        if(!items.length){
+          setStatus('일치하는 주소가 없습니다.', 'err');
         }else{
-          setStatus('조회 완료 · ' + (((res.apis || {}).title || {}).items || []).length + '건', '');
-          addLog('조회 완료: ' + (((res.apis || {}).title || {}).items || []).length + '건', 'ok');
+          setStatus('조회 완료 · ' + items.length + '건', 'ok');
         }
-
-        renderResult(res);
+        addLog('조회 완료: ' + items.length + '건');
+        renderAddressResults(items);
       }catch(e){
-        var msg = e && e.message ? e.message : String(e);
-        setStatus('조회 실패 · ' + msg, 'err');
-        addLog('조회 예외: ' + msg, 'err');
+        addLog('조회 실패: ' + (e && e.message ? e.message : String(e)));
+        setStatus('조회 실패 · ' + (e && e.message ? e.message : String(e)), 'err');
       }finally{
         setLoading(false);
       }
     }
 
-    els.addressSearchTrigger.addEventListener('click', function(){
-      if(addressLocked) return;
-      openAddressSearch('');
-    });
+    els.dongPickBtn.addEventListener('click', openDongModal);
+    els.dongCloseBtn.addEventListener('click', closeDongModal);
+    els.dongModal.addEventListener('click', function(e){ if(e.target === els.dongModal) closeDongModal(); });
+    els.dongSearchInput.addEventListener('input', renderDongList);
+    els.lookupBtn.addEventListener('click', lookup);
+    els.useAprDayInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') lookup(); });
 
-    els.refreshAddressBtn.addEventListener('click', function(e){
-      e.stopPropagation();
-      resetAddressOnly();
-    });
-
-    els.lookupBtn.addEventListener('click', function(){
-      lookup();
-    });
-
-    if(els.useAprDayInput){
-      els.useAprDayInput.addEventListener('keydown', function(e){
-        if(e.key === 'Enter') lookup();
-      });
-      els.useAprDayInput.addEventListener('blur', function(){
-        var n = normalizeUseAprDayInput(els.useAprDayInput.value);
-        if(n.ok) els.useAprDayInput.value = n.display;
-      });
-    }
-
-    els.naverMapBtn.addEventListener('click', function(){
-      openNaverMap();
-    });
-
-
-
-    if(els.dongSearchInput){
-      els.dongSearchInput.addEventListener('input', function(){ renderDongResults(); });
-      els.dongSearchInput.addEventListener('keydown', function(e){
-        if(e.key === 'Escape') closeDongSearch();
-      });
-    }
-
-    if(els.dongCloseBtn){
-      els.dongCloseBtn.addEventListener('click', function(){ closeDongSearch(); });
-    }
-
-    if(els.dongModal){
-      els.dongModal.addEventListener('click', function(e){
-        if(e.target === els.dongModal) closeDongSearch();
-      });
-    }
-
-    if(els.logClearBtn){
-      els.logClearBtn.addEventListener('click', function(){ clearLogs(); });
-    }
-
+    renderPickedDong();
     addLog('프론트 로드 완료');
     addLog('법정동 데이터: ' + getBjdongItems().length.toLocaleString('ko-KR') + '건');
-    renderAddressDisplay();
-    renderMapLink();
   </script>
 </body>
 </html>

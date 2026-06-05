@@ -1000,7 +1000,7 @@
     </div>
   </div>
 
-  <script src="./bjdong-codes.js"></script>
+  <script src="/search/bjdong-codes.js" onerror="document.write('<script src=&quot;./bjdong-codes.js&quot;><\/script>')"></script>
   <script>
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
     var picked = null;
@@ -1348,9 +1348,15 @@
       var items = getBjdongItems();
       var q = normalizeSearchText(els.dongSearchInput && els.dongSearchInput.value);
       if(els.dongDataNote){
-        els.dongDataNote.textContent = '내장 법정동 ' + items.length.toLocaleString('ko-KR') + '건';
+        els.dongDataNote.textContent = items.length
+          ? ('내장 법정동 ' + items.length.toLocaleString('ko-KR') + '건')
+          : '법정동 데이터 로드 실패';
       }
       if(!els.dongResultList) return;
+      if(!items.length){
+        els.dongResultList.innerHTML = '<div class="dong-empty-msg">법정동 데이터 파일을 불러오지 못했습니다.<br>/search/bjdong-codes.js 배포 여부를 확인하세요.</div>';
+        return;
+      }
       if(!q){
         els.dongResultList.innerHTML = '<div class="dong-empty-msg">동 이름을 입력하세요.<br>예: 오식도동, 군산, 성수동</div>';
         return;

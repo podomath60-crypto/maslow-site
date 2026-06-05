@@ -1,18 +1,20 @@
-search 프론트
+search 배포 파일
 
-구성:
-- index.html: 법정동 검색 + 사용승인일 조회 화면
-- bjdong-codes.js: 국토교통부_전국 법정동_20250807.csv에서 변환한 현존 법정동 내장 데이터
-- script.js: 참고용 분리 스크립트
+구조:
+- index.html
+- bjdong-codes.js
 
-법정동 데이터 반영 기준:
-- 전체 CSV 행: 49,878행
-- 삭제일자 없는 현존 법정동 중 읍면동/리 단위: 20,275건
-- 시도/시군구 상위 코드는 선택 대상에서 제외
+법정동 데이터:
+- 원본: 국토교통부_전국 법정동_20250807.csv
+- 전체 행: 49,878건
+- 현존 읍면동/리 단위: 20,275건
+- 삭제일자 있는 행 제외
+- 시/도, 시/군/구 상위 코드 제외
 
-조회 payload:
-{
-  action: 'fetchBuildingsByDongAndUseAprDay',
-  bcode: '10자리 법정동코드',
-  useAprDay: 'YYYYMMDD'
-}
+배포:
+- 서버의 기존 /search 폴더를 통째로 교체하세요.
+- 접속 주소는 /search 또는 /search/ 모두 동작하도록 index.html에서 /search/bjdong-codes.js 절대경로를 사용했습니다.
+- 로컬 파일 테스트용 fallback으로 ./bjdong-codes.js도 걸어두었습니다.
+
+확인용:
+- 오식도동: 전북특별자치도 군산시 오식도동 / 5213014700

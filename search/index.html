@@ -370,37 +370,64 @@
     }
 
     function jsonpCall(params){
-      return new Promise(function(resolve, reject){
-        var callbackName = 'lookupCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
-        var timer = null;
-        var script = document.createElement('script');
-        params.callback = callbackName;
-        var query = Object.keys(params).map(function(k){
-          return encodeURIComponent(k) + '=' + encodeURIComponent(params[k] == null ? '' : String(params[k]));
-        }).join('&');
+      var safeParams = Object.assign({}, params || {});
 
-        window[callbackName] = function(data){
-          clearTimeout(timer);
-          try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
-          if(script.parentNode) script.parentNode.removeChild(script);
-          resolve(data);
-        };
+      return fetch('/api/building-lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(safeParams),
+        cache: 'no-store'
+      }).then(function(res){
+        return res.text().then(function(text){
+          var data = null;
+          try{
+            data = text ? JSON.parse(text) : {};
+          }catch(e){
+            addLog('프록시 응답 파싱 실패: status=' + res.status + ', head=' + String(text || '').slice(0, 160));
+            throw new Error('조회 서버 응답 오류');
+          }
+          if(!res.ok){
+            throw new Error((data && data.message) || '조회 서버 응답 오류');
+          }
+          return data;
+        });
+      }).catch(function(proxyErr){
+        addLog('프록시 조회 실패, JSONP 예비경로 시도: ' + (proxyErr && proxyErr.message ? proxyErr.message : String(proxyErr)));
 
-        script.onerror = function(){
-          clearTimeout(timer);
-          try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
-          if(script.parentNode) script.parentNode.removeChild(script);
-          reject(new Error('JSONP 요청 실패'));
-        };
+        return new Promise(function(resolve, reject){
+          var callbackName = 'lookupCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+          var timer = null;
+          var script = document.createElement('script');
+          var fallbackParams = Object.assign({}, params || {});
+          fallbackParams.callback = callbackName;
+          fallbackParams._ts = Date.now();
+          var query = Object.keys(fallbackParams).map(function(k){
+            return encodeURIComponent(k) + '=' + encodeURIComponent(fallbackParams[k] == null ? '' : String(fallbackParams[k]));
+          }).join('&');
 
-        timer = setTimeout(function(){
-          try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
-          if(script.parentNode) script.parentNode.removeChild(script);
-          reject(new Error('JSONP 타임아웃'));
-        }, 45000);
+          window[callbackName] = function(data){
+            clearTimeout(timer);
+            try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
+            if(script.parentNode) script.parentNode.removeChild(script);
+            resolve(data);
+          };
 
-        script.src = GAS_URL + '?' + query;
-        document.body.appendChild(script);
+          script.onerror = function(){
+            clearTimeout(timer);
+            try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
+            if(script.parentNode) script.parentNode.removeChild(script);
+            reject(new Error('JSONP 요청 실패'));
+          };
+
+          timer = setTimeout(function(){
+            try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
+            if(script.parentNode) script.parentNode.removeChild(script);
+            reject(new Error('JSONP 타임아웃'));
+          }, 45000);
+
+          script.src = GAS_URL + '?' + query;
+          document.body.appendChild(script);
+        });
       });
     }
 

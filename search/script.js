@@ -260,49 +260,72 @@
     }
 
     function jsonpCall(params){
-      return new Promise(function(resolve, reject){
-        var cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-        var script = document.createElement('script');
-        var done = false;
-        var timer = null;
+      var safeParams = Object.assign({}, params || {});
 
-        function cleanup(){
-          try{ delete window[cb]; }catch(e){}
-          if(timer) clearTimeout(timer);
-          if(script.parentNode) script.parentNode.removeChild(script);
-        }
-
-        window[cb] = function(payload){
-          if(done) return;
-          done = true;
-          cleanup();
-          resolve(payload);
-        };
-
-        script.onerror = function(){
-          if(done) return;
-          done = true;
-          cleanup();
-          reject(new Error('JSONP 요청 실패'));
-        };
-
-        params.callback = cb;
-        params._ts = Date.now();
-
-        var q = new URLSearchParams();
-        Object.keys(params || {}).forEach(function(k){
-          q.set(k, params[k] == null ? '' : String(params[k]));
+      return fetch('/api/building-lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(safeParams),
+        cache: 'no-store'
+      }).then(function(res){
+        return res.text().then(function(text){
+          var data = null;
+          try{
+            data = text ? JSON.parse(text) : {};
+          }catch(e){
+            throw new Error('조회 서버 응답 오류');
+          }
+          if(!res.ok){
+            throw new Error((data && data.message) || '조회 서버 응답 오류');
+          }
+          return data;
         });
+      }).catch(function(){
+        return new Promise(function(resolve, reject){
+          var cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+          var script = document.createElement('script');
+          var done = false;
+          var timer = null;
 
-        script.src = GAS_URL + '?' + q.toString();
-        document.body.appendChild(script);
+          function cleanup(){
+            try{ delete window[cb]; }catch(e){}
+            if(timer) clearTimeout(timer);
+            if(script.parentNode) script.parentNode.removeChild(script);
+          }
 
-        timer = setTimeout(function(){
-          if(done) return;
-          done = true;
-          cleanup();
-          reject(new Error('JSONP 타임아웃'));
-        }, 15000);
+          window[cb] = function(payload){
+            if(done) return;
+            done = true;
+            cleanup();
+            resolve(payload);
+          };
+
+          script.onerror = function(){
+            if(done) return;
+            done = true;
+            cleanup();
+            reject(new Error('JSONP 요청 실패'));
+          };
+
+          var fallbackParams = Object.assign({}, params || {});
+          fallbackParams.callback = cb;
+          fallbackParams._ts = Date.now();
+
+          var q = new URLSearchParams();
+          Object.keys(fallbackParams || {}).forEach(function(k){
+            q.set(k, fallbackParams[k] == null ? '' : String(fallbackParams[k]));
+          });
+
+          script.src = GAS_URL + '?' + q.toString();
+          document.body.appendChild(script);
+
+          timer = setTimeout(function(){
+            if(done) return;
+            done = true;
+            cleanup();
+            reject(new Error('JSONP 타임아웃'));
+          }, 45000);
+        });
       });
     }
 

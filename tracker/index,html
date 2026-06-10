@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="판타스틱 매물추적기 | DDALGGAK" />
+  <meta name="theme-color" content="#eef5ff" />
+  <link rel="canonical" href="https://www.maslowkorea.site/search/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="DDALGGAK" />
+  <meta property="og:title" content="판타스틱 매물추적기 | DDALGGAK" />
+  <meta property="og:description" content="법정동과 사용승인일로 주소 후보를 찾아드립니다." />
+  <meta property="og:url" content="https://www.maslowkorea.site/search/" />
+  <meta property="og:image" content="https://www.maslowkorea.site/search/assets/og-kakao.png?v=20260605" />
+  <meta property="og:image:secure_url" content="https://www.maslowkorea.site/search/assets/og-kakao.png?v=20260605" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1731" />
+  <meta property="og:image:height" content="909" />
+  <meta property="og:image:alt" content="판타스틱 매물추적기 DDALGGAK" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="판타스틱 매물추적기 | DDALGGAK" />
+  <meta name="twitter:description" content="법정동과 사용승인일로 주소 후보를 찾아드립니다." />
+  <meta name="twitter:image" content="https://www.maslowkorea.site/search/assets/og-kakao.png?v=20260605" />
+  <title>판타스틱 매물추적기 | DDALGGAK</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eef5ff;color:#111827}
+    button,input{font:inherit}
+    .page{min-height:100vh}
+    .main{padding:34px 20px 64px}
+    .wrap{max-width:760px;margin:0 auto}
+    .hero{margin-bottom:34px;text-align:center}
+    .hero-visual{width:min(360px,78vw);height:168px;margin:0 auto 24px;position:relative;border-radius:28px;background:linear-gradient(135deg,#dbeafe 0%,#fff 52%,#e0f2fe 100%);box-shadow:0 18px 60px rgba(37,99,235,.18);display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .hero-visual:before{content:"";position:absolute;width:210px;height:210px;border-radius:999px;background:rgba(59,130,246,.16);top:-78px;right:-42px}
+    .hero-visual:after{content:"";position:absolute;width:160px;height:160px;border-radius:999px;background:rgba(14,165,233,.14);bottom:-70px;left:-38px}
+    .lamp{position:relative;z-index:1;width:124px;height:84px}
+    .lamp-body{position:absolute;left:16px;top:28px;width:86px;height:36px;border-radius:44px 44px 30px 30px;background:linear-gradient(135deg,#2563eb,#60a5fa);box-shadow:0 10px 24px rgba(37,99,235,.35)}
+    .lamp-body:before{content:"";position:absolute;right:-26px;top:7px;width:34px;height:20px;border:8px solid #3b82f6;border-left:0;border-radius:0 22px 22px 0}
+    .lamp-body:after{content:"";position:absolute;left:-16px;top:4px;border-top:9px solid transparent;border-bottom:9px solid transparent;border-right:26px solid #2563eb}
+    .lamp-base{position:absolute;left:28px;top:64px;width:66px;height:10px;border-radius:999px;background:#1d4ed8}
+    .smoke{position:absolute;left:55px;top:0;width:16px;height:16px;border-radius:50%;background:#93c5fd;box-shadow:18px 10px 0 #bfdbfe, -14px 16px 0 #dbeafe, 6px -8px 0 #60a5fa;animation:floatSmoke 2.4s ease-in-out infinite}
+    @keyframes floatSmoke{0%,100%{transform:translateY(0);opacity:.85}50%{transform:translateY(-8px);opacity:1}}
+    .brand{font-size:13px;font-weight:900;letter-spacing:.1em;color:#2563eb;margin-bottom:8px}
+    h1{margin:0;font-size:34px;letter-spacing:-.055em;line-height:1.05}
+    .desc{margin:10px auto 0;color:#4b5563;font-size:15px;line-height:1.55;max-width:520px}
+    .panel{background:#fff;border:1px solid #dbeafe;border-radius:24px;padding:18px;box-shadow:0 18px 44px rgba(37,99,235,.1)}
+    .search-area{display:grid;gap:10px}
+    .dong-btn{width:100%;min-height:58px;border:1px solid #d1d5db;background:#fff;border-radius:16px;text-align:left;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
+    .dong-btn strong{font-size:17px;font-weight:900;color:#111827}
+    .dong-btn span{font-size:13px;color:#6b7280}
+    .dong-placeholder{color:#9ca3af!important;font-weight:800!important}
+    .date-row{display:grid;grid-template-columns:minmax(0,1fr) 124px;gap:10px}
+    .date-input{height:56px;border:1px solid #d1d5db;background:#fff;border-radius:16px;padding:0 16px;font-size:18px;outline:none}
+    .date-input:focus,.dong-btn:focus{border-color:#2563eb;box-shadow:0 0 0 4px rgba(37,99,235,.11)}
+    .lookup-btn{height:56px;border:0;border-radius:16px;background:#2563eb;color:#fff;font-weight:900;cursor:pointer;box-shadow:0 10px 22px rgba(37,99,235,.24)}
+    .lookup-btn:disabled{opacity:.55;cursor:not-allowed}
+    .hint{font-size:13px;color:#6b7280;line-height:1.45}
+    .status{min-height:22px;font-size:14px;font-weight:900;color:#374151;margin:14px 2px}
+    .status.err{color:#dc2626}
+    .status.ok{color:#0f766e}
+    .results{display:grid;gap:10px;margin-top:12px}
+    .result-item{background:#fff;border:1px solid #dbeafe;border-radius:18px;padding:16px;display:grid;gap:12px;box-shadow:0 10px 28px rgba(37,99,235,.08)}
+    .addr{font-size:19px;font-weight:950;line-height:1.45;word-break:keep-all}
+    .building-name{font-size:15px;font-weight:900;color:#111827;line-height:1.45}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .action-btn,.map-link{height:42px;padding:0 14px;border-radius:12px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+    .map-link{background:#03c75a;border-color:#03c75a;color:#fff}
+    .empty{border:1px dashed #bfdbfe;border-radius:18px;background:rgba(255,255,255,.82);padding:20px;color:#6b7280;text-align:center;font-weight:800;margin-top:12px}
+    .modal{display:none;position:fixed;inset:0;background:rgba(17,24,39,.45);z-index:30;padding:18px;overflow:auto}
+    .modal.show{display:flex;align-items:flex-start;justify-content:center}
+    .modal-box{width:min(760px,100%);background:#fff;border-radius:18px;margin-top:24px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.22)}
+    .modal-head{padding:16px;border-bottom:1px solid #e5e7eb;display:grid;gap:10px}
+    .modal-title{font-size:18px;font-weight:900}
+    .dong-search{height:52px;border:1px solid #d1d5db;border-radius:13px;padding:0 14px;font-size:18px;outline:none}
+    .dong-list{max-height:58vh;overflow:auto;padding:8px}
+    .dong-item{width:100%;border:0;background:#fff;text-align:left;padding:13px 12px;border-radius:12px;cursor:pointer;display:grid;gap:4px}
+    .dong-item:hover{background:#f3f4f6}
+    .dong-name{font-weight:900;font-size:16px}
+    .dong-code{font-size:12px;color:#6b7280}
+    .modal-foot{padding:12px 16px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;gap:10px;align-items:center;color:#6b7280;font-size:13px}
+    .close-btn{border:1px solid #d1d5db;background:#fff;border-radius:10px;height:38px;padding:0 12px;font-weight:800;cursor:pointer}
+    .loading{display:none;position:fixed;inset:0;z-index:40;background:rgba(239,246,255,.76);backdrop-filter:blur(5px);align-items:center;justify-content:center;text-align:center}
+    .loading.show{display:flex}
+    .loading-box{background:#fff;border:1px solid #dbeafe;border-radius:24px;padding:28px 30px;box-shadow:0 20px 80px rgba(37,99,235,.22);display:grid;justify-items:center;gap:14px}
+    .spinner{width:54px;height:54px;border-radius:50%;border:6px solid #dbeafe;border-top-color:#2563eb;animation:spin .8s linear infinite}
+    .loading-text{font-size:18px;font-weight:950;line-height:1.45;color:#111827}
+    .search-progress{width:min(420px,72vw);display:grid;gap:10px;margin-top:2px}
+    .progress-track{position:relative;height:18px;border-radius:999px;background:#e0ecff;border:1px solid #bfdbfe;overflow:hidden;box-shadow:inset 0 2px 5px rgba(37,99,235,.09)}
+    .progress-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:999px;background:linear-gradient(90deg,#60a5fa,#2563eb);animation:progressFill30 30s linear forwards}
+    .paper-lane{position:absolute;inset:0;overflow:hidden;border-radius:999px}
+    .paper{position:absolute;top:1px;left:-28px;width:18px;height:14px;border-radius:3px;background:#fff;border:1px solid #93c5fd;box-shadow:0 2px 5px rgba(37,99,235,.18);opacity:0;animation:paperFly 2.4s linear infinite}
+    .paper:before{content:"";position:absolute;left:3px;right:3px;top:4px;height:1px;background:#93c5fd;box-shadow:0 4px 0 #bfdbfe}
+    .paper.p2{animation-delay:.38s;top:2px}
+    .paper.p3{animation-delay:.76s;top:1px}
+    .paper.p4{animation-delay:1.14s;top:2px}
+    .paper.p5{animation-delay:1.52s;top:1px}
+    .progress-caption{font-size:12px;font-weight:800;color:#6b7280}
+    @keyframes progressFill30{from{width:0}to{width:100%}}
+    @keyframes paperFly{
+      0%{transform:translateX(0) translateY(0) rotate(0deg);opacity:0}
+      12%{opacity:1}
+      70%{opacity:.95}
+      100%{transform:translateX(440px) translateY(-10px) rotate(-22deg);opacity:0}
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .lamp-burst{position:fixed;inset:0;z-index:50;pointer-events:none;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.08)}
+    .lamp-burst.show{display:flex}
+    .burst-core{position:relative;width:170px;height:170px;border-radius:50%;background:radial-gradient(circle,#fff 0%,#fef3c7 28%,#60a5fa 62%,rgba(96,165,250,0) 70%);animation:burstPop .78s ease-out forwards}
+    .burst-core:before,.burst-core:after{content:"";position:absolute;inset:-24px;border-radius:50%;border:6px solid rgba(37,99,235,.34);animation:burstRing .78s ease-out forwards}
+    .burst-core:after{inset:-48px;border-color:rgba(250,204,21,.34);animation-delay:.06s}
+    .spark{position:absolute;left:50%;top:50%;width:10px;height:10px;border-radius:50%;background:#facc15;box-shadow:0 -72px 0 #2563eb, 52px -48px 0 #60a5fa, 74px 0 0 #facc15, 48px 54px 0 #2563eb, 0 74px 0 #93c5fd, -54px 50px 0 #facc15, -76px 0 0 #60a5fa, -50px -52px 0 #2563eb}
+    @keyframes burstPop{0%{transform:scale(.2);opacity:0}35%{transform:scale(1.1);opacity:1}100%{transform:scale(1.35);opacity:0}}
+    @keyframes burstRing{0%{transform:scale(.2);opacity:0}40%{opacity:1}100%{transform:scale(1.55);opacity:0}}
+    @media(max-width:860px){.main{padding:24px 14px 44px}.date-row{grid-template-columns:1fr}.lookup-btn{width:100%}h1{font-size:30px}.hero-visual{height:142px}.lamp{transform:scale(.86)}}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <main class="main">
+      <div class="wrap">
+        <div class="hero">
+          <div class="hero-visual" aria-hidden="true">
+            <div class="lamp">
+              <div class="smoke"></div>
+              <div class="lamp-body"></div>
+              <div class="lamp-base"></div>
+            </div>
+          </div>
+          <div class="brand">DDALGGAK</div>
+          <h1>판타스틱 매물추적기</h1>
+        </div>
+
+        <div class="panel">
+          <div class="search-area">
+            <button id="dongPickBtn" class="dong-btn" type="button">
+              <strong id="pickedDongText" class="dong-placeholder">법정동 검색</strong>
+              <span id="pickedDongCode">동 이름을 입력해 선택</span>
+            </button>
+            <div class="date-row">
+              <input id="useAprDayInput" class="date-input" type="text" inputmode="numeric" placeholder="사용승인일 예: 2011.12.02" autocomplete="off" />
+              <button id="lookupBtn" class="lookup-btn" type="button">조회</button>
+            </div>
+            <div class="hint">날짜는 20111202, 2011.12.02, 2011-12-02, 2011/12/2처럼 입력해도 됩니다.</div>
+          </div>
+        </div>
+
+        <div id="status" class="status"></div>
+        <div id="results" class="results"></div>
+        <div id="empty" class="empty">법정동과 사용승인일을 입력하면 주소가 표시됩니다.</div>
+      </div>
+    </main>
+  </div>
+
+  <div id="dongModal" class="modal" aria-hidden="true">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="법정동 검색">
+      <div class="modal-head">
+        <div class="modal-title">법정동 검색</div>
+        <input id="dongSearchInput" class="dong-search" type="search" placeholder="예: 오식도동, 군산 오식도, 5213014700" autocomplete="off" />
+      </div>
+      <div id="dongList" class="dong-list"></div>
+      <div class="modal-foot">
+        <div id="dongCountText">법정동 데이터를 불러오는 중입니다.</div>
+        <button id="dongCloseBtn" class="close-btn" type="button">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="loading">
+    <div class="loading-box">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="loading-text">딸깍비서가<br>열심히 찾아보고 있어요...</div>
+      <div class="search-progress" aria-hidden="true">
+        <div class="progress-track">
+          <div class="progress-fill"></div>
+          <div class="paper-lane">
+            <span class="paper p1"></span>
+            <span class="paper p2"></span>
+            <span class="paper p3"></span>
+            <span class="paper p4"></span>
+            <span class="paper p5"></span>
+          </div>
+        </div>
+        <div class="progress-caption">건축물대장 서류를 뒤져보는 중...</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="lampBurst" class="lamp-burst" aria-hidden="true">
+    <div class="burst-core"><div class="spark"></div></div>
+  </div>
+
+  <script src="/search/bjdong-codes.js" onerror="document.write('<script src=&quot;./bjdong-codes.js&quot;><\/script>')"></script>
+  <script>
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
+    var picked = null;
+
+    var els = {
+      dongPickBtn: document.getElementById('dongPickBtn'),
+      pickedDongText: document.getElementById('pickedDongText'),
+      pickedDongCode: document.getElementById('pickedDongCode'),
+      useAprDayInput: document.getElementById('useAprDayInput'),
+      lookupBtn: document.getElementById('lookupBtn'),
+      status: document.getElementById('status'),
+      results: document.getElementById('results'),
+      empty: document.getElementById('empty'),
+      dongModal: document.getElementById('dongModal'),
+      dongSearchInput: document.getElementById('dongSearchInput'),
+      dongList: document.getElementById('dongList'),
+      dongCountText: document.getElementById('dongCountText'),
+      dongCloseBtn: document.getElementById('dongCloseBtn'),
+      loading: document.getElementById('loading'),
+      lampBurst: document.getElementById('lampBurst')
+    };
+
+    function addLog(msg){
+      if(window.console && console.log) console.log('[매물추적기] ' + msg);
+    }
+
+    function escapeHtml(v){
+      return String(v == null ? '' : v)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#39;');
+    }
+
+    function setStatus(text, type){
+      els.status.textContent = text || '';
+      els.status.className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function setLoading(on){
+      els.loading.classList.toggle('show', !!on);
+      els.lookupBtn.disabled = !!on;
+
+      if(on){
+        var fill = els.loading.querySelector('.progress-fill');
+        var papers = els.loading.querySelectorAll('.paper');
+        if(fill){
+          fill.style.animation = 'none';
+          void fill.offsetWidth;
+          fill.style.animation = '';
+        }
+        Array.prototype.forEach.call(papers, function(paper){
+          paper.style.animation = 'none';
+          void paper.offsetWidth;
+          paper.style.animation = '';
+        });
+      }
+    }
+
+    function showLampBurst(){
+      els.lampBurst.classList.remove('show');
+      void els.lampBurst.offsetWidth;
+      els.lampBurst.classList.add('show');
+      setTimeout(function(){ els.lampBurst.classList.remove('show'); }, 900);
+    }
+
+    function getBjdongItems(){
+      return Array.isArray(window.BJDONG_CODES) ? window.BJDONG_CODES : [];
+    }
+
+    function normalizeText(s){
+      return String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function normalizeUseAprDayInput(input){
+      var raw = String(input == null ? '' : input).trim();
+      if(!raw) return '';
+
+      var parts = raw.match(/\d+/g) || [];
+      if(parts.length >= 3){
+        var y = parts[0];
+        var m = parts[1];
+        var d = parts[2];
+        if(y.length === 4){
+          return y + String(m).padStart(2,'0') + String(d).padStart(2,'0');
+        }
+      }
+
+      var digits = raw.replace(/\D/g, '');
+      if(digits.length === 8) return digits;
+      return digits;
+    }
+
+    function formatDate8(v){
+      v = String(v || '');
+      if(v.length !== 8) return v;
+      return v.slice(0,4) + '-' + v.slice(4,6) + '-' + v.slice(6,8);
+    }
+
+    function openDongModal(){
+      els.dongModal.classList.add('show');
+      els.dongModal.setAttribute('aria-hidden','false');
+      els.dongSearchInput.value = '';
+      renderDongList();
+      setTimeout(function(){ els.dongSearchInput.focus(); }, 30);
+    }
+
+    function closeDongModal(){
+      els.dongModal.classList.remove('show');
+      els.dongModal.setAttribute('aria-hidden','true');
+    }
+
+    function renderPickedDong(){
+      if(picked){
+        els.pickedDongText.textContent = picked.name;
+        els.pickedDongText.classList.remove('dong-placeholder');
+        els.pickedDongCode.textContent = picked.code;
+      }else{
+        els.pickedDongText.textContent = '법정동 검색';
+        els.pickedDongText.classList.add('dong-placeholder');
+        els.pickedDongCode.textContent = '동 이름을 입력해 선택';
+      }
+    }
+
+    function renderDongList(){
+      var items = getBjdongItems();
+      var q = normalizeText(els.dongSearchInput.value);
+      els.dongCountText.textContent = '내장 법정동 ' + items.length.toLocaleString('ko-KR') + '건';
+
+      if(!items.length){
+        els.dongList.innerHTML = '<div class="empty">법정동 데이터 로드 실패</div>';
+        return;
+      }
+
+      if(!q){
+        els.dongList.innerHTML = '<div class="empty">동 이름이나 코드를 입력하세요.</div>';
+        return;
+      }
+
+      var qNoSpace = q.replace(/\s/g,'');
+      var matched = items.filter(function(item){
+        var name = normalizeText(item.name);
+        var bname = normalizeText(item.bname);
+        var sigungu = normalizeText(item.sigungu);
+        var code = String(item.code || '');
+        var compact = (name + bname + sigungu).replace(/\s/g,'');
+        return name.indexOf(q) !== -1 ||
+          bname.indexOf(q) !== -1 ||
+          sigungu.indexOf(q) !== -1 ||
+          code.indexOf(q) !== -1 ||
+          compact.indexOf(qNoSpace) !== -1;
+      }).slice(0, 80);
+
+      if(!matched.length){
+        els.dongList.innerHTML = '<div class="empty">검색 결과가 없습니다.</div>';
+        return;
+      }
+
+      els.dongList.innerHTML = matched.map(function(item, idx){
+        return '<button class="dong-item" type="button" data-idx="' + idx + '">' +
+          '<div class="dong-name">' + escapeHtml(item.name) + '</div>' +
+          '<div class="dong-code">' + escapeHtml(item.code) + '</div>' +
+          '</button>';
+      }).join('');
+
+      Array.prototype.forEach.call(els.dongList.querySelectorAll('.dong-item'), function(btn){
+        btn.addEventListener('click', function(){
+          picked = matched[Number(btn.getAttribute('data-idx'))];
+          renderPickedDong();
+          closeDongModal();
+          addLog('법정동 선택: ' + picked.name + ' / ' + picked.code);
+          setStatus('', '');
+        });
+      });
+    }
+
+    function jsonpCall(params){
+      var safeParams = Object.assign({}, params || {});
+
+      return fetch('/api/building-lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(safeParams),
+        cache: 'no-store'
+      }).then(function(res){
+        return res.text().then(function(text){
+          var data = null;
+          try{
+            data = text ? JSON.parse(text) : {};
+          }catch(e){
+            addLog('프록시 응답 파싱 실패: status=' + res.status + ', head=' + String(text || '').slice(0, 160));
+            throw new Error('조회 서버 응답 오류');
+          }
+          if(!res.ok){
+            throw new Error((data && data.message) || '조회 서버 응답 오류');
+          }
+          return data;
+        });
+      }).catch(function(proxyErr){
+        addLog('프록시 조회 실패, JSONP 예비경로 시도: ' + (proxyErr && proxyErr.message ? proxyErr.message : String(proxyErr)));
+
+        return new Promise(function(resolve, reject){
+          var callbackName = 'lookupCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+          var timer = null;
+          var script = document.createElement('script');
+          var fallbackParams = Object.assign({}, params || {});
+          fallbackParams.callback = callbackName;
+          fallbackParams._ts = Date.now();
+          var query = Object.keys(fallbackParams).map(function(k){
+            return encodeURIComponent(k) + '=' + encodeURIComponent(fallbackParams[k] == null ? '' : String(fallbackParams[k]));
+          }).join('&');
+
+          window[callbackName] = function(data){
+            clearTimeout(timer);
+            try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
+            if(script.parentNode) script.parentNode.removeChild(script);
+            resolve(data);
+          };
+
+          script.onerror = function(){
+            clearTimeout(timer);
+            try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
+            if(script.parentNode) script.parentNode.removeChild(script);
+            reject(new Error('JSONP 요청 실패'));
+          };
+
+          timer = setTimeout(function(){
+            try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
+            if(script.parentNode) script.parentNode.removeChild(script);
+            reject(new Error('JSONP 타임아웃'));
+          }, 45000);
+
+          script.src = GAS_URL + '?' + query;
+          document.body.appendChild(script);
+        });
+      });
+    }
+
+    function getResultItems(res){
+      if(Array.isArray(res && res.items)) return res.items;
+      var titleItems = (((res || {}).apis || {}).title || {}).items;
+      return Array.isArray(titleItems) ? titleItems : [];
+    }
+
+    function getAddressFromItem(item){
+      return String((item && (item.address || item.roadAddress || item.jibunAddress || item.newPlatPlc || item.platPlc)) || '').trim();
+    }
+
+    function getNaverMapUrl(item){
+      var direct = String((item && item.naverMapUrl) || '').trim();
+      if(direct) return direct;
+      var addr = getAddressFromItem(item);
+      return addr ? 'https://map.naver.com/p/search/' + encodeURIComponent(addr) : '';
+    }
+
+
+    function getBuildingNameFromItem(item){
+      var raw = (item && item.raw) ? item.raw : item || {};
+      return String((item && item.buildingName) || raw.bldNm || '').trim();
+    }
+
+
+    function getRawFromItem(item){
+      return (item && item.raw) ? item.raw : item || {};
+    }
+
+
+
+    function getBuildingNameFromGroup(group){
+      var names = [];
+      (group.items || []).forEach(function(item){
+        var name = getBuildingNameFromItem(item);
+        if(name && names.indexOf(name) === -1) names.push(name);
+      });
+
+      if(!names.length) return '';
+      if(names.length === 1) {
+        var itemCount = (group.items || []).length;
+        return itemCount > 1 ? names[0] + ' 외 ' + (itemCount - 1) + '동' : names[0];
+      }
+
+      return names[0] + ' 외 ' + (names.length - 1) + '동';
+    }
+
+
+    function groupAddressItems(items){
+      var map = {};
+      var groups = [];
+
+      (items || []).forEach(function(item){
+        var addr = getAddressFromItem(item);
+        if(!addr) return;
+
+        var key = addr.replace(/\s+/g, '').toLowerCase();
+        if(!map[key]){
+          map[key] = {
+            address: addr,
+            items: [],
+            naverMapUrl: getNaverMapUrl(item)
+          };
+          groups.push(map[key]);
+        }
+
+        map[key].items.push(item);
+      });
+
+      return groups;
+    }
+
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        setStatus('주소를 복사했습니다.', 'ok');
+      }catch(e){
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        setStatus('주소를 복사했습니다.', 'ok');
+      }
+    }
+
+    function renderAddressResults(groups){
+      els.results.innerHTML = '';
+      if(!groups.length){
+        els.empty.style.display = 'block';
+        els.empty.textContent = '일치하는 주소가 없습니다.';
+        return;
+      }
+
+      els.empty.style.display = 'none';
+      els.results.innerHTML = groups.map(function(group, idx){
+        var addr = group.address || '';
+        var mapUrl = group.naverMapUrl || (addr ? 'https://map.naver.com/p/search/' + encodeURIComponent(addr) : '');
+        var buildingName = getBuildingNameFromGroup(group);
+
+        return '<div class="result-item">' +
+          '<div class="addr">' + escapeHtml(addr || '주소 없음') + '</div>' +
+          (buildingName ? '<div class="building-name">건물명: ' + escapeHtml(buildingName) + '</div>' : '') +
+          '<div class="actions">' +
+          '<button class="action-btn" type="button" data-copy-idx="' + idx + '">주소복사</button>' +
+          (mapUrl ? '<a class="map-link" href="' + escapeHtml(mapUrl) + '" target="_blank" rel="noopener">네이버 지도로 조회</a>' : '') +
+          '</div>' +
+          '</div>';
+      }).join('');
+
+      Array.prototype.forEach.call(els.results.querySelectorAll('[data-copy-idx]'), function(btn){
+        btn.addEventListener('click', function(){
+          var group = groups[Number(btn.getAttribute('data-copy-idx'))];
+          var addr = group && group.address;
+          if(addr) copyText(addr);
+        });
+      });
+    }
+
+    async function lookup(){
+      if(!picked || !picked.code){
+        openDongModal();
+        return;
+      }
+
+      var rawDate = els.useAprDayInput.value;
+      var useAprDay = normalizeUseAprDayInput(rawDate);
+      addLog('날짜 정규화: ' + rawDate + ' → ' + useAprDay);
+
+      if(useAprDay.length !== 8){
+        setStatus('사용승인일을 8자리 날짜로 입력해주세요.', 'err');
+        els.useAprDayInput.focus();
+        return;
+      }
+
+      els.useAprDayInput.value = formatDate8(useAprDay);
+      setStatus('');
+      setLoading(true);
+
+      var params = {
+        action: 'fetchBuildingsByDongAndUseAprDay',
+        bcode: picked.code,
+        sido: picked.sido || '',
+        sigungu: picked.sigungu || '',
+        bname: picked.bname || '',
+        useAprDay: useAprDay
+      };
+
+      addLog('GAS 요청 시작: action=' + params.action + ', bcode=' + params.bcode + ', useAprDay=' + params.useAprDay);
+
+      try{
+        var res = await jsonpCall(params);
+        addLog('GAS 응답 수신: ok=' + !!(res && res.ok) + ', message=' + ((res && (res.message || res.error)) || ''));
+
+        if(!(res && res.ok)){
+          setStatus((res && (res.message || res.error)) || '조회 실패', 'err');
+          renderAddressResults([]);
+          return;
+        }
+
+        var rawItems = getResultItems(res).filter(function(item){ return !!getAddressFromItem(item); });
+        var groups = groupAddressItems(rawItems);
+
+        if(!groups.length){
+          setStatus('일치하는 주소가 없습니다.', 'err');
+        }else{
+          setStatus('조회 완료 · ' + groups.length + '건', 'ok');
+          showLampBurst();
+        }
+
+        addLog('조회 완료: 원본 ' + rawItems.length + '건 / 주소 그룹 ' + groups.length + '건');
+        renderAddressResults(groups);
+      }catch(e){
+        addLog('조회 실패: ' + (e && e.message ? e.message : String(e)));
+        setStatus('조회 실패 · ' + (e && e.message ? e.message : String(e)), 'err');
+      }finally{
+        setLoading(false);
+      }
+    }
+
+    els.dongPickBtn.addEventListener('click', openDongModal);
+    els.dongCloseBtn.addEventListener('click', closeDongModal);
+    els.dongModal.addEventListener('click', function(e){ if(e.target === els.dongModal) closeDongModal(); });
+    els.dongSearchInput.addEventListener('input', renderDongList);
+    els.lookupBtn.addEventListener('click', lookup);
+    els.useAprDayInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') lookup(); });
+
+    renderPickedDong();
+    addLog('프론트 로드 완료');
+    addLog('법정동 데이터: ' + getBjdongItems().length.toLocaleString('ko-KR') + '건');
+  </script>
+</body>
+</html>

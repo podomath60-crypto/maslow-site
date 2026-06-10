@@ -1519,26 +1519,20 @@
 
         <button class="panel-card" id="goListingLookupBtn" type="button">
           <div>
-            <div class="panel-eyebrow">Lookup</div>
-            <div class="panel-title">매물조회</div>
-          </div>
-          <div class="panel-desc">위치와 건축물정보를 제공합니다.</div>
-        </button>
-
-        <button class="panel-card" id="teamToggleBtn" type="button">
-          <div>
-            <div class="panel-eyebrow">Team</div>
+            <div class="panel-eyebrow">Tracker</div>
             <div class="panel-icon-wrap">
               <svg class="panel-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M3 21h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                <path d="M5 21V9.8c0-.5.24-.96.65-1.25l5.6-3.98a1.3 1.3 0 0 1 1.5 0l5.6 3.98c.41.29.65.75.65 1.25V21" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-                <path d="M9 21v-5.2c0-.44.36-.8.8-.8h4.4c.44 0 .8.36.8.8V21" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-                <path d="M9 10h.01M15 10h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                <path d="M10.8 18.2a7.2 7.2 0 1 1 5.1-2.1" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                <path d="M15.8 15.8 21 21" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                <path d="M8 10.8h5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                <path d="M10.8 8v5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                <path d="M5.9 18.7 4.4 21" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                <path d="M12.4 17.9 11.7 21" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
               </svg>
-              <div class="panel-title" id="teamToggleTitle">상가팀</div>
+              <div class="panel-title">매물추적</div>
             </div>
           </div>
-          <div class="panel-desc" id="teamToggleDesc">SK 매물을 봅니다.</div>
+          <div class="panel-desc">매물추적기로 이동합니다.</div>
         </button>
       </section>
 
@@ -1720,7 +1714,7 @@
       adminEditUrl: '/admin',
       listingsUrl: '/listings',
       naverBlogInputUrl: '/naverbloginput',
-      listingLookupUrl: 'https://lookout-zeta.vercel.app',
+      listingLookupUrl: '/search',
       authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
     };
 
@@ -2730,25 +2724,27 @@
 
 
     document.getElementById('goListingLookupBtn').addEventListener('click', function(){
-      window.open(CONFIG.listingLookupUrl, '_blank', 'noopener');
+      location.href = CONFIG.listingLookupUrl;
     });
 
-    teamToggleBtn.addEventListener('click', function(){
-      if(nextTeamToggleTarget === 'shopping'){
-        activeFilters.team = 'shopping';
-        currentTeamFilter = 'shopping';
-        nextTeamToggleTarget = 'factory';
-      }else{
-        activeFilters.team = 'factory';
-        currentTeamFilter = 'factory';
-        nextTeamToggleTarget = 'shopping';
-      }
-      syncLegacyCurrentFilter();
-      updateFilterChips();
-      visibleCount = PAGE_SIZE;
-      updateTeamTogglePanel();
-      renderDashboard();
-    });
+    if(teamToggleBtn){
+      teamToggleBtn.addEventListener('click', function(){
+        if(nextTeamToggleTarget === 'shopping'){
+          activeFilters.team = 'shopping';
+          currentTeamFilter = 'shopping';
+          nextTeamToggleTarget = 'factory';
+        }else{
+          activeFilters.team = 'factory';
+          currentTeamFilter = 'factory';
+          nextTeamToggleTarget = 'shopping';
+        }
+        syncLegacyCurrentFilter();
+        updateFilterChips();
+        visibleCount = PAGE_SIZE;
+        updateTeamTogglePanel();
+        renderDashboard();
+      });
+    }
 
     function detectTeamByListingNumber(listingNumber){
       const code = text(listingNumber).toUpperCase();

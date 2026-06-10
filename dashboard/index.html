@@ -33,7 +33,7 @@
     img{display:block;max-width:100%}
 
     .page{min-height:100vh;background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%)}
-    .shell{width:100%;max-width:1600px;margin:0 auto;padding:0 20px 48px}
+    .shell{width:100%;max-width:980px;margin:0 auto;padding:0 20px 48px}
 
     .topbar{
       position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
@@ -202,10 +202,6 @@
     .group-count{font-size:13px;color:#7b8794;font-weight:900}
 
     .card-list{display:grid;grid-template-columns:1fr;gap:12px}
-
-    @media (min-width:861px){
-      .card-list{grid-template-columns:repeat(5, minmax(0, 1fr))}
-    }
     .property-card{border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
     .property-main{
       display:grid;grid-template-columns:112px 1fr;gap:14px;padding:14px;align-items:start;cursor:pointer
@@ -314,21 +310,21 @@
 
     .channel-row{
       display:grid;
-      grid-template-columns:repeat(2, 32px);
+      grid-template-columns:repeat(9, 56px);
       justify-content:flex-start;
-      gap:6px;
+      gap:8px;
     }
     .channel-icon{
       position:relative;
       aspect-ratio:1 / 1;
-      width:32px;
-      min-width:32px;
-      max-width:32px;
-      min-height:32px;
-      max-height:32px;
-      height:32px;
+      width:56px;
+      min-width:56px;
+      max-width:56px;
+      min-height:56px;
+      max-height:56px;
+      height:56px;
       margin:0;
-      border-radius:9px;
+      border-radius:14px;
       border:1px solid #e4eaf1;
       background:#fafcff;
       display:flex;
@@ -336,29 +332,29 @@
       justify-content:center;
       padding:0;
       overflow:hidden;
-      flex:0 0 32px;
+      flex:0 0 56px;
     }
     .channel-favicon{
       position:absolute;
       left:50%;
       top:50%;
-      width:86%;
-      height:86%;
+      width:90%;
+      height:90%;
       transform:translate(-50%, -50%);
       object-fit:cover;
-      border-radius:3px;
+      border-radius:4px;
       flex:none
     }
     .site-chip{
       position:relative;
       aspect-ratio:1 / 1;
-      width:32px;
-      min-width:32px;
-      max-width:32px;
-      min-height:32px;
-      max-height:32px;
-      height:32px;
-      border-radius:9px;
+      width:56px;
+      min-width:56px;
+      max-width:56px;
+      min-height:56px;
+      max-height:56px;
+      height:56px;
+      border-radius:14px;
       border:1px solid #e4eaf1;
       background:#fff;
       display:inline-flex;
@@ -366,17 +362,17 @@
       justify-content:center;
       padding:0;
       overflow:hidden;
-      flex:0 0 32px
+      flex:0 0 56px
     }
     .site-favicon{
       position:absolute;
       left:50%;
       top:50%;
-      width:86%;
-      height:86%;
+      width:90%;
+      height:90%;
       transform:translate(-50%, -50%);
       object-fit:cover;
-      border-radius:3px;
+      border-radius:4px;
       flex:none
     }
     .empty{border:1px dashed #d9e3ed;border-radius:24px;background:#fff;padding:30px 18px;text-align:center;color:#7b8794;font-size:15px;font-weight:800}
@@ -628,6 +624,129 @@
       border-color:#0f7cff;
       background:#0f7cff;
       color:#fff;
+    }
+
+
+    @media (min-width:861px){
+      .shell{
+        max-width:1600px;
+      }
+      .panel-grid,
+      .search-wrap,
+      .toolbar{
+        max-width:980px;
+        margin-left:auto;
+        margin-right:auto;
+      }
+      .card-list{
+        grid-template-columns:repeat(5, minmax(0, 1fr));
+        gap:12px;
+      }
+      .property-card{
+        min-width:0;
+      }
+      .property-main{
+        display:grid;
+        grid-template-columns:112px minmax(0, 1fr);
+        grid-template-areas:
+          "thumb addr"
+          "thumb price"
+          "thumb meta"
+          "title title";
+        column-gap:12px;
+        row-gap:6px;
+        padding:12px;
+        align-items:start;
+      }
+      .thumb{
+        grid-area:thumb;
+      }
+      .card-content{
+        display:contents;
+      }
+      .title-row{
+        grid-area:title;
+        width:100%;
+        min-width:0;
+        margin-top:2px;
+      }
+      .card-title{
+        font-size:18px;
+        line-height:1.28;
+        letter-spacing:-0.04em;
+        white-space:normal;
+        overflow:visible;
+        word-break:keep-all;
+        overflow-wrap:anywhere;
+      }
+      .status-chip{
+        cursor:pointer;
+      }
+      .card-address{
+        grid-area:addr;
+        font-size:13px;
+        line-height:1.38;
+        white-space:normal;
+        overflow:visible;
+        word-break:keep-all;
+        overflow-wrap:anywhere;
+      }
+      .card-deal-price{
+        grid-area:price;
+        font-size:13px;
+        line-height:1.35;
+        white-space:normal;
+        overflow:visible;
+        word-break:keep-all;
+        overflow-wrap:anywhere;
+      }
+      .card-meta{
+        grid-area:meta;
+        font-size:12px;
+        line-height:1.35;
+        white-space:normal;
+        overflow:visible;
+        word-break:keep-all;
+        overflow-wrap:anywhere;
+      }
+      .card-bottom{
+        padding:9px 12px 12px;
+        gap:8px;
+      }
+      .action-row{
+        justify-content:flex-start;
+      }
+      .action-left{
+        overflow:visible;
+      }
+      .mini-btn.visibility-text-btn{
+        display:none;
+      }
+      .mini-btn.square{
+        min-height:30px;
+        padding:0 8px;
+        font-size:12px;
+        border-radius:9px;
+      }
+      .channel-row{
+        grid-template-columns:repeat(5, 32px);
+        gap:6px;
+      }
+      .channel-icon,
+      .site-chip{
+        width:32px;
+        min-width:32px;
+        max-width:32px;
+        height:32px;
+        min-height:32px;
+        max-height:32px;
+        border-radius:9px;
+      }
+      .channel-favicon,
+      .site-favicon{
+        width:88%;
+        height:88%;
+      }
     }
 
     @media (max-width:860px){
@@ -3214,7 +3333,8 @@
 
     function buildStatusChip(item){
       const visible = item.status === 'visible' || item.status === 'show' || item.status === '공개';
-      return '<span class="status-chip ' + (visible ? 'visible' : 'hidden') + '">' + (visible ? '공개중' : '비공개') + '</span>';
+      const nextStatus = visible ? 'hidden' : 'visible';
+      return '<button class="status-chip ' + (visible ? 'visible' : 'hidden') + '" type="button" title="공개 상태 변경" onclick="event.stopPropagation(); togglePropertyStatus(\'' + encodeURIComponent(item.listingNumber || '') + '\', \'' + nextStatus + '\')">' + (visible ? '공개' : '비공개') + '</button>';
     }
 
     function buildCard(item){
@@ -3483,6 +3603,10 @@
 
     window.markHidden = function(listingNumber){
       setPropertyStatus(listingNumber, 'hidden');
+    };
+
+    window.togglePropertyStatus = function(listingNumber, nextStatus){
+      setPropertyStatus(listingNumber, nextStatus);
     };
     window.openPropertyMemoModal = openPropertyMemoModal;
     window.closePropertyMemoModal = closePropertyMemoModal;

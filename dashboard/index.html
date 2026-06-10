@@ -186,6 +186,20 @@
       letter-spacing:-0.03em
     }
     .search-input::placeholder{color:rgba(123,135,148,.55);font-weight:600}
+    .search-input[contenteditable]{
+      min-height:24px;
+      display:flex;
+      align-items:center;
+      cursor:text;
+      white-space:nowrap;
+      overflow:hidden;
+    }
+    .search-input[contenteditable]:empty::before{
+      content:attr(data-placeholder);
+      color:rgba(123,135,148,.55);
+      font-weight:600;
+      pointer-events:none;
+    }
 
     .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 18px}
     .chip-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -1531,7 +1545,7 @@
       <section class="search-wrap">
         <div class="search-box">
           <span class="search-icon">🔎</span>
-          <input id="searchInput" class="search-input" type="text" name="maslow_dashboard_search_no_autofill_20260610" placeholder="제목, 주소, 매물번호 검색" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="search" readonly />
+          <div id="searchInput" class="search-input" role="textbox" aria-label="검색" data-placeholder="제목, 주소, 매물번호 검색" contenteditable="false" inputmode="search"></div>
         </div>
       </section>
 
@@ -2785,16 +2799,21 @@
       if(teamToggleDesc) teamToggleDesc.textContent = nextMeta.desc;
     }
 
+    function getSearchText(){
+      if(!searchInput) return '';
+      return String(searchInput.textContent || '').trim();
+    }
+
     function clearSearchAutofillValue(){
       if(!searchInput) return;
-      searchInput.value = '';
+      searchInput.textContent = '';
       currentKeyword = '';
     }
 
     function hardLockSearchAutofill(){
       if(!searchInput) return;
-      searchInput.setAttribute('readonly', 'readonly');
-      searchInput.setAttribute('autocomplete', 'new-password');
+      searchInput.setAttribute('contenteditable', 'false');
+      searchInput.setAttribute('autocomplete', 'off');
       searchInput.setAttribute('autocorrect', 'off');
       searchInput.setAttribute('autocapitalize', 'off');
       searchInput.setAttribute('spellcheck', 'false');
@@ -2806,7 +2825,10 @@
     function unlockSearchByUserAction(){
       if(!searchInput) return;
       searchInput.dataset.userTouched = '1';
-      searchInput.removeAttribute('readonly');
+      searchInput.setAttribute('contenteditable', 'true');
+      window.setTimeout(function(){
+        try{ searchInput.focus(); }catch(e){}
+      }, 0);
     }
 
     if(searchInput){
@@ -2819,19 +2841,33 @@
       searchInput.addEventListener('focus', function(){
         if(!searchInput.dataset.userTouched){
           hardLockSearchAutofill();
+          try{ searchInput.blur(); }catch(e){}
         }
       });
 
       searchInput.addEventListener('blur', function(){
-        if(!searchInput.value){
+        if(!getSearchText()){
           searchInput.dataset.userTouched = '';
           hardLockSearchAutofill();
         }
       });
 
-      searchInput.addEventListener('input', function(e){
+      searchInput.addEventListener('keydown', function(e){
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          try{ searchInput.blur(); }catch(err){}
+        }
+      });
+
+      searchInput.addEventListener('paste', function(e){
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text') || '';
+        document.execCommand('insertText', false, pasted.replace(/[\r\n\t]+/g, ' '));
+      });
+
+      searchInput.addEventListener('input', function(){
         searchInput.dataset.userTouched = '1';
-        currentKeyword = String(e.target.value || '').trim().toLowerCase();
+        currentKeyword = getSearchText().toLowerCase();
         visibleCount = PAGE_SIZE;
         renderDashboard();
       });

@@ -1531,16 +1531,20 @@
       <section class="search-wrap">
         <div class="search-box">
           <span class="search-icon">🔎</span>
-          <input id="searchInput" class="search-input" type="search" name="mk_property_lookup_text_20260427" placeholder="제목, 주소, 매물번호 검색" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="search" readonly />
+          <input id="searchInput" class="search-input" type="text" name="maslow_dashboard_search_no_autofill_20260610" placeholder="제목, 주소, 매물번호 검색" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="search" readonly />
         </div>
       </section>
 
       <section class="toolbar">
         <div class="chip-row">
-          <button class="filter-chip active" data-filter="default" type="button">기본정렬</button>
-          <button class="filter-chip" data-filter="updated" type="button">수정순</button>
-          <button class="filter-chip" data-filter="visible" type="button">공개중</button>
-          <button class="filter-chip" data-filter="hidden" type="button">비공개</button>
+          <button class="filter-chip active" data-filter-group="sort" data-filter-value="default" type="button">기본정렬</button>
+          <button class="filter-chip" data-filter-group="sort" data-filter-value="updated" type="button">수정순</button>
+          <button class="filter-chip" data-filter-group="status" data-filter-value="visible" type="button">공개중</button>
+          <button class="filter-chip" data-filter-group="status" data-filter-value="hidden" type="button">비공개</button>
+          <button class="filter-chip" data-filter-group="deal" data-filter-value="rent" type="button">임대</button>
+          <button class="filter-chip" data-filter-group="deal" data-filter-value="sale" type="button">매매</button>
+          <button class="filter-chip" data-filter-group="team" data-filter-value="shopping" type="button">상가팀</button>
+          <button class="filter-chip" data-filter-group="team" data-filter-value="factory" type="button">공장팀</button>
         </div>
         <div id="toolbarMeta" class="toolbar-meta">전체 0건</div>
       </section>
@@ -1764,6 +1768,7 @@
 
     let rawItems = [];
     let currentFilter = 'default';
+    let activeFilters = { sort: 'default', status: '', deal: '', team: '' };
     let currentKeyword = '';
     let unlockedUserName = '';
     let visibleCount = 50;
@@ -2716,12 +2721,16 @@
 
     teamToggleBtn.addEventListener('click', function(){
       if(nextTeamToggleTarget === 'shopping'){
+        activeFilters.team = 'shopping';
         currentTeamFilter = 'shopping';
         nextTeamToggleTarget = 'factory';
       }else{
+        activeFilters.team = 'factory';
         currentTeamFilter = 'factory';
         nextTeamToggleTarget = 'shopping';
       }
+      syncLegacyCurrentFilter();
+      updateFilterChips();
       visibleCount = PAGE_SIZE;
       updateTeamTogglePanel();
       renderDashboard();
@@ -2731,6 +2740,17 @@
       const code = text(listingNumber).toUpperCase();
       if(code.indexOf('SK') === 0) return 'shopping';
       if(code.indexOf('MK') === 0) return 'factory';
+      return '';
+    }
+
+    function detectDealType(item){
+      const value = [
+        item && item.dealType,
+        item && item.price,
+        item && item.title
+      ].map(text).join(' ');
+      if(value.indexOf('임대') !== -1 || value.indexOf('월세') !== -1 || value.indexOf('전세') !== -1) return 'rent';
+      if(value.indexOf('매매') !== -1 || value.indexOf('매각') !== -1) return 'sale';
       return '';
     }
 
@@ -2771,23 +2791,43 @@
       currentKeyword = '';
     }
 
+    function hardLockSearchAutofill(){
+      if(!searchInput) return;
+      searchInput.setAttribute('readonly', 'readonly');
+      searchInput.setAttribute('autocomplete', 'new-password');
+      searchInput.setAttribute('autocorrect', 'off');
+      searchInput.setAttribute('autocapitalize', 'off');
+      searchInput.setAttribute('spellcheck', 'false');
+      if(!searchInput.dataset.userTouched){
+        clearSearchAutofillValue();
+      }
+    }
+
+    function unlockSearchByUserAction(){
+      if(!searchInput) return;
+      searchInput.dataset.userTouched = '1';
+      searchInput.removeAttribute('readonly');
+    }
+
     if(searchInput){
-      clearSearchAutofillValue();
+      hardLockSearchAutofill();
+
+      searchInput.addEventListener('pointerdown', unlockSearchByUserAction);
+      searchInput.addEventListener('mousedown', unlockSearchByUserAction);
+      searchInput.addEventListener('touchstart', unlockSearchByUserAction, { passive:true });
 
       searchInput.addEventListener('focus', function(){
-        searchInput.removeAttribute('readonly');
         if(!searchInput.dataset.userTouched){
-          clearSearchAutofillValue();
+          hardLockSearchAutofill();
         }
       });
 
-      searchInput.addEventListener('mousedown', function(){
-        searchInput.removeAttribute('readonly');
+      searchInput.addEventListener('blur', function(){
+        if(!searchInput.value){
+          searchInput.dataset.userTouched = '';
+          hardLockSearchAutofill();
+        }
       });
-
-      searchInput.addEventListener('touchstart', function(){
-        searchInput.removeAttribute('readonly');
-      }, { passive:true });
 
       searchInput.addEventListener('input', function(e){
         searchInput.dataset.userTouched = '1';
@@ -2796,30 +2836,58 @@
         renderDashboard();
       });
 
-      window.setTimeout(function(){
-        if(!searchInput.dataset.userTouched){
-          clearSearchAutofillValue();
-        }
-      }, 120);
+      [80, 300, 1000, 1800].forEach(function(delay){
+        window.setTimeout(function(){
+          if(document.activeElement !== searchInput && !searchInput.dataset.userTouched){
+            hardLockSearchAutofill();
+          }
+        }, delay);
+      });
 
-      window.setTimeout(function(){
-        if(!searchInput.dataset.userTouched){
-          clearSearchAutofillValue();
+      window.addEventListener('pageshow', function(){
+        if(document.activeElement !== searchInput){
+          searchInput.dataset.userTouched = '';
+          hardLockSearchAutofill();
         }
-      }, 650);
+      });
+    }
+
+    function syncLegacyCurrentFilter(){
+      currentFilter = activeFilters.sort === 'updated'
+        ? 'updated'
+        : (activeFilters.status || 'default');
+    }
+
+    function updateFilterChips(){
+      document.querySelectorAll('.filter-chip').forEach(function(btn){
+        const group = btn.getAttribute('data-filter-group') || '';
+        const value = btn.getAttribute('data-filter-value') || '';
+        btn.classList.toggle('active', !!group && activeFilters[group] === value);
+      });
+    }
+
+    function setFilterChip(group, value){
+      if(!group) return;
+
+      if(group === 'sort'){
+        activeFilters.sort = value === 'updated' ? 'updated' : 'default';
+      }else{
+        activeFilters[group] = activeFilters[group] === value ? '' : value;
+      }
+
+      currentTeamFilter = activeFilters.team || '';
+      syncLegacyCurrentFilter();
+      updateFilterChips();
+      visibleCount = PAGE_SIZE;
+      renderDashboard();
     }
 
     document.querySelectorAll('.filter-chip').forEach(function(btn){
       btn.addEventListener('click', function(){
-        document.querySelectorAll('.filter-chip').forEach(function(x){
-          x.classList.remove('active');
-        });
-        btn.classList.add('active');
-        currentFilter = btn.getAttribute('data-filter') || 'default';
-        visibleCount = PAGE_SIZE;
-        renderDashboard();
+        setFilterChip(btn.getAttribute('data-filter-group') || '', btn.getAttribute('data-filter-value') || '');
       });
     });
+    updateFilterChips();
 
     function text(v){
       return String(v == null ? '' : v).trim();
@@ -3282,19 +3350,25 @@
     function applyFilter(items){
       let result = items.filter(matchesKeyword);
 
-      if(currentTeamFilter){
+      if(activeFilters.team){
         result = result.filter(function(item){
-          return detectTeamByListingNumber(item.listingNumber) === currentTeamFilter;
+          return detectTeamByListingNumber(item.listingNumber) === activeFilters.team;
         });
       }
 
-      if(currentFilter === 'visible'){
+      if(activeFilters.deal){
+        result = result.filter(function(item){
+          return detectDealType(item) === activeFilters.deal;
+        });
+      }
+
+      if(activeFilters.status === 'visible'){
         result = result.filter(function(item){ return item.status === 'visible' || item.status === 'show' || item.status === '공개'; });
-      }else if(currentFilter === 'hidden'){
+      }else if(activeFilters.status === 'hidden'){
         result = result.filter(function(item){ return !(item.status === 'visible' || item.status === 'show' || item.status === '공개'); });
       }
 
-      if(currentFilter === 'updated'){
+      if(activeFilters.sort === 'updated'){
         result = result.slice().sort(function(a,b){
           return (parseDateValue(b.updatedAt) || 0) - (parseDateValue(a.updatedAt) || 0);
         });
@@ -3310,7 +3384,7 @@
     function groupItems(items){
       const groups = new Map();
       items.forEach(function(item){
-        const key = currentFilter === 'updated'
+        const key = activeFilters.sort === 'updated'
           ? formatDateGroup(item.updatedAt || item.createdAt)
           : formatDateGroup(item.createdAt);
 

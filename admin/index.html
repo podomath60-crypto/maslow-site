@@ -260,6 +260,43 @@
       opacity:.38;
       pointer-events:none;
     }
+    .photo-download-icon-btn{
+      margin-left:auto;
+      width:36px;
+      height:36px;
+      padding:0;
+      border-radius:10px;
+      border:1px solid #d0d5dd;
+      background:#fff;
+      color:#344054;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      box-shadow:0 1px 2px rgba(16,24,40,.05);
+      flex:0 0 auto;
+    }
+    .photo-download-icon-btn svg{
+      width:18px;
+      height:18px;
+      fill:none;
+      stroke:currentColor;
+      stroke-width:2;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+    .photo-download-icon-btn:hover{
+      border-color:#98a2b3;
+      background:#f9fafb;
+    }
+    .photo-download-icon-btn:disabled{
+      opacity:.42;
+      cursor:not-allowed;
+      background:#f9fafb;
+    }
+    .photo-download-icon-btn.is-working{
+      pointer-events:none;
+    }
     @keyframes mosaicSpin{
       to{ transform:rotate(360deg); }
     }
@@ -2083,6 +2120,7 @@
 
   </style>
   <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
   <div class="editor-page">
@@ -2115,6 +2153,13 @@
               <button type="button" id="prevPhotoBtn">‹</button>
               <button type="button" id="nextPhotoBtn">›</button>
             </div>
+            <button type="button" class="photo-download-icon-btn" id="photoDownloadBtn" title="사진 다운로드" aria-label="사진 다운로드" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 3v11"></path>
+                <path d="M7 10l5 5 5-5"></path>
+                <path d="M5 20h14"></path>
+              </svg>
+            </button>
           </div>
           <div class="photo-thumb-strip" id="photoThumbStrip"></div>
           <input id="photoInput" class="file-input-hidden" type="file" accept="image/*" multiple>
@@ -2314,6 +2359,7 @@
       var heroAddBtn = document.getElementById('heroAddBtn');
       var mosaicToggleBtn = document.getElementById('mosaicToggleBtn');
       var mosaicUndoBtn = document.getElementById('mosaicUndoBtn');
+      var photoDownloadBtn = document.getElementById('photoDownloadBtn');
       var deleteCurrentPhotoBtn = document.getElementById('deleteCurrentPhotoBtn');
       var prevPhotoBtn = document.getElementById('prevPhotoBtn');
       var nextPhotoBtn = document.getElementById('nextPhotoBtn');
@@ -3886,6 +3932,103 @@
         });
       }
 
+      function sanitizePhotoDownloadName_(value){
+        return String(value || '')
+          .replace(/[\\/:*?"<>|]/g, '')
+          .replace(/\s+/g, '')
+          .trim()
+          .slice(0, 80);
+      }
+
+      function getPhotoDownloadBaseName_(){
+        var address = sanitizePhotoDownloadName_(plainText(addressField));
+        var requester = collectRequester_ ? collectRequester_() : null;
+        var requesterName = sanitizePhotoDownloadName_(requester && requester.name);
+        var listingNo = sanitizePhotoDownloadName_(getCurrentListingNumberForMosaic_());
+        var today = new Date();
+        var ymd = today.getFullYear() + String(today.getMonth() + 1).padStart(2, '0') + String(today.getDate()).padStart(2, '0');
+        if(!address) address = listingNo || ('매물사진' + ymd);
+        if(!requesterName) requesterName = '의뢰인미상';
+        return (address + '_' + requesterName).slice(0, 120);
+      }
+
+      function dataUrlToBlob_(dataUrl){
+        var parts = String(dataUrl || '').split(',');
+        if(parts.length < 2) throw new Error('사진 데이터 형식이 올바르지 않습니다.');
+        var match = parts[0].match(/data:([^;]+);base64/i);
+        var mime = match ? match[1] : 'image/jpeg';
+        var binary = atob(parts[1]);
+        var len = binary.length;
+        var bytes = new Uint8Array(len);
+        for(var i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+        return new Blob([bytes], { type: mime });
+      }
+
+      function photoExtFromDataUrl_(dataUrl){
+        var match = String(dataUrl || '').match(/^data:([^;]+);/i);
+        var mime = match ? match[1].toLowerCase() : '';
+        if(mime.indexOf('png') >= 0) return 'png';
+        if(mime.indexOf('webp') >= 0) return 'webp';
+        if(mime.indexOf('gif') >= 0) return 'gif';
+        return 'jpg';
+      }
+
+      function setPhotoDownloadWorking_(working){
+        if(!photoDownloadBtn) return;
+        photoDownloadBtn.classList.toggle('is-working', !!working);
+        photoDownloadBtn.disabled = !!working || !photoList.length;
+      }
+
+      function downloadPropertyPhotos_(){
+        if(!photoList.length){
+          showToast('다운로드할 사진이 없습니다');
+          return;
+        }
+        if(mosaicMode || mosaicSaving){
+          showToast('모자이크 저장 후 다운로드해주세요');
+          return;
+        }
+        if(!window.JSZip){
+          showToast('다운로드 모듈을 불러오지 못했습니다');
+          return;
+        }
+
+        var baseName = getPhotoDownloadBaseName_();
+        var zip = new JSZip();
+        var folder = zip.folder(baseName);
+        setPhotoDownloadWorking_(true);
+        showToast('사진 압축 준비중');
+
+        photoList.reduce(function(chain, item, idx){
+          return chain.then(function(){
+            return fetchMosaicSourceDataUrl_(item).then(function(dataUrl){
+              var ext = photoExtFromDataUrl_(dataUrl);
+              var fileName = String(idx + 1).padStart(2, '0') + '_매물사진.' + ext;
+              folder.file(fileName, dataUrlToBlob_(dataUrl));
+            });
+          });
+        }, Promise.resolve()).then(function(){
+          return zip.generateAsync({ type: 'blob' });
+        }).then(function(blob){
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = baseName + '.zip';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function(){
+            URL.revokeObjectURL(url);
+            if(a && a.parentNode) a.parentNode.removeChild(a);
+          }, 0);
+          showToast('사진 다운로드 준비됨');
+        }).catch(function(err){
+          console.warn('[photo-download]', err);
+          showToast((err && err.message) || '사진 다운로드 실패');
+        }).then(function(){
+          setPhotoDownloadWorking_(false);
+        });
+      }
+
       function drawCoverImageToMosaicCanvas_(img){
         if(!mosaicCanvas || !mosaicCtx || !heroImage) return;
         var rect = heroImage.getBoundingClientRect();
@@ -4157,6 +4300,7 @@
         prevPhotoBtn.style.display = hasPhotos ? 'inline-flex' : 'none';
         nextPhotoBtn.style.display = hasPhotos ? 'inline-flex' : 'none';
         deleteCurrentPhotoBtn.style.display = hasPhotos ? 'flex' : 'none';
+        if(photoDownloadBtn) photoDownloadBtn.disabled = !hasPhotos;
       }
 
       function renderHero(){
@@ -4536,6 +4680,11 @@
       if(mosaicUndoBtn){
         mosaicUndoBtn.addEventListener('click', function(){
           undoMosaicStroke_();
+        });
+      }
+      if(photoDownloadBtn){
+        photoDownloadBtn.addEventListener('click', function(){
+          downloadPropertyPhotos_();
         });
       }
       bindMosaicEvents_();

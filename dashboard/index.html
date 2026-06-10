@@ -1533,6 +1533,14 @@
 
         <button class="panel-card" id="goListingLookupBtn" type="button">
           <div>
+            <div class="panel-eyebrow">Lookup</div>
+            <div class="panel-title">매물조회</div>
+          </div>
+          <div class="panel-desc">위치와 건축물정보를 제공합니다.</div>
+        </button>
+
+        <button class="panel-card" id="goSearchTrackerBtn" type="button">
+          <div>
             <div class="panel-eyebrow">Tracker</div>
             <div class="panel-icon-wrap">
               <svg class="panel-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -1728,7 +1736,8 @@
       adminEditUrl: '/admin',
       listingsUrl: '/listings',
       naverBlogInputUrl: '/naverbloginput',
-      listingLookupUrl: '/search',
+      listingLookupUrl: 'https://lookout-zeta.vercel.app',
+      searchTrackerUrl: '/search',
       authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
     };
 
@@ -2738,8 +2747,15 @@
 
 
     document.getElementById('goListingLookupBtn').addEventListener('click', function(){
-      location.href = CONFIG.listingLookupUrl;
+      window.open(CONFIG.listingLookupUrl, '_blank', 'noopener');
     });
+
+    const goSearchTrackerBtn = document.getElementById('goSearchTrackerBtn');
+    if(goSearchTrackerBtn){
+      goSearchTrackerBtn.addEventListener('click', function(){
+        location.href = CONFIG.searchTrackerUrl;
+      });
+    }
 
     if(teamToggleBtn){
       teamToggleBtn.addEventListener('click', function(){

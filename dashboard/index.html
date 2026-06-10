@@ -2771,7 +2771,7 @@
     const goSearchTrackerBtn = document.getElementById('goSearchTrackerBtn');
     if(goSearchTrackerBtn){
       goSearchTrackerBtn.addEventListener('click', function(){
-        location.href = CONFIG.searchTrackerUrl;
+        window.open(CONFIG.searchTrackerUrl, '_blank', 'noopener');
       });
     }
 

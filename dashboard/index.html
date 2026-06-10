@@ -33,7 +33,7 @@
     img{display:block;max-width:100%}
 
     .page{min-height:100vh;background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%)}
-    .shell{width:100%;max-width:980px;margin:0 auto;padding:0 20px 48px}
+    .shell{width:100%;max-width:1600px;margin:0 auto;padding:0 20px 48px}
 
     .topbar{
       position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
@@ -202,6 +202,10 @@
     .group-count{font-size:13px;color:#7b8794;font-weight:900}
 
     .card-list{display:grid;grid-template-columns:1fr;gap:12px}
+
+    @media (min-width:861px){
+      .card-list{grid-template-columns:repeat(5, minmax(0, 1fr))}
+    }
     .property-card{border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
     .property-main{
       display:grid;grid-template-columns:112px 1fr;gap:14px;padding:14px;align-items:start;cursor:pointer
@@ -310,21 +314,21 @@
 
     .channel-row{
       display:grid;
-      grid-template-columns:repeat(9, 56px);
+      grid-template-columns:repeat(2, 32px);
       justify-content:flex-start;
-      gap:8px;
+      gap:6px;
     }
     .channel-icon{
       position:relative;
       aspect-ratio:1 / 1;
-      width:56px;
-      min-width:56px;
-      max-width:56px;
-      min-height:56px;
-      max-height:56px;
-      height:56px;
+      width:32px;
+      min-width:32px;
+      max-width:32px;
+      min-height:32px;
+      max-height:32px;
+      height:32px;
       margin:0;
-      border-radius:14px;
+      border-radius:9px;
       border:1px solid #e4eaf1;
       background:#fafcff;
       display:flex;
@@ -332,29 +336,29 @@
       justify-content:center;
       padding:0;
       overflow:hidden;
-      flex:0 0 56px;
+      flex:0 0 32px;
     }
     .channel-favicon{
       position:absolute;
       left:50%;
       top:50%;
-      width:90%;
-      height:90%;
+      width:86%;
+      height:86%;
       transform:translate(-50%, -50%);
       object-fit:cover;
-      border-radius:4px;
+      border-radius:3px;
       flex:none
     }
     .site-chip{
       position:relative;
       aspect-ratio:1 / 1;
-      width:56px;
-      min-width:56px;
-      max-width:56px;
-      min-height:56px;
-      max-height:56px;
-      height:56px;
-      border-radius:14px;
+      width:32px;
+      min-width:32px;
+      max-width:32px;
+      min-height:32px;
+      max-height:32px;
+      height:32px;
+      border-radius:9px;
       border:1px solid #e4eaf1;
       background:#fff;
       display:inline-flex;
@@ -362,17 +366,17 @@
       justify-content:center;
       padding:0;
       overflow:hidden;
-      flex:0 0 56px
+      flex:0 0 32px
     }
     .site-favicon{
       position:absolute;
       left:50%;
       top:50%;
-      width:90%;
-      height:90%;
+      width:86%;
+      height:86%;
       transform:translate(-50%, -50%);
       object-fit:cover;
-      border-radius:4px;
+      border-radius:3px;
       flex:none
     }
     .empty{border:1px dashed #d9e3ed;border-radius:24px;background:#fff;padding:30px 18px;text-align:center;color:#7b8794;font-size:15px;font-weight:800}

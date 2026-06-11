@@ -31,7 +31,7 @@
     .choice{min-height:46px;border:1px solid #d1d5db;background:#fff;border-radius:14px;font-weight:950;color:#374151}
     .choice.active{border-color:var(--blue);background:#eff6ff;color:#1d4ed8;box-shadow:0 8px 18px rgba(37,99,235,.12)}
     .trade-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-    .input-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+    .input-row{display:grid;grid-template-columns:170px minmax(0,1fr) minmax(0,1fr);gap:10px}
     .input{height:52px;border:1px solid #d1d5db;background:#fff;border-radius:15px;padding:0 14px;outline:none;color:#111827}
     .run-btn{height:54px;border:0;border-radius:16px;background:var(--blue);color:#fff;font-weight:950;box-shadow:0 10px 22px rgba(37,99,235,.24)}
     .run-btn:disabled{opacity:.55;cursor:not-allowed}
@@ -84,6 +84,32 @@
     .naver-map-btn:hover{background:#075fd1}
     .naver-map-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(37,99,235,.16)}
 
+
+    .desktop-layout{max-width:1460px;margin:0 auto;display:grid;grid-template-columns:240px minmax(0,980px) 280px;gap:16px;align-items:start}
+    .side-panel{position:sticky;top:18px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px;box-shadow:var(--shadow);max-height:calc(100vh - 36px);overflow:auto}
+    .side-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+    .side-title{font-size:15px;font-weight:950;color:#111827}
+    .side-count{font-size:12px;font-weight:950;color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:999px;padding:4px 8px;white-space:nowrap}
+    .side-list{display:grid;gap:8px}
+    .side-empty{border:1px dashed #bfdbfe;border-radius:14px;background:#f8fbff;padding:14px 10px;color:#6b7280;text-align:center;font-size:12px;font-weight:850;line-height:1.45;word-break:keep-all}
+    .side-item{border:1px solid #e5e7eb;border-radius:15px;background:#fff;padding:10px;display:grid;gap:7px}
+    .side-item.active{border-color:#93c5fd;background:#eff6ff}
+    .side-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+    .side-item-main{border:0;background:transparent;text-align:left;padding:0;min-width:0;color:#111827;font-weight:950;line-height:1.35;word-break:keep-all}
+    .side-item-main:hover{text-decoration:underline;text-underline-offset:3px}
+    .side-meta{display:flex;gap:5px;flex-wrap:wrap;align-items:center;color:#6b7280;font-size:11px;font-weight:850}
+    .delete-mini{width:28px;height:28px;border:1px solid #fecaca;background:#fff5f5;color:#dc2626;border-radius:10px;font-weight:950;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+    .delete-mini:hover{background:#fee2e2}
+    .history-refresh{height:34px;border-radius:11px;padding:0 9px;font-size:12px}
+    .status-pill{display:inline-flex;align-items:center;justify-content:center;min-height:23px;padding:0 7px;border-radius:999px;font-size:11px;font-weight:950;border:1px solid #e5e7eb;background:#f3f4f6;color:#374151}
+    .status-pill.queued{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+    .status-pill.running{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+    .status-pill.completed{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+    .status-pill.failed,.status-pill.not_found{background:#fef2f2;color:#dc2626;border-color:#fecaca}
+    .favorite-toggle{height:54px;border:1px solid #facc15;background:#fffdf0;color:#92400e;border-radius:16px;font-weight:950;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;white-space:nowrap}
+    .favorite-toggle.active{background:#fef3c7;border-color:#f59e0b;color:#78350f;box-shadow:0 8px 18px rgba(245,158,11,.14)}
+    .favorite-toggle .star{font-size:18px;line-height:1}
+
     .naver-guide-box{width:min(440px,100%)}
     .guide-text{font-size:15px;line-height:1.55;color:#374151;word-break:keep-all}
     .guide-article-no{display:inline-flex;margin-top:10px;padding:8px 12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-weight:950;font-size:18px;letter-spacing:.02em}
@@ -107,13 +133,23 @@
     .close-btn{border:1px solid #d1d5db;background:#fff;border-radius:10px;height:38px;padding:0 12px;font-weight:900}
     .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:60;background:#111827;color:#fff;border-radius:999px;padding:12px 16px;font-weight:900;box-shadow:0 14px 34px rgba(0,0,0,.25);transition:.2s ease;pointer-events:none}
     .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:30px}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:1fr}}
+    @media(max-width:1200px){.desktop-layout{grid-template-columns:1fr}.side-panel{display:none}.wrap{max-width:980px}}
+    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:30px}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:1fr}.favorite-toggle{width:100%}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <div class="page">
     <main class="main">
-      <div class="wrap">
+      <div class="desktop-layout">
+        <aside class="side-panel" aria-label="즐겨찾기">
+          <div class="side-head">
+            <div class="side-title">즐겨찾기</div>
+            <div id="favoriteCount" class="side-count">0/10</div>
+          </div>
+          <div id="favoriteList" class="side-list"></div>
+        </aside>
+
+        <div class="wrap">
         <div class="hero">
           <div class="brand">MASLOW INTERNAL</div>
           <h1>매물추적</h1>
@@ -143,8 +179,9 @@
             </div>
 
             <div class="input-row">
+              <button id="favoriteToggleBtn" class="favorite-toggle" type="button" aria-pressed="false"><span class="star">☆</span><span>즐겨찾기</span></button>
               <button id="runBtn" class="run-btn" type="button">조회</button>
-              <button id="refreshStatusBtn" class="ghost-btn refresh-btn" type="button">결과 새로고침</button>
+              <button id="refreshStatusBtn" class="ghost-btn refresh-btn" type="button">선택 결과 새로고침</button>
             </div>
           </div>
         </div>
@@ -211,6 +248,16 @@
         </div>
 
         <div id="empty" class="empty">지역을 선택하면 조회를 시작할 수 있습니다.</div>
+        </div>
+
+        <aside class="side-panel" aria-label="조회이력">
+          <div class="side-head">
+            <div class="side-title">조회이력</div>
+            <button id="historyRefreshBtn" class="ghost-btn history-refresh" type="button">상태 새로고침</button>
+          </div>
+          <div id="historyCount" class="side-count" style="margin-bottom:10px;width:max-content">0/30</div>
+          <div id="historyList" class="side-list"></div>
+        </aside>
       </div>
     </main>
   </div>
@@ -262,6 +309,8 @@
     var filteredItems = [];
     var selectedType = 'E02';
     var selectedTrade = 'ALL';
+    var favoriteChecked = false;
+    var selectedHistoryId = '';
 
     var els = {
       dongPickBtn: document.getElementById('dongPickBtn'),
@@ -269,6 +318,12 @@
       pickedDongCode: document.getElementById('pickedDongCode'),
       typeChoices: document.getElementById('typeChoices'),
       tradeChoices: null,
+      favoriteToggleBtn: document.getElementById('favoriteToggleBtn'),
+      favoriteCount: document.getElementById('favoriteCount'),
+      favoriteList: document.getElementById('favoriteList'),
+      historyRefreshBtn: document.getElementById('historyRefreshBtn'),
+      historyCount: document.getElementById('historyCount'),
+      historyList: document.getElementById('historyList'),
       runBtn: document.getElementById('runBtn'),
       refreshStatusBtn: document.getElementById('refreshStatusBtn'),
       status: document.getElementById('status'),
@@ -307,6 +362,182 @@
     var TRACKER_DURATION_SEC = 300;
     var TRACKER_PENDING_KEY = 'maslow_tracker_pending_v2';
     var TRACKER_RESULT_KEY = 'maslow_tracker_result_v2';
+    var TRACKER_HISTORY_KEY = 'maslow_tracker_history_v1';
+    var TRACKER_FAVORITES_KEY = 'maslow_tracker_favorites_v1';
+    var MAX_HISTORY_ITEMS = 30;
+    var MAX_FAVORITE_ITEMS = 10;
+
+
+    function localId(){ return 'local-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8); }
+    function readLocalArray(key){ try{ var v = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+    function writeLocalArray(key, arr){ try{ localStorage.setItem(key, JSON.stringify(arr || [])); }catch(e){} }
+    function formatLocalTime(iso){
+      try{ var d = new Date(iso); return (d.getMonth()+1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }catch(e){ return ''; }
+    }
+    function currentQueryLabel(payload){
+      if(!payload) return '';
+      var type = normalizeTypeLabel((payload.propertyTypeNames || []).join('-')) || normalizeTypeLabel(selectedType) || '';
+      return [payload.legalDongName || '', type].filter(Boolean).join(' · ');
+    }
+    function statusLabel(status){
+      return { queued:'대기중', running:'조회중', completed:'완료', done:'완료', failed:'실패', not_found:'결과없음' }[status] || status || '대기중';
+    }
+    function statusClass(status){
+      if(status === 'done') return 'completed';
+      return status || 'queued';
+    }
+    function readFavorites(){ return readLocalArray(TRACKER_FAVORITES_KEY); }
+    function saveFavorites(items){ writeLocalArray(TRACKER_FAVORITES_KEY, (items || []).slice(0, MAX_FAVORITE_ITEMS)); renderFavorites(); }
+    function readHistory(){ return readLocalArray(TRACKER_HISTORY_KEY); }
+    function saveHistory(items){ writeLocalArray(TRACKER_HISTORY_KEY, (items || []).slice(0, MAX_HISTORY_ITEMS)); renderHistory(); }
+    function setFavoriteChecked(value){
+      favoriteChecked = !!value;
+      if(!els.favoriteToggleBtn) return;
+      els.favoriteToggleBtn.classList.toggle('active', favoriteChecked);
+      els.favoriteToggleBtn.setAttribute('aria-pressed', favoriteChecked ? 'true' : 'false');
+      var star = els.favoriteToggleBtn.querySelector('.star');
+      if(star) star.textContent = favoriteChecked ? '★' : '☆';
+    }
+    function addFavoriteFromPayload(payload){
+      if(!payload || !payload.legalDongName) return;
+      var favorites = readFavorites();
+      var key = [payload.legalDongCode || '', payload.legalDongName || '', (payload.propertyTypeNames || []).join(',')].join('|');
+      favorites = favorites.filter(function(x){ return x.key !== key; });
+      favorites.unshift({
+        id: localId(),
+        key: key,
+        query: currentQueryLabel(payload),
+        dong: { name: payload.legalDongName || '', code: payload.legalDongCode || '' },
+        selectedType: (payload.propertyTypeNames || []).join(','),
+        createdAt: new Date().toISOString()
+      });
+      saveFavorites(favorites);
+    }
+    function addHistoryJob(jobId, payload, status){
+      var history = readHistory();
+      history = history.filter(function(x){ return x.jobId !== jobId; });
+      var entry = {
+        id: localId(),
+        jobId: jobId,
+        query: currentQueryLabel(payload),
+        dong: { name: payload.legalDongName || '', code: payload.legalDongCode || '' },
+        selectedType: (payload.propertyTypeNames || []).join(','),
+        payload: payload,
+        createdAt: new Date().toISOString(),
+        status: status || 'queued',
+        result: null,
+        error: null
+      };
+      history.unshift(entry);
+      selectedHistoryId = entry.id;
+      saveHistory(history);
+      return entry;
+    }
+    function updateHistoryFromStatus(data){
+      if(!data || !data.jobId) return;
+      var history = readHistory();
+      var changed = false;
+      history = history.map(function(item){
+        if(item.jobId !== data.jobId) return item;
+        changed = true;
+        var status = data.status === 'done' ? 'completed' : (data.status || item.status || 'queued');
+        var next = Object.assign({}, item, {
+          status: status,
+          error: data.message || data.error || item.error || null,
+          updatedAt: new Date().toISOString()
+        });
+        if(status === 'completed') next.result = data;
+        return next;
+      });
+      if(changed) saveHistory(history);
+    }
+    function renderFavorites(){
+      if(!els.favoriteList) return;
+      var favorites = readFavorites();
+      els.favoriteCount.textContent = favorites.length + '/' + MAX_FAVORITE_ITEMS;
+      if(!favorites.length){
+        els.favoriteList.innerHTML = '<div class="side-empty">별표를 켜고 조회하면 여기에 저장됩니다.</div>';
+        return;
+      }
+      els.favoriteList.innerHTML = favorites.map(function(item){
+        return '<div class="side-item" data-favorite-id="' + escapeHtml(item.id) + '">' +
+          '<div class="side-item-top">' +
+            '<button class="side-item-main" type="button" data-favorite-load="' + escapeHtml(item.id) + '">' + escapeHtml(item.query || item.dong.name || '-') + '</button>' +
+            '<button class="delete-mini" type="button" title="즐겨찾기 삭제" data-favorite-delete="' + escapeHtml(item.id) + '">🗑</button>' +
+          '</div>' +
+          '<div class="side-meta"><span>' + escapeHtml(formatLocalTime(item.createdAt)) + '</span></div>' +
+        '</div>';
+      }).join('');
+    }
+    function renderHistory(){
+      if(!els.historyList) return;
+      var history = readHistory();
+      els.historyCount.textContent = history.length + '/' + MAX_HISTORY_ITEMS;
+      if(!history.length){
+        els.historyList.innerHTML = '<div class="side-empty">조회하면 작업 상태가 여기에 쌓입니다.</div>';
+        return;
+      }
+      els.historyList.innerHTML = history.map(function(item){
+        var active = item.id === selectedHistoryId ? ' active' : '';
+        var status = statusClass(item.status);
+        return '<div class="side-item' + active + '" data-history-id="' + escapeHtml(item.id) + '">' +
+          '<div class="side-item-top">' +
+            '<button class="side-item-main" type="button" data-history-load="' + escapeHtml(item.id) + '">' + escapeHtml(item.query || '-') + '</button>' +
+            '<button class="delete-mini" type="button" title="조회이력 삭제" data-history-delete="' + escapeHtml(item.id) + '">🗑</button>' +
+          '</div>' +
+          '<div class="side-meta"><span class="status-pill ' + escapeHtml(status) + '">' + escapeHtml(statusLabel(item.status)) + '</span><span>' + escapeHtml(formatLocalTime(item.createdAt)) + '</span></div>' +
+        '</div>';
+      }).join('');
+    }
+    function loadFavorite(id){
+      var item = readFavorites().find(function(x){ return x.id === id; });
+      if(!item) return;
+      picked = item.dong || null;
+      if(item.selectedType){ selectedType = item.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
+      renderPickedDong();
+      setStatus('즐겨찾기를 조회창에 불러왔습니다. 조회 버튼을 누르세요.', 'ok');
+      toast('즐겨찾기를 불러왔습니다.');
+    }
+    function deleteFavorite(id){ saveFavorites(readFavorites().filter(function(x){ return x.id !== id; })); }
+    function deleteHistory(id){
+      if(selectedHistoryId === id) selectedHistoryId = '';
+      saveHistory(readHistory().filter(function(x){ return x.id !== id; }));
+    }
+    function loadHistory(id){
+      var item = readHistory().find(function(x){ return x.id === id; });
+      if(!item) return;
+      selectedHistoryId = id;
+      currentJobId = item.jobId || '';
+      picked = item.dong || (item.payload ? { name:item.payload.legalDongName, code:item.payload.legalDongCode || '' } : picked);
+      if(item.selectedType){ selectedType = item.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
+      renderPickedDong();
+      renderHistory();
+      if(item.status === 'completed' && item.result){
+        applyTrackerResult(item.result, '조회이력 결과 표시');
+        return;
+      }
+      resetResults();
+      showTrackerRunning(statusLabel(item.status) + '입니다. 상태 새로고침으로 확인하세요.');
+      setStatus('선택한 조회는 아직 완료 전입니다.', '');
+    }
+    async function refreshHistoryStatuses(){
+      var history = readHistory();
+      var pending = history.filter(function(x){ return x.jobId && x.status !== 'completed' && x.status !== 'failed' && x.status !== 'not_found'; });
+      if(!pending.length){ setStatus('새로 확인할 조회 작업이 없습니다.', ''); return; }
+      try{
+        var data = await fetchJson(TRACKER_API_BASE + '/api/tracker/status/batch', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ jobIds: pending.map(function(x){ return x.jobId; }) })
+        });
+        (data.jobs || []).forEach(updateHistoryFromStatus);
+        var selected = readHistory().find(function(x){ return x.id === selectedHistoryId; });
+        if(selected){ loadHistory(selected.id); }
+        setStatus('조회이력 상태를 갱신했습니다.', 'ok');
+      }catch(e){
+        setStatus(e && e.message ? e.message : '조회이력 상태 갱신 실패', 'err');
+      }
+    }
 
     function clearTrackerPending(){
       try{ localStorage.removeItem(TRACKER_PENDING_KEY); }catch(e){}
@@ -383,6 +614,7 @@
     function applyTrackerResult(data, prefix){
       var items = data.items || data.finalArticleRecords || [];
       saveTrackerResult(data);
+      updateHistoryFromStatus(data);
       renderResults(items);
       setProgress(null);
       setStatus((prefix || '조회 완료') + ' · ' + lastItems.length + '건', lastItems.length ? 'ok' : 'err');
@@ -416,6 +648,8 @@
         var data = await fetchJson(TRACKER_API_BASE + '/api/tracker/status/' + encodeURIComponent(jobId), {
           method:'GET'
         });
+
+        updateHistoryFromStatus(data);
 
         if(data.status === 'completed'){
           applyTrackerResult(data, '조회 완료');
@@ -835,14 +1069,14 @@
     async function runResearch(){
       if(!picked || !picked.code){ openDongModal(); return; }
 
-      // 새 조회는 기존 진행중 job/result를 무조건 버리고 새 jobId를 받아 시작한다.
+      // 새 조회는 기존 조회이력을 유지하고 새 jobId만 추가한다.
       clearTrackerState();
       resetResults();
       if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
 
       var payload = buildTrackerPayload();
       els.runBtn.disabled = true;
-      showTrackerRunning('새 조회 작업을 시작하고 있습니다. 기존 조회 상태는 버리고 새 job을 생성합니다.');
+      showTrackerRunning('새 조회 작업을 접수하고 있습니다. 기존 조회이력은 유지됩니다.');
 
       try{
         var data = await fetchJson(TRACKER_API_BASE + '/api/tracker/start-manual', {
@@ -855,8 +1089,10 @@
         if(!currentJobId) throw new Error('jobId를 받지 못했습니다.');
 
         saveTrackerPending(currentJobId, payload);
-        showTrackerRunning('조회중입니다. 서버에서 작업을 계속 진행합니다. 잠시 후 결과 새로고침 버튼으로 확인하세요.');
-        toast('조회 작업을 시작했습니다.');
+        addHistoryJob(currentJobId, payload, data.status || 'queued');
+        if(favoriteChecked) addFavoriteFromPayload(payload);
+        showTrackerRunning('조회가 접수되었습니다. 서버 큐에서 순서대로 처리합니다. 오른쪽 조회이력에서 확인하세요.');
+        toast('조회 작업을 접수했습니다.');
       }catch(e){
         clearTrackerState();
         setProgress(null);
@@ -926,7 +1162,11 @@
       });
     }
     els.runBtn.addEventListener('click', runResearch);
-    els.refreshStatusBtn.addEventListener('click', function(){ checkTrackerStatus('', true); });
+    els.favoriteToggleBtn.addEventListener('click', function(){ setFavoriteChecked(!favoriteChecked); });
+    els.refreshStatusBtn.addEventListener('click', function(){ checkTrackerStatus(currentJobId, true); });
+    els.historyRefreshBtn.addEventListener('click', refreshHistoryStatuses);
+    els.favoriteList.addEventListener('click', function(e){ var del=e.target.closest('[data-favorite-delete]'); if(del){ deleteFavorite(del.getAttribute('data-favorite-delete')); return; } var load=e.target.closest('[data-favorite-load]'); if(load) loadFavorite(load.getAttribute('data-favorite-load')); });
+    els.historyList.addEventListener('click', function(e){ var del=e.target.closest('[data-history-delete]'); if(del){ deleteHistory(del.getAttribute('data-history-delete')); return; } var load=e.target.closest('[data-history-load]'); if(load) loadHistory(load.getAttribute('data-history-load')); });
     els.filterTrade.addEventListener('change', renderFilteredResults);
     els.priceSort.addEventListener('change', renderFilteredResults);
     els.copyTableBtn.addEventListener('click', copyTable);
@@ -947,6 +1187,8 @@
 
     renderPickedDong();
     resetResults();
+    renderFavorites();
+    renderHistory();
     restoreTrackerState();
   </script>
 </body>

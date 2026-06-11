@@ -848,7 +848,38 @@
       return normalizeTypeLabel(item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || item.articleRealEstateTypeCode || item.displayType || '');
     }
     function getArticleNo(item){ return item.articleNumber || item.articleNo || item.atclNo || ''; }
-    function getAddressText(item){ return item.address || item.jibunAddress || item.roadAddress || item.estimatedAddress || ''; }
+    function firstListValue(value){
+      if(Array.isArray(value)){
+        for(var i=0; i<value.length; i++){
+          var v = String(value[i] || '').trim();
+          if(v) return v;
+        }
+      }
+      return '';
+    }
+    function isUsableAddressText(value){
+      var v = String(value || '').trim();
+      if(!v) return false;
+      if(/주소\s*미확인|주소미확정|미확인/.test(v)) return false;
+      // raw 응답에서 generic address 필드에 PNU/법정동코드/좌표성 숫자가 섞여 들어오는 경우가 있어 화면 주소로 쓰지 않는다.
+      if(/^\d{10,19}$/.test(v.replace(/\s+/g, ''))) return false;
+      if(!/[가-힣]/.test(v) && /^[-0-9.,\s]+$/.test(v)) return false;
+      return true;
+    }
+    function getAddressText(item){
+      if(!item) return '';
+      var candidates = [
+        item.jibunAddress,
+        firstListValue(item.jibunAddresses),
+        item.roadAddress,
+        item.estimatedAddress,
+        item.address
+      ];
+      for(var i=0; i<candidates.length; i++){
+        if(isUsableAddressText(candidates[i])) return String(candidates[i]).trim();
+      }
+      return '';
+    }
     function rawTypeText(item){
       return String((item && (item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || item.articleRealEstateTypeCode || item.displayType || item.propertyTypeName || item.typeName || item.type)) || '').trim();
     }
@@ -1030,7 +1061,8 @@
           ? '<button class="article-no-btn" type="button" data-article-no="' + escapeHtml(no) + '">' + escapeHtml(no) + '</button>'
           : '<span class="muted">-</span>';
         var addr = getAddressText(item) || '주소 미확인';
-        var pnu = item.pnu ? '<div class="muted">PNU ' + escapeHtml(item.pnu) + '</div>' : '';
+        var pnuValue = item.pnu || firstListValue(item.pnus);
+        var pnu = pnuValue ? '<div class="muted">PNU ' + escapeHtml(pnuValue) + '</div>' : '';
         var mapBtn = addr && addr !== '주소 미확인'
           ? '<button class="naver-map-btn" type="button" title="네이버지도에서 주소 검색" data-map-address="' + escapeHtml(addr) + '" aria-label="네이버지도에서 주소 검색"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2.75c-3.05 0-5.5 2.36-5.5 5.28 0 3.93 5.5 13.22 5.5 13.22s5.5-9.29 5.5-13.22c0-2.92-2.45-5.28-5.5-5.28Zm0 7.42a2.05 2.05 0 1 1 0-4.1 2.05 2.05 0 0 1 0 4.1Z"/></svg></button>'
           : '';

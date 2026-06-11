@@ -848,7 +848,39 @@
       return normalizeTypeLabel(item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || item.articleRealEstateTypeCode || item.displayType || '');
     }
     function getArticleNo(item){ return item.articleNumber || item.articleNo || item.atclNo || ''; }
-    function getAddressText(item){ return item.address || item.jibunAddress || item.roadAddress || item.estimatedAddress || ''; }
+    function pnuJibunTail(pnu){
+      pnu = String(pnu || '').trim();
+      if(!/^\d{19}$/.test(pnu)) return '';
+      var bon = parseInt(pnu.slice(11, 15), 10);
+      var bu = parseInt(pnu.slice(15, 19), 10);
+      if(!bon) return '';
+      var san = pnu.charAt(10) === '2' ? '산' : '';
+      return san + String(bon) + (bu ? '-' + String(bu) : '');
+    }
+    function addressCandidate(value){
+      var text = String(value || '').trim();
+      if(!text) return '';
+      if(/^\d{10,19}$/.test(text)) return '';
+      if(/주소\s*미확인|주소미확정|미확인/.test(text)) return '';
+      return text;
+    }
+    function addressFromLocalDongAndPnu(item){
+      var pnu = String((item && (item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : ''))) || '').trim();
+      if(!/^\d{19}$/.test(pnu)) return '';
+      if(!picked || !picked.name) return '';
+      if(picked.code && pnu.slice(0, 10) !== String(picked.code)) return '';
+      var tail = pnuJibunTail(pnu);
+      return tail ? (String(picked.name).trim() + ' ' + tail) : '';
+    }
+    function getAddressText(item){
+      return addressCandidate(item && item.jibunAddress)
+        || addressCandidate(item && Array.isArray(item.jibunAddresses) ? item.jibunAddresses[0] : '')
+        || addressCandidate(item && item.roadAddress)
+        || addressCandidate(item && item.estimatedAddress)
+        || addressFromLocalDongAndPnu(item)
+        || addressCandidate(item && item.address)
+        || '';
+    }
     function rawTypeText(item){
       return String((item && (item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || item.articleRealEstateTypeCode || item.displayType || item.propertyTypeName || item.typeName || item.type)) || '').trim();
     }

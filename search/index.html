@@ -38,6 +38,12 @@
     .refresh-btn{height:54px;border-radius:16px;font-weight:950}
     .sub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-top:12px}
     .small-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .result-filter{display:none;margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:0 10px 28px rgba(37,99,235,.06);grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .result-filter.show{display:grid}
+    .filter-field{display:grid;gap:6px}
+    .filter-field label{font-size:12px;font-weight:950;color:#374151}
+    .filter-select{height:40px;border:1px solid #d1d5db;border-radius:12px;background:#fff;padding:0 10px;font-weight:900;color:#111827;outline:none}
+    .filter-select:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(37,99,235,.11)}
     .ghost-btn{height:40px;padding:0 12px;border-radius:12px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
     details.settings{margin-top:12px;border:1px solid #e5e7eb;border-radius:16px;background:#f8fafc;padding:0 14px}
     details.settings summary{height:44px;display:flex;align-items:center;font-weight:950;color:#374151;cursor:pointer}
@@ -94,7 +100,7 @@
     .close-btn{border:1px solid #d1d5db;background:#fff;border-radius:10px;height:38px;padding:0 12px;font-weight:900}
     .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:60;background:#111827;color:#fff;border-radius:999px;padding:12px 16px;font-weight:900;box-shadow:0 14px 34px rgba(0,0,0,.25);transition:.2s ease;pointer-events:none}
     .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:30px}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:30px}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -170,6 +176,31 @@
           </div>
         </div>
 
+        <div id="resultFilters" class="result-filter">
+          <div class="filter-field">
+            <label for="filterTrade">거래</label>
+            <select id="filterTrade" class="filter-select">
+              <option value="ALL">전체</option>
+              <option value="SALE">매매</option>
+              <option value="RENT">임대</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <label for="filterType">유형</label>
+            <select id="filterType" class="filter-select">
+              <option value="ALL">전체</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <label for="priceSort">가격</label>
+            <select id="priceSort" class="filter-select">
+              <option value="NONE">기본순</option>
+              <option value="DESC">높은순</option>
+              <option value="ASC">낮은순</option>
+            </select>
+          </div>
+        </div>
+
         <div id="tableWrap" class="table-wrap">
           <table>
             <thead>
@@ -235,6 +266,7 @@
     var currentJobId = '';
     var pollTimer = null;
     var lastItems = [];
+    var filteredItems = [];
     var selectedType = 'E02';
     var selectedTrade = 'ALL';
 
@@ -257,6 +289,10 @@
       sumSale: document.getElementById('sumSale'),
       sumRent: document.getElementById('sumRent'),
       resultActions: document.getElementById('resultActions'),
+      resultFilters: document.getElementById('resultFilters'),
+      filterTrade: document.getElementById('filterTrade'),
+      filterType: document.getElementById('filterType'),
+      priceSort: document.getElementById('priceSort'),
       copyTableBtn: document.getElementById('copyTableBtn'),
       csvBtn: document.getElementById('csvBtn'),
       tableWrap: document.getElementById('tableWrap'),
@@ -567,17 +603,15 @@
       }
       return raw;
     }
-    function confidenceLabel(v){
-      v = String(v || '').trim();
-      if(v === 'PNU_CONFIRMED' || v === '주소확인' || v === 'ok') {
-        return '<span class="badge green">주소확인</span>';
-      }
-      if(v === 'COORDINATE_ESTIMATED' || v === '주소매칭' || v === 'matched') {
-        return '<span class="badge">주소매칭</span>';
-      }
-      if(v === '주소미확정' || v === 'missing' || v === 'unresolved') {
-        return '<span class="badge gray">주소미확정</span>';
-      }
+    function statusValue(item){
+      if(!item || typeof item !== 'object') return String(item || '');
+      return item.addressConfidence || item.addressStatus || item.pnuStatus || (item.pnu ? '주소확인' : '');
+    }
+    function confidenceLabel(item){
+      var v = statusValue(item);
+      if(/주소확인|PNU_CONFIRMED|confirmed|ok/i.test(v)) return '<span class="badge green">주소확인</span>';
+      if(/주소매칭|COORDINATE_ESTIMATED|matched|estimated/i.test(v)) return '<span class="badge">주소매칭</span>';
+      if(/주소미확정|missing|unresolved/i.test(v)) return '<span class="badge gray">주소미확정</span>';
       return '<span class="badge gray">미확인</span>';
     }
     function getTradeText(item){ return item.tradeTypeName || item.tradeType || item.tradeTypeCode || ''; }
@@ -587,6 +621,59 @@
     }
     function getArticleNo(item){ return item.articleNumber || item.articleNo || item.atclNo || ''; }
     function getAddressText(item){ return item.address || item.jibunAddress || item.roadAddress || item.estimatedAddress || ''; }
+    function tradeGroup(item){
+      var t = getTradeText(item);
+      if(/매매|A1/.test(t)) return 'SALE';
+      if(/임대|전세|월세|B1|B2|B3/.test(t)) return 'RENT';
+      return '';
+    }
+    function priceNumber(item){
+      var text = String(getPriceText(item) || '').replace(/,/g, '').trim();
+      if(!text) return -1;
+      var firstPart = text.split('/')[0];
+      var total = 0;
+      var eok = firstPart.match(/([0-9]+(?:\.[0-9]+)?)\s*억/);
+      if(eok){
+        total += Math.round(parseFloat(eok[1]) * 10000);
+        var tail = firstPart.slice(eok.index + eok[0].length);
+        var rest = tail.match(/([0-9]+)/);
+        if(rest) total += parseInt(rest[1], 10) || 0;
+        return total;
+      }
+      var m = firstPart.match(/([0-9]+)/);
+      return m ? (parseInt(m[1], 10) || 0) : -1;
+    }
+    function refreshTypeFilterOptions(items){
+      var current = els.filterType.value || 'ALL';
+      var types = [];
+      (items || []).forEach(function(item){
+        var t = getTypeText(item);
+        if(t && types.indexOf(t) === -1) types.push(t);
+      });
+      types.sort();
+      els.filterType.innerHTML = '<option value="ALL">전체</option>' + types.map(function(t){
+        return '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>';
+      }).join('');
+      els.filterType.value = types.indexOf(current) !== -1 ? current : 'ALL';
+    }
+    function applyResultFilters(items){
+      var trade = els.filterTrade.value || 'ALL';
+      var type = els.filterType.value || 'ALL';
+      var sort = els.priceSort.value || 'NONE';
+      var out = (items || []).slice();
+      if(trade !== 'ALL') out = out.filter(function(item){ return tradeGroup(item) === trade; });
+      if(type !== 'ALL') out = out.filter(function(item){ return getTypeText(item) === type; });
+      if(sort === 'ASC' || sort === 'DESC'){
+        out.sort(function(a,b){
+          var pa = priceNumber(a), pb = priceNumber(b);
+          if(pa < 0 && pb < 0) return 0;
+          if(pa < 0) return 1;
+          if(pb < 0) return -1;
+          return sort === 'DESC' ? pb - pa : pa - pb;
+        });
+      }
+      return out;
+    }
     function getNaverUrl(item){
       if(item.naverUrl) return item.naverUrl;
       var no = getArticleNo(item);
@@ -634,37 +721,52 @@
 
     function resetResults(){
       lastItems = [];
+      filteredItems = [];
       els.tableWrap.classList.remove('show');
       els.summary.classList.remove('show');
       els.resultActions.style.display = 'none';
+      els.resultFilters.classList.remove('show');
       els.resultBody.innerHTML = '';
       els.empty.style.display = 'block';
     }
     function renderSummary(items){
       var total = items.length;
-      var pnu = items.filter(function(x){ return x.pnu || x.addressConfidence === 'PNU_CONFIRMED'; }).length;
-      var sale = items.filter(function(x){ return /매매|A1/.test(getTradeText(x)); }).length;
-      var rent = items.filter(function(x){ return /임대|전세|월세|B1|B2|B3/.test(getTradeText(x)); }).length;
+      var pnu = items.filter(function(x){ return x.pnu || /주소확인|주소매칭|PNU_CONFIRMED|matched|ok/i.test(statusValue(x)); }).length;
+      var sale = items.filter(function(x){ return tradeGroup(x) === 'SALE'; }).length;
+      var rent = items.filter(function(x){ return tradeGroup(x) === 'RENT'; }).length;
       els.sumTotal.textContent = total;
       els.sumPnu.textContent = pnu;
       els.sumSale.textContent = sale;
       els.sumRent.textContent = rent;
-      els.summary.classList.toggle('show', total > 0);
+      els.summary.classList.toggle('show', lastItems.length > 0);
     }
-    function renderResults(items){
-      lastItems = Array.isArray(items) ? items : [];
-      renderSummary(lastItems);
+    function renderFilteredResults(){
+      filteredItems = applyResultFilters(lastItems);
+      renderSummary(filteredItems);
+
       if(!lastItems.length){
         els.tableWrap.classList.remove('show');
         els.resultActions.style.display = 'none';
+        els.resultFilters.classList.remove('show');
         els.empty.style.display = 'block';
         els.empty.textContent = '표시할 매물이 없습니다.';
         return;
       }
-      els.empty.style.display = 'none';
+
       els.resultActions.style.display = 'flex';
+      els.resultFilters.classList.add('show');
+
+      if(!filteredItems.length){
+        els.tableWrap.classList.remove('show');
+        els.resultBody.innerHTML = '';
+        els.empty.style.display = 'block';
+        els.empty.textContent = '필터 조건에 맞는 매물이 없습니다.';
+        return;
+      }
+
+      els.empty.style.display = 'none';
       els.tableWrap.classList.add('show');
-      els.resultBody.innerHTML = lastItems.map(function(item){
+      els.resultBody.innerHTML = filteredItems.map(function(item){
         var no = getArticleNo(item);
         var articleCell = no
           ? '<button class="article-no-btn" type="button" data-article-no="' + escapeHtml(no) + '">' + escapeHtml(no) + '</button>'
@@ -672,7 +774,7 @@
         var addr = getAddressText(item) || '주소 미확인';
         var pnu = item.pnu ? '<div class="muted">PNU ' + escapeHtml(item.pnu) + '</div>' : '';
         return '<tr>' +
-          '<td>' + confidenceLabel(item.addressConfidence || item.addressStatus || item.pnuStatus) + '</td>' +
+          '<td>' + confidenceLabel(item) + '</td>' +
           '<td><div class="addr">' + escapeHtml(addr) + '</div>' + pnu + '</td>' +
           '<td>' + escapeHtml(getTradeText(item) || '-') + '</td>' +
           '<td>' + escapeHtml(getPriceText(item) || '-') + '</td>' +
@@ -680,6 +782,11 @@
           '<td>' + articleCell + '</td>' +
           '</tr>';
       }).join('');
+    }
+    function renderResults(items){
+      lastItems = Array.isArray(items) ? items : [];
+      refreshTypeFilterOptions(lastItems);
+      renderFilteredResults();
     }
     function setProgress(job){
       var show = job && (job.status === 'queued' || job.status === 'running');
@@ -729,42 +836,34 @@
       }
     }
 
+    function exportItems(){
+      return filteredItems.length || lastItems.length ? applyResultFilters(lastItems) : [];
+    }
     function toRows(items){
-      var header = ['주소','거래유형','가격','물건유형','매물번호','PNU','상태'];
-      var rows = items.map(function(item){
-        return [getAddressText(item), getTradeText(item), getPriceText(item), getTypeText(item), getArticleNo(item), item.pnu || '', item.addressConfidence || ''];
+      var header = ['번호','유형','주소','거래','가격'];
+      var rows = (items || []).map(function(item, idx){
+        return [idx + 1, getTypeText(item), getAddressText(item), getTradeText(item), getPriceText(item)];
       });
       return [header].concat(rows);
     }
     function rowsToTsv(rows){ return rows.map(function(r){ return r.map(function(v){ return String(v == null ? '' : v).replace(/\t/g,' ').replace(/\n/g,' '); }).join('\t'); }).join('\n'); }
     function rowsToCsv(rows){ return rows.map(function(r){ return r.map(function(v){ v = String(v == null ? '' : v); return '"' + v.replace(/"/g,'""') + '"'; }).join(','); }).join('\r\n'); }
-    function buildTableCopyText(items){
+    function rowsToNumberedText(items){
       return (items || []).map(function(item, idx){
-        var type = getTypeText(item) || '-';
-        var addr = getAddressText(item) || '주소 미확인';
-        var trade = getTradeText(item) || '-';
-        var price = getPriceText(item) || '-';
-        return (idx + 1) + '. ' + [type, addr, trade, price].join(' / ');
+        return (idx + 1) + '. ' + [getTypeText(item), getAddressText(item), getTradeText(item), getPriceText(item)].filter(Boolean).join(' / ');
       }).join('\n');
     }
     async function copyTable(){
-      if(!lastItems.length) return;
-      var text = buildTableCopyText(lastItems);
-      try{
-        if(navigator.clipboard && navigator.clipboard.writeText){
-          await navigator.clipboard.writeText(text);
-        }else{
-          fallbackCopyText(text);
-        }
-        toast('유형/주소/거래/가격을 복사했습니다.');
-      }catch(e){
-        fallbackCopyText(text);
-        toast('유형/주소/거래/가격을 복사했습니다.');
-      }
+      var items = exportItems();
+      if(!items.length) return;
+      var text = rowsToNumberedText(items);
+      try{ await navigator.clipboard.writeText(text); toast('필터된 표를 복사했습니다.'); }
+      catch(e){ fallbackCopyText(text); toast('필터된 표를 복사했습니다.'); }
     }
     function downloadCsv(){
-      if(!lastItems.length) return;
-      var csv = '\ufeff' + rowsToCsv(toRows(lastItems));
+      var items = exportItems();
+      if(!items.length) return;
+      var csv = '\ufeff' + rowsToCsv(toRows(items));
       var blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
       var a = document.createElement('a');
       var name = '매물추적_' + (picked ? picked.name.replace(/\s+/g,'_') : 'result') + '_' + new Date().toISOString().slice(0,10) + '.csv';
@@ -775,6 +874,7 @@
       document.body.removeChild(a);
       setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
     }
+
 
     els.dongPickBtn.addEventListener('click', openDongModal);
     els.dongCloseBtn.addEventListener('click', closeDongModal);
@@ -794,6 +894,9 @@
     });
     els.runBtn.addEventListener('click', runResearch);
     els.refreshStatusBtn.addEventListener('click', function(){ checkTrackerStatus('', true); });
+    els.filterTrade.addEventListener('change', renderFilteredResults);
+    els.filterType.addEventListener('change', renderFilteredResults);
+    els.priceSort.addEventListener('change', renderFilteredResults);
     els.copyTableBtn.addEventListener('click', copyTable);
     els.csvBtn.addEventListener('click', downloadCsv);
     els.resultBody.addEventListener('click', function(e){

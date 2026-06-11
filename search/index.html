@@ -249,6 +249,80 @@
     var TRACKER_API_BASE = 'https://tracker.sf-farm.store';
     var TRACKER_LIMIT = 100;
     var TRACKER_DURATION_SEC = 300;
+    var TRACKER_PENDING_KEY = 'maslow_tracker_pending_v1';
+    var TRACKER_RESULT_KEY = 'maslow_tracker_result_v1';
+
+    function saveTrackerPending(payload){
+      try{
+        localStorage.setItem(TRACKER_PENDING_KEY, JSON.stringify({
+          status:'running',
+          payload:payload,
+          startedAt:new Date().toISOString()
+        }));
+        localStorage.removeItem(TRACKER_RESULT_KEY);
+      }catch(e){}
+    }
+    function saveTrackerResult(data){
+      try{
+        localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify({
+          status:'completed',
+          data:data,
+          finishedAt:new Date().toISOString()
+        }));
+        localStorage.removeItem(TRACKER_PENDING_KEY);
+      }catch(e){}
+    }
+    function readTrackerPending(){
+      try{ return JSON.parse(localStorage.getItem(TRACKER_PENDING_KEY) || 'null'); }catch(e){ return null; }
+    }
+    function readTrackerResult(){
+      try{ return JSON.parse(localStorage.getItem(TRACKER_RESULT_KEY) || 'null'); }catch(e){ return null; }
+    }
+    function buildTrackerPayload(){
+      return {
+        legalDongName: picked.name,
+        legalDongCode: picked.code || '',
+        mode: 'manual-record',
+        durationSec: TRACKER_DURATION_SEC,
+        limit: TRACKER_LIMIT,
+        recordRawJson: true,
+        headless: false,
+        autoSetup: true,
+        autoRegion: true,
+        autoPropertyType: true,
+        propertyTypeNames: selectedTypeArray(),
+        tradeTypes: selectedTradeArray()
+      };
+    }
+    function showTrackerRunning(message){
+      setStatus(message || '조회중입니다. 완료 전이면 새로고침해도 조회중으로 표시됩니다.', '');
+      setProgress({ status:'running', foundArticles:0, resolvedPnu:0, stage:'조회중' });
+      els.empty.style.display = 'block';
+      els.empty.textContent = '조회중입니다. 완료 후 새로고침하거나 결과가 돌아오면 목록이 표시됩니다.';
+      els.tableWrap.classList.remove('show');
+      els.summary.classList.remove('show');
+      els.resultActions.style.display = 'none';
+    }
+    function restoreTrackerState(){
+      var savedResult = readTrackerResult();
+      if(savedResult && savedResult.data){
+        var items = savedResult.data.items || savedResult.data.finalArticleRecords || [];
+        renderResults(items);
+        setProgress(null);
+        setStatus('최근 조회 완료 · ' + items.length + '건', items.length ? 'ok' : 'err');
+        return true;
+      }
+      var pending = readTrackerPending();
+      if(pending && pending.status === 'running'){
+        if(pending.payload && pending.payload.legalDongName){
+          picked = { name: pending.payload.legalDongName, code: pending.payload.legalDongCode || '' };
+          renderPickedDong();
+        }
+        showTrackerRunning('조회중입니다. 서버 작업이 끝나기 전이면 이 상태로 표시됩니다. 잠시 후 새로고침해서 확인하세요.');
+        return true;
+      }
+      return false;
+    }
 
     function getBjdongItems(){ return Array.isArray(window.BJDONG_CODES) ? window.BJDONG_CODES : []; }
     function normalizeText(s){ return String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' '); }
@@ -460,47 +534,35 @@
       resetResults();
       currentJobId = '';
       if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
-      var payload = {
-        legalDongName: picked.name,
-        legalDongCode: picked.code || '',
-        mode: 'manual-record',
-        durationSec: TRACKER_DURATION_SEC,
-        limit: TRACKER_LIMIT,
-        recordRawJson: true,
-        headless: false,
-        autoSetup: true,
-        autoRegion: true,
-        autoPropertyType: true,
-        propertyTypeNames: selectedTypeArray(),
-        tradeTypes: selectedTradeArray()
-      };
-      els.runBtn.disabled = true;
-      setStatus('매물 목록과 주소를 수집하고 있습니다. 최대 5분 정도 걸릴 수 있습니다.', '');
-      setProgress({ status:'running', foundArticles:0, resolvedPnu:0, stage:'수집 요청 중' });
-      try{
-        var data = await fetch(TRACKER_API_BASE + '/api/tracker/run-manual', {
-          method: 'POST',
-          headers: { 'Content-Type':'application/json' },
-          body: JSON.stringify(payload)
-        }).then(function(res){
-          return res.text().then(function(text){
-            var parsed = {};
-            try{ parsed = text ? JSON.parse(text) : {}; }catch(e){ throw new Error('응답을 읽지 못했습니다.'); }
-            if(!res.ok || parsed.ok === false) throw new Error(parsed.message || parsed.error || '조회 요청 실패');
-            return parsed;
-          });
+
+      var payload = buildTrackerPayload();
+      saveTrackerPending(payload);
+      els.runBtn.disabled = false;
+      showTrackerRunning('조회 요청을 보냈습니다. 화면은 계속 기다리지 않습니다. 완료 전이면 새로고침해도 조회중으로 표시됩니다.');
+
+      fetch(TRACKER_API_BASE + '/api/tracker/run-manual', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function(res){
+        return res.text().then(function(text){
+          var parsed = {};
+          try{ parsed = text ? JSON.parse(text) : {}; }catch(e){ throw new Error('응답을 읽지 못했습니다.'); }
+          if(!res.ok || parsed.ok === false) throw new Error(parsed.message || parsed.error || '조회 요청 실패');
+          return parsed;
         });
+      }).then(function(data){
         currentJobId = data.jobId || '';
         var items = data.items || data.finalArticleRecords || [];
+        saveTrackerResult(data);
         renderResults(items);
         setProgress(null);
         setStatus('조회 완료 · ' + items.length + '건', items.length ? 'ok' : 'err');
-      }catch(e){
-        setStatus(e && e.message ? e.message : '조회 요청 실패', 'err');
-        setProgress(null);
-      }finally{
-        els.runBtn.disabled = false;
-      }
+      }).catch(function(e){
+        // 브라우저/프록시 타임아웃이나 네트워크 끊김이 나도 프론트에서는 실패로 닫지 않는다.
+        // 서버 작업이 계속 진행 중일 수 있으므로 사용자가 새로고침하면 조회중 상태를 유지한다.
+        showTrackerRunning('조회중입니다. 응답 대기 중 연결이 끊겨도 실패로 처리하지 않습니다. 잠시 후 새로고침해서 확인하세요.');
+      });
     }
     function toRows(items){
       var header = ['주소','거래유형','가격','물건유형','매물번호','PNU','상태','원문'];
@@ -553,6 +615,7 @@
 
     renderPickedDong();
     resetResults();
+    restoreTrackerState();
   </script>
 </body>
 </html>

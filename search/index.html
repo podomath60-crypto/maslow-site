@@ -77,6 +77,10 @@
     .link-btn{height:34px;padding:0 10px;border-radius:10px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
     .article-no-btn{border:0;background:transparent;color:#1d4ed8;font-size:13px;font-weight:950;text-decoration:underline;text-underline-offset:3px;padding:4px 0;cursor:pointer}
     .article-no-btn:hover{color:#1e40af}
+    .addr-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .naver-map-btn{width:28px;height:28px;border:0;border-radius:4px;background:#0b7cff;color:#fff;font-size:15px;font-weight:950;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 5px 12px rgba(37,99,235,.18);cursor:pointer;line-height:1}
+    .naver-map-btn:hover{background:#075fd1}
+    .naver-map-btn:focus{outline:none;box-shadow:0 0 0 4px rgba(37,99,235,.18)}
     .naver-guide-box{width:min(440px,100%)}
     .guide-text{font-size:15px;line-height:1.55;color:#374151;word-break:keep-all}
     .guide-article-no{display:inline-flex;margin-top:10px;padding:8px 12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-weight:950;font-size:18px;letter-spacing:.02em}
@@ -734,6 +738,11 @@
     function goNaverLand(){
       window.open('https://fin.land.naver.com/map?realEstateTypes=E02&tradeTypes=A1-B1-B2-B3', '_blank', 'noopener,noreferrer');
     }
+    function openNaverMapAddress(address){
+      address = String(address || '').trim();
+      if(!address) return;
+      window.open('https://map.naver.com/p/search/' + encodeURIComponent(address), '_blank', 'noopener,noreferrer');
+    }
 
     function resetResults(){
       lastItems = [];
@@ -789,9 +798,12 @@
           : '<span class="muted">-</span>';
         var addr = getAddressText(item) || '주소 미확인';
         var pnu = item.pnu ? '<div class="muted">PNU ' + escapeHtml(item.pnu) + '</div>' : '';
+        var mapBtn = addr && addr !== '주소 미확인'
+          ? '<button class="naver-map-btn" type="button" title="네이버지도에서 주소 검색" data-map-address="' + escapeHtml(addr) + '" aria-label="네이버지도에서 주소 검색">N</button>'
+          : '';
         return '<tr>' +
           '<td>' + confidenceLabel(item) + '</td>' +
-          '<td><div class="addr">' + escapeHtml(addr) + '</div>' + pnu + '</td>' +
+          '<td><div class="addr-line"><div class="addr">' + escapeHtml(addr) + '</div>' + mapBtn + '</div>' + pnu + '</td>' +
           '<td>' + escapeHtml(getTradeText(item) || '-') + '</td>' +
           '<td>' + escapeHtml(getPriceText(item) || '-') + '</td>' +
           '<td>' + escapeHtml(getTypeText(item) || '-') + '</td>' +
@@ -914,6 +926,11 @@
     els.copyTableBtn.addEventListener('click', copyTable);
     els.csvBtn.addEventListener('click', downloadCsv);
     els.resultBody.addEventListener('click', function(e){
+      var mapBtn = e.target.closest('[data-map-address]');
+      if(mapBtn){
+        openNaverMapAddress(mapBtn.getAttribute('data-map-address') || '');
+        return;
+      }
       var btn = e.target.closest('[data-article-no]');
       if(!btn) return;
       openNaverGuide(btn.getAttribute('data-article-no') || '');

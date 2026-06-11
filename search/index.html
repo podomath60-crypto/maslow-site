@@ -258,6 +258,14 @@
     function clearTrackerPending(){
       try{ localStorage.removeItem(TRACKER_PENDING_KEY); }catch(e){}
     }
+    function clearTrackerResult(){
+      try{ localStorage.removeItem(TRACKER_RESULT_KEY); }catch(e){}
+    }
+    function clearTrackerState(){
+      clearTrackerPending();
+      clearTrackerResult();
+      currentJobId = '';
+    }
     function saveTrackerPending(jobId, payload){
       try{
         localStorage.setItem(TRACKER_PENDING_KEY, JSON.stringify({
@@ -616,13 +624,15 @@
 
     async function runResearch(){
       if(!picked || !picked.code){ openDongModal(); return; }
+
+      // 새 조회는 기존 진행중 job/result를 무조건 버리고 새 jobId를 받아 시작한다.
+      clearTrackerState();
       resetResults();
-      currentJobId = '';
       if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
 
       var payload = buildTrackerPayload();
       els.runBtn.disabled = true;
-      showTrackerRunning('조회 작업을 시작하고 있습니다.');
+      showTrackerRunning('새 조회 작업을 시작하고 있습니다. 기존 조회 상태는 버리고 새 job을 생성합니다.');
 
       try{
         var data = await fetchJson(TRACKER_API_BASE + '/api/tracker/start-manual', {
@@ -638,7 +648,7 @@
         showTrackerRunning('조회중입니다. 서버에서 작업을 계속 진행합니다. 잠시 후 결과 새로고침 버튼으로 확인하세요.');
         toast('조회 작업을 시작했습니다.');
       }catch(e){
-        clearTrackerPending();
+        clearTrackerState();
         setProgress(null);
         setStatus(e && e.message ? e.message : '조회 요청 실패', 'err');
       }finally{

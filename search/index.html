@@ -353,7 +353,7 @@
       els.resultActions.style.display = 'none';
     }
     function applyTrackerResult(data, prefix){
-      var items = data.items || data.finalArticleRecords || [];
+      var items = filterDisplayItems(data.items || data.finalArticleRecords || []);
       saveTrackerResult(data);
       renderResults(items);
       setProgress(null);
@@ -432,7 +432,7 @@
           picked = { name: data.input.legalDongName, code: data.input.legalDongCode || '' };
           renderPickedDong();
         }
-        var items = data.items || data.finalArticleRecords || [];
+        var items = filterDisplayItems(data.items || data.finalArticleRecords || []);
         renderResults(items);
         setProgress(null);
         setStatus('최근 조회 완료 · ' + items.length + '건', items.length ? 'ok' : 'err');
@@ -624,6 +624,47 @@
       window.open('https://fin.land.naver.com/map?realEstateTypes=E02&tradeTypes=A1-B1-B2-B3', '_blank', 'noopener,noreferrer');
     }
 
+    function hasUsablePnu(item){
+      if(!item || typeof item !== 'object') return false;
+      if(item.pnu) return true;
+      if(Array.isArray(item.pnus) && item.pnus.some(Boolean)) return true;
+      return false;
+    }
+    function hasUsableAddress(item){
+      var addr = getAddressText(item);
+      if(!addr) return false;
+      addr = String(addr).trim();
+      if(!addr || addr === '-' || addr === '주소 미확인') return false;
+      if(/주소\s*미확인|주소미확정|미확정|unresolved/i.test(addr)) return false;
+      return true;
+    }
+    function isJunkListingItem(item){
+      if(!item || typeof item !== 'object') return true;
+      var no = getArticleNo(item);
+      if(!/^\d{6,}$/.test(String(no || ''))) return true;
+
+      var statusText = [
+        item.addressStatus,
+        item.addressConfidence,
+        item.pnuStatus,
+        item.addressResolveMethod
+      ].map(function(v){ return String(v || ''); }).join(' ');
+
+      var hasPnu = hasUsablePnu(item);
+      var hasAddr = hasUsableAddress(item);
+
+      // 주소/PNU가 없는 unresolved raw 찌꺼기는 프론트 표시와 카운트에서 제외한다.
+      if(!hasPnu && !hasAddr) return true;
+      if(!hasPnu && /주소미확정|미확정|missing|unresolved/i.test(statusText)) return true;
+
+      return false;
+    }
+    function filterDisplayItems(items){
+      return (Array.isArray(items) ? items : []).filter(function(item){
+        return !isJunkListingItem(item);
+      });
+    }
+
     function resetResults(){
       lastItems = [];
       els.tableWrap.classList.remove('show');
@@ -644,7 +685,7 @@
       els.summary.classList.toggle('show', total > 0);
     }
     function renderResults(items){
-      lastItems = Array.isArray(items) ? items : [];
+      lastItems = filterDisplayItems(items);
       renderSummary(lastItems);
       if(!lastItems.length){
         els.tableWrap.classList.remove('show');
@@ -730,11 +771,29 @@
     }
     function rowsToTsv(rows){ return rows.map(function(r){ return r.map(function(v){ return String(v == null ? '' : v).replace(/\t/g,' ').replace(/\n/g,' '); }).join('\t'); }).join('\n'); }
     function rowsToCsv(rows){ return rows.map(function(r){ return r.map(function(v){ v = String(v == null ? '' : v); return '"' + v.replace(/"/g,'""') + '"'; }).join(','); }).join('\r\n'); }
+    function buildTableCopyText(items){
+      return (items || []).map(function(item, idx){
+        var type = getTypeText(item) || '-';
+        var addr = getAddressText(item) || '주소 미확인';
+        var trade = getTradeText(item) || '-';
+        var price = getPriceText(item) || '-';
+        return (idx + 1) + '. ' + [type, addr, trade, price].join(' / ');
+      }).join('\n');
+    }
     async function copyTable(){
       if(!lastItems.length) return;
-      var text = rowsToTsv(toRows(lastItems));
-      try{ await navigator.clipboard.writeText(text); toast('복사했습니다.'); }
-      catch(e){ setStatus('복사 실패', 'err'); }
+      var text = buildTableCopyText(lastItems);
+      try{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(text);
+        }else{
+          fallbackCopyText(text);
+        }
+        toast('유형/주소/거래/가격을 복사했습니다.');
+      }catch(e){
+        fallbackCopyText(text);
+        toast('유형/주소/거래/가격을 복사했습니다.');
+      }
     }
     function downloadCsv(){
       if(!lastItems.length) return;

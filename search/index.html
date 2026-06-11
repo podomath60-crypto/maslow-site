@@ -77,10 +77,11 @@
     .link-btn{height:34px;padding:0 10px;border-radius:10px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
     .article-no-btn{border:0;background:transparent;color:#1d4ed8;font-size:13px;font-weight:950;text-decoration:underline;text-underline-offset:3px;padding:4px 0;cursor:pointer}
     .article-no-btn:hover{color:#1e40af}
-    .addr-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .naver-map-btn{width:28px;height:28px;border:0;border-radius:4px;background:#0b7cff;color:#fff;font-size:15px;font-weight:950;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 5px 12px rgba(37,99,235,.18);cursor:pointer;line-height:1}
+    .addr-line{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+    .naver-map-btn{width:20px;height:20px;border:0;border-radius:4px;background:#0b7cff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(37,99,235,.14);cursor:pointer;line-height:1;flex:0 0 20px;padding:0}
+    .naver-map-btn svg{width:13px;height:13px;display:block}
     .naver-map-btn:hover{background:#075fd1}
-    .naver-map-btn:focus{outline:none;box-shadow:0 0 0 4px rgba(37,99,235,.18)}
+    .naver-map-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(37,99,235,.16)}
     .naver-guide-box{width:min(440px,100%)}
     .guide-text{font-size:15px;line-height:1.55;color:#374151;word-break:keep-all}
     .guide-article-no{display:inline-flex;margin-top:10px;padding:8px 12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-weight:950;font-size:18px;letter-spacing:.02em}
@@ -799,7 +800,7 @@
         var addr = getAddressText(item) || '주소 미확인';
         var pnu = item.pnu ? '<div class="muted">PNU ' + escapeHtml(item.pnu) + '</div>' : '';
         var mapBtn = addr && addr !== '주소 미확인'
-          ? '<button class="naver-map-btn" type="button" title="네이버지도에서 주소 검색" data-map-address="' + escapeHtml(addr) + '" aria-label="네이버지도에서 주소 검색">N</button>'
+          ? '<button class="naver-map-btn" type="button" title="네이버지도에서 주소 검색" data-map-address="' + escapeHtml(addr) + '" aria-label="네이버지도에서 주소 검색"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2.75c-3.05 0-5.5 2.36-5.5 5.28 0 3.93 5.5 13.22 5.5 13.22s5.5-9.29 5.5-13.22c0-2.92-2.45-5.28-5.5-5.28Zm0 7.42a2.05 2.05 0 1 1 0-4.1 2.05 2.05 0 0 1 0 4.1Z"/></svg></button>'
           : '';
         return '<tr>' +
           '<td>' + confidenceLabel(item) + '</td>' +

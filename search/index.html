@@ -38,7 +38,7 @@
     .refresh-btn{height:54px;border-radius:16px;font-weight:950}
     .sub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-top:12px}
     .small-actions{display:flex;gap:8px;flex-wrap:wrap}
-    .result-filter{display:none;margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:0 10px 28px rgba(37,99,235,.06);grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .result-filter{display:none;margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:0 10px 28px rgba(37,99,235,.06);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .result-filter.show{display:grid}
     .filter-field{display:grid;gap:6px}
     .filter-field label{font-size:12px;font-weight:950;color:#374151}
@@ -186,12 +186,6 @@
             </select>
           </div>
           <div class="filter-field">
-            <label for="filterType">유형</label>
-            <select id="filterType" class="filter-select">
-              <option value="ALL">전체</option>
-            </select>
-          </div>
-          <div class="filter-field">
             <label for="priceSort">가격</label>
             <select id="priceSort" class="filter-select">
               <option value="NONE">기본순</option>
@@ -291,7 +285,6 @@
       resultActions: document.getElementById('resultActions'),
       resultFilters: document.getElementById('resultFilters'),
       filterTrade: document.getElementById('filterTrade'),
-      filterType: document.getElementById('filterType'),
       priceSort: document.getElementById('priceSort'),
       copyTableBtn: document.getElementById('copyTableBtn'),
       csvBtn: document.getElementById('csvBtn'),
@@ -681,26 +674,11 @@
       var m = firstPart.match(/([0-9]+)/);
       return m ? (parseInt(m[1], 10) || 0) : -1;
     }
-    function refreshTypeFilterOptions(items){
-      var current = els.filterType.value || 'ALL';
-      var types = [];
-      (items || []).forEach(function(item){
-        var t = getTypeText(item);
-        if(t && types.indexOf(t) === -1) types.push(t);
-      });
-      types.sort();
-      els.filterType.innerHTML = '<option value="ALL">전체</option>' + types.map(function(t){
-        return '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>';
-      }).join('');
-      els.filterType.value = types.indexOf(current) !== -1 ? current : 'ALL';
-    }
     function applyResultFilters(items){
       var trade = els.filterTrade.value || 'ALL';
-      var type = els.filterType.value || 'ALL';
       var sort = els.priceSort.value || 'NONE';
       var out = (items || []).slice();
       if(trade !== 'ALL') out = out.filter(function(item){ return tradeGroup(item) === trade; });
-      if(type !== 'ALL') out = out.filter(function(item){ return getTypeText(item) === type; });
       if(sort === 'ASC' || sort === 'DESC'){
         out.sort(function(a,b){
           var pa = priceNumber(a), pb = priceNumber(b);
@@ -823,7 +801,6 @@
     }
     function renderResults(items){
       lastItems = cleanItems(Array.isArray(items) ? items : []);
-      refreshTypeFilterOptions(lastItems);
       renderFilteredResults();
     }
     function setProgress(job){
@@ -933,7 +910,6 @@
     els.runBtn.addEventListener('click', runResearch);
     els.refreshStatusBtn.addEventListener('click', function(){ checkTrackerStatus('', true); });
     els.filterTrade.addEventListener('change', renderFilteredResults);
-    els.filterType.addEventListener('change', renderFilteredResults);
     els.priceSort.addEventListener('change', renderFilteredResults);
     els.copyTableBtn.addEventListener('click', copyTable);
     els.csvBtn.addEventListener('click', downloadCsv);

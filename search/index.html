@@ -598,9 +598,14 @@
     function readTrackerResult(){
       try{ return JSON.parse(localStorage.getItem(TRACKER_RESULT_KEY) || 'null'); }catch(e){ return null; }
     }
+
+    function insertSpaceAfterSi(name){
+      return String(name == null ? '' : name).replace(/([가-힣]+시)(?=[가-힣])/g, '$1 ').trim();
+    }
+
     function buildTrackerPayload(){
       return {
-        legalDongName: picked.name,
+        legalDongName: insertSpaceAfterSi(picked.name),
         legalDongCode: picked.code || '',
         mode: 'manual-record',
         durationSec: TRACKER_DURATION_SEC,

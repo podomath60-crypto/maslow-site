@@ -271,6 +271,10 @@
       toast: document.getElementById('toast')
     };
 
+    var TRACKER_API_BASE = 'https://tracker.sf-farm.store';
+    var TRACKER_LIMIT = 100;
+    var TRACKER_DURATION_SEC = 300;
+
     function getBjdongItems(){ return Array.isArray(window.BJDONG_CODES) ? window.BJDONG_CODES : []; }
     function normalizeText(s){ return String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' '); }
     function compactText(s){ return normalizeText(s).replace(/\s/g,''); }
@@ -474,7 +478,7 @@
       var stage = job.stage || (job.progress && job.progress.stage) || '확인 중';
       els.progressStage.textContent = stage;
       els.progressCount.textContent = found + '건 / 주소 ' + resolved + '건';
-      var limit = Number(els.limitInput.value || 20);
+      var limit = TRACKER_LIMIT;
       var pct = Math.max(5, Math.min(100, Math.round((found / Math.max(limit,1)) * 100)));
       els.barFill.style.width = pct + '%';
     }
@@ -487,27 +491,44 @@
       if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
       var payload = {
         legalDongName: picked.name,
-        legalDongCode: picked.code,
-        sido: picked.sido || '',
-        sigungu: picked.sigungu || '',
-        bname: picked.bname || '',
-        realEstateTypes: selectedTypeArray(),
-        tradeTypes: selectedTradeArray(),
-        limit: Number(els.limitInput.value || 20),
-        mode: 'manual'
+        legalDongCode: picked.code || '',
+        mode: 'manual-record',
+        durationSec: TRACKER_DURATION_SEC,
+        limit: TRACKER_LIMIT,
+        recordRawJson: true,
+        headless: false,
+        autoSetup: true,
+        autoRegion: true,
+        autoPropertyType: true,
+        propertyTypeNames: selectedTypeArray(),
+        tradeTypes: selectedTradeArray()
       };
       els.runBtn.disabled = true;
-      setStatus('조회 요청 중입니다.', '');
+      setStatus('매물 목록과 주소를 수집하고 있습니다. 최대 5분 정도 걸릴 수 있습니다.', '');
+      setProgress({ status:'running', foundArticles:0, resolvedPnu:0, stage:'수집 요청 중' });
       try{
-        var data = await apiFetch('/api/naver-research/run', { method:'POST', body:JSON.stringify(payload) });
-        currentJobId = data.jobId;
-        setStatus('매물 목록을 정리하고 있습니다.', '');
-        pollJob();
-        pollTimer = setInterval(pollJob, 1800);
+        var data = await fetch(TRACKER_API_BASE + '/api/tracker/run-manual', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        }).then(function(res){
+          return res.text().then(function(text){
+            var parsed = {};
+            try{ parsed = text ? JSON.parse(text) : {}; }catch(e){ throw new Error('응답을 읽지 못했습니다.'); }
+            if(!res.ok || parsed.ok === false) throw new Error(parsed.message || parsed.error || '조회 요청 실패');
+            return parsed;
+          });
+        });
+        currentJobId = data.jobId || '';
+        var items = data.items || data.finalArticleRecords || [];
+        renderResults(items);
+        setProgress(null);
+        setStatus('조회 완료 · ' + items.length + '건', items.length ? 'ok' : 'err');
       }catch(e){
         setStatus(e && e.message ? e.message : '조회 요청 실패', 'err');
-        els.runBtn.disabled = false;
         setProgress(null);
+      }finally{
+        els.runBtn.disabled = false;
       }
     }
     async function pollJob(){

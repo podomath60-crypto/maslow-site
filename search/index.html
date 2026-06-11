@@ -353,7 +353,7 @@
       els.resultActions.style.display = 'none';
     }
     function applyTrackerResult(data, prefix){
-      var items = filterDisplayItems(data.items || data.finalArticleRecords || []);
+      var items = data.items || data.finalArticleRecords || [];
       saveTrackerResult(data);
       renderResults(items);
       setProgress(null);
@@ -432,7 +432,7 @@
           picked = { name: data.input.legalDongName, code: data.input.legalDongCode || '' };
           renderPickedDong();
         }
-        var items = filterDisplayItems(data.items || data.finalArticleRecords || []);
+        var items = data.items || data.finalArticleRecords || [];
         renderResults(items);
         setProgress(null);
         setStatus('최근 조회 완료 · ' + items.length + '건', items.length ? 'ok' : 'err');
@@ -568,8 +568,16 @@
       return raw;
     }
     function confidenceLabel(v){
-      if(v === 'PNU_CONFIRMED') return '<span class="badge green">주소확인</span>';
-      if(v === 'COORDINATE_ESTIMATED') return '<span class="badge">좌표추정</span>';
+      v = String(v || '').trim();
+      if(v === 'PNU_CONFIRMED' || v === '주소확인' || v === 'ok') {
+        return '<span class="badge green">주소확인</span>';
+      }
+      if(v === 'COORDINATE_ESTIMATED' || v === '주소매칭' || v === 'matched') {
+        return '<span class="badge">주소매칭</span>';
+      }
+      if(v === '주소미확정' || v === 'missing' || v === 'unresolved') {
+        return '<span class="badge gray">주소미확정</span>';
+      }
       return '<span class="badge gray">미확인</span>';
     }
     function getTradeText(item){ return item.tradeTypeName || item.tradeType || item.tradeTypeCode || ''; }
@@ -624,47 +632,6 @@
       window.open('https://fin.land.naver.com/map?realEstateTypes=E02&tradeTypes=A1-B1-B2-B3', '_blank', 'noopener,noreferrer');
     }
 
-    function hasUsablePnu(item){
-      if(!item || typeof item !== 'object') return false;
-      if(item.pnu) return true;
-      if(Array.isArray(item.pnus) && item.pnus.some(Boolean)) return true;
-      return false;
-    }
-    function hasUsableAddress(item){
-      var addr = getAddressText(item);
-      if(!addr) return false;
-      addr = String(addr).trim();
-      if(!addr || addr === '-' || addr === '주소 미확인') return false;
-      if(/주소\s*미확인|주소미확정|미확정|unresolved/i.test(addr)) return false;
-      return true;
-    }
-    function isJunkListingItem(item){
-      if(!item || typeof item !== 'object') return true;
-      var no = getArticleNo(item);
-      if(!/^\d{6,}$/.test(String(no || ''))) return true;
-
-      var statusText = [
-        item.addressStatus,
-        item.addressConfidence,
-        item.pnuStatus,
-        item.addressResolveMethod
-      ].map(function(v){ return String(v || ''); }).join(' ');
-
-      var hasPnu = hasUsablePnu(item);
-      var hasAddr = hasUsableAddress(item);
-
-      // 주소/PNU가 없는 unresolved raw 찌꺼기는 프론트 표시와 카운트에서 제외한다.
-      if(!hasPnu && !hasAddr) return true;
-      if(!hasPnu && /주소미확정|미확정|missing|unresolved/i.test(statusText)) return true;
-
-      return false;
-    }
-    function filterDisplayItems(items){
-      return (Array.isArray(items) ? items : []).filter(function(item){
-        return !isJunkListingItem(item);
-      });
-    }
-
     function resetResults(){
       lastItems = [];
       els.tableWrap.classList.remove('show');
@@ -685,7 +652,7 @@
       els.summary.classList.toggle('show', total > 0);
     }
     function renderResults(items){
-      lastItems = filterDisplayItems(items);
+      lastItems = Array.isArray(items) ? items : [];
       renderSummary(lastItems);
       if(!lastItems.length){
         els.tableWrap.classList.remove('show');
@@ -705,7 +672,7 @@
         var addr = getAddressText(item) || '주소 미확인';
         var pnu = item.pnu ? '<div class="muted">PNU ' + escapeHtml(item.pnu) + '</div>' : '';
         return '<tr>' +
-          '<td>' + confidenceLabel(item.addressConfidence) + '</td>' +
+          '<td>' + confidenceLabel(item.addressConfidence || item.addressStatus || item.pnuStatus) + '</td>' +
           '<td><div class="addr">' + escapeHtml(addr) + '</div>' + pnu + '</td>' +
           '<td>' + escapeHtml(getTradeText(item) || '-') + '</td>' +
           '<td>' + escapeHtml(getPriceText(item) || '-') + '</td>' +

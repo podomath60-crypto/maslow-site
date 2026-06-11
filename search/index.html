@@ -69,6 +69,12 @@
     .badge.gray{background:#f3f4f6;color:#374151;border-color:#e5e7eb}
     .badge.green{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
     .link-btn{height:34px;padding:0 10px;border-radius:10px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+    .article-no-btn{border:0;background:transparent;color:#1d4ed8;font-size:13px;font-weight:950;text-decoration:underline;text-underline-offset:3px;padding:4px 0;cursor:pointer}
+    .article-no-btn:hover{color:#1e40af}
+    .naver-guide-box{width:min(440px,100%)}
+    .guide-text{font-size:15px;line-height:1.55;color:#374151;word-break:keep-all}
+    .guide-article-no{display:inline-flex;margin-top:10px;padding:8px 12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-weight:950;font-size:18px;letter-spacing:.02em}
+    .primary-btn{border:0;background:var(--blue);color:#fff;border-radius:10px;height:40px;padding:0 14px;font-weight:950}
     .empty{border:1px dashed #bfdbfe;border-radius:18px;background:rgba(255,255,255,.82);padding:22px;color:#6b7280;text-align:center;font-weight:850;margin-top:12px;word-break:keep-all}
     .modal{display:none;position:fixed;inset:0;background:rgba(17,24,39,.45);z-index:30;padding:18px;overflow:auto}
     .modal.show{display:flex;align-items:flex-start;justify-content:center}
@@ -174,7 +180,6 @@
                 <th>가격</th>
                 <th>유형</th>
                 <th>매물번호</th>
-                <th>원문</th>
               </tr>
             </thead>
             <tbody id="resultBody"></tbody>
@@ -202,6 +207,22 @@
       <div class="modal-foot">
         <div id="dongCountText">검색어를 입력하세요.</div>
         <button id="dongCloseBtn" class="close-btn" type="button">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="naverGuideModal" class="modal" aria-hidden="true">
+    <div class="modal-box naver-guide-box" role="dialog" aria-modal="true" aria-label="네이버부동산 이동 안내">
+      <div class="modal-head">
+        <div class="modal-title">매물번호가 복사되었습니다.</div>
+        <div class="guide-text">
+          네이버부동산 검색창에 붙여넣으면 해당 매물 상세를 확인할 수 있습니다.
+          <div id="copiedArticleNo" class="guide-article-no"></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button id="naverGuideCloseBtn" class="close-btn" type="button">닫기</button>
+        <button id="naverGuideGoBtn" class="primary-btn" type="button">GO 네이버부동산</button>
       </div>
     </div>
   </div>
@@ -246,6 +267,10 @@
       dongList: document.getElementById('dongList'),
       dongCountText: document.getElementById('dongCountText'),
       dongCloseBtn: document.getElementById('dongCloseBtn'),
+      naverGuideModal: document.getElementById('naverGuideModal'),
+      copiedArticleNo: document.getElementById('copiedArticleNo'),
+      naverGuideCloseBtn: document.getElementById('naverGuideCloseBtn'),
+      naverGuideGoBtn: document.getElementById('naverGuideGoBtn'),
       toast: document.getElementById('toast')
     };
 
@@ -559,6 +584,45 @@
       var no = getArticleNo(item);
       return no ? 'https://new.land.naver.com/articles/' + encodeURIComponent(no) : '';
     }
+    function fallbackCopyText(text){
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try{ document.execCommand('copy'); }catch(e){}
+      document.body.removeChild(ta);
+    }
+    async function copyArticleNumber(articleNo){
+      articleNo = String(articleNo || '').trim();
+      if(!articleNo) return;
+      try{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(articleNo);
+        }else{
+          fallbackCopyText(articleNo);
+        }
+      }catch(e){
+        fallbackCopyText(articleNo);
+      }
+    }
+    async function openNaverGuide(articleNo){
+      articleNo = String(articleNo || '').trim();
+      if(!articleNo) return;
+      await copyArticleNumber(articleNo);
+      els.copiedArticleNo.textContent = articleNo;
+      els.naverGuideModal.classList.add('show');
+      els.naverGuideModal.setAttribute('aria-hidden', 'false');
+    }
+    function closeNaverGuide(){
+      els.naverGuideModal.classList.remove('show');
+      els.naverGuideModal.setAttribute('aria-hidden', 'true');
+    }
+    function goNaverLand(){
+      window.open('https://fin.land.naver.com/map?realEstateTypes=E02&tradeTypes=A1-B1-B2-B3', '_blank', 'noopener,noreferrer');
+    }
 
     function resetResults(){
       lastItems = [];
@@ -594,7 +658,9 @@
       els.tableWrap.classList.add('show');
       els.resultBody.innerHTML = lastItems.map(function(item){
         var no = getArticleNo(item);
-        var url = getNaverUrl(item);
+        var articleCell = no
+          ? '<button class="article-no-btn" type="button" data-article-no="' + escapeHtml(no) + '">' + escapeHtml(no) + '</button>'
+          : '<span class="muted">-</span>';
         var addr = getAddressText(item) || '주소 미확인';
         var pnu = item.pnu ? '<div class="muted">PNU ' + escapeHtml(item.pnu) + '</div>' : '';
         return '<tr>' +
@@ -603,8 +669,7 @@
           '<td>' + escapeHtml(getTradeText(item) || '-') + '</td>' +
           '<td>' + escapeHtml(getPriceText(item) || '-') + '</td>' +
           '<td>' + escapeHtml(getTypeText(item) || '-') + '</td>' +
-          '<td><span class="muted">' + escapeHtml(no || '-') + '</span></td>' +
-          '<td>' + (url ? '<a class="link-btn" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">보기</a>' : '-') + '</td>' +
+          '<td>' + articleCell + '</td>' +
           '</tr>';
       }).join('');
     }
@@ -657,9 +722,9 @@
     }
 
     function toRows(items){
-      var header = ['주소','거래유형','가격','물건유형','매물번호','PNU','상태','원문'];
+      var header = ['주소','거래유형','가격','물건유형','매물번호','PNU','상태'];
       var rows = items.map(function(item){
-        return [getAddressText(item), getTradeText(item), getPriceText(item), getTypeText(item), getArticleNo(item), item.pnu || '', item.addressConfidence || '', getNaverUrl(item)];
+        return [getAddressText(item), getTradeText(item), getPriceText(item), getTypeText(item), getArticleNo(item), item.pnu || '', item.addressConfidence || ''];
       });
       return [header].concat(rows);
     }
@@ -705,6 +770,14 @@
     els.refreshStatusBtn.addEventListener('click', function(){ checkTrackerStatus('', true); });
     els.copyTableBtn.addEventListener('click', copyTable);
     els.csvBtn.addEventListener('click', downloadCsv);
+    els.resultBody.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-article-no]');
+      if(!btn) return;
+      openNaverGuide(btn.getAttribute('data-article-no') || '');
+    });
+    els.naverGuideCloseBtn.addEventListener('click', closeNaverGuide);
+    els.naverGuideModal.addEventListener('click', function(e){ if(e.target === els.naverGuideModal) closeNaverGuide(); });
+    els.naverGuideGoBtn.addEventListener('click', goNaverLand);
 
     renderPickedDong();
     resetResults();

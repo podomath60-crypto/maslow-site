@@ -393,8 +393,8 @@
       saveTrackerResult(data);
       renderResults(items);
       setProgress(null);
-      setStatus((prefix || '조회 완료') + ' · ' + items.length + '건', items.length ? 'ok' : 'err');
-      return items;
+      setStatus((prefix || '조회 완료') + ' · ' + lastItems.length + '건', lastItems.length ? 'ok' : 'err');
+      return lastItems;
     }
     async function fetchJson(url, options){
       return fetch(url, options || {}).then(function(res){
@@ -471,7 +471,7 @@
         var items = data.items || data.finalArticleRecords || [];
         renderResults(items);
         setProgress(null);
-        setStatus('최근 조회 완료 · ' + items.length + '건', items.length ? 'ok' : 'err');
+        setStatus('최근 조회 완료 · ' + lastItems.length + '건', lastItems.length ? 'ok' : 'err');
         return true;
       }
 
@@ -621,6 +621,44 @@
     }
     function getArticleNo(item){ return item.articleNumber || item.articleNo || item.atclNo || ''; }
     function getAddressText(item){ return item.address || item.jibunAddress || item.roadAddress || item.estimatedAddress || ''; }
+    function rawTypeText(item){
+      return String((item && (item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || item.articleRealEstateTypeCode || item.displayType || item.propertyTypeName || item.typeName || item.type)) || '').trim();
+    }
+    function hasValidAddress(item){
+      var addr = String(getAddressText(item) || '').trim();
+      var pnu = String((item && (item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : ''))) || '').trim();
+      if(pnu) return true;
+      if(!addr) return false;
+      if(/주소\s*미확인|주소미확정|미확인/.test(addr)) return false;
+      return true;
+    }
+    function isJunkItem(item){
+      if(!item || typeof item !== 'object') return true;
+      var no = String(getArticleNo(item) || '').trim();
+      if(!no) return true;
+
+      var status = String(statusValue(item) || '').trim();
+      var pnu = String(item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : '') || '').trim();
+      var addrOk = hasValidAddress(item);
+
+      // 네이버 raw 목록에 섞여 들어오는 A01/A04 같은 거래코드 찌꺼기.
+      // 실제 매물 유형이 아니라 행 자체가 깨진 항목이라 화면/카운트/복사/CSV에서 제외한다.
+      var rawType = rawTypeText(item);
+      var normalizedType = getTypeText(item);
+      var price = String(getPriceText(item) || '').trim();
+      if(/^(A\d+|B\d+)$/.test(rawType) || /^(A\d+|B\d+)$/.test(normalizedType)) return true;
+
+      // 주소/PNU가 전혀 없는 주소미확정 행은 찌꺼기로 본다.
+      if(!addrOk && !pnu) return true;
+      if(/주소미확정|missing|unresolved/i.test(status) && !addrOk && !pnu) return true;
+
+      // 가격도 없고 유형도 네이버 원본 코드처럼 깨져 있으면 제외한다.
+      if((!price || price === '-') && !addrOk) return true;
+      return false;
+    }
+    function cleanItems(items){
+      return (items || []).filter(function(item){ return !isJunkItem(item); });
+    }
     function tradeGroup(item){
       var t = getTradeText(item);
       if(/매매|A1/.test(t)) return 'SALE';
@@ -784,7 +822,7 @@
       }).join('');
     }
     function renderResults(items){
-      lastItems = Array.isArray(items) ? items : [];
+      lastItems = cleanItems(Array.isArray(items) ? items : []);
       refreshTypeFilterOptions(lastItems);
       renderFilteredResults();
     }

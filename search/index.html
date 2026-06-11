@@ -17,7 +17,7 @@
     .wrap{max-width:980px;margin:0 auto}
     .hero{margin-bottom:22px;text-align:center}
     .brand{font-size:13px;font-weight:950;letter-spacing:.12em;color:var(--blue);margin-bottom:8px}
-    h1{margin:0;font-size:34px;letter-spacing:-.055em;line-height:1.08}
+    h1{margin:0;font-size:46px;letter-spacing:-.06em;line-height:1.03}
     .desc{margin:10px auto 0;color:#4b5563;font-size:15px;line-height:1.55;max-width:620px;word-break:keep-all}
     .panel{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:var(--shadow)}
     .section-title{font-size:14px;font-weight:950;color:#111827;margin:0 0 9px}
@@ -140,7 +140,7 @@
     .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:60;background:#111827;color:#fff;border-radius:999px;padding:12px 16px;font-weight:900;box-shadow:0 14px 34px rgba(0,0,0,.25);transition:.2s ease;pointer-events:none}
     .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
     @media(max-width:1200px){.desktop-layout{grid-template-columns:1fr}.side-panel{display:none}.wrap{max-width:980px}}
-    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:30px}.dong-trade-row{grid-template-columns:1fr}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:64px 1fr}.favorite-toggle{width:64px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:1fr}}
+    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:36px}.dong-trade-row{grid-template-columns:1fr}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:64px 1fr}.favorite-toggle{width:64px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -159,7 +159,6 @@
         <div class="hero">
           <div class="brand">네이버부동산</div>
           <h1>매물주소추적기</h1>
-          <p class="desc">지역을 선택하고 물건유형을 고르면 내부 검토용 매물 목록을 정리합니다. 최종 안내 전에는 원문과 공적장부를 확인하세요.</p>
         </div>
 
         <div class="panel">
@@ -881,23 +880,40 @@
       var text = String(value || '').trim();
       if(!text) return '';
       if(/^\d{10,19}$/.test(text)) return '';
+      // 서버/원본에서 "5221033029 1570-15"처럼 코드+지번 형태가 섞여 오면 주소로 표시하지 않는다.
+      if(/^\d{10}\s+산?\d+(?:-\d+)?$/.test(text)) return '';
       if(/주소\s*미확인|주소미확정|미확인/.test(text)) return '';
       return text;
     }
-    function addressFromLocalDongAndPnu(item){
-      var pnu = String((item && (item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : ''))) || '').trim();
+    function pnuValue(item){
+      return String((item && (item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : ''))) || '').trim();
+    }
+    var bjdongNameCache = null;
+    function bjdongNameByCode(code){
+      code = String(code || '').trim();
+      if(!/^\d{10}$/.test(code)) return '';
+      if(!bjdongNameCache){
+        bjdongNameCache = {};
+        getBjdongItems().forEach(function(dong){
+          if(dong && dong.code && dong.name) bjdongNameCache[String(dong.code)] = String(dong.name).trim();
+        });
+      }
+      return bjdongNameCache[code] || '';
+    }
+    function addressFromBjdongAndPnu(item){
+      var pnu = pnuValue(item);
       if(!/^\d{19}$/.test(pnu)) return '';
-      if(!picked || !picked.name) return '';
-      if(picked.code && pnu.slice(0, 10) !== String(picked.code)) return '';
+      var dongName = bjdongNameByCode(pnu.slice(0, 10));
+      if(!dongName) return '';
       var tail = pnuJibunTail(pnu);
-      return tail ? (String(picked.name).trim() + ' ' + tail) : '';
+      return tail ? (dongName + ' ' + tail) : '';
     }
     function getAddressText(item){
       return addressCandidate(item && item.jibunAddress)
         || addressCandidate(item && Array.isArray(item.jibunAddresses) ? item.jibunAddresses[0] : '')
         || addressCandidate(item && item.roadAddress)
         || addressCandidate(item && item.estimatedAddress)
-        || addressFromLocalDongAndPnu(item)
+        || addressFromBjdongAndPnu(item)
         || addressCandidate(item && item.address)
         || '';
     }

@@ -77,12 +77,6 @@
     .link-btn{height:34px;padding:0 10px;border-radius:10px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
     .article-no-btn{border:0;background:transparent;color:#1d4ed8;font-size:13px;font-weight:950;text-decoration:underline;text-underline-offset:3px;padding:4px 0;cursor:pointer}
     .article-no-btn:hover{color:#1e40af}
-    .map-head{width:32px;min-width:32px;padding-left:0;padding-right:0}
-    .map-cell{width:32px;min-width:32px;text-align:center;vertical-align:middle;padding-left:0;padding-right:0}
-    .naver-map-btn{width:18px;height:18px;border:0;border-radius:4px;background:#0b7cff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(37,99,235,.13);cursor:pointer;line-height:1;padding:0;vertical-align:middle;transform:translateX(-18px)}
-    .naver-map-btn svg{width:12px;height:12px;display:block}
-    .naver-map-btn:hover{background:#075fd1}
-    .naver-map-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(37,99,235,.16)}
     .naver-guide-box{width:min(440px,100%)}
     .guide-text{font-size:15px;line-height:1.55;color:#374151;word-break:keep-all}
     .guide-article-no{display:inline-flex;margin-top:10px;padding:8px 12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-weight:950;font-size:18px;letter-spacing:.02em}
@@ -138,15 +132,6 @@
                 <button class="choice" type="button" data-type="D03,D04,E01,Z00">건물</button>
                 <button class="choice active" type="button" data-type="E02">공장/창고</button>
                 <button class="choice" type="button" data-type="E04">지식산업센터</button>
-              </div>
-            </div>
-
-            <div>
-              <p class="section-title">거래유형</p>
-              <div id="tradeChoices" class="trade-grid">
-                <button class="choice active" type="button" data-trade="ALL">전체</button>
-                <button class="choice" type="button" data-trade="A1">매매</button>
-                <button class="choice" type="button" data-trade="B1,B2,B3">임대</button>
               </div>
             </div>
 
@@ -207,7 +192,6 @@
               <tr>
                 <th>상태</th>
                 <th>주소</th>
-                <th class="map-head"></th>
                 <th>거래</th>
                 <th>가격</th>
                 <th>유형</th>
@@ -276,7 +260,7 @@
       pickedDongText: document.getElementById('pickedDongText'),
       pickedDongCode: document.getElementById('pickedDongCode'),
       typeChoices: document.getElementById('typeChoices'),
-      tradeChoices: document.getElementById('tradeChoices'),
+      tradeChoices: null,
       runBtn: document.getElementById('runBtn'),
       refreshStatusBtn: document.getElementById('refreshStatusBtn'),
       status: document.getElementById('status'),
@@ -376,7 +360,7 @@
         autoRegion: true,
         autoPropertyType: true,
         propertyTypeNames: selectedTypeArray(),
-        tradeTypes: selectedTradeArray()
+        tradeTypes: ['A1','B1','B2','B3']
       };
     }
     function showTrackerRunning(message){
@@ -576,7 +560,7 @@
       });
     }
     function selectedTypeArray(){ return selectedType.split(',').filter(Boolean); }
-    function selectedTradeArray(){ return selectedTrade === 'ALL' ? ['A1','B1','B2','B3'] : selectedTrade.split(',').filter(Boolean); }
+    function selectedTradeArray(){ return ['A1','B1','B2','B3']; }
     var REAL_ESTATE_TYPE_LABELS = {
       D02:'상가',
       E03:'토지',
@@ -741,11 +725,6 @@
     function goNaverLand(){
       window.open('https://fin.land.naver.com/map?realEstateTypes=E02&tradeTypes=A1-B1-B2-B3', '_blank', 'noopener,noreferrer');
     }
-    function openNaverMapAddress(address){
-      address = String(address || '').trim();
-      if(!address) return;
-      window.open('https://map.naver.com/p/search/' + encodeURIComponent(address), '_blank', 'noopener,noreferrer');
-    }
 
     function resetResults(){
       lastItems = [];
@@ -801,13 +780,9 @@
           : '<span class="muted">-</span>';
         var addr = getAddressText(item) || '주소 미확인';
         var pnu = item.pnu ? '<div class="muted">PNU ' + escapeHtml(item.pnu) + '</div>' : '';
-        var mapBtn = addr && addr !== '주소 미확인'
-          ? '<button class="naver-map-btn" type="button" title="네이버지도에서 주소 검색" data-map-address="' + escapeHtml(addr) + '" aria-label="네이버지도에서 주소 검색"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2.75c-3.05 0-5.5 2.36-5.5 5.28 0 3.93 5.5 13.22 5.5 13.22s5.5-9.29 5.5-13.22c0-2.92-2.45-5.28-5.5-5.28Zm0 7.42a2.05 2.05 0 1 1 0-4.1 2.05 2.05 0 0 1 0 4.1Z"/></svg></button>'
-          : '';
         return '<tr>' +
           '<td>' + confidenceLabel(item) + '</td>' +
           '<td><div class="addr">' + escapeHtml(addr) + '</div>' + pnu + '</td>' +
-          '<td class="map-cell">' + mapBtn + '</td>' +
           '<td>' + escapeHtml(getTradeText(item) || '-') + '</td>' +
           '<td>' + escapeHtml(getPriceText(item) || '-') + '</td>' +
           '<td>' + escapeHtml(getTypeText(item) || '-') + '</td>' +
@@ -919,10 +894,13 @@
       var btn = e.target.closest('[data-type]'); if(!btn) return;
       selectedType = btn.getAttribute('data-type'); setChoice(els.typeChoices, 'data-type', selectedType);
     });
-    els.tradeChoices.addEventListener('click', function(e){
-      var btn = e.target.closest('[data-trade]'); if(!btn) return;
-      selectedTrade = btn.getAttribute('data-trade'); setChoice(els.tradeChoices, 'data-trade', selectedTrade);
-    });
+    if(els.tradeChoices){
+      els.tradeChoices.addEventListener('click', function(e){
+        var btn = e.target.closest('[data-trade]'); if(!btn) return;
+        selectedTrade = 'ALL';
+        setChoice(els.tradeChoices, 'data-trade', selectedTrade);
+      });
+    }
     els.runBtn.addEventListener('click', runResearch);
     els.refreshStatusBtn.addEventListener('click', function(){ checkTrackerStatus('', true); });
     els.filterTrade.addEventListener('change', renderFilteredResults);
@@ -930,11 +908,6 @@
     els.copyTableBtn.addEventListener('click', copyTable);
     els.csvBtn.addEventListener('click', downloadCsv);
     els.resultBody.addEventListener('click', function(e){
-      var mapBtn = e.target.closest('[data-map-address]');
-      if(mapBtn){
-        openNaverMapAddress(mapBtn.getAttribute('data-map-address') || '');
-        return;
-      }
       var btn = e.target.closest('[data-article-no]');
       if(!btn) return;
       openNaverGuide(btn.getAttribute('data-article-no') || '');

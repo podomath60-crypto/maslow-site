@@ -132,28 +132,8 @@
             </div>
 
             <div class="input-row">
-              <select id="limitInput" class="input" aria-label="조회 개수">
-                <option value="10">최대 10개</option>
-                <option value="20" selected>최대 20개</option>
-                <option value="30">최대 30개</option>
-              </select>
               <button id="runBtn" class="run-btn" type="button">조회</button>
             </div>
-
-            <details class="settings">
-              <summary>로컬 연결 설정</summary>
-              <div class="settings-body">
-                <input id="apiBaseInput" class="input" type="url" placeholder="Cloudflare Tunnel 주소 예: https://xxxxx.trycloudflare.com" autocomplete="off" />
-                <input id="apiKeyInput" class="input" type="password" placeholder="내부 API 키" autocomplete="off" />
-                <div class="sub-actions">
-                  <div class="hint">주소와 키는 이 브라우저에만 저장됩니다.</div>
-                  <div class="small-actions">
-                    <button id="saveConfigBtn" class="ghost-btn" type="button">저장</button>
-                    <button id="healthBtn" class="ghost-btn" type="button">연결확인</button>
-                  </div>
-                </div>
-              </div>
-            </details>
           </div>
         </div>
 
@@ -241,12 +221,7 @@
       pickedDongCode: document.getElementById('pickedDongCode'),
       typeChoices: document.getElementById('typeChoices'),
       tradeChoices: document.getElementById('tradeChoices'),
-      limitInput: document.getElementById('limitInput'),
       runBtn: document.getElementById('runBtn'),
-      apiBaseInput: document.getElementById('apiBaseInput'),
-      apiKeyInput: document.getElementById('apiKeyInput'),
-      saveConfigBtn: document.getElementById('saveConfigBtn'),
-      healthBtn: document.getElementById('healthBtn'),
       status: document.getElementById('status'),
       progress: document.getElementById('progress'),
       progressStage: document.getElementById('progressStage'),
@@ -281,33 +256,6 @@
     function escapeHtml(v){ return String(v == null ? '' : v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
     function setStatus(text,type){ els.status.textContent = text || ''; els.status.className = 'status' + (type ? ' ' + type : ''); }
     function toast(text){ els.toast.textContent = text || ''; els.toast.classList.add('show'); setTimeout(function(){ els.toast.classList.remove('show'); }, 1600); }
-
-    function loadConfig(){
-      els.apiBaseInput.value = localStorage.getItem('naverResearchApiBase') || '';
-      els.apiKeyInput.value = localStorage.getItem('naverResearchApiKey') || '';
-    }
-    function saveConfig(){
-      localStorage.setItem('naverResearchApiBase', String(els.apiBaseInput.value || '').trim().replace(/\/$/,''));
-      localStorage.setItem('naverResearchApiKey', String(els.apiKeyInput.value || '').trim());
-      toast('저장했습니다.');
-    }
-    function getApiBase(){ return String(els.apiBaseInput.value || localStorage.getItem('naverResearchApiBase') || '').trim().replace(/\/$/,''); }
-    function getApiKey(){ return String(els.apiKeyInput.value || localStorage.getItem('naverResearchApiKey') || '').trim(); }
-    function apiFetch(path, options){
-      var base = getApiBase();
-      var key = getApiKey();
-      if(!base) throw new Error('로컬 연결 주소를 입력하세요.');
-      options = options || {};
-      options.headers = Object.assign({ 'Content-Type':'application/json', 'X-Internal-Api-Key': key }, options.headers || {});
-      return fetch(base + path, options).then(function(res){
-        return res.text().then(function(text){
-          var data = {};
-          try{ data = text ? JSON.parse(text) : {}; }catch(e){ throw new Error('응답을 읽지 못했습니다.'); }
-          if(!res.ok || data.ok === false) throw new Error(data.message || data.error || '요청 실패');
-          return data;
-        });
-      });
-    }
 
     function openDongModal(){
       els.dongModal.classList.add('show');
@@ -485,7 +433,6 @@
 
     async function runResearch(){
       if(!picked || !picked.code){ openDongModal(); return; }
-      saveConfig();
       resetResults();
       currentJobId = '';
       if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
@@ -531,50 +478,6 @@
         els.runBtn.disabled = false;
       }
     }
-    async function pollJob(){
-      if(!currentJobId) return;
-      try{
-        var job = await apiFetch('/api/naver-research/jobs/' + encodeURIComponent(currentJobId), { method:'GET' });
-        setProgress(job);
-        if(job.status === 'done' || job.status === 'completed' || job.status === 'success'){
-          if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
-          await loadResults();
-          els.runBtn.disabled = false;
-        }else if(job.status === 'failed' || job.status === 'error'){
-          if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
-          els.runBtn.disabled = false;
-          setProgress(null);
-          setStatus(job.error || job.message || '조회 실패', 'err');
-        }
-      }catch(e){
-        if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
-        els.runBtn.disabled = false;
-        setProgress(null);
-        setStatus(e && e.message ? e.message : '진행 상태 확인 실패', 'err');
-      }
-    }
-    async function loadResults(){
-      try{
-        var data = await apiFetch('/api/naver-research/jobs/' + encodeURIComponent(currentJobId) + '/results', { method:'GET' });
-        var items = data.items || [];
-        renderResults(items);
-        setProgress(null);
-        setStatus('조회 완료 · ' + items.length + '건', items.length ? 'ok' : 'err');
-      }catch(e){
-        setStatus(e && e.message ? e.message : '결과 조회 실패', 'err');
-      }
-    }
-    async function healthCheck(){
-      saveConfig();
-      try{
-        var base = getApiBase();
-        if(!base) throw new Error('로컬 연결 주소를 입력하세요.');
-        var res = await fetch(base + '/health', { cache:'no-store' });
-        if(!res.ok) throw new Error('연결 실패');
-        toast('연결되었습니다.');
-      }catch(e){ setStatus(e && e.message ? e.message : '연결 실패', 'err'); }
-    }
-
     function toRows(items){
       var header = ['주소','거래유형','가격','물건유형','매물번호','PNU','상태','원문'];
       var rows = items.map(function(item){
@@ -620,13 +523,10 @@
       var btn = e.target.closest('[data-trade]'); if(!btn) return;
       selectedTrade = btn.getAttribute('data-trade'); setChoice(els.tradeChoices, 'data-trade', selectedTrade);
     });
-    els.saveConfigBtn.addEventListener('click', saveConfig);
-    els.healthBtn.addEventListener('click', healthCheck);
     els.runBtn.addEventListener('click', runResearch);
     els.copyTableBtn.addEventListener('click', copyTable);
     els.csvBtn.addEventListener('click', downloadCsv);
 
-    loadConfig();
     renderPickedDong();
     resetResults();
   </script>

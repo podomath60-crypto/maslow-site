@@ -113,12 +113,12 @@
             <div>
               <p class="section-title">물건유형</p>
               <div id="typeChoices" class="choice-grid">
-                <button class="choice" type="button" data-type="SG">상가</button>
-                <button class="choice" type="button" data-type="TJ">토지</button>
-                <button class="choice" type="button" data-type="SMS">사무실</button>
-                <button class="choice" type="button" data-type="GM">건물</button>
-                <button class="choice active" type="button" data-type="E02,E03">공장/창고</button>
-                <button class="choice" type="button" data-type="GJCG">지식산업센터</button>
+                <button class="choice" type="button" data-type="D02">상가</button>
+                <button class="choice" type="button" data-type="E03">토지</button>
+                <button class="choice" type="button" data-type="D01">사무실</button>
+                <button class="choice" type="button" data-type="D03,D04,E01,Z00">건물</button>
+                <button class="choice active" type="button" data-type="E02">공장/창고</button>
+                <button class="choice" type="button" data-type="E04">지식산업센터</button>
               </div>
             </div>
 
@@ -212,7 +212,7 @@
     var currentJobId = '';
     var pollTimer = null;
     var lastItems = [];
-    var selectedType = 'E02,E03';
+    var selectedType = 'E02';
     var selectedTrade = 'ALL';
 
     var els = {
@@ -349,9 +349,31 @@
     }
     function selectedTypeArray(){ return selectedType.split(',').filter(Boolean); }
     function selectedTradeArray(){ return selectedTrade === 'ALL' ? ['A1','B1','B2','B3'] : selectedTrade.split(',').filter(Boolean); }
+    var REAL_ESTATE_TYPE_LABELS = {
+      D02:'상가',
+      E03:'토지',
+      D01:'사무실',
+      'D03-D04-E01-Z00':'건물',
+      'D03,D04,E01,Z00':'건물',
+      E02:'공장/창고',
+      E04:'지식산업센터'
+    };
     function typeLabel(code){
-      var map = {SG:'상가',TJ:'토지',SMS:'사무실',GM:'건물','E02,E03':'공장/창고',GJCG:'지식산업센터'};
-      return map[code] || code;
+      return normalizeTypeLabel(code);
+    }
+    function normalizeTypeLabel(value){
+      var raw = String(value == null ? '' : value).trim();
+      if(!raw) return '';
+      if(REAL_ESTATE_TYPE_LABELS[raw]) return REAL_ESTATE_TYPE_LABELS[raw];
+      var key = raw.replace(/,/g, '-');
+      if(REAL_ESTATE_TYPE_LABELS[key]) return REAL_ESTATE_TYPE_LABELS[key];
+      var parts = key.split('-').filter(Boolean);
+      if(['D03','D04','E01','Z00'].every(function(code){ return parts.indexOf(code) !== -1; })) return '건물';
+      var labels = parts.map(function(code){ return REAL_ESTATE_TYPE_LABELS[code]; }).filter(Boolean);
+      if(labels.length){
+        return labels.filter(function(label, idx){ return labels.indexOf(label) === idx; }).join('/');
+      }
+      return raw;
     }
     function confidenceLabel(v){
       if(v === 'PNU_CONFIRMED') return '<span class="badge green">주소확인</span>';
@@ -360,7 +382,9 @@
     }
     function getTradeText(item){ return item.tradeTypeName || item.tradeType || item.tradeTypeCode || ''; }
     function getPriceText(item){ return item.priceText || item.price || item.dealOrWarrantPrc || item.rentPrc || ''; }
-    function getTypeText(item){ return item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || ''; }
+    function getTypeText(item){
+      return normalizeTypeLabel(item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || item.articleRealEstateTypeCode || item.displayType || '');
+    }
     function getArticleNo(item){ return item.articleNumber || item.articleNo || item.atclNo || ''; }
     function getAddressText(item){ return item.address || item.jibunAddress || item.roadAddress || item.estimatedAddress || ''; }
     function getNaverUrl(item){

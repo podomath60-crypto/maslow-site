@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
   <meta name="theme-color" content="#eef5ff" />
-  <title>매물추적 | 매슬로우</title>
+  <title>매물주소추적기 | 네이버부동산</title>
   <style>
     *{box-sizing:border-box}
     :root{--bg:#eef5ff;--card:#fff;--line:#dbeafe;--text:#111827;--muted:#6b7280;--blue:#2563eb;--blue2:#60a5fa;--green:#03c75a;--red:#dc2626;--shadow:0 18px 44px rgba(37,99,235,.1)}
@@ -27,6 +27,13 @@
     .dong-btn span{font-size:13px;color:#6b7280;white-space:nowrap}
     .dong-placeholder{color:#9ca3af!important;font-weight:900!important}
     .dong-btn:focus,.input:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(37,99,235,.11);outline:none}
+    .dong-trade-row{display:grid;grid-template-columns:2fr 1fr;gap:12px;align-items:end}
+    .trade-pick-box{min-height:64px;border:1px solid #d1d5db;background:#fff;border-radius:16px;padding:8px 10px;display:grid;gap:6px;align-content:center}
+    .trade-pick-title{font-size:12px;font-weight:950;color:#6b7280;line-height:1}
+    .trade-checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+    .trade-check{height:30px;border:1px solid #d1d5db;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:950;color:#374151;cursor:pointer;user-select:none}
+    .trade-check input{width:13px;height:13px;margin:0;accent-color:var(--blue)}
+    .trade-check.active{border-color:var(--blue);background:#eff6ff;color:#1d4ed8}
     .choice-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
     .choice{min-height:46px;border:1px solid #d1d5db;background:#fff;border-radius:14px;font-weight:950;color:#374151}
     .choice.active{border-color:var(--blue);background:#eff6ff;color:#1d4ed8;box-shadow:0 8px 18px rgba(37,99,235,.12)}
@@ -133,7 +140,7 @@
     .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:60;background:#111827;color:#fff;border-radius:999px;padding:12px 16px;font-weight:900;box-shadow:0 14px 34px rgba(0,0,0,.25);transition:.2s ease;pointer-events:none}
     .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
     @media(max-width:1200px){.desktop-layout{grid-template-columns:1fr}.side-panel{display:none}.wrap{max-width:980px}}
-    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:30px}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:64px 1fr}.favorite-toggle{width:64px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:1fr}}
+    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:30px}.dong-trade-row{grid-template-columns:1fr}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:64px 1fr}.favorite-toggle{width:64px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -150,8 +157,8 @@
 
         <div class="wrap">
         <div class="hero">
-          <div class="brand">MASLOW INTERNAL</div>
-          <h1>매물추적</h1>
+          <div class="brand">네이버부동산</div>
+          <h1>매물주소추적기</h1>
           <p class="desc">지역을 선택하고 물건유형을 고르면 내부 검토용 매물 목록을 정리합니다. 최종 안내 전에는 원문과 공적장부를 확인하세요.</p>
         </div>
 
@@ -159,10 +166,20 @@
           <div class="form-grid">
             <div>
               <p class="section-title">지역 선택</p>
-              <button id="dongPickBtn" class="dong-btn" type="button">
-                <strong id="pickedDongText" class="dong-placeholder">법정동 검색</strong>
-                <span id="pickedDongCode">동 이름을 입력해 선택</span>
-              </button>
+              <div class="dong-trade-row">
+                <button id="dongPickBtn" class="dong-btn" type="button">
+                  <strong id="pickedDongText" class="dong-placeholder">법정동 검색</strong>
+                  <span id="pickedDongCode">동 이름을 입력해 선택</span>
+                </button>
+                <div id="tradeChoices" class="trade-pick-box" aria-label="거래유형 선택">
+                  <div class="trade-pick-title">거래유형</div>
+                  <div class="trade-checks">
+                    <label class="trade-check active" data-trade="ALL"><input type="checkbox" checked />전체</label>
+                    <label class="trade-check" data-trade="SALE"><input type="checkbox" />매매</label>
+                    <label class="trade-check" data-trade="RENT"><input type="checkbox" />임대</label>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -267,9 +284,8 @@
         <input id="dongSearchInput" class="dong-search" type="search" placeholder="예: 오식도동, 군산 오식도, 5213014700" autocomplete="off" />
         <div class="quick-row">
           <button class="quick" type="button" data-q="오식도동">오식도동</button>
+          <button class="quick" type="button" data-q="산북동">산북동</button>
           <button class="quick" type="button" data-q="소룡동">소룡동</button>
-          <button class="quick" type="button" data-q="익산 팔봉동">익산 팔봉동</button>
-          <button class="quick" type="button" data-q="전주 팔복동">전주 팔복동</button>
         </div>
       </div>
       <div id="dongList" class="dong-list"></div>
@@ -315,7 +331,7 @@
       pickedDongText: document.getElementById('pickedDongText'),
       pickedDongCode: document.getElementById('pickedDongCode'),
       typeChoices: document.getElementById('typeChoices'),
-      tradeChoices: null,
+      tradeChoices: document.getElementById('tradeChoices'),
       favoriteToggleBtn: document.getElementById('favoriteToggleBtn'),
       favoriteCount: document.getElementById('favoriteCount'),
       favoriteList: document.getElementById('favoriteList'),
@@ -596,7 +612,7 @@
         autoRegion: true,
         autoPropertyType: true,
         propertyTypeNames: selectedTypeArray(),
-        tradeTypes: ['A1','B1','B2','B3']
+        tradeTypes: selectedTradeArray()
       };
     }
     function showTrackerRunning(message){
@@ -799,7 +815,11 @@
       });
     }
     function selectedTypeArray(){ return selectedType.split(',').filter(Boolean); }
-    function selectedTradeArray(){ return ['A1','B1','B2','B3']; }
+    function selectedTradeArray(){
+      if(selectedTrade === 'SALE') return ['A1'];
+      if(selectedTrade === 'RENT') return ['B1','B2','B3'];
+      return ['A1','B1','B2','B3'];
+    }
     var REAL_ESTATE_TYPE_LABELS = {
       D02:'상가',
       E03:'토지',
@@ -857,41 +877,27 @@
       var san = pnu.charAt(10) === '2' ? '산' : '';
       return san + String(bon) + (bu ? '-' + String(bu) : '');
     }
-    function bjdongNameByCode(code){
-      code = String(code || '').trim();
-      if(!/^\d{10}$/.test(code)) return '';
-      var items = getBjdongItems();
-      for(var i = 0; i < items.length; i += 1){
-        if(String(items[i].code || '').trim() === code){
-          return String(items[i].name || '').trim();
-        }
-      }
-      return '';
-    }
-    function pnuFromItem(item){
-      return String((item && (item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : ''))) || '').trim();
-    }
-    function addressFromBjdongAndPnu(item){
-      var pnu = pnuFromItem(item);
-      if(!/^\d{19}$/.test(pnu)) return '';
-      var dongName = bjdongNameByCode(pnu.slice(0, 10));
-      var tail = pnuJibunTail(pnu);
-      return (dongName && tail) ? (dongName + ' ' + tail) : '';
-    }
     function addressCandidate(value){
       var text = String(value || '').trim();
       if(!text) return '';
       if(/^\d{10,19}$/.test(text)) return '';
-      if(/^\d{10}\s+(?:산\s*)?\d+(?:-\d+)?$/.test(text)) return '';
       if(/주소\s*미확인|주소미확정|미확인/.test(text)) return '';
       return text;
     }
+    function addressFromLocalDongAndPnu(item){
+      var pnu = String((item && (item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : ''))) || '').trim();
+      if(!/^\d{19}$/.test(pnu)) return '';
+      if(!picked || !picked.name) return '';
+      if(picked.code && pnu.slice(0, 10) !== String(picked.code)) return '';
+      var tail = pnuJibunTail(pnu);
+      return tail ? (String(picked.name).trim() + ' ' + tail) : '';
+    }
     function getAddressText(item){
-      return addressFromBjdongAndPnu(item)
-        || addressCandidate(item && item.jibunAddress)
+      return addressCandidate(item && item.jibunAddress)
         || addressCandidate(item && Array.isArray(item.jibunAddresses) ? item.jibunAddresses[0] : '')
         || addressCandidate(item && item.roadAddress)
         || addressCandidate(item && item.estimatedAddress)
+        || addressFromLocalDongAndPnu(item)
         || addressCandidate(item && item.address)
         || '';
     }
@@ -1199,9 +1205,14 @@
     });
     if(els.tradeChoices){
       els.tradeChoices.addEventListener('click', function(e){
-        var btn = e.target.closest('[data-trade]'); if(!btn) return;
-        selectedTrade = 'ALL';
-        setChoice(els.tradeChoices, 'data-trade', selectedTrade);
+        var opt = e.target.closest('[data-trade]'); if(!opt) return;
+        selectedTrade = opt.getAttribute('data-trade') || 'ALL';
+        Array.prototype.forEach.call(els.tradeChoices.querySelectorAll('[data-trade]'), function(label){
+          var active = label.getAttribute('data-trade') === selectedTrade;
+          label.classList.toggle('active', active);
+          var input = label.querySelector('input');
+          if(input) input.checked = active;
+        });
       });
     }
     els.runBtn.addEventListener('click', runResearch);

@@ -857,27 +857,41 @@
       var san = pnu.charAt(10) === '2' ? '산' : '';
       return san + String(bon) + (bu ? '-' + String(bu) : '');
     }
+    function bjdongNameByCode(code){
+      code = String(code || '').trim();
+      if(!/^\d{10}$/.test(code)) return '';
+      var items = getBjdongItems();
+      for(var i = 0; i < items.length; i += 1){
+        if(String(items[i].code || '').trim() === code){
+          return String(items[i].name || '').trim();
+        }
+      }
+      return '';
+    }
+    function pnuFromItem(item){
+      return String((item && (item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : ''))) || '').trim();
+    }
+    function addressFromBjdongAndPnu(item){
+      var pnu = pnuFromItem(item);
+      if(!/^\d{19}$/.test(pnu)) return '';
+      var dongName = bjdongNameByCode(pnu.slice(0, 10));
+      var tail = pnuJibunTail(pnu);
+      return (dongName && tail) ? (dongName + ' ' + tail) : '';
+    }
     function addressCandidate(value){
       var text = String(value || '').trim();
       if(!text) return '';
       if(/^\d{10,19}$/.test(text)) return '';
+      if(/^\d{10}\s+(?:산\s*)?\d+(?:-\d+)?$/.test(text)) return '';
       if(/주소\s*미확인|주소미확정|미확인/.test(text)) return '';
       return text;
     }
-    function addressFromLocalDongAndPnu(item){
-      var pnu = String((item && (item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : ''))) || '').trim();
-      if(!/^\d{19}$/.test(pnu)) return '';
-      if(!picked || !picked.name) return '';
-      if(picked.code && pnu.slice(0, 10) !== String(picked.code)) return '';
-      var tail = pnuJibunTail(pnu);
-      return tail ? (String(picked.name).trim() + ' ' + tail) : '';
-    }
     function getAddressText(item){
-      return addressCandidate(item && item.jibunAddress)
+      return addressFromBjdongAndPnu(item)
+        || addressCandidate(item && item.jibunAddress)
         || addressCandidate(item && Array.isArray(item.jibunAddresses) ? item.jibunAddresses[0] : '')
         || addressCandidate(item && item.roadAddress)
         || addressCandidate(item && item.estimatedAddress)
-        || addressFromLocalDongAndPnu(item)
         || addressCandidate(item && item.address)
         || '';
     }

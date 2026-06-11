@@ -31,10 +31,11 @@
     .choice{min-height:46px;border:1px solid #d1d5db;background:#fff;border-radius:14px;font-weight:950;color:#374151}
     .choice.active{border-color:var(--blue);background:#eff6ff;color:#1d4ed8;box-shadow:0 8px 18px rgba(37,99,235,.12)}
     .trade-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-    .input-row{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:10px}
+    .input-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
     .input{height:52px;border:1px solid #d1d5db;background:#fff;border-radius:15px;padding:0 14px;outline:none;color:#111827}
     .run-btn{height:54px;border:0;border-radius:16px;background:var(--blue);color:#fff;font-weight:950;box-shadow:0 10px 22px rgba(37,99,235,.24)}
     .run-btn:disabled{opacity:.55;cursor:not-allowed}
+    .refresh-btn{height:54px;border-radius:16px;font-weight:950}
     .sub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-top:12px}
     .small-actions{display:flex;gap:8px;flex-wrap:wrap}
     .ghost-btn{height:40px;padding:0 12px;border-radius:12px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
@@ -133,6 +134,7 @@
 
             <div class="input-row">
               <button id="runBtn" class="run-btn" type="button">조회</button>
+              <button id="refreshStatusBtn" class="ghost-btn refresh-btn" type="button">결과 새로고침</button>
             </div>
           </div>
         </div>
@@ -222,6 +224,7 @@
       typeChoices: document.getElementById('typeChoices'),
       tradeChoices: document.getElementById('tradeChoices'),
       runBtn: document.getElementById('runBtn'),
+      refreshStatusBtn: document.getElementById('refreshStatusBtn'),
       status: document.getElementById('status'),
       progress: document.getElementById('progress'),
       progressStage: document.getElementById('progressStage'),
@@ -249,14 +252,18 @@
     var TRACKER_API_BASE = 'https://tracker.sf-farm.store';
     var TRACKER_LIMIT = 100;
     var TRACKER_DURATION_SEC = 300;
-    var TRACKER_PENDING_KEY = 'maslow_tracker_pending_v1';
-    var TRACKER_RESULT_KEY = 'maslow_tracker_result_v1';
+    var TRACKER_PENDING_KEY = 'maslow_tracker_pending_v2';
+    var TRACKER_RESULT_KEY = 'maslow_tracker_result_v2';
 
-    function saveTrackerPending(payload){
+    function clearTrackerPending(){
+      try{ localStorage.removeItem(TRACKER_PENDING_KEY); }catch(e){}
+    }
+    function saveTrackerPending(jobId, payload){
       try{
         localStorage.setItem(TRACKER_PENDING_KEY, JSON.stringify({
           status:'running',
-          payload:payload,
+          jobId: jobId || '',
+          payload: payload || null,
           startedAt:new Date().toISOString()
         }));
         localStorage.removeItem(TRACKER_RESULT_KEY);
@@ -266,10 +273,19 @@
       try{
         localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify({
           status:'completed',
+          jobId: data && data.jobId ? data.jobId : '',
           data:data,
           finishedAt:new Date().toISOString()
         }));
-        localStorage.removeItem(TRACKER_PENDING_KEY);
+        if(data && data.jobId){
+          localStorage.setItem(TRACKER_PENDING_KEY, JSON.stringify({
+            status:'completed',
+            jobId:data.jobId,
+            finishedAt:new Date().toISOString()
+          }));
+        }else{
+          localStorage.removeItem(TRACKER_PENDING_KEY);
+        }
       }catch(e){}
     }
     function readTrackerPending(){
@@ -295,32 +311,101 @@
       };
     }
     function showTrackerRunning(message){
-      setStatus(message || '조회중입니다. 완료 전이면 새로고침해도 조회중으로 표시됩니다.', '');
+      setStatus(message || '조회중입니다. 잠시 후 새로고침 버튼으로 확인하세요.', '');
       setProgress({ status:'running', foundArticles:0, resolvedPnu:0, stage:'조회중' });
       els.empty.style.display = 'block';
-      els.empty.textContent = '조회중입니다. 완료 후 새로고침하거나 결과가 돌아오면 목록이 표시됩니다.';
+      els.empty.textContent = '조회중입니다. 브라우저 새로고침을 해도 작업은 서버에서 계속 진행됩니다. 결과 새로고침 버튼으로 확인하세요.';
       els.tableWrap.classList.remove('show');
       els.summary.classList.remove('show');
       els.resultActions.style.display = 'none';
     }
+    function applyTrackerResult(data, prefix){
+      var items = data.items || data.finalArticleRecords || [];
+      saveTrackerResult(data);
+      renderResults(items);
+      setProgress(null);
+      setStatus((prefix || '조회 완료') + ' · ' + items.length + '건', items.length ? 'ok' : 'err');
+      return items;
+    }
+    async function fetchJson(url, options){
+      return fetch(url, options || {}).then(function(res){
+        return res.text().then(function(text){
+          var parsed = {};
+          try{ parsed = text ? JSON.parse(text) : {}; }catch(e){ throw new Error('응답을 읽지 못했습니다.'); }
+          if(!res.ok || parsed.ok === false){
+            throw new Error(parsed.message || parsed.error || (parsed.detail && parsed.detail.message) || '요청 실패');
+          }
+          return parsed;
+        });
+      });
+    }
+    async function checkTrackerStatus(jobId, manual){
+      jobId = String(jobId || '').trim();
+      if(!jobId){
+        var pending = readTrackerPending();
+        jobId = pending && pending.jobId ? pending.jobId : '';
+      }
+      if(!jobId){
+        if(manual) setStatus('확인할 조회 작업이 없습니다.', 'err');
+        return null;
+      }
+
+      showTrackerRunning('조회 상태를 확인하고 있습니다.');
+      try{
+        var data = await fetchJson(TRACKER_API_BASE + '/api/tracker/status/' + encodeURIComponent(jobId), {
+          method:'GET'
+        });
+
+        if(data.status === 'completed'){
+          applyTrackerResult(data, '조회 완료');
+          return data;
+        }
+
+        if(data.status === 'failed' || data.ok === false){
+          clearTrackerPending();
+          setProgress(null);
+          setStatus(data.message || data.error || '조회 실패', 'err');
+          els.empty.style.display = 'block';
+          els.empty.textContent = data.message || data.error || '조회 실패';
+          return data;
+        }
+
+        saveTrackerPending(jobId, data.input || ((readTrackerPending() || {}).payload || null));
+        showTrackerRunning('아직 조회중입니다. 잠시 후 결과 새로고침 버튼으로 다시 확인하세요.');
+        return data;
+      }catch(e){
+        setProgress(null);
+        setStatus(e && e.message ? e.message : '조회 상태 확인 실패', 'err');
+        return null;
+      }
+    }
     function restoreTrackerState(){
+      var pending = readTrackerPending();
+      if(pending && pending.payload && pending.payload.legalDongName){
+        picked = { name: pending.payload.legalDongName, code: pending.payload.legalDongCode || '' };
+        renderPickedDong();
+      }
+
+      if(pending && pending.jobId && pending.status !== 'completed'){
+        showTrackerRunning('이전 조회가 진행 중입니다. 결과 새로고침 버튼으로 확인하세요.');
+        checkTrackerStatus(pending.jobId, false);
+        return true;
+      }
+
       var savedResult = readTrackerResult();
       if(savedResult && savedResult.data){
-        var items = savedResult.data.items || savedResult.data.finalArticleRecords || [];
+        var data = savedResult.data;
+        if(data && data.input && data.input.legalDongName){
+          picked = { name: data.input.legalDongName, code: data.input.legalDongCode || '' };
+          renderPickedDong();
+        }
+        var items = data.items || data.finalArticleRecords || [];
         renderResults(items);
         setProgress(null);
         setStatus('최근 조회 완료 · ' + items.length + '건', items.length ? 'ok' : 'err');
         return true;
       }
-      var pending = readTrackerPending();
-      if(pending && pending.status === 'running'){
-        if(pending.payload && pending.payload.legalDongName){
-          picked = { name: pending.payload.legalDongName, code: pending.payload.legalDongCode || '' };
-          renderPickedDong();
-        }
-        showTrackerRunning('조회중입니다. 서버 작업이 끝나기 전이면 이 상태로 표시됩니다. 잠시 후 새로고침해서 확인하세요.');
-        return true;
-      }
+
       return false;
     }
 
@@ -536,34 +621,31 @@
       if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
 
       var payload = buildTrackerPayload();
-      saveTrackerPending(payload);
-      els.runBtn.disabled = false;
-      showTrackerRunning('조회 요청을 보냈습니다. 화면은 계속 기다리지 않습니다. 완료 전이면 새로고침해도 조회중으로 표시됩니다.');
+      els.runBtn.disabled = true;
+      showTrackerRunning('조회 작업을 시작하고 있습니다.');
 
-      fetch(TRACKER_API_BASE + '/api/tracker/run-manual', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify(payload)
-      }).then(function(res){
-        return res.text().then(function(text){
-          var parsed = {};
-          try{ parsed = text ? JSON.parse(text) : {}; }catch(e){ throw new Error('응답을 읽지 못했습니다.'); }
-          if(!res.ok || parsed.ok === false) throw new Error(parsed.message || parsed.error || '조회 요청 실패');
-          return parsed;
+      try{
+        var data = await fetchJson(TRACKER_API_BASE + '/api/tracker/start-manual', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
         });
-      }).then(function(data){
+
         currentJobId = data.jobId || '';
-        var items = data.items || data.finalArticleRecords || [];
-        saveTrackerResult(data);
-        renderResults(items);
+        if(!currentJobId) throw new Error('jobId를 받지 못했습니다.');
+
+        saveTrackerPending(currentJobId, payload);
+        showTrackerRunning('조회중입니다. 서버에서 작업을 계속 진행합니다. 잠시 후 결과 새로고침 버튼으로 확인하세요.');
+        toast('조회 작업을 시작했습니다.');
+      }catch(e){
+        clearTrackerPending();
         setProgress(null);
-        setStatus('조회 완료 · ' + items.length + '건', items.length ? 'ok' : 'err');
-      }).catch(function(e){
-        // 브라우저/프록시 타임아웃이나 네트워크 끊김이 나도 프론트에서는 실패로 닫지 않는다.
-        // 서버 작업이 계속 진행 중일 수 있으므로 사용자가 새로고침하면 조회중 상태를 유지한다.
-        showTrackerRunning('조회중입니다. 응답 대기 중 연결이 끊겨도 실패로 처리하지 않습니다. 잠시 후 새로고침해서 확인하세요.');
-      });
+        setStatus(e && e.message ? e.message : '조회 요청 실패', 'err');
+      }finally{
+        els.runBtn.disabled = false;
+      }
     }
+
     function toRows(items){
       var header = ['주소','거래유형','가격','물건유형','매물번호','PNU','상태','원문'];
       var rows = items.map(function(item){
@@ -610,6 +692,7 @@
       selectedTrade = btn.getAttribute('data-trade'); setChoice(els.tradeChoices, 'data-trade', selectedTrade);
     });
     els.runBtn.addEventListener('click', runResearch);
+    els.refreshStatusBtn.addEventListener('click', function(){ checkTrackerStatus('', true); });
     els.copyTableBtn.addEventListener('click', copyTable);
     els.csvBtn.addEventListener('click', downloadCsv);
 

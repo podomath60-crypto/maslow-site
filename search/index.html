@@ -80,6 +80,15 @@
     .badge{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:950;white-space:nowrap;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
     .badge.gray{background:#f3f4f6;color:#374151;border-color:#e5e7eb}
     .badge.green{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+    tr.favorite-row td{background:#fff1f7 !important}
+    tr.favorite-row td:first-child{box-shadow:inset 4px 0 0 #ec4899}
+    .result-favorite-chip{position:relative;cursor:pointer;user-select:none;transition:transform .15s ease,background .15s ease,border-color .15s ease,color .15s ease;overflow:visible}
+    .result-favorite-chip:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(236,72,153,.14)}
+    .result-favorite-chip.is-favorite{background:#fce7f3;color:#be185d;border-color:#f9a8d4;border-radius:8px}
+    .result-favorite-chip.is-favorite.just-favorited{animation:favoriteChipPop .42s ease-out}
+    .result-favorite-chip.is-favorite.just-favorited::after{content:'♥';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:24px;color:#ec4899;pointer-events:none;animation:favoriteHeartBurst .58s ease-out forwards}
+    @keyframes favoriteChipPop{0%{transform:scale(.88)}45%{transform:scale(1.12)}100%{transform:scale(1)}}
+    @keyframes favoriteHeartBurst{0%{opacity:0;transform:translate(-50%,-50%) scale(.35)}35%{opacity:1;transform:translate(-50%,-130%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-230%) scale(.72)}}
     .link-btn{height:34px;padding:0 10px;border-radius:10px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
     .article-no-btn{border:0;background:transparent;color:#1d4ed8;font-size:13px;font-weight:950;text-decoration:underline;text-underline-offset:3px;padding:4px 0;cursor:pointer}
     .article-no-btn:hover{color:#1e40af}
@@ -421,7 +430,7 @@
     var TRACKER_RESULT_KEY = 'maslow_tracker_result_v2';
     var TRACKER_HISTORY_KEY = 'maslow_tracker_history_v1';
     var TRACKER_FAVORITES_KEY = 'maslow_tracker_favorites_v1';
-    var MAX_HISTORY_ITEMS = 50;
+    var MAX_HISTORY_ITEMS = 30;
     var MAX_FAVORITE_ITEMS = 10;
 
 
@@ -950,6 +959,88 @@
       return normalizeTypeLabel(item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || item.articleRealEstateTypeCode || item.displayType || '');
     }
     function getArticleNo(item){ return item.articleNumber || item.articleNo || item.atclNo || ''; }
+    function isResultFavorite(item){
+      return !!(item && (item._favorite === true || item._favorite === 'true' || item.favorite === true));
+    }
+    function getFavoriteKey(item){
+      if(!item || typeof item !== 'object') return '';
+      var no = String(getArticleNo(item) || '').trim();
+      if(no) return 'no:' + no;
+      var pnu = String((item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : '')) || '').trim();
+      var price = String(getPriceText(item) || '').trim();
+      var trade = String(getTradeText(item) || '').trim();
+      if(pnu) return ['pnu', pnu, price, trade].join('|');
+      var addr = String(getAddressText(item) || '').trim();
+      return ['addr', addr, price, trade].join('|');
+    }
+    function setFavoriteOnItemArray(items, key, value){
+      var changed = false;
+      if(!Array.isArray(items) || !key) return false;
+      items.forEach(function(item){
+        if(!item || typeof item !== 'object') return;
+        if(getFavoriteKey(item) !== key) return;
+        item._favorite = !!value;
+        changed = true;
+      });
+      return changed;
+    }
+    function setFavoriteOnResultObject(result, key, value){
+      var changed = false;
+      if(!result || typeof result !== 'object') return false;
+      if(result.data && typeof result.data === 'object'){
+        changed = setFavoriteOnItemArray(result.data.items, key, value) || changed;
+        changed = setFavoriteOnItemArray(result.data.finalArticleRecords, key, value) || changed;
+      }
+      changed = setFavoriteOnItemArray(result.items, key, value) || changed;
+      changed = setFavoriteOnItemArray(result.finalArticleRecords, key, value) || changed;
+      return changed;
+    }
+    function syncFavoriteToLocalStorage(key, value){
+      if(!key) return;
+      try{
+        var stored = readTrackerResult();
+        if(stored && setFavoriteOnResultObject(stored, key, value)){
+          localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify(stored));
+        }
+      }catch(e){}
+      try{
+        var history = readHistory();
+        var changed = false;
+        history.forEach(function(entry){
+          if(!entry) return;
+          if(setFavoriteOnResultObject(entry.result, key, value)) changed = true;
+        });
+        if(changed) writeLocalArray(TRACKER_HISTORY_KEY, history);
+      }catch(e){}
+    }
+    function favoriteChipHtml(item){
+      if(isResultFavorite(item)) return '<span class="badge result-favorite-chip is-favorite" data-favorite-key="' + escapeHtml(getFavoriteKey(item)) + '">♥ 찜</span>';
+      return String(confidenceLabel(item)).replace('<span class="badge', '<span class="badge result-favorite-chip" data-favorite-key="' + escapeHtml(getFavoriteKey(item)) + '"');
+    }
+    function toggleResultFavoriteByKey(key){
+      if(!key) return;
+      var target = null;
+      (lastItems || []).some(function(item){
+        if(getFavoriteKey(item) === key){ target = item; return true; }
+        return false;
+      });
+      if(!target) return;
+      var next = !isResultFavorite(target);
+      setFavoriteOnItemArray(lastItems, key, next);
+      setFavoriteOnItemArray(filteredItems, key, next);
+      syncFavoriteToLocalStorage(key, next);
+      renderFilteredResults();
+      if(next){
+        var chip = els.resultBody.querySelector('[data-favorite-key="' + cssEscapeValue(key) + '"]');
+        if(chip){ chip.classList.add('just-favorited'); setTimeout(function(){ chip.classList.remove('just-favorited'); }, 700); }
+      }
+      toast(next ? '찜 표시했습니다.' : '찜 해제했습니다.');
+    }
+    function cssEscapeValue(value){
+      value = String(value || '');
+      if(window.CSS && CSS.escape) return CSS.escape(value);
+      return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    }
     function pnuJibunTail(pnu){
       pnu = String(pnu || '').trim();
       if(!/^\d{19}$/.test(pnu)) return '';
@@ -1203,8 +1294,9 @@
         var mapBtn = addr && addr !== '주소 미확인'
           ? '<button class="naver-map-btn" type="button" title="네이버지도에서 주소 검색" data-map-address="' + escapeHtml(addr) + '" aria-label="네이버지도에서 주소 검색"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2.75c-3.05 0-5.5 2.36-5.5 5.28 0 3.93 5.5 13.22 5.5 13.22s5.5-9.29 5.5-13.22c0-2.92-2.45-5.28-5.5-5.28Zm0 7.42a2.05 2.05 0 1 1 0-4.1 2.05 2.05 0 0 1 0 4.1Z"/></svg></button>'
           : '';
-        return '<tr>' +
-          '<td>' + confidenceLabel(item) + '</td>' +
+        var favRowClass = isResultFavorite(item) ? ' class="favorite-row"' : '';
+        return '<tr' + favRowClass + '>' +
+          '<td>' + favoriteChipHtml(item) + '</td>' +
           '<td><div class="addr">' + escapeHtml(addr) + '</div>' + pnu + '</td>' +
           '<td class="map-cell">' + mapBtn + '</td>' +
           '<td>' + escapeHtml(getTradeText(item) || '-') + '</td>' +
@@ -1311,7 +1403,7 @@
     function buildResultTxtFileName(){
       var d = new Date();
       var pad = function(n){ return String(n).padStart(2, '0'); };
-      return 'maslow-search-all-results-' + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + '.txt';
+      return 'maslow-search-result-' + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + '.txt';
     }
     function downloadTextFile(text, filename){
       // 브라우저 기본 다운로드 방식 사용: 폴더 선택 API(showSaveFilePicker) 없이
@@ -1344,145 +1436,33 @@
         })
       };
     }
-    function buildTransferMetaFromHistoryItem(item){
-      item = item || {};
-      var payload = item.payload || {};
-      var dong = item.dong || {
-        name: payload.legalDongName || '',
-        code: payload.legalDongCode || ''
-      };
-      var selectedTypeText = item.selectedType || (Array.isArray(payload.propertyTypeNames) ? payload.propertyTypeNames.join(',') : '');
-      var selectedTradeText = item.selectedTrade || '';
-      var selectedTradeTypes = Array.isArray(item.selectedTradeTypes) ? item.selectedTradeTypes : (Array.isArray(payload.tradeTypes) ? payload.tradeTypes : []);
-      return {
-        dong: { name: dong.name || '', code: dong.code || '' },
-        selectedType: selectedTypeText || '',
-        selectedTrade: selectedTradeText || '',
-        selectedTradeTypes: selectedTradeTypes,
-        query: item.query || currentQueryLabel({
-          legalDongName: dong.name || '',
-          legalDongCode: dong.code || '',
-          propertyTypeNames: selectedTypeText ? selectedTypeText.split(',').filter(Boolean) : [],
-          tradeTypes: selectedTradeTypes
-        }),
-        sourceHistoryId: item.id || '',
-        sourceJobId: item.jobId || ''
-      };
-    }
-    function wrapTrackerDataForTransfer(data, jobId, finishedAt){
-      return {
-        status: 'completed',
-        jobId: jobId || (data && data.jobId) || '',
-        data: data || {},
-        finishedAt: finishedAt || new Date().toISOString()
-      };
-    }
-    function trackerResultItemCount(stored){
-      var data = stored && stored.data ? stored.data : {};
-      var items = data.items || data.finalArticleRecords || [];
-      return Array.isArray(items) ? items.length : 0;
-    }
-    function savedTrackerExportKey(stored, meta){
-      var jobId = String((stored && stored.jobId) || (meta && meta.sourceJobId) || '').trim();
-      if(jobId) return 'job:' + jobId;
-      var data = stored && stored.data ? stored.data : {};
-      var input = data.input || data.payload || {};
-      var itemCount = trackerResultItemCount(stored);
-      var q = (meta && meta.query) || input.legalDongName || '';
-      var t = (meta && meta.selectedType) || (Array.isArray(input.propertyTypeNames) ? input.propertyTypeNames.join(',') : '');
-      var tr = (meta && meta.selectedTrade) || (Array.isArray(input.tradeTypes) ? input.tradeTypes.join(',') : '');
-      return ['manual', q, t, tr, itemCount, stored && stored.finishedAt || ''].join('|');
-    }
-    function collectSavedTrackerResultsForExport(){
-      var rows = [];
-      var seen = {};
-
-      function addStored(stored, meta){
-        if(!stored || !stored.data) return;
-        if(!trackerResultItemCount(stored)) return;
-        var key = savedTrackerExportKey(stored, meta);
-        if(seen[key]) return;
-        seen[key] = true;
-        rows.push({
-          meta: meta || {},
-          trackerResult: stored
-        });
-      }
-
-      // 1) 최근 조회결과
-      try{
-        var raw = localStorage.getItem(TRACKER_RESULT_KEY) || '';
-        if(raw){
-          var latest = JSON.parse(raw);
-          addStored(latest, buildTransferMetaForExport());
-        }
-      }catch(e){}
-
-      // 2) 오른쪽 조회이력에 저장된 완료 결과 전체
-      readHistory().forEach(function(item){
-        if(!item || item.status !== 'completed' || !item.result) return;
-        addStored(
-          wrapTrackerDataForTransfer(item.result, item.jobId || (item.result && item.result.jobId) || '', item.updatedAt || item.createdAt || ''),
-          buildTransferMetaFromHistoryItem(item)
-        );
-      });
-
-      return rows;
-    }
     function exportTrackerResultTxt(){
+      var raw = '';
+      try{ raw = localStorage.getItem(TRACKER_RESULT_KEY) || ''; }catch(e){}
+      if(!raw){
+        setStatus('내보낼 조회결과가 없습니다.', 'err');
+        toast('내보낼 조회결과가 없습니다.');
+        return;
+      }
       try{
-        var resultRows = collectSavedTrackerResultsForExport();
-        if(!resultRows.length){
-          setStatus('내보낼 저장 매물이 없습니다.', 'err');
-          toast('내보낼 저장 매물이 없습니다.');
-          return;
-        }
-
-        var totalItems = resultRows.reduce(function(sum, row){ return sum + trackerResultItemCount(row.trackerResult); }, 0);
+        var stored = JSON.parse(raw);
         var payload = {
           app: 'maslow-search',
-          version: 2,
+          version: 1,
           type: 'tracker-result',
-          exportScope: 'all-local-results',
           exportedAt: new Date().toISOString(),
-          resultCount: resultRows.length,
-          itemCount: totalItems,
-          trackerResults: resultRows,
-          // 구버전 가져오기 호환용: 첫 번째 결과도 같이 둔다.
-          meta: resultRows[0].meta || {},
-          trackerResult: resultRows[0].trackerResult
+          meta: buildTransferMetaForExport(),
+          trackerResult: stored
         };
-
         downloadTextFile(JSON.stringify(payload, null, 2), buildResultTxtFileName());
-        setStatus('저장된 조회결과 전체를 TXT 파일로 내보냈습니다. · 이력 ' + resultRows.length + '개 / 매물 ' + totalItems + '건', 'ok');
-        toast('저장 매물 전체 TXT를 저장했습니다.');
+        setStatus('조회결과 TXT 파일을 내보냈습니다.', 'ok');
+        toast('조회결과 TXT를 저장했습니다.');
       }catch(e){
         setStatus('저장된 조회결과를 읽지 못했습니다.', 'err');
       }
     }
-    function normalizeImportedTrackerEntries(payload){
-      var entries = [];
-      if(payload && Array.isArray(payload.trackerResults)){
-        payload.trackerResults.forEach(function(row){
-          if(row && row.trackerResult && row.trackerResult.data){
-            entries.push({
-              meta: row.meta || {},
-              trackerResult: row.trackerResult
-            });
-          }
-        });
-      }
-      if(!entries.length && payload && payload.trackerResult && payload.trackerResult.data){
-        entries.push({
-          meta: payload.meta || {},
-          trackerResult: payload.trackerResult
-        });
-      }
-      return entries;
-    }
-    function buildImportedHistoryEntry(row, index){
-      var stored = row && row.trackerResult ? row.trackerResult : {};
-      var meta = (row && row.meta) || {};
+    function addImportedTrackerResultToHistory(stored, payload){
+      var meta = (payload && payload.meta) || {};
       var data = (stored && stored.data) || {};
       var input = data.input || data.payload || {};
       var dong = meta.dong || {
@@ -1494,7 +1474,6 @@
 
       var selectedTradeText = meta.selectedTrade || '';
       var selectedTradeTypes = Array.isArray(meta.selectedTradeTypes) ? meta.selectedTradeTypes : [];
-      if(!selectedTradeTypes.length && Array.isArray(input.tradeTypes)) selectedTradeTypes = input.tradeTypes;
       if(!selectedTradeTypes.length && selectedTradeText){
         if(selectedTradeText === 'SALE') selectedTradeTypes = ['A1'];
         else if(selectedTradeText === 'RENT') selectedTradeTypes = ['B1','B2','B3'];
@@ -1508,10 +1487,11 @@
         tradeTypes: selectedTradeTypes
       });
 
-      return {
+      var history = readHistory();
+      var entry = {
         id: localId(),
         jobId: '',
-        query: query || ('가져온 조회결과 ' + (index + 1)),
+        query: query || '가져온 조회결과',
         dong: { name: dong.name || '', code: dong.code || '' },
         selectedType: selectedTypeText,
         selectedTrade: selectedTradeText,
@@ -1529,41 +1509,27 @@
         imported: true,
         importedAt: new Date().toISOString()
       };
-    }
-    function addImportedTrackerResultsToHistory(entries){
-      var imported = entries.map(buildImportedHistoryEntry);
-      var history = readHistory();
-      history = imported.concat(history);
-      selectedHistoryId = imported.length ? imported[0].id : '';
+      history.unshift(entry);
+      selectedHistoryId = entry.id;
       saveHistory(history);
-      return imported;
+      return entry;
     }
     function restoreImportedTrackerResult(stored, payload){
-      // 구버전 함수명 유지. 내부는 단일/다중 TXT 모두 처리한다.
-      var entries = normalizeImportedTrackerEntries(payload || { trackerResult: stored });
-      if(!entries.length) throw new Error('missing result');
-
-      var firstStored = entries[0].trackerResult;
-      localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify(firstStored));
+      if(!stored || !stored.data) throw new Error('missing result');
+      localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify(stored));
       localStorage.removeItem(TRACKER_PENDING_KEY);
       currentJobId = '';
-
-      var imported = addImportedTrackerResultsToHistory(entries);
-      var firstEntry = imported[0];
-
-      if(firstEntry && firstEntry.dong && firstEntry.dong.name){ picked = firstEntry.dong; renderPickedDong(); }
-      if(firstEntry && firstEntry.selectedType){ selectedType = firstEntry.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
-      if(firstEntry && firstEntry.selectedTrade){ setTradeChoice(firstEntry.selectedTrade); }
-
-      var data = firstStored.data || {};
+      var entry = addImportedTrackerResultToHistory(stored, payload || {});
+      if(entry.dong && entry.dong.name){ picked = entry.dong; renderPickedDong(); }
+      if(entry.selectedType){ selectedType = entry.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
+      if(entry.selectedTrade){ setTradeChoice(entry.selectedTrade); }
+      var data = stored.data || {};
       var items = data.items || data.finalArticleRecords || [];
       renderResults(items);
       renderHistory();
       setProgress(null);
-
-      var totalItems = entries.reduce(function(sum, row){ return sum + trackerResultItemCount(row.trackerResult); }, 0);
-      setStatus('저장 매물을 가져왔습니다. 오른쪽 조회이력에 반영했습니다. · 이력 ' + entries.length + '개 / 매물 ' + totalItems + '건', totalItems ? 'ok' : 'err');
-      toast('저장 매물을 가져왔습니다.');
+      setStatus('조회결과를 가져왔습니다. 오른쪽 조회이력에도 추가했습니다. · ' + lastItems.length + '건', lastItems.length ? 'ok' : 'err');
+      toast('조회결과를 가져왔습니다.');
     }
     function importTrackerResultTxtFile(file){
       if(!file) return;
@@ -1593,7 +1559,7 @@
     if(els.importResultTxtInput) els.importResultTxtInput.addEventListener('change', function(e){
       var file = e.target.files && e.target.files[0];
       if(!file) return;
-      if(!confirm('선택한 TXT 파일의 저장 매물을 현재 브라우저 조회이력에 추가하고 최근 조회결과로 복원합니다. 계속할까요?')){
+      if(!confirm('선택한 TXT 파일의 조회결과로 현재 조회결과를 교체합니다. 계속할까요?')){
         els.importResultTxtInput.value = '';
         return;
       }
@@ -1628,6 +1594,13 @@
     els.copyTableBtn.addEventListener('click', copyTable);
     els.csvBtn.addEventListener('click', downloadCsv);
     els.resultBody.addEventListener('click', function(e){
+      var favoriteChip = e.target.closest('[data-favorite-key]');
+      if(favoriteChip){
+        e.preventDefault();
+        e.stopPropagation();
+        toggleResultFavoriteByKey(favoriteChip.getAttribute('data-favorite-key') || '');
+        return;
+      }
       var mapBtn = e.target.closest('[data-map-address]');
       if(mapBtn){
         openNaverMapAddress(mapBtn.getAttribute('data-map-address') || '');

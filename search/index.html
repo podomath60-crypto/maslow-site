@@ -430,6 +430,7 @@
     var TRACKER_RESULT_KEY = 'maslow_tracker_result_v2';
     var TRACKER_HISTORY_KEY = 'maslow_tracker_history_v1';
     var TRACKER_FAVORITES_KEY = 'maslow_tracker_favorites_v1';
+    var TRACKER_FAVORITE_KEYS_KEY = 'maslow_tracker_favorite_keys_v1';
     var MAX_HISTORY_ITEMS = 50;
     var MAX_FAVORITE_ITEMS = 10;
 
@@ -959,8 +960,30 @@
       return normalizeTypeLabel(item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || item.articleRealEstateTypeCode || item.displayType || '');
     }
     function getArticleNo(item){ return item.articleNumber || item.articleNo || item.atclNo || ''; }
+    function readFavoriteKeyMap(){
+      try{
+        var map = JSON.parse(localStorage.getItem(TRACKER_FAVORITE_KEYS_KEY) || '{}');
+        return map && typeof map === 'object' && !Array.isArray(map) ? map : {};
+      }catch(e){ return {}; }
+    }
+    function writeFavoriteKeyMap(map){
+      try{ localStorage.setItem(TRACKER_FAVORITE_KEYS_KEY, JSON.stringify(map || {})); }catch(e){}
+    }
+    function setFavoriteKeyPersisted(key, value){
+      if(!key) return;
+      var map = readFavoriteKeyMap();
+      if(value) map[key] = true;
+      else delete map[key];
+      writeFavoriteKeyMap(map);
+    }
+    function hasFavoriteFlag(item){
+      return !!(item && (item._favorite === true || item._favorite === 'true' || item.favorite === true || item.favorite === 'true'));
+    }
     function isResultFavorite(item){
-      return !!(item && (item._favorite === true || item._favorite === 'true' || item.favorite === true));
+      if(hasFavoriteFlag(item)) return true;
+      var key = getFavoriteKey(item);
+      if(!key) return false;
+      return !!readFavoriteKeyMap()[key];
     }
     function getFavoriteKey(item){
       if(!item || typeof item !== 'object') return '';
@@ -1013,7 +1036,7 @@
     function collectFavoriteKeysFromResultObject(result, out){
       out = out || {};
       walkResultItems(result, function(item){
-        if(!isResultFavorite(item)) return;
+        if(!hasFavoriteFlag(item) && !isResultFavorite(item)) return;
         var key = getFavoriteKey(item);
         if(key) out[key] = true;
       });
@@ -1037,8 +1060,11 @@
       (entries || []).forEach(function(row){
         if(row && row.trackerResult) collectFavoriteKeysFromResultObject(row.trackerResult, favoriteKeys);
       });
+      var persistedMap = readFavoriteKeyMap();
+      Object.keys(persistedMap).forEach(function(key){ if(persistedMap[key]) favoriteKeys[key] = true; });
       Object.keys(favoriteKeys).forEach(function(){ favoriteCount += 1; });
       if(!favoriteCount) return 0;
+      writeFavoriteKeyMap(favoriteKeys);
       (entries || []).forEach(function(row){
         if(row && row.trackerResult) applyFavoriteKeyMapToResultObject(row.trackerResult, favoriteKeys);
       });
@@ -1046,6 +1072,7 @@
     }
     function syncFavoriteToLocalStorage(key, value){
       if(!key) return;
+      setFavoriteKeyPersisted(key, value);
       try{
         var stored = readTrackerResult();
         if(stored && setFavoriteOnResultObject(stored, key, value)){
@@ -1356,7 +1383,9 @@
       }).join('');
     }
     function renderResults(items){
-      lastItems = cleanItems(Array.isArray(items) ? items : []);
+      var list = Array.isArray(items) ? items : [];
+      applyFavoriteKeyMapToResultObject({ items: list }, readFavoriteKeyMap());
+      lastItems = cleanItems(list);
       renderFilteredResults();
     }
     function setProgress(job){
@@ -1570,9 +1599,21 @@
 
       return rows;
     }
+    function applyFavoriteMapToTransferRows(rows){
+      rows = rows || [];
+      var favoriteKeys = readFavoriteKeyMap();
+      rows.forEach(function(row){
+        if(row && row.trackerResult) collectFavoriteKeysFromResultObject(row.trackerResult, favoriteKeys);
+      });
+      writeFavoriteKeyMap(favoriteKeys);
+      rows.forEach(function(row){
+        if(row && row.trackerResult) applyFavoriteKeyMapToResultObject(row.trackerResult, favoriteKeys);
+      });
+      return rows;
+    }
     function exportTrackerResultTxt(){
       try{
-        var resultRows = collectSavedTrackerResultsForExport();
+        var resultRows = applyFavoriteMapToTransferRows(collectSavedTrackerResultsForExport());
         if(!resultRows.length){
           setStatus('내보낼 저장 매물이 없습니다.', 'err');
           toast('내보낼 저장 매물이 없습니다.');

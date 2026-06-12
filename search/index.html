@@ -1327,6 +1327,23 @@
       document.body.removeChild(a);
       setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
     }
+    function buildTransferMetaForExport(){
+      var typeCodes = selectedTypeArray();
+      var tradeTypes = selectedTradeArray();
+      var dong = picked ? { name: picked.name || '', code: picked.code || '' } : { name: '', code: '' };
+      return {
+        dong: dong,
+        selectedType: typeCodes.join(','),
+        selectedTrade: selectedTrade || '',
+        selectedTradeTypes: tradeTypes,
+        query: currentQueryLabel({
+          legalDongName: dong.name || '',
+          legalDongCode: dong.code || '',
+          propertyTypeNames: typeCodes,
+          tradeTypes: tradeTypes
+        })
+      };
+    }
     function exportTrackerResultTxt(){
       var raw = '';
       try{ raw = localStorage.getItem(TRACKER_RESULT_KEY) || ''; }catch(e){}
@@ -1342,6 +1359,7 @@
           version: 1,
           type: 'tracker-result',
           exportedAt: new Date().toISOString(),
+          meta: buildTransferMetaForExport(),
           trackerResult: stored
         };
         downloadTextFile(JSON.stringify(payload, null, 2), buildResultTxtFileName());
@@ -1351,22 +1369,74 @@
         setStatus('저장된 조회결과를 읽지 못했습니다.', 'err');
       }
     }
-    function restoreImportedTrackerResult(stored){
+    function addImportedTrackerResultToHistory(stored, payload){
+      var meta = (payload && payload.meta) || {};
+      var data = (stored && stored.data) || {};
+      var input = data.input || data.payload || {};
+      var dong = meta.dong || {
+        name: input.legalDongName || input.dongName || input.regionName || '',
+        code: input.legalDongCode || input.dongCode || ''
+      };
+      var selectedTypeText = meta.selectedType || '';
+      if(!selectedTypeText && Array.isArray(input.propertyTypeNames)) selectedTypeText = input.propertyTypeNames.join(',');
+
+      var selectedTradeText = meta.selectedTrade || '';
+      var selectedTradeTypes = Array.isArray(meta.selectedTradeTypes) ? meta.selectedTradeTypes : [];
+      if(!selectedTradeTypes.length && selectedTradeText){
+        if(selectedTradeText === 'SALE') selectedTradeTypes = ['A1'];
+        else if(selectedTradeText === 'RENT') selectedTradeTypes = ['B1','B2','B3'];
+        else if(selectedTradeText === 'ALL') selectedTradeTypes = ['A1','B1','B2','B3'];
+      }
+
+      var query = meta.query || currentQueryLabel({
+        legalDongName: dong.name || '가져온 조회결과',
+        legalDongCode: dong.code || '',
+        propertyTypeNames: selectedTypeText ? selectedTypeText.split(',').filter(Boolean) : [],
+        tradeTypes: selectedTradeTypes
+      });
+
+      var history = readHistory();
+      var entry = {
+        id: localId(),
+        jobId: '',
+        query: query || '가져온 조회결과',
+        dong: { name: dong.name || '', code: dong.code || '' },
+        selectedType: selectedTypeText,
+        selectedTrade: selectedTradeText,
+        selectedTradeTypes: selectedTradeTypes,
+        payload: {
+          legalDongName: dong.name || '',
+          legalDongCode: dong.code || '',
+          propertyTypeNames: selectedTypeText ? selectedTypeText.split(',').filter(Boolean) : [],
+          tradeTypes: selectedTradeTypes
+        },
+        createdAt: new Date().toISOString(),
+        status: 'completed',
+        result: data,
+        error: null,
+        imported: true,
+        importedAt: new Date().toISOString()
+      };
+      history.unshift(entry);
+      selectedHistoryId = entry.id;
+      saveHistory(history);
+      return entry;
+    }
+    function restoreImportedTrackerResult(stored, payload){
       if(!stored || !stored.data) throw new Error('missing result');
       localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify(stored));
-      if(stored.jobId){
-        localStorage.setItem(TRACKER_PENDING_KEY, JSON.stringify({
-          status:'completed',
-          jobId:stored.jobId,
-          finishedAt:stored.finishedAt || new Date().toISOString()
-        }));
-        currentJobId = stored.jobId;
-      }
+      localStorage.removeItem(TRACKER_PENDING_KEY);
+      currentJobId = '';
+      var entry = addImportedTrackerResultToHistory(stored, payload || {});
+      if(entry.dong && entry.dong.name){ picked = entry.dong; renderPickedDong(); }
+      if(entry.selectedType){ selectedType = entry.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
+      if(entry.selectedTrade){ setTradeChoice(entry.selectedTrade); }
       var data = stored.data || {};
       var items = data.items || data.finalArticleRecords || [];
       renderResults(items);
+      renderHistory();
       setProgress(null);
-      setStatus('조회결과를 가져왔습니다. · ' + lastItems.length + '건', lastItems.length ? 'ok' : 'err');
+      setStatus('조회결과를 가져왔습니다. 오른쪽 조회이력에도 추가했습니다. · ' + lastItems.length + '건', lastItems.length ? 'ok' : 'err');
       toast('조회결과를 가져왔습니다.');
     }
     function importTrackerResultTxtFile(file){
@@ -1376,7 +1446,7 @@
         try{
           var payload = JSON.parse(String(reader.result || ''));
           if(!payload || payload.app !== 'maslow-search' || payload.type !== 'tracker-result') throw new Error('invalid file');
-          restoreImportedTrackerResult(payload.trackerResult);
+          restoreImportedTrackerResult(payload.trackerResult, payload);
         }catch(e){
           setStatus('올바른 조회결과 TXT 파일이 아닙니다.', 'err');
           toast('조회결과 TXT 파일을 확인하세요.');

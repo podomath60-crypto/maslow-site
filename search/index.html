@@ -166,6 +166,30 @@
       68%{opacity:.42}
       100%{transform:translateY(-34px) scale(1.06);opacity:0}
     }
+
+    .side-item.is-in-center{
+      box-shadow:
+        inset 7px 0 0 #5b341c,
+        0 0 0 1px rgba(91,52,28,.12);
+    }
+    .side-item.has-favorite-listing.is-in-center{
+      border-color:#ff1493;
+      background:linear-gradient(180deg,#ffe8f4 0%,#fff3fa 100%);
+      box-shadow:
+        inset 7px 0 0 #5b341c,
+        0 0 0 1px rgba(255,20,147,.24),
+        0 10px 24px rgba(255,20,147,.18),
+        0 0 20px rgba(255,20,147,.18);
+    }
+    .side-item.is-dragging{
+      opacity:.72;
+      transform:scale(.99);
+    }
+    .table-wrap.is-drop-target,
+    .empty.is-drop-target{
+      border-color:#5b341c;
+      box-shadow:0 0 0 3px rgba(91,52,28,.12);
+    }
     .side-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
     .side-item-main{border:0;background:transparent;text-align:left;padding:0;min-width:0;color:#111827;font-weight:950;line-height:1.35;word-break:keep-all}
     .side-item-main:hover{text-decoration:underline;text-underline-offset:3px}
@@ -423,6 +447,7 @@
     var selectedTrade = 'ALL';
     var favoriteChecked = false;
     var selectedHistoryId = '';
+    var selectedHistoryIds = {};
 
     var els = {
       dongPickBtn: document.getElementById('dongPickBtn'),
@@ -631,6 +656,80 @@
         return isResultFavorite(item);
       });
     }
+    function selectedHistoryCount(){
+      return Object.keys(selectedHistoryIds || {}).filter(function(id){ return selectedHistoryIds[id]; }).length;
+    }
+    function clearSelectedHistoryIds(){
+      selectedHistoryIds = {};
+    }
+    function setHistoryInCenter(id, value){
+      if(!id) return;
+      if(value) selectedHistoryIds[id] = true;
+      else delete selectedHistoryIds[id];
+    }
+    function historyById(id){
+      return readHistory().find(function(x){ return x.id === id; });
+    }
+    function showCenterSelectionPrompt(){
+      lastItems = [];
+      filteredItems = [];
+      renderSummary([]);
+      els.tableWrap.classList.remove('show');
+      els.resultActions.style.display = 'none';
+      els.resultFilters.classList.remove('show');
+      els.resultBody.innerHTML = '';
+      els.empty.style.display = 'block';
+      els.empty.textContent = '조회 카드를 선택 or 드래그 해주세요.';
+    }
+    function renderSelectedHistoryResults(){
+      var history = readHistory();
+      var merged = [];
+      history.forEach(function(item){
+        if(!selectedHistoryIds[item.id]) return;
+        if(item.status !== 'completed' || !item.result) return;
+        merged = merged.concat(historyResultItems(item));
+      });
+      if(!merged.length){
+        showCenterSelectionPrompt();
+        return [];
+      }
+      renderResults(merged);
+      setProgress(null);
+      setStatus('선택한 조회카드 ' + selectedHistoryCount() + '개 · 매물 ' + lastItems.length + '건', lastItems.length ? 'ok' : '');
+      return lastItems;
+    }
+    function toggleHistorySelection(id){
+      var item = historyById(id);
+      if(!item) return;
+      selectedHistoryId = id;
+      currentJobId = item.jobId || '';
+      picked = item.dong || (item.payload ? { name:item.payload.legalDongName, code:item.payload.legalDongCode || '' } : picked);
+      if(item.selectedType){ selectedType = item.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
+      if(item.selectedTrade){ setTradeChoice(item.selectedTrade); }
+      renderPickedDong();
+
+      if(item.status !== 'completed' || !item.result){
+        renderHistory();
+        resetResults();
+        showTrackerRunning(statusLabel(item.status) + '입니다. 상태 새로고침으로 확인하세요.');
+        setStatus('선택한 조회는 아직 완료 전입니다.', '');
+        return;
+      }
+
+      setHistoryInCenter(id, !selectedHistoryIds[id]);
+      renderHistory();
+      renderSelectedHistoryResults();
+    }
+    function selectSingleCompletedHistoryByJobId(jobId){
+      if(!jobId) return false;
+      var item = readHistory().find(function(x){ return x.jobId === jobId && x.status === 'completed' && x.result; });
+      if(!item) return false;
+      clearSelectedHistoryIds();
+      setHistoryInCenter(item.id, true);
+      selectedHistoryId = item.id;
+      renderHistory();
+      return true;
+    }
     function renderHistory(){
       if(!els.historyList) return;
       var history = readHistory();
@@ -640,10 +739,11 @@
         return;
       }
       els.historyList.innerHTML = history.map(function(item){
-        var active = item.id === selectedHistoryId ? ' active' : '';
+        var active = '';
         var favoriteClass = historyHasFavoriteItem(item) ? ' has-favorite-listing' : '';
+        var centerClass = selectedHistoryIds[item.id] ? ' is-in-center' : '';
         var status = statusClass(item.status);
-        return '<div class="side-item' + active + favoriteClass + '" data-history-id="' + escapeHtml(item.id) + '">' +
+        return '<div class="side-item' + active + favoriteClass + centerClass + '" draggable="true" data-history-id="' + escapeHtml(item.id) + '">' +
           '<div class="side-item-top">' +
             '<button class="side-item-main" type="button" data-history-load="' + escapeHtml(item.id) + '">' + escapeHtml(item.query || '-') + '</button>' +
             '<button class="delete-mini" type="button" title="조회이력 삭제" data-history-delete="' + escapeHtml(item.id) + '">🗑</button>' +
@@ -665,25 +765,13 @@
     function deleteFavorite(id){ saveFavorites(readFavorites().filter(function(x){ return x.id !== id; })); }
     function deleteHistory(id){
       if(selectedHistoryId === id) selectedHistoryId = '';
+      delete selectedHistoryIds[id];
       saveHistory(readHistory().filter(function(x){ return x.id !== id; }));
+      if(!selectedHistoryCount()) showCenterSelectionPrompt();
+      else renderSelectedHistoryResults();
     }
     function loadHistory(id){
-      var item = readHistory().find(function(x){ return x.id === id; });
-      if(!item) return;
-      selectedHistoryId = id;
-      currentJobId = item.jobId || '';
-      picked = item.dong || (item.payload ? { name:item.payload.legalDongName, code:item.payload.legalDongCode || '' } : picked);
-      if(item.selectedType){ selectedType = item.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
-      if(item.selectedTrade){ setTradeChoice(item.selectedTrade); }
-      renderPickedDong();
-      renderHistory();
-      if(item.status === 'completed' && item.result){
-        applyTrackerResult(item.result, '조회이력 결과 표시');
-        return;
-      }
-      resetResults();
-      showTrackerRunning(statusLabel(item.status) + '입니다. 상태 새로고침으로 확인하세요.');
-      setStatus('선택한 조회는 아직 완료 전입니다.', '');
+      toggleHistorySelection(id);
     }
     async function refreshHistoryStatuses(){
       var history = readHistory();
@@ -696,8 +784,8 @@
           body: JSON.stringify({ jobIds: pending.map(function(x){ return x.jobId; }) })
         });
         (data.jobs || []).forEach(updateHistoryFromStatus);
-        var selected = readHistory().find(function(x){ return x.id === selectedHistoryId; });
-        if(selected){ loadHistory(selected.id); }
+        renderHistory();
+        if(selectedHistoryCount()) renderSelectedHistoryResults();
         setStatus('조회이력 상태를 갱신했습니다.', 'ok');
       }catch(e){
         setStatus(e && e.message ? e.message : '조회이력 상태 갱신 실패', 'err');
@@ -785,6 +873,7 @@
       var items = data.items || data.finalArticleRecords || [];
       saveTrackerResult(data);
       updateHistoryFromStatus(data);
+      selectSingleCompletedHistoryByJobId(data && data.jobId);
       renderResults(items);
       setProgress(null);
       setStatus((prefix || '조회 완료') + ' · ' + lastItems.length + '건', lastItems.length ? 'ok' : 'err');
@@ -1782,6 +1871,8 @@
       var history = readHistory();
       history = imported.concat(history);
       selectedHistoryId = imported.length ? imported[0].id : '';
+      clearSelectedHistoryIds();
+      if(imported.length) setHistoryInCenter(imported[0].id, true);
       saveHistory(history);
       return imported;
     }
@@ -1803,10 +1894,8 @@
       if(firstEntry && firstEntry.selectedType){ selectedType = firstEntry.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
       if(firstEntry && firstEntry.selectedTrade){ setTradeChoice(firstEntry.selectedTrade); }
 
-      var data = firstStored.data || {};
-      var items = data.items || data.finalArticleRecords || [];
-      renderResults(items);
       renderHistory();
+      renderSelectedHistoryResults();
       setProgress(null);
 
       var totalItems = entries.reduce(function(sum, row){ return sum + trackerResultItemCount(row.trackerResult); }, 0);
@@ -1870,7 +1959,51 @@
     els.favoriteToggleBtn.addEventListener('click', function(){ setFavoriteChecked(!favoriteChecked); });
     els.historyRefreshBtn.addEventListener('click', refreshHistoryStatuses);
     els.favoriteList.addEventListener('click', function(e){ var del=e.target.closest('[data-favorite-delete]'); if(del){ deleteFavorite(del.getAttribute('data-favorite-delete')); return; } var load=e.target.closest('[data-favorite-load]'); if(load) loadFavorite(load.getAttribute('data-favorite-load')); });
-    els.historyList.addEventListener('click', function(e){ var del=e.target.closest('[data-history-delete]'); if(del){ deleteHistory(del.getAttribute('data-history-delete')); return; } var load=e.target.closest('[data-history-load]'); if(load) loadHistory(load.getAttribute('data-history-load')); });
+    els.historyList.addEventListener('click', function(e){
+      var del=e.target.closest('[data-history-delete]');
+      if(del){ deleteHistory(del.getAttribute('data-history-delete')); return; }
+      var card=e.target.closest('[data-history-id]');
+      if(card) loadHistory(card.getAttribute('data-history-id'));
+    });
+    els.historyList.addEventListener('dragstart', function(e){
+      var card=e.target.closest('[data-history-id]');
+      if(!card) return;
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData('text/plain', card.getAttribute('data-history-id'));
+      card.classList.add('is-dragging');
+    });
+    els.historyList.addEventListener('dragend', function(e){
+      var card=e.target.closest('[data-history-id]');
+      if(card) card.classList.remove('is-dragging');
+    });
+    [els.tableWrap, els.empty].forEach(function(target){
+      if(!target) return;
+      target.addEventListener('dragover', function(e){
+        e.preventDefault();
+        target.classList.add('is-drop-target');
+      });
+      target.addEventListener('dragleave', function(){
+        target.classList.remove('is-drop-target');
+      });
+      target.addEventListener('drop', function(e){
+        e.preventDefault();
+        target.classList.remove('is-drop-target');
+        var id = e.dataTransfer.getData('text/plain');
+        if(!id) return;
+        var item = historyById(id);
+        if(!item) return;
+        if(item.status !== 'completed' || !item.result){
+          selectedHistoryId = id;
+          renderHistory();
+          setStatus('완료된 조회카드만 중앙 결과에 넣을 수 있습니다.', 'err');
+          return;
+        }
+        selectedHistoryId = id;
+        setHistoryInCenter(id, true);
+        renderHistory();
+        renderSelectedHistoryResults();
+      });
+    });
     els.filterTrade.addEventListener('change', renderFilteredResults);
     els.priceSort.addEventListener('change', renderFilteredResults);
     els.addressSort.addEventListener('change', renderFilteredResults);

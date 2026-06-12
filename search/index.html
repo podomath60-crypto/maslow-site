@@ -117,6 +117,55 @@
     .side-empty{border:1px dashed #bfdbfe;border-radius:14px;background:#f8fbff;padding:14px 10px;color:#6b7280;text-align:center;font-size:12px;font-weight:850;line-height:1.45;word-break:keep-all}
     .side-item{border:1px solid #e5e7eb;border-radius:15px;background:#fff;padding:10px;display:grid;gap:7px}
     .side-item.active{border-color:#93c5fd;background:#eff6ff}
+
+    .side-item.has-favorite-listing{
+      position:relative;
+      overflow:hidden;
+      border-color:#ff1493;
+      background:linear-gradient(180deg,#fff1f8 0%,#fff7fb 100%);
+      box-shadow:
+        0 0 0 1px rgba(255,20,147,.18),
+        0 8px 22px rgba(255,20,147,.14),
+        0 0 18px rgba(255,20,147,.16);
+    }
+    .side-item.has-favorite-listing.active{
+      border-color:#ff1493;
+      background:linear-gradient(180deg,#ffe8f4 0%,#fff3fa 100%);
+      box-shadow:
+        0 0 0 1px rgba(255,20,147,.24),
+        0 10px 24px rgba(255,20,147,.18),
+        0 0 20px rgba(255,20,147,.18);
+    }
+    .side-item.has-favorite-listing::before,
+    .side-item.has-favorite-listing::after{
+      content:'♥';
+      position:absolute;
+      right:18px;
+      bottom:6px;
+      color:rgba(255,20,147,.55);
+      font-size:13px;
+      font-weight:950;
+      pointer-events:none;
+      animation:favoriteBubbleUp 2.8s ease-in-out infinite;
+      text-shadow:0 2px 8px rgba(255,20,147,.22);
+      z-index:0;
+    }
+    .side-item.has-favorite-listing::after{
+      right:42px;
+      bottom:2px;
+      font-size:10px;
+      animation-delay:1.25s;
+    }
+    .side-item.has-favorite-listing > *{
+      position:relative;
+      z-index:1;
+    }
+    @keyframes favoriteBubbleUp{
+      0%{transform:translateY(10px) scale(.7);opacity:0}
+      18%{opacity:.8}
+      68%{opacity:.42}
+      100%{transform:translateY(-34px) scale(1.06);opacity:0}
+    }
     .side-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
     .side-item-main{border:0;background:transparent;text-align:left;padding:0;min-width:0;color:#111827;font-weight:950;line-height:1.35;word-break:keep-all}
     .side-item-main:hover{text-decoration:underline;text-underline-offset:3px}
@@ -567,6 +616,21 @@
         '</div>';
       }).join('');
     }
+
+    function historyResultItems(historyItem){
+      var result = historyItem && historyItem.result;
+      if(!result || typeof result !== 'object') return [];
+      var data = result.data && typeof result.data === 'object' ? result.data : result;
+      var items = data.items || data.finalArticleRecords || result.items || result.finalArticleRecords || [];
+      return Array.isArray(items) ? items : [];
+    }
+    function historyHasFavoriteItem(historyItem){
+      var items = historyResultItems(historyItem);
+      if(!items.length) return false;
+      return items.some(function(item){
+        return isResultFavorite(item);
+      });
+    }
     function renderHistory(){
       if(!els.historyList) return;
       var history = readHistory();
@@ -577,8 +641,9 @@
       }
       els.historyList.innerHTML = history.map(function(item){
         var active = item.id === selectedHistoryId ? ' active' : '';
+        var favoriteClass = historyHasFavoriteItem(item) ? ' has-favorite-listing' : '';
         var status = statusClass(item.status);
-        return '<div class="side-item' + active + '" data-history-id="' + escapeHtml(item.id) + '">' +
+        return '<div class="side-item' + active + favoriteClass + '" data-history-id="' + escapeHtml(item.id) + '">' +
           '<div class="side-item-top">' +
             '<button class="side-item-main" type="button" data-history-load="' + escapeHtml(item.id) + '">' + escapeHtml(item.query || '-') + '</button>' +
             '<button class="delete-mini" type="button" title="조회이력 삭제" data-history-delete="' + escapeHtml(item.id) + '">🗑</button>' +

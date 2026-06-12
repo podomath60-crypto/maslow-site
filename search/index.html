@@ -421,7 +421,7 @@
     var TRACKER_RESULT_KEY = 'maslow_tracker_result_v2';
     var TRACKER_HISTORY_KEY = 'maslow_tracker_history_v1';
     var TRACKER_FAVORITES_KEY = 'maslow_tracker_favorites_v1';
-    var MAX_HISTORY_ITEMS = 30;
+    var MAX_HISTORY_ITEMS = 50;
     var MAX_FAVORITE_ITEMS = 10;
 
 
@@ -1311,7 +1311,7 @@
     function buildResultTxtFileName(){
       var d = new Date();
       var pad = function(n){ return String(n).padStart(2, '0'); };
-      return 'maslow-search-result-' + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + '.txt';
+      return 'maslow-search-all-results-' + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + '.txt';
     }
     function downloadTextFile(text, filename){
       // 브라우저 기본 다운로드 방식 사용: 폴더 선택 API(showSaveFilePicker) 없이
@@ -1344,33 +1344,145 @@
         })
       };
     }
-    function exportTrackerResultTxt(){
-      var raw = '';
-      try{ raw = localStorage.getItem(TRACKER_RESULT_KEY) || ''; }catch(e){}
-      if(!raw){
-        setStatus('내보낼 조회결과가 없습니다.', 'err');
-        toast('내보낼 조회결과가 없습니다.');
-        return;
+    function buildTransferMetaFromHistoryItem(item){
+      item = item || {};
+      var payload = item.payload || {};
+      var dong = item.dong || {
+        name: payload.legalDongName || '',
+        code: payload.legalDongCode || ''
+      };
+      var selectedTypeText = item.selectedType || (Array.isArray(payload.propertyTypeNames) ? payload.propertyTypeNames.join(',') : '');
+      var selectedTradeText = item.selectedTrade || '';
+      var selectedTradeTypes = Array.isArray(item.selectedTradeTypes) ? item.selectedTradeTypes : (Array.isArray(payload.tradeTypes) ? payload.tradeTypes : []);
+      return {
+        dong: { name: dong.name || '', code: dong.code || '' },
+        selectedType: selectedTypeText || '',
+        selectedTrade: selectedTradeText || '',
+        selectedTradeTypes: selectedTradeTypes,
+        query: item.query || currentQueryLabel({
+          legalDongName: dong.name || '',
+          legalDongCode: dong.code || '',
+          propertyTypeNames: selectedTypeText ? selectedTypeText.split(',').filter(Boolean) : [],
+          tradeTypes: selectedTradeTypes
+        }),
+        sourceHistoryId: item.id || '',
+        sourceJobId: item.jobId || ''
+      };
+    }
+    function wrapTrackerDataForTransfer(data, jobId, finishedAt){
+      return {
+        status: 'completed',
+        jobId: jobId || (data && data.jobId) || '',
+        data: data || {},
+        finishedAt: finishedAt || new Date().toISOString()
+      };
+    }
+    function trackerResultItemCount(stored){
+      var data = stored && stored.data ? stored.data : {};
+      var items = data.items || data.finalArticleRecords || [];
+      return Array.isArray(items) ? items.length : 0;
+    }
+    function savedTrackerExportKey(stored, meta){
+      var jobId = String((stored && stored.jobId) || (meta && meta.sourceJobId) || '').trim();
+      if(jobId) return 'job:' + jobId;
+      var data = stored && stored.data ? stored.data : {};
+      var input = data.input || data.payload || {};
+      var itemCount = trackerResultItemCount(stored);
+      var q = (meta && meta.query) || input.legalDongName || '';
+      var t = (meta && meta.selectedType) || (Array.isArray(input.propertyTypeNames) ? input.propertyTypeNames.join(',') : '');
+      var tr = (meta && meta.selectedTrade) || (Array.isArray(input.tradeTypes) ? input.tradeTypes.join(',') : '');
+      return ['manual', q, t, tr, itemCount, stored && stored.finishedAt || ''].join('|');
+    }
+    function collectSavedTrackerResultsForExport(){
+      var rows = [];
+      var seen = {};
+
+      function addStored(stored, meta){
+        if(!stored || !stored.data) return;
+        if(!trackerResultItemCount(stored)) return;
+        var key = savedTrackerExportKey(stored, meta);
+        if(seen[key]) return;
+        seen[key] = true;
+        rows.push({
+          meta: meta || {},
+          trackerResult: stored
+        });
       }
+
+      // 1) 최근 조회결과
       try{
-        var stored = JSON.parse(raw);
+        var raw = localStorage.getItem(TRACKER_RESULT_KEY) || '';
+        if(raw){
+          var latest = JSON.parse(raw);
+          addStored(latest, buildTransferMetaForExport());
+        }
+      }catch(e){}
+
+      // 2) 오른쪽 조회이력에 저장된 완료 결과 전체
+      readHistory().forEach(function(item){
+        if(!item || item.status !== 'completed' || !item.result) return;
+        addStored(
+          wrapTrackerDataForTransfer(item.result, item.jobId || (item.result && item.result.jobId) || '', item.updatedAt || item.createdAt || ''),
+          buildTransferMetaFromHistoryItem(item)
+        );
+      });
+
+      return rows;
+    }
+    function exportTrackerResultTxt(){
+      try{
+        var resultRows = collectSavedTrackerResultsForExport();
+        if(!resultRows.length){
+          setStatus('내보낼 저장 매물이 없습니다.', 'err');
+          toast('내보낼 저장 매물이 없습니다.');
+          return;
+        }
+
+        var totalItems = resultRows.reduce(function(sum, row){ return sum + trackerResultItemCount(row.trackerResult); }, 0);
         var payload = {
           app: 'maslow-search',
-          version: 1,
+          version: 2,
           type: 'tracker-result',
+          exportScope: 'all-local-results',
           exportedAt: new Date().toISOString(),
-          meta: buildTransferMetaForExport(),
-          trackerResult: stored
+          resultCount: resultRows.length,
+          itemCount: totalItems,
+          trackerResults: resultRows,
+          // 구버전 가져오기 호환용: 첫 번째 결과도 같이 둔다.
+          meta: resultRows[0].meta || {},
+          trackerResult: resultRows[0].trackerResult
         };
+
         downloadTextFile(JSON.stringify(payload, null, 2), buildResultTxtFileName());
-        setStatus('조회결과 TXT 파일을 내보냈습니다.', 'ok');
-        toast('조회결과 TXT를 저장했습니다.');
+        setStatus('저장된 조회결과 전체를 TXT 파일로 내보냈습니다. · 이력 ' + resultRows.length + '개 / 매물 ' + totalItems + '건', 'ok');
+        toast('저장 매물 전체 TXT를 저장했습니다.');
       }catch(e){
         setStatus('저장된 조회결과를 읽지 못했습니다.', 'err');
       }
     }
-    function addImportedTrackerResultToHistory(stored, payload){
-      var meta = (payload && payload.meta) || {};
+    function normalizeImportedTrackerEntries(payload){
+      var entries = [];
+      if(payload && Array.isArray(payload.trackerResults)){
+        payload.trackerResults.forEach(function(row){
+          if(row && row.trackerResult && row.trackerResult.data){
+            entries.push({
+              meta: row.meta || {},
+              trackerResult: row.trackerResult
+            });
+          }
+        });
+      }
+      if(!entries.length && payload && payload.trackerResult && payload.trackerResult.data){
+        entries.push({
+          meta: payload.meta || {},
+          trackerResult: payload.trackerResult
+        });
+      }
+      return entries;
+    }
+    function buildImportedHistoryEntry(row, index){
+      var stored = row && row.trackerResult ? row.trackerResult : {};
+      var meta = (row && row.meta) || {};
       var data = (stored && stored.data) || {};
       var input = data.input || data.payload || {};
       var dong = meta.dong || {
@@ -1382,6 +1494,7 @@
 
       var selectedTradeText = meta.selectedTrade || '';
       var selectedTradeTypes = Array.isArray(meta.selectedTradeTypes) ? meta.selectedTradeTypes : [];
+      if(!selectedTradeTypes.length && Array.isArray(input.tradeTypes)) selectedTradeTypes = input.tradeTypes;
       if(!selectedTradeTypes.length && selectedTradeText){
         if(selectedTradeText === 'SALE') selectedTradeTypes = ['A1'];
         else if(selectedTradeText === 'RENT') selectedTradeTypes = ['B1','B2','B3'];
@@ -1395,11 +1508,10 @@
         tradeTypes: selectedTradeTypes
       });
 
-      var history = readHistory();
-      var entry = {
+      return {
         id: localId(),
         jobId: '',
-        query: query || '가져온 조회결과',
+        query: query || ('가져온 조회결과 ' + (index + 1)),
         dong: { name: dong.name || '', code: dong.code || '' },
         selectedType: selectedTypeText,
         selectedTrade: selectedTradeText,
@@ -1417,27 +1529,41 @@
         imported: true,
         importedAt: new Date().toISOString()
       };
-      history.unshift(entry);
-      selectedHistoryId = entry.id;
+    }
+    function addImportedTrackerResultsToHistory(entries){
+      var imported = entries.map(buildImportedHistoryEntry);
+      var history = readHistory();
+      history = imported.concat(history);
+      selectedHistoryId = imported.length ? imported[0].id : '';
       saveHistory(history);
-      return entry;
+      return imported;
     }
     function restoreImportedTrackerResult(stored, payload){
-      if(!stored || !stored.data) throw new Error('missing result');
-      localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify(stored));
+      // 구버전 함수명 유지. 내부는 단일/다중 TXT 모두 처리한다.
+      var entries = normalizeImportedTrackerEntries(payload || { trackerResult: stored });
+      if(!entries.length) throw new Error('missing result');
+
+      var firstStored = entries[0].trackerResult;
+      localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify(firstStored));
       localStorage.removeItem(TRACKER_PENDING_KEY);
       currentJobId = '';
-      var entry = addImportedTrackerResultToHistory(stored, payload || {});
-      if(entry.dong && entry.dong.name){ picked = entry.dong; renderPickedDong(); }
-      if(entry.selectedType){ selectedType = entry.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
-      if(entry.selectedTrade){ setTradeChoice(entry.selectedTrade); }
-      var data = stored.data || {};
+
+      var imported = addImportedTrackerResultsToHistory(entries);
+      var firstEntry = imported[0];
+
+      if(firstEntry && firstEntry.dong && firstEntry.dong.name){ picked = firstEntry.dong; renderPickedDong(); }
+      if(firstEntry && firstEntry.selectedType){ selectedType = firstEntry.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
+      if(firstEntry && firstEntry.selectedTrade){ setTradeChoice(firstEntry.selectedTrade); }
+
+      var data = firstStored.data || {};
       var items = data.items || data.finalArticleRecords || [];
       renderResults(items);
       renderHistory();
       setProgress(null);
-      setStatus('조회결과를 가져왔습니다. 오른쪽 조회이력에도 추가했습니다. · ' + lastItems.length + '건', lastItems.length ? 'ok' : 'err');
-      toast('조회결과를 가져왔습니다.');
+
+      var totalItems = entries.reduce(function(sum, row){ return sum + trackerResultItemCount(row.trackerResult); }, 0);
+      setStatus('저장 매물을 가져왔습니다. 오른쪽 조회이력에 반영했습니다. · 이력 ' + entries.length + '개 / 매물 ' + totalItems + '건', totalItems ? 'ok' : 'err');
+      toast('저장 매물을 가져왔습니다.');
     }
     function importTrackerResultTxtFile(file){
       if(!file) return;
@@ -1467,7 +1593,7 @@
     if(els.importResultTxtInput) els.importResultTxtInput.addEventListener('change', function(e){
       var file = e.target.files && e.target.files[0];
       if(!file) return;
-      if(!confirm('선택한 TXT 파일의 조회결과로 현재 조회결과를 교체합니다. 계속할까요?')){
+      if(!confirm('선택한 TXT 파일의 저장 매물을 현재 브라우저 조회이력에 추가하고 최근 조회결과로 복원합니다. 계속할까요?')){
         els.importResultTxtInput.value = '';
         return;
       }

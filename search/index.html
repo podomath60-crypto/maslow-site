@@ -724,9 +724,11 @@
         showCenterSelectionPrompt();
         return [];
       }
-      renderResults(merged);
+      applyFavoriteKeyMapToResultObject({ items: merged }, readFavoriteKeyMap());
+      var uniqueItems = dedupeResultItemsByListing(merged);
+      renderResults(uniqueItems);
       setProgress(null);
-      setStatus('선택한 조회카드 ' + selectedHistoryCount() + '개 · 매물 ' + lastItems.length + '건', lastItems.length ? 'ok' : '');
+      setStatus('선택한 조회카드 ' + selectedHistoryCount() + '개 · 매물 ' + uniqueItems.length + '건', uniqueItems.length ? 'ok' : '');
       return lastItems;
     }
     function toggleHistorySelection(id){
@@ -1179,7 +1181,47 @@
       var trade = String(getTradeText(item) || '').trim();
       if(pnu) return ['pnu', pnu, price, trade].join('|');
       var addr = String(getAddressText(item) || '').trim();
+      if(!addr || addr === '주소 미확인') return '';
       return ['addr', addr, price, trade].join('|');
+    }
+    function getResultMergeKey(item){
+      if(!item || typeof item !== 'object') return '';
+      var no = String(getArticleNo(item) || '').trim();
+      if(no) return 'no:' + no;
+      return getFavoriteKey(item);
+    }
+    function mergeResultItemData(target, source){
+      if(!target || !source || typeof target !== 'object' || typeof source !== 'object') return target;
+      Object.keys(source).forEach(function(key){
+        if(key === '_favorite'){
+          if(hasFavoriteFlag(source)) target._favorite = true;
+          return;
+        }
+        if(target[key] == null || target[key] === '' || target[key] === '주소 미확인'){
+          target[key] = source[key];
+        }
+      });
+      if(hasFavoriteFlag(source)) target._favorite = true;
+      return target;
+    }
+    function dedupeResultItemsByListing(items){
+      var out = [];
+      var indexByKey = {};
+      (items || []).forEach(function(item){
+        if(!item || typeof item !== 'object') return;
+        var key = getResultMergeKey(item);
+        if(!key){
+          out.push(item);
+          return;
+        }
+        if(indexByKey[key] == null){
+          indexByKey[key] = out.length;
+          out.push(item);
+          return;
+        }
+        mergeResultItemData(out[indexByKey[key]], item);
+      });
+      return out;
     }
     function setFavoriteOnItemArray(items, key, value){
       var changed = false;
@@ -1239,9 +1281,21 @@
       });
       return changed;
     }
-    function normalizeImportedFavoriteFlags(entries){
+    function normalizeImportedFavoriteFlags(entries, payload){
       var favoriteKeys = {};
       var favoriteCount = 0;
+
+      if(payload && Array.isArray(payload.favoriteKeys)){
+        payload.favoriteKeys.forEach(function(key){
+          key = String(key || '').trim();
+          if(key) favoriteKeys[key] = true;
+        });
+      }else if(payload && payload.favoriteKeys && typeof payload.favoriteKeys === 'object'){
+        Object.keys(payload.favoriteKeys).forEach(function(key){
+          if(payload.favoriteKeys[key]) favoriteKeys[key] = true;
+        });
+      }
+
       (entries || []).forEach(function(row){
         if(row && row.trackerResult) collectFavoriteKeysFromResultObject(row.trackerResult, favoriteKeys);
       });
@@ -1290,6 +1344,7 @@
       setFavoriteOnItemArray(lastItems, key, next);
       setFavoriteOnItemArray(filteredItems, key, next);
       syncFavoriteToLocalStorage(key, next);
+      renderHistory();
       renderFilteredResults();
       if(next){
         var chip = els.resultBody.querySelector('[data-favorite-key="' + cssEscapeValue(key) + '"]');
@@ -1796,6 +1851,13 @@
       });
       return rows;
     }
+    function favoriteKeyListFromTransferRows(rows){
+      var favoriteKeys = {};
+      (rows || []).forEach(function(row){
+        if(row && row.trackerResult) collectFavoriteKeysFromResultObject(row.trackerResult, favoriteKeys);
+      });
+      return Object.keys(favoriteKeys).filter(function(key){ return !!favoriteKeys[key]; });
+    }
     function exportTrackerResultTxt(){
       try{
         var resultRows = applyFavoriteMapToTransferRows(collectSavedTrackerResultsForExport());
@@ -1815,6 +1877,7 @@
           resultCount: resultRows.length,
           itemCount: totalItems,
           trackerResults: resultRows,
+          favoriteKeys: favoriteKeyListFromTransferRows(resultRows),
           // 구버전 가져오기 호환용: 첫 번째 결과도 같이 둔다.
           meta: resultRows[0].meta || {},
           trackerResult: resultRows[0].trackerResult
@@ -1911,7 +1974,7 @@
       // 구버전 함수명 유지. 내부는 단일/다중 TXT 모두 처리한다.
       var entries = normalizeImportedTrackerEntries(payload || { trackerResult: stored });
       if(!entries.length) throw new Error('missing result');
-      var importedFavoriteCount = normalizeImportedFavoriteFlags(entries);
+      var importedFavoriteCount = normalizeImportedFavoriteFlags(entries, payload || {});
 
       var firstStored = entries[0].trackerResult;
       localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify(firstStored));

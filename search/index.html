@@ -1314,14 +1314,18 @@
       return 'maslow-search-result-' + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + '.txt';
     }
     function downloadTextFile(text, filename){
+      // 브라우저 기본 다운로드 방식 사용: 폴더 선택 API(showSaveFilePicker) 없이
+      // a.download 클릭만 실행해서 기본 다운로드 폴더로 저장되게 한다.
       var blob = new Blob([text], { type:'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
+      a.href = url;
       a.download = filename;
+      a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
     }
     function exportTrackerResultTxt(){
       var raw = '';

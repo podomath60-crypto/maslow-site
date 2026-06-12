@@ -242,6 +242,14 @@
               <option value="ASC">낮은순</option>
             </select>
           </div>
+          <div class="filter-field">
+            <label for="addressSort">주소</label>
+            <select id="addressSort" class="filter-select">
+              <option value="NONE">기본순</option>
+              <option value="ASC">오름차순</option>
+              <option value="DESC">내림차순</option>
+            </select>
+          </div>
         </div>
 
         <div id="tableWrap" class="table-wrap">
@@ -352,6 +360,7 @@
       resultFilters: document.getElementById('resultFilters'),
       filterTrade: document.getElementById('filterTrade'),
       priceSort: document.getElementById('priceSort'),
+      addressSort: document.getElementById('addressSort'),
       copyTableBtn: document.getElementById('copyTableBtn'),
       csvBtn: document.getElementById('csvBtn'),
       tableWrap: document.getElementById('tableWrap'),
@@ -982,9 +991,24 @@
       var m = firstPart.match(/([0-9]+)/);
       return m ? (parseInt(m[1], 10) || 0) : -1;
     }
+    function compareAddressText(a,b, direction){
+      var aa = String(getAddressText(a) || '').trim();
+      var bb = String(getAddressText(b) || '').trim();
+      var aMissing = !aa || aa === '주소 미확인';
+      var bMissing = !bb || bb === '주소 미확인';
+
+      // 주소가 없는 매물은 오름차순/내림차순 모두 아래로 보낸다.
+      if(aMissing && bMissing) return 0;
+      if(aMissing) return 1;
+      if(bMissing) return -1;
+
+      var cmp = aa.localeCompare(bb, 'ko-KR', { numeric:true, sensitivity:'base' });
+      return direction === 'DESC' ? -cmp : cmp;
+    }
     function applyResultFilters(items){
       var trade = els.filterTrade.value || 'ALL';
       var sort = els.priceSort.value || 'NONE';
+      var addressSort = els.addressSort.value || 'NONE';
       var out = (items || []).slice();
       if(trade !== 'ALL') out = out.filter(function(item){ return tradeGroup(item) === trade; });
       if(sort === 'ASC' || sort === 'DESC'){
@@ -995,6 +1019,9 @@
           if(pb < 0) return -1;
           return sort === 'DESC' ? pb - pa : pa - pb;
         });
+      }
+      if(addressSort === 'ASC' || addressSort === 'DESC'){
+        out.sort(function(a,b){ return compareAddressText(a,b,addressSort); });
       }
       return out;
     }
@@ -1243,6 +1270,7 @@
     els.historyList.addEventListener('click', function(e){ var del=e.target.closest('[data-history-delete]'); if(del){ deleteHistory(del.getAttribute('data-history-delete')); return; } var load=e.target.closest('[data-history-load]'); if(load) loadHistory(load.getAttribute('data-history-load')); });
     els.filterTrade.addEventListener('change', renderFilteredResults);
     els.priceSort.addEventListener('change', renderFilteredResults);
+    els.addressSort.addEventListener('change', renderFilteredResults);
     els.copyTableBtn.addEventListener('click', copyTable);
     els.csvBtn.addEventListener('click', downloadCsv);
     els.resultBody.addEventListener('click', function(e){

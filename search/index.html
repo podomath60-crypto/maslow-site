@@ -44,7 +44,7 @@
     .run-btn:disabled{opacity:.55;cursor:not-allowed}
         .sub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-top:12px}
     .small-actions{display:flex;gap:8px;flex-wrap:wrap}
-    .result-filter{display:none;margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:0 10px 28px rgba(37,99,235,.06);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .result-filter{display:none;margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:0 10px 28px rgba(37,99,235,.06);grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
     .result-filter.show{display:grid}
     .filter-field{display:grid;gap:6px}
     .filter-field label{font-size:12px;font-weight:950;color:#374151}
@@ -104,6 +104,10 @@
     .side-item-main{border:0;background:transparent;text-align:left;padding:0;min-width:0;color:#111827;font-weight:950;line-height:1.35;word-break:keep-all}
     .side-item-main:hover{text-decoration:underline;text-underline-offset:3px}
     .side-meta{display:flex;gap:5px;flex-wrap:wrap;align-items:center;color:#6b7280;font-size:11px;font-weight:850}
+    .history-trade-chip{display:inline-flex;align-items:center;justify-content:center;min-height:23px;padding:0 7px;border-radius:4px;border:1px solid #cbd5e1;background:#f8fafc;color:#334155;font-size:11px;font-weight:950;line-height:1.2;white-space:nowrap}
+    .history-trade-chip.is-sale{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+    .history-trade-chip.is-rent{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+    .history-trade-chip.is-both{background:#fffbeb;color:#92400e;border-color:#fde68a}
     .delete-mini{width:28px;height:28px;border:1px solid #fecaca;background:#fff5f5;color:#dc2626;border-radius:10px;font-weight:950;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
     .delete-mini:hover{background:#fee2e2}
     .history-refresh{height:34px;border-radius:11px;padding:0 9px;font-size:12px}
@@ -140,7 +144,7 @@
     .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:60;background:#111827;color:#fff;border-radius:999px;padding:12px 16px;font-weight:900;box-shadow:0 14px 34px rgba(0,0,0,.25);transition:.2s ease;pointer-events:none}
     .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
     @media(max-width:1200px){.desktop-layout{grid-template-columns:1fr}.side-panel{display:none}.wrap{max-width:980px}}
-    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:36px}.dong-trade-row{grid-template-columns:1fr}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:64px 1fr}.favorite-toggle{width:64px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:1fr}}
+    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:36px}.dong-trade-row{grid-template-columns:1fr}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:64px 1fr}.favorite-toggle{width:64px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:10px}.filter-select{padding:0 6px;font-size:12px}.filter-field label{font-size:11px}}
   </style>
 </head>
 <body>
@@ -400,6 +404,35 @@
       var type = normalizeTypeLabel((payload.propertyTypeNames || []).join('-')) || normalizeTypeLabel(selectedType) || '';
       return [payload.legalDongName || '', type].filter(Boolean).join(' · ');
     }
+    function tradeLabelFromHistory(item){
+      if(!item || !item.selectedTrade) return '';
+      if(item.selectedTrade === 'SALE') return '매매';
+      if(item.selectedTrade === 'RENT') return '임대';
+      if(item.selectedTrade === 'ALL') return '매매 임대';
+      return '';
+    }
+    function tradeClassFromHistory(item){
+      var label = tradeLabelFromHistory(item);
+      if(label === '매매') return 'is-sale';
+      if(label === '임대') return 'is-rent';
+      if(label === '매매 임대') return 'is-both';
+      return '';
+    }
+    function historyTradeChipHtml(item){
+      var label = tradeLabelFromHistory(item);
+      if(!label) return '';
+      var cls = tradeClassFromHistory(item);
+      return '<span class="history-trade-chip ' + escapeHtml(cls) + '">' + escapeHtml(label) + '</span>';
+    }
+    function setTradeChoice(value){
+      selectedTrade = value || 'ALL';
+      Array.prototype.forEach.call(els.tradeChoices.querySelectorAll('[data-trade]'), function(label){
+        var active = label.getAttribute('data-trade') === selectedTrade;
+        label.classList.toggle('active', active);
+        var input = label.querySelector('input');
+        if(input) input.checked = active;
+      });
+    }
     function statusLabel(status){
       return { queued:'대기중', running:'조회중', completed:'완료', done:'완료', failed:'실패', not_found:'결과없음' }[status] || status || '대기중';
     }
@@ -443,6 +476,8 @@
         query: currentQueryLabel(payload),
         dong: { name: payload.legalDongName || '', code: payload.legalDongCode || '' },
         selectedType: (payload.propertyTypeNames || []).join(','),
+        selectedTrade: selectedTrade,
+        selectedTradeTypes: payload.tradeTypes || [],
         payload: payload,
         createdAt: new Date().toISOString(),
         status: status || 'queued',
@@ -506,7 +541,7 @@
             '<button class="side-item-main" type="button" data-history-load="' + escapeHtml(item.id) + '">' + escapeHtml(item.query || '-') + '</button>' +
             '<button class="delete-mini" type="button" title="조회이력 삭제" data-history-delete="' + escapeHtml(item.id) + '">🗑</button>' +
           '</div>' +
-          '<div class="side-meta"><span class="status-pill ' + escapeHtml(status) + '">' + escapeHtml(statusLabel(item.status)) + '</span><span>' + escapeHtml(formatLocalTime(item.createdAt)) + '</span></div>' +
+          '<div class="side-meta"><span class="status-pill ' + escapeHtml(status) + '">' + escapeHtml(statusLabel(item.status)) + '</span><span>' + escapeHtml(formatLocalTime(item.createdAt)) + '</span>' + historyTradeChipHtml(item) + '</div>' +
         '</div>';
       }).join('');
     }
@@ -515,6 +550,7 @@
       if(!item) return;
       picked = item.dong || null;
       if(item.selectedType){ selectedType = item.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
+      if(item.selectedTrade){ setTradeChoice(item.selectedTrade); }
       renderPickedDong();
       setStatus('즐겨찾기를 조회창에 불러왔습니다. 조회 버튼을 누르세요.', 'ok');
       toast('즐겨찾기를 불러왔습니다.');
@@ -531,6 +567,7 @@
       currentJobId = item.jobId || '';
       picked = item.dong || (item.payload ? { name:item.payload.legalDongName, code:item.payload.legalDongCode || '' } : picked);
       if(item.selectedType){ selectedType = item.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
+      if(item.selectedTrade){ setTradeChoice(item.selectedTrade); }
       renderPickedDong();
       renderHistory();
       if(item.status === 'completed' && item.result){
@@ -1254,13 +1291,7 @@
     if(els.tradeChoices){
       els.tradeChoices.addEventListener('click', function(e){
         var opt = e.target.closest('[data-trade]'); if(!opt) return;
-        selectedTrade = opt.getAttribute('data-trade') || 'ALL';
-        Array.prototype.forEach.call(els.tradeChoices.querySelectorAll('[data-trade]'), function(label){
-          var active = label.getAttribute('data-trade') === selectedTrade;
-          label.classList.toggle('active', active);
-          var input = label.querySelector('input');
-          if(input) input.checked = active;
-        });
+        setTradeChoice(opt.getAttribute('data-trade') || 'ALL');
       });
     }
     els.runBtn.addEventListener('click', runResearch);

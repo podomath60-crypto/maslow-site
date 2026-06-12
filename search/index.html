@@ -995,6 +995,55 @@
       changed = setFavoriteOnItemArray(result.finalArticleRecords, key, value) || changed;
       return changed;
     }
+    function walkResultItems(result, callback){
+      if(!result || typeof result !== 'object' || typeof callback !== 'function') return;
+      function walk(items){
+        if(!Array.isArray(items)) return;
+        items.forEach(function(item){
+          if(item && typeof item === 'object') callback(item);
+        });
+      }
+      if(result.data && typeof result.data === 'object'){
+        walk(result.data.items);
+        walk(result.data.finalArticleRecords);
+      }
+      walk(result.items);
+      walk(result.finalArticleRecords);
+    }
+    function collectFavoriteKeysFromResultObject(result, out){
+      out = out || {};
+      walkResultItems(result, function(item){
+        if(!isResultFavorite(item)) return;
+        var key = getFavoriteKey(item);
+        if(key) out[key] = true;
+      });
+      return out;
+    }
+    function applyFavoriteKeyMapToResultObject(result, favoriteKeys){
+      var changed = false;
+      if(!favoriteKeys || !result) return false;
+      walkResultItems(result, function(item){
+        var key = getFavoriteKey(item);
+        if(key && favoriteKeys[key] && !isResultFavorite(item)){
+          item._favorite = true;
+          changed = true;
+        }
+      });
+      return changed;
+    }
+    function normalizeImportedFavoriteFlags(entries){
+      var favoriteKeys = {};
+      var favoriteCount = 0;
+      (entries || []).forEach(function(row){
+        if(row && row.trackerResult) collectFavoriteKeysFromResultObject(row.trackerResult, favoriteKeys);
+      });
+      Object.keys(favoriteKeys).forEach(function(){ favoriteCount += 1; });
+      if(!favoriteCount) return 0;
+      (entries || []).forEach(function(row){
+        if(row && row.trackerResult) applyFavoriteKeyMapToResultObject(row.trackerResult, favoriteKeys);
+      });
+      return favoriteCount;
+    }
     function syncFavoriteToLocalStorage(key, value){
       if(!key) return;
       try{
@@ -1634,6 +1683,7 @@
       // 구버전 함수명 유지. 내부는 단일/다중 TXT 모두 처리한다.
       var entries = normalizeImportedTrackerEntries(payload || { trackerResult: stored });
       if(!entries.length) throw new Error('missing result');
+      var importedFavoriteCount = normalizeImportedFavoriteFlags(entries);
 
       var firstStored = entries[0].trackerResult;
       localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify(firstStored));
@@ -1654,8 +1704,9 @@
       setProgress(null);
 
       var totalItems = entries.reduce(function(sum, row){ return sum + trackerResultItemCount(row.trackerResult); }, 0);
-      setStatus('저장 매물을 가져왔습니다. 오른쪽 조회이력에 반영했습니다. · 이력 ' + entries.length + '개 / 매물 ' + totalItems + '건', totalItems ? 'ok' : 'err');
-      toast('저장 매물을 가져왔습니다.');
+      var favoriteNote = importedFavoriteCount ? ' / 찜 ' + importedFavoriteCount + '개' : '';
+      setStatus('저장 매물을 가져왔습니다. 오른쪽 조회이력에 반영했습니다. · 이력 ' + entries.length + '개 / 매물 ' + totalItems + '건' + favoriteNote, totalItems ? 'ok' : 'err');
+      toast(importedFavoriteCount ? '찜 표시까지 가져왔습니다.' : '저장 매물을 가져왔습니다.');
     }
     function importTrackerResultTxtFile(file){
       if(!file) return;

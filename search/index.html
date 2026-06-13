@@ -589,6 +589,156 @@
     var MAX_HISTORY_ITEMS = 100;
     var MAX_FAVORITE_ITEMS = 10;
 
+    var TRACKER_DB_NAME = 'maslow_tracker_indexeddb_v1';
+    var TRACKER_DB_VERSION = 1;
+    var TRACKER_DB_RESULT_STORE = 'tracker_results';
+    var TRACKER_DB_FAVORITE_STORE = 'favorite_keys';
+
+    function openTrackerDb(){
+      return new Promise(function(resolve, reject){
+        if(!window.indexedDB){ reject(new Error('IndexedDB를 사용할 수 없습니다.')); return; }
+        var req = indexedDB.open(TRACKER_DB_NAME, TRACKER_DB_VERSION);
+        req.onupgradeneeded = function(){
+          var db = req.result;
+          if(!db.objectStoreNames.contains(TRACKER_DB_RESULT_STORE)){
+            db.createObjectStore(TRACKER_DB_RESULT_STORE, { keyPath:'id' });
+          }
+          if(!db.objectStoreNames.contains(TRACKER_DB_FAVORITE_STORE)){
+            db.createObjectStore(TRACKER_DB_FAVORITE_STORE, { keyPath:'key' });
+          }
+        };
+        req.onsuccess = function(){ resolve(req.result); };
+        req.onerror = function(){ reject(req.error || new Error('IndexedDB 열기 실패')); };
+      });
+    }
+    function idbPut(storeName, value){
+      return openTrackerDb().then(function(db){
+        return new Promise(function(resolve, reject){
+          var tx = db.transaction(storeName, 'readwrite');
+          tx.objectStore(storeName).put(value);
+          tx.oncomplete = function(){ resolve(value); };
+          tx.onerror = function(){ reject(tx.error || new Error('IndexedDB 저장 실패')); };
+        });
+      });
+    }
+    function idbGet(storeName, key){
+      return openTrackerDb().then(function(db){
+        return new Promise(function(resolve, reject){
+          var tx = db.transaction(storeName, 'readonly');
+          var req = tx.objectStore(storeName).get(key);
+          req.onsuccess = function(){ resolve(req.result || null); };
+          req.onerror = function(){ reject(req.error || new Error('IndexedDB 읽기 실패')); };
+        });
+      });
+    }
+    function idbDelete(storeName, key){
+      return openTrackerDb().then(function(db){
+        return new Promise(function(resolve, reject){
+          var tx = db.transaction(storeName, 'readwrite');
+          tx.objectStore(storeName).delete(key);
+          tx.oncomplete = function(){ resolve(true); };
+          tx.onerror = function(){ reject(tx.error || new Error('IndexedDB 삭제 실패')); };
+        });
+      });
+    }
+    function idbGetAll(storeName){
+      return openTrackerDb().then(function(db){
+        return new Promise(function(resolve, reject){
+          var tx = db.transaction(storeName, 'readonly');
+          var req = tx.objectStore(storeName).getAll();
+          req.onsuccess = function(){ resolve(Array.isArray(req.result) ? req.result : []); };
+          req.onerror = function(){ reject(req.error || new Error('IndexedDB 전체 읽기 실패')); };
+        });
+      });
+    }
+    function resultIdFromHistoryItem(item, fallback){
+      item = item || {};
+      return String(item.resultId || item.jobId || fallback || item.id || localId()).trim();
+    }
+    function latestResultId(){
+      try{ return localStorage.getItem(TRACKER_RESULT_KEY + '_id') || ''; }catch(e){ return ''; }
+    }
+    async function saveTrackerResultToDb(id, data, meta){
+      id = String(id || '').trim();
+      if(!id) id = localId();
+      await idbPut(TRACKER_DB_RESULT_STORE, {
+        id:id,
+        data:data || {},
+        meta:meta || {},
+        savedAt:new Date().toISOString()
+      });
+      return id;
+    }
+    async function readTrackerResultFromDb(id){
+      id = String(id || '').trim();
+      if(!id) return null;
+      var row = await idbGet(TRACKER_DB_RESULT_STORE, id);
+      return row && row.data ? row.data : null;
+    }
+    function storeFavoriteKeyInDb(key, value){
+      key = String(key || '').trim();
+      if(!key) return;
+      if(value){
+        idbPut(TRACKER_DB_FAVORITE_STORE, { key:key, createdAt:new Date().toISOString(), source:'user' }).catch(function(){});
+      }else{
+        idbDelete(TRACKER_DB_FAVORITE_STORE, key).catch(function(){});
+      }
+    }
+    async function readFavoriteKeyMapFromDb(){
+      var map = {};
+      try{
+        var rows = await idbGetAll(TRACKER_DB_FAVORITE_STORE);
+        rows.forEach(function(row){ if(row && row.key) map[row.key] = true; });
+      }catch(e){}
+      return map;
+    }
+    async function hydrateFavoriteKeysFromDb(){
+      var fromDb = await readFavoriteKeyMapFromDb();
+      var local = readFavoriteKeyMap();
+      var changed = false;
+      Object.keys(fromDb).forEach(function(key){
+        if(!local[key]){ local[key] = true; changed = true; }
+      });
+      if(changed) writeFavoriteKeyMap(local);
+      return local;
+    }
+    function itemArrayFromResultData(data){
+      data = data && data.data && typeof data.data === 'object' ? data.data : data;
+      if(!data || typeof data !== 'object') return [];
+      var items = data.items || data.finalArticleRecords || data.records || [];
+      return Array.isArray(items) ? items : [];
+    }
+    function listingKeysFromItems(items){
+      var seen = {};
+      var keys = [];
+      (items || []).forEach(function(item){
+        var key = getResultMergeKey(item);
+        if(key && !seen[key]){ seen[key] = true; keys.push(key); }
+      });
+      return keys;
+    }
+    function favoriteKeysFromItems(items){
+      var seen = {};
+      var keys = [];
+      (items || []).forEach(function(item){
+        var key = getFavoriteKey(item);
+        if(key && isResultFavorite(item) && !seen[key]){ seen[key] = true; keys.push(key); }
+      });
+      return keys;
+    }
+    function stripHeavyResultFromHistoryItem(item){
+      if(!item || typeof item !== 'object') return item;
+      if(item.result) item.result = null;
+      return item;
+    }
+    function historyItemContainsFavorite(item){
+      item = item || {};
+      var favoriteMap = readFavoriteKeyMap();
+      var keys = Array.isArray(item.listingKeys) ? item.listingKeys : [];
+      if(keys.some(function(key){ return !!favoriteMap[key]; })) return true;
+      var favKeys = Array.isArray(item.favoriteKeys) ? item.favoriteKeys : [];
+      return favKeys.some(function(key){ return !!favoriteMap[key]; });
+    }
 
     function localId(){ return 'local-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8); }
     function readLocalArray(key){ try{ var v = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
@@ -640,7 +790,58 @@
     function readFavorites(){ return readLocalArray(TRACKER_FAVORITES_KEY); }
     function saveFavorites(items){ writeLocalArray(TRACKER_FAVORITES_KEY, (items || []).slice(0, MAX_FAVORITE_ITEMS)); renderFavorites(); }
     function readHistory(){ return readLocalArray(TRACKER_HISTORY_KEY); }
-    function saveHistory(items){ writeLocalArray(TRACKER_HISTORY_KEY, (items || []).slice(0, MAX_HISTORY_ITEMS)); renderHistory(); }
+    function saveHistory(items){
+      var slim = (items || []).slice(0, MAX_HISTORY_ITEMS).map(function(item){
+        return stripHeavyResultFromHistoryItem(Object.assign({}, item || {}));
+      });
+      writeLocalArray(TRACKER_HISTORY_KEY, slim);
+      renderHistory();
+    }
+    async function migrateLegacyHistoryResultsToDb(){
+      var history = readHistory();
+      var changed = false;
+      for(var i = 0; i < history.length; i += 1){
+        var item = history[i];
+        if(!item || !item.result) continue;
+        var resultId = resultIdFromHistoryItem(item);
+        var resultData = item.result;
+        var items = itemArrayFromResultData(resultData);
+        await saveTrackerResultToDb(resultId, resultData, buildTransferMetaFromHistoryItem(item));
+        item.resultId = resultId;
+        item.itemCount = items.length;
+        item.listingKeys = listingKeysFromItems(items);
+        item.favoriteKeys = favoriteKeysFromItems(items);
+        item.result = null;
+        changed = true;
+      }
+      if(changed) saveHistory(history);
+      return changed;
+    }
+    async function migrateLegacyLatestResultToDb(){
+      try{
+        var raw = localStorage.getItem(TRACKER_RESULT_KEY) || '';
+        if(!raw) return false;
+        var stored = JSON.parse(raw);
+        if(!stored || !stored.data) return false;
+        var resultId = String(stored.resultId || stored.jobId || latestResultId() || localId()).trim();
+        await saveTrackerResultToDb(resultId, stored.data, { source:'legacy-latest', jobId:stored.jobId || '', savedAt:stored.finishedAt || '' });
+        localStorage.setItem(TRACKER_RESULT_KEY + '_id', resultId);
+        localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify({
+          status: stored.status || 'completed',
+          jobId: stored.jobId || '',
+          resultId: resultId,
+          itemCount: trackerResultItemCount(stored),
+          finishedAt: stored.finishedAt || new Date().toISOString()
+        }));
+        return true;
+      }catch(e){ return false; }
+    }
+    async function migrateLegacyLocalStorageToIndexedDb(){
+      await hydrateFavoriteKeysFromDb();
+      await migrateLegacyLatestResultToDb();
+      await migrateLegacyHistoryResultsToDb();
+      renderHistory();
+    }
     function setFavoriteChecked(value){
       favoriteChecked = !!value;
       if(!els.favoriteToggleBtn) return;
@@ -686,12 +887,13 @@
       saveHistory(history);
       return entry;
     }
-    function updateHistoryFromStatus(data){
+    async function updateHistoryFromStatus(data){
       if(!data || !data.jobId) return;
       var history = readHistory();
       var changed = false;
-      history = history.map(function(item){
-        if(item.jobId !== data.jobId) return item;
+      for(var idx = 0; idx < history.length; idx += 1){
+        var item = history[idx];
+        if(!item || item.jobId !== data.jobId) continue;
         changed = true;
         var status = data.status === 'done' ? 'completed' : (data.status || item.status || 'queued');
         var next = Object.assign({}, item, {
@@ -699,9 +901,18 @@
           error: data.message || data.error || item.error || null,
           updatedAt: new Date().toISOString()
         });
-        if(status === 'completed') next.result = data;
-        return next;
-      });
+        if(status === 'completed'){
+          var resultId = resultIdFromHistoryItem(next, data.jobId);
+          var items = itemArrayFromResultData(data);
+          await saveTrackerResultToDb(resultId, data, buildTransferMetaFromHistoryItem(next));
+          next.resultId = resultId;
+          next.itemCount = items.length;
+          next.listingKeys = listingKeysFromItems(items);
+          next.favoriteKeys = favoriteKeysFromItems(items);
+          next.result = null;
+        }
+        history[idx] = next;
+      }
       if(changed) saveHistory(history);
     }
     function renderFavorites(){
@@ -726,11 +937,20 @@
     function historyResultItems(historyItem){
       var result = historyItem && historyItem.result;
       if(!result || typeof result !== 'object') return [];
-      var data = result.data && typeof result.data === 'object' ? result.data : result;
-      var items = data.items || data.finalArticleRecords || result.items || result.finalArticleRecords || [];
-      return Array.isArray(items) ? items : [];
+      return itemArrayFromResultData(result);
+    }
+    async function getHistoryResultData(historyItem){
+      if(!historyItem) return null;
+      if(historyItem.result && typeof historyItem.result === 'object') return historyItem.result;
+      var resultId = resultIdFromHistoryItem(historyItem);
+      return await readTrackerResultFromDb(resultId);
+    }
+    async function historyResultItemsAsync(historyItem){
+      var result = await getHistoryResultData(historyItem);
+      return itemArrayFromResultData(result);
     }
     function historyHasFavoriteItem(historyItem){
+      if(historyItemContainsFavorite(historyItem)) return true;
       var items = historyResultItems(historyItem);
       if(!items.length) return false;
       return items.some(function(item){
@@ -767,7 +987,7 @@
       els.favoriteViewBtn.classList.toggle('active', !!favoriteViewMode);
       els.favoriteViewBtn.setAttribute('aria-pressed', favoriteViewMode ? 'true' : 'false');
     }
-    function collectFavoriteItemsFromAllSources(){
+    async function collectFavoriteItemsFromAllSources(){
       var favoriteMap = readFavoriteKeyMap();
       var items = [];
       function collectFromResult(result){
@@ -779,11 +999,14 @@
           }
         });
       }
-      readHistory().forEach(function(historyItem){
-        if(historyItem && historyItem.result) collectFromResult(historyItem.result);
-      });
+      var history = readHistory();
+      for(var i = 0; i < history.length; i += 1){
+        var historyItem = history[i];
+        var result = await getHistoryResultData(historyItem);
+        if(result) collectFromResult(result);
+      }
       try{
-        var stored = readTrackerResult();
+        var stored = await readLatestTrackerResult();
         if(stored) collectFromResult(stored);
       }catch(e){}
       return dedupeResultItemsByListing(items);
@@ -800,8 +1023,8 @@
       els.empty.textContent = '찜한 매물이 없습니다.';
       setStatus('찜한 매물이 없습니다.', '');
     }
-    function renderFavoriteViewResults(){
-      var items = collectFavoriteItemsFromAllSources();
+    async function renderFavoriteViewResults(){
+      var items = await collectFavoriteItemsFromAllSources();
       if(!items.length){
         showFavoriteViewEmpty();
         return [];
@@ -827,14 +1050,16 @@
     function toggleFavoriteViewMode(){
       setFavoriteViewMode(!favoriteViewMode);
     }
-    function renderSelectedHistoryResults(){
+    async function renderSelectedHistoryResults(){
       var history = readHistory();
       var merged = [];
-      history.forEach(function(item){
-        if(!selectedHistoryIds[item.id]) return;
-        if(item.status !== 'completed' || !item.result) return;
-        merged = merged.concat(historyResultItems(item));
-      });
+      for(var i = 0; i < history.length; i += 1){
+        var item = history[i];
+        if(!item || !selectedHistoryIds[item.id]) continue;
+        if(item.status !== 'completed') continue;
+        var items = await historyResultItemsAsync(item);
+        merged = merged.concat(items);
+      }
       if(!merged.length){
         showCenterSelectionPrompt();
         return [];
@@ -846,7 +1071,7 @@
       setStatus('선택한 조회카드 ' + selectedHistoryCount() + '개 · 매물 ' + uniqueItems.length + '건', uniqueItems.length ? 'ok' : '');
       return lastItems;
     }
-    function toggleHistorySelection(id){
+    async function toggleHistorySelection(id){
       if(favoriteViewMode){
         favoriteViewMode = false;
         setFavoriteViewButton();
@@ -860,7 +1085,7 @@
       if(item.selectedTrade){ setTradeChoice(item.selectedTrade); }
       renderPickedDong();
 
-      if(item.status !== 'completed' || !item.result){
+      if(item.status !== 'completed'){
         renderHistory();
         resetResults();
         showTrackerRunning(statusLabel(item.status) + '입니다. 상태 새로고침으로 확인하세요.');
@@ -870,7 +1095,7 @@
 
       setHistoryInCenter(id, !selectedHistoryIds[id]);
       renderHistory();
-      renderSelectedHistoryResults();
+      await renderSelectedHistoryResults();
     }
     function selectSingleCompletedHistoryByJobId(jobId){
       if(!jobId) return false;
@@ -936,9 +1161,10 @@
           headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify({ jobIds: pending.map(function(x){ return x.jobId; }) })
         });
-        (data.jobs || []).forEach(updateHistoryFromStatus);
+        await Promise.all((data.jobs || []).map(updateHistoryFromStatus));
         renderHistory();
-        if(selectedHistoryCount()) renderSelectedHistoryResults();
+        if(favoriteViewMode) renderFavoriteViewResults();
+        else if(selectedHistoryCount()) renderSelectedHistoryResults();
         setStatus('조회이력 상태를 갱신했습니다.', 'ok');
       }catch(e){
         setStatus(e && e.message ? e.message : '조회이력 상태 갱신 실패', 'err');
@@ -967,30 +1193,49 @@
         localStorage.removeItem(TRACKER_RESULT_KEY);
       }catch(e){}
     }
-    function saveTrackerResult(data){
+    async function saveTrackerResult(data){
       try{
+        var resultId = String((data && data.jobId) || localId()).trim();
+        await saveTrackerResultToDb(resultId, data || {}, {
+          source:'latest',
+          jobId: resultId,
+          savedAt:new Date().toISOString()
+        });
+        localStorage.setItem(TRACKER_RESULT_KEY + '_id', resultId);
         localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify({
           status:'completed',
-          jobId: data && data.jobId ? data.jobId : '',
-          data:data,
+          jobId: resultId,
+          resultId: resultId,
+          itemCount: itemArrayFromResultData(data).length,
           finishedAt:new Date().toISOString()
         }));
         if(data && data.jobId){
           localStorage.setItem(TRACKER_PENDING_KEY, JSON.stringify({
             status:'completed',
             jobId:data.jobId,
+            resultId:resultId,
             finishedAt:new Date().toISOString()
           }));
         }else{
           localStorage.removeItem(TRACKER_PENDING_KEY);
         }
-      }catch(e){}
+        return resultId;
+      }catch(e){
+        setStatus('조회결과를 브라우저 DB에 저장하지 못했습니다.', 'err');
+        throw e;
+      }
     }
     function readTrackerPending(){
       try{ return JSON.parse(localStorage.getItem(TRACKER_PENDING_KEY) || 'null'); }catch(e){ return null; }
     }
     function readTrackerResult(){
       try{ return JSON.parse(localStorage.getItem(TRACKER_RESULT_KEY) || 'null'); }catch(e){ return null; }
+    }
+    async function readLatestTrackerResult(){
+      var meta = readTrackerResult();
+      var resultId = (meta && meta.resultId) || latestResultId() || (meta && meta.jobId) || '';
+      if(resultId) return await readTrackerResultFromDb(resultId);
+      return meta && meta.data ? meta.data : null;
     }
 
     function insertSpaceAfterSi(name){
@@ -1022,10 +1267,10 @@
       els.summary.classList.remove('show');
       els.resultActions.style.display = 'none';
     }
-    function applyTrackerResult(data, prefix){
-      var items = data.items || data.finalArticleRecords || [];
-      saveTrackerResult(data);
-      updateHistoryFromStatus(data);
+    async function applyTrackerResult(data, prefix){
+      var items = itemArrayFromResultData(data);
+      await saveTrackerResult(data);
+      await updateHistoryFromStatus(data);
       selectSingleCompletedHistoryByJobId(data && data.jobId);
       renderResults(items);
       setProgress(null);
@@ -1061,10 +1306,10 @@
           method:'GET'
         });
 
-        updateHistoryFromStatus(data);
+        await updateHistoryFromStatus(data);
 
         if(data.status === 'completed'){
-          applyTrackerResult(data, '조회 완료');
+          await applyTrackerResult(data, '조회 완료');
           return data;
         }
 
@@ -1086,7 +1331,7 @@
         return null;
       }
     }
-    function restoreTrackerState(){
+    async function restoreTrackerState(){
       var pending = readTrackerPending();
       if(pending && pending.payload && pending.payload.legalDongName){
         picked = { name: pending.payload.legalDongName, code: pending.payload.legalDongCode || '' };
@@ -1099,14 +1344,13 @@
         return true;
       }
 
-      var savedResult = readTrackerResult();
-      if(savedResult && savedResult.data){
-        var data = savedResult.data;
+      var data = await readLatestTrackerResult();
+      if(data){
         if(data && data.input && data.input.legalDongName){
           picked = { name: data.input.legalDongName, code: data.input.legalDongCode || '' };
           renderPickedDong();
         }
-        var items = data.items || data.finalArticleRecords || [];
+        var items = itemArrayFromResultData(data);
         renderResults(items);
         setProgress(null);
         setStatus('최근 조회 완료 · ' + lastItems.length + '건', lastItems.length ? 'ok' : 'err');
@@ -1275,6 +1519,9 @@
     }
     function writeFavoriteKeyMap(map){
       try{ localStorage.setItem(TRACKER_FAVORITE_KEYS_KEY, JSON.stringify(map || {})); }catch(e){}
+      try{
+        Object.keys(map || {}).forEach(function(key){ if(map[key]) storeFavoriteKeyInDb(key, true); });
+      }catch(e){}
     }
     function setFavoriteKeyPersisted(key, value){
       if(!key) return;
@@ -1282,6 +1529,7 @@
       if(value) map[key] = true;
       else delete map[key];
       writeFavoriteKeyMap(map);
+      storeFavoriteKeyInDb(key, !!value);
     }
     function hasFavoriteFlag(item){
       return !!(item && (item._favorite === true || item._favorite === 'true' || item.favorite === true || item.favorite === 'true'));
@@ -1924,7 +2172,7 @@
       var tr = (meta && meta.selectedTrade) || (Array.isArray(input.tradeTypes) ? input.tradeTypes.join(',') : '');
       return ['manual', q, t, tr, itemCount, stored && stored.finishedAt || ''].join('|');
     }
-    function collectSavedTrackerResultsForExport(){
+    async function collectSavedTrackerResultsForExport(){
       var rows = [];
       var seen = {};
 
@@ -1942,21 +2190,25 @@
 
       // 1) 최근 조회결과
       try{
-        var raw = localStorage.getItem(TRACKER_RESULT_KEY) || '';
-        if(raw){
-          var latest = JSON.parse(raw);
-          addStored(latest, buildTransferMetaForExport());
+        var latestData = await readLatestTrackerResult();
+        if(latestData){
+          var latestMeta = readTrackerResult() || {};
+          addStored(wrapTrackerDataForTransfer(latestData, latestMeta.jobId || latestMeta.resultId || latestResultId(), latestMeta.finishedAt || ''), buildTransferMetaForExport());
         }
       }catch(e){}
 
       // 2) 오른쪽 조회이력에 저장된 완료 결과 전체
-      readHistory().forEach(function(item){
-        if(!item || item.status !== 'completed' || !item.result) return;
+      var history = readHistory();
+      for(var i = 0; i < history.length; i += 1){
+        var item = history[i];
+        if(!item || item.status !== 'completed') continue;
+        var resultData = await getHistoryResultData(item);
+        if(!resultData) continue;
         addStored(
-          wrapTrackerDataForTransfer(item.result, item.jobId || (item.result && item.result.jobId) || '', item.updatedAt || item.createdAt || ''),
+          wrapTrackerDataForTransfer(resultData, item.jobId || item.resultId || '', item.updatedAt || item.createdAt || ''),
           buildTransferMetaFromHistoryItem(item)
         );
-      });
+      }
 
       return rows;
     }
@@ -1979,9 +2231,9 @@
       });
       return Object.keys(favoriteKeys).filter(function(key){ return !!favoriteKeys[key]; });
     }
-    function exportTrackerResultTxt(){
+    async function exportTrackerResultTxt(){
       try{
-        var resultRows = applyFavoriteMapToTransferRows(collectSavedTrackerResultsForExport());
+        var resultRows = applyFavoriteMapToTransferRows(await collectSavedTrackerResultsForExport());
         if(!resultRows.length){
           setStatus('내보낼 저장 매물이 없습니다.', 'err');
           toast('내보낼 저장 매물이 없습니다.');
@@ -1989,16 +2241,22 @@
         }
 
         var totalItems = resultRows.reduce(function(sum, row){ return sum + trackerResultItemCount(row.trackerResult); }, 0);
+        var favoriteKeys = favoriteKeyListFromTransferRows(resultRows);
+        var dbFavoriteMap = await readFavoriteKeyMapFromDb();
+        Object.keys(dbFavoriteMap).forEach(function(key){
+          if(dbFavoriteMap[key] && favoriteKeys.indexOf(key) < 0) favoriteKeys.push(key);
+        });
         var payload = {
           app: 'maslow-search',
-          version: 2,
+          version: 3,
           type: 'tracker-result',
           exportScope: 'all-local-results',
+          storage: 'indexeddb-results',
           exportedAt: new Date().toISOString(),
           resultCount: resultRows.length,
           itemCount: totalItems,
           trackerResults: resultRows,
-          favoriteKeys: favoriteKeyListFromTransferRows(resultRows),
+          favoriteKeys: favoriteKeys,
           // 구버전 가져오기 호환용: 첫 번째 결과도 같이 둔다.
           meta: resultRows[0].meta || {},
           trackerResult: resultRows[0].trackerResult
@@ -2075,14 +2333,29 @@
         },
         createdAt: new Date().toISOString(),
         status: 'completed',
+        resultId: meta.resultId || ('import-' + localId()),
         result: data,
         error: null,
         imported: true,
         importedAt: new Date().toISOString()
       };
     }
-    function addImportedTrackerResultsToHistory(entries){
-      var imported = entries.map(buildImportedHistoryEntry);
+    async function addImportedTrackerResultsToHistory(entries){
+      var imported = [];
+      for(var i = 0; i < entries.length; i += 1){
+        var entry = buildImportedHistoryEntry(entries[i], i);
+        var stored = entries[i] && entries[i].trackerResult ? entries[i].trackerResult : {};
+        var data = stored && stored.data ? stored.data : {};
+        var resultId = resultIdFromHistoryItem(entry, entry.resultId);
+        var items = itemArrayFromResultData(data);
+        await saveTrackerResultToDb(resultId, data, buildTransferMetaFromHistoryItem(entry));
+        entry.resultId = resultId;
+        entry.itemCount = items.length;
+        entry.listingKeys = listingKeysFromItems(items);
+        entry.favoriteKeys = favoriteKeysFromItems(items);
+        entry.result = null;
+        imported.push(entry);
+      }
       var history = readHistory();
       history = imported.concat(history);
       selectedHistoryId = imported.length ? imported[0].id : '';
@@ -2091,26 +2364,36 @@
       saveHistory(history);
       return imported;
     }
-    function restoreImportedTrackerResult(stored, payload){
+    async function restoreImportedTrackerResult(stored, payload){
       // 구버전 함수명 유지. 내부는 단일/다중 TXT 모두 처리한다.
       var entries = normalizeImportedTrackerEntries(payload || { trackerResult: stored });
       if(!entries.length) throw new Error('missing result');
       var importedFavoriteCount = normalizeImportedFavoriteFlags(entries, payload || {});
 
+      var imported = await addImportedTrackerResultsToHistory(entries);
+      var firstEntry = imported[0];
       var firstStored = entries[0].trackerResult;
-      localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify(firstStored));
+      var firstResultId = firstEntry ? firstEntry.resultId : '';
+      if(firstStored && firstStored.data && firstResultId){
+        await saveTrackerResultToDb(firstResultId, firstStored.data, firstEntry ? buildTransferMetaFromHistoryItem(firstEntry) : {});
+        localStorage.setItem(TRACKER_RESULT_KEY + '_id', firstResultId);
+        localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify({
+          status:'completed',
+          jobId:firstEntry ? firstEntry.jobId || '' : '',
+          resultId:firstResultId,
+          itemCount: trackerResultItemCount(firstStored),
+          finishedAt:new Date().toISOString()
+        }));
+      }
       localStorage.removeItem(TRACKER_PENDING_KEY);
       currentJobId = '';
-
-      var imported = addImportedTrackerResultsToHistory(entries);
-      var firstEntry = imported[0];
 
       if(firstEntry && firstEntry.dong && firstEntry.dong.name){ picked = firstEntry.dong; renderPickedDong(); }
       if(firstEntry && firstEntry.selectedType){ selectedType = firstEntry.selectedType; setChoice(els.typeChoices, 'data-type', selectedType); }
       if(firstEntry && firstEntry.selectedTrade){ setTradeChoice(firstEntry.selectedTrade); }
 
       renderHistory();
-      renderSelectedHistoryResults();
+      await renderSelectedHistoryResults();
       setProgress(null);
 
       var totalItems = entries.reduce(function(sum, row){ return sum + trackerResultItemCount(row.trackerResult); }, 0);
@@ -2121,11 +2404,11 @@
     function importTrackerResultTxtFile(file){
       if(!file) return;
       var reader = new FileReader();
-      reader.onload = function(){
+      reader.onload = async function(){
         try{
           var payload = JSON.parse(String(reader.result || ''));
           if(!payload || payload.app !== 'maslow-search' || payload.type !== 'tracker-result') throw new Error('invalid file');
-          restoreImportedTrackerResult(payload.trackerResult, payload);
+          await restoreImportedTrackerResult(payload.trackerResult, payload);
         }catch(e){
           setStatus('올바른 조회결과 TXT 파일이 아닙니다.', 'err');
           toast('조회결과 TXT 파일을 확인하세요.');
@@ -2251,7 +2534,11 @@
     renderFavorites();
     setFavoriteViewButton();
     renderHistory();
-    restoreTrackerState();
+    migrateLegacyLocalStorageToIndexedDb().then(function(){
+      restoreTrackerState();
+    }).catch(function(){
+      restoreTrackerState();
+    });
   </script>
 </body>
 </html>

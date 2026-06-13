@@ -15,7 +15,54 @@
     .page{min-height:100vh}
     .main{padding:34px 20px 64px}
     .wrap{max-width:980px;margin:0 auto}
-    .hero{margin-bottom:22px;text-align:center}
+    .hero{position:relative;margin-bottom:22px;text-align:center}
+    .favorite-view-btn{
+      position:absolute;
+      left:44px;
+      top:-12px;
+      min-width:92px;
+      height:66px;
+      border:2px solid rgba(255,126,171,.42);
+      background:rgba(255,179,205,.26);
+      color:rgba(219,39,119,.42);
+      border-radius:999px;
+      font-size:26px;
+      font-weight:950;
+      letter-spacing:-.04em;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:none;
+      opacity:.72;
+      transition:background .15s ease,color .15s ease,border-color .15s ease,box-shadow .15s ease,opacity .15s ease,transform .15s ease;
+    }
+    .favorite-view-btn::after{
+      content:'';
+      position:absolute;
+      right:15px;
+      bottom:-9px;
+      width:22px;
+      height:22px;
+      background:inherit;
+      border-right:2px solid rgba(255,126,171,.42);
+      border-bottom:2px solid rgba(255,126,171,.42);
+      transform:rotate(24deg);
+      border-bottom-right-radius:4px;
+    }
+    .favorite-view-btn span{position:relative;z-index:1}
+    .favorite-view-btn:hover{opacity:.92}
+    .favorite-view-btn.active{
+      background:#ff8fbc;
+      border-color:#ff8fbc;
+      color:#fff;
+      opacity:1;
+      box-shadow:0 12px 28px rgba(255,105,180,.22);
+      transform:translateY(-1px);
+    }
+    .favorite-view-btn.active::after{
+      background:#ff8fbc;
+      border-color:#ff8fbc;
+    }
     .brand{font-size:13px;font-weight:950;letter-spacing:.12em;color:var(--blue);margin-bottom:8px}
     h1{margin:0;font-size:46px;letter-spacing:-.06em;line-height:1.03}
     .desc{margin:10px auto 0;color:#4b5563;font-size:15px;line-height:1.55;max-width:620px;word-break:keep-all}
@@ -303,6 +350,7 @@
 
         <div class="wrap">
         <div class="hero">
+          <button id="favoriteViewBtn" class="favorite-view-btn" type="button" aria-pressed="false" title="찜 모아보기"><span>찜</span></button>
           <div class="brand">네이버부동산</div>
           <h1>매물주소추적기</h1>
         </div>
@@ -477,6 +525,7 @@
     var selectedType = 'E02';
     var selectedTrade = 'ALL';
     var favoriteChecked = false;
+    var favoriteViewMode = false;
     var selectedHistoryId = '';
     var selectedHistoryIds = {};
 
@@ -487,6 +536,7 @@
       typeChoices: document.getElementById('typeChoices'),
       tradeChoices: document.getElementById('tradeChoices'),
       favoriteToggleBtn: document.getElementById('favoriteToggleBtn'),
+      favoriteViewBtn: document.getElementById('favoriteViewBtn'),
       favoriteCount: document.getElementById('favoriteCount'),
       favoriteList: document.getElementById('favoriteList'),
       historyRefreshBtn: document.getElementById('historyRefreshBtn'),
@@ -712,6 +762,71 @@
       els.empty.style.display = 'block';
       els.empty.textContent = '조회 카드를 선택 or 드래그 해주세요.';
     }
+    function setFavoriteViewButton(){
+      if(!els.favoriteViewBtn) return;
+      els.favoriteViewBtn.classList.toggle('active', !!favoriteViewMode);
+      els.favoriteViewBtn.setAttribute('aria-pressed', favoriteViewMode ? 'true' : 'false');
+    }
+    function collectFavoriteItemsFromAllSources(){
+      var favoriteMap = readFavoriteKeyMap();
+      var items = [];
+      function collectFromResult(result){
+        walkResultItems(result, function(item){
+          var key = getFavoriteKey(item);
+          if(key && favoriteMap[key]){
+            item._favorite = true;
+            items.push(item);
+          }
+        });
+      }
+      readHistory().forEach(function(historyItem){
+        if(historyItem && historyItem.result) collectFromResult(historyItem.result);
+      });
+      try{
+        var stored = readTrackerResult();
+        if(stored) collectFromResult(stored);
+      }catch(e){}
+      return dedupeResultItemsByListing(items);
+    }
+    function showFavoriteViewEmpty(){
+      lastItems = [];
+      filteredItems = [];
+      renderSummary([]);
+      els.tableWrap.classList.remove('show');
+      els.resultActions.style.display = 'none';
+      els.resultFilters.classList.remove('show');
+      els.resultBody.innerHTML = '';
+      els.empty.style.display = 'block';
+      els.empty.textContent = '찜한 매물이 없습니다.';
+      setStatus('찜한 매물이 없습니다.', '');
+    }
+    function renderFavoriteViewResults(){
+      var items = collectFavoriteItemsFromAllSources();
+      if(!items.length){
+        showFavoriteViewEmpty();
+        return [];
+      }
+      renderResults(items);
+      setProgress(null);
+      setStatus('찜 매물 ' + items.length + '건', 'ok');
+      return lastItems;
+    }
+    function setFavoriteViewMode(value){
+      favoriteViewMode = !!value;
+      setFavoriteViewButton();
+      if(favoriteViewMode){
+        renderFavoriteViewResults();
+        return;
+      }
+      clearSelectedHistoryIds();
+      selectedHistoryId = '';
+      renderHistory();
+      showCenterSelectionPrompt();
+      setStatus('', '');
+    }
+    function toggleFavoriteViewMode(){
+      setFavoriteViewMode(!favoriteViewMode);
+    }
     function renderSelectedHistoryResults(){
       var history = readHistory();
       var merged = [];
@@ -732,6 +847,10 @@
       return lastItems;
     }
     function toggleHistorySelection(id){
+      if(favoriteViewMode){
+        favoriteViewMode = false;
+        setFavoriteViewButton();
+      }
       var item = historyById(id);
       if(!item) return;
       selectedHistoryId = id;
@@ -800,7 +919,8 @@
       if(selectedHistoryId === id) selectedHistoryId = '';
       delete selectedHistoryIds[id];
       saveHistory(readHistory().filter(function(x){ return x.id !== id; }));
-      if(!selectedHistoryCount()) showCenterSelectionPrompt();
+      if(favoriteViewMode) renderFavoriteViewResults();
+      else if(!selectedHistoryCount()) showCenterSelectionPrompt();
       else renderSelectedHistoryResults();
     }
     function loadHistory(id){
@@ -1345,7 +1465,8 @@
       setFavoriteOnItemArray(filteredItems, key, next);
       syncFavoriteToLocalStorage(key, next);
       renderHistory();
-      renderFilteredResults();
+      if(favoriteViewMode) renderFavoriteViewResults();
+      else renderFilteredResults();
       if(next){
         var chip = els.resultBody.querySelector('[data-favorite-key="' + cssEscapeValue(key) + '"]');
         if(chip){ chip.classList.add('just-favorited'); setTimeout(function(){ chip.classList.remove('just-favorited'); }, 700); }
@@ -2020,6 +2141,7 @@
     }
 
 
+    if(els.favoriteViewBtn) els.favoriteViewBtn.addEventListener('click', toggleFavoriteViewMode);
     if(els.exportResultTxtBtn) els.exportResultTxtBtn.addEventListener('click', exportTrackerResultTxt);
     if(els.importResultTxtBtn) els.importResultTxtBtn.addEventListener('click', function(){ if(els.importResultTxtInput) els.importResultTxtInput.click(); });
     if(els.importResultTxtInput) els.importResultTxtInput.addEventListener('change', function(e){
@@ -2127,6 +2249,7 @@
     renderPickedDong();
     resetResults();
     renderFavorites();
+    setFavoriteViewButton();
     renderHistory();
     restoreTrackerState();
   </script>

@@ -1975,14 +1975,13 @@
           ? '<button class="article-no-btn" type="button" data-article-no="' + escapeHtml(no) + '">' + escapeHtml(no) + '</button>'
           : '<span class="muted">-</span>';
         var addr = getAddressText(item) || '주소 미확인';
-        var pnu = item.pnu ? '<div class="muted">PNU ' + escapeHtml(item.pnu) + '</div>' : '';
         var mapBtn = addr && addr !== '주소 미확인'
           ? '<button class="naver-map-btn" type="button" title="네이버지도에서 주소 검색" data-map-address="' + escapeHtml(addr) + '" aria-label="네이버지도에서 주소 검색"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2.75c-3.05 0-5.5 2.36-5.5 5.28 0 3.93 5.5 13.22 5.5 13.22s5.5-9.29 5.5-13.22c0-2.92-2.45-5.28-5.5-5.28Zm0 7.42a2.05 2.05 0 1 1 0-4.1 2.05 2.05 0 0 1 0 4.1Z"/></svg></button>'
           : '';
         var favRowClass = isResultFavorite(item) ? ' class="favorite-row"' : '';
         return '<tr' + favRowClass + '>' +
           '<td>' + favoriteChipHtml(item) + '</td>' +
-          '<td><div class="addr">' + escapeHtml(addr) + '</div>' + pnu + '</td>' +
+          '<td><div class="addr">' + escapeHtml(addr) + '</div></td>' +
           '<td class="map-cell">' + mapBtn + '</td>' +
           '<td>' + escapeHtml(getTradeText(item) || '-') + '</td>' +
           '<td>' + escapeHtml(getPriceText(item) || '-') + '</td>' +

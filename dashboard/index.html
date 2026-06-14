@@ -246,9 +246,18 @@
     .card-list{display:grid;grid-template-columns:1fr;gap:12px}
     .property-card{border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
     .property-main{
-      display:grid;grid-template-columns:112px 1fr;gap:14px;padding:14px;align-items:start;cursor:pointer
+      display:grid;grid-template-columns:112px 1fr;gap:14px;padding:14px;align-items:start;cursor:default
     }
     .thumb{width:112px;height:112px;border-radius:18px;background:#edf2f7 center/cover no-repeat;overflow:hidden;flex:0 0 112px}
+    .property-copy-thumb{
+      cursor:pointer;
+      -webkit-user-select:none;
+      user-select:none;
+      -webkit-touch-callout:none;
+      touch-action:manipulation;
+    }
+    .property-edit-link{cursor:pointer}
+    .property-edit-link:hover{text-decoration:underline}
     .card-content{min-width:0;display:grid;gap:8px}
     .title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
     .card-title{
@@ -349,6 +358,55 @@
     .memo-modal-actions{display:flex;justify-content:flex-end;gap:16px}
     .memo-btn{min-height:32px;padding:0 4px;border:none;background:transparent;font-size:15px;font-weight:700;color:#7a6500}
     .memo-btn.primary{color:#0f7cff}
+
+    .property-copy-modal{
+      position:fixed;
+      inset:0;
+      z-index:12170;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(15,23,42,.35);
+      backdrop-filter:blur(4px);
+      -webkit-backdrop-filter:blur(4px);
+    }
+    .property-copy-modal.show{display:flex}
+    .property-copy-card{
+      width:min(420px, calc(100vw - 32px));
+      padding:24px 22px 20px;
+      border:1px solid #dbe7f4;
+      border-radius:22px;
+      background:#fff;
+      box-shadow:0 22px 58px rgba(15,23,42,.24);
+      display:grid;
+      gap:14px;
+    }
+    .property-copy-head{font-size:22px;font-weight:1000;color:#17191d;letter-spacing:-0.04em}
+    .property-copy-desc{font-size:15px;line-height:1.65;color:#5f6873;font-weight:750;letter-spacing:-0.03em;white-space:pre-line}
+    .property-copy-number{
+      padding:10px 12px;
+      border-radius:14px;
+      background:#f5f8fc;
+      color:#3f4852;
+      font-size:13px;
+      line-height:1.45;
+      font-weight:900;
+      word-break:break-all;
+    }
+    .property-copy-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:2px}
+    .property-copy-btn{
+      min-height:40px;
+      padding:0 16px;
+      border-radius:999px;
+      border:1px solid #dce6f1;
+      background:#fff;
+      color:#4f5863;
+      font-size:14px;
+      font-weight:950;
+      letter-spacing:-0.02em;
+    }
+    .property-copy-btn.primary{border-color:#0f7cff;background:#0f7cff;color:#fff}
 
     .channel-row{
       display:grid;
@@ -1731,6 +1789,21 @@
   </div>
 
 
+  <div id="propertyCopyConfirmModal" class="property-copy-modal" onclick="closePropertyCopyConfirmModal()" aria-hidden="true">
+    <div class="property-copy-card" onclick="event.stopPropagation()">
+      <div class="property-copy-head">매물을 복사할까요?</div>
+      <div class="property-copy-desc">복사본은 새 매물번호로 비공개 생성됩니다.
+사진과 자료는 새 Drive 폴더에 독립 복사됩니다.
+AI/SNS 상태는 완전히 초기화됩니다.</div>
+      <div id="propertyCopyListingNumberText" class="property-copy-number"></div>
+      <div class="property-copy-actions">
+        <button type="button" class="property-copy-btn" onclick="closePropertyCopyConfirmModal()">취소</button>
+        <button type="button" class="property-copy-btn primary" onclick="confirmPropertyCopyFromModal()">복사하기</button>
+      </div>
+    </div>
+  </div>
+
+
   <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-panel">
       <img class="loading-buddy" src="https://cdn.imweb.me/thumbnail/20260407/eb862821485f9.jpg" alt="로딩">
@@ -1888,6 +1961,13 @@
     const propertyMemoModal = document.getElementById('propertyMemoModal');
     const propertyMemoTextarea = document.getElementById('propertyMemoTextarea');
     let propertyMemoEditingItem = null;
+
+    const propertyCopyConfirmModal = document.getElementById('propertyCopyConfirmModal');
+    const propertyCopyListingNumberText = document.getElementById('propertyCopyListingNumberText');
+    let propertyCopyPressTimer = null;
+    let propertyCopyLongPressed = false;
+    let propertyCopyPendingListingNumber = '';
+    let isCopyingProperty = false;
 
     function isCalendarModalOpen(){
       return !!(calendarModal && calendarModal.classList.contains('show'));
@@ -3504,14 +3584,20 @@
 
       return ''
         + '<article class="property-card">'
-        +   '<div class="property-main" onclick="editItem(\'' + encodeURIComponent(item.listingNumber) + '\')">'
-        +     '<div class="thumb" style="' + thumb + '"></div>'
+        +   '<div class="property-main">'
+        +     '<div class="thumb property-copy-thumb" style="' + thumb + '"'
+        +       ' onpointerdown="startPropertyCopyLongPress(\'' + encodeURIComponent(item.listingNumber || '') + '\', event)"'
+        +       ' onpointerup="clearPropertyCopyLongPress()"'
+        +       ' onpointerleave="clearPropertyCopyLongPress()"'
+        +       ' onpointercancel="clearPropertyCopyLongPress()"'
+        +       ' onclick="return handlePropertyThumbClick(event)"'
+        +     '></div>'
         +     '<div class="card-content">'
         +       '<div class="title-row">'
-        +         '<h3 class="card-title">' + escapeHtml(item.title || '제목 없음') + '</h3>'
+        +         '<h3 class="card-title property-edit-link" onclick="event.stopPropagation(); editItem(\'' + encodeURIComponent(item.listingNumber || '') + '\')">' + escapeHtml(item.title || '제목 없음') + '</h3>'
         +         buildStatusChip(item)
         +       '</div>'
-        +       '<div class="card-address">' + escapeHtml(item.address || '-') + '</div>'
+        +       '<div class="card-address property-edit-link" onclick="event.stopPropagation(); editItem(\'' + encodeURIComponent(item.listingNumber || '') + '\')">' + escapeHtml(item.address || '-') + '</div>'
         +       '<div class="card-deal-price">' + formatDealPrice(item) + '</div>'
         +       '<div class="card-meta"><strong>' + escapeHtml(item.listingNumber || '-') + '</strong><br>' + formatUpdatedMeta(item) + '</div>'
         +     '</div>'
@@ -3578,6 +3664,138 @@
       return rawItems.find(function(x){
         return text(x && x.listingNumber) === key;
       }) || null;
+    }
+
+    function normalizeEncodedListingNumber_(listingNumber){
+      try{
+        return decodeURIComponent(String(listingNumber || '')).trim();
+      }catch(e){
+        return String(listingNumber || '').trim();
+      }
+    }
+
+    function clearPropertyCopyLongPress(){
+      if(propertyCopyPressTimer){
+        clearTimeout(propertyCopyPressTimer);
+        propertyCopyPressTimer = null;
+      }
+    }
+
+    function startPropertyCopyLongPress(listingNumber, ev){
+      if(ev){
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+      clearPropertyCopyLongPress();
+      propertyCopyLongPressed = false;
+
+      const sourceListingNumber = normalizeEncodedListingNumber_(listingNumber);
+      if(!sourceListingNumber) return;
+
+      propertyCopyPressTimer = setTimeout(function(){
+        propertyCopyPressTimer = null;
+        propertyCopyLongPressed = true;
+        openPropertyCopyConfirmModal(sourceListingNumber);
+      }, 3000);
+    }
+
+    function handlePropertyThumbClick(ev){
+      if(ev){
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+      if(propertyCopyLongPressed){
+        propertyCopyLongPressed = false;
+      }
+      return false;
+    }
+
+    function openPropertyCopyConfirmModal(listingNumber){
+      const sourceListingNumber = normalizeEncodedListingNumber_(listingNumber);
+      if(!sourceListingNumber) return;
+
+      propertyCopyPendingListingNumber = sourceListingNumber;
+      if(propertyCopyListingNumberText){
+        propertyCopyListingNumberText.textContent = '원본 매물번호: ' + sourceListingNumber;
+      }
+      if(propertyCopyConfirmModal){
+        propertyCopyConfirmModal.classList.add('show');
+        propertyCopyConfirmModal.setAttribute('aria-hidden', 'false');
+      }
+    }
+
+    function closePropertyCopyConfirmModal(){
+      clearPropertyCopyLongPress();
+      propertyCopyPendingListingNumber = '';
+      propertyCopyLongPressed = false;
+      if(propertyCopyConfirmModal){
+        propertyCopyConfirmModal.classList.remove('show');
+        propertyCopyConfirmModal.setAttribute('aria-hidden', 'true');
+      }
+      if(propertyCopyListingNumberText){
+        propertyCopyListingNumberText.textContent = '';
+      }
+    }
+
+    async function confirmPropertyCopyFromModal(){
+      const listingNumber = propertyCopyPendingListingNumber;
+      if(!listingNumber){
+        closePropertyCopyConfirmModal();
+        return;
+      }
+      closePropertyCopyConfirmModal();
+      await copyPropertyItem(listingNumber);
+    }
+
+    async function copyPropertyItem(listingNumber){
+      const sourceListingNumber = normalizeEncodedListingNumber_(listingNumber);
+      if(!sourceListingNumber){
+        alert('복사할 매물번호를 찾지 못했습니다.');
+        return;
+      }
+      if(isCopyingProperty){
+        alert('이미 매물을 복사하고 있습니다.');
+        return;
+      }
+
+      isCopyingProperty = true;
+      currentLoadingText = '매물을 복사하고 있어요!';
+      startLoadingOverlay();
+
+      try{
+        const payload = {
+          action: 'copyProperty',
+          sourceListingNumber: sourceListingNumber
+        };
+        const writerCode = getUnlockedWriterCode();
+        if(writerCode) payload.writerCode = writerCode;
+
+        const res = await fetch(CONFIG.adminListUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify(payload)
+        });
+        if(!res.ok) throw new Error('매물 복사 실패: ' + res.status);
+
+        const data = await res.json();
+        if(!data || data.ok !== true){
+          throw new Error((data && (data.message || data.error)) || '매물 복사 실패');
+        }
+
+        const newListingNumber = text(data.newListingNumber);
+        if(!newListingNumber){
+          throw new Error('새 매물번호를 받지 못했습니다.');
+        }
+
+        location.href = CONFIG.adminEditUrl + '?listingNumber=' + encodeURIComponent(newListingNumber);
+      }catch(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '매물 복사 중 문제가 발생했습니다.');
+      }finally{
+        isCopyingProperty = false;
+        stopLoadingOverlay();
+      }
     }
 
     function openPropertyMemoModal(listingNumber){
@@ -3762,6 +3980,13 @@
     window.togglePropertyStatus = function(listingNumber, nextStatus){
       setPropertyStatus(listingNumber, nextStatus);
     };
+    window.startPropertyCopyLongPress = startPropertyCopyLongPress;
+    window.clearPropertyCopyLongPress = clearPropertyCopyLongPress;
+    window.handlePropertyThumbClick = handlePropertyThumbClick;
+    window.openPropertyCopyConfirmModal = openPropertyCopyConfirmModal;
+    window.closePropertyCopyConfirmModal = closePropertyCopyConfirmModal;
+    window.confirmPropertyCopyFromModal = confirmPropertyCopyFromModal;
+    window.copyPropertyItem = copyPropertyItem;
     window.openPropertyMemoModal = openPropertyMemoModal;
     window.closePropertyMemoModal = closePropertyMemoModal;
     window.savePropertyMemo = savePropertyMemo;
@@ -3778,6 +4003,8 @@
           return;
         }
         closeChannelModal();
+        closePropertyCopyConfirmModal();
+        closePropertyMemoModal();
       }
     });
 

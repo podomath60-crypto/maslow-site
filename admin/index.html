@@ -6401,19 +6401,19 @@
       '.pdf-external-summary-item{font-size:13px;line-height:1.5;color:#1f2937;word-break:keep-all;}',
       '.pdf-external-summary-item::before{content:"✔";display:inline-block;margin-right:6px;color:#0f172a;font-weight:900;}',
       '.pdf-foot-note{display:none;}',
-      '.pdf-external-stack{display:grid;gap:14px;margin-top:14px;}',
+      '.pdf-external-stack{display:grid;grid-template-columns:65% 35%;gap:12px;margin-top:14px;align-items:start;}',
       '.pdf-section.external-section{border-color:#d9dee7;border-radius:14px;}',
-      '.pdf-section.external-section .pdf-section-title{padding:10px 12px;font-size:14px;background:#f6f2ea;color:#111827;}',
-      '.pdf-kv.external-kv{grid-template-columns:116px 1fr;}',
-      '.pdf-kv.external-kv .pdf-kv-label,.pdf-kv.external-kv .pdf-kv-value{padding:8px 10px;font-size:12.5px;line-height:1.45;}',
+      '.pdf-section.external-section .pdf-section-title{padding:9px 11px;font-size:13px;background:#f6f2ea;color:#111827;}',
+      '.pdf-kv.external-kv{grid-template-columns:104px 1fr;}',
+      '.pdf-kv.external-kv .pdf-kv-label,.pdf-kv.external-kv .pdf-kv-value{padding:7px 9px;font-size:12px;line-height:1.38;}',
       '.pdf-kv.external-kv .pdf-kv-label{font-weight:800;background:#fbfbfc;}',
       '.pdf-external-factory-list{display:block;}',
-      '.pdf-external-factory-row{display:grid;grid-template-columns:126px 1fr;}',
+      '.pdf-external-factory-row{display:grid;grid-template-columns:86px 1fr;}',
       '.pdf-external-factory-row + .pdf-external-factory-row{border-top:1px solid #eef2f7;}',
-      '.pdf-external-factory-label,.pdf-external-factory-value{padding:8px 10px;font-size:12.5px;line-height:1.45;word-break:break-word;}',
+      '.pdf-external-factory-label,.pdf-external-factory-value{padding:7px 8px;font-size:11.2px;line-height:1.34;word-break:break-word;}',
       '.pdf-external-factory-label{background:#fbfbfc;color:#6b7280;font-weight:800;}',
       '.pdf-external-factory-value{color:#111827;font-weight:600;}',
-      '@media (max-width:860px){#pdfPreviewModal,#pdfModePickerModal{padding:0}.pdf-preview-shell{width:100%;height:100%;max-height:none;border-radius:0}.pdf-preview-scroll{padding:10px}#pdfPrintPage{transform:scale(.72);transform-origin:top center;margin-bottom:-300px}.pdf-top-grid,.pdf-two-col,.pdf-external-gallery,.pdf-external-info{grid-template-columns:1fr}.pdf-hero{height:140px}.pdf-external-hero{height:220px}.pdf-external-thumb{height:112px}}',
+      '@media (max-width:860px){#pdfPreviewModal,#pdfModePickerModal{padding:0}.pdf-preview-shell{width:100%;height:100%;max-height:none;border-radius:0}.pdf-preview-scroll{padding:10px}#pdfPrintPage{transform:scale(.72);transform-origin:top center;margin-bottom:-300px}.pdf-top-grid,.pdf-two-col,.pdf-external-gallery,.pdf-external-info{grid-template-columns:1fr}.pdf-external-stack{grid-template-columns:1fr}.pdf-hero{height:140px}.pdf-external-hero{height:220px}.pdf-external-thumb{height:112px}}',
       '@media print{body *{visibility:hidden !important;} .pdf-print-root, .pdf-print-root *{visibility:visible !important;} .pdf-print-root{position:absolute;left:0;top:0;width:794px;background:#fff;} @page{size:A4 portrait;margin:8mm;} }'
     ].join('\n');
   }
@@ -6787,16 +6787,16 @@
       + '.pdf-external-summary-item{font-size:13px;line-height:1.5;color:#1f2937;word-break:keep-all;} '
       + '.pdf-external-summary-item::before{content:"✔";display:inline-block;margin-right:6px;color:#0f172a;font-weight:900;} '
       + '.pdf-foot-note{display:none;} '
-      + '.pdf-external-stack{display:grid;gap:14px;margin-top:14px;} '
+      + '.pdf-external-stack{display:grid;grid-template-columns:65% 35%;gap:12px;margin-top:14px;align-items:start;} '
       + '.pdf-section.external-section{border-color:#d9dee7;border-radius:14px;} '
-      + '.pdf-section.external-section .pdf-section-title{padding:10px 12px;font-size:14px;background:#f6f2ea;color:#111827;} '
-      + '.pdf-kv.external-kv{grid-template-columns:116px 1fr;} '
-      + '.pdf-kv.external-kv .pdf-kv-label,.pdf-kv.external-kv .pdf-kv-value{padding:8px 10px;font-size:12.5px;line-height:1.45;} '
+      + '.pdf-section.external-section .pdf-section-title{padding:9px 11px;font-size:13px;background:#f6f2ea;color:#111827;} '
+      + '.pdf-kv.external-kv{grid-template-columns:104px 1fr;} '
+      + '.pdf-kv.external-kv .pdf-kv-label,.pdf-kv.external-kv .pdf-kv-value{padding:7px 9px;font-size:12px;line-height:1.38;} '
       + '.pdf-kv.external-kv .pdf-kv-label{font-weight:800;background:#fbfbfc;} '
       + '.pdf-external-factory-list{display:block;} '
-      + '.pdf-external-factory-row{display:grid;grid-template-columns:126px 1fr;} '
+      + '.pdf-external-factory-row{display:grid;grid-template-columns:86px 1fr;} '
       + '.pdf-external-factory-row + .pdf-external-factory-row{border-top:1px solid #eef2f7;} '
-      + '.pdf-external-factory-label,.pdf-external-factory-value{padding:8px 10px;font-size:12.5px;line-height:1.45;word-break:break-word;} '
+      + '.pdf-external-factory-label,.pdf-external-factory-value{padding:7px 8px;font-size:11.2px;line-height:1.34;word-break:break-word;} '
       + '.pdf-external-factory-label{background:#fbfbfc;color:#6b7280;font-weight:800;} '
       + '.pdf-external-factory-value{color:#111827;font-weight:600;} '
       + '</style></head><body><div id="pdfPrintPage">'+ html +'</div></body></html>');

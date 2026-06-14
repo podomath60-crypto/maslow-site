@@ -6566,6 +6566,21 @@
   }
 
 
+
+  function normalizePriceRowsForDeal(rows, deal){
+    var d = String(deal || '').trim();
+    return (rows || []).map(function(pair){
+      if(!pair || !pair.length) return pair;
+      var label = String(pair[0] || '').replace(/\s+/g, ' ').trim();
+      if(label.indexOf('매매가') > -1 && label.indexOf('임대가') > -1){
+        if(d.indexOf('임대') > -1 && d.indexOf('매매') === -1) return ['임대가', pair[1] || ''];
+        if(d.indexOf('매매') > -1 && d.indexOf('임대') === -1) return ['매매가', pair[1] || ''];
+        return ['가격', pair[1] || ''];
+      }
+      return pair;
+    });
+  }
+
   function buildExternalKv(rows, emptyText){
     if(!rows.length) return '<div style="padding:12px 14px;font-size:13px;color:#6b7280;">'+ htmlEscape(emptyText || '표시할 내용이 없습니다.') +'</div>';
     return '<div class="pdf-kv external-kv">' + rows.map(function(pair){
@@ -6607,7 +6622,7 @@
     var address = cleanAddress(textOf(document.getElementById('topAddress')));
     var price = textOf(document.getElementById('topPrice'));
     var summaries = collectSummaryTexts(3);
-    var basicRows = collectRowsBetween('기본정보', '공장특화정보', false);
+    var basicRows = normalizePriceRowsForDeal(collectRowsBetween('기본정보', '공장특화정보', false), deal);
     var factoryRows = collectRowsBetween('공장특화정보', null, true);
     var requesterRows = collectRequesterRows();
     var memo = textOf(document.querySelector('.memo-body'));
@@ -6658,7 +6673,7 @@
     var address = maskAddressForPdf(cleanAddress(textOf(document.getElementById('topAddress'))));
     var price = textOf(document.getElementById('topPrice'));
     var summaries = collectSummaryTexts(4);
-    var basicRows = collectRowsBetween('기본정보', '공장특화정보', false, { maskAddress: true });
+    var basicRows = normalizePriceRowsForDeal(collectRowsBetween('기본정보', '공장특화정보', false, { maskAddress: true }), deal);
     var factoryRows = collectRowsBetween('공장특화정보', null, true);
     var summaryHtml = summaries.length
       ? summaries.map(function(t){ return '<div class="pdf-external-summary-item">'+ htmlEscape(t) +'</div>'; }).join('')

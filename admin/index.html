@@ -6312,8 +6312,24 @@
     var m = bg.match(/url\(["']?(.*?)["']?\)/);
     return m ? m[1] : '';
   }
+  var currentPdfMode = 'internal';
+
   function cleanAddress(s){
     return String(s||'').replace(/(^|\s)(검색|조회)(?=\s|$)/g, ' ').replace(/\s+/g,' ').trim();
+  }
+  function isExternalPdfMode(mode){
+    return String(mode || currentPdfMode || 'internal') === 'external';
+  }
+  function maskAddressForPdf_(s){
+    var value = cleanAddress(s);
+    if(!value) return '';
+    var parts = value.split(/\s+/).filter(Boolean);
+    var keepIndex = -1;
+    for(var i=0;i<parts.length;i++){
+      if(/(?:동|리|가)$/.test(parts[i])) keepIndex = i;
+    }
+    if(keepIndex >= 0) return parts.slice(0, keepIndex + 1).join(' ');
+    return value.replace(/\s+\d+(?:[-~·–—]\d+)?(?:번지|호)?(?:\s.*)?$/,'').trim() || value;
   }
   function getSelectedDealType(){
     var active = document.querySelector('#dealTypeRow .type-chip.active');
@@ -6332,7 +6348,7 @@
     btn.className = 'head-btn pdf-head-btn';
     btn.id = 'pdfPreviewBtn';
     btn.textContent = 'PDF';
-    btn.addEventListener('click', openPdfPreview);
+    btn.addEventListener('click', openPdfModePicker);
     adminBtn.insertAdjacentElement('afterend', btn);
   }
 
@@ -6376,6 +6392,17 @@
       + '.pdf-factory-table th{width:19%;background:#fcfcfd;color:#6b7280;font-weight:700;text-align:left;}\n'
       + '.pdf-factory-table td{width:31%;color:#111827;font-weight:500;}\n'
       + '.pdf-memo-box{padding:7px 8px;font-size:10.5px;line-height:1.36;white-space:pre-wrap;min-height:54px;word-break:break-word;}\n'
+      + '#pdfModeModal{position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.56);display:none;align-items:center;justify-content:center;padding:20px;}\n'
+      + '#pdfModeModal.show{display:flex;}\n'
+      + '.pdf-mode-shell{width:min(420px,100%);background:#fff;border-radius:22px;box-shadow:0 24px 60px rgba(15,23,42,.28);padding:18px;box-sizing:border-box;}\n'
+      + '.pdf-mode-title{font-size:18px;font-weight:900;letter-spacing:-0.04em;margin:0 0 12px;}\n'
+      + '.pdf-mode-options{display:grid;gap:10px;}\n'
+      + '.pdf-mode-option{width:100%;text-align:left;border:1px solid #e5e7eb;background:#fff;border-radius:16px;padding:14px 15px;box-sizing:border-box;}\n'
+      + '.pdf-mode-option strong{display:block;font-size:15px;font-weight:900;color:#111827;margin-bottom:4px;}\n'
+      + '.pdf-mode-option span{display:block;font-size:12px;line-height:1.42;color:#6b7280;font-weight:700;}\n'
+      + '.pdf-mode-option.primary{border-color:#111827;background:#111827;}\n'
+      + '.pdf-mode-option.primary strong,.pdf-mode-option.primary span{color:#fff;}\n'
+      + '.pdf-mode-cancel{width:100%;margin-top:10px;min-height:40px;border-radius:999px;border:1px solid #dce6f1;background:#fff;color:#111;font-size:14px;font-weight:800;}\n'
       + '@media (max-width:860px){#pdfPreviewModal{padding:0}.pdf-preview-shell{width:100%;height:100%;max-height:none;border-radius:0}.pdf-preview-scroll{padding:10px}#pdfPrintPage{transform:scale(.72);transform-origin:top center;margin-bottom:-300px}.pdf-top-grid{grid-template-columns:1fr}.pdf-hero{height:140px}.pdf-two-col{grid-template-columns:1fr}}\n'
       + '@media print{body *{visibility:hidden !important;} .pdf-print-root, .pdf-print-root *{visibility:visible !important;} .pdf-print-root{position:absolute;left:0;top:0;width:794px;background:#fff;} @page{size:A4 portrait;margin:8mm;} }';
     document.head.appendChild(style);
@@ -6397,6 +6424,42 @@
     modal.addEventListener('click', function(e){ if(e.target === modal) closePdfPreview(); });
     document.getElementById('pdfPreviewCloseBtn').addEventListener('click', closePdfPreview);
     document.getElementById('pdfPreviewDownloadBtn').addEventListener('click', printPdfPage);
+  }
+
+  function ensurePdfModeModal(){
+    ensurePdfModal();
+    if(document.getElementById('pdfModeModal')) return;
+    var modal = document.createElement('div');
+    modal.id = 'pdfModeModal';
+    modal.innerHTML = ''
+      + '<div class="pdf-mode-shell">'
+      + '  <div class="pdf-mode-title">PDF 출력 방식 선택</div>'
+      + '  <div class="pdf-mode-options">'
+      + '    <button type="button" class="pdf-mode-option primary" data-pdf-mode="internal"><strong>내부용 PDF</strong><span>상세주소, 메모, 의뢰인 정보를 포함해 출력합니다.</span></button>'
+      + '    <button type="button" class="pdf-mode-option" data-pdf-mode="external"><strong>외부용 PDF</strong><span>상세주소 가림 / 메모 비움 / 의뢰인 정보 비움</span></button>'
+      + '  </div>'
+      + '  <button type="button" class="pdf-mode-cancel" id="pdfModeCancelBtn">취소</button>'
+      + '</div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function(e){
+      if(e.target === modal) closePdfModePicker();
+      var btn = e.target && e.target.closest ? e.target.closest('[data-pdf-mode]') : null;
+      if(btn){
+        closePdfModePicker();
+        openPdfPreview(btn.getAttribute('data-pdf-mode') || 'internal');
+      }
+    });
+    document.getElementById('pdfModeCancelBtn').addEventListener('click', closePdfModePicker);
+  }
+
+  function openPdfModePicker(){
+    ensurePdfModeModal();
+    document.getElementById('pdfModeModal').classList.add('show');
+  }
+
+  function closePdfModePicker(){
+    var modal = document.getElementById('pdfModeModal');
+    if(modal) modal.classList.remove('show');
   }
 
   function collectRowsBetween(startTitle, endTitle, includeEmpty){
@@ -6481,17 +6544,23 @@
     return { hero: heroSrc, thumbs: thumbs.slice(0,5) };
   }
 
-  function buildPdfHtml(){
+  function buildPdfHtml(mode){
+    mode = isExternalPdfMode(mode) ? 'external' : 'internal';
+    var external = mode === 'external';
     var imgs = getImageUrls();
     var deal = getSelectedDealType();
     var title = textOf(document.querySelector('.property-detail-title'));
     var address = cleanAddress(textOf(document.getElementById('topAddress')));
+    if(external) address = maskAddressForPdf_(address);
     var price = textOf(document.getElementById('topPrice'));
     var summaries = Array.prototype.slice.call(document.querySelectorAll('.summary-editable')).map(function(el){ return textOf(el); }).slice(0,3);
     var basicRows = collectRowsBetween('기본정보', '공장특화정보', false);
     var factoryRows = collectRowsBetween('공장특화정보', null, true);
-    var requesterRows = collectRequesterRows();
-    var memo = textOf(document.querySelector('.memo-body'));
+    if(external){
+      basicRows = basicRows.map(function(pair){ return pair && pair[0] === '소재지' ? [pair[0], maskAddressForPdf_(pair[1])] : pair; });
+    }
+    var requesterRows = external ? [] : collectRequesterRows();
+    var memo = external ? '' : textOf(document.querySelector('.memo-body'));
 
     var thumbsHtml = imgs.thumbs.map(function(url){ return '<div class="pdf-thumb"><img src="'+ htmlEscape(url) +'" alt=""></div>'; }).join('');
 
@@ -6516,16 +6585,17 @@
       + '  <div class="pdf-section"><div class="pdf-section-title">기본정보</div>'+ buildKv(basicRows) +'</div>'
       + '  <div>'
       + '    <div class="pdf-section"><div class="pdf-section-title">공장특화정보</div>'+ buildFactoryTable(factoryRows) +'</div>'
-      + '    <div class="pdf-section"><div class="pdf-section-title">의뢰인 정보</div>'+ buildKv(requesterRows, '의뢰인 정보가 없습니다.') +'</div>'
+      + '    <div class="pdf-section"><div class="pdf-section-title">의뢰인 정보</div>'+ buildKv(requesterRows, external ? '-' : '의뢰인 정보가 없습니다.') +'</div>'
       + '  </div>'
       + '</div>'
-      + '<div class="pdf-section"><div class="pdf-section-title">MEMO</div><div class="pdf-memo-box">'+ nl2br(memo || '') +'</div></div>';
+      + '<div class="pdf-section"><div class="pdf-section-title">MEMO</div><div class="pdf-memo-box">'+ nl2br(memo || (external ? '-' : '')) +'</div></div>';
   }
 
-  function openPdfPreview(){
+  function openPdfPreview(mode){
+    currentPdfMode = isExternalPdfMode(mode) ? 'external' : 'internal';
     ensurePdfModal();
     var page = document.getElementById('pdfPrintPage');
-    page.innerHTML = buildPdfHtml();
+    page.innerHTML = buildPdfHtml(currentPdfMode);
     document.getElementById('pdfPreviewModal').classList.add('show');
   }
   function closePdfPreview(){
@@ -6555,8 +6625,8 @@
   }
 
   function printPdfPage(){
-    var html = buildPdfHtml();
-    var fileBaseName = getPdfFileBaseName();
+    var html = buildPdfHtml(currentPdfMode);
+    var fileBaseName = getPdfFileBaseName() + (currentPdfMode === 'external' ? '_외부용' : '_내부용');
     var w = window.open('', '_blank');
     if(!w){ alert('팝업이 차단되어 있습니다. 팝업 허용 후 다시 시도해주세요.'); return; }
     var doc = w.document;
@@ -6604,9 +6674,9 @@
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ ensurePdfButton(); ensurePdfModal(); });
+    document.addEventListener('DOMContentLoaded', function(){ ensurePdfButton(); ensurePdfModal(); ensurePdfModeModal(); });
   } else {
-    ensurePdfButton(); ensurePdfModal();
+    ensurePdfButton(); ensurePdfModal(); ensurePdfModeModal();
   }
 })();
 </script>

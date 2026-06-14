@@ -6348,8 +6348,8 @@
       '.pdf-preview-btn{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid #dce6f1;background:#fff;color:#111;font-size:14px;font-weight:800;}',
       '.pdf-preview-btn.primary{background:#111827;color:#fff;border-color:#111827;}',
       '.pdf-preview-scroll{flex:1 1 auto;overflow:auto;background:#eef2f7;padding:18px;}',
-      '#pdfPrintPage{width:794px;min-height:1123px;margin:0 auto;background:#fff;color:#111;padding:38px 22px 18px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;}',
-      '.pdf-brand{font-size:18px;font-weight:900;letter-spacing:-0.03em;margin:0 0 20px;text-align:right;}',
+      '#pdfPrintPage{width:794px;min-height:1123px;margin:0 auto;background:#fff;color:#111;padding:24px 22px 14px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;}',
+      '.pdf-brand{font-size:18px;font-weight:900;letter-spacing:-0.03em;margin:0 0 8px;text-align:right;}',
       '.pdf-top-grid{display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:start;}',
       '.pdf-hero{width:100%;height:112px;border-radius:14px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;}',
       '.pdf-hero img{width:100%;height:100%;object-fit:cover;display:block;}',
@@ -6416,7 +6416,7 @@
       '.pdf-external-factory-label{background:#fbfaf8;color:#5b6472;font-weight:900;}',
       '.pdf-external-factory-value{color:#111827;font-weight:700;}',
       '@media (max-width:860px){#pdfPreviewModal,#pdfModePickerModal{padding:0}.pdf-preview-shell{width:100%;height:100%;max-height:none;border-radius:0}.pdf-preview-scroll{padding:10px}#pdfPrintPage{transform:scale(.72);transform-origin:top center;margin-bottom:-300px}.pdf-top-grid,.pdf-two-col,.pdf-external-gallery,.pdf-external-info{grid-template-columns:1fr}.pdf-external-stack{grid-template-columns:1fr}.pdf-hero{height:140px}.pdf-external-hero{height:220px}.pdf-external-thumb{height:112px}}',
-      '@media print{body *{visibility:hidden !important;} .pdf-print-root, .pdf-print-root *{visibility:visible !important;} .pdf-print-root{position:absolute;left:0;top:0;width:794px;background:#fff;} @page{size:A4 portrait;margin:8mm;} }'
+      '@media print{body *{visibility:hidden !important;} .pdf-print-root, .pdf-print-root *{visibility:visible !important;} .pdf-print-root{position:absolute;left:0;top:0;width:794px;background:#fff;} @page{size:A4 portrait;margin:6mm 8mm 8mm;} }'
     ].join('\n');
   }
 
@@ -6743,10 +6743,10 @@
     var doc = w.document;
     doc.open();
     doc.write('<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>'+ htmlEscape(fileBaseName) +'</title><style>'
-      + '@page{size:A4 portrait;margin:12mm 8mm 8mm;} html,body{margin:0;padding:0;background:#fff;color:#111;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;} '
+      + '@page{size:A4 portrait;margin:6mm 8mm 8mm;} html,body{margin:0;padding:0;background:#fff;color:#111;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;} '
       + 'body{print-color-adjust:exact;-webkit-print-color-adjust:exact;} '
       + '#pdfPrintPage{width:auto;min-height:auto;background:#fff;color:#111;padding:0;box-sizing:border-box;} '
-      + '.pdf-brand{font-size:18px;font-weight:900;letter-spacing:-0.03em;margin:0 0 20px;text-align:right;} '
+      + '.pdf-brand{font-size:18px;font-weight:900;letter-spacing:-0.03em;margin:0 0 8px;text-align:right;} '
       + '.pdf-top-grid{display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:start;} '
       + '.pdf-hero{width:100%;height:112px;border-radius:14px;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;} '
       + '.pdf-hero img{width:100%;height:100%;object-fit:cover;display:block;} '

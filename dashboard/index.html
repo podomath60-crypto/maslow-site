@@ -1803,6 +1803,19 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     </div>
   </div>
 
+  <div id="propertyHideConfirmModal" class="property-copy-modal" onclick="closePropertyHideConfirmModal()" aria-hidden="true">
+    <div class="property-copy-card" onclick="event.stopPropagation()">
+      <div class="property-copy-head">삭제할까요?</div>
+      <div class="property-copy-desc">
+</div>
+      <div id="propertyHideListingNumberText" class="property-copy-number"></div>
+      <div class="property-copy-actions">
+        <button type="button" class="property-copy-btn" onclick="closePropertyHideConfirmModal()">취소</button>
+        <button type="button" class="property-copy-btn primary" onclick="confirmPropertyHideFromModal()">삭제하기</button>
+      </div>
+    </div>
+  </div>
+
 
   <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-panel">
@@ -1968,6 +1981,11 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     let propertyCopyLongPressed = false;
     let propertyCopyPendingListingNumber = '';
     let isCopyingProperty = false;
+    const propertyHideConfirmModal = document.getElementById('propertyHideConfirmModal');
+    const propertyHideListingNumberText = document.getElementById('propertyHideListingNumberText');
+    let propertyHidePendingListingNumber = '';
+    let propertyThumbTapListingNumber = '';
+    let propertyThumbTapTimes = [];
 
     function isCalendarModalOpen(){
       return !!(calendarModal && calendarModal.classList.contains('show'));
@@ -3397,7 +3415,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         const calendarData = calendarResult.data || calendarResult;
 
         const items = Array.isArray(propertyData && propertyData.items) ? propertyData.items : [];
-        rawItems = items.map(normalizeItem);
+        rawItems = items.map(normalizeItem).filter(function(item){
+          return text(item.status).toLowerCase() !== 'hidden';
+        });
 
         applyCalendarOverviewData(calendarData, monthKey, calendarResult.loadedAll !== false);
 
@@ -3590,7 +3610,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         +       ' onpointerup="clearPropertyCopyLongPress()"'
         +       ' onpointerleave="clearPropertyCopyLongPress()"'
         +       ' onpointercancel="clearPropertyCopyLongPress()"'
-        +       ' onclick="return handlePropertyThumbClick(event)"'
+        +       ' onclick="return handlePropertyThumbClick(\'' + encodeURIComponent(item.listingNumber || '') + '\', event)"'
         +     '></div>'
         +     '<div class="card-content">'
         +       '<div class="title-row">'
@@ -3696,17 +3716,35 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         propertyCopyPressTimer = null;
         propertyCopyLongPressed = true;
         openPropertyCopyConfirmModal(sourceListingNumber);
-      }, 3000);
+      }, 2000);
     }
 
-    function handlePropertyThumbClick(ev){
+    function registerPropertyThumbTap_(listingNumber){
+      const sourceListingNumber = normalizeEncodedListingNumber_(listingNumber);
+      if(!sourceListingNumber) return;
+      const now = Date.now();
+      if(propertyThumbTapListingNumber !== sourceListingNumber){
+        propertyThumbTapListingNumber = sourceListingNumber;
+        propertyThumbTapTimes = [];
+      }
+      propertyThumbTapTimes = propertyThumbTapTimes.filter(function(t){ return now - t <= 2500; });
+      propertyThumbTapTimes.push(now);
+      if(propertyThumbTapTimes.length >= 7){
+        propertyThumbTapTimes = [];
+        openPropertyHideConfirmModal(sourceListingNumber);
+      }
+    }
+
+    function handlePropertyThumbClick(listingNumber, ev){
       if(ev){
         ev.preventDefault();
         ev.stopPropagation();
       }
       if(propertyCopyLongPressed){
         propertyCopyLongPressed = false;
+        return false;
       }
+      registerPropertyThumbTap_(listingNumber);
       return false;
     }
 
@@ -3745,6 +3783,40 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       }
       closePropertyCopyConfirmModal();
       await copyPropertyItem(listingNumber);
+    }
+
+    function openPropertyHideConfirmModal(listingNumber){
+      const sourceListingNumber = normalizeEncodedListingNumber_(listingNumber);
+      if(!sourceListingNumber) return;
+      propertyHidePendingListingNumber = sourceListingNumber;
+      if(propertyHideListingNumberText){
+        propertyHideListingNumberText.textContent = '대상 매물번호: ' + sourceListingNumber;
+      }
+      if(propertyHideConfirmModal){
+        propertyHideConfirmModal.classList.add('show');
+        propertyHideConfirmModal.setAttribute('aria-hidden', 'false');
+      }
+    }
+
+    function closePropertyHideConfirmModal(){
+      propertyHidePendingListingNumber = '';
+      if(propertyHideConfirmModal){
+        propertyHideConfirmModal.classList.remove('show');
+        propertyHideConfirmModal.setAttribute('aria-hidden', 'true');
+      }
+      if(propertyHideListingNumberText){
+        propertyHideListingNumberText.textContent = '';
+      }
+    }
+
+    async function confirmPropertyHideFromModal(){
+      const listingNumber = propertyHidePendingListingNumber;
+      if(!listingNumber){
+        closePropertyHideConfirmModal();
+        return;
+      }
+      closePropertyHideConfirmModal();
+      await setPropertyStatus(listingNumber, 'hidden');
     }
 
     async function copyPropertyItem(listingNumber){
@@ -3986,6 +4058,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     window.openPropertyCopyConfirmModal = openPropertyCopyConfirmModal;
     window.closePropertyCopyConfirmModal = closePropertyCopyConfirmModal;
     window.confirmPropertyCopyFromModal = confirmPropertyCopyFromModal;
+    window.openPropertyHideConfirmModal = openPropertyHideConfirmModal;
+    window.closePropertyHideConfirmModal = closePropertyHideConfirmModal;
+    window.confirmPropertyHideFromModal = confirmPropertyHideFromModal;
     window.copyPropertyItem = copyPropertyItem;
     window.openPropertyMemoModal = openPropertyMemoModal;
     window.closePropertyMemoModal = closePropertyMemoModal;

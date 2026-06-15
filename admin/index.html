@@ -2947,12 +2947,21 @@
         };
       }
 
+      function summaryTextForPayload_(el){
+        return ((el && (el.innerText || el.textContent) || '') + '')
+          .replace(/\u00A0/g, ' ')
+          .replace(/\r\n/g, '\n')
+          .replace(/\r/g, '\n')
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
+      }
+
       function collectSummary_(){
         var els = getSummaryEls_();
         return {
-          line1: plainText(els[0]),
-          line2: plainText(els[1]),
-          line3: plainText(els[2])
+          line1: summaryTextForPayload_(els[0]),
+          line2: summaryTextForPayload_(els[1]),
+          line3: summaryTextForPayload_(els[2])
         };
       }
 

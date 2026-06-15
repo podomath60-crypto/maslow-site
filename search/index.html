@@ -89,13 +89,13 @@
     .input{height:52px;border:1px solid #d1d5db;background:#fff;border-radius:15px;padding:0 14px;outline:none;color:#111827}
     .run-btn{height:54px;border:0;border-radius:16px;background:var(--blue);color:#fff;font-weight:950;box-shadow:0 10px 22px rgba(37,99,235,.24)}
     .run-btn:disabled{opacity:.55;cursor:not-allowed}
-    .single-article-box{border:1px solid #dbeafe;background:#f8fbff;border-radius:18px;padding:14px;display:grid;gap:10px}
-    .single-article-row{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:10px}
-    .single-article-input{height:48px;border:1px solid #d1d5db;background:#fff;border-radius:14px;padding:0 14px;outline:none;color:#111827;font-weight:900;letter-spacing:.01em}
-    .single-article-input:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(37,99,235,.11)}
-    .single-article-btn{height:48px;border:0;border-radius:14px;background:#111827;color:#fff;font-weight:950;box-shadow:0 10px 20px rgba(17,24,39,.15)}
+    .single-article-box{border:1px solid #e5e7eb;background:#ffffff;border-radius:14px;padding:10px;margin:0 0 14px;display:grid;gap:7px}
+    .single-article-title{font-size:12px;font-weight:950;color:#111827;line-height:1}
+    .single-article-row{display:grid;grid-template-columns:minmax(0,1fr) 58px;gap:6px}
+    .single-article-input{height:34px;border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:0 9px;outline:none;color:#111827;font-size:12px;font-weight:900;letter-spacing:.01em}
+    .single-article-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+    .single-article-btn{height:34px;border:0;border-radius:10px;background:#111827;color:#fff;font-size:12px;font-weight:950;box-shadow:0 6px 12px rgba(17,24,39,.12)}
     .single-article-btn:disabled{opacity:.55;cursor:not-allowed}
-    .single-article-hint{font-size:12px;font-weight:850;color:#6b7280;line-height:1.45;word-break:keep-all}
         .sub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-top:12px}
     .small-actions{display:flex;gap:8px;flex-wrap:wrap}
     .result-filter{display:none;margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:0 10px 28px rgba(37,99,235,.06);grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
@@ -350,6 +350,14 @@
             </button>
             <input id="importResultTxtInput" type="file" accept=".txt,text/plain" hidden />
           </div>
+          <div class="single-article-box" aria-label="매물번호 단건조회">
+            <div class="single-article-title">매물번호 단건조회</div>
+            <div class="single-article-row">
+              <input id="singleArticleInput" class="single-article-input" type="search" inputmode="numeric" autocomplete="off" placeholder="매물번호" />
+              <button id="singleArticleBtn" class="single-article-btn" type="button">조회</button>
+            </div>
+          </div>
+
           <div class="side-head">
             <div class="side-title">즐겨찾기</div>
             <div id="favoriteCount" class="side-count">0/10</div>
@@ -401,14 +409,6 @@
               <button id="runBtn" class="run-btn" type="button">조회</button>
             </div>
 
-            <div class="single-article-box" aria-label="매물번호 단건조회">
-              <p class="section-title">매물번호 단건조회</p>
-              <div class="single-article-row">
-                <input id="singleArticleInput" class="single-article-input" type="search" inputmode="numeric" autocomplete="off" placeholder="네이버 매물번호 입력" />
-                <button id="singleArticleBtn" class="single-article-btn" type="button">단건조회</button>
-              </div>
-              <div class="single-article-hint">매물번호만 서버로 전송합니다. 서버에서 네이버 검색창 입력 → 결과 패널 클릭 → 상세 PNU 확인 순서로 처리합니다.</div>
-            </div>
           </div>
         </div>
 

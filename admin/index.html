@@ -2822,7 +2822,7 @@
       function collectRequester_(){
         return {
           name: plainText(findRequesterValueByLabel_('의뢰인명')),
-          phone: plainText(findRequesterValueByLabel_('연락처')),
+          phone: normalizePhoneForPayload_(findRequesterValueByLabel_('연락처')),
           requestType: plainText(findRequesterValueByLabel_('의뢰 구분')),
           note: plainText(findRequesterValueByLabel_('비고'))
         };
@@ -2965,7 +2965,7 @@
           summary: collectSummary_(),
           basic: collectBasic_(),
           factory: collectFactory_(),
-          memo: plainText(document.querySelector('.memo-body')),
+          memo: memoTextForPayload_(document.querySelector('.memo-body')),
           photoTemps: serializeTempItems_(photoList),
           ledgerTemps: serializeTempItems_(ledgerList),
           pageUrl: location.href,
@@ -3533,6 +3533,54 @@
 
       function normalizedEditableText(el){
         return ((el && (el.innerText || el.textContent) || '') + '').replace(/\u00A0/g, ' ').trim();
+      }
+
+      function memoTextForPayload_(el){
+        return ((el && (el.innerText || el.textContent) || '') + '')
+          .replace(/\u00A0/g, ' ')
+          .replace(/\r\n?/g, '\n')
+          .replace(/[ \t]+\n/g, '\n')
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
+      }
+
+      function normalizePhoneText_(value){
+        var raw = String(value || '').trim();
+        if(!raw) return '';
+        var digits = raw.replace(/\D/g, '');
+        if(!digits) return raw;
+        if(digits.indexOf('82') === 0 && digits.length >= 11){
+          digits = '0' + digits.slice(2);
+        }
+        if(digits.indexOf('02') === 0){
+          if(digits.length <= 2) return digits;
+          if(digits.length <= 5) return digits.slice(0,2) + '-' + digits.slice(2);
+          if(digits.length <= 9) return digits.slice(0,2) + '-' + digits.slice(2, digits.length - 4) + '-' + digits.slice(-4);
+          return digits.slice(0,2) + '-' + digits.slice(2,6) + '-' + digits.slice(6,10);
+        }
+        if(digits.length === 8) return digits.slice(0,4) + '-' + digits.slice(4);
+        if(digits.length === 10) return digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+        if(digits.length === 11) return digits.slice(0,3) + '-' + digits.slice(3,7) + '-' + digits.slice(7);
+        if(digits.length === 12 && digits.indexOf('050') === 0) return digits.slice(0,4) + '-' + digits.slice(4,8) + '-' + digits.slice(8);
+        if(digits.length > 11) return digits.slice(0,3) + '-' + digits.slice(3,7) + '-' + digits.slice(7);
+        return raw.indexOf('-') > -1 ? raw : digits;
+      }
+
+      function normalizePhoneForPayload_(el){
+        return normalizePhoneText_(plainText(el));
+      }
+
+      function isRequesterPhoneEditable_(el){
+        if(!el || !el.classList || !el.classList.contains('requester-value')) return false;
+        var row = el.closest ? el.closest('.requester-row') : null;
+        var labelEl = row ? row.querySelector('.requester-label') : null;
+        return plainText(labelEl) === '연락처';
+      }
+
+      function normalizeRequesterPhoneEditable_(el){
+        if(!isRequesterPhoneEditable_(el)) return;
+        var formatted = normalizePhoneText_(plainText(el));
+        if(formatted) el.textContent = formatted;
       }
 
       function updateMirror(el, value){
@@ -5760,6 +5808,7 @@
           }
         });
         el.addEventListener('blur', function(){
+          normalizeRequesterPhoneEditable_(el);
           normalizeEditable(el);
           updateTopFields();
           queueSave();

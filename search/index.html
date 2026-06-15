@@ -89,6 +89,13 @@
     .input{height:52px;border:1px solid #d1d5db;background:#fff;border-radius:15px;padding:0 14px;outline:none;color:#111827}
     .run-btn{height:54px;border:0;border-radius:16px;background:var(--blue);color:#fff;font-weight:950;box-shadow:0 10px 22px rgba(37,99,235,.24)}
     .run-btn:disabled{opacity:.55;cursor:not-allowed}
+    .single-article-box{border:1px solid #dbeafe;background:#f8fbff;border-radius:18px;padding:14px;display:grid;gap:10px}
+    .single-article-row{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:10px}
+    .single-article-input{height:48px;border:1px solid #d1d5db;background:#fff;border-radius:14px;padding:0 14px;outline:none;color:#111827;font-weight:900;letter-spacing:.01em}
+    .single-article-input:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(37,99,235,.11)}
+    .single-article-btn{height:48px;border:0;border-radius:14px;background:#111827;color:#fff;font-weight:950;box-shadow:0 10px 20px rgba(17,24,39,.15)}
+    .single-article-btn:disabled{opacity:.55;cursor:not-allowed}
+    .single-article-hint{font-size:12px;font-weight:850;color:#6b7280;line-height:1.45;word-break:keep-all}
         .sub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-top:12px}
     .small-actions{display:flex;gap:8px;flex-wrap:wrap}
     .result-filter{display:none;margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:0 10px 28px rgba(37,99,235,.06);grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
@@ -314,7 +321,7 @@
     .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:60;background:#111827;color:#fff;border-radius:999px;padding:12px 16px;font-weight:900;box-shadow:0 14px 34px rgba(0,0,0,.25);transition:.2s ease;pointer-events:none}
     .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
     @media(max-width:1200px){.desktop-layout{grid-template-columns:1fr}.desktop-layout > .wrap{width:100%;max-width:900px}.side-panel{display:none}.wrap{max-width:900px}}
-    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:36px}.dong-trade-row{grid-template-columns:1fr}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:64px 1fr}.favorite-toggle{width:64px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:10px}.filter-select{padding:0 6px;font-size:12px}.filter-field label{font-size:11px}}
+    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:36px}.dong-trade-row{grid-template-columns:1fr}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:64px 1fr}.single-article-row{grid-template-columns:1fr}.favorite-toggle{width:64px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:10px}.filter-select{padding:0 6px;font-size:12px}.filter-field label{font-size:11px}}
   </style>
 </head>
 <body>
@@ -392,6 +399,15 @@
             <div class="input-row">
               <button id="favoriteToggleBtn" class="favorite-toggle" type="button" aria-pressed="false" title="즐겨찾기 저장"><span class="star">☆</span></button>
               <button id="runBtn" class="run-btn" type="button">조회</button>
+            </div>
+
+            <div class="single-article-box" aria-label="매물번호 단건조회">
+              <p class="section-title">매물번호 단건조회</p>
+              <div class="single-article-row">
+                <input id="singleArticleInput" class="single-article-input" type="search" inputmode="numeric" autocomplete="off" placeholder="네이버 매물번호 입력" />
+                <button id="singleArticleBtn" class="single-article-btn" type="button">단건조회</button>
+              </div>
+              <div class="single-article-hint">매물번호만 서버로 전송합니다. 서버에서 네이버 검색창 입력 → 결과 패널 클릭 → 상세 PNU 확인 순서로 처리합니다.</div>
             </div>
           </div>
         </div>
@@ -545,6 +561,8 @@
       historyCount: document.getElementById('historyCount'),
       historyList: document.getElementById('historyList'),
       runBtn: document.getElementById('runBtn'),
+      singleArticleInput: document.getElementById('singleArticleInput'),
+      singleArticleBtn: document.getElementById('singleArticleBtn'),
       status: document.getElementById('status'),
       progress: document.getElementById('progress'),
       progressStage: document.getElementById('progressStage'),
@@ -1259,6 +1277,80 @@
         propertyTypeNames: selectedTypeArray(),
         tradeTypes: selectedTradeArray()
       };
+    }
+
+    function normalizeArticleNumber(value){
+      return String(value == null ? '' : value).replace(/\D/g, '').trim();
+    }
+    function buildSingleArticlePayload(){
+      return {
+        articleNumber: normalizeArticleNumber(els.singleArticleInput && els.singleArticleInput.value)
+      };
+    }
+    function itemFromSingleArticleResult(data){
+      data = data || {};
+      if(Array.isArray(data.items) && data.items.length) return data.items[0];
+      if(data.item && typeof data.item === 'object') return data.item;
+      return {
+        articleNumber: data.articleNumber || data.articleNo || data.atclNo || '',
+        pnu: data.pnu || '',
+        pnus: data.pnus || (data.pnu ? [data.pnu] : []),
+        jibunAddress: data.jibunAddress || data.address || '',
+        jibunAddresses: data.jibunAddresses || (data.jibunAddress ? [data.jibunAddress] : []),
+        roadAddress: data.roadAddress || '',
+        addressStatus: data.addressStatus || data.addressConfidence || (data.pnu ? '주소확인' : '주소미확정'),
+        addressConfidence: data.addressConfidence || data.addressStatus || (data.pnu ? '주소확인' : '주소미확정'),
+        pnuStatus: data.pnuStatus || (data.pnu ? 'ok' : 'missing'),
+        realEstateTypeName: data.realEstateTypeName || data.realEstateType || data.realEstateTypeCode || '',
+        realEstateType: data.realEstateType || data.realEstateTypeName || data.realEstateTypeCode || '',
+        tradeTypeName: data.tradeTypeName || data.tradeType || '',
+        tradeType: data.tradeType || data.tradeTypeName || '',
+        priceText: data.priceText || data.price || '',
+        price: data.price || data.priceText || '',
+        source: data.source || data.method || 'single-article-search',
+        kind: data.kind || 'single-article',
+        naverUrl: data.naverUrl || '',
+        detailUrls: data.detailUrls || []
+      };
+    }
+    async function resolveSingleArticle(){
+      var payload = buildSingleArticlePayload();
+      if(!payload.articleNumber || payload.articleNumber.length < 6){
+        setStatus('매물번호를 입력해주세요.', 'err');
+        if(els.singleArticleInput) els.singleArticleInput.focus();
+        return;
+      }
+
+      clearTrackerState();
+      resetResults();
+      if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+      if(els.singleArticleBtn) els.singleArticleBtn.disabled = true;
+      if(els.runBtn) els.runBtn.disabled = true;
+      setProgress({ status:'running', foundArticles:0, resolvedPnu:0, stage:'단건조회' });
+      setStatus('매물번호 단건조회 중입니다.', '');
+      els.empty.style.display = 'block';
+      els.empty.textContent = '네이버 검색창에 매물번호를 넣고 결과 패널을 클릭해 상세주소를 확인합니다.';
+
+      try{
+        var data = await fetchJson(TRACKER_API_BASE + '/api/tracker/resolve-article-by-search', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        });
+        var item = itemFromSingleArticleResult(data);
+        var items = Array.isArray(data.items) && data.items.length ? data.items : [item];
+        renderResults(items);
+        setProgress(null);
+        setStatus((data && data.ok === false ? '단건조회 실패' : '단건조회 완료') + ' · ' + payload.articleNumber, data && data.ok === false ? 'err' : 'ok');
+      }catch(e){
+        setProgress(null);
+        setStatus(e && e.message ? e.message : '단건조회 요청 실패', 'err');
+        els.empty.style.display = 'block';
+        els.empty.textContent = '단건조회 실패 · 서버 또는 네이버 응답을 확인하세요.';
+      }finally{
+        if(els.singleArticleBtn) els.singleArticleBtn.disabled = false;
+        if(els.runBtn) els.runBtn.disabled = false;
+      }
     }
     function showTrackerRunning(message){
       setStatus(message || '조회중입니다. 오른쪽 조회이력의 상태 새로고침으로 확인하세요.', '');
@@ -2456,6 +2548,17 @@
       });
     }
     els.runBtn.addEventListener('click', runResearch);
+    if(els.singleArticleBtn){
+      els.singleArticleBtn.addEventListener('click', resolveSingleArticle);
+    }
+    if(els.singleArticleInput){
+      els.singleArticleInput.addEventListener('keydown', function(e){
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          resolveSingleArticle();
+        }
+      });
+    }
     els.favoriteToggleBtn.addEventListener('click', function(){ setFavoriteChecked(!favoriteChecked); });
     els.historyRefreshBtn.addEventListener('click', refreshHistoryStatuses);
     els.favoriteList.addEventListener('click', function(e){ var del=e.target.closest('[data-favorite-delete]'); if(del){ deleteFavorite(del.getAttribute('data-favorite-delete')); return; } var load=e.target.closest('[data-favorite-load]'); if(load) loadFavorite(load.getAttribute('data-favorite-load')); });

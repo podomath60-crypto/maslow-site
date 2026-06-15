@@ -172,25 +172,20 @@
     .side-list{display:grid;gap:8px}
     .side-empty{border:1px dashed #bfdbfe;border-radius:14px;background:#f8fbff;padding:14px 10px;color:#6b7280;text-align:center;font-size:12px;font-weight:850;line-height:1.45;word-break:keep-all}
     .side-item{border:1px solid #e5e7eb;border-radius:15px;background:#fff;padding:10px;display:grid;gap:7px}
+    .side-item.is-single-article{padding:6px 8px;gap:0;border-radius:11px}
+    .side-item.is-single-article .side-item-top{align-items:center;gap:6px}
+    .side-item.is-single-article .side-item-main{font-size:13px;line-height:1.15}
+    .side-item.is-single-article .delete-mini{width:22px;height:22px;border-radius:7px;font-size:11px}
+    .side-item.is-single-article .side-meta{display:none}
     .side-item.active{border-color:#93c5fd;background:#eff6ff}
 
     .side-item.has-favorite-listing{
       position:relative;
       overflow:hidden;
-      border-color:#ff1493;
-      background:linear-gradient(180deg,#fff1f8 0%,#fff7fb 100%);
-      box-shadow:
-        0 0 0 1px rgba(255,20,147,.18),
-        0 8px 22px rgba(255,20,147,.14),
-        0 0 18px rgba(255,20,147,.16);
     }
     .side-item.has-favorite-listing.active{
-      border-color:#ff1493;
-      background:linear-gradient(180deg,#ffe8f4 0%,#fff3fa 100%);
-      box-shadow:
-        0 0 0 1px rgba(255,20,147,.24),
-        0 10px 24px rgba(255,20,147,.18),
-        0 0 20px rgba(255,20,147,.18);
+      border-color:#93c5fd;
+      background:#eff6ff;
     }
     .side-item.has-favorite-listing > *{
       position:relative;
@@ -1127,6 +1122,46 @@
       renderHistory();
       return true;
     }
+    async function addSingleArticleHistoryResult(payload, data, items){
+      payload = payload || {};
+      data = data || {};
+      items = Array.isArray(items) ? items : [];
+      var history = readHistory();
+      var articleNumber = normalizeArticleNumber(payload.articleNumber || data.articleNumber || '');
+      var resultId = String(data.resultId || data.jobId || ('single-article-' + articleNumber + '-' + Date.now())).trim();
+      var resultData = Object.assign({}, data, { items: items });
+      var entry = {
+        id: localId(),
+        jobId: data.jobId || resultId,
+        resultId: resultId,
+        type: 'single-article',
+        query: articleNumber,
+        payload: { articleNumber: articleNumber },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: data && data.ok === false ? 'failed' : 'completed',
+        result: null,
+        error: data && data.ok === false ? (data.message || data.error || '단건조회 실패') : null,
+        itemCount: items.length,
+        listingKeys: listingKeysFromItems(items),
+        favoriteKeys: favoriteKeysFromItems(items)
+      };
+      try{
+        await saveTrackerResultToDb(resultId, resultData, { source:'single-article', articleNumber: articleNumber, savedAt: entry.updatedAt });
+      }catch(e){
+        entry.result = resultData;
+      }
+      history = history.filter(function(x){
+        return !(x && x.type === 'single-article' && normalizeArticleNumber((x.payload && x.payload.articleNumber) || x.query || '') === articleNumber);
+      });
+      history.unshift(entry);
+      clearSelectedHistoryIds();
+      selectedHistoryId = entry.id;
+      setHistoryInCenter(entry.id, true);
+      saveHistory(history);
+      return entry;
+    }
+
     function renderHistory(){
       if(!els.historyList) return;
       var history = readHistory();
@@ -1140,12 +1175,14 @@
         var favoriteClass = historyHasFavoriteItem(item) ? ' has-favorite-listing' : '';
         var centerClass = selectedHistoryIds[item.id] ? ' is-in-center' : '';
         var status = statusClass(item.status);
-        return '<div class="side-item' + active + favoriteClass + centerClass + '" draggable="true" data-history-id="' + escapeHtml(item.id) + '">' +
+        var singleClass = item.type === 'single-article' ? ' is-single-article' : '';
+        var metaHtml = item.type === 'single-article' ? '' : '<div class="side-meta"><span class="status-pill ' + escapeHtml(status) + '">' + escapeHtml(statusLabel(item.status)) + '</span><span>' + escapeHtml(formatLocalTime(item.createdAt)) + '</span>' + historyTradeChipHtml(item) + '</div>';
+        return '<div class="side-item' + active + favoriteClass + centerClass + singleClass + '" draggable="true" data-history-id="' + escapeHtml(item.id) + '">' +
           '<div class="side-item-top">' +
             '<button class="side-item-main" type="button" data-history-load="' + escapeHtml(item.id) + '">' + escapeHtml(item.query || '-') + '</button>' +
             '<button class="delete-mini" type="button" title="조회이력 삭제" data-history-delete="' + escapeHtml(item.id) + '">🗑</button>' +
           '</div>' +
-          '<div class="side-meta"><span class="status-pill ' + escapeHtml(status) + '">' + escapeHtml(statusLabel(item.status)) + '</span><span>' + escapeHtml(formatLocalTime(item.createdAt)) + '</span>' + historyTradeChipHtml(item) + '</div>' +
+          metaHtml +
         '</div>';
       }).join('');
     }
@@ -1329,7 +1366,7 @@
       setProgress({ status:'running', foundArticles:0, resolvedPnu:0, stage:'단건조회' });
       setStatus('매물번호 단건조회 중입니다.', '');
       els.empty.style.display = 'block';
-      els.empty.textContent = '네이버 검색창에 매물번호를 넣고 결과 패널을 클릭해 상세주소를 확인합니다.';
+      els.empty.textContent = '조회중입니다.';
 
       try{
         var data = await fetchJson(TRACKER_API_BASE + '/api/tracker/resolve-article-by-search', {
@@ -1340,6 +1377,7 @@
         var item = itemFromSingleArticleResult(data);
         var items = Array.isArray(data.items) && data.items.length ? data.items : [item];
         renderResults(items);
+        await addSingleArticleHistoryResult(payload, data, items);
         setProgress(null);
         setStatus((data && data.ok === false ? '단건조회 실패' : '단건조회 완료') + ' · ' + payload.articleNumber, data && data.ok === false ? 'err' : 'ok');
       }catch(e){

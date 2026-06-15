@@ -2115,6 +2115,14 @@
       }
     }
 
+    /* 모바일에서는 PDF 출력 버튼만 숨김: 생성/선택/출력 로직은 그대로 유지 */
+    @media (max-width:860px){
+      #pdfPreviewBtn{
+        display:none !important;
+      }
+    }
+
+
   </style>
   <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>

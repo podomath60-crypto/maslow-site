@@ -1325,31 +1325,88 @@
         articleNumber: normalizeArticleNumber(els.singleArticleInput && els.singleArticleInput.value)
       };
     }
+    function normalizeTradeLabel(value){
+      var raw = String(value == null ? '' : value).trim();
+      if(!raw) return '';
+      if(raw === 'A1') return '매매';
+      if(raw === 'B1') return '전세';
+      if(raw === 'B2') return '월세';
+      if(raw === 'B3') return '단기임대';
+      return raw;
+    }
+    function formatWonPriceForDisplay(value){
+      if(value == null || value === '') return '';
+      var won = Number(value);
+      if(!isFinite(won) || won <= 0) return String(value || '').trim();
+      var man = Math.round(won / 10000);
+      if(man >= 10000){
+        var eok = Math.floor(man / 10000);
+        var rest = man % 10000;
+        return String(eok) + '억' + (rest ? ' ' + rest.toLocaleString('ko-KR') : '');
+      }
+      return man.toLocaleString('ko-KR');
+    }
+    function priceTextFromPriceInfo(tradeType, priceInfo){
+      priceInfo = priceInfo || {};
+      tradeType = String(tradeType || '').trim();
+      if(tradeType === 'A1') return formatWonPriceForDisplay(priceInfo.dealPrice);
+      if(tradeType === 'B1') return formatWonPriceForDisplay(priceInfo.warrantyPrice);
+      if(tradeType === 'B2' || tradeType === 'B3'){
+        var warranty = formatWonPriceForDisplay(priceInfo.warrantyPrice);
+        var rent = formatWonPriceForDisplay(priceInfo.rentPrice);
+        if(warranty && rent) return warranty + '/' + rent;
+        return warranty || rent;
+      }
+      return formatWonPriceForDisplay(priceInfo.dealPrice) || formatWonPriceForDisplay(priceInfo.warrantyPrice) || formatWonPriceForDisplay(priceInfo.rentPrice);
+    }
+    function normalizeSingleArticleItem(item, fallbackArticleNumber){
+      item = item && typeof item === 'object' ? Object.assign({}, item) : {};
+      var raw = item._rawArticleInfo || item.rawArticleInfo || item.articleInfo || {};
+      var detail = item.articleDetail || raw.articleDetail || {};
+      var priceInfo = item.priceInfo || raw.priceInfo || {};
+      var articleNumber = normalizeArticleNumber(item.articleNumber || item.articleNo || item.atclNo || raw.articleNumber || raw.articleNo || fallbackArticleNumber || '');
+      var pnu = String(item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : '') || '').trim();
+      var jibun = item.jibunAddress || (Array.isArray(item.jibunAddresses) ? item.jibunAddresses[0] : '') || item.address || '';
+      var tradeRaw = item.tradeTypeName || item.tradeType || item.tradeTypeCode || raw.tradeTypeName || raw.tradeType || '';
+      var tradeText = normalizeTradeLabel(tradeRaw);
+      var priceText = item.priceText || item.price || item.dealOrWarrantPrc || raw.priceText || raw.price || raw.dealOrWarrantPrc || priceTextFromPriceInfo(raw.tradeType || item.tradeTypeCode || item.tradeType, priceInfo);
+      var typeText = item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || item.articleRealEstateTypeCode || item.displayType || raw.realEstateTypeName || raw.realEstateType || raw.articleRealEstateTypeCode || raw.articleName || '';
+      var clickedText = item.clickedText || item.clickedKey || [raw.articleName, tradeText, priceText, typeText, detail.articleFeatureDescription].filter(Boolean).join(' ');
+
+      item.articleNumber = articleNumber;
+      item.articleNo = item.articleNo || articleNumber;
+      item.atclNo = item.atclNo || articleNumber;
+      item.pnu = pnu;
+      item.pnus = Array.isArray(item.pnus) ? item.pnus : (pnu ? [pnu] : []);
+      item.jibunAddress = jibun;
+      item.jibunAddresses = Array.isArray(item.jibunAddresses) ? item.jibunAddresses : (jibun ? [jibun] : []);
+      item.addressStatus = item.addressStatus || item.addressConfidence || (pnu || jibun ? '주소확인' : '주소미확정');
+      item.addressConfidence = item.addressConfidence || item.addressStatus;
+      item.pnuStatus = item.pnuStatus || (pnu ? 'ok' : 'missing');
+      item.realEstateTypeName = typeText;
+      item.realEstateType = item.realEstateType || typeText;
+      item.realEstateTypeCode = item.realEstateTypeCode || typeText;
+      item.tradeTypeName = tradeText;
+      item.tradeType = item.tradeType || tradeText;
+      item.priceText = priceText || '';
+      item.price = item.price || item.priceText;
+      item.clickedText = clickedText || '';
+      item.source = item.source || 'single-article-search';
+      item.kind = item.kind || 'single-article';
+      item.detailUrls = Array.isArray(item.detailUrls) ? item.detailUrls : [];
+      return item;
+    }
+    function singleArticleItemsFromResult(data, payload){
+      payload = payload || {};
+      var items = itemArrayFromResultData(data);
+      data = data && data.data && typeof data.data === 'object' ? data.data : (data || {});
+      if(!items.length && data.item && typeof data.item === 'object') items = [data.item];
+      if(!items.length) items = [data];
+      return items.map(function(item){ return normalizeSingleArticleItem(item, payload.articleNumber || data.articleNumber || ''); });
+    }
     function itemFromSingleArticleResult(data){
-      data = data || {};
-      if(Array.isArray(data.items) && data.items.length) return data.items[0];
-      if(data.item && typeof data.item === 'object') return data.item;
-      return {
-        articleNumber: data.articleNumber || data.articleNo || data.atclNo || '',
-        pnu: data.pnu || '',
-        pnus: data.pnus || (data.pnu ? [data.pnu] : []),
-        jibunAddress: data.jibunAddress || data.address || '',
-        jibunAddresses: data.jibunAddresses || (data.jibunAddress ? [data.jibunAddress] : []),
-        roadAddress: data.roadAddress || '',
-        addressStatus: data.addressStatus || data.addressConfidence || (data.pnu ? '주소확인' : '주소미확정'),
-        addressConfidence: data.addressConfidence || data.addressStatus || (data.pnu ? '주소확인' : '주소미확정'),
-        pnuStatus: data.pnuStatus || (data.pnu ? 'ok' : 'missing'),
-        realEstateTypeName: data.realEstateTypeName || data.realEstateType || data.realEstateTypeCode || '',
-        realEstateType: data.realEstateType || data.realEstateTypeName || data.realEstateTypeCode || '',
-        tradeTypeName: data.tradeTypeName || data.tradeType || '',
-        tradeType: data.tradeType || data.tradeTypeName || '',
-        priceText: data.priceText || data.price || '',
-        price: data.price || data.priceText || '',
-        source: data.source || data.method || 'single-article-search',
-        kind: data.kind || 'single-article',
-        naverUrl: data.naverUrl || '',
-        detailUrls: data.detailUrls || []
-      };
+      var items = singleArticleItemsFromResult(data, { articleNumber: data && data.articleNumber });
+      return items[0] || {};
     }
     async function resolveSingleArticle(){
       var payload = buildSingleArticlePayload();
@@ -1375,8 +1432,7 @@
           headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify(payload)
         });
-        var item = itemFromSingleArticleResult(data);
-        var items = Array.isArray(data.items) && data.items.length ? data.items : [item];
+        var items = singleArticleItemsFromResult(data, payload);
         renderResults(items);
         await addSingleArticleHistoryResult(payload, data, items);
         setProgress(null);

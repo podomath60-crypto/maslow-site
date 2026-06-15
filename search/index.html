@@ -1346,18 +1346,72 @@
       }
       return man.toLocaleString('ko-KR');
     }
+    function tradeCodeLike(value){
+      var raw = String(value == null ? '' : value).trim();
+      if(raw === '매매') return 'A1';
+      if(raw === '전세') return 'B1';
+      if(raw === '월세') return 'B2';
+      if(raw === '단기임대') return 'B3';
+      return raw;
+    }
+    function firstNonEmpty(){
+      for(var i=0; i<arguments.length; i++){
+        var v = arguments[i];
+        if(v == null) continue;
+        if(typeof v === 'number' && isFinite(v)) return v;
+        if(typeof v === 'string' && v.trim()) return v.trim();
+      }
+      return '';
+    }
     function priceTextFromPriceInfo(tradeType, priceInfo){
       priceInfo = priceInfo || {};
-      tradeType = String(tradeType || '').trim();
-      if(tradeType === 'A1') return formatWonPriceForDisplay(priceInfo.dealPrice);
-      if(tradeType === 'B1') return formatWonPriceForDisplay(priceInfo.warrantyPrice);
+      tradeType = tradeCodeLike(tradeType);
+      var deal = firstNonEmpty(priceInfo.dealPrice, priceInfo.dealPriceText, priceInfo.dealOrWarrantPrc);
+      var warranty = firstNonEmpty(priceInfo.warrantyPrice, priceInfo.warrantPrice, priceInfo.depositPrice, priceInfo.warrantyPriceText);
+      var rent = firstNonEmpty(priceInfo.rentPrice, priceInfo.monthlyRentPrice, priceInfo.rentPriceText);
+      if(tradeType === 'A1') return formatWonPriceForDisplay(deal) || String(deal || '').trim();
+      if(tradeType === 'B1') return formatWonPriceForDisplay(warranty) || String(warranty || '').trim();
       if(tradeType === 'B2' || tradeType === 'B3'){
-        var warranty = formatWonPriceForDisplay(priceInfo.warrantyPrice);
-        var rent = formatWonPriceForDisplay(priceInfo.rentPrice);
-        if(warranty && rent) return warranty + '/' + rent;
-        return warranty || rent;
+        var w = formatWonPriceForDisplay(warranty) || String(warranty || '').trim();
+        var r = formatWonPriceForDisplay(rent) || String(rent || '').trim();
+        if(w && r) return w + '/' + r;
+        return w || r;
       }
-      return formatWonPriceForDisplay(priceInfo.dealPrice) || formatWonPriceForDisplay(priceInfo.warrantyPrice) || formatWonPriceForDisplay(priceInfo.rentPrice);
+      return formatWonPriceForDisplay(deal) || String(deal || '').trim() || formatWonPriceForDisplay(warranty) || String(warranty || '').trim() || formatWonPriceForDisplay(rent) || String(rent || '').trim();
+    }
+    function priceTextFromListingText(text, tradeText){
+      text = String(text || '').replace(/\s+/g, ' ').trim();
+      if(!text) return '';
+      var trades = [];
+      if(tradeText) trades.push(String(tradeText).trim());
+      ['매매','전세','월세','임대','단기임대'].forEach(function(t){ if(trades.indexOf(t) < 0) trades.push(t); });
+      var priceToken = '(?:가격협의|문의|\\d+(?:,\\d{3})*(?:\\.\\d+)?\\s*억(?:\\s*\\d+(?:,\\d{3})*)?|\\d+(?:,\\d{3})*(?:/\\d+(?:,\\d{3})*)+|\\d+(?:,\\d{3})*\\s*만원|\\d+(?:,\\d{3})*)';
+      for(var i=0; i<trades.length; i++){
+        var trade = trades[i];
+        if(!trade) continue;
+        var re = new RegExp(trade + '\\s*(' + priceToken + ')');
+        var m = text.match(re);
+        if(m && m[1]) return String(m[1]).replace(/[.,/]$/, '').trim();
+      }
+      var m2 = text.match(new RegExp('(?:보증금|보증)\\s*(' + priceToken + ')'));
+      if(m2 && m2[1]) return String(m2[1]).replace(/[.,/]$/, '').trim();
+      return '';
+    }
+    function priceTextFromAnyItem(item){
+      item = item && typeof item === 'object' ? item : {};
+      var raw = item._rawArticleInfo || item.rawArticleInfo || item.articleInfo || {};
+      var detail = item.articleDetail || raw.articleDetail || {};
+      var priceInfo = item.priceInfo || raw.priceInfo || detail.priceInfo || {};
+      var direct = firstNonEmpty(
+        item.priceText, item.price, item.dealOrWarrantPrc, item.priceString, item.priceName,
+        raw.priceText, raw.price, raw.dealOrWarrantPrc, raw.priceString, raw.priceName,
+        detail.priceText, detail.price, detail.dealOrWarrantPrc
+      );
+      if(direct) return String(direct).trim();
+      var tradeRaw = item.tradeTypeName || item.tradeType || item.tradeTypeCode || raw.tradeTypeName || raw.tradeType || detail.tradeType || '';
+      var byInfo = priceTextFromPriceInfo(tradeRaw, priceInfo);
+      if(byInfo) return byInfo;
+      return priceTextFromListingText([item.clickedText, item.clickedKey, raw.articleName, detail.articleFeatureDescription].filter(Boolean).join(' '), normalizeTradeLabel(tradeRaw));
     }
     function normalizeSingleArticleItem(item, fallbackArticleNumber){
       item = item && typeof item === 'object' ? Object.assign({}, item) : {};
@@ -1369,7 +1423,7 @@
       var jibun = item.jibunAddress || (Array.isArray(item.jibunAddresses) ? item.jibunAddresses[0] : '') || item.address || '';
       var tradeRaw = item.tradeTypeName || item.tradeType || item.tradeTypeCode || raw.tradeTypeName || raw.tradeType || '';
       var tradeText = normalizeTradeLabel(tradeRaw);
-      var priceText = item.priceText || item.price || item.dealOrWarrantPrc || raw.priceText || raw.price || raw.dealOrWarrantPrc || priceTextFromPriceInfo(raw.tradeType || item.tradeTypeCode || item.tradeType, priceInfo);
+      var priceText = priceTextFromAnyItem(item);
       var typeText = item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || item.articleRealEstateTypeCode || item.displayType || raw.realEstateTypeName || raw.realEstateType || raw.articleRealEstateTypeCode || raw.articleName || '';
       var clickedText = item.clickedText || item.clickedKey || [raw.articleName, tradeText, priceText, typeText, detail.articleFeatureDescription].filter(Boolean).join(' ');
 
@@ -1695,7 +1749,7 @@
       return '<span class="badge gray">미확인</span>';
     }
     function getTradeText(item){ return item.tradeTypeName || item.tradeType || item.tradeTypeCode || ''; }
-    function getPriceText(item){ return item.priceText || item.price || item.dealOrWarrantPrc || item.rentPrc || ''; }
+    function getPriceText(item){ return priceTextFromAnyItem(item) || item.priceText || item.price || item.dealOrWarrantPrc || item.rentPrc || ''; }
     function getTypeText(item){
       return normalizeTypeLabel(item.realEstateTypeName || item.realEstateType || item.realEstateTypeCode || item.articleRealEstateTypeCode || item.displayType || '');
     }

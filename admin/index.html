@@ -2819,10 +2819,99 @@
         return el ? String(el.value || '').trim() : '';
       }
 
+
+      function memoTextForPayload_(el){
+        return ((el && (el.innerText || el.textContent) || '') + '')
+          .replace(/\u00A0/g, ' ')
+          .trim();
+      }
+
+      function formatPhoneDigitsForPayload_(digits){
+        digits = String(digits || '').replace(/\D/g, '');
+        if(!digits) return '';
+        if(digits.indexOf('010') === 0){
+          if(digits.length === 11) return digits.slice(0,3) + '-' + digits.slice(3,7) + '-' + digits.slice(7);
+          if(digits.length === 10) return digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+        }
+        if(digits.indexOf('02') === 0){
+          if(digits.length === 10) return digits.slice(0,2) + '-' + digits.slice(2,6) + '-' + digits.slice(6);
+          if(digits.length === 9) return digits.slice(0,2) + '-' + digits.slice(2,5) + '-' + digits.slice(5);
+        }
+        if(/^0\d{2}/.test(digits)){
+          if(digits.length === 11) return digits.slice(0,3) + '-' + digits.slice(3,7) + '-' + digits.slice(7);
+          if(digits.length === 10) return digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+        }
+        if(/^0\d{3}/.test(digits) && digits.length === 12){
+          return digits.slice(0,4) + '-' + digits.slice(4,8) + '-' + digits.slice(8);
+        }
+        return digits;
+      }
+
+      function normalizePhoneTextForPayload_(value){
+        var s = String(value || '').replace(/\u00A0/g, ' ').trim();
+        if(!s) return '';
+
+        // 전화번호처럼 보이는 덩어리만 정규화한다. 일반 텍스트는 그대로 둔다.
+        s = s.replace(/(^|[^0-9])((?:0\d{1,3})[\d\-\.\s]{6,15}\d)(?=$|[^0-9])/g, function(full, prefix, raw){
+          var digits = raw.replace(/\D/g, '');
+          if(digits.length < 9 || digits.length > 12) return full;
+          return prefix + formatPhoneDigitsForPayload_(digits);
+        });
+
+        // 번호만 연속으로 붙여 넣은 경우 보기 좋게 / 로 구분한다.
+        s = s.replace(/(\d{2,4}-\d{3,4}-\d{4})(?:\s*[,;|·、]+\s*|\s+)(?=\d{2,4}-\d{3,4}-\d{4})/g, '$1 / ');
+        s = s.replace(/\s*\/\s*/g, ' / ');
+        s = s.replace(/[ \t]{2,}/g, ' ');
+        return s.trim();
+      }
+
+      function placeCaretAtEnd_(el){
+        if(!el || !document.createRange || !window.getSelection) return;
+        var range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+
+      function normalizeRequesterPhoneField_(preserveFocus){
+        var el = findRequesterValueByLabel_('연락처');
+        if(!el) return;
+        var before = el.innerText || el.textContent || '';
+        var after = normalizePhoneTextForPayload_(before);
+        if(before !== after){
+          el.textContent = after;
+          if(preserveFocus) placeCaretAtEnd_(el);
+        }
+      }
+
+      function bindRequesterPhoneNormalizer_(){
+        var el = findRequesterValueByLabel_('연락처');
+        if(!el || el.__phoneNormalizerBound) return;
+        el.__phoneNormalizerBound = true;
+        var timer = null;
+        el.addEventListener('input', function(){
+          clearTimeout(timer);
+          timer = setTimeout(function(){
+            normalizeRequesterPhoneField_(document.activeElement === el);
+          }, 220);
+        });
+        el.addEventListener('paste', function(){
+          setTimeout(function(){
+            normalizeRequesterPhoneField_(document.activeElement === el);
+          }, 0);
+        });
+        el.addEventListener('blur', function(){
+          clearTimeout(timer);
+          normalizeRequesterPhoneField_(false);
+        });
+      }
+
       function collectRequester_(){
         return {
           name: plainText(findRequesterValueByLabel_('의뢰인명')),
-          phone: normalizePhoneForPayload_(findRequesterValueByLabel_('연락처')),
+          phone: normalizePhoneTextForPayload_(plainText(findRequesterValueByLabel_('연락처'))),
           requestType: plainText(findRequesterValueByLabel_('의뢰 구분')),
           note: plainText(findRequesterValueByLabel_('비고'))
         };
@@ -3533,54 +3622,6 @@
 
       function normalizedEditableText(el){
         return ((el && (el.innerText || el.textContent) || '') + '').replace(/\u00A0/g, ' ').trim();
-      }
-
-      function memoTextForPayload_(el){
-        return ((el && (el.innerText || el.textContent) || '') + '')
-          .replace(/\u00A0/g, ' ')
-          .replace(/\r\n?/g, '\n')
-          .replace(/[ \t]+\n/g, '\n')
-          .replace(/\n{3,}/g, '\n\n')
-          .trim();
-      }
-
-      function normalizePhoneText_(value){
-        var raw = String(value || '').trim();
-        if(!raw) return '';
-        var digits = raw.replace(/\D/g, '');
-        if(!digits) return raw;
-        if(digits.indexOf('82') === 0 && digits.length >= 11){
-          digits = '0' + digits.slice(2);
-        }
-        if(digits.indexOf('02') === 0){
-          if(digits.length <= 2) return digits;
-          if(digits.length <= 5) return digits.slice(0,2) + '-' + digits.slice(2);
-          if(digits.length <= 9) return digits.slice(0,2) + '-' + digits.slice(2, digits.length - 4) + '-' + digits.slice(-4);
-          return digits.slice(0,2) + '-' + digits.slice(2,6) + '-' + digits.slice(6,10);
-        }
-        if(digits.length === 8) return digits.slice(0,4) + '-' + digits.slice(4);
-        if(digits.length === 10) return digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
-        if(digits.length === 11) return digits.slice(0,3) + '-' + digits.slice(3,7) + '-' + digits.slice(7);
-        if(digits.length === 12 && digits.indexOf('050') === 0) return digits.slice(0,4) + '-' + digits.slice(4,8) + '-' + digits.slice(8);
-        if(digits.length > 11) return digits.slice(0,3) + '-' + digits.slice(3,7) + '-' + digits.slice(7);
-        return raw.indexOf('-') > -1 ? raw : digits;
-      }
-
-      function normalizePhoneForPayload_(el){
-        return normalizePhoneText_(plainText(el));
-      }
-
-      function isRequesterPhoneEditable_(el){
-        if(!el || !el.classList || !el.classList.contains('requester-value')) return false;
-        var row = el.closest ? el.closest('.requester-row') : null;
-        var labelEl = row ? row.querySelector('.requester-label') : null;
-        return plainText(labelEl) === '연락처';
-      }
-
-      function normalizeRequesterPhoneEditable_(el){
-        if(!isRequesterPhoneEditable_(el)) return;
-        var formatted = normalizePhoneText_(plainText(el));
-        if(formatted) el.textContent = formatted;
       }
 
       function updateMirror(el, value){
@@ -5808,7 +5849,6 @@
           }
         });
         el.addEventListener('blur', function(){
-          normalizeRequesterPhoneEditable_(el);
           normalizeEditable(el);
           updateTopFields();
           queueSave();
@@ -6016,7 +6056,7 @@
       function setRequesterFieldValue_(labelText, value){
         var el = findRequesterValueByLabel_(labelText);
         if(!el) return;
-        el.textContent = value || '';
+        el.textContent = labelText === '연락처' ? normalizePhoneTextForPayload_(value || '') : (value || '');
       }
 
       function getFirstContactValue_(value){
@@ -6130,6 +6170,8 @@
           pickRequesterContact_();
         });
       }
+
+      bindRequesterPhoneNormalizer_();
 
 
       if(addressSearchBtn){

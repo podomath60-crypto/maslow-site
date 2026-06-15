@@ -2847,22 +2847,52 @@
         return digits;
       }
 
+      function isPureFormattedPhoneForPayload_(value){
+        return /^0\d{1,3}-\d{3,4}-\d{4}$/.test(String(value || '').trim());
+      }
+
+      function normalizePhoneChunkForPayload_(chunk){
+        return String(chunk || '').replace(/0\d[\d\-.]{7,14}\d/g, function(raw){
+          var digits = raw.replace(/\D/g, '');
+          if(digits.length < 9 || digits.length > 12) return raw;
+          return formatPhoneDigitsForPayload_(digits);
+        });
+      }
+
       function normalizePhoneTextForPayload_(value){
         var s = String(value || '').replace(/\u00A0/g, ' ').trim();
         if(!s) return '';
 
-        // 전화번호처럼 보이는 덩어리만 정규화한다. 일반 텍스트는 그대로 둔다.
-        s = s.replace(/(^|[^0-9])((?:0\d{1,3})[\d\-\.\s]{6,15}\d)(?=$|[^0-9])/g, function(full, prefix, raw){
-          var digits = raw.replace(/\D/g, '');
-          if(digits.length < 9 || digits.length > 12) return full;
-          return prefix + formatPhoneDigitsForPayload_(digits);
+        // 공백/쉼표/슬래시 등으로 먼저 끊은 뒤, 각 조각 안의 전화번호만 정규화한다.
+        // 이렇게 해야 "010-0001-0000 01054872154" 같은 복수 번호가 하나로 붙지 않는다.
+        var parts = s.split(/([\s,;|/·、]+|\\n+)/g).filter(function(part){ return part !== ''; });
+        var out = [];
+        var prevWasPurePhone = false;
+        var pendingSep = '';
+
+        parts.forEach(function(part){
+          if(/^[\s,;|/·、]+$/.test(part)){
+            pendingSep = part;
+            return;
+          }
+
+          var normalized = normalizePhoneChunkForPayload_(part);
+          var currentIsPurePhone = isPureFormattedPhoneForPayload_(normalized);
+
+          if(out.length){
+            if(prevWasPurePhone && currentIsPurePhone){
+              out.push(' / ');
+            } else if(pendingSep){
+              out.push(pendingSep.replace(/[\t\r\n]+/g, ' '));
+            }
+          }
+
+          out.push(normalized);
+          prevWasPurePhone = currentIsPurePhone;
+          pendingSep = '';
         });
 
-        // 번호만 연속으로 붙여 넣은 경우 보기 좋게 / 로 구분한다.
-        s = s.replace(/(\d{2,4}-\d{3,4}-\d{4})(?:\s*[,;|·、]+\s*|\s+)(?=\d{2,4}-\d{3,4}-\d{4})/g, '$1 / ');
-        s = s.replace(/\s*\/\s*/g, ' / ');
-        s = s.replace(/[ \t]{2,}/g, ' ');
-        return s.trim();
+        return out.join('').replace(/\s*\/\s*/g, ' / ').replace(/[ \t]{2,}/g, ' ').trim();
       }
 
       function placeCaretAtEnd_(el){

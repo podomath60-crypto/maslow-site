@@ -15,10 +15,12 @@
     .wrap{max-width:1180px;margin:0 auto;padding:30px 18px 70px}
     header{margin-bottom:18px}
     .hero-header{background:transparent;border:0;border-radius:0;padding:0 0 18px;box-shadow:none}
-    .hero-top{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:14px}
-    .hero-copy{flex:1;min-width:0}
-    .tax-hero-img{width:210px;max-width:26vw;height:auto;display:block;object-fit:contain;flex:0 0 auto}
-    .title h1{margin:0;color:#111827;font-size:34px;letter-spacing:-.05em;line-height:1.16}
+    .hero-top{display:flex;align-items:center;justify-content:flex-start;gap:30px;margin-bottom:14px}
+    .hero-copy{flex:0 1 auto;min-width:0}
+    .tax-hero-img{width:230px;max-width:24vw;height:auto;display:block;object-fit:contain;flex:0 0 auto}
+    .title h1{margin:0;color:#183a8f;font-size:68px;font-weight:950;letter-spacing:-.06em;line-height:1.03;text-align:left;-webkit-text-stroke:2.5px #ffffff;paint-order:stroke fill;text-shadow:0 2px 10px rgba(24,58,143,.18)}
+    .title-line{display:block}
+    .check-mark{display:inline-block;margin-left:8px;font-size:.9em;vertical-align:baseline}
     .top-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 0;padding-top:16px;border-top:1px solid #e5e7eb}
     button{border:0;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:800;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease}
     button:hover{transform:translateY(-1px)}
@@ -87,7 +89,7 @@
     .source{font-size:12px;color:#6b7280;word-break:keep-all}
     .source a{color:#2563eb;text-decoration:none}
     .pill{display:inline-flex;padding:4px 8px;border-radius:999px;background:var(--soft);color:#3730a3;font-size:12px;font-weight:800}
-    @media(max-width:900px){.grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.party-results{grid-template-columns:1fr}.result-grid{grid-template-columns:1fr}.full{grid-column:auto}.hero-header{padding:0 0 16px}.hero-top{display:block}.tax-hero-img{width:180px;max-width:70%;margin:14px auto 0}.title h1{font-size:27px}.top-actions{padding:12px}}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.party-results{grid-template-columns:1fr}.result-grid{grid-template-columns:1fr}.full{grid-column:auto}.hero-header{padding:0 0 16px}.hero-top{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left}.tax-hero-img{width:180px;max-width:70%;margin:0}.title h1{font-size:44px;line-height:1.05}.top-actions{padding:12px}}
     .print-wrap{display:none!important}
     @media print{
       @page{size:A4;margin:24mm 10mm 12mm}
@@ -195,12 +197,12 @@
     <header>
       <div class="hero-header">
         <div class="hero-top">
+          <img class="tax-hero-img" src="https://www.maslowkorea.site/taxcheckup/assets/tax-checkup-illustration.png" alt="" />
           <div class="hero-copy">
             <div class="title">
-              <h1>매도·매수 세금·거래비용 체크업</h1>
+              <h1><span class="title-line">매도인·매수인</span><span class="title-line">세금·거래비용 CHECK UP <span class="check-mark">✔</span></span></h1>
             </div>
           </div>
-          <img class="tax-hero-img" src="https://www.maslowkorea.site/taxcheckup/assets/tax-checkup-illustration.png" alt="" />
         </div>
 
         <div class="top-actions">

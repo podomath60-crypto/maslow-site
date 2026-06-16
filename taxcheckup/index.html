@@ -334,7 +334,7 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card" id="sellerSummaryCapture">
           <h2>매도인 큰 요약</h2>
           <div class="party-results">
             <div class="party-card seller-card">
@@ -473,7 +473,7 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card" id="buyerSummaryCapture">
           <h2>매수인 큰 요약</h2>
           <div class="party-results">
             <div class="party-card buyer-card">
@@ -1006,7 +1006,7 @@
     return new Promise(function(resolve, reject){
       var existing = document.querySelector('script[src="' + src + '"]');
       if(existing){
-        if(window.html2canvas) resolve();
+        if((src.indexOf('html2canvas') !== -1 && window.html2canvas) || (src.indexOf('jszip') !== -1 && window.JSZip)) resolve();
         else existing.addEventListener('load', resolve, {once:true});
         return;
       }
@@ -1023,6 +1023,13 @@
     await loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
     if(!window.html2canvas) throw new Error('html2canvas load failed');
     return window.html2canvas;
+  }
+
+  async function ensureJsZip(){
+    if(window.JSZip) return window.JSZip;
+    await loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
+    if(!window.JSZip) throw new Error('jszip load failed');
+    return window.JSZip;
   }
 
   async function nodeToPngBlob(node){
@@ -1052,9 +1059,12 @@
 
     var btn = byId('downloadQueryBtn');
     var party = getCurrentParty();
-    var detail = byId(party === 'buyer' ? 'buyerDetailCapture' : 'sellerDetailCapture');
-    var law = byId(party === 'buyer' ? 'buyerLawCapture' : 'sellerLawCapture');
     var prefix = party === 'buyer' ? '매수인' : '매도인';
+    var targets = [
+      {node: byId(party === 'buyer' ? 'buyerSummaryCapture' : 'sellerSummaryCapture'), filename: prefix + '_큰요약.png'},
+      {node: byId(party === 'buyer' ? 'buyerDetailCapture' : 'sellerDetailCapture'), filename: prefix + '_상세내역.png'},
+      {node: byId(party === 'buyer' ? 'buyerLawCapture' : 'sellerLawCapture'), filename: prefix + '_공식설명.png'}
+    ];
 
     var oldText = btn ? btn.textContent : '';
     if(btn){
@@ -1063,15 +1073,22 @@
     }
 
     try{
-      var detailBlob = await nodeToPngBlob(detail);
-      if(detailBlob) downloadBlob(detailBlob, prefix + '_상세내역.png');
-      await new Promise(function(resolve){ setTimeout(resolve, 350); });
+      var JSZipRef = await ensureJsZip();
+      var zip = new JSZipRef();
 
-      var lawBlob = await nodeToPngBlob(law);
-      if(lawBlob) downloadBlob(lawBlob, prefix + '_공식_법규설명.png');
+      for(var i = 0; i < targets.length; i++){
+        if(btn) btn.textContent = '이미지 생성 중... ' + (i + 1) + '/3';
+        var blob = await nodeToPngBlob(targets[i].node);
+        if(!blob) throw new Error('png blob missing: ' + targets[i].filename);
+        zip.file(targets[i].filename, blob);
+      }
+
+      if(btn) btn.textContent = '파일 압축 중...';
+      var zipBlob = await zip.generateAsync({type:'blob'});
+      downloadBlob(zipBlob, prefix + '_조회내용.zip');
     } catch(err){
       console.error(err);
-      alert('이미지 다운로드를 완료하지 못했습니다. 다시 한 번 눌러 주세요.');
+      alert('조회내용 다운로드를 완료하지 못했습니다. 다시 한 번 눌러 주세요.');
     } finally {
       if(btn){
         btn.disabled = false;

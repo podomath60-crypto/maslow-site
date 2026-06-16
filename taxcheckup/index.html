@@ -4,6 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>매도·매수 세금·거래비용 체크업</title>
+  <link rel="icon" href="/favicon.ico?v=20260616">
+  <link rel="shortcut icon" href="/favicon.ico?v=20260616">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png?v=20260616">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=20260616">
+  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48.png?v=20260616">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png?v=20260616">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=20260616">
   <style>
     :root{
       --bg:#f4f6fb; --card:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -189,11 +196,8 @@
         visibility: hidden !important;
       }
     }
-
-
     /* 모바일 전용: 상단 이미지/PDF 버튼 숨김, 매도인·매수인 일체형 토글 */
     .mobile-party-toggle{display:none}
-    .bottom-download-area{margin-top:18px;display:flex;justify-content:center}
     .download-query-btn{width:100%;max-width:420px;background:#183a8f;color:#fff}
     .download-query-btn:disabled{opacity:.65;cursor:wait;transform:none}
     @media(max-width:900px){
@@ -229,7 +233,17 @@
       body.party-seller .buyer-side{display:none!important}
       body.party-buyer .seller-side{display:none!important}
       body.party-buyer .buyer-side{display:grid!important}
+    }
+
+
+    /* 조회내용 다운로드는 모바일 전용 */
+    .bottom-download-area{
+      display:none!important;
+    }
+    @media(max-width:900px){
       .bottom-download-area{
+        display:flex!important;
+        justify-content:center;
         position:sticky;
         bottom:0;
         z-index:20;
@@ -975,59 +989,62 @@
   }
 
   function downloadBlob(blob, filename){
+    if(!blob) throw new Error('blob empty');
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    a.rel = 'noopener';
+    a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
+  }
+
+  function loadScript(src){
+    return new Promise(function(resolve, reject){
+      var existing = document.querySelector('script[src="' + src + '"]');
+      if(existing){
+        if(window.html2canvas) resolve();
+        else existing.addEventListener('load', resolve, {once:true});
+        return;
+      }
+      var script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  async function ensureHtml2Canvas(){
+    if(window.html2canvas) return window.html2canvas;
+    await loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
+    if(!window.html2canvas) throw new Error('html2canvas load failed');
+    return window.html2canvas;
   }
 
   async function nodeToPngBlob(node){
     if(!node) throw new Error('capture target not found');
     if(document.fonts && document.fonts.ready) await document.fonts.ready;
 
-    var rect = node.getBoundingClientRect();
-    var width = Math.max(320, Math.ceil(rect.width || node.scrollWidth));
-    var height = Math.max(120, Math.ceil(node.scrollHeight || rect.height));
-    var styles = Array.from(document.querySelectorAll('style')).map(function(style){ return style.textContent; }).join('\n');
-    var clone = node.cloneNode(true);
-    clone.querySelectorAll('button').forEach(function(btn){ btn.remove(); });
-
-    var xhtml = '<!doctype html><html xmlns="http://www.w3.org/1999/xhtml" lang="ko"><head><meta charset="utf-8"/><style>' +
-      styles +
-      '\nhtml,body{margin:0;padding:0;background:#f4f6fb}.capture-root{width:' + width + 'px;padding:16px;background:#f4f6fb}.capture-root .card{box-shadow:0 10px 28px rgba(15,23,42,.10)}</style></head><body><div class="capture-root">' +
-      clone.outerHTML +
-      '</div></body></html>';
-
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + (width + 32) + '" height="' + (height + 32) + '"><foreignObject width="100%" height="100%">' + xhtml + '</foreignObject></svg>';
-    var svgBlob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
-    var url = URL.createObjectURL(svgBlob);
-
-    try{
-      var img = new Image();
-      var loaded = new Promise(function(resolve, reject){
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-      img.src = url;
-      await loaded;
-
-      var scale = Math.min(2, window.devicePixelRatio || 2);
-      var canvas = document.createElement('canvas');
-      canvas.width = Math.ceil((width + 32) * scale);
-      canvas.height = Math.ceil((height + 32) * scale);
-      var ctx = canvas.getContext('2d');
-      ctx.setTransform(scale,0,0,scale,0,0);
-      ctx.fillStyle = '#f4f6fb';
-      ctx.fillRect(0,0,width + 32,height + 32);
-      ctx.drawImage(img,0,0);
-      return await new Promise(function(resolve){ canvas.toBlob(resolve, 'image/png', 0.95); });
-    } finally {
-      URL.revokeObjectURL(url);
-    }
+    var html2canvas = await ensureHtml2Canvas();
+    var canvas = await html2canvas(node, {
+      backgroundColor:'#f4f6fb',
+      scale:Math.min(2, window.devicePixelRatio || 2),
+      useCORS:true,
+      allowTaint:true,
+      logging:false,
+      scrollX:0,
+      scrollY:-window.scrollY,
+      windowWidth:document.documentElement.clientWidth,
+      width:node.scrollWidth,
+      height:node.scrollHeight
+    });
+    return await new Promise(function(resolve){
+      canvas.toBlob(resolve, 'image/png', 0.95);
+    });
   }
 
   async function downloadQueryImages(){
@@ -1048,12 +1065,13 @@
     try{
       var detailBlob = await nodeToPngBlob(detail);
       if(detailBlob) downloadBlob(detailBlob, prefix + '_상세내역.png');
+      await new Promise(function(resolve){ setTimeout(resolve, 350); });
 
       var lawBlob = await nodeToPngBlob(law);
       if(lawBlob) downloadBlob(lawBlob, prefix + '_공식_법규설명.png');
     } catch(err){
       console.error(err);
-      alert('이미지 다운로드를 완료하지 못했습니다. 화면 캡처 또는 PDF 저장을 이용해 주세요.');
+      alert('이미지 다운로드를 완료하지 못했습니다. 다시 한 번 눌러 주세요.');
     } finally {
       if(btn){
         btn.disabled = false;

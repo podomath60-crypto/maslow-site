@@ -115,6 +115,13 @@
     @keyframes burstRing{0%{transform:scale(.2);opacity:0}40%{opacity:1}100%{transform:scale(1.55);opacity:0}}
     @media(max-width:860px){.main{padding:24px 14px 44px}.date-row{grid-template-columns:1fr}.lookup-btn{width:100%}h1{font-size:30px}.hero-visual{height:142px}.lamp{transform:scale(.86)}}
   </style>
+  <link rel="icon" href="/favicon.ico?v=20260616">
+  <link rel="shortcut icon" href="/favicon.ico?v=20260616">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png?v=20260616">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=20260616">
+  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48.png?v=20260616">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png?v=20260616">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=20260616">
 </head>
 <body>
   <div class="page">

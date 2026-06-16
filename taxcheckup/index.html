@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>매도·매수 세금·거래비용 체크업</title>
+  <style>
+    :root{
+      --bg:#f4f6fb; --card:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+      --accent:#2563eb; --accent2:#0f766e; --warn:#b45309; --danger:#b91c1c; --soft:#eef2ff;
+      --shadow:0 16px 40px rgba(15,23,42,.08); --radius:20px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#eef3ff 0%,var(--bg) 260px);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);}
+    .wrap{max-width:1180px;margin:0 auto;padding:30px 18px 70px}
+    header{margin-bottom:18px}
+    .hero-header{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px 26px 22px;box-shadow:0 14px 34px rgba(15,23,42,.07)}
+    .hero-top{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:14px}
+    .hero-copy{flex:1;min-width:0}
+    .tax-hero-img{width:210px;max-width:26vw;height:auto;display:block;object-fit:contain;flex:0 0 auto}
+    .title h1{margin:0;color:#111827;font-size:34px;letter-spacing:-.05em;line-height:1.16}
+    .title p{margin:10px 0 0;color:#4b5563;font-size:15px;line-height:1.6;max-width:780px}
+    .badge{display:inline-flex;gap:8px;align-items:center;background:#f8fafc;color:#334155;border:1px solid #e2e8f0;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:800;white-space:nowrap;margin-top:12px}
+    .hero-kicker{display:inline-flex;align-items:center;gap:8px;margin-bottom:10px;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;font-size:12px;font-weight:900;letter-spacing:.01em}
+    .hero-kicker .dot{width:7px;height:7px;border-radius:50%;background:#2563eb}
+    .hero-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    .hero-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 11px;border-radius:999px;background:#f9fafb;border:1px solid #e5e7eb;color:#374151;font-size:13px;font-weight:750}
+    .hero-pill b{font-weight:900;color:#111827}
+    .top-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 0;padding-top:16px;border-top:1px solid #e5e7eb}
+    button{border:0;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:800;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease}
+    button:hover{transform:translateY(-1px)}
+    .primary{background:var(--accent);color:white;box-shadow:0 12px 26px rgba(37,99,235,.22)}
+    .ghost{background:#fff;color:#111827;border:1px solid #d1d5db}
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start}
+    .card{background:rgba(255,255,255,.94);border:1px solid rgba(229,231,235,.9);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .card h2{font-size:18px;margin:0;padding:18px 20px;border-bottom:1px solid var(--line);letter-spacing:-.03em;background:rgba(255,255,255,.7)}
+    .section{padding:18px 20px;border-bottom:1px solid var(--line)}
+    .section:last-child{border-bottom:0}
+    .section-title{font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px;letter-spacing:-.02em}
+    .form-grid{display:grid;grid-template-columns:170px 1fr;gap:10px 12px;align-items:center}
+    label{font-size:14px;color:#374151;font-weight:650}
+    input,select{width:100%;border:1px solid #d1d5db;border-radius:12px;padding:12px 12px;font-size:15px;background:#fff;color:var(--ink);outline:none}
+    input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.13)}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .hint{font-size:12px;color:var(--muted);line-height:1.45;margin-top:7px}
+    .checks{display:grid;gap:10px;margin-top:4px}
+    .check{display:flex;gap:10px;align-items:flex-start;background:#f9fafb;border:1px solid var(--line);border-radius:14px;padding:12px}
+    .check input{width:auto;margin-top:3px}
+    .check span{font-size:14px;line-height:1.4;color:#374151}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;padding:18px 20px;background:#f9fafb;border-top:1px solid var(--line)}
+    .party-results{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px;background:#f9fafb;border-bottom:1px solid var(--line)}
+    .party-card{background:white;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 10px 24px rgba(15,23,42,.06)}
+    .party-head{padding:16px 18px;color:white}
+    .party-head .kicker{font-size:13px;opacity:.86;margin-bottom:7px;font-weight:800}
+    .party-head .big{font-size:29px;font-weight:950;letter-spacing:-.04em;line-height:1.1}
+    .party-head .sub{font-size:12px;opacity:.82;margin-top:6px;line-height:1.45}
+    .seller-head{background:linear-gradient(135deg,#0f172a,#1e3a8a)}
+    .buyer-head{background:linear-gradient(135deg,#065f46,#0f766e)}
+    .party-lines{padding:13px 16px 15px;display:grid;gap:9px;background:#fff}
+    .party-line{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px dashed #e5e7eb;padding-bottom:8px;font-size:13px;color:#374151}
+    .party-line:last-child{border-bottom:0;padding-bottom:0}
+    .party-line span:first-child{font-weight:750;color:#4b5563}
+    .party-line strong{font-size:15px;color:#111827;text-align:right;white-space:nowrap}
+    .party-note{font-size:12px;color:#6b7280;line-height:1.4;margin-top:1px}
+    .party-section-title{margin-top:8px;padding:9px 10px;border-radius:12px;font-size:13px;font-weight:900;letter-spacing:-.02em}
+    .seller-title{background:#eef2ff;color:#1e3a8a;border:1px solid #c7d2fe}
+    .buyer-title{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
+    .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px;background:#f9fafb}
+    .tile{background:white;border:1px solid var(--line);border-radius:16px;padding:14px;min-height:86px}
+    .tile b{display:block;font-size:13px;color:#6b7280;margin-bottom:7px}
+    .tile strong{font-size:20px;letter-spacing:-.03em}
+    .tile .mini{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.35}
+    .full{grid-column:1/-1}
+    .table{width:100%;border-collapse:collapse;font-size:13px;background:white;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+    .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left}
+    .table th{background:#f3f4f6;color:#374151}
+    .table tr:last-child td{border-bottom:0}
+    .note{padding:18px 20px;color:#374151;font-size:14px;line-height:1.65}
+    .note h3{margin:18px 0 8px;font-size:16px;color:#111827}
+    .note h3:first-child{margin-top:0}
+    .note ul{margin:8px 0 0 20px;padding:0}
+    .note li{margin:4px 0}
+    .law-split{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+    .law-box{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px 16px 18px}
+    .law-box h3{margin:0 0 10px;font-size:18px;letter-spacing:-.03em}
+    .law-box.seller-law{border-top:6px solid #1e3a8a}
+    .law-box.buyer-law{border-top:6px solid #047857}
+    .law-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;margin:0 0 10px}
+    .law-chip.seller{background:#eff6ff;color:#1e3a8a}
+    .law-chip.buyer{background:#ecfdf5;color:#047857}
+    .warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:16px;padding:13px 14px;margin-top:12px;font-size:13px;line-height:1.55}
+    .input-alert{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.45;margin-top:10px}
+    .input-ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.45;margin-top:10px}
+    .source{font-size:12px;color:#6b7280;word-break:keep-all}
+    .source a{color:#2563eb;text-decoration:none}
+    .pill{display:inline-flex;padding:4px 8px;border-radius:999px;background:var(--soft);color:#3730a3;font-size:12px;font-weight:800}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.party-results{grid-template-columns:1fr}.result-grid{grid-template-columns:1fr}.full{grid-column:auto}.hero-header{padding:22px 18px 18px}.hero-top{display:block}.tax-hero-img{width:180px;max-width:70%;margin:14px auto 0}.badge{margin-top:12px}.title h1{font-size:27px}.title p{font-size:14px}.top-actions{padding:12px}}
+    .print-wrap{display:none!important}
+    @media print{
+      @page{size:A4;margin:24mm 10mm 12mm}
+      html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      body{background:#fff;color:#0f172a}
+      .wrap{display:none!important}
+      .print-wrap{display:block!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0f172a}
+      body.print-seller #printBuyerPage{display:none!important}
+      body.print-buyer #printSellerPage{display:none!important}
+      body.print-seller #printSellerPage, body.print-buyer #printBuyerPage{page-break-after:auto;break-after:auto}
+      .print-page{page-break-after:always;break-after:page;min-height:246mm;padding:0 0 14mm;position:relative;background:#fff;border:1px solid #dbe3f0;border-radius:18px;overflow:hidden}
+      .print-page:last-child{page-break-after:auto;break-after:auto}
+      .print-page.seller-page{background:linear-gradient(180deg,#eef4ff 0,#f8fbff 120px,#ffffff 260px)}
+      .print-page.buyer-page{background:linear-gradient(180deg,#ecfdf5 0,#f6fffb 120px,#ffffff 260px)}
+      .print-header{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 18px 12px;margin-bottom:0;border-bottom:0}
+      .print-header h1{font-size:23px;margin:0;letter-spacing:-.05em;line-height:1.15}
+      .print-header p{margin:6px 0 0;color:#475569;font-size:12px;line-height:1.5}
+      .print-badge{font-size:12px;font-weight:900;border-radius:999px;padding:7px 12px;white-space:nowrap}
+      .seller-page .print-badge{background:#dbeafe;color:#1e3a8a;border:1px solid #93c5fd}
+      .buyer-page .print-badge{background:#dcfce7;color:#047857;border:1px solid #86efac}
+      .print-total{border-radius:20px;color:#fff;padding:18px 20px;margin:0 18px 14px;box-shadow:0 14px 32px rgba(15,23,42,.12)}
+      .print-total.seller{background:linear-gradient(135deg,#1e1b4b,#1d4ed8)}
+      .print-total.buyer{background:linear-gradient(135deg,#065f46,#10b981)}
+      .print-total .label{font-size:13px;font-weight:900;opacity:.9;margin-bottom:4px;letter-spacing:-.02em}
+      .print-total .amount{font-size:30px;font-weight:950;letter-spacing:-.05em;line-height:1.08}
+      .print-total .sub{font-size:12px;opacity:.9;margin-top:4px;line-height:1.45}
+      .print-section{margin:0 18px 12px;border:1px solid #d8dee8;border-radius:16px;overflow:hidden;break-inside:avoid;background:#fff;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+      .print-section h2{font-size:14px;margin:0;padding:11px 14px;border-bottom:1px solid #d8dee8;letter-spacing:-.02em}
+      .seller-page .print-section h2{background:linear-gradient(180deg,#eff6ff,#dbeafe);color:#1e3a8a}
+      .buyer-page .print-section h2{background:linear-gradient(180deg,#ecfdf5,#d1fae5);color:#047857}
+      .print-table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+      .print-table th,.print-table td{border-bottom:1px solid #eef2f7;padding:8px 10px;text-align:left;vertical-align:top}
+      .print-table tr:last-child td{border-bottom:0}
+      .print-table th{background:#f8fafc;color:#334155;width:38%;font-weight:800}
+      .print-table tr:nth-child(even) td{background:#fbfdff}
+      .print-table tr:last-child td{font-weight:900;background:#f8fafc}
+      .print-formula{font-size:11.5px;line-height:1.58;padding:12px 14px 14px;background:#fff}
+      .print-formula h3{font-size:13px;margin:12px 0 6px;padding:6px 10px;border-radius:10px;display:inline-block}
+      .seller-page .print-formula h3{background:#eef2ff;color:#1e3a8a}
+      .buyer-page .print-formula h3{background:#ecfdf5;color:#047857}
+      .print-formula h3:first-child{margin-top:0}
+      .print-formula p{margin:6px 0}
+      .print-formula ul{margin:6px 0 0 18px;padding:0}
+      .print-formula li{margin:3px 0}
+      .print-warn{margin-top:10px;border-radius:12px;padding:10px 12px;font-size:11.5px;line-height:1.5}
+      .seller-page .print-warn{border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8}
+      .buyer-page .print-warn{border:1px solid #a7f3d0;background:#ecfdf5;color:#047857}
+
+      .print-summary-disclaimer{
+        margin:-2px 18px 12px;
+        border:3px solid #dc2626;
+        background:#fef2f2;
+        color:#7f1d1d;
+        border-radius:14px;
+        padding:11px 13px;
+        font-size:11.7px;
+        line-height:1.48;
+        font-weight:850;
+        break-inside:avoid;
+        box-shadow:0 8px 18px rgba(220,38,38,.14);
+      }
+      .print-summary-disclaimer .danger-title{
+        display:block;
+        color:#b91c1c;
+        font-size:14px;
+        font-weight:950;
+        letter-spacing:-.03em;
+        margin-bottom:4px;
+      }
+      .print-summary-disclaimer b{color:#991b1b;font-weight:950}
+
+      .print-footer{display:none!important}
+    }
+    @media (max-width:900px){.law-split{grid-template-columns:1fr}}
+
+    .dashboard-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+    .side-col{display:grid;gap:18px;align-items:start}
+    .side-col .card{height:auto}
+    .side-col .party-results{display:block;padding:0;background:transparent;border-bottom:0}
+    .side-col .party-card{border-radius:0;box-shadow:none;border:0}
+    .side-col .party-head{border-radius:0}
+    .side-col .result-grid{display:block;padding:0;background:transparent}
+    .side-col .tile{border:0;border-radius:0;min-height:auto}
+    .law-single{padding:18px 20px}
+    .law-single .law-box{border-radius:16px}
+    .column-label{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .column-label small{font-size:12px;color:var(--muted);font-weight:700}
+    @media(max-width:1100px){.dashboard-cols{grid-template-columns:1fr}}
+
+    /* 화면에서는 PDF/인쇄 전용 영역을 절대 노출하지 않음 */
+    @media screen {
+      .print-wrap,
+      .print-wrap *,
+      #printSellerPage,
+      #printBuyerPage {
+        display: none !important;
+        visibility: hidden !important;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="hero-header">
+        <div class="hero-top">
+          <div class="hero-copy">
+            <div class="title">
+              <div class="hero-kicker"><span class="dot"></span>중개 실무 상담용 간이 계산기</div>
+              <h1>매도·매수 세금·거래비용 체크업</h1>
+              <p>매도인과 매수인 계산 영역을 좌우로 분리해 입력값, 큰 요약, 상세내역, 공식·법규 설명을 한 번에 확인할 수 있도록 구성했습니다. 중개사 실무 상담용 추정치이며 최종 세액 확정 자료는 아닙니다.</p>
+            </div>
+            <div class="badge">세금 · 부대비용 · 초기자금 통합 체크</div>
+          </div>
+          <img class="tax-hero-img" src="assets/tax-checkup-illustration.png" alt="세금·거래비용 체크업 일러스트" />
+        </div>
+
+        <div class="hero-pills">
+          <div class="hero-pill"><b>매도인</b> 양도세 · 지방소득세</div>
+          <div class="hero-pill"><b>매수인</b> 취득세 · 부가세 · 초기 필요자금</div>
+          <div class="hero-pill"><b>반영사항</b> 중개보수 부가세 포함</div>
+        </div>
+
+        <div class="top-actions">
+          <button class="primary" id="calcBtn">다시 계산</button>
+          <button class="ghost" id="sample10Btn">10억 예시</button>
+          <button class="ghost" id="resetBtn">초기값</button>
+          <button class="ghost" id="printSellerBtn">매도인용 PDF 저장</button>
+          <button class="ghost" id="printBuyerBtn">매수인용 PDF 저장</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="dashboard-cols">
+      <div class="side-col seller-side">
+        <section class="card">
+          <h2 class="column-label">매도인 입력값 <small>양도세 계산</small></h2>
+          <div class="section">
+            <div class="section-title"><span class="pill">매도인</span> 양도세 계산 기본값</div>
+            <div class="form-grid">
+              <label for="assetType">자산 구분</label>
+              <select id="assetType">
+                <option value="normal">공장·창고·상가 / 일반 토지·건물</option>
+                <option value="nonbiz">비사업용 토지</option>
+              </select>
+
+              <label>취득일 / 양도일</label>
+              <div class="row2">
+                <input id="buyDate" type="date" value="2020-01-01" />
+                <input id="sellDate" type="date" value="2026-06-15" />
+              </div>
+
+              <label for="buyPrice">취득가액</label>
+              <input id="buyPrice" inputmode="numeric" value="500,000,000" />
+
+              <label for="sellPrice">양도가액</label>
+              <input id="sellPrice" inputmode="numeric" value="800,000,000" />
+
+              <label for="necessaryCost">기타 양도 필요경비</label>
+              <input id="necessaryCost" inputmode="numeric" value="0" />
+
+              <label for="brokerFee">매도 중개보수 0.9%</label>
+              <input id="brokerFee" inputmode="numeric" value="7,200,000" />
+
+              <label for="sellerBrokerVat">매도 중개보수 부가세 10%</label>
+              <input id="sellerBrokerVat" inputmode="numeric" value="720,000" readonly />
+
+              <label for="legalFee">법무사비용</label>
+              <input id="legalFee" inputmode="numeric" value="1,000,000" />
+
+              <label for="otherCost">기타 양도비</label>
+              <input id="otherCost" inputmode="numeric" value="1,000,000" />
+            </div>
+            <p class="hint">매도 중개보수는 양도가액 × 0.9%로 자동 고정 계산하고, 중개보수 부가세 10%를 별도 반영합니다. 이 금액은 매도인 양도비/필요경비 성격으로 양도차익 계산에서 차감합니다.</p>
+            <div class="checks">
+              <label class="check"><input id="applyLongDeduction" type="checkbox" checked><span>장기보유특별공제 적용<br><small>일반 토지·건물 기준 3년 이상 6%, 이후 연 2%씩, 15년 이상 최대 30%로 계산합니다.</small></span></label>
+              <label class="check"><input id="designatedArea" type="checkbox"><span>비사업용 토지 + 지정지역 추가 10%p 적용<br><small>해당되는 경우에만 선택합니다. 일반 공장·창고·상가는 보통 끄고 계산합니다.</small></span></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>매도인 큰 요약</h2>
+          <div class="party-results">
+            <div class="party-card seller-card">
+              <div class="party-head seller-head">
+                <div class="kicker">매도인 예상 부담세액</div>
+                <div class="big" id="sellerTotal">-</div>
+                <div class="sub">양도소득세 + 지방소득세</div>
+              </div>
+              <div class="party-lines">
+                <div class="party-line"><span>예상 양도세</span><strong id="sellerTransferTax">-</strong></div>
+                <div class="party-line"><span>지방소득세</span><strong id="sellerLocalIncomeTax">-</strong></div>
+                <div class="party-note" id="sellerRateNote">-</div>
+                <div class="party-section-title seller-title">매도인 양도세 산출내역</div>
+                <div class="party-line"><span>보유기간</span><strong id="holdingText">-</strong></div>
+                <div class="party-note" id="holdingMini">-</div>
+                <div class="party-line"><span>양도차익</span><strong id="gain">-</strong></div>
+                <div class="party-note">매도인 계산: 양도가 - 취득가 - 양도 필요경비</div>
+                <div class="party-line"><span>장기보유특별공제</span><strong id="longDeduction">-</strong></div>
+                <div class="party-note" id="longRate">-</div>
+                <div class="party-line"><span>양도세 과세표준</span><strong id="taxBase">-</strong></div>
+                <div class="party-note">매도인 계산: 양도차익 - 장특공제 - 기본공제 250만원</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>매도인 상세내역</h2>
+          <div class="result-grid">
+            <div class="tile full">
+              <b>매도인 상세 산출표</b>
+              <table class="table" id="sellerDetailTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>매도인 공식 · 법규설명</h2>
+          <div class="law-single">
+            <div class="law-box seller-law">
+<span class="law-chip seller">매도인 기준</span>
+            <h3>매도인 양도세 공식 · 법규설명</h3>
+            <p><b>참고자료:</b> 이 설명은 중개사 상담용 간이 추정 기준입니다. 실제 신고세액은 개인/법인 여부, 보유·사용 사실관계, 비사업용 토지 판단, 감가상각, 필요경비 증빙, 감면·중과 여부에 따라 달라질 수 있으므로 최종 안내 전 세무사 확인이 필요합니다.</p>
+
+            <h3>1. 양도세는 누가 부담하나</h3>
+            <p>양도소득세는 <b>자산을 파는 사람, 즉 매도인</b>에게 발생하는 세금입니다. 이 계산기의 매도인 칸은 매수인의 취득세·부가세와 섞지 않고, 매도인의 양도차익과 양도세만 계산합니다.</p>
+
+            <h3>2. 양도차익 계산 구조</h3>
+            <p><b>양도차익 = 양도가액 - 취득가액 - 기타 양도 필요경비 - 매도 중개보수 - 법무사비용 - 기타 양도비</b>로 계산합니다.</p>
+            <ul>
+              <li><b>양도가액</b>: 실제 매도금액입니다.</li>
+              <li><b>취득가액</b>: 과거 매수금액입니다. 취득 당시 인정되는 부대비용이 포함될 수 있습니다.</li>
+              <li><b>매도 중개보수</b>: 양도가액 × 0.9%로 자동 계산합니다. 매도인이 양도를 위해 지출한 양도비 성격으로 차감합니다.</li>
+              <li><b>법무사비용·기타 양도비</b>: 양도와 직접 관련된 비용만 입력합니다.</li>
+            </ul>
+
+            <h3>3. 기타 양도 필요경비에 넣는 항목</h3>
+            <p><b>기타 양도 필요경비</b>는 법으로 정해진 고정 금액이 아닙니다. 실제 지출했고 증빙이 있는 비용만 입력합니다. 기본값은 0원입니다.</p>
+            <ul>
+              <li><b>입력 가능 예시</b>: 취득 당시 중개보수, 취득세·등기비용 등 취득 부대비용, 증축·대수선·용도변경처럼 자산가치를 높인 자본적 지출, 양도 관련 세무사·법무사 비용, 매각을 위해 직접 든 비용</li>
+              <li><b>중복 입력 금지</b>: 매도 중개보수는 자동 계산됩니다. 법무사비용도 별도 칸에 입력했다면 기타 양도 필요경비에 다시 넣지 않습니다.</li>
+              <li><b>제외 예시</b>: 단순 도배·장판, 일반 수리·유지관리비, 전기·수도·관리비, 증빙 없는 현금 지출, 개인적 비용</li>
+            </ul>
+
+            <h3>4. 장기보유특별공제</h3>
+            <p>일반 토지·건물 기준으로 <b>3년 이상 보유 시 6%</b>, 이후 1년마다 2%씩 증가하여 <b>15년 이상 최대 30%</b>를 적용합니다. 이 계산기는 상담 편의를 위해 <b>보유연수 × 2%, 최대 30%</b>로 간이 계산하고, 3년 미만은 0%로 처리합니다.</p>
+            <p>단, 장기보유특별공제 적용 여부는 자산 종류, 보유기간, 중과 대상 여부 등에 따라 달라질 수 있습니다. 체크 해제 시 장특공제는 0원으로 계산됩니다.</p>
+
+            <h3>5. 양도소득 과세표준</h3>
+            <p><b>과세표준 = 양도차익 - 장기보유특별공제 - 기본공제 2,500,000원</b>입니다. 과세표준이 0원 이하이면 이 계산기에서는 양도세를 0원으로 처리합니다.</p>
+            <p>기본공제 250만원은 같은 과세기간의 양도소득 계산에서 적용되는 공제입니다. 여러 건을 같은 해에 양도한 경우에는 단순히 건마다 250만원을 반복 적용하면 안 될 수 있습니다.</p>
+
+            <h3>6. 양도세율과 지방소득세</h3>
+            <ul>
+              <li><b>일반 토지·건물</b>: 보유기간 1년 미만 50%, 2년 미만 40%, 2년 이상 기본세율로 계산합니다.</li>
+              <li><b>기본세율</b>: 1,400만원 이하 6%, 5,000만원 이하 15%, 8,800만원 이하 24%, 1억5천만원 이하 35%, 3억원 이하 38%, 5억원 이하 40%, 10억원 이하 42%, 10억원 초과 45% 구조입니다.</li>
+              <li><b>비사업용 토지</b>: 기본세율에 10%p를 더하는 방식으로 간이 반영합니다. 지정지역 추가 옵션을 선택하면 추가 10%p를 더 반영합니다.</li>
+              <li><b>지방소득세</b>: 계산된 양도소득세의 10%로 표시합니다.</li>
+            </ul>
+
+            <h3>7. 토지 매도 시 특히 조심할 내용</h3>
+            <p>토지는 공장·상가 건물보다 <b>비사업용 토지 여부</b>가 핵심입니다. 일반토지는 상담용 간이 계산에 활용할 수 있지만, 아래 유형은 실제 세액이 크게 달라질 수 있습니다.</p>
+            <ul>
+              <li>나대지, 잡종지, 임야, 농지</li>
+              <li>장기간 방치된 토지</li>
+              <li>법인이 보유한 토지</li>
+              <li>사업에 직접 사용하지 않은 토지</li>
+              <li>개발 예정지</li>
+              <li>농지 자경 여부가 쟁점인 토지</li>
+            </ul>
+            <div class="warn"><b>매도인 참고자료 경고:</b> 이 계산 결과는 상담용 추정치입니다. 비사업용 토지, 농지·자경, 법인 보유, 감가상각, 중과·감면 여부가 있으면 실제 양도세가 달라질 수 있습니다. 최종 세액 안내 전 세무사 확인이 필요합니다.</div></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="side-col buyer-side">
+        <section class="card">
+          <h2 class="column-label">매수인 입력값 <small>취득세·초기자금 계산</small></h2>
+          <div class="section">
+            <div class="section-title"><span class="pill">매수인</span> 취득세 계산 기본값</div>
+            <div class="form-grid">
+              <label for="acqTaxBase">취득세 과세표준 / 부가세 제외 매매가액</label>
+              <input id="acqTaxBase" inputmode="numeric" value="800,000,000" />
+
+              <label for="landValue">토지분 가액</label>
+              <input id="landValue" inputmode="numeric" value="0" />
+
+              <label for="buildingValue">건물분 가액</label>
+              <input id="buildingValue" inputmode="numeric" value="0" />
+
+              <label for="buyerVat">건물분 부가세 10%</label>
+              <input id="buyerVat" inputmode="numeric" value="0" readonly />
+
+              <label for="acqRateMode">취득 유형</label>
+              <select id="acqRateMode">
+                <option value="nonHouse">주택 외 매매: 취득세 4.0% + 농특세 0.2% + 지방교육세 0.4%</option>
+              </select>
+
+              <label for="buyerBrokerFee">매수 중개보수 0.9%</label>
+              <input id="buyerBrokerFee" inputmode="numeric" value="7,200,000" />
+
+              <label for="buyerBrokerVat">매수 중개보수 부가세 10%</label>
+              <input id="buyerBrokerVat" inputmode="numeric" value="720,000" readonly />
+
+              <label for="buyerLegalFee">매수 법무사·등기비용</label>
+              <input id="buyerLegalFee" inputmode="numeric" value="1,000,000" />
+
+              <label for="buyerOtherCost">인지세·채권·기타 취득비용</label>
+              <input id="buyerOtherCost" inputmode="numeric" value="1,000,000" />
+            </div>
+            <div class="checks">
+              <label class="check"><input id="vatCreditPossible" type="checkbox" checked><span>건물분 부가세 환급/매입세액 공제 가능<br><small>건물분 가액을 입력하면 건물분 부가세를 10%로 자동 계산합니다. 실제 공제·환급 가능한 경우에만 체크합니다.</small></span></label>
+            </div>
+            <p class="hint" id="vatInputNotice">건물분 가액을 입력하면 건물분 부가세가 자동 계산됩니다.</p>
+            <p class="hint">취득세 과세표준/부가세 제외 매매가액 기준으로 취득세 계열 4.6%와 매수 중개보수 0.9%를 각각 자동 계산하고, 중개보수 부가세 10%를 별도 반영합니다. 토지분에는 부가세를 계산하지 않고, 건물분 가액에 대해서만 부가세 10%를 자동 계산합니다.</p>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>매수인 큰 요약</h2>
+          <div class="party-results">
+            <div class="party-card buyer-card">
+              <div class="party-head buyer-head">
+                <div class="kicker">매수인 취득세 계열</div>
+                <div class="big" id="buyerTotal">-</div>
+                <div class="sub">취득세 + 농어촌특별세 + 지방교육세, 중개보수 제외</div>
+              </div>
+              <div class="party-lines">
+                <div class="party-line"><span>취득세</span><strong id="buyerAcqTax">-</strong></div>
+                <div class="party-line"><span>농어촌특별세</span><strong id="buyerRuralTax">-</strong></div>
+                <div class="party-line"><span>지방교육세</span><strong id="buyerEduTax">-</strong></div>
+                <div class="party-note">주택 외 일반 매매 기준 총 4.6% 간이 계산</div>
+
+                <div class="party-section-title buyer-title">매수인 취득세·부대비용 내역</div>
+                <div class="party-line"><span>취득세 과세표준</span><strong id="buyerBaseMini">-</strong></div>
+                <div class="party-line"><span>토지분 / 건물분</span><strong id="buyerSplitMini">-</strong></div>
+                <div class="party-line"><span>매수 중개보수 0.9%</span><strong id="buyerBrokerMini">-</strong></div>
+                <div class="party-line"><span>매수 중개보수 부가세 10%</span><strong id="buyerBrokerVatMini">-</strong></div>
+                <div class="party-note" id="buyerBrokerFormulaMini">매수 중개보수 = 부가세 제외 매매가액 × 0.9%</div>
+                <div class="party-note">매수 중개보수는 취득세가 아니라 매수 부대비용입니다. 총 초기 필요자금에 별도 반영합니다.</div>
+                <div class="party-line"><span>법무사·등기·기타</span><strong id="buyerAncillaryMini">-</strong></div>
+                <div class="party-line"><span>건물분 부가세 10%</span><strong id="buyerVatMini">-</strong></div>
+                <div class="party-note" id="buyerVatNote">-</div>
+                <div class="party-line"><span>총 초기 결제 필요자금</span><strong id="buyerInitialMini">-</strong></div>
+                <div class="party-line"><span>향후 취득원가 반영 가능액</span><strong id="buyerCostBasisMini">-</strong></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>매수인 상세내역</h2>
+          <div class="result-grid">
+            <div class="tile full">
+              <b>매수인 상세 산출표</b>
+              <table class="table" id="buyerDetailTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>매수인 공식 · 법규설명</h2>
+          <div class="law-single">
+            <div class="law-box buyer-law">
+<span class="law-chip buyer">매수인 기준</span>
+            <h3>매수인 취득세·초기자금 공식 · 법규설명</h3>
+            <p><b>참고자료:</b> 이 설명은 중개사 상담용 간이 추정 기준입니다. 실제 취득세·부가세·환급 여부는 물건 종류, 토지·건물 안분, 사업자 여부, 과세사업 사용 여부, 감면·중과 여부, 계약서 작성 방식에 따라 달라질 수 있으므로 최종 안내 전 세무사·법무사 확인이 필요합니다.</p>
+
+            <h3>1. 취득세는 누가 부담하나</h3>
+            <p>취득세 계열 세금은 <b>부동산을 사는 사람, 즉 매수인</b>이 부담합니다. 이 계산기의 매수인 칸은 매도인의 양도세와 섞지 않고, 매수인이 취득할 때 준비해야 할 세금·부대비용·초기자금만 계산합니다.</p>
+
+            <h3>2. 취득세 계열 4.6%</h3>
+            <p>공장·창고·상가·일반토지 등 <b>주택 외 일반 매매</b>는 상담용으로 <b>취득세 과세표준/부가세 제외 매매가액 기준 취득세 4.0% + 농어촌특별세 0.2% + 지방교육세 0.4% = 총 4.6%</b>를 적용합니다.</p>
+            <ul>
+              <li><b>취득세</b>: 취득세 과세표준/부가세 제외 매매가액 × 4.0%</li>
+              <li><b>농어촌특별세</b>: 취득세 과세표준/부가세 제외 매매가액 × 0.2%</li>
+              <li><b>지방교육세</b>: 취득세 과세표준/부가세 제외 매매가액 × 0.4%</li>
+              <li><b>취득세 계열 합계</b>: 취득세 과세표준/부가세 제외 매매가액 × 4.6%</li>
+            </ul>
+            <p>농지, 감면 대상, 중과 대상, 원시취득, 증여·상속, 특수관계 거래 등은 이 4.6% 단순 계산과 다를 수 있습니다.</p>
+
+            <h3>3. 매수 중개보수 0.9%</h3>
+            <p><b>매수 중개보수 = 취득세 과세표준/부가세 제외 매매가액 × 0.9%</b>로 자동 계산하고, <b>중개보수 부가세 10%</b>를 별도 반영합니다. 공장·창고·상가·토지 등 주택 외 중개대상물은 상한요율 0.9% 이내에서 협의하는 구조지만, 이 계산기는 보수적으로 0.9%를 강제 적용합니다.</p>
+            <p>매수 중개보수는 <b>취득세가 아니라 매수 부대비용</b>입니다. 총 초기 결제 필요자금에는 포함하고, 향후 매도 시 취득가액/필요경비 쪽에 반영될 수 있습니다.</p>
+
+            <h3>4. 토지·건물 안분과 부가세</h3>
+            <p>부가세는 총 매매가액 전체가 아니라 <b>건물분 가액에만 10%</b>를 적용합니다. 토지분은 부가세 면세로 봅니다.</p>
+            <ul>
+              <li><b>건물분 부가세</b>: 건물분 가액 × 10%</li>
+              <li><b>토지분 부가세</b>: 0원</li>
+              <li><b>총 매매가액</b>: 토지분 가액 + 건물분 가액이 맞는지 확인합니다.</li>
+            </ul>
+            <p>건물분 부가세 환급/매입세액 공제 가능으로 체크했는데 건물분 가액이 0원이면, 입력폼 아래에 건물분 가액을 입력해야 계산된다는 안내가 표시됩니다.</p>
+            <ul>
+              <li><b>부가세 공제 가능</b>: 초기 결제 필요자금에는 포함하지만, 향후 취득원가 반영 가능액에서는 제외합니다.</li>
+              <li><b>부가세 공제 불가</b>: 초기 결제 필요자금에도 포함하고, 향후 취득원가 반영 가능액에도 포함합니다.</li>
+            </ul>
+
+            <h3>5. 매수인 총 초기 결제 필요자금</h3>
+            <p><b>총 초기 결제 필요자금 = 취득세 과세표준/부가세 제외 매매가액 + 취득세 계열 + 매수 중개보수 0.9% + 중개보수 부가세 10% + 법무사·등기비용 + 인지세·채권·기타 취득비용 + 건물분 부가세</b>로 표시합니다.</p>
+            <p>이 금액은 매수인이 계약·잔금·이전등기 과정에서 준비해야 할 자금 규모를 보기 위한 상담용 금액입니다. 실제 잔금 방식, 부가세 별도 계약, 법무사 견적, 국민주택채권 매입·할인액에 따라 달라질 수 있습니다.</p>
+
+            <h3>6. 향후 취득원가 반영 가능액</h3>
+            <p><b>향후 취득원가 반영 가능액 = 취득세 과세표준/부가세 제외 매매가액 + 취득세 계열 + 매수 중개보수 + 중개보수 부가세 + 법무사·등기비용 + 기타 취득비용 + 공제 불가 부가세</b>로 표시합니다.</p>
+            <p>매수 중개보수, 취득세·농특세·지방교육세, 인지세, 법무사·등기비용 등은 취득에 소요된 부대비용으로서 향후 양도세 계산 시 취득가액/필요경비 쪽에 반영될 수 있습니다. 단, 실제 반영은 증빙과 세무 판단이 필요합니다.</p>
+
+            <h3>7. 매수 시 주의사항</h3>
+            <ul>
+              <li>농지는 취득세율·감면 여부가 일반 토지와 다를 수 있습니다.</li>
+              <li>부가세 환급 가능 여부는 사업자등록, 과세사업 사용 여부, 세금계산서 수취 여부, 면세사업 여부 등에 따라 달라질 수 있습니다.</li>
+              <li>토지분·건물분 안분이 불명확하면 부가세와 취득원가 계산이 달라질 수 있습니다.</li>
+              <li>법인 매수, 특수관계 거래, 저가·고가 양수도, 감면·중과 대상은 별도 검토가 필요합니다.</li>
+            </ul>
+            <div class="warn"><b>매수인 참고자료 경고:</b> 이 계산 결과는 상담용 추정치입니다. 실제 취득세, 부가세 환급, 법무사비, 인지세, 채권비용, 감면·중과 여부는 계약 조건과 신고 기준에 따라 달라질 수 있습니다. 최종 안내 전 세무사·법무사 확인이 필요합니다.</div></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <section class="card" style="margin-top:18px">
+      <h2>참고 출처</h2>
+      <div class="note">
+        <h3>참고 출처</h3>
+        <p class="source">
+          국세청 양도소득세 세율 안내: <a href="https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7711&mi=2312" target="_blank" rel="noreferrer">nts.go.kr</a><br>
+          국세청 장기보유특별공제율 안내: <a href="https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7710&mi=2311" target="_blank" rel="noreferrer">nts.go.kr</a><br>
+          생활법령정보 부동산 매수인 부담 세금 안내: <a href="https://www.easylaw.go.kr/CSP/CnpClsMainBtr.laf?ccfNo=4&cciNo=3&cnpClsNo=2&csmSeq=649&popMenu=ov" target="_blank" rel="noreferrer">easylaw.go.kr</a><br>
+          국세청 상담자료 필요경비·취득부대비용 안내: <a href="https://call.nts.go.kr/call/qna/selectQnaInfo.do%3Bjsessionid%3DT1Fkousof3cLnk8dHLn5v_rg02b5N9O-Dn2y_-vD.nts_call11?ctgId=CTG11749&mi=2013" target="_blank" rel="noreferrer">call.nts.go.kr</a>
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <div class="print-wrap" aria-hidden="true">
+    <section class="print-page seller-page" id="printSellerPage">
+      <div class="print-header">
+        <div>
+          <h1>매도인 세금 체크업</h1>
+          <p>매도·매수 세금·거래비용 체크업 상담용 추정치</p>
+        </div>
+        <div class="print-badge">매도인</div>
+      </div>
+      <div class="print-total seller">
+        <div class="label">매도인 예상 부담세액</div>
+        <div class="amount" id="printSellerTotal">-</div>
+        <div class="sub">양도소득세 + 지방소득세</div>
+      </div>
+      <div class="print-section">
+        <h2>매도인 산출 내역</h2>
+        <table class="print-table" id="printSellerSummary"></table>
+      </div>
+      <div class="print-summary-disclaimer seller">
+        <span class="danger-title">반드시 확인 · 면책 안내</span>
+        본 계산서는 중개사 상담 편의를 위한 <b>참고자료</b>입니다.
+        <b>해당 물건의 구체적인 사실관계와 세무상 사정을 검토하지 않은 추정치</b>입니다.
+        필요경비 증빙, 비사업용 토지 여부, 감가상각, 감면·중과, 개인/법인 여부, 계약 구조 등에 따라 실제 세액은 크게 달라질 수 있습니다.
+        <b>실제 신고·납부 전에는 반드시 세무사 확인이 필요합니다.</b>
+      </div>
+
+      <div class="print-section">
+        <h2>매도인 적용 공식 · 법규 설명</h2>
+        <div class="print-formula">
+          <h3>참고자료 경고</h3>
+          <p>이 계산서는 중개사 상담용 간이 추정자료입니다. 실제 신고세액은 개인/법인 여부, 보유·사용 사실관계, 비사업용 토지 판단, 감가상각, 필요경비 증빙, 감면·중과 여부에 따라 달라질 수 있으므로 최종 안내 전 세무사 확인이 필요합니다.</p>
+          <h3>양도세 부담 주체</h3>
+          <p>양도소득세는 자산을 파는 매도인에게 발생합니다. 매수인의 취득세·부가세와 합산하지 않습니다.</p>
+          <h3>양도차익</h3>
+          <p><b>양도차익 = 양도가액 - 취득가액 - 기타 양도 필요경비 - 매도 중개보수 - 중개보수 부가세 - 법무사비용 - 기타 양도비</b></p>
+          <ul>
+            <li>매도 중개보수는 <b>양도가액 × 0.9%</b>로 자동 계산하며 양도비 성격으로 차감합니다.</li>
+            <li>기타 양도 필요경비는 실제 지출했고 증빙이 있는 비용만 입력합니다. 기본값은 0원입니다.</li>
+          </ul>
+          <h3>기타 양도 필요경비</h3>
+          <ul>
+            <li>입력 가능: 취득 당시 중개보수, 취득세·등기비용 등 취득 부대비용, 증축·대수선·용도변경 등 자본적 지출, 양도 관련 세무사·법무사 비용, 매각 직접 비용</li>
+            <li>중복 주의: 매도 중개보수와 별도 법무사비용은 이미 따로 계산되므로 다시 넣지 않습니다.</li>
+            <li>제외 예시: 단순 도배·장판, 일반 수리·유지관리비, 전기·수도·관리비, 증빙 없는 현금 지출, 개인적 비용</li>
+          </ul>
+          <h3>장기보유특별공제</h3>
+          <p>일반 토지·건물 기준 3년 이상 6%, 이후 1년마다 2%씩, 15년 이상 최대 30%를 간이 적용합니다. 체크 해제 시 장특공제는 0원입니다.</p>
+          <h3>과세표준·세율</h3>
+          <p><b>과세표준 = 양도차익 - 장특공제 - 기본공제 250만원</b>입니다. 일반 토지·건물은 1년 미만 50%, 2년 미만 40%, 2년 이상 기본세율 구조로 계산합니다. 지방소득세는 양도세의 10%입니다.</p>
+          <p>비사업용 토지는 기본세율에 10%p 추가 구조로 간이 반영합니다. 지정지역 추가 옵션을 선택하면 추가 10%p를 더 반영합니다.</p>
+          <div class="print-warn"><b>매도인 주의:</b> 나대지, 잡종지, 임야, 농지, 장기간 방치 토지, 법인 보유 토지, 사업에 직접 사용하지 않은 토지, 개발 예정지, 농지 자경 여부 쟁점 토지는 실제 세액이 크게 달라질 수 있습니다.</div>
+        </div>        </div>
+      </div>
+</section>
+
+    <section class="print-page buyer-page" id="printBuyerPage">
+      <div class="print-header">
+        <div>
+          <h1>매수인 거래비용 체크업</h1>
+          <p>매도·매수 세금·거래비용 체크업 상담용 추정치</p>
+        </div>
+        <div class="print-badge">매수인</div>
+      </div>
+      <div class="print-total buyer">
+        <div class="label">매수인 취득세 계열</div>
+        <div class="amount" id="printBuyerTotal">-</div>
+        <div class="sub">취득세 + 농어촌특별세 + 지방교육세</div>
+      </div>
+      <div class="print-section">
+        <h2>매수인 산출 내역</h2>
+        <table class="print-table" id="printBuyerSummary"></table>
+      </div>
+      <div class="print-summary-disclaimer buyer">
+        <span class="danger-title">반드시 확인 · 면책 안내</span>
+        본 계산서는 중개사 상담 편의를 위한 <b>참고자료</b>입니다.
+        <b>해당 물건의 구체적인 사실관계와 세무상 사정을 검토하지 않은 추정치</b>입니다.
+        취득세 감면·중과 여부, 토지·건물 안분, 부가세 환급 가능 여부, 사업자/과세사업 사용 여부, 법무사·채권·인지세 비용 등에 따라 실제 부담액은 달라질 수 있습니다.
+        <b>실제 신고·납부 및 등기 진행 전에는 반드시 세무사·법무사 확인이 필요합니다.</b>
+      </div>
+
+      <div class="print-section">
+        <h2>매수인 적용 공식 · 법규 설명</h2>
+        <div class="print-formula">
+          <h3>참고자료 경고</h3>
+          <p>이 계산서는 중개사 상담용 간이 추정자료입니다. 실제 취득세·부가세·환급 여부는 물건 종류, 토지·건물 안분, 사업자 여부, 과세사업 사용 여부, 감면·중과 여부, 계약서 작성 방식에 따라 달라질 수 있으므로 최종 안내 전 세무사·법무사 확인이 필요합니다.</p>
+          <h3>취득세 부담 주체</h3>
+          <p>취득세 계열 세금은 부동산을 사는 매수인이 부담합니다. 매도인의 양도세와 합산하지 않고, 매수인의 초기자금 계산용으로 봅니다.</p>
+          <h3>취득세 계열</h3>
+          <p>공장·창고·상가·일반토지 등 주택 외 일반 매매 기준으로 <b>취득세 과세표준/부가세 제외 매매가액 기준 취득세 4.0% + 농어촌특별세 0.2% + 지방교육세 0.4% = 총 4.6%</b>를 간이 적용합니다.</p>
+          <ul>
+            <li>취득세: 취득세 과세표준/부가세 제외 매매가액 × 4.0%</li>
+            <li>농어촌특별세: 취득세 과세표준/부가세 제외 매매가액 × 0.2%</li>
+            <li>지방교육세: 취득세 과세표준/부가세 제외 매매가액 × 0.4%</li>
+          </ul>
+          <h3>매수 중개보수</h3>
+          <p><b>매수 중개보수 = 취득세 과세표준/부가세 제외 매매가액 × 0.9%</b>로 자동 계산하고, 중개보수 부가세 10%를 별도 반영합니다. 취득세가 아니라 매수 부대비용이며 총 초기 결제 필요자금에 포함합니다.</p>
+          <h3>토지·건물 안분과 부가세</h3>
+          <p>부가세는 총 매매가액 전체가 아니라 <b>건물분 가액 × 10%</b>로 계산합니다. 토지분에는 부가세를 계산하지 않습니다.</p>
+          <ul>
+            <li>부가세 공제 가능: 초기 결제 필요자금에는 포함하지만 향후 취득원가 반영 가능액에서는 제외합니다.</li>
+            <li>부가세 공제 불가: 초기 결제 필요자금과 향후 취득원가 반영 가능액에 모두 포함합니다.</li>
+          </ul>
+          <h3>총 초기 결제 필요자금</h3>
+          <p><b>총 초기 결제 필요자금 = 취득세 과세표준/부가세 제외 매매가액 + 취득세 계열 + 매수 중개보수 + 중개보수 부가세 + 법무사·등기비용 + 기타 취득비용 + 건물분 부가세</b></p>
+          <h3>향후 취득원가 반영 가능액</h3>
+          <p><b>향후 취득원가 반영 가능액 = 취득세 과세표준/부가세 제외 매매가액 + 취득세 계열 + 매수 중개보수 + 중개보수 부가세 + 법무사·등기비용 + 기타 취득비용 + 공제 불가 부가세</b></p>
+          <div class="print-warn"><b>매수인 주의:</b> 농지, 감면 대상, 중과 대상, 특수 거래, 부가세 환급 가능 여부, 토지·건물 안분 방식, 채권·인지세·법무사 견적에 따라 실제 부담액이 달라질 수 있습니다.</div>
+        </div>        </div>
+      </div>
+</section>
+  </div>
+
+
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const moneyFields = ['buyPrice','sellPrice','necessaryCost','brokerFee','sellerBrokerVat','legalFee','otherCost','acqTaxBase','landValue','buildingValue','buyerBrokerFee','buyerBrokerVat','buyerLegalFee','buyerOtherCost','buyerVat'];
+  const defaults = {
+    buyDate:'2020-01-01', sellDate:'2026-06-15', buyPrice:500000000, sellPrice:800000000,
+    necessaryCost:0, brokerFee:7200000, sellerBrokerVat:720000, legalFee:1000000, otherCost:1000000, acqTaxBase:800000000, landValue:0, buildingValue:0, buyerBrokerFee:7200000, buyerBrokerVat:720000, buyerLegalFee:1000000, buyerOtherCost:1000000, buyerVat:0
+  };
+
+  function parseMoney(v){ return Number(String(v||'').replace(/[^0-9.-]/g,'')) || 0; }
+  function fmt(n){ return Math.round(n).toLocaleString('ko-KR') + '원'; }
+  function fmtShort(n){
+    n = Math.round(n);
+    const eok = Math.floor(n/100000000);
+    const man = Math.floor((n%100000000)/10000);
+    if(eok && man) return `${eok}억 ${man.toLocaleString('ko-KR')}만원`;
+    if(eok) return `${eok}억원`;
+    if(man) return `${man.toLocaleString('ko-KR')}만원`;
+    return fmt(n);
+  }
+  function setMoney(id, n){ $(id).value = Number(n).toLocaleString('ko-KR'); }
+  function fullYears(start, end){
+    const s = new Date(start), e = new Date(end);
+    if(isNaN(s)||isNaN(e)||e<s) return {years:0, months:0, days:0, invalid:true};
+    let y = e.getFullYear() - s.getFullYear();
+    let m = e.getMonth() - s.getMonth();
+    let d = e.getDate() - s.getDate();
+    if(d < 0){ m--; const prev = new Date(e.getFullYear(), e.getMonth(), 0).getDate(); d += prev; }
+    if(m < 0){ y--; m += 12; }
+    return {years:y, months:m, days:d, invalid:false};
+  }
+  function basicTax(taxBase){
+    const b = Math.max(0, taxBase);
+    const brackets = [
+      [14000000, .06, 0], [50000000, .15, 1260000], [88000000, .24, 5760000],
+      [150000000, .35, 15440000], [300000000, .38, 19940000], [500000000, .40, 25940000],
+      [1000000000, .42, 35940000], [Infinity, .45, 65940000]
+    ];
+    for(const [limit, rate, deduction] of brackets){
+      if(b <= limit) return {tax:Math.max(0, b*rate-deduction), rate, deduction};
+    }
+  }
+  const BROKER_RATE = 0.009;
+  const brokerManual = { brokerFee:false, buyerBrokerFee:false };
+  const ACQ_TAX_RATE = 0.04;
+  const RURAL_TAX_RATE = 0.002;
+  const EDU_TAX_RATE = 0.004;
+
+  function calc(){
+    const buyDate = $('buyDate').value, sellDate = $('sellDate').value;
+    const hp = fullYears(buyDate, sellDate);
+    const buy = parseMoney($('buyPrice').value), sell = parseMoney($('sellPrice').value);
+    const autoSellerBrokerFee = sell * BROKER_RATE;
+    let sellerBrokerFee;
+    if(!brokerManual.brokerFee && document.activeElement !== $('brokerFee')){
+      sellerBrokerFee = autoSellerBrokerFee;
+      $('brokerFee').value = Math.round(sellerBrokerFee).toLocaleString('ko-KR');
+    } else {
+      sellerBrokerFee = parseMoney($('brokerFee').value);
+    }
+    const sellerBrokerVat = sellerBrokerFee * 0.10;
+    $('sellerBrokerVat').value = Math.round(sellerBrokerVat).toLocaleString('ko-KR');
+    const sellerBrokerNote = brokerManual.brokerFee ? '직접 입력' : '양도가액 × 0.9%';
+    const costs = parseMoney($('necessaryCost').value)+sellerBrokerFee+sellerBrokerVat+parseMoney($('legalFee').value)+parseMoney($('otherCost').value);
+    const gain = sell - buy - costs;
+    const longRate = ($('applyLongDeduction').checked && hp.years >= 3) ? Math.min(.30, hp.years * .02) : 0;
+    const longDeduction = Math.max(0, gain) * longRate;
+    const taxBase = Math.max(0, gain - longDeduction - 2500000);
+    const basic = basicTax(taxBase);
+    const nonbiz = $('assetType').value === 'nonbiz';
+    const designated = $('designatedArea').checked;
+    let transferTax = 0, rateText = '';
+
+    if(taxBase <= 0){
+      transferTax = 0; rateText = '과세표준 0원';
+    } else if(hp.years < 1){
+      const shortTax = taxBase * .50;
+      const nonbizTax = nonbiz ? basic.tax + taxBase * (designated ? .20 : .10) : 0;
+      transferTax = Math.max(shortTax, nonbizTax);
+      rateText = nonbiz ? '1년 미만 50%와 비사업용 토지세율 중 큰 세액' : '1년 미만 50%';
+    } else if(hp.years < 2){
+      const shortTax = taxBase * .40;
+      const nonbizTax = nonbiz ? basic.tax + taxBase * (designated ? .20 : .10) : 0;
+      transferTax = Math.max(shortTax, nonbizTax);
+      rateText = nonbiz ? '2년 미만 40%와 비사업용 토지세율 중 큰 세액' : '2년 미만 40%';
+    } else {
+      transferTax = basic.tax;
+      rateText = `기본세율 ${(basic.rate*100).toFixed(0)}%, 누진공제 ${fmtShort(basic.deduction)}`;
+      if(nonbiz){
+        const add = designated ? .20 : .10;
+        transferTax = basic.tax + taxBase * add;
+        rateText = `비사업용 토지: 기본세율 + ${(add*100).toFixed(0)}%p`;
+      }
+    }
+
+    const localIncomeTax = transferTax * .10;
+    const acqBase = parseMoney($('acqTaxBase').value);
+    const autoBuyerBrokerFee = acqBase * BROKER_RATE;
+    let buyerBrokerFee;
+    if(!brokerManual.buyerBrokerFee && document.activeElement !== $('buyerBrokerFee')){
+      buyerBrokerFee = autoBuyerBrokerFee;
+      $('buyerBrokerFee').value = Math.round(buyerBrokerFee).toLocaleString('ko-KR');
+    } else {
+      buyerBrokerFee = parseMoney($('buyerBrokerFee').value);
+    }
+    const buyerBrokerVat = buyerBrokerFee * 0.10;
+    $('buyerBrokerVat').value = Math.round(buyerBrokerVat).toLocaleString('ko-KR');
+    const buyerBrokerNote = brokerManual.buyerBrokerFee ? '직접 입력' : `${fmt(acqBase)} × 0.9% = ${fmt(buyerBrokerFee)}`;
+    const landValue = parseMoney($('landValue').value);
+    const buildingValue = parseMoney($('buildingValue').value);
+    const buyerLegalFee = parseMoney($('buyerLegalFee').value);
+    const buyerOtherCost = parseMoney($('buyerOtherCost').value);
+    const buyerVat = buildingValue * 0.10;
+    $('buyerVat').value = Math.round(buyerVat).toLocaleString('ko-KR');
+    const acqTax = acqBase * ACQ_TAX_RATE;
+    const ruralTax = acqBase * RURAL_TAX_RATE;
+    const eduTax = acqBase * EDU_TAX_RATE;
+    const acqTotal = acqTax + ruralTax + eduTax;
+    const buyerAncillary = buyerBrokerFee + buyerBrokerVat + buyerLegalFee + buyerOtherCost;
+    const buyerInitialNeed = acqBase + acqTotal + buyerAncillary + buyerVat;
+    const buyerCostBasis = acqBase + acqTotal + buyerAncillary + ($('vatCreditPossible').checked ? 0 : buyerVat);
+
+    const sellerTotal = transferTax + localIncomeTax;
+    const buyerTotal = acqTotal;
+    $('sellerTotal').textContent = fmtShort(sellerTotal);
+    $('buyerTotal').textContent = fmtShort(buyerTotal);
+    $('sellerTransferTax').textContent = fmtShort(transferTax);
+    $('sellerLocalIncomeTax').textContent = fmtShort(localIncomeTax);
+    $('sellerRateNote').textContent = rateText;
+    $('buyerAcqTax').textContent = fmtShort(acqTax);
+    $('buyerRuralTax').textContent = fmtShort(ruralTax);
+    $('buyerEduTax').textContent = fmtShort(eduTax);
+    $('buyerBaseMini').textContent = fmtShort(acqBase);
+    $('buyerSplitMini').textContent = `${fmtShort(landValue)} / ${fmtShort(buildingValue)}`;
+    const splitTotal = landValue + buildingValue;
+    const notice = $('vatInputNotice');
+    if($('vatCreditPossible').checked && buildingValue <= 0){
+      notice.className = 'input-alert';
+      notice.textContent = '건물분 부가세 공제 가능으로 계산하려면 건물분 가액을 입력해야 합니다. 건물분 가액이 0원이면 부가세는 0원으로 계산됩니다.';
+    } else if(splitTotal > 0 && Math.abs(splitTotal - acqBase) > 1000){
+      notice.className = 'input-alert';
+      notice.textContent = `토지분+건물분 합계(${fmt(splitTotal)})가 취득세 과세표준/부가세 제외 매매가액(${fmt(acqBase)})과 다릅니다. 안분 금액을 확인하세요.`;
+    } else if(buildingValue > 0){
+      notice.className = 'input-ok';
+      notice.textContent = `건물분 부가세 = ${fmt(buildingValue)} × 10% = ${fmt(buyerVat)}로 자동 계산됩니다.`;
+    } else {
+      notice.className = 'hint';
+      notice.textContent = '건물분 가액을 입력하면 건물분 부가세가 자동 계산됩니다.';
+    }
+    $('buyerBrokerMini').textContent = fmtShort(buyerBrokerFee);
+    $('buyerBrokerVatMini').textContent = fmtShort(buyerBrokerVat);
+    $('buyerBrokerFormulaMini').textContent = `${buyerBrokerNote}, 중개보수 부가세 ${fmt(buyerBrokerVat)}`;
+    $('buyerAncillaryMini').textContent = fmtShort(buyerLegalFee + buyerOtherCost);
+    $('buyerVatMini').textContent = fmtShort(buyerVat);
+    $('buyerVatNote').textContent = buyerVat <= 0 ? '건물분 가액이 없거나 0원이므로 부가세는 0원입니다.' : ($('vatCreditPossible').checked ? '공제·환급 가능으로 보아 향후 취득원가 반영 가능액에서는 제외합니다.' : '공제 불가로 보아 향후 취득원가 반영 가능액에 포함합니다.');
+    $('buyerInitialMini').textContent = fmtShort(buyerInitialNeed);
+    $('buyerCostBasisMini').textContent = fmtShort(buyerCostBasis);
+    $('holdingText').textContent = hp.invalid ? '날짜 확인' : `${hp.years}년 ${hp.months}개월`;
+    $('holdingMini').textContent = hp.invalid ? '양도일이 취득일보다 빠릅니다.' : `${buyDate} ~ ${sellDate}, 장특공제 적용연수 ${hp.years}년`;
+    $('gain').textContent = fmtShort(gain);
+    $('longDeduction').textContent = fmtShort(longDeduction);
+    $('longRate').textContent = `공제율 ${(longRate*100).toFixed(0)}%`;
+    $('taxBase').textContent = fmtShort(taxBase);
+    $('sellerDetailTable').innerHTML = `
+      <tr><th>매도인 항목</th><th>계산값</th></tr>
+      <tr><td>양도가액</td><td>${fmt(sell)}</td></tr>
+      <tr><td>취득가액</td><td>${fmt(buy)}</td></tr>
+      <tr><td>기타 양도 필요경비</td><td>${fmt(parseMoney($('necessaryCost').value))}</td></tr>
+      <tr><td>매도 중개보수</td><td>${fmt(sellerBrokerFee)} <small>(${sellerBrokerNote})</small></td></tr>
+      <tr><td>매도 중개보수 부가세 10%</td><td>${fmt(sellerBrokerVat)}</td></tr>
+      <tr><td>법무사비용</td><td>${fmt(parseMoney($('legalFee').value))}</td></tr>
+      <tr><td>기타 양도비</td><td>${fmt(parseMoney($('otherCost').value))}</td></tr>
+      <tr><td>총 양도 필요경비</td><td>${fmt(costs)}</td></tr>
+      <tr><td>양도차익</td><td>${fmt(gain)}</td></tr>
+      <tr><td>장기보유특별공제율</td><td>${(longRate*100).toFixed(0)}%</td></tr>
+      <tr><td>장기보유특별공제액</td><td>${fmt(longDeduction)}</td></tr>
+      <tr><td>기본공제</td><td>${fmt(2500000)}</td></tr>
+      <tr><td>양도세 과세표준</td><td>${fmt(taxBase)}</td></tr>
+      <tr><td>적용 양도세율</td><td>${rateText}</td></tr>
+      <tr><td>예상 양도세</td><td>${fmt(transferTax)}</td></tr>
+      <tr><td>지방소득세</td><td>${fmt(localIncomeTax)}</td></tr>
+      <tr><td><b>매도인 총 예상 부담세액</b></td><td><b>${fmt(sellerTotal)}</b></td></tr>`;
+
+    $('buyerDetailTable').innerHTML = `
+      <tr><th>매수인 항목</th><th>계산값</th></tr>
+      <tr><td>취득세 과세표준<br><small>(부가세 제외 매매가액)</small></td><td>${fmt(acqBase)}</td></tr>
+      <tr><td>토지분 가액</td><td>${fmt(landValue)}</td></tr>
+      <tr><td>건물분 가액</td><td>${fmt(buildingValue)}</td></tr>
+      <tr><td>취득세</td><td>${fmt(acqTax)} <small>(4.0%)</small></td></tr>
+      <tr><td>농어촌특별세</td><td>${fmt(ruralTax)} <small>(0.2%)</small></td></tr>
+      <tr><td>지방교육세</td><td>${fmt(eduTax)} <small>(0.4%)</small></td></tr>
+      <tr><td>취득 관련 총 세율</td><td>4.6%</td></tr>
+      <tr><td><b>매수인 총 예상 부담세액</b></td><td><b>${fmt(buyerTotal)}</b></td></tr>
+      <tr><td>매수 중개보수 0.9%</td><td>${fmt(buyerBrokerFee)} <small>${buyerBrokerNote}</small></td></tr>
+      <tr><td>매수 중개보수 부가세 10%</td><td>${fmt(buyerBrokerVat)}</td></tr>
+      <tr><td>매수 법무사·등기비용</td><td>${fmt(buyerLegalFee)}</td></tr>
+      <tr><td>인지세·채권·기타 취득비용</td><td>${fmt(buyerOtherCost)}</td></tr>
+      <tr><td>건물분 부가세 10%</td><td>${fmt(buyerVat)} <small>${buildingValue > 0 ? `${fmt(buildingValue)} × 10%` : '건물분 가액 미입력: 0원 계산'}</small></td></tr>
+      <tr><td><b>매수인 총 초기 결제 필요자금</b></td><td><b>${fmt(buyerInitialNeed)}</b></td></tr>
+      <tr><td><b>향후 취득원가 반영 가능액</b></td><td><b>${fmt(buyerCostBasis)}</b></td></tr>`;
+
+    $('printSellerTotal').textContent = fmt(sellerTotal);
+    $('printSellerSummary').innerHTML = `
+      <tr><th>항목</th><th>계산값</th></tr>
+      <tr><td>취득일 ~ 양도일</td><td>${buyDate} ~ ${sellDate} / 보유기간 ${hp.years}년 ${hp.months}개월</td></tr>
+      <tr><td>양도가액</td><td>${fmt(sell)}</td></tr>
+      <tr><td>취득가액</td><td>${fmt(buy)}</td></tr>
+      <tr><td>기타 양도 필요경비</td><td>${fmt(parseMoney($('necessaryCost').value))}</td></tr>
+      <tr><td>매도 중개보수 0.9%</td><td>${fmt(sellerBrokerFee)} (${sellerBrokerNote})</td></tr>
+      <tr><td>매도 중개보수 부가세 10%</td><td>${fmt(sellerBrokerVat)}</td></tr>
+      <tr><td>법무사비용 / 기타 양도비</td><td>${fmt(parseMoney($('legalFee').value))} / ${fmt(parseMoney($('otherCost').value))}</td></tr>
+      <tr><td>양도차익</td><td>${fmt(gain)}</td></tr>
+      <tr><td>장기보유특별공제</td><td>${fmt(longDeduction)} (공제율 ${(longRate*100).toFixed(0)}%)</td></tr>
+      <tr><td>양도세 과세표준</td><td>${fmt(taxBase)}</td></tr>
+      <tr><td>적용 세율</td><td>${rateText}</td></tr>
+      <tr><td>예상 양도세</td><td>${fmt(transferTax)}</td></tr>
+      <tr><td>지방소득세</td><td>${fmt(localIncomeTax)}</td></tr>
+      <tr><td><b>매도인 총 예상 부담세액</b></td><td><b>${fmt(sellerTotal)}</b></td></tr>`;
+
+    $('printBuyerTotal').textContent = fmt(buyerTotal);
+    $('printBuyerSummary').innerHTML = `
+      <tr><th>항목</th><th>계산값</th></tr>
+      <tr><td>취득세 과세표준<br><small>(부가세 제외 매매가액)</small></td><td>${fmt(acqBase)}</td></tr>
+      <tr><td>토지분 / 건물분</td><td>${fmt(landValue)} / ${fmt(buildingValue)}</td></tr>
+      <tr><td>취득세</td><td>${fmt(acqTax)} (4.0%)</td></tr>
+      <tr><td>농어촌특별세</td><td>${fmt(ruralTax)} (0.2%)</td></tr>
+      <tr><td>지방교육세</td><td>${fmt(eduTax)} (0.4%)</td></tr>
+      <tr><td><b>매수인 취득세 계열</b></td><td><b>${fmt(buyerTotal)} (총 4.6%)</b></td></tr>
+      <tr><td>매수 중개보수 0.9%</td><td>${fmt(buyerBrokerFee)} (${buyerBrokerNote})</td></tr>
+      <tr><td>매수 중개보수 부가세 10%</td><td>${fmt(buyerBrokerVat)}</td></tr>
+      <tr><td>법무사·등기비용 / 기타 취득비용</td><td>${fmt(buyerLegalFee)} / ${fmt(buyerOtherCost)}</td></tr>
+      <tr><td>건물분 부가세 10%</td><td>${fmt(buyerVat)} ${buildingValue > 0 ? `(${fmt(buildingValue)} × 10%)` : '(건물분 가액 미입력: 0원 계산)'}</td></tr>
+      <tr><td>부가세 공제/환급 가능 여부</td><td>${$('vatCreditPossible').checked ? '가능으로 계산' : '불가로 계산'}</td></tr>
+      <tr><td><b>총 초기 결제 필요자금</b></td><td><b>${fmt(buyerInitialNeed)}</b></td></tr>
+      <tr><td><b>향후 취득원가 반영 가능액</b></td><td><b>${fmt(buyerCostBasis)}</b></td></tr>`;
+  }
+
+  moneyFields.forEach(id => {
+    $(id).addEventListener('blur', () => setMoney(id, parseMoney($(id).value)));
+    $(id).addEventListener('input', () => {
+      if(id === 'brokerFee') brokerManual.brokerFee = true;
+      if(id === 'buyerBrokerFee') brokerManual.buyerBrokerFee = true;
+      calc();
+    });
+  });
+  ['buyDate','sellDate','assetType','applyLongDeduction','designatedArea','acqRateMode','vatCreditPossible'].forEach(id => $(id).addEventListener('change', calc));
+  $('sellPrice').addEventListener('blur', () => { if(parseMoney($('acqTaxBase').value) === 0) setMoney('acqTaxBase', parseMoney($('sellPrice').value)); calc(); });
+  function printOnly(type){
+    calc();
+    document.body.classList.remove('print-seller','print-buyer');
+    document.body.classList.add(type === 'seller' ? 'print-seller' : 'print-buyer');
+    window.print();
+  }
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('print-seller','print-buyer');
+  });
+  $('printSellerBtn').addEventListener('click', () => printOnly('seller'));
+  $('printBuyerBtn').addEventListener('click', () => printOnly('buyer'));
+  $('calcBtn').addEventListener('click', calc);
+  $('resetBtn').addEventListener('click', () => { brokerManual.brokerFee=false; brokerManual.buyerBrokerFee=false; Object.entries(defaults).forEach(([k,v]) => k.includes('Date') ? $(k).value=v : setMoney(k,v)); $('assetType').value='normal'; $('applyLongDeduction').checked=true; $('designatedArea').checked=false; $('vatCreditPossible').checked=true; calc(); });
+  $('sample10Btn').addEventListener('click', () => { brokerManual.brokerFee=false; brokerManual.buyerBrokerFee=false; setMoney('buyPrice',600000000); setMoney('sellPrice',1000000000); setMoney('necessaryCost',20000000); setMoney('brokerFee',9000000); setMoney('sellerBrokerVat',900000); setMoney('legalFee',0); setMoney('otherCost',0); setMoney('acqTaxBase',1000000000); setMoney('landValue',700000000); setMoney('buildingValue',300000000); setMoney('buyerBrokerFee',9000000); setMoney('buyerBrokerVat',900000); setMoney('buyerLegalFee',1500000); setMoney('buyerOtherCost',500000); setMoney('buyerVat',30000000); $('vatCreditPossible').checked=true; calc(); });
+  calc();
+</script>
+</body>
+</html>

@@ -96,6 +96,9 @@
     .source{font-size:12px;color:#6b7280;word-break:keep-all}
     .source a{color:#2563eb;text-decoration:none}
     .corp-field{display:none}
+
+    .individual-only{display:block}
+    body.seller-corp-mode .individual-only{display:none!important}
     body.seller-corp-mode .corp-field{display:block}
 
     .pill{display:inline-flex;padding:4px 8px;border-radius:999px;background:var(--soft);color:#3730a3;font-size:12px;font-weight:800}
@@ -340,8 +343,9 @@
             </div>
             <p class="hint">매도 중개보수는 양도가액 × 0.9%로 자동 고정 계산하고, 중개보수 부가세 10%를 별도 반영합니다. 이 금액은 매도인 양도비/필요경비 성격으로 양도차익 계산에서 차감합니다.</p>
             <div class="checks">
-              <label class="check"><input id="applyLongDeduction" type="checkbox" checked><span>장기보유특별공제 적용<br><small>일반 토지·건물 기준 3년 이상 6%, 이후 연 2%씩, 15년 이상 최대 30%로 계산합니다.</small></span></label>
-              <label class="check"><input id="designatedArea" type="checkbox"><span>비사업용 토지 + 지정지역 추가 10%p 적용<br><small>해당되는 경우에만 선택합니다. 일반 공장·창고·상가는 보통 끄고 계산합니다.</small></span></label>
+              <label class="check individual-only"><input id="applyLongDeduction" type="checkbox" checked><span>장기보유특별공제 적용<br><small>일반 토지·건물 기준 3년 이상 6%, 이후 연 2%씩, 15년 이상 최대 30%로 계산합니다.</small></span></label>
+              <label class="check individual-only"><input id="designatedArea" type="checkbox"><span>비사업용 토지 + 지정지역 추가 10%p 적용<br><small>해당되는 경우에만 선택합니다. 일반 공장·창고·상가는 보통 끄고 계산합니다.</small></span></label>
+              <label class="check corp-field"><span>법인 보유 계산<br><small>법인에는 장기보유특별공제와 기본공제 250만 원을 적용하지 않습니다. 장부가액 기준 처분손익으로 계산합니다.</small></span></label>
             </div>
           </div>
         </section>
@@ -821,6 +825,8 @@
     const hp = fullYears(buyDate, sellDate);
     const isCorp = $('sellerIsCorp') && $('sellerIsCorp').checked;
     document.body.classList.toggle('seller-corp-mode', !!isCorp);
+    if($('applyLongDeduction')) $('applyLongDeduction').disabled = !!isCorp;
+    if($('designatedArea')) $('designatedArea').disabled = !!isCorp;
     renderSellerLaw(isCorp);
 
     const buy = parseMoney($('buyPrice').value), sell = parseMoney($('sellPrice').value);

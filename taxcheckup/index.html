@@ -95,6 +95,9 @@
     .input-ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.45;margin-top:10px}
     .source{font-size:12px;color:#6b7280;word-break:keep-all}
     .source a{color:#2563eb;text-decoration:none}
+    .corp-field{display:none}
+    body.seller-corp-mode .corp-field{display:block}
+
     .pill{display:inline-flex;padding:4px 8px;border-radius:999px;background:var(--soft);color:#3730a3;font-size:12px;font-weight:800}
     @media(max-width:900px){.grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.party-results{grid-template-columns:1fr}.result-grid{grid-template-columns:1fr}.full{grid-column:auto}.hero-header{padding:0 0 16px}.hero-top{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left}.tax-hero-img{width:180px;max-width:70%;margin:0}.title h1{font-size:44px;line-height:1.05}.top-actions{padding:12px}}
     .print-wrap{display:none!important}
@@ -293,11 +296,20 @@
           <div class="section">
             <div class="section-title"><span class="pill">매도인</span> 양도세 계산 기본값</div>
             <div class="form-grid">
+              <label for="sellerIsCorp">매도인 구분</label>
+              <label class="check" style="margin:0">
+                <input id="sellerIsCorp" type="checkbox">
+                <span>법인 보유로 계산<br><small>체크 시 개인 양도세가 아니라 법인 처분손익 기준으로 산정합니다.</small></span>
+              </label>
+
               <label for="assetType">자산 구분</label>
               <select id="assetType">
-                <option value="normal">공장·창고·상가 / 일반 토지·건물</option>
+                <option value="normal">공장·창고·상가 / 일반 토지·건물·법인 사업용 토지</option>
                 <option value="nonbiz">비사업용 토지</option>
               </select>
+
+              <label for="corpBookValue" class="corp-field">법인 장부가액</label>
+              <input id="corpBookValue" class="corp-field" inputmode="numeric" value="500,000,000" />
 
               <label>취득일 / 양도일</label>
               <div class="row2">
@@ -375,57 +387,8 @@
           <h2>매도인 공식 · 법규설명</h2>
           <div class="law-single">
             <div class="law-box seller-law">
-<span class="law-chip seller">매도인 기준</span>
-            <h3>매도인 양도세 공식 · 법규설명</h3>
-            <p><b>참고자료:</b> 이 설명은 중개사 상담용 간이 추정 기준입니다. 실제 신고세액은 개인/법인 여부, 보유·사용 사실관계, 비사업용 토지 판단, 감가상각, 필요경비 증빙, 감면·중과 여부에 따라 달라질 수 있으므로 최종 안내 전 세무사 확인이 필요합니다.</p>
-
-            <h3>1. 양도세는 누가 부담하나</h3>
-            <p>양도소득세는 <b>자산을 파는 사람, 즉 매도인</b>에게 발생하는 세금입니다. 이 계산기의 매도인 칸은 매수인의 취득세·부가세와 섞지 않고, 매도인의 양도차익과 양도세만 계산합니다.</p>
-
-            <h3>2. 양도차익 계산 구조</h3>
-            <p><b>양도차익 = 양도가액 - 취득가액 - 기타 양도 필요경비 - 매도 중개보수 - 법무사비용 - 기타 양도비</b>로 계산합니다.</p>
-            <ul>
-              <li><b>양도가액</b>: 실제 매도금액입니다.</li>
-              <li><b>취득가액</b>: 과거 매수금액입니다. 취득 당시 인정되는 부대비용이 포함될 수 있습니다.</li>
-              <li><b>매도 중개보수</b>: 양도가액 × 0.9%로 자동 계산합니다. 매도인이 양도를 위해 지출한 양도비 성격으로 차감합니다.</li>
-              <li><b>법무사비용·기타 양도비</b>: 양도와 직접 관련된 비용만 입력합니다.</li>
-            </ul>
-
-            <h3>3. 기타 양도 필요경비에 넣는 항목</h3>
-            <p><b>기타 양도 필요경비</b>는 법으로 정해진 고정 금액이 아닙니다. 실제 지출했고 증빙이 있는 비용만 입력합니다. 기본값은 0원입니다.</p>
-            <ul>
-              <li><b>입력 가능 예시</b>: 취득 당시 중개보수, 취득세·등기비용 등 취득 부대비용, 증축·대수선·용도변경처럼 자산가치를 높인 자본적 지출, 양도 관련 세무사·법무사 비용, 매각을 위해 직접 든 비용</li>
-              <li><b>중복 입력 금지</b>: 매도 중개보수는 자동 계산됩니다. 법무사비용도 별도 칸에 입력했다면 기타 양도 필요경비에 다시 넣지 않습니다.</li>
-              <li><b>제외 예시</b>: 단순 도배·장판, 일반 수리·유지관리비, 전기·수도·관리비, 증빙 없는 현금 지출, 개인적 비용</li>
-            </ul>
-
-            <h3>4. 장기보유특별공제</h3>
-            <p>일반 토지·건물 기준으로 <b>3년 이상 보유 시 6%</b>, 이후 1년마다 2%씩 증가하여 <b>15년 이상 최대 30%</b>를 적용합니다. 이 계산기는 상담 편의를 위해 <b>보유연수 × 2%, 최대 30%</b>로 간이 계산하고, 3년 미만은 0%로 처리합니다.</p>
-            <p>단, 장기보유특별공제 적용 여부는 자산 종류, 보유기간, 중과 대상 여부 등에 따라 달라질 수 있습니다. 체크 해제 시 장특공제는 0원으로 계산됩니다.</p>
-
-            <h3>5. 양도소득 과세표준</h3>
-            <p><b>과세표준 = 양도차익 - 장기보유특별공제 - 기본공제 2,500,000원</b>입니다. 과세표준이 0원 이하이면 이 계산기에서는 양도세를 0원으로 처리합니다.</p>
-            <p>기본공제 250만원은 같은 과세기간의 양도소득 계산에서 적용되는 공제입니다. 여러 건을 같은 해에 양도한 경우에는 단순히 건마다 250만원을 반복 적용하면 안 될 수 있습니다.</p>
-
-            <h3>6. 양도세율과 지방소득세</h3>
-            <ul>
-              <li><b>일반 토지·건물</b>: 보유기간 1년 미만 50%, 2년 미만 40%, 2년 이상 기본세율로 계산합니다.</li>
-              <li><b>기본세율</b>: 1,400만원 이하 6%, 5,000만원 이하 15%, 8,800만원 이하 24%, 1억5천만원 이하 35%, 3억원 이하 38%, 5억원 이하 40%, 10억원 이하 42%, 10억원 초과 45% 구조입니다.</li>
-              <li><b>비사업용 토지</b>: 기본세율에 10%p를 더하는 방식으로 간이 반영합니다. 지정지역 추가 옵션을 선택하면 추가 10%p를 더 반영합니다.</li>
-              <li><b>지방소득세</b>: 계산된 양도소득세의 10%로 표시합니다.</li>
-            </ul>
-
-            <h3>7. 토지 매도 시 특히 조심할 내용</h3>
-            <p>토지는 공장·상가 건물보다 <b>비사업용 토지 여부</b>가 핵심입니다. 일반토지는 상담용 간이 계산에 활용할 수 있지만, 아래 유형은 실제 세액이 크게 달라질 수 있습니다.</p>
-            <ul>
-              <li>나대지, 잡종지, 임야, 농지</li>
-              <li>장기간 방치된 토지</li>
-              <li>법인이 보유한 토지</li>
-              <li>사업에 직접 사용하지 않은 토지</li>
-              <li>개발 예정지</li>
-              <li>농지 자경 여부가 쟁점인 토지</li>
-            </ul>
-            <div class="warn"><b>매도인 참고자료 경고:</b> 이 계산 결과는 상담용 추정치입니다. 비사업용 토지, 농지·자경, 법인 보유, 감가상각, 중과·감면 여부가 있으면 실제 양도세가 달라질 수 있습니다. 최종 세액 안내 전 세무사 확인이 필요합니다.</div></div>
+              <div id="sellerLawContent"></div>
+</div></div>
           </div>
         </section>
       </div>
@@ -620,7 +583,7 @@
 
       <div class="print-section">
         <h2>매도인 적용 공식 · 법규 설명</h2>
-        <div class="print-formula">
+        <div class="print-formula" id="printSellerFormulaContent">
           <h3>참고자료 경고</h3>
           <p>이 계산서는 중개사 상담용 간이 추정자료입니다. 실제 신고세액은 개인/법인 여부, 보유·사용 사실관계, 비사업용 토지 판단, 감가상각, 필요경비 증빙, 감면·중과 여부에 따라 달라질 수 있으므로 최종 안내 전 세무사 확인이 필요합니다.</p>
           <h3>양도세 부담 주체</h3>
@@ -708,10 +671,10 @@
 
 <script>
   const $ = (id) => document.getElementById(id);
-  const moneyFields = ['buyPrice','sellPrice','necessaryCost','brokerFee','sellerBrokerVat','legalFee','otherCost','acqTaxBase','landValue','buildingValue','buyerBrokerFee','buyerBrokerVat','buyerLegalFee','buyerOtherCost','buyerVat'];
+  const moneyFields = ['buyPrice','sellPrice','corpBookValue','necessaryCost','brokerFee','sellerBrokerVat','legalFee','otherCost','acqTaxBase','landValue','buildingValue','buyerBrokerFee','buyerBrokerVat','buyerLegalFee','buyerOtherCost','buyerVat'];
   const defaults = {
     buyDate:'2020-01-01', sellDate:'2026-06-15', buyPrice:500000000, sellPrice:800000000,
-    necessaryCost:0, brokerFee:7200000, sellerBrokerVat:720000, legalFee:1000000, otherCost:1000000, acqTaxBase:800000000, landValue:0, buildingValue:0, buyerBrokerFee:7200000, buyerBrokerVat:720000, buyerLegalFee:1000000, buyerOtherCost:1000000, buyerVat:0
+    necessaryCost:0, corpBookValue:500000000, brokerFee:7200000, sellerBrokerVat:720000, legalFee:1000000, otherCost:1000000, acqTaxBase:800000000, landValue:0, buildingValue:0, buyerBrokerFee:7200000, buyerBrokerVat:720000, buyerLegalFee:1000000, buyerOtherCost:1000000, buyerVat:0
   };
 
   function parseMoney(v){ return Number(String(v||'').replace(/[^0-9.-]/g,'')) || 0; }
@@ -747,16 +710,123 @@
       if(b <= limit) return {tax:Math.max(0, b*rate-deduction), rate, deduction};
     }
   }
+  function corporateTax(taxBase){
+    const b = Math.max(0, taxBase);
+    const brackets = [
+      [200000000, .10, 0],
+      [20000000000, .20, 20000000],
+      [300000000000, .22, 420000000],
+      [Infinity, .25, 9420000000]
+    ];
+    for(const [limit, rate, deduction] of brackets){
+      if(b <= limit) return {tax:Math.max(0, b*rate-deduction), rate, deduction};
+    }
+  }
   const BROKER_RATE = 0.009;
   const brokerManual = { brokerFee:false, buyerBrokerFee:false };
   const ACQ_TAX_RATE = 0.04;
   const RURAL_TAX_RATE = 0.002;
   const EDU_TAX_RATE = 0.004;
 
+
+  function sellerIndividualLawHtml(){
+    return `
+<span class="law-chip seller">개인 매도인 기준</span>
+<h3>개인 매도인 양도세 공식 · 법규설명</h3>
+<p><b>참고자료:</b> 이 설명은 중개사 상담용 간이 추정 기준입니다. 실제 신고세액은 보유·사용 사실관계, 비사업용 토지 판단, 필요경비 증빙, 감면·중과 여부에 따라 달라질 수 있으므로 최종 안내 전 세무사 확인이 필요합니다.</p>
+
+<h3>1. 개인 양도세는 누가 부담하나</h3>
+<p>양도소득세는 <b>자산을 파는 개인 매도인</b>에게 발생하는 세금입니다. 개인 보유로 계산할 때는 매도인의 양도차익, 장기보유특별공제, 기본공제, 양도세율을 기준으로 산정합니다.</p>
+
+<h3>2. 개인 양도차익 계산 구조</h3>
+<p><b>양도차익 = 양도가액 - 취득가액 - 기타 양도 필요경비 - 매도 중개보수 - 중개보수 부가세 - 법무사비용 - 기타 양도비</b>로 계산합니다.</p>
+<ul>
+  <li><b>양도가액</b>: 실제 매도금액입니다.</li>
+  <li><b>취득가액</b>: 과거 매수금액입니다. 취득 당시 인정되는 부대비용이 포함될 수 있습니다.</li>
+  <li><b>매도 중개보수</b>: 양도가액 × 0.9%로 자동 계산합니다.</li>
+  <li><b>법무사비용·기타 양도비</b>: 양도와 직접 관련된 비용만 입력합니다.</li>
+</ul>
+
+<h3>3. 기타 양도 필요경비</h3>
+<p>기타 양도 필요경비는 실제 지출했고 증빙이 있는 비용만 입력합니다. 매도 중개보수와 법무사비용을 별도 칸에 입력했다면 기타 필요경비에 중복 입력하지 않습니다.</p>
+
+<h3>4. 장기보유특별공제</h3>
+<p>일반 토지·건물 기준으로 3년 이상 보유 시 6%, 이후 1년마다 2%씩 증가하여 최대 30%를 간이 적용합니다. 체크 해제 시 장특공제는 0원으로 계산됩니다.</p>
+
+<h3>5. 과세표준과 세율</h3>
+<p><b>개인 양도세 과세표준 = 양도차익 - 장기보유특별공제 - 기본공제 2,500,000원</b>입니다. 과세표준이 0원 이하이면 이 계산기에서는 양도세를 0원으로 처리합니다.</p>
+<ul>
+  <li><b>일반 토지·건물</b>: 보유기간 1년 미만 50%, 2년 미만 40%, 2년 이상 기본세율로 계산합니다.</li>
+  <li><b>비사업용 토지</b>: 기본세율에 10%p를 더하는 방식으로 간이 반영합니다. 지정지역 추가 옵션 선택 시 추가 10%p를 더 반영합니다.</li>
+  <li><b>지방소득세</b>: 계산된 양도소득세의 10%로 표시합니다.</li>
+</ul>
+
+<div class="warn"><b>개인 매도인 참고자료 경고:</b> 이 계산 결과는 상담용 추정치입니다. 비사업용 토지, 농지·자경, 감면·중과 여부가 있으면 실제 양도세가 달라질 수 있습니다. 최종 세액 안내 전 세무사 확인이 필요합니다.</div>`;
+  }
+
+  function sellerCorporateLawHtml(){
+    return `
+<span class="law-chip seller">법인 매도인 기준</span>
+<h3>법인 보유 부동산 공식 · 법규설명</h3>
+<p><b>참고자료:</b> 법인 보유로 체크한 경우에는 개인 양도소득세가 아니라 <b>법인 장부가액 기준 처분손익</b>을 계산하고, 해당 사업연도 법인세 과세소득에 반영하는 구조로 간이 산정합니다. 실제 세액은 법인의 다른 손익, 이월결손금, 세액공제·감면, 회계처리, 특수관계 거래 여부에 따라 달라질 수 있습니다.</p>
+
+<h3>1. 법인 매도인은 개인 양도세 대상이 아님</h3>
+<p>법인이 보유한 부동산을 매도하는 경우, 개인처럼 양도소득세·장기보유특별공제·기본공제 250만 원 구조를 적용하지 않습니다. 매각으로 생긴 이익 또는 손실은 법인의 <b>유형자산처분손익</b> 또는 토지·건물 처분손익으로 보아 법인세 계산에 반영합니다.</p>
+
+<h3>2. 법인 처분손익 계산 구조</h3>
+<p><b>법인 처분손익 = 양도가액 - 법인 장부가액 - 양도 관련 비용</b>으로 계산합니다.</p>
+<ul>
+  <li><b>양도가액</b>: 실제 매도금액입니다.</li>
+  <li><b>법인 장부가액</b>: 법인 회계장부상 토지·건물의 현재 장부금액입니다. 개인 취득가액과 다를 수 있습니다.</li>
+  <li><b>양도 관련 비용</b>: 매도 중개보수, 중개보수 부가세, 법무사비용, 기타 양도 직접비용을 반영합니다.</li>
+  <li><b>감가상각</b>: 건물은 감가상각 누계액 때문에 장부가액이 취득가액보다 낮아질 수 있습니다. 이 경우 처분이익이 커질 수 있습니다.</li>
+</ul>
+
+<h3>3. 법인세 과세표준과 세율</h3>
+<p>이 계산기는 상담용으로 <b>법인 처분손익이 0원 초과인 경우 그 금액을 법인세 과세표준</b>으로 보고 일반 법인세율을 간이 적용합니다.</p>
+<ul>
+  <li>2억 원 이하: 10%</li>
+  <li>2억 원 초과 200억 원 이하: 20%, 누진공제 2,000만 원</li>
+  <li>200억 원 초과 3,000억 원 이하: 22%, 누진공제 4억 2,000만 원</li>
+  <li>3,000억 원 초과: 25%, 누진공제 94억 2,000만 원</li>
+</ul>
+<p><b>법인지방소득세</b>는 계산된 법인세의 10%로 간이 표시합니다.</p>
+
+<h3>4. 법인 사업용 토지인 경우</h3>
+<p>법인이 실제 사업에 사용한 사업용 토지라면, 이 계산기에서는 <b>일반 법인세 + 법인지방소득세</b> 구조로 산정합니다. 개인 양도세의 장기보유특별공제와 기본공제 250만 원은 적용하지 않습니다.</p>
+<p>다만 사업용 토지 해당 여부는 실제 사용기간, 업종, 토지 이용 상태, 임대 여부, 유휴기간 등에 따라 달라질 수 있으므로 최종 판단은 세무 검토가 필요합니다.</p>
+
+<h3>5. 법인 비사업용 토지인 경우</h3>
+<p>자산 구분을 <b>비사업용 토지</b>로 선택하면, 일반 법인세와 법인지방소득세 외에 <b>토지 등 양도소득에 대한 추가 법인세 10%</b>를 별도로 반영합니다.</p>
+<p><b>추가 법인세 = 법인 처분손익 × 10%</b>로 간이 계산합니다. 실제 비사업용 토지 해당 여부는 법인세법상 사용기준과 예외규정을 확인해야 합니다.</p>
+
+<h3>6. 이 계산기의 한계</h3>
+<ul>
+  <li>법인의 다른 영업이익·영업손실은 반영하지 않습니다.</li>
+  <li>이월결손금 공제, 세액공제·감면, 중소기업 여부, 농특세 등은 반영하지 않습니다.</li>
+  <li>건물 감가상각, 자본적 지출, 회계상 장부가액이 정확해야 계산 의미가 있습니다.</li>
+  <li>특수관계자 거래, 저가·고가 양도, 부당행위계산 부인 가능성은 별도 검토가 필요합니다.</li>
+</ul>
+
+<div class="warn"><b>법인 매도인 참고자료 경고:</b> 법인 보유 부동산은 개인 양도세 계산과 다릅니다. 장부가액, 감가상각, 사업용·비사업용 토지 판단, 이월결손금, 세액감면 여부에 따라 실제 법인세가 달라질 수 있으므로 최종 안내 전 세무사 확인이 필요합니다.</div>`;
+  }
+
+  function renderSellerLaw(isCorp){
+    const box = $('sellerLawContent');
+    if(box) box.innerHTML = isCorp ? sellerCorporateLawHtml() : sellerIndividualLawHtml();
+  }
+
   function calc(){
     const buyDate = $('buyDate').value, sellDate = $('sellDate').value;
     const hp = fullYears(buyDate, sellDate);
+    const isCorp = $('sellerIsCorp') && $('sellerIsCorp').checked;
+    document.body.classList.toggle('seller-corp-mode', !!isCorp);
+    renderSellerLaw(isCorp);
+
     const buy = parseMoney($('buyPrice').value), sell = parseMoney($('sellPrice').value);
+    const corpBookValue = parseMoney($('corpBookValue') ? $('corpBookValue').value : buy);
+    const sellerBasis = isCorp ? corpBookValue : buy;
+
     const autoSellerBrokerFee = sell * BROKER_RATE;
     let sellerBrokerFee;
     if(!brokerManual.brokerFee && document.activeElement !== $('brokerFee')){
@@ -768,39 +838,69 @@
     const sellerBrokerVat = sellerBrokerFee * 0.10;
     $('sellerBrokerVat').value = Math.round(sellerBrokerVat).toLocaleString('ko-KR');
     const sellerBrokerNote = brokerManual.brokerFee ? '직접 입력' : '양도가액 × 0.9%';
-    const costs = parseMoney($('necessaryCost').value)+sellerBrokerFee+sellerBrokerVat+parseMoney($('legalFee').value)+parseMoney($('otherCost').value);
-    const gain = sell - buy - costs;
-    const longRate = ($('applyLongDeduction').checked && hp.years >= 3) ? Math.min(.30, hp.years * .02) : 0;
-    const longDeduction = Math.max(0, gain) * longRate;
-    const taxBase = Math.max(0, gain - longDeduction - 2500000);
-    const basic = basicTax(taxBase);
+    const sellerNecessaryCost = parseMoney($('necessaryCost').value);
+    const sellerLegalFee = parseMoney($('legalFee').value);
+    const sellerOtherCost = parseMoney($('otherCost').value);
+    const costs = sellerNecessaryCost + sellerBrokerFee + sellerBrokerVat + sellerLegalFee + sellerOtherCost;
+    const gain = sell - sellerBasis - costs;
     const nonbiz = $('assetType').value === 'nonbiz';
     const designated = $('designatedArea').checked;
-    let transferTax = 0, rateText = '';
 
-    if(taxBase <= 0){
-      transferTax = 0; rateText = '과세표준 0원';
-    } else if(hp.years < 1){
-      const shortTax = taxBase * .50;
-      const nonbizTax = nonbiz ? basic.tax + taxBase * (designated ? .20 : .10) : 0;
-      transferTax = Math.max(shortTax, nonbizTax);
-      rateText = nonbiz ? '1년 미만 50%와 비사업용 토지세율 중 큰 세액' : '1년 미만 50%';
-    } else if(hp.years < 2){
-      const shortTax = taxBase * .40;
-      const nonbizTax = nonbiz ? basic.tax + taxBase * (designated ? .20 : .10) : 0;
-      transferTax = Math.max(shortTax, nonbizTax);
-      rateText = nonbiz ? '2년 미만 40%와 비사업용 토지세율 중 큰 세액' : '2년 미만 40%';
+    let longRate = 0;
+    let longDeduction = 0;
+    let taxBase = 0;
+    let transferTax = 0;
+    let localIncomeTax = 0;
+    let additionalCorpLandTax = 0;
+    let rateText = '';
+    let sellerTotal = 0;
+    let sellerModeText = '';
+
+    if(isCorp){
+      longRate = 0;
+      longDeduction = 0;
+      taxBase = Math.max(0, gain);
+      const corp = corporateTax(taxBase);
+      transferTax = corp.tax;
+      localIncomeTax = transferTax * .10;
+      additionalCorpLandTax = nonbiz ? taxBase * .10 : 0;
+      sellerTotal = transferTax + localIncomeTax + additionalCorpLandTax;
+      sellerModeText = '법인 보유';
+      rateText = taxBase <= 0
+        ? '법인 처분손익 0원'
+        : `법인세율 ${(corp.rate*100).toFixed(0)}%, 누진공제 ${fmtShort(corp.deduction)}${nonbiz ? ', 비사업용 토지 추가 법인세 10%' : ''}`;
     } else {
-      transferTax = basic.tax;
-      rateText = `기본세율 ${(basic.rate*100).toFixed(0)}%, 누진공제 ${fmtShort(basic.deduction)}`;
-      if(nonbiz){
-        const add = designated ? .20 : .10;
-        transferTax = basic.tax + taxBase * add;
-        rateText = `비사업용 토지: 기본세율 + ${(add*100).toFixed(0)}%p`;
+      longRate = ($('applyLongDeduction').checked && hp.years >= 3) ? Math.min(.30, hp.years * .02) : 0;
+      longDeduction = Math.max(0, gain) * longRate;
+      taxBase = Math.max(0, gain - longDeduction - 2500000);
+      const basic = basicTax(taxBase);
+      sellerModeText = '개인 보유';
+
+      if(taxBase <= 0){
+        transferTax = 0; rateText = '과세표준 0원';
+      } else if(hp.years < 1){
+        const shortTax = taxBase * .50;
+        const nonbizTax = nonbiz ? basic.tax + taxBase * (designated ? .20 : .10) : 0;
+        transferTax = Math.max(shortTax, nonbizTax);
+        rateText = nonbiz ? '1년 미만 50%와 비사업용 토지세율 중 큰 세액' : '1년 미만 50%';
+      } else if(hp.years < 2){
+        const shortTax = taxBase * .40;
+        const nonbizTax = nonbiz ? basic.tax + taxBase * (designated ? .20 : .10) : 0;
+        transferTax = Math.max(shortTax, nonbizTax);
+        rateText = nonbiz ? '2년 미만 40%와 비사업용 토지세율 중 큰 세액' : '2년 미만 40%';
+      } else {
+        transferTax = basic.tax;
+        rateText = `기본세율 ${(basic.rate*100).toFixed(0)}%, 누진공제 ${fmtShort(basic.deduction)}`;
+        if(nonbiz){
+          const add = designated ? .20 : .10;
+          transferTax = basic.tax + taxBase * add;
+          rateText = `비사업용 토지: 기본세율 + ${(add*100).toFixed(0)}%p`;
+        }
       }
+      localIncomeTax = transferTax * .10;
+      sellerTotal = transferTax + localIncomeTax;
     }
 
-    const localIncomeTax = transferTax * .10;
     const acqBase = parseMoney($('acqTaxBase').value);
     const autoBuyerBrokerFee = acqBase * BROKER_RATE;
     let buyerBrokerFee;
@@ -826,14 +926,14 @@
     const buyerAncillary = buyerBrokerFee + buyerBrokerVat + buyerLegalFee + buyerOtherCost;
     const buyerInitialNeed = acqBase + acqTotal + buyerAncillary + buyerVat;
     const buyerCostBasis = acqBase + acqTotal + buyerAncillary + ($('vatCreditPossible').checked ? 0 : buyerVat);
-
-    const sellerTotal = transferTax + localIncomeTax;
     const buyerTotal = acqTotal;
+
     $('sellerTotal').textContent = fmtShort(sellerTotal);
     $('buyerTotal').textContent = fmtShort(buyerTotal);
     $('sellerTransferTax').textContent = fmtShort(transferTax);
-    $('sellerLocalIncomeTax').textContent = fmtShort(localIncomeTax);
-    $('sellerRateNote').textContent = rateText;
+    $('sellerLocalIncomeTax').textContent = fmtShort(localIncomeTax + additionalCorpLandTax);
+    $('sellerRateNote').textContent = isCorp ? `${rateText}, 법인지방소득세는 법인세의 10%` : rateText;
+
     $('buyerAcqTax').textContent = fmtShort(acqTax);
     $('buyerRuralTax').textContent = fmtShort(ruralTax);
     $('buyerEduTax').textContent = fmtShort(eduTax);
@@ -862,30 +962,39 @@
     $('buyerVatNote').textContent = buyerVat <= 0 ? '건물분 가액이 없거나 0원이므로 부가세는 0원입니다.' : ($('vatCreditPossible').checked ? '공제·환급 가능으로 보아 향후 취득원가 반영 가능액에서는 제외합니다.' : '공제 불가로 보아 향후 취득원가 반영 가능액에 포함합니다.');
     $('buyerInitialMini').textContent = fmtShort(buyerInitialNeed);
     $('buyerCostBasisMini').textContent = fmtShort(buyerCostBasis);
+
     $('holdingText').textContent = hp.invalid ? '날짜 확인' : `${hp.years}년 ${hp.months}개월`;
-    $('holdingMini').textContent = hp.invalid ? '양도일이 취득일보다 빠릅니다.' : `${buyDate} ~ ${sellDate}, 장특공제 적용연수 ${hp.years}년`;
+    $('holdingMini').textContent = hp.invalid ? '양도일이 취득일보다 빠릅니다.' : (isCorp ? `${sellerModeText}: 장기보유특별공제·기본공제 미적용` : `${buyDate} ~ ${sellDate}, 장특공제 적용연수 ${hp.years}년`);
     $('gain').textContent = fmtShort(gain);
     $('longDeduction').textContent = fmtShort(longDeduction);
-    $('longRate').textContent = `공제율 ${(longRate*100).toFixed(0)}%`;
+    $('longRate').textContent = isCorp ? '법인 계산: 장기보유특별공제 미적용' : `공제율 ${(longRate*100).toFixed(0)}%`;
     $('taxBase').textContent = fmtShort(taxBase);
+
+    const sellerBasisLabel = isCorp ? '법인 장부가액' : '취득가액';
+    const sellerTaxLabel = isCorp ? '예상 법인세' : '예상 양도세';
+    const localTaxLabel = isCorp ? '법인지방소득세 + 추가 법인세' : '지방소득세';
+    const sellerBaseLabel = isCorp ? '법인세 과세표준<br><small>(처분손익 기준)</small>' : '양도세 과세표준';
+
     $('sellerDetailTable').innerHTML = `
       <tr><th>매도인 항목</th><th>계산값</th></tr>
+      <tr><td>매도인 구분</td><td>${sellerModeText}</td></tr>
       <tr><td>양도가액</td><td>${fmt(sell)}</td></tr>
-      <tr><td>취득가액</td><td>${fmt(buy)}</td></tr>
-      <tr><td>기타 양도 필요경비</td><td>${fmt(parseMoney($('necessaryCost').value))}</td></tr>
+      <tr><td>${sellerBasisLabel}</td><td>${fmt(sellerBasis)}</td></tr>
+      <tr><td>기타 양도 필요경비</td><td>${fmt(sellerNecessaryCost)}</td></tr>
       <tr><td>매도 중개보수</td><td>${fmt(sellerBrokerFee)} <small>(${sellerBrokerNote})</small></td></tr>
       <tr><td>매도 중개보수 부가세 10%</td><td>${fmt(sellerBrokerVat)}</td></tr>
-      <tr><td>법무사비용</td><td>${fmt(parseMoney($('legalFee').value))}</td></tr>
-      <tr><td>기타 양도비</td><td>${fmt(parseMoney($('otherCost').value))}</td></tr>
-      <tr><td>총 양도 필요경비</td><td>${fmt(costs)}</td></tr>
-      <tr><td>양도차익</td><td>${fmt(gain)}</td></tr>
-      <tr><td>장기보유특별공제율</td><td>${(longRate*100).toFixed(0)}%</td></tr>
+      <tr><td>법무사비용</td><td>${fmt(sellerLegalFee)}</td></tr>
+      <tr><td>기타 양도비</td><td>${fmt(sellerOtherCost)}</td></tr>
+      <tr><td>총 차감 비용</td><td>${fmt(costs)}</td></tr>
+      <tr><td>${isCorp ? '법인 처분손익' : '양도차익'}</td><td>${fmt(gain)}</td></tr>
+      <tr><td>장기보유특별공제율</td><td>${isCorp ? '미적용' : (longRate*100).toFixed(0) + '%'}</td></tr>
       <tr><td>장기보유특별공제액</td><td>${fmt(longDeduction)}</td></tr>
-      <tr><td>기본공제</td><td>${fmt(2500000)}</td></tr>
-      <tr><td>양도세 과세표준</td><td>${fmt(taxBase)}</td></tr>
-      <tr><td>적용 양도세율</td><td>${rateText}</td></tr>
-      <tr><td>예상 양도세</td><td>${fmt(transferTax)}</td></tr>
-      <tr><td>지방소득세</td><td>${fmt(localIncomeTax)}</td></tr>
+      <tr><td>기본공제</td><td>${isCorp ? '미적용' : fmt(2500000)}</td></tr>
+      <tr><td>${sellerBaseLabel}</td><td>${fmt(taxBase)}</td></tr>
+      <tr><td>적용 세율</td><td>${rateText}</td></tr>
+      <tr><td>${sellerTaxLabel}</td><td>${fmt(transferTax)}</td></tr>
+      <tr><td>${localTaxLabel}</td><td>${fmt(localIncomeTax + additionalCorpLandTax)}</td></tr>
+      ${isCorp && nonbiz ? `<tr><td>토지 등 양도소득 추가 법인세</td><td>${fmt(additionalCorpLandTax)} <small>(처분손익 × 10%)</small></td></tr>` : ''}
       <tr><td><b>매도인 총 예상 부담세액</b></td><td><b>${fmt(sellerTotal)}</b></td></tr>`;
 
     $('buyerDetailTable').innerHTML = `
@@ -909,19 +1018,20 @@
     $('printSellerTotal').textContent = fmt(sellerTotal);
     $('printSellerSummary').innerHTML = `
       <tr><th>항목</th><th>계산값</th></tr>
+      <tr><td>매도인 구분</td><td>${sellerModeText}</td></tr>
       <tr><td>취득일 ~ 양도일</td><td>${buyDate} ~ ${sellDate} / 보유기간 ${hp.years}년 ${hp.months}개월</td></tr>
       <tr><td>양도가액</td><td>${fmt(sell)}</td></tr>
-      <tr><td>취득가액</td><td>${fmt(buy)}</td></tr>
-      <tr><td>기타 양도 필요경비</td><td>${fmt(parseMoney($('necessaryCost').value))}</td></tr>
+      <tr><td>${sellerBasisLabel}</td><td>${fmt(sellerBasis)}</td></tr>
+      <tr><td>기타 양도 필요경비</td><td>${fmt(sellerNecessaryCost)}</td></tr>
       <tr><td>매도 중개보수 0.9%</td><td>${fmt(sellerBrokerFee)} (${sellerBrokerNote})</td></tr>
       <tr><td>매도 중개보수 부가세 10%</td><td>${fmt(sellerBrokerVat)}</td></tr>
-      <tr><td>법무사비용 / 기타 양도비</td><td>${fmt(parseMoney($('legalFee').value))} / ${fmt(parseMoney($('otherCost').value))}</td></tr>
-      <tr><td>양도차익</td><td>${fmt(gain)}</td></tr>
-      <tr><td>장기보유특별공제</td><td>${fmt(longDeduction)} (공제율 ${(longRate*100).toFixed(0)}%)</td></tr>
-      <tr><td>양도세 과세표준</td><td>${fmt(taxBase)}</td></tr>
+      <tr><td>법무사비용 / 기타 양도비</td><td>${fmt(sellerLegalFee)} / ${fmt(sellerOtherCost)}</td></tr>
+      <tr><td>${isCorp ? '법인 처분손익' : '양도차익'}</td><td>${fmt(gain)}</td></tr>
+      <tr><td>장기보유특별공제</td><td>${isCorp ? '미적용' : `${fmt(longDeduction)} (공제율 ${(longRate*100).toFixed(0)}%)`}</td></tr>
+      <tr><td>${isCorp ? '법인세 과세표준' : '양도세 과세표준'}</td><td>${fmt(taxBase)}</td></tr>
       <tr><td>적용 세율</td><td>${rateText}</td></tr>
-      <tr><td>예상 양도세</td><td>${fmt(transferTax)}</td></tr>
-      <tr><td>지방소득세</td><td>${fmt(localIncomeTax)}</td></tr>
+      <tr><td>${sellerTaxLabel}</td><td>${fmt(transferTax)}</td></tr>
+      <tr><td>${localTaxLabel}</td><td>${fmt(localIncomeTax + additionalCorpLandTax)}</td></tr>
       <tr><td><b>매도인 총 예상 부담세액</b></td><td><b>${fmt(sellerTotal)}</b></td></tr>`;
 
     $('printBuyerTotal').textContent = fmt(buyerTotal);
@@ -950,10 +1060,64 @@
       calc();
     });
   });
-  ['buyDate','sellDate','assetType','applyLongDeduction','designatedArea','acqRateMode','vatCreditPossible'].forEach(id => $(id).addEventListener('change', calc));
+  ['buyDate','sellDate','sellerIsCorp','assetType','applyLongDeduction','designatedArea','acqRateMode','vatCreditPossible'].forEach(id => $(id).addEventListener('change', calc));
   $('sellPrice').addEventListener('blur', () => { if(parseMoney($('acqTaxBase').value) === 0) setMoney('acqTaxBase', parseMoney($('sellPrice').value)); calc(); });
+
+  function sellerIndividualPrintFormulaHtml(){
+    return `
+          <h3>참고자료 경고</h3>
+          <p>이 계산서는 중개사 상담용 간이 추정자료입니다. 실제 신고세액은 개인의 보유·사용 사실관계, 비사업용 토지 판단, 필요경비 증빙, 감면·중과 여부에 따라 달라질 수 있으므로 최종 안내 전 세무사 확인이 필요합니다.</p>
+          <h3>개인 양도세 부담 주체</h3>
+          <p>양도소득세는 자산을 파는 개인 매도인에게 발생합니다. 법인 보유 자산과 달리 개인 양도세율, 장기보유특별공제, 기본공제 250만 원 구조를 적용합니다.</p>
+          <h3>개인 양도차익</h3>
+          <p><b>양도차익 = 양도가액 - 취득가액 - 기타 양도 필요경비 - 매도 중개보수 - 중개보수 부가세 - 법무사비용 - 기타 양도비</b></p>
+          <ul>
+            <li>매도 중개보수는 <b>양도가액 × 0.9%</b>로 자동 계산하며 양도비 성격으로 차감합니다.</li>
+            <li>기타 양도 필요경비는 실제 지출했고 증빙이 있는 비용만 입력합니다.</li>
+          </ul>
+          <h3>장기보유특별공제·과세표준</h3>
+          <p>일반 토지·건물 기준 3년 이상 보유 시 6%, 이후 1년마다 2%씩, 15년 이상 최대 30%를 간이 적용합니다.</p>
+          <p><b>과세표준 = 양도차익 - 장기보유특별공제 - 기본공제 250만원</b>입니다. 지방소득세는 양도세의 10%입니다.</p>
+          <div class="print-warn"><b>개인 매도인 주의:</b> 비사업용 토지, 농지·자경, 감면·중과 여부에 따라 실제 세액이 달라질 수 있습니다.</div>`;
+  }
+
+  function sellerCorporatePrintFormulaHtml(){
+    return `
+          <h3>참고자료 경고</h3>
+          <p>이 계산서는 중개사 상담용 간이 추정자료입니다. 법인 보유로 체크한 경우 개인 양도소득세가 아니라 <b>법인 장부가액 기준 처분손익</b>과 법인세 구조로 간이 산정합니다. 실제 세액은 법인의 다른 손익, 이월결손금, 세액공제·감면, 회계처리, 특수관계 거래 여부에 따라 달라질 수 있습니다.</p>
+          <h3>법인 매도인은 개인 양도세 대상이 아님</h3>
+          <p>법인이 보유한 부동산을 매도하는 경우 장기보유특별공제와 기본공제 250만 원을 적용하지 않습니다. 매각으로 생긴 이익 또는 손실은 법인의 처분손익으로 보아 법인세 계산에 반영합니다.</p>
+          <h3>법인 처분손익</h3>
+          <p><b>법인 처분손익 = 양도가액 - 법인 장부가액 - 양도 관련 비용</b></p>
+          <ul>
+            <li><b>법인 장부가액</b>: 법인 회계장부상 토지·건물의 현재 장부금액입니다. 개인 취득가액과 다를 수 있습니다.</li>
+            <li><b>양도 관련 비용</b>: 매도 중개보수, 중개보수 부가세, 법무사비용, 기타 양도 직접비용을 반영합니다.</li>
+            <li><b>감가상각</b>: 건물은 감가상각 누계액 때문에 장부가액이 취득가액보다 낮아질 수 있습니다.</li>
+          </ul>
+          <h3>법인세·법인지방소득세</h3>
+          <p>이 계산기는 상담용으로 법인 처분손익이 0원 초과인 경우 그 금액을 법인세 과세표준으로 보고 일반 법인세율을 간이 적용합니다.</p>
+          <ul>
+            <li>2억 원 이하: 10%</li>
+            <li>2억 원 초과 200억 원 이하: 20%, 누진공제 2,000만 원</li>
+            <li>200억 원 초과 3,000억 원 이하: 22%, 누진공제 4억 2,000만 원</li>
+            <li>3,000억 원 초과: 25%, 누진공제 94억 2,000만 원</li>
+          </ul>
+          <p><b>법인지방소득세</b>는 계산된 법인세의 10%로 간이 표시합니다.</p>
+          <h3>사업용 토지와 비사업용 토지</h3>
+          <p>법인 사업용 토지는 일반 법인세와 법인지방소득세 구조로 산정합니다. 자산 구분을 비사업용 토지로 선택하면 <b>토지 등 양도소득에 대한 추가 법인세 10%</b>를 별도 반영합니다.</p>
+          <p><b>추가 법인세 = 법인 처분손익 × 10%</b>로 간이 계산합니다.</p>
+          <div class="print-warn"><b>법인 매도인 주의:</b> 장부가액, 감가상각, 사업용·비사업용 토지 판단, 이월결손금, 세액감면 여부에 따라 실제 법인세가 달라질 수 있으므로 최종 안내 전 세무사 확인이 필요합니다.</div>`;
+  }
+
+  function renderSellerPrintFormula(){
+    const box = $('printSellerFormulaContent');
+    const isCorp = $('sellerIsCorp') && $('sellerIsCorp').checked;
+    if(box) box.innerHTML = isCorp ? sellerCorporatePrintFormulaHtml() : sellerIndividualPrintFormulaHtml();
+  }
+
   function printOnly(type){
     calc();
+    renderSellerPrintFormula();
     document.body.classList.remove('print-seller','print-buyer');
     document.body.classList.add(type === 'seller' ? 'print-seller' : 'print-buyer');
     window.print();
@@ -964,8 +1128,8 @@
   $('printSellerBtn').addEventListener('click', () => printOnly('seller'));
   $('printBuyerBtn').addEventListener('click', () => printOnly('buyer'));
   $('calcBtn').addEventListener('click', calc);
-  $('resetBtn').addEventListener('click', () => { brokerManual.brokerFee=false; brokerManual.buyerBrokerFee=false; Object.entries(defaults).forEach(([k,v]) => k.includes('Date') ? $(k).value=v : setMoney(k,v)); $('assetType').value='normal'; $('applyLongDeduction').checked=true; $('designatedArea').checked=false; $('vatCreditPossible').checked=true; calc(); });
-  $('sample10Btn').addEventListener('click', () => { brokerManual.brokerFee=false; brokerManual.buyerBrokerFee=false; setMoney('buyPrice',600000000); setMoney('sellPrice',1000000000); setMoney('necessaryCost',20000000); setMoney('brokerFee',9000000); setMoney('sellerBrokerVat',900000); setMoney('legalFee',0); setMoney('otherCost',0); setMoney('acqTaxBase',1000000000); setMoney('landValue',700000000); setMoney('buildingValue',300000000); setMoney('buyerBrokerFee',9000000); setMoney('buyerBrokerVat',900000); setMoney('buyerLegalFee',1500000); setMoney('buyerOtherCost',500000); setMoney('buyerVat',30000000); $('vatCreditPossible').checked=true; calc(); });
+  $('resetBtn').addEventListener('click', () => { brokerManual.brokerFee=false; brokerManual.buyerBrokerFee=false; Object.entries(defaults).forEach(([k,v]) => k.includes('Date') ? $(k).value=v : setMoney(k,v)); $('sellerIsCorp').checked=false; $('assetType').value='normal'; $('applyLongDeduction').checked=true; $('designatedArea').checked=false; $('vatCreditPossible').checked=true; calc(); });
+  $('sample10Btn').addEventListener('click', () => { brokerManual.brokerFee=false; brokerManual.buyerBrokerFee=false; setMoney('buyPrice',600000000); setMoney('corpBookValue',600000000); setMoney('sellPrice',1000000000); setMoney('necessaryCost',20000000); setMoney('brokerFee',9000000); setMoney('sellerBrokerVat',900000); setMoney('legalFee',0); setMoney('otherCost',0); setMoney('acqTaxBase',1000000000); setMoney('landValue',700000000); setMoney('buildingValue',300000000); setMoney('buyerBrokerFee',9000000); setMoney('buyerBrokerVat',900000); setMoney('buyerLegalFee',1500000); setMoney('buyerOtherCost',500000); setMoney('buyerVat',30000000); $('vatCreditPossible').checked=true; calc(); });
   calc();
 </script>
 

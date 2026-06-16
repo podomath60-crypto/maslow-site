@@ -48,6 +48,11 @@
     .law-modal-section{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:16px 18px;margin-bottom:14px}
     .law-modal-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px;padding:14px 16px;color:#1e3a8a}
     .law-modal-note strong{font-weight:900}
+    .law-modal-danger-pulse{list-style:none;margin-top:10px;padding:14px 16px;border-radius:16px;background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);border:2px solid #ef4444;color:#dc2626;font-weight:950;text-shadow:0 0 8px rgba(239,68,68,.55),0 0 18px rgba(239,68,68,.35);box-shadow:0 0 0 rgba(239,68,68,0),0 0 22px rgba(239,68,68,.28),inset 0 0 12px rgba(255,255,255,.55);animation:lawDangerBlink 1s steps(2,end) infinite, lawDangerGlow 1.8s ease-in-out infinite, lawDangerSway 2.4s ease-in-out infinite}
+    .law-modal-danger-pulse::before{content:"🚨 ";display:inline}
+    @keyframes lawDangerBlink{0%,47%{opacity:1}50%,57%{opacity:.3}60%,100%{opacity:1}}
+    @keyframes lawDangerGlow{0%,100%{transform:scale(1);box-shadow:0 0 0 rgba(239,68,68,0),0 0 18px rgba(239,68,68,.22),inset 0 0 10px rgba(255,255,255,.45)}50%{transform:scale(1.02);box-shadow:0 0 10px rgba(239,68,68,.45),0 0 30px rgba(239,68,68,.5),inset 0 0 16px rgba(255,255,255,.72)}}
+    @keyframes lawDangerSway{0%,100%{translate:0 0}25%{translate:1px 0}50%{translate:-1px 0}75%{translate:1px 0}}
     .check-mark{display:inline-block;margin-left:8px;font-size:.9em;vertical-align:baseline}
     .top-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 0;padding-top:16px;border-top:1px solid #e5e7eb}
     button{border:0;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:800;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease}
@@ -319,6 +324,8 @@
       </div>
     </header>
 
+    </header>
+
     <div class="law-modal" id="lawModal" aria-hidden="true">
       <div class="law-modal-panel" role="dialog" aria-modal="true" aria-labelledby="lawModalTitle">
         <div class="law-modal-head">
@@ -471,7 +478,7 @@
               <li>매수인은 <b>지방세법 + 농어촌특별세법 + 지방교육세법</b> 중심</li>
               <li>건물분 부가세와 환급 가능 여부는 <b>부가가치세법</b> 중심</li>
               <li>중개보수는 <b>공인중개사법</b> 기준</li>
-              <li>실제 신고 전에는 비사업용 토지 판정, 감면·중과, 법인 장부가액, 감가상각, 토지·건물 안분, 부가세 공제 가능 여부를 반드시 확인해야 합니다.</li>
+              <li class="law-modal-danger-pulse">실제 신고 전에는 비사업용 토지 판정, 감면·중과, 법인 장부가액, 감가상각, 토지·건물 안분, 부가세 공제 가능 여부를 반드시 확인해야 합니다.</li>
             </ul>
           </div>
         </div>

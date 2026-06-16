@@ -169,6 +169,7 @@
       line-height:1;
       font-family:Arial,Helvetica,sans-serif;
     }
+    .brand-icon-taxcheckup .tax-mobile-label{display:none}
 
     .hero-spacer{height:18px}
     .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0 18px}
@@ -1598,7 +1599,16 @@
   }
 
       @media(max-width:900px){
-      .brand-icon-taxcheckup{display:none}
+      .brand-icon-taxcheckup{
+        width:36.1px;
+        height:36.1px;
+        flex:0 0 36.1px;
+        border-radius:11.4px;
+        font-size:17.1px;
+        box-shadow:var(--shadow);
+      }
+      .brand-icon-taxcheckup .tax-full-label{display:none}
+      .brand-icon-taxcheckup .tax-mobile-label{display:inline}
     }
 
   </style>
@@ -1638,7 +1648,7 @@
               <img src="https://www.maslow-vfactory.site/icons/icon-192.png" alt="영상 딸깍이">
             </a>
             <a href="/naverbloginput" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-naverblog" aria-label="네이버 블로그 입력기 새창으로 이동">N</a>
-            <a href="/taxcheckup/" class="brand-icon-link brand-icon-taxcheckup" aria-label="택스체크업으로 이동">TAX</a>
+            <a href="/taxcheckup/" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-taxcheckup" aria-label="택스체크업 새창으로 이동"><span class="tax-full-label">TAX</span><span class="tax-mobile-label">T</span></a>
           </div>
         </div>
         <div class="topbar-right">

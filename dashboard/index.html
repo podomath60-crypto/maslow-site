@@ -157,7 +157,7 @@
     }
 
     .hero-spacer{height:18px}
-    .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0 18px}
+    .panel-grid,.desktop-link-panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0 18px}
     .panel-card{
       position:relative;display:flex;flex-direction:column;justify-content:space-between;
       min-height:132px;padding:22px 22px 20px;border:1px solid var(--line);border-radius:28px;
@@ -732,11 +732,24 @@
         max-width:1600px;
       }
       .panel-grid,
+      .desktop-link-panel-grid,
       .search-wrap,
       .toolbar{
         max-width:980px;
         margin-left:auto;
         margin-right:auto;
+      }
+      .desktop-link-panel-grid{
+        grid-template-columns:repeat(4, minmax(0, 1fr));
+        gap:14px;
+        margin-top:0;
+      }
+      .desktop-link-panel-grid .panel-card{
+        min-height:132px;
+        padding:20px 20px 18px;
+      }
+      .desktop-link-panel-grid .panel-title{
+        font-size:26px;
       }
       .card-list{
         grid-template-columns:repeat(5, minmax(0, 1fr));
@@ -851,7 +864,7 @@
 
     @media (max-width:860px){
       .shell{padding:0 16px 40px}
-      .panel-grid{grid-template-columns:1fr 1fr;gap:10px}
+      .panel-grid,.desktop-link-panel-grid{grid-template-columns:1fr 1fr;gap:10px}
       .panel-card{min-height:114px;padding:18px 16px 16px;border-radius:22px}
       .panel-title{font-size:24px}
       .topbar-greeting{font-size:13px}
@@ -1613,7 +1626,9 @@
           </div>
           <div class="panel-desc">일정 관리 영역입니다.</div>
         </button>
+      </section>
 
+      <section class="desktop-link-panel-grid">
         <button class="panel-card" id="goListingLookupBtn" type="button">
           <div>
             <div class="panel-eyebrow">Lookup</div>
@@ -1622,9 +1637,17 @@
           <div class="panel-desc">위치와 건축물정보를 제공합니다.</div>
         </button>
 
-        <button class="panel-card" id="goSearchTrackerBtn" type="button">
+        <button class="panel-card" id="goPropertyTrackerBtn" type="button">
           <div>
             <div class="panel-eyebrow">Tracker</div>
+            <div class="panel-title">매물추적</div>
+          </div>
+          <div class="panel-desc">네이버부동산 매물 추적기로 이동합니다.</div>
+        </button>
+
+        <button class="panel-card" id="goDdangyaBtn" type="button">
+          <div>
+            <div class="panel-eyebrow">Ddangya</div>
             <div class="panel-icon-wrap">
               <svg class="panel-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M10.8 18.2a7.2 7.2 0 1 1 5.1-2.1" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
@@ -1638,6 +1661,14 @@
             </div>
           </div>
           <div class="panel-desc">땅야로 이동합니다.</div>
+        </button>
+
+        <button class="panel-card" id="goPriceLookupBtn" type="button">
+          <div>
+            <div class="panel-eyebrow">Market Price</div>
+            <div class="panel-title">시세조회</div>
+          </div>
+          <div class="panel-desc">토지·부동산 시세조회로 이동합니다.</div>
         </button>
       </section>
 
@@ -1846,7 +1877,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       listingsUrl: '/listings',
       naverBlogInputUrl: '/naverbloginput',
       listingLookupUrl: 'https://lookout-zeta.vercel.app',
-      searchTrackerUrl: 'https://ddangya.com/',
+      propertyTrackerUrl: 'https://www.maslowkorea.site/search/',
+      ddangyaUrl: 'https://ddangya.com/',
+      priceLookupUrl: 'https://vos.land/',
       authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
     };
 
@@ -2871,10 +2904,24 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       window.open(CONFIG.listingLookupUrl, '_blank', 'noopener');
     });
 
-    const goSearchTrackerBtn = document.getElementById('goSearchTrackerBtn');
-    if(goSearchTrackerBtn){
-      goSearchTrackerBtn.addEventListener('click', function(){
-        window.open(CONFIG.searchTrackerUrl, '_blank', 'noopener');
+    const goPropertyTrackerBtn = document.getElementById('goPropertyTrackerBtn');
+    if(goPropertyTrackerBtn){
+      goPropertyTrackerBtn.addEventListener('click', function(){
+        window.open(CONFIG.propertyTrackerUrl, '_blank', 'noopener');
+      });
+    }
+
+    const goDdangyaBtn = document.getElementById('goDdangyaBtn');
+    if(goDdangyaBtn){
+      goDdangyaBtn.addEventListener('click', function(){
+        window.open(CONFIG.ddangyaUrl, '_blank', 'noopener');
+      });
+    }
+
+    const goPriceLookupBtn = document.getElementById('goPriceLookupBtn');
+    if(goPriceLookupBtn){
+      goPriceLookupBtn.addEventListener('click', function(){
+        window.open(CONFIG.priceLookupUrl, '_blank', 'noopener');
       });
     }
 

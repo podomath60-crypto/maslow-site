@@ -190,6 +190,26 @@
       }
     }
 
+
+    .mobile-party-toggle{display:none}
+    .bottom-download-area{margin-top:18px;display:flex;justify-content:center}
+    .download-query-btn{width:100%;max-width:420px;background:#183a8f;color:#fff;box-shadow:0 12px 26px rgba(24,58,143,.18)}
+    .download-query-btn:disabled{opacity:.65;cursor:wait;transform:none}
+    @media(max-width:900px){
+      .tax-hero-img{display:none!important}
+      #printSellerBtn,#printBuyerBtn{display:none!important}
+      .mobile-party-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 0}
+      .party-toggle-btn{border:1px solid #d1d5db;background:#fff;color:#374151;border-radius:14px;padding:12px 10px;font-size:15px;font-weight:900}
+      body.party-seller #sellerToggleBtn,
+      body.party-buyer #buyerToggleBtn{background:#183a8f;color:#fff;border-color:#183a8f}
+      .dashboard-cols{display:block}
+      body:not(.party-buyer) .buyer-side{display:none!important}
+      body.party-buyer .seller-side{display:none!important}
+      body.party-buyer .buyer-side{display:grid!important}
+      .bottom-download-area{position:sticky;bottom:0;z-index:20;margin:18px -18px -20px;padding:12px 18px;background:rgba(244,246,251,.92);backdrop-filter:blur(10px);border-top:1px solid rgba(229,231,235,.9)}
+      .download-query-btn{max-width:none}
+    }
+
   </style>
 </head>
 <body>
@@ -211,6 +231,11 @@
           <button class="ghost" id="resetBtn">초기값</button>
           <button class="ghost" id="printSellerBtn">매도인용 PDF 저장</button>
           <button class="ghost" id="printBuyerBtn">매수인용 PDF 저장</button>
+        </div>
+
+        <div class="mobile-party-toggle" aria-label="매도인 매수인 화면 전환">
+          <button class="party-toggle-btn" id="sellerToggleBtn" type="button">매도인</button>
+          <button class="party-toggle-btn" id="buyerToggleBtn" type="button">매수인</button>
         </div>
       </div>
     </header>
@@ -290,7 +315,7 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card" id="sellerDetailCapture">
           <h2>매도인 상세내역</h2>
           <div class="result-grid">
             <div class="tile full">
@@ -300,7 +325,7 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card" id="sellerLawCapture">
           <h2>매도인 공식 · 법규설명</h2>
           <div class="law-single">
             <div class="law-box seller-law">
@@ -434,7 +459,7 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card" id="buyerDetailCapture">
           <h2>매수인 상세내역</h2>
           <div class="result-grid">
             <div class="tile full">
@@ -444,7 +469,7 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card" id="buyerLawCapture">
           <h2>매수인 공식 · 법규설명</h2>
           <div class="law-single">
             <div class="law-box buyer-law">
@@ -515,6 +540,9 @@
         </p>
       </div>
     </section>
+    <div class="bottom-download-area">
+      <button class="download-query-btn" id="downloadQueryBtn" type="button">조회내용 다운로드</button>
+    </div>
   </div>
 
   <div class="print-wrap" aria-hidden="true">
@@ -891,6 +919,88 @@
   $('calcBtn').addEventListener('click', calc);
   $('resetBtn').addEventListener('click', () => { brokerManual.brokerFee=false; brokerManual.buyerBrokerFee=false; Object.entries(defaults).forEach(([k,v]) => k.includes('Date') ? $(k).value=v : setMoney(k,v)); $('assetType').value='normal'; $('applyLongDeduction').checked=true; $('designatedArea').checked=false; $('vatCreditPossible').checked=true; calc(); });
   $('sample10Btn').addEventListener('click', () => { brokerManual.brokerFee=false; brokerManual.buyerBrokerFee=false; setMoney('buyPrice',600000000); setMoney('sellPrice',1000000000); setMoney('necessaryCost',20000000); setMoney('brokerFee',9000000); setMoney('sellerBrokerVat',900000); setMoney('legalFee',0); setMoney('otherCost',0); setMoney('acqTaxBase',1000000000); setMoney('landValue',700000000); setMoney('buildingValue',300000000); setMoney('buyerBrokerFee',9000000); setMoney('buyerBrokerVat',900000); setMoney('buyerLegalFee',1500000); setMoney('buyerOtherCost',500000); setMoney('buyerVat',30000000); $('vatCreditPossible').checked=true; calc(); });
+
+  function setPartyView(type){
+    document.body.classList.toggle('party-seller', type !== 'buyer');
+    document.body.classList.toggle('party-buyer', type === 'buyer');
+  }
+  function getCurrentParty(){
+    return document.body.classList.contains('party-buyer') ? 'buyer' : 'seller';
+  }
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+  async function nodeToPngBlob(node){
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    const rect = node.getBoundingClientRect();
+    const width = Math.max(320, Math.ceil(rect.width));
+    const height = Math.max(120, Math.ceil(node.scrollHeight || rect.height));
+    const styles = Array.from(document.querySelectorAll('style')).map(style => style.textContent).join('
+');
+    const clone = node.cloneNode(true);
+    clone.querySelectorAll('button').forEach(btn => btn.remove());
+    const xhtml = `<!doctype html><html xmlns="http://www.w3.org/1999/xhtml" lang="ko"><head><meta charset="utf-8"/><style>${styles}
+html,body{margin:0;padding:0;background:#f4f6fb}.capture-root{width:${width}px;padding:16px;background:#f4f6fb}.capture-root .card{box-shadow:0 10px 28px rgba(15,23,42,.10)}</style></head><body><div class="capture-root">${clone.outerHTML}</div></body></html>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width + 32}" height="${height + 32}"><foreignObject width="100%" height="100%">${xhtml}</foreignObject></svg>`;
+    const svgBlob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(svgBlob);
+    try{
+      const img = new Image();
+      const loaded = new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+      img.src = url;
+      await loaded;
+      const scale = Math.min(2, window.devicePixelRatio || 2);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil((width + 32) * scale);
+      canvas.height = Math.ceil((height + 32) * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(scale,0,0,scale,0,0);
+      ctx.fillStyle = '#f4f6fb';
+      ctx.fillRect(0,0,width + 32,height + 32);
+      ctx.drawImage(img,0,0);
+      return await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.95));
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+  async function downloadQueryImages(){
+    calc();
+    const btn = $('downloadQueryBtn');
+    const party = getCurrentParty();
+    const detail = $(party === 'buyer' ? 'buyerDetailCapture' : 'sellerDetailCapture');
+    const law = $(party === 'buyer' ? 'buyerLawCapture' : 'sellerLawCapture');
+    const prefix = party === 'buyer' ? '매수인' : '매도인';
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = '이미지 생성 중...';
+    try{
+      const detailBlob = await nodeToPngBlob(detail);
+      if(detailBlob) downloadBlob(detailBlob, `${prefix}_상세내역.png`);
+      const lawBlob = await nodeToPngBlob(law);
+      if(lawBlob) downloadBlob(lawBlob, `${prefix}_공식_법규설명.png`);
+    } catch(err){
+      console.error(err);
+      alert('이미지 다운로드를 완료하지 못했습니다. 화면 캡처 또는 PDF 저장을 이용해 주세요.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  }
+  $('sellerToggleBtn').addEventListener('click', () => setPartyView('seller'));
+  $('buyerToggleBtn').addEventListener('click', () => setPartyView('buyer'));
+  $('downloadQueryBtn').addEventListener('click', downloadQueryImages);
+  setPartyView('seller');
+
   calc();
 </script>
 </body>

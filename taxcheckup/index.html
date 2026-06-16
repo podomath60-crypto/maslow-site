@@ -14,18 +14,11 @@
     body{margin:0;background:linear-gradient(180deg,#eef3ff 0%,var(--bg) 260px);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);}
     .wrap{max-width:1180px;margin:0 auto;padding:30px 18px 70px}
     header{margin-bottom:18px}
-    .hero-header{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px 26px 22px;box-shadow:0 14px 34px rgba(15,23,42,.07)}
+    .hero-header{background:transparent;border:0;border-radius:0;padding:0 0 18px;box-shadow:none}
     .hero-top{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:14px}
     .hero-copy{flex:1;min-width:0}
     .tax-hero-img{width:210px;max-width:26vw;height:auto;display:block;object-fit:contain;flex:0 0 auto}
     .title h1{margin:0;color:#111827;font-size:34px;letter-spacing:-.05em;line-height:1.16}
-    .title p{margin:10px 0 0;color:#4b5563;font-size:15px;line-height:1.6;max-width:780px}
-    .badge{display:inline-flex;gap:8px;align-items:center;background:#f8fafc;color:#334155;border:1px solid #e2e8f0;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:800;white-space:nowrap;margin-top:12px}
-    .hero-kicker{display:inline-flex;align-items:center;gap:8px;margin-bottom:10px;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;font-size:12px;font-weight:900;letter-spacing:.01em}
-    .hero-kicker .dot{width:7px;height:7px;border-radius:50%;background:#2563eb}
-    .hero-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-    .hero-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 11px;border-radius:999px;background:#f9fafb;border:1px solid #e5e7eb;color:#374151;font-size:13px;font-weight:750}
-    .hero-pill b{font-weight:900;color:#111827}
     .top-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 0;padding-top:16px;border-top:1px solid #e5e7eb}
     button{border:0;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:800;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease}
     button:hover{transform:translateY(-1px)}
@@ -94,7 +87,7 @@
     .source{font-size:12px;color:#6b7280;word-break:keep-all}
     .source a{color:#2563eb;text-decoration:none}
     .pill{display:inline-flex;padding:4px 8px;border-radius:999px;background:var(--soft);color:#3730a3;font-size:12px;font-weight:800}
-    @media(max-width:900px){.grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.party-results{grid-template-columns:1fr}.result-grid{grid-template-columns:1fr}.full{grid-column:auto}.hero-header{padding:22px 18px 18px}.hero-top{display:block}.tax-hero-img{width:180px;max-width:70%;margin:14px auto 0}.badge{margin-top:12px}.title h1{font-size:27px}.title p{font-size:14px}.top-actions{padding:12px}}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.party-results{grid-template-columns:1fr}.result-grid{grid-template-columns:1fr}.full{grid-column:auto}.hero-header{padding:0 0 16px}.hero-top{display:block}.tax-hero-img{width:180px;max-width:70%;margin:14px auto 0}.title h1{font-size:27px}.top-actions{padding:12px}}
     .print-wrap{display:none!important}
     @media print{
       @page{size:A4;margin:24mm 10mm 12mm}
@@ -204,19 +197,10 @@
         <div class="hero-top">
           <div class="hero-copy">
             <div class="title">
-              <div class="hero-kicker"><span class="dot"></span>중개 실무 상담용 간이 계산기</div>
               <h1>매도·매수 세금·거래비용 체크업</h1>
-              <p>매도인과 매수인 계산 영역을 좌우로 분리해 입력값, 큰 요약, 상세내역, 공식·법규 설명을 한 번에 확인할 수 있도록 구성했습니다. 중개사 실무 상담용 추정치이며 최종 세액 확정 자료는 아닙니다.</p>
             </div>
-            <div class="badge">세금 · 부대비용 · 초기자금 통합 체크</div>
           </div>
-          <img class="tax-hero-img" src="https://www.maslowkorea.site/taxcheckup/assets/tax-checkup-illustration.png" alt="세금·거래비용 체크업 일러스트" />
-        </div>
-
-        <div class="hero-pills">
-          <div class="hero-pill"><b>매도인</b> 양도세 · 지방소득세</div>
-          <div class="hero-pill"><b>매수인</b> 취득세 · 부가세 · 초기 필요자금</div>
-          <div class="hero-pill"><b>반영사항</b> 중개보수 부가세 포함</div>
+          <img class="tax-hero-img" src="https://www.maslowkorea.site/taxcheckup/assets/tax-checkup-illustration.png" alt="" />
         </div>
 
         <div class="top-actions">

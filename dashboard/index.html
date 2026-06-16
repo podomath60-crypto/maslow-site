@@ -145,24 +145,6 @@
       transform-origin:center;
       flex:0 0 auto;
     }
-    .brand-icon-taxcheckup{
-      width:63px;
-      flex:0 0 63px;
-      height:42px;
-      border-radius:14px;
-      background:#183a8f;
-      border-color:#183a8f;
-      color:#fff;
-      font-size:18px;
-      font-weight:1000;
-      letter-spacing:-0.03em;
-      line-height:1;
-      font-family:Arial,Helvetica,sans-serif;
-      box-shadow:0 14px 30px rgba(24,58,143,.20);
-    }
-    .brand-icon-taxcheckup:hover{
-      box-shadow:0 18px 34px rgba(24,58,143,.28);
-    }
     .brand-icon-naverblog{
       background:#19ce60;
       border-color:#19ce60;
@@ -926,25 +908,7 @@
         object-fit:cover;
         border-radius:11px;
       }
-      .brand-icon-taxcheckup{
-      width:63px;
-      flex:0 0 63px;
-      height:42px;
-      border-radius:14px;
-      background:#183a8f;
-      border-color:#183a8f;
-      color:#fff;
-      font-size:18px;
-      font-weight:1000;
-      letter-spacing:-0.03em;
-      line-height:1;
-      font-family:Arial,Helvetica,sans-serif;
-      box-shadow:0 14px 30px rgba(24,58,143,.20);
-    }
-    .brand-icon-taxcheckup:hover{
-      box-shadow:0 18px 34px rgba(24,58,143,.28);
-    }
-    .brand-icon-naverblog{
+      .brand-icon-naverblog{
         display:none;
       }
       .search-box{width:min(220px,100%);min-height:54px;padding:0 16px}
@@ -1618,6 +1582,10 @@
     .calendar-detail-card{padding:14px;border-radius:20px}
     .calendar-detail-date{font-size:18px}
   }
+
+      @media(max-width:900px){
+      .brand-icon-taxcheckup{display:none}
+    }
 
   </style>
   <link rel="icon" href="/favicon.ico?v=20260616">

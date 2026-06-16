@@ -802,7 +802,8 @@
 
 <h3>5. 법인 비사업용 토지인 경우</h3>
 <p>자산 구분을 <b>비사업용 토지</b>로 선택하면, 일반 법인세와 법인지방소득세 외에 <b>토지 등 양도소득에 대한 추가 법인세 10%</b>를 별도로 반영합니다.</p>
-<p><b>추가 법인세 = 법인 처분손익 × 10%</b>로 간이 계산합니다. 실제 비사업용 토지 해당 여부는 법인세법상 사용기준과 예외규정을 확인해야 합니다.</p>
+<p>이 계산기에서는 상담용으로 <b>추가 법인세 기준금액 = 양도가액 - 법인 장부가액</b>으로 보고, <b>추가 법인세 = 추가 법인세 기준금액 × 10%</b>로 간이 계산합니다. 일반 법인세 과세표준으로 쓰는 처분손익과 달리, 추가 법인세 기준금액은 양도 관련 비용을 차감하지 않고 별도로 표시합니다.</p>
+<p>실제 비사업용 토지 해당 여부와 추가 법인세 적용 여부는 법인의 실제 사용기간, 업종, 임대 여부, 유휴기간, 예외규정 등에 따라 달라질 수 있으므로 세무 검토가 필요합니다.</p>
 
 <h3>6. 이 계산기의 한계</h3>
 <ul>
@@ -858,6 +859,7 @@
     let transferTax = 0;
     let localIncomeTax = 0;
     let additionalCorpLandTax = 0;
+    let corpLandAdditionalBase = 0;
     let rateText = '';
     let sellerTotal = 0;
     let sellerModeText = '';
@@ -869,12 +871,13 @@
       const corp = corporateTax(taxBase);
       transferTax = corp.tax;
       localIncomeTax = transferTax * .10;
-      additionalCorpLandTax = nonbiz ? taxBase * .10 : 0;
+      corpLandAdditionalBase = Math.max(0, sell - corpBookValue);
+      additionalCorpLandTax = nonbiz ? corpLandAdditionalBase * .10 : 0;
       sellerTotal = transferTax + localIncomeTax + additionalCorpLandTax;
       sellerModeText = '법인 보유';
       rateText = taxBase <= 0
         ? '법인 처분손익 0원'
-        : `법인세율 ${(corp.rate*100).toFixed(0)}%, 누진공제 ${fmtShort(corp.deduction)}${nonbiz ? ', 비사업용 토지 추가 법인세 10%' : ''}`;
+        : `법인세율 ${(corp.rate*100).toFixed(0)}%, 누진공제 ${fmtShort(corp.deduction)}${nonbiz ? ', 비사업용 토지 추가 법인세 10% 별도' : ''}`;
     } else {
       longRate = ($('applyLongDeduction').checked && hp.years >= 3) ? Math.min(.30, hp.years * .02) : 0;
       longDeduction = Math.max(0, gain) * longRate;
@@ -940,6 +943,45 @@
     $('sellerLocalIncomeTax').textContent = fmtShort(localIncomeTax);
     $('sellerRateNote').textContent = isCorp ? `${rateText}, 법인지방소득세는 법인세의 10%${additionalCorpLandTax > 0 ? `, 토지 등 양도소득 추가 법인세 ${fmtShort(additionalCorpLandTax)} 별도 반영` : ''}` : rateText;
 
+    const sellerSummaryCard = document.querySelector('#sellerSummaryCapture .seller-card');
+    if(sellerSummaryCard){
+      const sellerSummarySub = sellerSummaryCard.querySelector('.party-head .sub');
+      const sellerSummarySectionTitle = sellerSummaryCard.querySelector('.party-section-title.seller-title');
+      if(sellerSummarySub){
+        sellerSummarySub.textContent = isCorp
+          ? (additionalCorpLandTax > 0 ? '법인세 + 법인지방소득세 + 토지 등 양도소득 추가 법인세' : '법인세 + 법인지방소득세')
+          : '양도소득세 + 지방소득세';
+      }
+      if(sellerSummarySectionTitle){
+        sellerSummarySectionTitle.textContent = isCorp ? '법인 처분손익 산출내역' : '매도인 양도세 산출내역';
+      }
+      const setSummaryLabel = (id, label, html=false) => {
+        const target = $(id);
+        if(!target || !target.parentElement) return;
+        const span = target.parentElement.querySelector('span');
+        if(!span) return;
+        if(html) span.innerHTML = label;
+        else span.textContent = label;
+      };
+      setSummaryLabel('sellerTransferTax', isCorp ? '예상 법인세' : '예상 양도세');
+      setSummaryLabel('sellerLocalIncomeTax', isCorp ? '법인지방소득세' : '지방소득세');
+      setSummaryLabel('gain', isCorp ? '법인 처분손익' : '양도차익');
+      setSummaryLabel('longDeduction', isCorp ? '장기보유특별공제' : '장기보유특별공제');
+      setSummaryLabel('taxBase', isCorp ? '법인세 과세표준' : '양도세 과세표준');
+      const gainNote = $('gain')?.parentElement?.nextElementSibling;
+      if(gainNote){
+        gainNote.textContent = isCorp
+          ? '법인 계산: 양도가 - 법인 장부가액 - 양도 관련 비용'
+          : '매도인 계산: 양도가 - 취득가 - 양도 필요경비';
+      }
+      const taxBaseNote = $('taxBase')?.parentElement?.nextElementSibling;
+      if(taxBaseNote){
+        taxBaseNote.textContent = isCorp
+          ? '법인 계산: 처분손익 기준, 장기보유특별공제·기본공제 미적용'
+          : '매도인 계산: 양도차익 - 장특공제 - 기본공제 250만원';
+      }
+    }
+
     $('buyerAcqTax').textContent = fmtShort(acqTax);
     $('buyerRuralTax').textContent = fmtShort(ruralTax);
     $('buyerEduTax').textContent = fmtShort(eduTax);
@@ -982,7 +1024,6 @@
     const sellerBaseLabel = isCorp ? '법인세 과세표준<br><small>(처분손익 기준)</small>' : '양도세 과세표준';
 
     $('sellerDetailTable').innerHTML = `
-      <tr><th>매도인 항목</th><th>계산값</th></tr>
       <tr><td>매도인 구분</td><td>${sellerModeText}</td></tr>
       <tr><td>양도가액</td><td>${fmt(sell)}</td></tr>
       <tr><td>${sellerBasisLabel}</td><td>${fmt(sellerBasis)}</td></tr>
@@ -1000,11 +1041,11 @@
       <tr><td>적용 세율</td><td>${rateText}</td></tr>
       <tr><td>${sellerTaxLabel}</td><td>${fmt(transferTax)}</td></tr>
       <tr><td>${localTaxLabel}</td><td>${fmt(localIncomeTax)}</td></tr>
-      ${isCorp && nonbiz ? `<tr><td>토지 등 양도소득 추가 법인세</td><td>${fmt(additionalCorpLandTax)} <small>(처분손익 × 10%)</small></td></tr>` : ''}
+      ${isCorp && nonbiz ? `<tr><td>추가 법인세 기준금액</td><td>${fmt(corpLandAdditionalBase)} <small>(양도가액 - 법인 장부가액)</small></td></tr>` : ''}
+      ${isCorp && nonbiz ? `<tr><td>토지 등 양도소득 추가 법인세</td><td>${fmt(additionalCorpLandTax)} <small>(추가 법인세 기준금액 × 10%)</small></td></tr>` : ''}
       <tr><td><b>매도인 총 예상 부담세액</b></td><td><b>${fmt(sellerTotal)}</b></td></tr>`;
 
     $('buyerDetailTable').innerHTML = `
-      <tr><th>매수인 항목</th><th>계산값</th></tr>
       <tr><td>취득세 과세표준 간이값<br><small>(부가세 제외 매매가액 기준)</small></td><td>${fmt(acqBase)}</td></tr>
       <tr><td>토지분 가액</td><td>${fmt(landValue)}</td></tr>
       <tr><td>건물분 가액</td><td>${fmt(buildingValue)}</td></tr>
@@ -1022,8 +1063,13 @@
       <tr><td><b>향후 취득원가 반영 가능액</b></td><td><b>${fmt(buyerCostBasis)}</b></td></tr>`;
 
     $('printSellerTotal').textContent = fmt(sellerTotal);
+    const printSellerSub = document.querySelector('#printSellerPage .print-total .sub');
+    if(printSellerSub){
+      printSellerSub.textContent = isCorp
+        ? (additionalCorpLandTax > 0 ? '법인세 + 법인지방소득세 + 토지 등 양도소득 추가 법인세' : '법인세 + 법인지방소득세')
+        : '양도소득세 + 지방소득세';
+    }
     $('printSellerSummary').innerHTML = `
-      <tr><th>항목</th><th>계산값</th></tr>
       <tr><td>매도인 구분</td><td>${sellerModeText}</td></tr>
       <tr><td>취득일 ~ 양도일</td><td>${buyDate} ~ ${sellDate} / 보유기간 ${hp.years}년 ${hp.months}개월</td></tr>
       <tr><td>양도가액</td><td>${fmt(sell)}</td></tr>
@@ -1038,12 +1084,12 @@
       <tr><td>적용 세율</td><td>${rateText}</td></tr>
       <tr><td>${sellerTaxLabel}</td><td>${fmt(transferTax)}</td></tr>
       <tr><td>${localTaxLabel}</td><td>${fmt(localIncomeTax)}</td></tr>
-      ${isCorp && nonbiz ? `<tr><td>토지 등 양도소득 추가 법인세</td><td>${fmt(additionalCorpLandTax)} (처분손익 × 10%)</td></tr>` : ''}
+      ${isCorp && nonbiz ? `<tr><td>추가 법인세 기준금액</td><td>${fmt(corpLandAdditionalBase)} (양도가액 - 법인 장부가액)</td></tr>` : ''}
+      ${isCorp && nonbiz ? `<tr><td>토지 등 양도소득 추가 법인세</td><td>${fmt(additionalCorpLandTax)} (추가 법인세 기준금액 × 10%)</td></tr>` : ''}
       <tr><td><b>매도인 총 예상 부담세액</b></td><td><b>${fmt(sellerTotal)}</b></td></tr>`;
 
     $('printBuyerTotal').textContent = fmt(buyerTotal);
     $('printBuyerSummary').innerHTML = `
-      <tr><th>항목</th><th>계산값</th></tr>
       <tr><td>취득세 과세표준 간이값<br><small>(부가세 제외 매매가액 기준)</small></td><td>${fmt(acqBase)}</td></tr>
       <tr><td>토지분 / 건물분</td><td>${fmt(landValue)} / ${fmt(buildingValue)}</td></tr>
       <tr><td>취득세</td><td>${fmt(acqTax)} (4.0%)</td></tr>
@@ -1112,7 +1158,7 @@
           <p><b>법인지방소득세</b>는 계산된 법인세의 10%로 간이 표시합니다.</p>
           <h3>사업용 토지와 비사업용 토지</h3>
           <p>법인 사업용 토지는 일반 법인세와 법인지방소득세 구조로 산정합니다. 자산 구분을 비사업용 토지로 선택하면 <b>토지 등 양도소득에 대한 추가 법인세 10%</b>를 별도 반영합니다.</p>
-          <p><b>추가 법인세 = 법인 처분손익 × 10%</b>로 간이 계산합니다.</p>
+          <p>이 계산기에서는 상담용으로 <b>추가 법인세 기준금액 = 양도가액 - 법인 장부가액</b>으로 보고, <b>추가 법인세 = 추가 법인세 기준금액 × 10%</b>로 간이 계산합니다. 일반 법인세 과세표준으로 쓰는 처분손익과 달리, 추가 법인세 기준금액은 양도 관련 비용을 차감하지 않고 별도로 표시합니다.</p>
           <div class="print-warn"><b>법인 매도인 주의:</b> 장부가액, 감가상각, 사업용·비사업용 토지 판단, 이월결손금, 세액감면 여부에 따라 실제 법인세가 달라질 수 있으므로 최종 안내 전 세무사 확인이 필요합니다.</div>`;
   }
 

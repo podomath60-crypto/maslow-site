@@ -48,11 +48,6 @@
     .law-modal-section{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:16px 18px;margin-bottom:14px}
     .law-modal-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px;padding:14px 16px;color:#1e3a8a}
     .law-modal-note strong{font-weight:900}
-    .law-modal-danger-pulse{list-style:none;margin-top:10px;padding:14px 16px;border-radius:16px;background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);border:2px solid #ef4444;color:#dc2626;font-weight:950;text-shadow:0 0 8px rgba(239,68,68,.55),0 0 18px rgba(239,68,68,.35);box-shadow:0 0 0 rgba(239,68,68,0),0 0 22px rgba(239,68,68,.28),inset 0 0 12px rgba(255,255,255,.55);animation:lawDangerBlink 1s steps(2,end) infinite, lawDangerGlow 1.8s ease-in-out infinite, lawDangerSway 2.4s ease-in-out infinite}
-    .law-modal-danger-pulse::before{content:"🚨 ";display:inline}
-    @keyframes lawDangerBlink{0%,47%{opacity:1}50%,57%{opacity:.3}60%,100%{opacity:1}}
-    @keyframes lawDangerGlow{0%,100%{transform:scale(1);box-shadow:0 0 0 rgba(239,68,68,0),0 0 18px rgba(239,68,68,.22),inset 0 0 10px rgba(255,255,255,.45)}50%{transform:scale(1.02);box-shadow:0 0 10px rgba(239,68,68,.45),0 0 30px rgba(239,68,68,.5),inset 0 0 16px rgba(255,255,255,.72)}}
-    @keyframes lawDangerSway{0%,100%{translate:0 0}25%{translate:1px 0}50%{translate:-1px 0}75%{translate:1px 0}}
     .check-mark{display:inline-block;margin-left:8px;font-size:.9em;vertical-align:baseline}
     .top-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 0;padding-top:16px;border-top:1px solid #e5e7eb}
     button{border:0;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:800;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease}
@@ -478,7 +473,7 @@
               <li>매수인은 <b>지방세법 + 농어촌특별세법 + 지방교육세법</b> 중심</li>
               <li>건물분 부가세와 환급 가능 여부는 <b>부가가치세법</b> 중심</li>
               <li>중개보수는 <b>공인중개사법</b> 기준</li>
-              <li class="law-modal-danger-pulse">실제 신고 전에는 비사업용 토지 판정, 감면·중과, 법인 장부가액, 감가상각, 토지·건물 안분, 부가세 공제 가능 여부를 반드시 확인해야 합니다.</li>
+              <li>실제 신고 전에는 비사업용 토지 판정, 감면·중과, 법인 장부가액, 감가상각, 토지·건물 안분, 부가세 공제 가능 여부를 반드시 확인해야 합니다.</li>
             </ul>
           </div>
         </div>
@@ -1320,11 +1315,26 @@
           <ul>
             <li>매도 중개보수는 <b>양도가액 × 0.9%</b>로 자동 계산하며 양도비 성격으로 차감합니다.</li>
             <li>기타 양도 필요경비는 실제 지출했고 증빙이 있는 비용만 입력합니다.</li>
+            <li>취득 당시 중개보수, 취득세·등기비용, 자본적 지출, 양도 관련 세무사·법무사 비용 등은 증빙과 성격에 따라 필요경비 반영 여부가 달라질 수 있습니다.</li>
           </ul>
           <h3>장기보유특별공제·과세표준</h3>
           <p>일반 토지·건물 기준 3년 이상 보유 시 6%, 이후 1년마다 2%씩, 15년 이상 최대 30%를 간이 적용합니다.</p>
           <p><b>과세표준 = 양도차익 - 장기보유특별공제 - 기본공제 250만원</b>입니다. 지방소득세는 양도세의 10%입니다.</p>
-          <div class="print-warn"><b>개인 매도인 주의:</b> 비사업용 토지, 농지·자경, 감면·중과 여부에 따라 실제 세액이 달라질 수 있습니다.</div>`;
+          <h3>적용 법령 요약</h3>
+          <ul>
+            <li><b>소득세법상 양도소득세 체계</b>에 따라 양도가액, 취득가액, 필요경비, 장기보유특별공제, 기본공제, 양도소득세율을 검토합니다.</li>
+            <li><b>소득세법상 필요경비 규정</b>에 따라 실제 지출했고 증빙이 있는 취득·양도 관련 비용만 차감 대상이 될 수 있습니다.</li>
+            <li><b>소득세법상 장기보유특별공제 규정</b>에 따라 일반 토지·건물은 보유기간별 공제율을 적용할 수 있으나, 자산 종류와 사용 사실관계에 따라 달라질 수 있습니다.</li>
+            <li><b>비사업용 토지</b>는 별도 판정이 필요하며, 해당되면 기본세율에 추가 세율이 붙을 수 있습니다.</li>
+            <li><b>지방소득세</b>는 산출된 양도소득세에 별도로 붙는 세금으로, 이 계산기에서는 상담용으로 양도소득세의 10%를 표시합니다.</li>
+          </ul>
+          <h3>확인해야 할 위험 변수</h3>
+          <ul>
+            <li>취득가액과 필요경비 증빙이 부족하면 실제 인정 금액이 달라질 수 있습니다.</li>
+            <li>농지, 임야, 잡종지, 나대지, 장기간 미사용 토지는 비사업용 토지 판단이 필요합니다.</li>
+            <li>감면·중과, 특수관계 거래, 부담부증여, 재개발·수용, 자경농지 여부가 있으면 별도 검토가 필요합니다.</li>
+          </ul>
+          <div class="print-warn"><b>개인 매도인 최종 확인:</b> 본 계산은 신고용 세액 산출이 아니라 상담용 추정입니다. 실제 신고 전에는 필요경비 증빙, 비사업용 토지 여부, 감면·중과, 보유·사용 사실관계, 농지 자경 여부, 특수거래 여부를 반드시 세무사에게 확인해야 합니다.</div>`;
   }
 
   function sellerCorporatePrintFormulaHtml(){
@@ -1338,7 +1348,7 @@
           <ul>
             <li><b>법인 장부가액</b>: 법인 회계장부상 토지·건물의 현재 장부금액입니다. 개인 취득가액과 다를 수 있습니다.</li>
             <li><b>양도 관련 비용</b>: 매도 중개보수, 중개보수 부가세, 법무사비용, 기타 양도 직접비용을 반영합니다.</li>
-            <li><b>감가상각</b>: 건물은 감가상각 누계액 때문에 장부가액이 취득가액보다 낮아질 수 있습니다.</li>
+            <li><b>감가상각</b>: 건물은 감가상각 누계액 때문에 장부가액이 취득가액보다 낮아질 수 있고, 그만큼 처분이익이 커질 수 있습니다.</li>
           </ul>
           <h3>법인세·법인지방소득세</h3>
           <p>이 계산기는 상담용으로 법인 처분손익이 0원 초과인 경우 그 금액을 법인세 과세표준으로 보고 일반 법인세율을 간이 적용합니다.</p>
@@ -1352,7 +1362,21 @@
           <h3>사업용 토지와 비사업용 토지</h3>
           <p>법인 사업용 토지는 일반 법인세와 법인지방소득세 구조로 산정합니다. 자산 구분을 비사업용 토지로 선택하면 <b>토지 등 양도소득에 대한 추가 법인세 10%</b>를 별도 반영합니다.</p>
           <p>이 계산기에서는 상담용으로 <b>추가 법인세 기준금액 = 양도가액 - 법인 장부가액</b>으로 보고, <b>추가 법인세 = 추가 법인세 기준금액 × 10%</b>로 간이 계산합니다. 일반 법인세 과세표준으로 쓰는 처분손익과 달리, 추가 법인세 기준금액은 양도 관련 비용을 차감하지 않고 별도로 표시합니다.</p>
-          <div class="print-warn"><b>법인 매도인 주의:</b> 장부가액, 감가상각, 사업용·비사업용 토지 판단, 이월결손금, 세액감면 여부에 따라 실제 법인세가 달라질 수 있으므로 최종 안내 전 세무사 확인이 필요합니다.</div>`;
+          <h3>적용 법령 요약</h3>
+          <ul>
+            <li><b>법인세법상 각 사업연도 소득 계산 구조</b>에 따라 부동산 매각 손익은 법인의 익금·손금 계산에 반영됩니다.</li>
+            <li><b>법인세법상 법인세율</b>은 과세표준 구간별 누진세율 구조이며, 이 계산기는 처분손익만 단독 과세표준처럼 보아 간이 적용합니다.</li>
+            <li><b>법인 보유 부동산</b>에는 개인 양도세의 장기보유특별공제와 기본공제 250만 원을 적용하지 않습니다.</li>
+            <li><b>법인 비사업용 토지</b>에 해당하면 일반 법인세 외에 토지 등 양도소득에 대한 추가 법인세가 별도로 적용될 수 있습니다.</li>
+            <li><b>법인지방소득세</b>는 법인세에 대응해 별도로 부담하는 지방세이며, 이 계산기에서는 상담용으로 법인세의 10%를 표시합니다.</li>
+          </ul>
+          <h3>확인해야 할 위험 변수</h3>
+          <ul>
+            <li>법인 장부가액은 취득가액과 다를 수 있으며, 건물 감가상각 누계액 때문에 처분이익이 커질 수 있습니다.</li>
+            <li>실제 법인세는 해당 부동산 처분손익만이 아니라 법인의 다른 영업손익, 이월결손금, 세액공제·감면과 합산해 계산합니다.</li>
+            <li>업무무관자산, 특수관계 거래, 저가·고가 양도, 비사업용 토지 해당 여부는 별도 세무 판단이 필요합니다.</li>
+          </ul>
+          <div class="print-warn"><b>법인 매도인 최종 확인:</b> 본 계산은 법인 전체 법인세 신고액을 확정하는 계산이 아니라 부동산 처분에 따른 상담용 추정입니다. 실제 신고 전에는 장부가액, 감가상각, 사업용·비사업용 토지 판단, 이월결손금, 세액공제·감면, 특수관계 거래 여부를 반드시 세무사에게 확인해야 합니다.</div>`;
   }
 
   function renderSellerPrintFormula(){

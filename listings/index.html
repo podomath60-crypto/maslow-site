@@ -1103,15 +1103,9 @@
     raw = raw || {};
     var basic = raw.basic || {};
     var factory = raw.factory || {};
-    var summarySource = Array.isArray(raw.summary)
-      ? raw.summary
-      : [raw.summary1, raw.summary2, raw.summary3];
-    var summary = summarySource
-      .map(function(v){ return String(v == null ? '' : v); })
-      .join('\n')
-      .split(/\r?\n+/)
-      .map(function(v){ return v.trim(); })
-      .filter(Boolean);
+    var summary = Array.isArray(raw.summary)
+      ? raw.summary.filter(Boolean)
+      : [raw.summary1, raw.summary2, raw.summary3].filter(Boolean);
     var pricePlain = buildPricePlain_(raw, basic);
     return {
       listingNumber: firstNonEmpty(raw.listingNumber, raw.basic && raw.basic.listingNumber),

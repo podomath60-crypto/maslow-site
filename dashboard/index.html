@@ -4028,6 +4028,54 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       return '<button class="status-chip ' + (visible ? 'visible' : 'hidden') + '" type="button" title="공개 상태 변경" onclick="event.stopPropagation(); togglePropertyStatus(\'' + encodeURIComponent(item.listingNumber || '') + '\', \'' + nextStatus + '\')">' + (visible ? '공개' : '비공개') + '</button>';
     }
 
+
+    const SAFE_EDIT_SCROLL_COOLDOWN_MS = 300;
+    const SAFE_EDIT_SCROLL_DELTA_PX = 6;
+    let safeEditLastScrollAt = 0;
+    let safeEditPointerState = null;
+
+    function updateSafeEditLastScroll(){
+      safeEditLastScrollAt = Date.now();
+    }
+
+    window.addEventListener('scroll', updateSafeEditLastScroll, { passive: true });
+
+    function getSafeEditEventListingNumber(event){
+      const target = event && event.target;
+      const card = target && target.closest ? target.closest('.property-card') : null;
+      return normalizeListingKey(card ? card.getAttribute('data-listing-number') : '');
+    }
+
+    function safeEditItemPointerDown(listingNumber, event){
+      const key = normalizeListingKey(listingNumber);
+      safeEditPointerState = {
+        listingNumber: key,
+        targetListingNumber: getSafeEditEventListingNumber(event) || key,
+        scrollY: getDashboardScrollY(),
+        time: Date.now()
+      };
+    }
+
+    function safeEditItemClick(listingNumber, event){
+      if(event && event.stopPropagation) event.stopPropagation();
+      if(event && event.preventDefault) event.preventDefault();
+
+      const key = normalizeListingKey(listingNumber);
+      const now = Date.now();
+      const currentScrollY = getDashboardScrollY();
+      const currentTargetKey = getSafeEditEventListingNumber(event) || key;
+      const pointerState = safeEditPointerState;
+
+      if(now - safeEditLastScrollAt < SAFE_EDIT_SCROLL_COOLDOWN_MS) return false;
+      if(!pointerState || pointerState.listingNumber !== key) return false;
+      if(pointerState.targetListingNumber && pointerState.targetListingNumber !== key) return false;
+      if(currentTargetKey && currentTargetKey !== key) return false;
+      if(Math.abs(currentScrollY - pointerState.scrollY) > SAFE_EDIT_SCROLL_DELTA_PX) return false;
+
+      editItem(key);
+      return false;
+    }
+
     function buildCard(item){
       const thumb = item.heroUrl ? "background-image:url('" + escapeHtml(item.heroUrl) + "')" : '';
       const channelHtml = CHANNELS.map(function(channel){
@@ -4051,10 +4099,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         +     '></div>'
         +     '<div class="card-content">'
         +       '<div class="title-row">'
-        +         '<h3 class="card-title property-edit-link" onclick="event.stopPropagation(); editItem(\'' + encodeURIComponent(item.listingNumber || '') + '\')">' + escapeHtml(item.title || '제목 없음') + '</h3>'
+        +         '<h3 class="card-title property-edit-link" onpointerdown="safeEditItemPointerDown(\'' + encodeURIComponent(item.listingNumber || '') + '\', event)" onclick="return safeEditItemClick(\'' + encodeURIComponent(item.listingNumber || '') + '\', event)">' + escapeHtml(item.title || '제목 없음') + '</h3>'
         +         buildStatusChip(item)
         +       '</div>'
-        +       '<div class="card-address property-edit-link" onclick="event.stopPropagation(); editItem(\'' + encodeURIComponent(item.listingNumber || '') + '\')">' + escapeHtml(item.address || '-') + '</div>'
+        +       '<div class="card-address property-edit-link" onpointerdown="safeEditItemPointerDown(\'' + encodeURIComponent(item.listingNumber || '') + '\', event)" onclick="return safeEditItemClick(\'' + encodeURIComponent(item.listingNumber || '') + '\', event)">' + escapeHtml(item.address || '-') + '</div>'
         +       '<div class="card-deal-price">' + formatDealPrice(item) + '</div>'
         +       '<div class="card-meta"><strong>' + escapeHtml(item.listingNumber || '-') + '</strong><br>' + formatUpdatedMeta(item) + '</div>'
         +     '</div>'
@@ -4497,6 +4545,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       saveDashboardReturnState(decodedListingNumber);
       location.href = CONFIG.adminEditUrl + '?listingNumber=' + encodeURIComponent(decodedListingNumber);
     };
+    window.safeEditItemPointerDown = safeEditItemPointerDown;
+    window.safeEditItemClick = safeEditItemClick;
 
     window.markVisible = function(listingNumber){
       setPropertyStatus(listingNumber, 'visible');

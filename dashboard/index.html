@@ -2099,6 +2099,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     let dashboardViewStateRestored = false;
     let dashboardScrollRestoreY = null;
     let dashboardScrollSaveTimer = null;
+    let dashboardLastUserScrollAt = 0;
+    let dashboardProgrammaticScrollUntil = 0;
     let dashboardScrollRestoreTimer = null;
 
     const dashboardRoot = document.getElementById('dashboardRoot');
@@ -3211,11 +3213,13 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         clearTimeout(dashboardScrollRestoreTimer);
         dashboardScrollRestoreTimer = null;
       }
+      dashboardProgrammaticScrollUntil = Date.now() + 650;
       requestAnimationFrame(function(){
         try{ window.scrollTo(0, y); }catch(e){}
         dashboardScrollRestoreTimer = window.setTimeout(function(){
           try{ window.scrollTo(0, y); }catch(e){}
           dashboardScrollRestoreTimer = null;
+          dashboardProgrammaticScrollUntil = Date.now() + 120;
         }, 140);
       });
     }
@@ -3747,6 +3751,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const silent = !!options.silent;
       const preserveView = options.preserveView !== false;
       const restoreScroll = !!options.restoreScroll;
+      const fetchStartedAt = Date.now();
       const scrollYBeforeFetch = window.scrollY || window.pageYOffset || dashboardScrollRestoreY || 0;
 
       if(!preserveView){
@@ -3802,10 +3807,13 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         applyCalendarOverviewData(calendarData, monthKey, calendarResult.loadedAll !== false);
 
         renderDashboard();
-        if(restoreScroll){
+        const userScrolledDuringFetch = dashboardLastUserScrollAt > fetchStartedAt;
+        if(restoreScroll && !userScrolledDuringFetch){
           scheduleDashboardScrollRestore(dashboardScrollRestoreY != null ? dashboardScrollRestoreY : scrollYBeforeFetch);
+          saveDashboardViewState({ scrollY: dashboardScrollRestoreY != null ? dashboardScrollRestoreY : scrollYBeforeFetch });
+        }else{
+          saveDashboardViewState({ scrollY: window.scrollY || window.pageYOffset || 0 });
         }
-        saveDashboardViewState({ scrollY: restoreScroll ? (dashboardScrollRestoreY != null ? dashboardScrollRestoreY : scrollYBeforeFetch) : (window.scrollY || window.pageYOffset || 0) });
         try{ sessionStorage.removeItem(CONFIG.dashboardReturnFlagKey); }catch(e){}
       })
       .catch(function(err){
@@ -4436,6 +4444,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     }
 
     window.addEventListener('scroll', function(){
+      const now = Date.now();
+      if(now < dashboardProgrammaticScrollUntil) return;
+      dashboardLastUserScrollAt = now;
       if(dashboardScrollSaveTimer) return;
       dashboardScrollSaveTimer = window.setTimeout(function(){
         dashboardScrollSaveTimer = null;

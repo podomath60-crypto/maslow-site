@@ -2173,6 +2173,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     let dashboardBjdongCodesPromise = null;
     let channelModalListingNumber = '';
     let channelModalChannelKey = '';
+    let channelModalHistoryArmed = false;
 
     let currentLoadingText = '자료를 가져오고 있어요!';
     let loadingTypingTimer = null;
@@ -2257,6 +2258,11 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
     function isPropertyMemoModalOpen(){
       return !!(propertyMemoModal && propertyMemoModal.classList.contains('show'));
+    }
+
+    function isChannelModalOpen(){
+      const modal = document.getElementById('channelModal');
+      return !!(modal && modal.classList.contains('show'));
     }
 
     function startCalendarInlineLoading(){
@@ -3564,9 +3570,13 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         radio.checked = (state.done && radio.value === 'done') || (!state.done && radio.value === 'notYet');
       });
       if(modal) modal.classList.add('show');
+      if(!channelModalHistoryArmed){
+        history.pushState({ channelModal: true }, '');
+        channelModalHistoryArmed = true;
+      }
     }
 
-    function closeChannelModal(){
+    function closeChannelModal(fromPopstate){
       const modal = document.getElementById('channelModal');
       const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
       const naverBlogCreateBox = document.getElementById('naverBlogCreateBox');
@@ -3575,6 +3585,12 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(naverBlogCreateBox) naverBlogCreateBox.style.display = 'none';
       channelModalListingNumber = '';
       channelModalChannelKey = '';
+      if(channelModalHistoryArmed){
+        channelModalHistoryArmed = false;
+        if(!fromPopstate){
+          history.back();
+        }
+      }
     }
 
     function updatePropertyChannel(listingNumber, channelKey, done, links){
@@ -4838,6 +4854,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     window.addEventListener('popstate', function(){
       if(isPropertyMemoModalOpen()){
         closePropertyMemoModal(true);
+        return;
+      }
+      if(isChannelModalOpen()){
+        closeChannelModal(true);
         return;
       }
       if(isCalendarModalOpen()){

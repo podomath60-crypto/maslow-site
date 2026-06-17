@@ -2169,6 +2169,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     let dashboardReturnState = null;
     let dashboardRestoredFromReturnState = false;
     let dashboardReturnSearchTextRestored = false;
+    let dashboardReturnedCardRefreshInFlight = false;
     let dashboardBjdongCodesPromise = null;
     let channelModalListingNumber = '';
     let channelModalChannelKey = '';
@@ -2236,6 +2237,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     const propertyMemoModal = document.getElementById('propertyMemoModal');
     const propertyMemoTextarea = document.getElementById('propertyMemoTextarea');
     let propertyMemoEditingItem = null;
+    let propertyMemoHistoryArmed = false;
 
     const propertyCopyConfirmModal = document.getElementById('propertyCopyConfirmModal');
     const propertyCopyListingNumberText = document.getElementById('propertyCopyListingNumberText');
@@ -2251,6 +2253,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
     function isCalendarModalOpen(){
       return !!(calendarModal && calendarModal.classList.contains('show'));
+    }
+
+    function isPropertyMemoModalOpen(){
+      return !!(propertyMemoModal && propertyMemoModal.classList.contains('show'));
     }
 
     function startCalendarInlineLoading(){
@@ -3909,11 +3915,14 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     }
 
     function refreshReturnedEditedCardIfNeeded(){
+      if(dashboardReturnedCardRefreshInFlight) return;
+
       const request = readDashboardSaveRequest();
       const returnState = dashboardReturnState || readDashboardReturnState();
       const targetListingNumber = normalizeListingKey((request && request.listingNumber) || (returnState && returnState.listingNumber));
       if(!targetListingNumber || !request || normalizeListingKey(request.listingNumber) !== targetListingNumber) return;
 
+      dashboardReturnedCardRefreshInFlight = true;
       setCardRefreshing(targetListingNumber, true);
       fetchLatestPropertyListOnly()
         .then(function(data){
@@ -3931,7 +3940,18 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         .catch(function(err){
           console.error(err);
           setCardRefreshing(targetListingNumber, false);
+        })
+        .finally(function(){
+          dashboardReturnedCardRefreshInFlight = false;
         });
+    }
+
+    function checkReturnedEditedCardOnPageshow(){
+      if(!localStorage.getItem(CONFIG.authStorageKey)) return;
+      if(!readDashboardSaveRequest()) return;
+      window.setTimeout(function(){
+        refreshReturnedEditedCardIfNeeded();
+      }, 0);
     }
 
     function parseDateValue(value){
@@ -4585,6 +4605,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       propertyMemoEditingItem = item;
       if(propertyMemoTextarea) propertyMemoTextarea.value = text(item.memo);
       if(propertyMemoModal) propertyMemoModal.classList.add('show');
+      if(!propertyMemoHistoryArmed){
+        history.pushState({ propertyMemoModal: true }, '');
+        propertyMemoHistoryArmed = true;
+      }
       setTimeout(function(){
         try{
           propertyMemoTextarea.focus();
@@ -4593,9 +4617,15 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       }, 40);
     }
 
-    function closePropertyMemoModal(){
+    function closePropertyMemoModal(fromPopstate){
       if(propertyMemoModal) propertyMemoModal.classList.remove('show');
       propertyMemoEditingItem = null;
+      if(propertyMemoHistoryArmed){
+        propertyMemoHistoryArmed = false;
+        if(!fromPopstate){
+          history.back();
+        }
+      }
     }
 
     async function savePropertyMemo(){
@@ -4741,6 +4771,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       }
     }
 
+    window.addEventListener('pageshow', function(){
+      checkReturnedEditedCardOnPageshow();
+    });
+
     window.openPreview = function(listingNumber){
       startLoadingOverlay();
       const url = buildPreviewUrl(listingNumber);
@@ -4802,6 +4836,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     });
 
     window.addEventListener('popstate', function(){
+      if(isPropertyMemoModalOpen()){
+        closePropertyMemoModal(true);
+        return;
+      }
       if(isCalendarModalOpen()){
         closeCalendarModal(true);
       }

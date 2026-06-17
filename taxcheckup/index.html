@@ -48,6 +48,21 @@
     .law-modal-section{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:16px 18px;margin-bottom:14px}
     .law-modal-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px;padding:14px 16px;color:#1e3a8a}
     .law-modal-note strong{font-weight:900}
+    .tax-scope-alert-trigger{position:relative;display:inline-flex;align-items:center;justify-content:center;width:67px;height:27px;min-width:0;min-height:0;margin-left:auto;padding:0;box-sizing:border-box;border:1px solid rgba(120,72,30,.58);border-radius:8px;background:#8b5a2b;color:#fff;font-size:11px;font-weight:950;line-height:1;letter-spacing:-.04em;cursor:pointer;box-shadow:none;animation:maslow-bell-ring 1.28s ease-in-out infinite;transform-origin:50% 6%;white-space:nowrap}
+    .tax-scope-alert-trigger::after{content:"";position:absolute;inset:-3px;border:1px solid rgba(120,72,30,.28);border-radius:9px;pointer-events:none;animation:maslow-bell-pulse 1.28s ease-in-out infinite}
+    .tax-scope-alert-trigger-star{position:absolute;right:-4px;top:-6px;z-index:1;color:#e5484d;font-size:8px;line-height:1;font-weight:950;text-shadow:0 1px 0 #fff,0 0 8px rgba(229,72,77,.35)}
+    @keyframes maslow-bell-ring{0%,42%,100%{transform:rotate(0deg)}8%{transform:rotate(-12deg)}16%{transform:rotate(10deg)}24%{transform:rotate(-8deg)}32%{transform:rotate(6deg)}}
+    @keyframes maslow-bell-pulse{0%,100%{opacity:.28;transform:scale(.96)}50%{opacity:.9;transform:scale(1.12)}}
+    .tax-scope-modal{position:absolute;top:0;left:0;right:0;min-height:100%;display:none;background:rgba(15,23,42,.58);z-index:10000;pointer-events:auto}
+    .tax-scope-modal.open{display:block}
+    .tax-scope-modal-panel{position:absolute;left:50%;top:80px;transform:translateX(-50%);width:min(720px,calc(100% - 48px));background:#fff;border-radius:22px;box-shadow:0 28px 80px rgba(15,23,42,.28);overflow:hidden;border:1px solid rgba(229,231,235,.95);pointer-events:auto}
+    .tax-scope-modal-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 22px;border-bottom:1px solid #e5e7eb;background:linear-gradient(180deg,#fff1f2 0%,#ffffff 100%)}
+    .tax-scope-modal-title{display:flex;align-items:center;gap:10px;font-size:23px;font-weight:950;color:#dc2626;letter-spacing:-.04em}
+    .tax-scope-modal-close{background:#fff;color:#111827;border:1px solid #d1d5db;padding:10px 14px;border-radius:12px;box-shadow:none}
+    .tax-scope-modal-body{padding:22px;background:#fff}
+    .tax-scope-modal-body p{margin:0 0 14px;color:#111827;line-height:1.75;font-size:16px;font-weight:700;letter-spacing:-.03em}
+    .tax-scope-modal-body p:last-child{margin-bottom:0}
+
     .check-mark{display:inline-block;margin-left:8px;font-size:.9em;vertical-align:baseline}
     .top-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 0;padding-top:16px;border-top:1px solid #e5e7eb}
     button{border:0;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:800;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease}
@@ -310,7 +325,11 @@
           <button class="ghost" id="resetBtn">초기값</button>
           <button class="ghost" id="printSellerBtn">매도인용 PDF 저장</button>
           <button class="ghost" id="printBuyerBtn">매수인용 PDF 저장</button>
-        </div>
+                  <button type="button" class="tax-scope-alert-trigger" id="openTaxScopeModalBtn" aria-haspopup="dialog" aria-controls="taxScopeModal" aria-expanded="false">
+            주의사항
+            <span aria-hidden="true" class="tax-scope-alert-trigger-star">★</span>
+          </button>
+</div>
 
         <div class="mobile-party-toggle" aria-label="매도인 매수인 화면 전환">
           <button class="party-toggle-btn" id="sellerToggleBtn" type="button" aria-pressed="true">매도인</button>
@@ -860,6 +879,23 @@
   </div>
 
 
+
+
+    <div class="tax-scope-modal" id="taxScopeModal" aria-hidden="true">
+      <div class="tax-scope-modal-panel" role="dialog" aria-modal="true" aria-labelledby="taxScopeModalTitle">
+        <div class="tax-scope-modal-head">
+          <div class="tax-scope-modal-title" id="taxScopeModalTitle">주의사항</div>
+          <button type="button" class="tax-scope-modal-close" id="closeTaxScopeModalBtn">닫기</button>
+        </div>
+        <div class="tax-scope-modal-body">
+          <p>본 계산기는 주택용 양도세 계산기가 아닙니다.</p>
+          <p>공장·창고·상가·일반 토지·건물 거래에서 매도인 세금과 매수인 취득비용을 상담용으로 간이 확인하기 위한 실무 도구입니다.</p>
+          <p>주택, 1세대 1주택 비과세, 다주택자 중과, 분양권·입주권, 주거용 오피스텔 등 주택 관련 세금 판단에는 사용할 수 없습니다.</p>
+          <p><b>면책고지:</b> 본 계산 결과는 신고·납부·계약 판단을 위한 확정 자료가 아니며, 입력값과 간이 기준에 따른 참고용 추정치입니다.</p>
+          <p><b>최종 확인:</b> 실제 거래·신고 전에는 비사업용 토지 여부, 감면·중과, 법인 장부가액, 감가상각, 토지·건물 안분, 부가세 공제 가능 여부 등을 세무사·법무사 등 전문가에게 직접 검토받아야 합니다.</p>
+        </div>
+      </div>
+    </div>
 
 <script>
   const $ = (id) => document.getElementById(id);
@@ -1581,6 +1617,94 @@
   } else {
     initMobileTools();
   }
+})();
+</script>
+
+
+<script>
+(function(){
+  function onReady(fn){
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", fn);
+    }else{
+      fn();
+    }
+  }
+
+  onReady(function(){
+    var scopeModal = document.getElementById("taxScopeModal");
+    var scopePanel = scopeModal ? scopeModal.querySelector(".tax-scope-modal-panel") : null;
+    var openScopeBtn = document.getElementById("openTaxScopeModalBtn");
+    var closeScopeBtn = document.getElementById("closeTaxScopeModalBtn");
+
+    if(!scopeModal || !scopePanel || !openScopeBtn) return;
+
+    function placeModalInVisibleScreen(){
+      var panelHeight = scopePanel.offsetHeight || 260;
+      var top = 80;
+
+      try {
+        if(window.frameElement && window.parent){
+          var frameRect = window.frameElement.getBoundingClientRect();
+          var parentHeight = window.parent.innerHeight || 800;
+          top = (-frameRect.top) + Math.max(24, Math.round((parentHeight - panelHeight) / 2));
+        } else {
+          top = (window.scrollY || 0) + Math.max(24, Math.round(((window.innerHeight || 800) - panelHeight) / 2));
+        }
+      } catch(e) {
+        top = (window.scrollY || 0) + 80;
+      }
+
+      if(top < 24) top = 24;
+      scopePanel.style.top = top + "px";
+    }
+
+    function openTaxScopeModal(){
+      scopeModal.classList.add("open");
+      scopeModal.setAttribute("aria-hidden", "false");
+      openScopeBtn.setAttribute("aria-expanded", "true");
+      placeModalInVisibleScreen();
+      window.setTimeout(placeModalInVisibleScreen, 0);
+      window.setTimeout(placeModalInVisibleScreen, 80);
+    }
+
+    function closeTaxScopeModal(){
+      scopeModal.classList.remove("open");
+      scopeModal.setAttribute("aria-hidden", "true");
+      openScopeBtn.setAttribute("aria-expanded", "false");
+    }
+
+    openScopeBtn.addEventListener("click", function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      openTaxScopeModal();
+    });
+
+    if(closeScopeBtn){
+      closeScopeBtn.addEventListener("click", function(e){
+        e.preventDefault();
+        closeTaxScopeModal();
+      });
+    }
+
+    scopeModal.addEventListener("click", function(e){
+      if(e.target === scopeModal) closeTaxScopeModal();
+    });
+
+    document.addEventListener("keydown", function(e){
+      if(e.key === "Escape") closeTaxScopeModal();
+    });
+
+    window.addEventListener("resize", function(){
+      if(scopeModal.classList.contains("open")) placeModalInVisibleScreen();
+    });
+
+    try {
+      window.parent.addEventListener("scroll", function(){
+        if(scopeModal.classList.contains("open")) placeModalInVisibleScreen();
+      }, { passive: true });
+    } catch(e) {}
+  });
 })();
 </script>
 

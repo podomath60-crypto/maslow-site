@@ -110,7 +110,10 @@
     .box-value{font-weight:800;color:#20242a;min-height:21px;padding:0 2px}
     .notice{margin-top:13px;padding:10px 16px;border-left:4px solid var(--olive);background:#f7f8f1;font-size:12px;line-height:1.48;color:#4f5642;font-weight:800}
     .sign{margin-top:22px;text-align:right;line-height:1.55;font-size:14px;font-weight:900}
-    .footer-info{margin-top:16px;border-top:1px solid #d6ccbd;padding-top:10px;font-size:11.5px;line-height:1.45;color:#4c4f48;text-align:right;font-weight:800}
+    .footer-block{margin-top:14px;border-top:1px solid #d6ccbd;padding-top:9px;display:flex;align-items:flex-end;justify-content:space-between;gap:18px}
+    .footer-qr{width:74px;flex:0 0 74px;text-align:center;color:#4c4f48;font-size:10.5px;font-weight:900;line-height:1.2}
+    .footer-qr img{display:block;width:74px;height:74px;object-fit:contain;margin:0 auto 5px}
+    .footer-info{margin-top:0;font-size:11.5px;line-height:1.45;color:#4c4f48;text-align:right;font-weight:800;flex:1}
     .saved-list{padding:12px;display:grid;gap:10px;max-height:calc(100vh - 180px);overflow:auto}
     .saved-empty{padding:16px;border:1px dashed #cfc6b7;border-radius:16px;text-align:center;font-size:12px;font-weight:900;color:#81796d;line-height:1.5;background:#fffdf8}
     .saved-card{border:1px solid var(--line);border-radius:16px;background:#fffdf8;padding:13px;box-shadow:0 10px 22px rgba(38,32,22,.05)}
@@ -189,7 +192,7 @@
 
   <script>
     const STORAGE_KEY='maslow_owner_letters_v1';
-    const officeInfo={name:'매슬로우공인중개사사무소',brand:'MASLOW KOREA',specialty:'산업용 상업용 부동산 전문 중개',owner:'박성연',regNo:'52130-2025-00005',address:'전북 군산시 대학로 342 26빌딩',phone:'010-5407-0444'};
+    const officeInfo={name:'매슬로우공인중개사사무소',brand:'MASLOW KOREA',specialty:'산업용 상업용 부동산 전문 중개',owner:'박성연',regNo:'52130-2025-00005',address:'전북 군산시 대학로 342 26빌딩',phone:'010-5407-0444',email:'hiboy@kakao.com'};
     const templates={
       general:{label:'부동산 활용 안내',title:'부동산 활용 및 거래 가능성 검토 안내',boxTitle:'대상 부동산 개요',boxRows:[['소 재 지',''],['__AREA__',''],['용도 지역',''],['이용 상황',''],['참고 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 현장 확인과 실수요자 상담을 진행하고 있습니다.','최근 해당 지역에서 공장·창고·토지 활용 및 거래 가능성을 검토하는 문의가 있어 등기부상 소유자님께 정중히 안내드립니다.','본 안내는 매도나 임대를 강요하는 내용이 아니며, 소유자님의 의사를 우선 확인하고 필요한 경우 상담을 도와드리기 위한 것입니다.','검토 의향이 있으시다면 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)']},
       buyer:{label:'매입 문의 안내',title:'실수요자 매입 검토 관련 연락 요청',boxTitle:'매입 검토 내용',boxRows:[['희망 용도',''],['희망 면적',''],['희망 조건',''],['요청 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 전문적으로 검토하고 중개하는 공인중개사무소입니다.','최근 해당 지역 내 공장·창고·토지 매입을 검토하는 실수요자의 문의가 있어 등기부상 소유자님께 정중히 연락드립니다.','본 우편은 소유자님의 매도 의사를 확인하기 위한 안내이며, 매매가 확정되었거나 특정 조건을 강요하는 내용은 아닙니다.','검토 의향이 있으시다면 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)']},
@@ -281,7 +284,7 @@
           <div class="info-box"><div class="box-title" contenteditable="true" spellcheck="false">${esc(t.boxTitle)}</div><div class="box-grid">${t.boxRows.map(row=>row[0]==='__AREA__'?areaRowHtml():`<div class="box-row"><div class="box-label" contenteditable="true" spellcheck="false">${esc(row[0])}</div>${editable(row[1],'box-value','입력')}</div>`).join('')}</div></div>
           <div class="notice" contenteditable="true" spellcheck="false">본 안내를 원하지 않으시는 경우 연락 주시면 추가 우편 발송을 중단하겠습니다. 본 우편은 소유자님의 의사를 확인하기 위한 안내이며, 특정 거래 조건을 강요하는 내용이 아닙니다.</div>
           <div class="sign" contenteditable="true" spellcheck="false">감사합니다.<br><br>${officeInfo.name}</div>
-          <div class="footer-info" contenteditable="true" spellcheck="false">${officeInfo.name} · 대표 공인중개사 ${officeInfo.owner} · 등록번호 ${officeInfo.regNo}<br>${officeInfo.address} · TEL. ${officeInfo.phone}</div>`;
+          <div class="footer-block"><div class="footer-qr"><img src="./homepage-qr.jpg" alt="홈페이지 QR"><div>홈페이지</div></div><div class="footer-info" contenteditable="true" spellcheck="false">${officeInfo.name} · 대표 공인중개사 ${officeInfo.owner} · 등록번호 ${officeInfo.regNo}<br>${officeInfo.address} · TEL. ${officeInfo.phone} · E-Mail ${officeInfo.email}</div></div>`;
         draftByType[type]=paper.innerHTML;
       }
       document.querySelectorAll('.type-card').forEach(b=>b.classList.toggle('active',b.dataset.type===type));

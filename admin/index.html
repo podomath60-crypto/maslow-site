@@ -2659,6 +2659,20 @@
         });
       }
 
+      var DASHBOARD_SAVE_REQUEST_KEY_ = 'MK_ADMIN_SAVE_REQUESTED_FOR_DASHBOARD_V1';
+
+      function markDashboardSaveRequested_(){
+        var currentListingNumber = String(listingNumber || plainText(listingNumberField) || '').trim();
+        if(!currentListingNumber) return;
+        var payload = {
+          listingNumber: currentListingNumber,
+          requestedAt: Date.now(),
+          source: 'admin-server-save'
+        };
+        try{ localStorage.setItem(DASHBOARD_SAVE_REQUEST_KEY_, JSON.stringify(payload)); }catch(e){}
+        try{ sessionStorage.setItem(DASHBOARD_SAVE_REQUEST_KEY_, JSON.stringify(payload)); }catch(e){}
+      }
+
 
       function ensureTempSessionKey_(){
         if (tempSessionKey) return tempSessionKey;
@@ -3116,6 +3130,7 @@
 
         return waitForPendingTempUploads_()
           .then(function(){
+            markDashboardSaveRequested_();
             return postToGasNoCors_(buildPropertyPayload_());
           })
           .then(function(){

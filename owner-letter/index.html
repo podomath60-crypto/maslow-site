@@ -96,13 +96,18 @@
     .meta-value{min-height:20px;color:#1f2328;font-weight:800;padding:0 2px}
     .body{font-size:14.2px;line-height:1.62;letter-spacing:-.025em;color:#1d1f23}
     .body [contenteditable="true"]{margin:0 0 9px}
-    .info-box{border:1px solid #d8cfbf;background:#fbf9f4;margin:13px 0;padding:13px 22px;border-radius:4px}
+    .info-box{border:1px solid #d8cfbf;background:#fbf9f4;margin:13px 0;padding:13px 28px;border-radius:4px}
     .box-title{font-size:14px;font-weight:1000;margin-bottom:8px;color:#25291f}
     .box-grid{display:grid;gap:2px}
-    .box-row{display:grid;grid-template-columns:118px 1fr;gap:14px;align-items:start;min-height:22px;font-size:14px;line-height:1.48}
-    .box-label{font-weight:1000;color:#373b33;white-space:nowrap;text-align:justify;text-align-last:justify;letter-spacing:.05em}
-    .box-label::after{content:"";display:inline-block;width:100%}
-    .box-value{font-weight:800;color:#20242a;min-height:22px;padding:0 2px}
+    .box-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;align-items:start;min-height:21px;font-size:14px;line-height:1.42}
+    .box-row.area-row{grid-template-columns:76px minmax(0,1fr) 76px minmax(0,1fr);gap:8px 10px;align-items:center}
+    .area-pair{display:flex;align-items:baseline;gap:3px;min-width:0;font-weight:800;color:#20242a;white-space:nowrap}
+    .area-input{display:inline-block;min-width:38px;max-width:72px;min-height:20px;padding:0 2px;text-align:right;font-weight:900;color:#20242a}
+    .area-input.editable-placeholder.is-empty:not(:focus)::before{display:inline-block;min-width:38px;min-height:1.25em}
+    .area-unit{font-weight:900;color:#343830}
+    .box-label{font-weight:1000;color:#373b33;white-space:nowrap;text-align:left;letter-spacing:.01em}
+    .box-label::after{content:none!important;display:none!important}
+    .box-value{font-weight:800;color:#20242a;min-height:21px;padding:0 2px}
     .notice{margin-top:13px;padding:10px 16px;border-left:4px solid var(--olive);background:#f7f8f1;font-size:12px;line-height:1.48;color:#4f5642;font-weight:800}
     .sign{margin-top:22px;text-align:right;line-height:1.55;font-size:14px;font-weight:900}
     .footer-info{margin-top:16px;border-top:1px solid #d6ccbd;padding-top:10px;font-size:11.5px;line-height:1.45;color:#4c4f48;text-align:right;font-weight:800}
@@ -186,9 +191,9 @@
     const STORAGE_KEY='maslow_owner_letters_v1';
     const officeInfo={name:'매슬로우공인중개사사무소',brand:'MASLOW KOREA',specialty:'산업용 상업용 부동산 전문 중개',owner:'박성연',regNo:'52130-2025-00005',address:'전북 군산시 대학로 342 26빌딩',phone:'010-5407-0444'};
     const templates={
-      general:{label:'부동산 활용 안내',title:'부동산 활용 및 거래 가능성 검토 안내',boxTitle:'대상 부동산 개요',boxRows:[['소 재 지',''],['토지 면적',''],['건물 면적',''],['용도 지역',''],['이용 상황',''],['참고 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 현장 확인과 실수요자 상담을 진행하고 있습니다.','최근 해당 지역에서 공장·창고·토지 활용 및 거래 가능성을 검토하는 문의가 있어 등기부상 소유자님께 정중히 안내드립니다.','본 안내는 매도나 임대를 강요하는 내용이 아니며, 소유자님의 의사를 우선 확인하고 필요한 경우 상담을 도와드리기 위한 것입니다.','검토 의향이 있으시다면 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)']},
+      general:{label:'부동산 활용 안내',title:'부동산 활용 및 거래 가능성 검토 안내',boxTitle:'대상 부동산 개요',boxRows:[['소 재 지',''],['__AREA__',''],['용도 지역',''],['이용 상황',''],['참고 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 현장 확인과 실수요자 상담을 진행하고 있습니다.','최근 해당 지역에서 공장·창고·토지 활용 및 거래 가능성을 검토하는 문의가 있어 등기부상 소유자님께 정중히 안내드립니다.','본 안내는 매도나 임대를 강요하는 내용이 아니며, 소유자님의 의사를 우선 확인하고 필요한 경우 상담을 도와드리기 위한 것입니다.','검토 의향이 있으시다면 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)']},
       buyer:{label:'매입 문의 안내',title:'실수요자 매입 검토 관련 연락 요청',boxTitle:'매입 검토 내용',boxRows:[['희망 용도',''],['희망 면적',''],['희망 조건',''],['요청 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 전문적으로 검토하고 중개하는 공인중개사무소입니다.','최근 해당 지역 내 공장·창고·토지 매입을 검토하는 실수요자의 문의가 있어 등기부상 소유자님께 정중히 연락드립니다.','본 우편은 소유자님의 매도 의사를 확인하기 위한 안내이며, 매매가 확정되었거나 특정 조건을 강요하는 내용은 아닙니다.','검토 의향이 있으시다면 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)']},
-      listing:{label:'매물 소개 제안',title:'공장·창고·토지 매물 상담 안내',boxTitle:'대상 부동산 개요',boxRows:[['소 재 지',''],['토지 면적',''],['건물 면적',''],['용도 지역',''],['이용 상황',''],['참고 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 매수자와 임차인의 실제 조건을 확인한 뒤 매물을 소개하고 있습니다.','소유자님께서 해당 부동산의 매도, 임대, 시세 확인, 향후 거래 가능성 검토를 원하실 경우 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)','상담 과정에서는 소유자님의 의사와 조건을 우선으로 확인하며, 원치 않으시는 경우 거래 진행이나 추가 연락은 하지 않습니다.']}
+      listing:{label:'매물 소개 제안',title:'공장·창고·토지 매물 상담 안내',boxTitle:'대상 부동산 개요',boxRows:[['소 재 지',''],['__AREA__',''],['용도 지역',''],['이용 상황',''],['참고 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 매수자와 임차인의 실제 조건을 확인한 뒤 매물을 소개하고 있습니다.','소유자님께서 해당 부동산의 매도, 임대, 시세 확인, 향후 거래 가능성 검토를 원하실 경우 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)','상담 과정에서는 소유자님의 의사와 조건을 우선으로 확인하며, 원치 않으시는 경우 거래 진행이나 추가 연락은 하지 않습니다.']}
     };
     let currentType='general';
     let currentId=null;
@@ -202,15 +207,48 @@
       const empty=!val.trim();
       return `<div class="${cls}${placeholder?' editable-placeholder':''}${empty&&placeholder?' is-empty':''}" contenteditable="true" spellcheck="false" data-placeholder="${esc(placeholder)}">${esc(val)}</div>`;
     }
+    function areaInput(area,unit){
+      return `<span class="area-input editable-placeholder is-empty" contenteditable="true" spellcheck="false" data-placeholder=" " data-area="${area}" data-unit="${unit}"></span>`;
+    }
+    function areaRowHtml(){
+      return `<div class="box-row area-row"><div class="box-label" contenteditable="true" spellcheck="false">토지 면적</div><div class="area-pair">${areaInput('land','m2')}<span class="area-unit">㎡</span><span class="area-unit">(</span>${areaInput('land','pyeong')}<span class="area-unit">평)</span></div><div class="box-label" contenteditable="true" spellcheck="false">건물 면적</div><div class="area-pair">${areaInput('building','m2')}<span class="area-unit">㎡</span><span class="area-unit">(</span>${areaInput('building','pyeong')}<span class="area-unit">평)</span></div></div>`;
+    }
     function updateEmptyState(root=paper){
       root.querySelectorAll('.editable-placeholder').forEach(el=>{
         const empty=(el.textContent||'').replace(/\u00a0/g,'').trim()==='';
         el.classList.toggle('is-empty', empty);
       });
     }
+    function parseAreaNumber(text){
+      const n=parseFloat(String(text||'').replace(/,/g,'').replace(/[^0-9.]/g,''));
+      return Number.isFinite(n)?n:null;
+    }
+    function formatAreaNumber(n){
+      if(!Number.isFinite(n)) return '';
+      const rounded=Math.round(n*100)/100;
+      return rounded.toLocaleString('ko-KR',{maximumFractionDigits:2});
+    }
+    function syncAreaInput(el){
+      if(!el.classList.contains('area-input') || el.dataset.syncing==='1') return;
+      const area=el.dataset.area;
+      const unit=el.dataset.unit;
+      const pair=paper.querySelector(`.area-input[data-area="${area}"][data-unit="${unit==='m2'?'pyeong':'m2'}"]`);
+      if(!pair) return;
+      const value=parseAreaNumber(el.textContent);
+      pair.dataset.syncing='1';
+      if(value===null){
+        pair.textContent='';
+      }else if(unit==='m2'){
+        pair.textContent=formatAreaNumber(value/3.305785);
+      }else{
+        pair.textContent=formatAreaNumber(value*3.305785);
+      }
+      pair.dataset.syncing='0';
+      updateEmptyState();
+    }
     function attachEditableState(){
       paper.querySelectorAll('[contenteditable="true"]').forEach(el=>{
-        el.addEventListener('input',()=>{updateEmptyState(); draftByType[currentType]=paper.innerHTML;});
+        el.addEventListener('input',()=>{syncAreaInput(el); updateEmptyState(); draftByType[currentType]=paper.innerHTML;});
         el.addEventListener('focus',()=>{el.classList.remove('is-empty');});
         el.addEventListener('blur',()=>{updateEmptyState(); draftByType[currentType]=paper.innerHTML;});
       });
@@ -240,7 +278,7 @@
             <div class="meta-row full"><div class="meta-label">대상 부동산</div>${editable('','meta-value js-property','대상 부동산 소재지')}</div>
           </div>
           <div class="body">${t.body.map(p=>editable(p,'')).join('')}</div>
-          <div class="info-box"><div class="box-title" contenteditable="true" spellcheck="false">${esc(t.boxTitle)}</div><div class="box-grid">${t.boxRows.map(row=>`<div class="box-row"><div class="box-label" contenteditable="true" spellcheck="false">${esc(row[0])}</div>${editable(row[1],'box-value','입력')}</div>`).join('')}</div></div>
+          <div class="info-box"><div class="box-title" contenteditable="true" spellcheck="false">${esc(t.boxTitle)}</div><div class="box-grid">${t.boxRows.map(row=>row[0]==='__AREA__'?areaRowHtml():`<div class="box-row"><div class="box-label" contenteditable="true" spellcheck="false">${esc(row[0])}</div>${editable(row[1],'box-value','입력')}</div>`).join('')}</div></div>
           <div class="notice" contenteditable="true" spellcheck="false">본 안내를 원하지 않으시는 경우 연락 주시면 추가 우편 발송을 중단하겠습니다. 본 우편은 소유자님의 의사를 확인하기 위한 안내이며, 특정 거래 조건을 강요하는 내용이 아닙니다.</div>
           <div class="sign" contenteditable="true" spellcheck="false">감사합니다.<br><br>${officeInfo.name}</div>
           <div class="footer-info" contenteditable="true" spellcheck="false">${officeInfo.name} · 대표 공인중개사 ${officeInfo.owner} · 등록번호 ${officeInfo.regNo}<br>${officeInfo.address} · TEL. ${officeInfo.phone}</div>`;

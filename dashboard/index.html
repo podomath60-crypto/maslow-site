@@ -327,7 +327,7 @@
     .status-chip.hidden{background:#f3f5f8;color:#7f8792;border:1px solid #dde3ea}
     .address-map-row{display:flex;align-items:flex-start;gap:6px;min-width:0;line-height:1.55}
     .card-address{font-size:15px;line-height:1.55;color:#505862;font-weight:700;word-break:keep-all;min-width:0;flex:1 1 auto}
-    .address-map-actions{display:inline-flex;flex-direction:column;align-items:center;gap:3px;flex:0 0 22px;margin-top:1px}
+    .address-map-actions{display:inline-flex;flex-direction:column;align-items:center;gap:3px;flex:0 0 22px;margin-top:1px;margin-left:auto}
     .dashboard-map-btn{
       width:22px;height:22px;border:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;
       box-shadow:0 2px 6px rgba(15,23,42,.13);cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex:0 0 22px
@@ -4061,11 +4061,11 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const encodedAddress = encodeURIComponent(address);
       return ''
         + '<div class="address-map-row">'
+        +   '<span class="card-address">' + escapeHtml(address || '-') + '</span>'
         +   '<span class="address-map-actions">'
         +     '<button class="dashboard-map-btn ddangya-map-btn" type="button" title="땅야 토지 상세 열기" aria-label="땅야 토지 상세 열기" onclick="return openDashboardDdangyaMap(\'' + encodedAddress + '\', event)">' + DASHBOARD_MAP_PIN_SVG + '</button>'
         +     '<button class="dashboard-map-btn naver-map-btn" type="button" title="네이버지도에서 주소 검색" aria-label="네이버지도에서 주소 검색" onclick="return openDashboardNaverMap(\'' + encodedAddress + '\', event)">' + DASHBOARD_MAP_PIN_SVG + '</button>'
         +   '</span>'
-        +   '<span class="card-address">' + escapeHtml(address || '-') + '</span>'
         + '</div>';
     }
 

@@ -238,7 +238,7 @@
     .property-summary-box{background:#dfeef9;border-radius:28px;padding:28px 26px;margin-bottom:26px}
     .property-summary-box h4{margin:0 0 14px;font-size:30px;line-height:1.2;font-weight:900;color:#202227;letter-spacing:-0.04em;text-align:center}
     .property-summary-box ul{margin:0;padding:0;list-style:none;display:grid;gap:10px;text-align:center}
-    .property-summary-box li{font-size:19px;line-height:1.7;color:#2f3338;letter-spacing:-0.03em;text-align:center}
+    .property-summary-box li{font-size:19px;line-height:1.7;color:#2f3338;letter-spacing:-0.03em;text-align:center;white-space:pre-line}
     
     .property-detail-cta{display:flex;justify-content:center;align-items:center;margin:18px 0 8px}
     .property-more-btn{margin:0 auto !important}
@@ -1103,9 +1103,15 @@
     raw = raw || {};
     var basic = raw.basic || {};
     var factory = raw.factory || {};
-    var summary = Array.isArray(raw.summary)
-      ? raw.summary.filter(Boolean)
-      : [raw.summary1, raw.summary2, raw.summary3].filter(Boolean);
+    var summarySource = Array.isArray(raw.summary)
+      ? raw.summary
+      : [raw.summary1, raw.summary2, raw.summary3];
+    var summary = summarySource
+      .map(function(v){ return String(v == null ? '' : v); })
+      .join('\n')
+      .split(/\r?\n+/)
+      .map(function(v){ return v.trim(); })
+      .filter(Boolean);
     var pricePlain = buildPricePlain_(raw, basic);
     return {
       listingNumber: firstNonEmpty(raw.listingNumber, raw.basic && raw.basic.listingNumber),

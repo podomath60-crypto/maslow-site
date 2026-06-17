@@ -18,7 +18,6 @@
       --soft:#f8f5ef;
       --olive:#6f7f3f;
       --olive-dark:#56652f;
-      --brown:#8a5d2f;
       --shadow:0 20px 60px rgba(38,32,22,.10);
     }
     *{box-sizing:border-box}
@@ -50,28 +49,58 @@
     .action-btn{height:44px;border-radius:15px;border:1px solid var(--line);background:#fff;font-size:14px;font-weight:1000;color:#222;box-shadow:0 10px 22px rgba(38,32,22,.05)}
     .action-btn.save{background:#222;color:#fff;border-color:#222}
     .action-btn.pdf{background:var(--olive);color:#fff;border-color:var(--olive)}
-    .hint{padding:0 14px 14px;color:#7b746b;font-size:11px;font-weight:800;line-height:1.55;letter-spacing:-.03em}
     .center-panel{padding:18px;min-height:calc(100vh - 98px)}
     .paper-wrap{display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:12px 0 22px}
-    .letter-paper{width:210mm;min-height:297mm;background:var(--paper);border:1px solid #e7decf;box-shadow:0 26px 70px rgba(0,0,0,.14);padding:20mm 18mm 18mm;position:relative}
-    [contenteditable="true"]{outline:none;border-radius:6px;transition:box-shadow .14s ease, background .14s ease}
-    [contenteditable="true"]:hover{background:rgba(111,127,63,.06);box-shadow:0 0 0 4px rgba(111,127,63,.06)}
-    [contenteditable="true"]:focus{background:#fff;box-shadow:0 0 0 2px rgba(111,127,63,.38),0 0 0 7px rgba(111,127,63,.08)}
-    .doc-top{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;border-bottom:2px solid #222;padding-bottom:13px;margin-bottom:18px}
-    .doc-logo{font-size:23px;font-weight:1000;letter-spacing:-.06em}
-    .doc-small{margin-top:5px;font-size:11px;font-weight:900;color:#6b6258;letter-spacing:.03em;text-transform:uppercase}
-    .doc-office{text-align:right;font-size:11px;font-weight:800;color:#4e514a;line-height:1.55;min-width:210px}
+    .letter-paper{width:210mm;min-height:297mm;background:var(--paper);border:1px solid #e7decf;box-shadow:0 26px 70px rgba(0,0,0,.14);padding:18mm 18mm 16mm;position:relative}
+
+    [contenteditable="true"]{
+      outline:none!important;
+      border:none!important;
+      box-shadow:none!important;
+      text-decoration:none!important;
+      caret-color:#111;
+      border-radius:0;
+      transition:background .12s ease;
+    }
+    [contenteditable="true"]:hover,
+    [contenteditable="true"]:focus{
+      outline:none!important;
+      border:none!important;
+      box-shadow:none!important;
+      text-decoration:none!important;
+      background:transparent!important;
+    }
+    .editable-placeholder{position:relative;min-height:1.45em;white-space:pre-wrap}
+    .editable-placeholder.is-empty:not(:focus)::before{
+      content:attr(data-placeholder);
+      display:block;
+      min-height:1.45em;
+      color:transparent;
+      border-bottom:1px dotted #bdb3a3;
+      pointer-events:none;
+    }
+    .editable-placeholder.is-empty:focus::before{content:"";display:none;border:0!important}
+
+    .doc-top{border-bottom:2px solid #222;padding-bottom:13px;margin-bottom:18px}
+    .doc-brand{font-size:13px;font-weight:1000;letter-spacing:.12em;color:#4f5546;text-transform:uppercase}
+    .doc-office-name{margin-top:5px;font-size:21px;font-weight:1000;letter-spacing:-.065em;color:#16191d}
+    .doc-specialty{margin-top:4px;font-size:12px;font-weight:900;letter-spacing:-.025em;color:#555b50}
+    .doc-tel{margin-top:7px;font-size:12px;font-weight:1000;letter-spacing:.02em;color:#20251f}
     .doc-title{font-size:24px;font-weight:1000;letter-spacing:-.07em;text-align:center;margin:22px 0 20px;padding:14px 0;border-top:1px solid #cfc6b7;border-bottom:1px solid #cfc6b7}
     .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-bottom:22px;background:#f8f5ef;border:1px solid #e3dacb;padding:13px 14px;border-radius:4px}
     .meta-row{display:grid;grid-template-columns:92px 1fr;gap:8px;align-items:start;font-size:13px;line-height:1.55}
     .meta-row.full{grid-column:1/-1}
-    .meta-label{font-weight:1000;color:#2f332c;white-space:nowrap}
-    .meta-value{min-height:20px;color:#1f2328;font-weight:800;border-bottom:1px dotted #c2b8a8;padding:0 2px}
+    .meta-label{font-weight:1000;color:#2f332c;white-space:nowrap;letter-spacing:-.03em}
+    .meta-value{min-height:20px;color:#1f2328;font-weight:800;padding:0 2px}
     .body{font-size:15px;line-height:1.88;letter-spacing:-.025em;color:#1d1f23}
-    .body p{margin:0 0 14px}
+    .body [contenteditable="true"]{margin:0 0 14px}
     .info-box{border:1px solid #d8cfbf;background:#fbf9f4;margin:18px 0;padding:14px 16px;border-radius:4px}
-    .box-title{font-size:14px;font-weight:1000;margin-bottom:8px;color:#25291f}
-    .box-line{font-size:14px;line-height:1.8;margin:2px 0;min-height:23px}
+    .box-title{font-size:14px;font-weight:1000;margin-bottom:9px;color:#25291f}
+    .box-grid{display:grid;gap:3px}
+    .box-row{display:grid;grid-template-columns:112px 1fr;gap:12px;align-items:start;min-height:25px;font-size:14px;line-height:1.75}
+    .box-label{font-weight:1000;color:#373b33;white-space:nowrap;text-align:justify;text-align-last:justify;letter-spacing:.05em}
+    .box-label::after{content:"";display:inline-block;width:100%}
+    .box-value{font-weight:800;color:#20242a;min-height:25px;padding:0 2px}
     .notice{margin-top:18px;padding:12px 14px;border-left:4px solid var(--olive);background:#f7f8f1;font-size:12px;line-height:1.65;color:#4f5642;font-weight:800}
     .sign{margin-top:32px;text-align:right;line-height:1.8;font-size:14px;font-weight:900}
     .footer-info{margin-top:22px;border-top:1px solid #d6ccbd;padding-top:12px;font-size:11.5px;line-height:1.65;color:#4c4f48;text-align:right;font-weight:800}
@@ -90,11 +119,12 @@
     @media(max-width:860px){.app{padding:12px}.topbar{height:auto;align-items:flex-start}.top-actions{display:none}.layout{display:block}.panel{margin-bottom:12px;border-radius:20px}.center-panel{padding:10px;min-height:auto}.paper-wrap{justify-content:flex-start}.letter-paper{width:210mm;transform:scale(.64);transform-origin:top left;margin-bottom:-104mm}.brand-title{font-size:22px}.brand-sub{font-size:12px}.type-list{grid-template-columns:1fr}.meta-grid{grid-template-columns:1fr}}
     @media print{
       @page{size:A4;margin:0}
-      html,body{background:#fff!important}
+      html,body{background:#fff!important;width:210mm;min-height:297mm;overflow:visible!important}
       body *{visibility:hidden!important}
       .letter-paper,.letter-paper *{visibility:visible!important}
-      .letter-paper{position:absolute;left:0;top:0;width:210mm;min-height:297mm;box-shadow:none!important;border:none!important;background:#fff!important;padding:20mm 18mm 18mm!important}
-      [contenteditable="true"]{box-shadow:none!important;background:transparent!important}
+      .letter-paper{position:absolute!important;left:0!important;top:0!important;width:210mm!important;min-height:297mm!important;max-width:none!important;transform:none!important;zoom:1!important;margin:0!important;box-shadow:none!important;border:none!important;background:#fff!important;padding:18mm 18mm 16mm!important}
+      [contenteditable="true"]{box-shadow:none!important;background:transparent!important;outline:none!important;border:none!important;text-decoration:none!important}
+      .editable-placeholder.is-empty:not(:focus)::before{border-bottom:1px dotted #aaa!important}
     }
   </style>
 </head>
@@ -119,7 +149,7 @@
       <aside class="panel left-panel">
         <div class="panel-head">
           <div class="panel-title">문서 유형</div>
-          <div class="panel-desc">왼쪽에서 유형을 고르면 중앙 A4 문서가 바뀝니다.</div>
+          <div class="panel-desc">왼쪽에서 유형을 고르면 중앙 A4 문서가 바로 바뀝니다.</div>
         </div>
         <div class="type-list">
           <button class="type-card active" type="button" data-type="general"><div class="type-name">부동산 활용 안내</div><div class="type-text">첫 우편용. 매도·임대·시세 상담 가능성을 부드럽게 안내합니다.</div></button>
@@ -131,7 +161,6 @@
           <button class="action-btn save" type="button" id="saveBtn">현재 내용 저장</button>
           <button class="action-btn pdf" type="button" id="pdfBtn">PDF 만들기</button>
         </div>
-        <div class="hint">저장은 이 브라우저에만 보관됩니다. 최대 10개까지 저장되며, DB는 사용하지 않습니다.</div>
       </aside>
 
       <section class="panel center-panel">
@@ -143,7 +172,7 @@
       <aside class="panel right-panel">
         <div class="panel-head">
           <div class="panel-title">저장한 우편</div>
-          <div class="panel-desc">저장한 글귀는 최대 10개까지 보관됩니다.</div>
+          <div class="panel-desc">저장한 문서를 불러와 다시 편집할 수 있습니다.</div>
         </div>
         <div id="savedList" class="saved-list"></div>
       </aside>
@@ -153,46 +182,76 @@
 
   <script>
     const STORAGE_KEY='maslow_owner_letters_v1';
-    const officeInfo={name:'매슬로우공인중개사사무소',brand:'MASLOW KOREA',owner:'박성연',regNo:'52130-2025-00005',address:'전북 군산시 대학로 342 26빌딩',phone:'010-5407-0444'};
+    const officeInfo={name:'매슬로우공인중개사사무소',brand:'MASLOW KOREA',specialty:'산업용 상업용 부동산 전문 중개',owner:'박성연',regNo:'52130-2025-00005',address:'전북 군산시 대학로 342 26빌딩',phone:'010-5407-0444'};
     const templates={
-      general:{label:'부동산 활용 안내',title:'부동산 활용 및 거래 가능성 검토 안내',boxTitle:'대상 부동산 개요',boxLines:['- 소재지: __________________________','- 토지 면적: ________________________','- 건물 면적: ________________________','- 용도지역/지목: ____________________','- 참고 내용: ________________________'],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 현장 확인과 실수요자 상담을 진행하고 있습니다.','최근 해당 지역에서 공장·창고·토지 활용 및 거래 가능성을 검토하는 문의가 있어 등기부상 소유자님께 정중히 안내드립니다.','본 안내는 매도나 임대를 강요하는 내용이 아니며, 소유자님의 의사를 우선 확인하고 필요한 경우 상담을 도와드리기 위한 것입니다.']},
-      buyer:{label:'매입 문의 안내',title:'실수요자 매입 검토 관련 연락 요청',boxTitle:'매입 검토 내용',boxLines:['- 희망 용도: ________________________','- 희망 면적: ________________________','- 희망 조건: ________________________','- 기타 요청사항: ____________________'],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 전문적으로 검토하고 중개하는 공인중개사무소입니다.','최근 해당 지역 내 공장·창고·토지 매입을 검토하는 실수요자의 문의가 있어 등기부상 소유자님께 정중히 연락드립니다.','본 우편은 소유자님의 매도 의사를 확인하기 위한 안내이며, 매매가 확정되었거나 특정 조건을 강요하는 내용은 아닙니다.']},
-      listing:{label:'매물 소개 제안',title:'공장·창고·토지 매물 상담 안내',boxTitle:'대상 부동산 개요',boxLines:['- 소재지: __________________________','- 토지 면적: ________________________','- 건물 면적: ________________________','- 현재 이용 상황: ____________________','- 참고 사항: ________________________'],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 매수자와 임차인의 실제 조건을 확인한 뒤 매물을 소개하고 있습니다.','소유자님께서 해당 부동산의 매도, 임대, 시세 확인, 향후 거래 가능성 검토를 원하실 경우 편하게 연락 주시면 됩니다.','상담 과정에서는 소유자님의 의사와 조건을 우선으로 확인하며, 원치 않으시는 경우 거래 진행이나 추가 연락은 하지 않습니다.']}
+      general:{label:'부동산 활용 안내',title:'부동산 활용 및 거래 가능성 검토 안내',boxTitle:'대상 부동산 개요',boxRows:[['소 재 지',''],['토지 면적',''],['건물 면적',''],['용도 지역',''],['이용 상황',''],['참고 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 현장 확인과 실수요자 상담을 진행하고 있습니다.','최근 해당 지역에서 공장·창고·토지 활용 및 거래 가능성을 검토하는 문의가 있어 등기부상 소유자님께 정중히 안내드립니다.','본 안내는 매도나 임대를 강요하는 내용이 아니며, 소유자님의 의사를 우선 확인하고 필요한 경우 상담을 도와드리기 위한 것입니다.','검토 의향이 있으시다면 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)']},
+      buyer:{label:'매입 문의 안내',title:'실수요자 매입 검토 관련 연락 요청',boxTitle:'매입 검토 내용',boxRows:[['희망 용도',''],['희망 면적',''],['희망 조건',''],['요청 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 전문적으로 검토하고 중개하는 공인중개사무소입니다.','최근 해당 지역 내 공장·창고·토지 매입을 검토하는 실수요자의 문의가 있어 등기부상 소유자님께 정중히 연락드립니다.','본 우편은 소유자님의 매도 의사를 확인하기 위한 안내이며, 매매가 확정되었거나 특정 조건을 강요하는 내용은 아닙니다.','검토 의향이 있으시다면 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)']},
+      listing:{label:'매물 소개 제안',title:'공장·창고·토지 매물 상담 안내',boxTitle:'대상 부동산 개요',boxRows:[['소 재 지',''],['토지 면적',''],['건물 면적',''],['용도 지역',''],['이용 상황',''],['참고 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 매수자와 임차인의 실제 조건을 확인한 뒤 매물을 소개하고 있습니다.','소유자님께서 해당 부동산의 매도, 임대, 시세 확인, 향후 거래 가능성 검토를 원하실 경우 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)','상담 과정에서는 소유자님의 의사와 조건을 우선으로 확인하며, 원치 않으시는 경우 거래 진행이나 추가 연락은 하지 않습니다.']}
     };
     let currentType='general';
     let currentId=null;
+    const draftByType={general:null,buyer:null,listing:null};
     const paper=document.getElementById('letterPaper');
     const savedList=document.getElementById('savedList');
-    function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-    function editable(html,cls=''){return `<div class="${cls}" contenteditable="true" spellcheck="false">${html}</div>`;}
+    function esc(s){return String(s||'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
     function today(){const d=new Date(); return `${d.getFullYear()}. ${String(d.getMonth()+1).padStart(2,'0')}. ${String(d.getDate()).padStart(2,'0')}.`;}
-    function buildTemplate(type){
-      const t=templates[type]||templates.general;
+    function editable(html,cls='',placeholder=''){
+      const val=String(html||'');
+      const empty=!val.trim();
+      return `<div class="${cls}${placeholder?' editable-placeholder':''}${empty&&placeholder?' is-empty':''}" contenteditable="true" spellcheck="false" data-placeholder="${esc(placeholder)}">${esc(val)}</div>`;
+    }
+    function updateEmptyState(root=paper){
+      root.querySelectorAll('.editable-placeholder').forEach(el=>{
+        const empty=(el.textContent||'').replace(/\u00a0/g,'').trim()==='';
+        el.classList.toggle('is-empty', empty);
+      });
+    }
+    function attachEditableState(){
+      paper.querySelectorAll('[contenteditable="true"]').forEach(el=>{
+        el.addEventListener('input',()=>{updateEmptyState(); draftByType[currentType]=paper.innerHTML;});
+        el.addEventListener('focus',()=>{el.classList.remove('is-empty');});
+        el.addEventListener('blur',()=>{updateEmptyState(); draftByType[currentType]=paper.innerHTML;});
+      });
+      updateEmptyState();
+    }
+    function buildTemplate(type, reset=false){
+      if(!reset && currentType && paper.innerHTML) draftByType[currentType]=paper.innerHTML;
       currentType=type; currentId=null;
-      paper.innerHTML=`
-        <div class="doc-top">
-          <div><div class="doc-logo" contenteditable="true">${officeInfo.name}</div><div class="doc-small" contenteditable="true">${officeInfo.brand} OWNER LETTER</div></div>
-          <div class="doc-office" contenteditable="true">대표 ${officeInfo.owner}<br>등록번호 ${officeInfo.regNo}<br>${officeInfo.address}<br>${officeInfo.phone}</div>
-        </div>
-        ${editable(esc(t.title),'doc-title')}
-        <div class="meta-grid">
-          <div class="meta-row"><div class="meta-label">수신인</div>${editable('__________________ 님','meta-value js-recipient')}</div>
-          <div class="meta-row"><div class="meta-label">발송일</div>${editable(today(),'meta-value')}</div>
-          <div class="meta-row full"><div class="meta-label">수신 주소</div>${editable('____________________________','meta-value')}</div>
-          <div class="meta-row full"><div class="meta-label">대상 부동산</div>${editable('____________________________','meta-value js-property')}</div>
-        </div>
-        <div class="body">${t.body.map(p=>editable(esc(p),'')).join('')}</div>
-        <div class="info-box"><div class="box-title" contenteditable="true">${esc(t.boxTitle)}</div>${t.boxLines.map(line=>editable(esc(line),'box-line')).join('')}</div>
-        <div class="notice" contenteditable="true">본 안내를 원하지 않으시는 경우 연락 주시면 추가 우편 발송을 중단하겠습니다. 본 우편은 소유자님의 의사를 확인하기 위한 안내이며, 특정 거래 조건을 강요하는 내용이 아닙니다.</div>
-        <div class="sign" contenteditable="true">감사합니다.<br><br>${officeInfo.name}</div>
-        <div class="footer-info" contenteditable="true">${officeInfo.name} · 대표 ${officeInfo.owner} · 등록번호 ${officeInfo.regNo}<br>${officeInfo.address} · ${officeInfo.phone}</div>`;
+      if(!reset && draftByType[type]){
+        paper.innerHTML=draftByType[type];
+      }else{
+        const t=templates[type]||templates.general;
+        paper.innerHTML=`
+          <div class="doc-top">
+            <div class="doc-brand" contenteditable="true" spellcheck="false">${officeInfo.brand}</div>
+            <div class="doc-office-name" contenteditable="true" spellcheck="false">${officeInfo.name}</div>
+            <div class="doc-specialty" contenteditable="true" spellcheck="false">${officeInfo.specialty}</div>
+            <div class="doc-tel" contenteditable="true" spellcheck="false">TEL. ${officeInfo.phone}</div>
+          </div>
+          ${editable(t.title,'doc-title')}
+          <div class="meta-grid">
+            <div class="meta-row"><div class="meta-label">수신인</div>${editable('','meta-value js-recipient','수신인')}</div>
+            <div class="meta-row"><div class="meta-label">발송일</div>${editable(today(),'meta-value')}</div>
+            <div class="meta-row full"><div class="meta-label">수신 주소</div>${editable('','meta-value','수신 주소')}</div>
+            <div class="meta-row full"><div class="meta-label">대상 부동산</div>${editable('','meta-value js-property','대상 부동산 소재지')}</div>
+          </div>
+          <div class="body">${t.body.map(p=>editable(p,'')).join('')}</div>
+          <div class="info-box"><div class="box-title" contenteditable="true" spellcheck="false">${esc(t.boxTitle)}</div><div class="box-grid">${t.boxRows.map(row=>`<div class="box-row"><div class="box-label" contenteditable="true" spellcheck="false">${esc(row[0])}</div>${editable(row[1],'box-value','입력')}</div>`).join('')}</div></div>
+          <div class="notice" contenteditable="true" spellcheck="false">본 안내를 원하지 않으시는 경우 연락 주시면 추가 우편 발송을 중단하겠습니다. 본 우편은 소유자님의 의사를 확인하기 위한 안내이며, 특정 거래 조건을 강요하는 내용이 아닙니다.</div>
+          <div class="sign" contenteditable="true" spellcheck="false">감사합니다.<br><br>${officeInfo.name}</div>
+          <div class="footer-info" contenteditable="true" spellcheck="false">${officeInfo.name} · 대표 공인중개사 ${officeInfo.owner} · 등록번호 ${officeInfo.regNo}<br>${officeInfo.address} · TEL. ${officeInfo.phone}</div>`;
+        draftByType[type]=paper.innerHTML;
+      }
       document.querySelectorAll('.type-card').forEach(b=>b.classList.toggle('active',b.dataset.type===type));
+      attachEditableState();
     }
     function getSaved(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){return []}}
     function setSaved(items){localStorage.setItem(STORAGE_KEY,JSON.stringify(items));}
     function cleanText(el){return (el?.innerText||'').replace(/\s+/g,' ').trim();}
     function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>t.classList.remove('show'),1700)}
     function saveCurrent(){
+      updateEmptyState();
+      draftByType[currentType]=paper.innerHTML;
       const items=getSaved();
       if(!currentId && items.length>=10){toast('저장함이 가득 찼습니다. 기존 문서를 삭제하세요.');return;}
       const title=cleanText(paper.querySelector('.doc-title'))||templates[currentType].title;
@@ -206,12 +265,12 @@
       if(!items.length){savedList.innerHTML='<div class="saved-empty">저장된 우편이 없습니다.<br>중앙 문서를 편집한 뒤 저장하세요.</div>';return;}
       savedList.innerHTML=items.map(item=>{const d=new Date(item.updatedAt);const date=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;return `<div class="saved-card ${item.id===currentId?'active':''}" data-id="${esc(item.id)}"><div class="saved-title">${esc(item.title)}</div><div class="saved-meta">${date} · ${esc(item.recipient)}<br>${esc(item.property)}</div><div class="saved-buttons"><button type="button" data-act="load" data-id="${esc(item.id)}">불러오기</button><button type="button" class="danger" data-act="delete" data-id="${esc(item.id)}">삭제</button></div></div>`}).join('');
     }
-    function loadSaved(id){const item=getSaved().find(x=>x.id===id); if(!item)return; currentId=item.id; currentType=item.type||'general'; paper.innerHTML=item.html; document.querySelectorAll('.type-card').forEach(b=>b.classList.toggle('active',b.dataset.type===currentType)); renderSaved(); toast('불러왔습니다.');}
+    function loadSaved(id){const item=getSaved().find(x=>x.id===id); if(!item)return; if(currentType && paper.innerHTML) draftByType[currentType]=paper.innerHTML; currentId=item.id; currentType=item.type||'general'; paper.innerHTML=item.html; draftByType[currentType]=item.html; document.querySelectorAll('.type-card').forEach(b=>b.classList.toggle('active',b.dataset.type===currentType)); attachEditableState(); renderSaved(); toast('불러왔습니다.');}
     function deleteSaved(id){if(!confirm('저장한 우편을 삭제할까요?'))return; setSaved(getSaved().filter(x=>x.id!==id)); if(currentId===id)currentId=null; renderSaved(); toast('삭제했습니다.');}
-    document.querySelectorAll('.type-card').forEach(btn=>btn.addEventListener('click',()=>{if(paper.innerText.trim() && !confirm('현재 문서를 새 유형으로 바꿀까요? 저장하지 않은 내용은 사라집니다.'))return; buildTemplate(btn.dataset.type)}));
-    document.getElementById('newBtn').onclick=()=>buildTemplate(currentType); document.getElementById('newTopBtn').onclick=()=>buildTemplate(currentType);
+    document.querySelectorAll('.type-card').forEach(btn=>btn.addEventListener('click',()=>buildTemplate(btn.dataset.type)));
+    document.getElementById('newBtn').onclick=()=>buildTemplate(currentType,true); document.getElementById('newTopBtn').onclick=()=>buildTemplate(currentType,true);
     document.getElementById('saveBtn').onclick=saveCurrent;
-    document.getElementById('pdfBtn').onclick=()=>window.print(); document.getElementById('pdfTopBtn').onclick=()=>window.print();
+    document.getElementById('pdfBtn').onclick=()=>{updateEmptyState(); window.print();}; document.getElementById('pdfTopBtn').onclick=()=>{updateEmptyState(); window.print();};
     savedList.addEventListener('click',e=>{const btn=e.target.closest('button'); if(!btn)return; const id=btn.dataset.id; if(btn.dataset.act==='load')loadSaved(id); if(btn.dataset.act==='delete')deleteSaved(id);});
     buildTemplate('general'); renderSaved();
   </script>

@@ -325,14 +325,14 @@
     }
     .status-chip.visible{background:#eef5ff;color:#0f7cff;border:1px solid #cfe2ff}
     .status-chip.hidden{background:#f3f5f8;color:#7f8792;border:1px solid #dde3ea}
-    .address-map-row{display:flex;align-items:center;gap:6px;min-width:0;line-height:1.55}
-    .card-address{font-size:15px;line-height:1.55;color:#505862;font-weight:700;word-break:keep-all;min-width:0}
-    .address-map-actions{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto}
+    .address-map-row{display:flex;align-items:flex-start;gap:6px;min-width:0;line-height:1.55}
+    .card-address{font-size:15px;line-height:1.55;color:#505862;font-weight:700;word-break:keep-all;min-width:0;flex:1 1 auto}
+    .address-map-actions{display:inline-flex;flex-direction:column;align-items:center;gap:3px;flex:0 0 22px;margin-top:1px}
     .dashboard-map-btn{
-      width:18px;height:18px;border:0;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;
-      box-shadow:0 2px 6px rgba(15,23,42,.13);cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex:0 0 18px
+      width:22px;height:22px;border:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;
+      box-shadow:0 2px 6px rgba(15,23,42,.13);cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex:0 0 22px
     }
-    .dashboard-map-btn svg{width:12px;height:12px;display:block}
+    .dashboard-map-btn svg{width:14px;height:14px;display:block}
     .dashboard-map-btn.ddangya-map-btn{background:#f97316}
     .dashboard-map-btn.ddangya-map-btn:hover{background:#ea580c}
     .dashboard-map-btn.naver-map-btn{background:#0b7cff}
@@ -4061,11 +4061,11 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const encodedAddress = encodeURIComponent(address);
       return ''
         + '<div class="address-map-row">'
-        +   '<span class="card-address">' + escapeHtml(address || '-') + '</span>'
         +   '<span class="address-map-actions">'
         +     '<button class="dashboard-map-btn ddangya-map-btn" type="button" title="땅야 토지 상세 열기" aria-label="땅야 토지 상세 열기" onclick="return openDashboardDdangyaMap(\'' + encodedAddress + '\', event)">' + DASHBOARD_MAP_PIN_SVG + '</button>'
         +     '<button class="dashboard-map-btn naver-map-btn" type="button" title="네이버지도에서 주소 검색" aria-label="네이버지도에서 주소 검색" onclick="return openDashboardNaverMap(\'' + encodedAddress + '\', event)">' + DASHBOARD_MAP_PIN_SVG + '</button>'
         +   '</span>'
+        +   '<span class="card-address">' + escapeHtml(address || '-') + '</span>'
         + '</div>';
     }
 

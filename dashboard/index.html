@@ -2018,7 +2018,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       priceLookupUrl: 'https://vos.land/',
       krasUrl: 'https://www.kras.go.kr/mainView.do',
       rfineUrl: 'https://new.rfine.kr/Pos/index.php',
-      authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
+      authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1',
+      dashboardItemsCacheKey: 'MK_DASHBOARD_ITEMS_CACHE_V1',
+      dashboardViewStateKey: 'MK_DASHBOARD_VIEW_STATE_V1',
+      dashboardReturnFlagKey: 'MK_DASHBOARD_RETURNING_FROM_EDIT'
     };
 
     const PASSWORD_MAP = {
@@ -2093,6 +2096,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
     let currentTeamFilter = '';
     let nextTeamToggleTarget = 'shopping';
+    let dashboardViewStateRestored = false;
+    let dashboardScrollRestoreY = null;
+    let dashboardScrollSaveTimer = null;
+    let dashboardScrollRestoreTimer = null;
 
     const dashboardRoot = document.getElementById('dashboardRoot');
     const toolbarMeta = document.getElementById('toolbarMeta');
@@ -3092,8 +3099,158 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         updateFilterChips();
         visibleCount = PAGE_SIZE;
         updateTeamTogglePanel();
+        saveDashboardViewState();
         renderDashboard();
       });
+    }
+
+    function safeJsonParse(value, fallback){
+      try{
+        const parsed = JSON.parse(value || '');
+        return parsed == null ? fallback : parsed;
+      }catch(e){
+        return fallback;
+      }
+    }
+
+    function saveDashboardItemsCache(){
+      try{
+        if(!Array.isArray(rawItems)) return;
+        localStorage.setItem(CONFIG.dashboardItemsCacheKey, JSON.stringify({
+          savedAt: Date.now(),
+          items: rawItems
+        }));
+      }catch(e){
+        console.warn('대시보드 매물 캐시 저장 실패', e);
+      }
+    }
+
+    function loadDashboardItemsCache(){
+      try{
+        const cached = safeJsonParse(localStorage.getItem(CONFIG.dashboardItemsCacheKey), null);
+        if(!cached || !Array.isArray(cached.items) || !cached.items.length) return false;
+        rawItems = cached.items;
+        return true;
+      }catch(e){
+        console.warn('대시보드 매물 캐시 복원 실패', e);
+        return false;
+      }
+    }
+
+    function getDashboardViewState(){
+      return {
+        keyword: getSearchText(),
+        activeFilters: {
+          sort: activeFilters.sort || 'default',
+          status: activeFilters.status || '',
+          deal: activeFilters.deal || '',
+          team: activeFilters.team || ''
+        },
+        currentTeamFilter: currentTeamFilter || '',
+        nextTeamToggleTarget: nextTeamToggleTarget || 'shopping',
+        visibleCount: visibleCount || PAGE_SIZE,
+        scrollY: window.scrollY || window.pageYOffset || 0,
+        savedAt: Date.now()
+      };
+    }
+
+    function saveDashboardViewState(extra){
+      try{
+        const state = getDashboardViewState();
+        if(extra && typeof extra === 'object'){
+          Object.keys(extra).forEach(function(key){ state[key] = extra[key]; });
+        }
+        localStorage.setItem(CONFIG.dashboardViewStateKey, JSON.stringify(state));
+      }catch(e){
+        console.warn('대시보드 화면상태 저장 실패', e);
+      }
+    }
+
+    function applySearchText(value){
+      const keyword = text(value);
+      if(!searchInput) return;
+      searchInput.textContent = keyword;
+      currentKeyword = keyword.toLowerCase();
+      if(keyword){
+        searchInput.dataset.userTouched = '1';
+      }else{
+        searchInput.dataset.userTouched = '';
+        hardLockSearchAutofill();
+      }
+    }
+
+    function restoreDashboardViewState(){
+      const state = safeJsonParse(localStorage.getItem(CONFIG.dashboardViewStateKey), null);
+      if(!state) return false;
+
+      if(state.activeFilters && typeof state.activeFilters === 'object'){
+        activeFilters = {
+          sort: state.activeFilters.sort === 'updated' ? 'updated' : 'default',
+          status: state.activeFilters.status || '',
+          deal: state.activeFilters.deal || '',
+          team: state.activeFilters.team || ''
+        };
+      }
+
+      currentTeamFilter = activeFilters.team || state.currentTeamFilter || '';
+      nextTeamToggleTarget = state.nextTeamToggleTarget === 'factory' ? 'factory' : 'shopping';
+      visibleCount = Math.max(PAGE_SIZE, Number(state.visibleCount) || PAGE_SIZE);
+      applySearchText(state.keyword || '');
+      syncLegacyCurrentFilter();
+      updateFilterChips();
+      updateTeamTogglePanel();
+      dashboardScrollRestoreY = Math.max(0, Number(state.scrollY) || 0);
+      dashboardViewStateRestored = true;
+      return true;
+    }
+
+    function scheduleDashboardScrollRestore(scrollY){
+      if(scrollY == null) return;
+      const y = Math.max(0, Number(scrollY) || 0);
+      if(dashboardScrollRestoreTimer){
+        clearTimeout(dashboardScrollRestoreTimer);
+        dashboardScrollRestoreTimer = null;
+      }
+      requestAnimationFrame(function(){
+        try{ window.scrollTo(0, y); }catch(e){}
+        dashboardScrollRestoreTimer = window.setTimeout(function(){
+          try{ window.scrollTo(0, y); }catch(e){}
+          dashboardScrollRestoreTimer = null;
+        }, 140);
+      });
+    }
+
+    function restoreDashboardFromCacheAndState(){
+      const hasCache = loadDashboardItemsCache();
+      const hasState = restoreDashboardViewState();
+      if(hasCache){
+        renderDashboard();
+        if(hasState) scheduleDashboardScrollRestore(dashboardScrollRestoreY);
+        return true;
+      }
+      return false;
+    }
+
+    function bootDashboardAfterUnlock(){
+      let returningFromEdit = false;
+      try{
+        returningFromEdit = sessionStorage.getItem(CONFIG.dashboardReturnFlagKey) === '1';
+      }catch(e){}
+
+      const restored = restoreDashboardFromCacheAndState();
+      const shouldPreserveView = restored || returningFromEdit || dashboardViewStateRestored;
+      fetchAdminItems({
+        silent: restored,
+        preserveView: shouldPreserveView,
+        restoreScroll: shouldPreserveView
+      });
+    }
+
+    function markDashboardReturnPoint(){
+      try{
+        saveDashboardViewState();
+        sessionStorage.setItem(CONFIG.dashboardReturnFlagKey, '1');
+      }catch(e){}
     }
 
     function detectTeamByListingNumber(listingNumber){
@@ -3215,6 +3372,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         searchInput.dataset.userTouched = '1';
         currentKeyword = getSearchText().toLowerCase();
         visibleCount = PAGE_SIZE;
+        saveDashboardViewState();
         renderDashboard();
       });
 
@@ -3261,6 +3419,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       syncLegacyCurrentFilter();
       updateFilterChips();
       visibleCount = PAGE_SIZE;
+      saveDashboardViewState();
       renderDashboard();
     }
 
@@ -3583,9 +3742,27 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       });
     }
 
-    function fetchAdminItems(){
-      clearSearchAutofillValue();
-      startLoadingOverlay();
+    function fetchAdminItems(options){
+      options = options || {};
+      const silent = !!options.silent;
+      const preserveView = options.preserveView !== false;
+      const restoreScroll = !!options.restoreScroll;
+      const scrollYBeforeFetch = window.scrollY || window.pageYOffset || dashboardScrollRestoreY || 0;
+
+      if(!preserveView){
+        clearSearchAutofillValue();
+        activeFilters = { sort: 'default', status: '', deal: '', team: '' };
+        currentTeamFilter = '';
+        nextTeamToggleTarget = 'shopping';
+        visibleCount = PAGE_SIZE;
+        syncLegacyCurrentFilter();
+        updateFilterChips();
+        updateTeamTogglePanel();
+      }
+
+      if(!silent){
+        startLoadingOverlay();
+      }
 
       const today = getTodayDateKey();
       const monthKey = getCurrentMonthKeyFromDate(today);
@@ -3620,18 +3797,28 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
         const items = Array.isArray(propertyData && propertyData.items) ? propertyData.items : [];
         rawItems = items.map(normalizeItem);
+        saveDashboardItemsCache();
 
         applyCalendarOverviewData(calendarData, monthKey, calendarResult.loadedAll !== false);
 
         renderDashboard();
+        if(restoreScroll){
+          scheduleDashboardScrollRestore(dashboardScrollRestoreY != null ? dashboardScrollRestoreY : scrollYBeforeFetch);
+        }
+        saveDashboardViewState({ scrollY: restoreScroll ? (dashboardScrollRestoreY != null ? dashboardScrollRestoreY : scrollYBeforeFetch) : (window.scrollY || window.pageYOffset || 0) });
+        try{ sessionStorage.removeItem(CONFIG.dashboardReturnFlagKey); }catch(e){}
       })
       .catch(function(err){
         console.error(err);
-        dashboardRoot.innerHTML = '<div class="empty">매물 데이터를 불러오지 못했습니다.</div>';
-        toolbarMeta.textContent = '불러오기 실패';
+        if(!rawItems.length){
+          dashboardRoot.innerHTML = '<div class="empty">매물 데이터를 불러오지 못했습니다.</div>';
+          toolbarMeta.textContent = '불러오기 실패';
+        }
       })
       .finally(function(){
-        stopLoadingOverlay();
+        if(!silent){
+          stopLoadingOverlay();
+        }
       });
     }
 
@@ -4218,6 +4405,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
     window.loadMoreItems = function(){
       visibleCount += PAGE_SIZE;
+      saveDashboardViewState();
       renderDashboard();
     };
 
@@ -4232,7 +4420,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       localStorage.setItem(CONFIG.authStorageKey, matched);
       updateGreeting();
       lockOverlay.style.display = 'none';
-      fetchAdminItems();
+      fetchAdminItems({ silent:false, preserveView:false, restoreScroll:false });
     }
 
     lockBtn.addEventListener('click', unlockWithPassword);
@@ -4244,8 +4432,20 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       unlockedUserName = localStorage.getItem(CONFIG.authStorageKey) || '';
       updateGreeting();
       lockOverlay.style.display = 'none';
-      fetchAdminItems();
+      bootDashboardAfterUnlock();
     }
+
+    window.addEventListener('scroll', function(){
+      if(dashboardScrollSaveTimer) return;
+      dashboardScrollSaveTimer = window.setTimeout(function(){
+        dashboardScrollSaveTimer = null;
+        saveDashboardViewState();
+      }, 250);
+    }, { passive:true });
+
+    window.addEventListener('pagehide', function(){
+      saveDashboardViewState();
+    });
 
     window.openPreview = function(listingNumber){
       startLoadingOverlay();
@@ -4255,6 +4455,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     };
 
     window.editItem = function(listingNumber){
+      markDashboardReturnPoint();
       location.href = CONFIG.adminEditUrl + '?listingNumber=' + encodeURIComponent(listingNumber);
     };
 

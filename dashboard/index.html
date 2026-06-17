@@ -976,13 +976,50 @@
       .brand-icon-ownerletter{
         display:none !important;
       }
+      .dashboard-refresh-btn.desktop-only{
+        display:none !important;
+      }
       .search-box{width:min(220px,100%);min-height:54px;padding:0 16px}
       .search-box:focus-within{width:min(100%, 420px)}
-      .property-main{grid-template-columns:90px 1fr;gap:12px;padding:12px}
-      .thumb{width:90px;height:90px;border-radius:16px}
+      .property-main{
+        grid-template-columns:90px minmax(0, 1fr);
+        grid-template-areas:
+          "thumb title"
+          "map addr"
+          "map price"
+          "map meta";
+        column-gap:12px;
+        row-gap:6px;
+        padding:12px;
+        align-items:start;
+      }
+      .thumb{grid-area:thumb;width:90px;height:90px;border-radius:16px}
+      .card-content{display:contents}
+      .title-row{grid-area:title;width:100%;min-width:0}
+      .address-map-row{display:contents}
+      .address-map-actions{
+        grid-area:map;
+        width:90px;
+        max-width:90px;
+        display:flex;
+        flex-direction:row;
+        align-items:center;
+        justify-content:space-between;
+        gap:0;
+        margin:6px 0 0 0;
+        align-self:start;
+      }
+      .dashboard-map-btn{
+        width:40.5px;
+        height:40.5px;
+        flex:0 0 40.5px;
+        border-radius:10px;
+      }
+      .dashboard-map-btn svg{width:24px;height:24px}
       .card-title{font-size:20px}
-      .card-address{font-size:14px}
-      .card-deal-price{font-size:14px}
+      .card-address{grid-area:addr;font-size:14px}
+      .card-deal-price{grid-area:price;font-size:14px}
+      .card-meta{grid-area:meta}
       .action-row{
         gap:6px;
       }

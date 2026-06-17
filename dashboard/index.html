@@ -2103,6 +2103,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     const DASHBOARD_SAVE_REQUEST_KEY = 'MK_ADMIN_SAVE_REQUESTED_FOR_DASHBOARD_V1';
     let dashboardReturnState = null;
     let dashboardRestoredFromReturnState = false;
+    let dashboardReturnSearchTextRestored = false;
     let channelModalListingNumber = '';
     let channelModalChannelKey = '';
 
@@ -3172,6 +3173,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     function clearSearchAutofillValue(){
       if(!searchInput) return;
       searchInput.textContent = '';
+      searchInput.dataset.returnRestoredSearch = '';
+      dashboardReturnSearchTextRestored = false;
       currentKeyword = '';
     }
 
@@ -3232,6 +3235,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
       searchInput.addEventListener('input', function(){
         searchInput.dataset.userTouched = '1';
+        searchInput.dataset.returnRestoredSearch = '';
+        dashboardReturnSearchTextRestored = false;
         currentKeyword = getSearchText().toLowerCase();
         visibleCount = PAGE_SIZE;
         renderDashboard();
@@ -3247,7 +3252,13 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
       window.addEventListener('pageshow', function(){
         if(document.activeElement !== searchInput){
+          if(dashboardReturnSearchTextRestored && searchInput.dataset.returnRestoredSearch === '1' && (getSearchText() || currentKeyword)){
+            searchInput.dataset.userTouched = '1';
+            searchInput.setAttribute('contenteditable', 'false');
+            return;
+          }
           searchInput.dataset.userTouched = '';
+          searchInput.dataset.returnRestoredSearch = '';
           hardLockSearchAutofill();
         }
       });
@@ -3727,14 +3738,13 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     function restoreSearchTextForReturn(state){
       if(!searchInput) return;
       const restoredText = String((state && (state.searchText || state.keyword)) || '').trim();
+      searchInput.dataset.userTouched = restoredText ? '1' : '';
+      searchInput.dataset.returnRestoredSearch = restoredText ? '1' : '';
+      searchInput.setAttribute('contenteditable', 'true');
       searchInput.textContent = restoredText;
       currentKeyword = restoredText ? restoredText.toLowerCase() : String((state && state.keyword) || '').toLowerCase();
-      if(restoredText){
-        searchInput.dataset.userTouched = '1';
-      }else{
-        searchInput.dataset.userTouched = '';
-      }
       searchInput.setAttribute('contenteditable', 'false');
+      dashboardReturnSearchTextRestored = !!restoredText;
     }
 
     function restoreDashboardFromReturnState(){

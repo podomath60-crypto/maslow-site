@@ -2078,6 +2078,11 @@
       return String((item && (item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : ''))) || '').trim();
     }
     var bjdongNameCache = null;
+    var BJDONG_CODE_ALIAS_MAP = {
+      // 화성시 구 설치 후 네이버 PNU 신코드가 내려오지만, 현재 내장 법정동 데이터는 구코드 기준인 경우 보정한다.
+      // 4159134025 = 경기도 화성시 만세구 팔탄면 구장리 → 4159036025 = 경기도 화성시 팔탄면 구장리
+      '4159134025': '4159036025'
+    };
     function bjdongNameByCode(code){
       code = String(code || '').trim();
       if(!/^\d{10}$/.test(code)) return '';
@@ -2087,7 +2092,7 @@
           if(dong && dong.code && dong.name) bjdongNameCache[String(dong.code)] = String(dong.name).trim();
         });
       }
-      return bjdongNameCache[code] || '';
+      return bjdongNameCache[code] || bjdongNameCache[BJDONG_CODE_ALIAS_MAP[code]] || '';
     }
     function addressFromBjdongAndPnu(item){
       var pnu = pnuValue(item);

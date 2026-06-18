@@ -2600,7 +2600,7 @@
         if(adminBjdongCodesPromise) return adminBjdongCodesPromise;
         adminBjdongCodesPromise = new Promise(function(resolve, reject){
           var script = document.createElement('script');
-          script.src = '/search/bjdong-codes.js';
+          script.src = 'https://www.maslowkorea.site/search/bjdong-codes.js';
           script.onload = function(){
             if(Array.isArray(window.BJDONG_CODES) && window.BJDONG_CODES.length){
               resolve(window.BJDONG_CODES);

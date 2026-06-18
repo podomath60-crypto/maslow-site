@@ -616,6 +616,7 @@
     var TRACKER_DB_VERSION = 1;
     var TRACKER_DB_RESULT_STORE = 'tracker_results';
     var TRACKER_DB_FAVORITE_STORE = 'favorite_keys';
+    var trackerResultMemoryCache = {};
 
     function openTrackerDb(){
       return new Promise(function(resolve, reject){
@@ -684,6 +685,7 @@
     async function saveTrackerResultToDb(id, data, meta){
       id = String(id || '').trim();
       if(!id) id = localId();
+      trackerResultMemoryCache[id] = data || {};
       await idbPut(TRACKER_DB_RESULT_STORE, {
         id:id,
         data:data || {},
@@ -695,8 +697,13 @@
     async function readTrackerResultFromDb(id){
       id = String(id || '').trim();
       if(!id) return null;
+      if(trackerResultMemoryCache[id]) return trackerResultMemoryCache[id];
       var row = await idbGet(TRACKER_DB_RESULT_STORE, id);
-      return row && row.data ? row.data : null;
+      if(row && row.data){
+        trackerResultMemoryCache[id] = row.data;
+        return row.data;
+      }
+      return null;
     }
     function storeFavoriteKeyInDb(key, value){
       key = String(key || '').trim();
@@ -751,7 +758,7 @@
     }
     function stripHeavyResultFromHistoryItem(item){
       if(!item || typeof item !== 'object') return item;
-      if(item.result) item.result = null;
+      if(item.result && !item.keepInlineResult) item.result = null;
       return item;
     }
     function historyItemContainsFavorite(item){
@@ -965,8 +972,20 @@
     async function getHistoryResultData(historyItem){
       if(!historyItem) return null;
       if(historyItem.result && typeof historyItem.result === 'object') return historyItem.result;
+      if(historyItem.inlineResult && typeof historyItem.inlineResult === 'object') return historyItem.inlineResult;
       var resultId = resultIdFromHistoryItem(historyItem);
-      return await readTrackerResultFromDb(resultId);
+      try{
+        var fromDb = await readTrackerResultFromDb(resultId);
+        if(fromDb) return fromDb;
+      }catch(e){}
+      try{
+        var latest = readTrackerResult();
+        var latestId = (latest && (latest.resultId || latest.jobId)) || latestResultId();
+        if(latestId && resultId && String(latestId) === String(resultId)){
+          return await readLatestTrackerResult();
+        }
+      }catch(e){}
+      return null;
     }
     async function historyResultItemsAsync(historyItem){
       var result = await getHistoryResultData(historyItem);
@@ -1080,11 +1099,22 @@
         var item = history[i];
         if(!item || !selectedHistoryIds[item.id]) continue;
         if(item.status !== 'completed') continue;
-        var items = await historyResultItemsAsync(item);
-        merged = merged.concat(items);
+        try{
+          var items = await historyResultItemsAsync(item);
+          merged = merged.concat(items);
+        }catch(e){}
       }
       if(!merged.length){
-        showCenterSelectionPrompt();
+        lastItems = [];
+        filteredItems = [];
+        renderSummary([]);
+        els.tableWrap.classList.remove('show');
+        els.resultActions.style.display = 'none';
+        els.resultFilters.classList.remove('show');
+        els.resultBody.innerHTML = '';
+        els.empty.style.display = 'block';
+        els.empty.textContent = '선택한 조회카드의 매물 데이터를 읽지 못했습니다. TXT를 다시 가져오거나 브라우저 저장소 권한을 확인하세요.';
+        setStatus('조회이력은 있으나 매물 데이터 읽기에 실패했습니다.', 'err');
         return [];
       }
       applyFavoriteKeyMapToResultObject({ items: merged }, readFavoriteKeyMap());
@@ -2601,12 +2631,20 @@
         var data = stored && stored.data ? stored.data : {};
         var resultId = resultIdFromHistoryItem(entry, entry.resultId);
         var items = itemArrayFromResultData(data);
-        await saveTrackerResultToDb(resultId, data, buildTransferMetaFromHistoryItem(entry));
+        trackerResultMemoryCache[resultId] = data || {};
+        try{
+          await saveTrackerResultToDb(resultId, data, buildTransferMetaFromHistoryItem(entry));
+          entry.result = null;
+        }catch(e){
+          entry.result = data;
+          entry.inlineResult = data;
+          entry.keepInlineResult = true;
+          entry.dbSaveError = true;
+        }
         entry.resultId = resultId;
         entry.itemCount = items.length;
         entry.listingKeys = listingKeysFromItems(items);
         entry.favoriteKeys = favoriteKeysFromItems(items);
-        entry.result = null;
         imported.push(entry);
       }
       var history = readHistory();
@@ -2628,7 +2666,8 @@
       var firstStored = entries[0].trackerResult;
       var firstResultId = firstEntry ? firstEntry.resultId : '';
       if(firstStored && firstStored.data && firstResultId){
-        await saveTrackerResultToDb(firstResultId, firstStored.data, firstEntry ? buildTransferMetaFromHistoryItem(firstEntry) : {});
+        trackerResultMemoryCache[firstResultId] = firstStored.data;
+        try{ await saveTrackerResultToDb(firstResultId, firstStored.data, firstEntry ? buildTransferMetaFromHistoryItem(firstEntry) : {}); }catch(e){}
         localStorage.setItem(TRACKER_RESULT_KEY + '_id', firstResultId);
         localStorage.setItem(TRACKER_RESULT_KEY, JSON.stringify({
           status:'completed',

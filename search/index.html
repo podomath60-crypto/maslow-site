@@ -1441,15 +1441,9 @@
       item.pnus = Array.isArray(item.pnus) ? item.pnus : (pnu ? [pnu] : []);
       item.jibunAddress = jibun;
       item.jibunAddresses = Array.isArray(item.jibunAddresses) ? item.jibunAddresses : (jibun ? [jibun] : []);
-      if(pnu || jibun){
-        item.addressStatus = '주소확인';
-        item.addressConfidence = '주소확인';
-        item.pnuStatus = pnu ? 'ok' : (item.pnuStatus || 'ok');
-      }else{
-        item.addressStatus = item.addressStatus || item.addressConfidence || '주소미확정';
-        item.addressConfidence = item.addressConfidence || item.addressStatus;
-        item.pnuStatus = item.pnuStatus || 'missing';
-      }
+      item.addressStatus = item.addressStatus || item.addressConfidence || (pnu || jibun ? '주소확인' : '주소미확정');
+      item.addressConfidence = item.addressConfidence || item.addressStatus;
+      item.pnuStatus = item.pnuStatus || (pnu ? 'ok' : 'missing');
       item.realEstateTypeName = typeText;
       item.realEstateType = item.realEstateType || typeText;
       item.realEstateTypeCode = item.realEstateTypeCode || typeText;
@@ -1463,85 +1457,13 @@
       item.detailUrls = Array.isArray(item.detailUrls) ? item.detailUrls : [];
       return item;
     }
-    function pnuFromCandidateValue(value){
-      if(!value) return '';
-      if(typeof value === 'string') return /^\d{19}$/.test(value.trim()) ? value.trim() : '';
-      if(Array.isArray(value)){
-        for(var i = 0; i < value.length; i += 1){
-          var p = pnuFromCandidateValue(value[i]);
-          if(p) return p;
-        }
-        return '';
-      }
-      if(typeof value === 'object'){
-        return pnuFromCandidateValue(value.pnu)
-          || pnuFromCandidateValue(value.pnus)
-          || pnuFromCandidateValue(value.pnuCandidates);
-      }
-      return '';
-    }
-    function pnuFromSingleArticleResultData(data, articleNumber){
-      data = data && data.data && typeof data.data === 'object' ? data.data : (data || {});
-      articleNumber = normalizeArticleNumber(articleNumber || data.articleNumber || '');
-      var candidates = [
-        data.item,
-        data.runner && data.runner.item,
-        data.debug && data.debug.rawArticlePnuCandidates,
-        data.runner && data.runner.rawArticlePnuCandidates,
-        data.rawArticlePnuCandidates
-      ];
-      for(var i = 0; i < candidates.length; i += 1){
-        var cand = candidates[i];
-        if(!cand) continue;
-        if(articleNumber && cand[articleNumber]){
-          var byArticle = pnuFromCandidateValue(cand[articleNumber]);
-          if(byArticle) return byArticle;
-        }
-        var direct = pnuFromCandidateValue(cand);
-        if(direct) return direct;
-      }
-      return '';
-    }
-    function overlaySingleArticlePnuFields(base, overlay){
-      base = base && typeof base === 'object' ? Object.assign({}, base) : {};
-      overlay = overlay && typeof overlay === 'object' ? overlay : {};
-      var pnu = String(overlay.pnu || (Array.isArray(overlay.pnus) ? overlay.pnus[0] : '') || '').trim();
-      var jibun = overlay.jibunAddress || (Array.isArray(overlay.jibunAddresses) ? overlay.jibunAddresses[0] : '') || '';
-      if(pnu && !base.pnu){
-        base.pnu = pnu;
-        base.pnus = Array.isArray(base.pnus) && base.pnus.length ? base.pnus : [pnu];
-      }
-      if(jibun && !base.jibunAddress){
-        base.jibunAddress = jibun;
-        base.jibunAddresses = Array.isArray(base.jibunAddresses) && base.jibunAddresses.length ? base.jibunAddresses : [jibun];
-      }
-      if(base.pnu || base.jibunAddress){
-        base.addressStatus = '주소확인';
-        base.addressConfidence = '주소확인';
-        base.pnuStatus = base.pnu ? 'ok' : (base.pnuStatus || 'ok');
-      }
-      return base;
-    }
     function singleArticleItemsFromResult(data, payload){
       payload = payload || {};
       var items = itemArrayFromResultData(data);
       data = data && data.data && typeof data.data === 'object' ? data.data : (data || {});
-      var fallbackArticleNumber = payload.articleNumber || data.articleNumber || '';
-      var runnerItem = data.runner && data.runner.item && typeof data.runner.item === 'object' ? data.runner.item : null;
-      var fallbackPnu = pnuFromSingleArticleResultData(data, fallbackArticleNumber);
       if(!items.length && data.item && typeof data.item === 'object') items = [data.item];
       if(!items.length) items = [data];
-      return items.map(function(item){
-        var merged = overlaySingleArticlePnuFields(item, runnerItem);
-        if(fallbackPnu && !merged.pnu){
-          merged.pnu = fallbackPnu;
-          merged.pnus = [fallbackPnu];
-          merged.addressStatus = '주소확인';
-          merged.addressConfidence = '주소확인';
-          merged.pnuStatus = 'ok';
-        }
-        return normalizeSingleArticleItem(merged, fallbackArticleNumber);
-      });
+      return items.map(function(item){ return normalizeSingleArticleItem(item, payload.articleNumber || data.articleNumber || ''); });
     }
     function itemFromSingleArticleResult(data){
       var items = singleArticleItemsFromResult(data, { articleNumber: data && data.articleNumber });
@@ -1824,9 +1746,7 @@
     }
     function statusValue(item){
       if(!item || typeof item !== 'object') return String(item || '');
-      var pnu = String((item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : '')) || '').trim();
-      if(pnu) return '주소확인';
-      return item.addressConfidence || item.addressStatus || item.pnuStatus || '';
+      return item.addressConfidence || item.addressStatus || item.pnuStatus || (item.pnu ? '주소확인' : '');
     }
     function confidenceLabel(item){
       var v = statusValue(item);
@@ -2078,10 +1998,9 @@
       return String((item && (item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : ''))) || '').trim();
     }
     var bjdongNameCache = null;
-    var BJDONG_CODE_ALIAS_MAP = {
-      // 화성시 구 설치 후 네이버 PNU 신코드가 내려오지만, 현재 내장 법정동 데이터는 구코드 기준인 경우 보정한다.
-      // 4159134025 = 경기도 화성시 만세구 팔탄면 구장리 → 4159036025 = 경기도 화성시 팔탄면 구장리
-      '4159134025': '4159036025'
+    var BJDONG_CODE_ALIAS = {
+      '4159134025': '4159036025', // 화성시 만세구 팔탄면 구장리 -> 기존 화성시 팔탄면 구장리
+      '4159125027': '4159025627'  // 화성시 만세구 우정읍 주곡리 -> 기존 화성시 우정읍 주곡리
     };
     function bjdongNameByCode(code){
       code = String(code || '').trim();
@@ -2092,7 +2011,7 @@
           if(dong && dong.code && dong.name) bjdongNameCache[String(dong.code)] = String(dong.name).trim();
         });
       }
-      return bjdongNameCache[code] || bjdongNameCache[BJDONG_CODE_ALIAS_MAP[code]] || '';
+      return bjdongNameCache[code] || bjdongNameCache[BJDONG_CODE_ALIAS[code]] || '';
     }
     function addressFromBjdongAndPnu(item){
       var pnu = pnuValue(item);

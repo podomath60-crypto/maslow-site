@@ -4171,7 +4171,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(dashboardBjdongCodesPromise) return dashboardBjdongCodesPromise;
       dashboardBjdongCodesPromise = new Promise(function(resolve, reject){
         const script = document.createElement('script');
-        script.src = '/search/bjdong-codes.js';
+        script.src = 'https://www.maslowkorea.site/search/bjdong-codes.js';
         script.onload = function(){
           if(Array.isArray(window.BJDONG_CODES) && window.BJDONG_CODES.length){
             resolve(window.BJDONG_CODES);

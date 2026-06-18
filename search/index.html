@@ -1463,13 +1463,85 @@
       item.detailUrls = Array.isArray(item.detailUrls) ? item.detailUrls : [];
       return item;
     }
+    function pnuFromCandidateValue(value){
+      if(!value) return '';
+      if(typeof value === 'string') return /^\d{19}$/.test(value.trim()) ? value.trim() : '';
+      if(Array.isArray(value)){
+        for(var i = 0; i < value.length; i += 1){
+          var p = pnuFromCandidateValue(value[i]);
+          if(p) return p;
+        }
+        return '';
+      }
+      if(typeof value === 'object'){
+        return pnuFromCandidateValue(value.pnu)
+          || pnuFromCandidateValue(value.pnus)
+          || pnuFromCandidateValue(value.pnuCandidates);
+      }
+      return '';
+    }
+    function pnuFromSingleArticleResultData(data, articleNumber){
+      data = data && data.data && typeof data.data === 'object' ? data.data : (data || {});
+      articleNumber = normalizeArticleNumber(articleNumber || data.articleNumber || '');
+      var candidates = [
+        data.item,
+        data.runner && data.runner.item,
+        data.debug && data.debug.rawArticlePnuCandidates,
+        data.runner && data.runner.rawArticlePnuCandidates,
+        data.rawArticlePnuCandidates
+      ];
+      for(var i = 0; i < candidates.length; i += 1){
+        var cand = candidates[i];
+        if(!cand) continue;
+        if(articleNumber && cand[articleNumber]){
+          var byArticle = pnuFromCandidateValue(cand[articleNumber]);
+          if(byArticle) return byArticle;
+        }
+        var direct = pnuFromCandidateValue(cand);
+        if(direct) return direct;
+      }
+      return '';
+    }
+    function overlaySingleArticlePnuFields(base, overlay){
+      base = base && typeof base === 'object' ? Object.assign({}, base) : {};
+      overlay = overlay && typeof overlay === 'object' ? overlay : {};
+      var pnu = String(overlay.pnu || (Array.isArray(overlay.pnus) ? overlay.pnus[0] : '') || '').trim();
+      var jibun = overlay.jibunAddress || (Array.isArray(overlay.jibunAddresses) ? overlay.jibunAddresses[0] : '') || '';
+      if(pnu && !base.pnu){
+        base.pnu = pnu;
+        base.pnus = Array.isArray(base.pnus) && base.pnus.length ? base.pnus : [pnu];
+      }
+      if(jibun && !base.jibunAddress){
+        base.jibunAddress = jibun;
+        base.jibunAddresses = Array.isArray(base.jibunAddresses) && base.jibunAddresses.length ? base.jibunAddresses : [jibun];
+      }
+      if(base.pnu || base.jibunAddress){
+        base.addressStatus = '주소확인';
+        base.addressConfidence = '주소확인';
+        base.pnuStatus = base.pnu ? 'ok' : (base.pnuStatus || 'ok');
+      }
+      return base;
+    }
     function singleArticleItemsFromResult(data, payload){
       payload = payload || {};
       var items = itemArrayFromResultData(data);
       data = data && data.data && typeof data.data === 'object' ? data.data : (data || {});
+      var fallbackArticleNumber = payload.articleNumber || data.articleNumber || '';
+      var runnerItem = data.runner && data.runner.item && typeof data.runner.item === 'object' ? data.runner.item : null;
+      var fallbackPnu = pnuFromSingleArticleResultData(data, fallbackArticleNumber);
       if(!items.length && data.item && typeof data.item === 'object') items = [data.item];
       if(!items.length) items = [data];
-      return items.map(function(item){ return normalizeSingleArticleItem(item, payload.articleNumber || data.articleNumber || ''); });
+      return items.map(function(item){
+        var merged = overlaySingleArticlePnuFields(item, runnerItem);
+        if(fallbackPnu && !merged.pnu){
+          merged.pnu = fallbackPnu;
+          merged.pnus = [fallbackPnu];
+          merged.addressStatus = '주소확인';
+          merged.addressConfidence = '주소확인';
+          merged.pnuStatus = 'ok';
+        }
+        return normalizeSingleArticleItem(merged, fallbackArticleNumber);
+      });
     }
     function itemFromSingleArticleResult(data){
       var items = singleArticleItemsFromResult(data, { articleNumber: data && data.articleNumber });

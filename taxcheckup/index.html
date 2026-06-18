@@ -479,7 +479,7 @@
             <ul>
               <li>매도 중개보수 = 양도가액 × 0.9%</li>
               <li>매수 중개보수 = 부가세 제외 매매가액 × 0.9%</li>
-              <li>중개보수 부가세 = 각 중개보수 × 10%를 기본값으로 자동 계산하며, 간이과세자 또는 부가세 별도 청구가 없는 경우 직접 수정</li>
+              <li>중개보수 부가세 = 각 중개보수 × 10%</li>
             </ul>
           </div>
 
@@ -539,9 +539,8 @@
               <label for="brokerFee">매도 중개보수 0.9%</label>
               <input id="brokerFee" inputmode="numeric" value="7,200,000" />
 
-              <label for="sellerBrokerVat">매도 중개보수 부가세</label>
+              <label for="sellerBrokerVat">매도 중개보수 부가세 10%</label>
               <input id="sellerBrokerVat" inputmode="numeric" value="720,000" />
-              <div class="hint">기본은 중개보수 × 10%로 자동 계산됩니다. 간이과세자이거나 부가세 별도 청구가 없으면 0원 등으로 직접 수정하세요.</div>
 
               <label for="legalFee">법무사비용</label>
               <input id="legalFee" inputmode="numeric" value="1,000,000" />
@@ -631,9 +630,8 @@
               <label for="buyerBrokerFee">매수 중개보수 0.9%</label>
               <input id="buyerBrokerFee" inputmode="numeric" value="7,200,000" />
 
-              <label for="buyerBrokerVat">매수 중개보수 부가세</label>
+              <label for="buyerBrokerVat">매수 중개보수 부가세 10%</label>
               <input id="buyerBrokerVat" inputmode="numeric" value="720,000" />
-              <div class="hint">기본은 중개보수 × 10%로 자동 계산됩니다. 간이과세자이거나 부가세 별도 청구가 없으면 0원 등으로 직접 수정하세요.</div>
 
               <label for="buyerLegalFee">매수 법무사·등기비용</label>
               <input id="buyerLegalFee" inputmode="numeric" value="1,000,000" />
@@ -668,9 +666,8 @@
                 <div class="party-line"><span>취득세 과세표준</span><strong id="buyerBaseMini">-</strong></div>
                 <div class="party-line"><span>토지분 / 건물분</span><strong id="buyerSplitMini">-</strong></div>
                 <div class="party-line"><span>매수 중개보수 0.9%</span><strong id="buyerBrokerMini">-</strong></div>
-                <div class="party-line"><span>매수 중개보수 부가세</span><strong id="buyerBrokerVatMini">-</strong></div>
+                <div class="party-line"><span>매수 중개보수 부가세 10%</span><strong id="buyerBrokerVatMini">-</strong></div>
                 <div class="party-note" id="buyerBrokerFormulaMini">매수 중개보수 = 부가세 제외 매매가액 × 0.9%</div>
-                <div class="party-note" id="buyerBrokerVatFormulaMini">중개보수 부가세는 기본 10% 자동 계산, 필요 시 직접 수정</div>
                 <div class="party-note">매수 중개보수는 취득세가 아니라 매수 부대비용입니다. 총 초기 필요자금에 별도 반영합니다.</div>
                 <div class="party-line"><span>법무사·등기·기타</span><strong id="buyerAncillaryMini">-</strong></div>
                 <div class="party-line"><span>건물분 부가세 10%</span><strong id="buyerVatMini">-</strong></div>
@@ -1077,7 +1074,6 @@
       sellerBrokerVat = parseMoney($('sellerBrokerVat').value);
     }
     const sellerBrokerNote = brokerManual.brokerFee ? '직접 입력' : '양도가액 × 0.9%';
-    const sellerBrokerVatNote = brokerManual.sellerBrokerVat ? '직접 입력' : '일반과세자 기준 중개보수 × 10%';
     const sellerNecessaryCost = parseMoney($('necessaryCost').value);
     const sellerLegalFee = parseMoney($('legalFee').value);
     const sellerOtherCost = parseMoney($('otherCost').value);
@@ -1160,7 +1156,6 @@
       buyerBrokerVat = parseMoney($('buyerBrokerVat').value);
     }
     const buyerBrokerNote = brokerManual.buyerBrokerFee ? '직접 입력' : `${fmt(acqBase)} × 0.9% = ${fmt(buyerBrokerFee)}`;
-    const buyerBrokerVatNote = brokerManual.buyerBrokerVat ? '직접 입력' : '일반과세자 기준 중개보수 × 10%';
     const landValue = parseMoney($('landValue').value);
     const buildingValue = parseMoney($('buildingValue').value);
     const buyerLegalFee = parseMoney($('buyerLegalFee').value);
@@ -1268,7 +1263,7 @@
       <tr><td>${sellerBasisLabel}</td><td>${fmt(sellerBasis)}</td></tr>
       <tr><td>기타 양도 필요경비</td><td>${fmt(sellerNecessaryCost)}</td></tr>
       <tr><td>매도 중개보수</td><td>${fmt(sellerBrokerFee)} <small>(${sellerBrokerNote})</small></td></tr>
-      <tr><td>매도 중개보수 부가세</td><td>${fmt(sellerBrokerVat)} <small>(${sellerBrokerVatNote})</small></td></tr>
+      <tr><td>매도 중개보수 부가세 10%</td><td>${fmt(sellerBrokerVat)}</td></tr>
       <tr><td>법무사비용</td><td>${fmt(sellerLegalFee)}</td></tr>
       <tr><td>기타 양도비</td><td>${fmt(sellerOtherCost)}</td></tr>
       <tr><td>총 차감 비용</td><td>${fmt(costs)}</td></tr>
@@ -1294,7 +1289,7 @@
       <tr><td>취득 관련 총 세율</td><td>4.6%</td></tr>
       <tr><td><b>매수인 총 예상 부담세액</b></td><td><b>${fmt(buyerTotal)}</b></td></tr>
       <tr><td>매수 중개보수 0.9%</td><td>${fmt(buyerBrokerFee)} <small>${buyerBrokerNote}</small></td></tr>
-      <tr><td>매수 중개보수 부가세</td><td>${fmt(buyerBrokerVat)} <small>(${buyerBrokerVatNote})</small></td></tr>
+      <tr><td>매수 중개보수 부가세 10%</td><td>${fmt(buyerBrokerVat)}</td></tr>
       <tr><td>매수 법무사·등기비용</td><td>${fmt(buyerLegalFee)}</td></tr>
       <tr><td>인지세·채권·기타 취득비용</td><td>${fmt(buyerOtherCost)}</td></tr>
       <tr><td>건물분 부가세 10%</td><td>${fmt(buyerVat)} <small>${buildingValue > 0 ? `${fmt(buildingValue)} × 10%` : '건물분 가액 미입력: 0원 계산'}</small></td></tr>
@@ -1315,7 +1310,7 @@
       <tr><td>${sellerBasisLabel}</td><td>${fmt(sellerBasis)}</td></tr>
       <tr><td>기타 양도 필요경비</td><td>${fmt(sellerNecessaryCost)}</td></tr>
       <tr><td>매도 중개보수 0.9%</td><td>${fmt(sellerBrokerFee)} (${sellerBrokerNote})</td></tr>
-      <tr><td>매도 중개보수 부가세</td><td>${fmt(sellerBrokerVat)} <small>(${sellerBrokerVatNote})</small></td></tr>
+      <tr><td>매도 중개보수 부가세 10%</td><td>${fmt(sellerBrokerVat)}</td></tr>
       <tr><td>법무사비용 / 기타 양도비</td><td>${fmt(sellerLegalFee)} / ${fmt(sellerOtherCost)}</td></tr>
       <tr><td>${isCorp ? '법인 처분손익' : '양도차익'}</td><td>${fmt(gain)}</td></tr>
       <tr><td>장기보유특별공제</td><td>${isCorp ? '미적용' : `${fmt(longDeduction)} (공제율 ${(longRate*100).toFixed(0)}%)`}</td></tr>
@@ -1336,7 +1331,7 @@
       <tr><td>지방교육세</td><td>${fmt(eduTax)} (0.4%)</td></tr>
       <tr><td><b>매수인 취득세 계열</b></td><td><b>${fmt(buyerTotal)} (총 4.6%)</b></td></tr>
       <tr><td>매수 중개보수 0.9%</td><td>${fmt(buyerBrokerFee)} (${buyerBrokerNote})</td></tr>
-      <tr><td>매수 중개보수 부가세</td><td>${fmt(buyerBrokerVat)} <small>(${buyerBrokerVatNote})</small></td></tr>
+      <tr><td>매수 중개보수 부가세 10%</td><td>${fmt(buyerBrokerVat)}</td></tr>
       <tr><td>법무사·등기비용 / 기타 취득비용</td><td>${fmt(buyerLegalFee)} / ${fmt(buyerOtherCost)}</td></tr>
       <tr><td>건물분 부가세 10%</td><td>${fmt(buyerVat)} ${buildingValue > 0 ? `(${fmt(buildingValue)} × 10%)` : '(건물분 가액 미입력: 0원 계산)'}</td></tr>
       <tr><td>부가세 공제/환급 가능 여부</td><td>${$('vatCreditPossible').checked ? '가능으로 계산' : '불가로 계산'}</td></tr>

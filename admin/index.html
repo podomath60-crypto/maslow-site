@@ -778,6 +778,12 @@
       color:#0f7cff;
       box-shadow:0 4px 12px rgba(15,124,255,.06);
     }
+    .naver-map-link-btn.ddangya{
+      border-color:#fed7aa;
+      background:#fff7ed;
+      color:#f97316;
+      box-shadow:0 4px 12px rgba(249,115,22,.08);
+    }
     .naver-map-link-caption{
       min-width:0;
       flex:1 1 220px;
@@ -2215,6 +2221,7 @@
         <div class="property-specs">
           <div class="property-spec-sector-title">기본정보</div>
           <div id="naverMapLinkRow" class="naver-map-link-row" aria-hidden="true">
+            <button type="button" id="ddangyaMapLinkBtn" class="naver-map-link-btn ddangya">땅야에서 보기</button>
             <button type="button" id="naverMapLinkBtn" class="naver-map-link-btn">네이버 지도에서 보기</button>
             <div id="naverMapLinkCaption" class="naver-map-link-caption"></div>
           </div>
@@ -2384,6 +2391,7 @@
       var addressSearchBtn = document.getElementById('addressSearchBtn');
       var addressLookupBtn = document.getElementById('addressLookupBtn');
       var naverMapLinkRow = document.getElementById('naverMapLinkRow');
+      var ddangyaMapLinkBtn = document.getElementById('ddangyaMapLinkBtn');
       var naverMapLinkBtn = document.getElementById('naverMapLinkBtn');
       var naverMapLinkCaption = document.getElementById('naverMapLinkCaption');
       var priceField = document.getElementById('priceField');
@@ -2545,6 +2553,7 @@
       var ledgerUploadIndicatorTimer = null;
       var rentPriceState = { deposit: '', monthly: '' };
       var selectedAddressSearchData = null;
+      var adminBjdongCodesPromise = null;
       var CREATOR_CACHE_KEY = 'MK_CREATOR_INITIAL_V1';
       var CREATOR_NAME_CACHE_KEY = 'MK_CREATOR_NAME_V1';
 
@@ -2577,11 +2586,117 @@
 
         naverMapLinkRow.classList.toggle('show', hasAddress);
         naverMapLinkRow.setAttribute('aria-hidden', hasAddress ? 'false' : 'true');
+        if(ddangyaMapLinkBtn) ddangyaMapLinkBtn.disabled = !hasAddress;
         naverMapLinkBtn.disabled = !hasAddress;
 
         if(naverMapLinkCaption){
           naverMapLinkCaption.textContent = hasAddress ? address : '';
         }
+      }
+
+
+      function ensureAdminBjdongCodes_(){
+        if(Array.isArray(window.BJDONG_CODES) && window.BJDONG_CODES.length) return Promise.resolve(window.BJDONG_CODES);
+        if(adminBjdongCodesPromise) return adminBjdongCodesPromise;
+        adminBjdongCodesPromise = new Promise(function(resolve, reject){
+          var script = document.createElement('script');
+          script.src = '/search/bjdong-codes.js';
+          script.onload = function(){
+            if(Array.isArray(window.BJDONG_CODES) && window.BJDONG_CODES.length){
+              resolve(window.BJDONG_CODES);
+            }else{
+              reject(new Error('법정동 코드 데이터가 비어 있습니다.'));
+            }
+          };
+          script.onerror = function(){ reject(new Error('법정동 코드 데이터를 불러오지 못했습니다.')); };
+          document.head.appendChild(script);
+        });
+        return adminBjdongCodesPromise;
+      }
+
+      function normalizeAdminBjdongText_(value){
+        var text = String(value || '').trim();
+        text = text.replace(/\([^)]*\)/g, ' ');
+        text = text.replace(/\[[^\]]*\]/g, ' ');
+        text = text.replace(/,/g, ' ');
+        text = text.replace(/\s+/g, ' ').trim();
+        text = text.replace(/^전북\s+/, '전북특별자치도 ');
+        text = text.replace(/^전라북도\s+/, '전북특별자치도 ');
+        text = text.replace(/^전북특별자치도\s*전북특별자치도\s+/, '전북특별자치도 ');
+        text = text.replace(/([가-힣]+시)([가-힣]+구)(\s|$)/g, '$1 $2$3');
+        return text.replace(/\s+/g, ' ').trim();
+      }
+
+      function parseAdminJibunAddress_(address){
+        var clean = normalizeAdminBjdongText_(address);
+        var matches = [];
+        var re = /(산\s*)?(\d+)(?:\s*-\s*(\d+))?/g;
+        var match;
+        while((match = re.exec(clean))){
+          matches.push({ index: match.index, text: match[0], mountain: !!match[1], main: match[2], sub: match[3] || '0' });
+        }
+        if(!matches.length) return null;
+        var lot = matches[matches.length - 1];
+        var legalName = clean.slice(0, lot.index).replace(/(?:번지|일원|필지|외)\s*$/g, '').trim();
+        if(!legalName || !lot.main) return null;
+        return { legalName: legalName, mountain: lot.mountain, main: lot.main, sub: lot.sub };
+      }
+
+      function findAdminBjdongCode_(legalName){
+        var codes = Array.isArray(window.BJDONG_CODES) ? window.BJDONG_CODES : [];
+        var target = normalizeAdminBjdongText_(legalName);
+        var found = codes.find(function(row){ return normalizeAdminBjdongText_(row && row.name) === target; });
+        if(found && found.code) return String(found.code);
+        found = codes
+          .filter(function(row){
+            var name = normalizeAdminBjdongText_(row && row.name);
+            return name && (target === name || target.indexOf(name + ' ') === 0 || name.indexOf(target + ' ') === 0);
+          })
+          .sort(function(a,b){ return String(b.name || '').length - String(a.name || '').length; })[0];
+        return found && found.code ? String(found.code) : '';
+      }
+
+      function buildAdminPnuFromAddress_(address){
+        var parsed = parseAdminJibunAddress_(address);
+        if(!parsed) return '';
+        var code = findAdminBjdongCode_(parsed.legalName);
+        if(!/^\d{10}$/.test(code)) return '';
+        var main = String(parsed.main || '').padStart(4, '0');
+        var sub = String(parsed.sub || '0').padStart(4, '0');
+        if(!/^\d{4}$/.test(main) || !/^\d{4}$/.test(sub)) return '';
+        return code + (parsed.mountain ? '2' : '1') + main + sub;
+      }
+
+      function openDdangyaMapLink_(){
+        var address = getCurrentAddressForMap_();
+        if(!address){
+          alert('주소를 확인할 수 없어 땅야 상세페이지를 열 수 없습니다.');
+          return;
+        }
+        var popup = null;
+        try{
+          popup = window.open('about:blank', '_blank');
+          if(popup) popup.opener = null;
+        }catch(err){
+          popup = null;
+        }
+        ensureAdminBjdongCodes_().then(function(){
+          var pnu = buildAdminPnuFromAddress_(address);
+          if(!pnu){
+            if(popup) popup.close();
+            alert('지번 주소를 확인할 수 없어 땅야 상세페이지를 열 수 없습니다.');
+            return;
+          }
+          var url = 'https://ddangya.com/land/detail/' + pnu;
+          if(popup){
+            popup.location.href = url;
+          }else{
+            window.open(url, '_blank', 'noopener,noreferrer');
+          }
+        }).catch(function(){
+          if(popup) popup.close();
+          alert('법정동 코드 데이터를 불러오지 못해 땅야 상세페이지를 열 수 없습니다.');
+        });
       }
 
       function openNaverMapLink_(){
@@ -6251,6 +6366,12 @@
       if(addressLookupBtn){
         addressLookupBtn.addEventListener('click', function(){
           runAddressLookup_();
+        });
+      }
+
+      if(ddangyaMapLinkBtn){
+        ddangyaMapLinkBtn.addEventListener('click', function(){
+          openDdangyaMapLink_();
         });
       }
 

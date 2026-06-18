@@ -1441,9 +1441,15 @@
       item.pnus = Array.isArray(item.pnus) ? item.pnus : (pnu ? [pnu] : []);
       item.jibunAddress = jibun;
       item.jibunAddresses = Array.isArray(item.jibunAddresses) ? item.jibunAddresses : (jibun ? [jibun] : []);
-      item.addressStatus = item.addressStatus || item.addressConfidence || (pnu || jibun ? '주소확인' : '주소미확정');
-      item.addressConfidence = item.addressConfidence || item.addressStatus;
-      item.pnuStatus = item.pnuStatus || (pnu ? 'ok' : 'missing');
+      if(pnu || jibun){
+        item.addressStatus = '주소확인';
+        item.addressConfidence = '주소확인';
+        item.pnuStatus = pnu ? 'ok' : (item.pnuStatus || 'ok');
+      }else{
+        item.addressStatus = item.addressStatus || item.addressConfidence || '주소미확정';
+        item.addressConfidence = item.addressConfidence || item.addressStatus;
+        item.pnuStatus = item.pnuStatus || 'missing';
+      }
       item.realEstateTypeName = typeText;
       item.realEstateType = item.realEstateType || typeText;
       item.realEstateTypeCode = item.realEstateTypeCode || typeText;
@@ -1746,7 +1752,9 @@
     }
     function statusValue(item){
       if(!item || typeof item !== 'object') return String(item || '');
-      return item.addressConfidence || item.addressStatus || item.pnuStatus || (item.pnu ? '주소확인' : '');
+      var pnu = String((item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : '')) || '').trim();
+      if(pnu) return '주소확인';
+      return item.addressConfidence || item.addressStatus || item.pnuStatus || '';
     }
     function confidenceLabel(item){
       var v = statusValue(item);

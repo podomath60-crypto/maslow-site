@@ -367,7 +367,17 @@
     .mini-btn.gray{border-color:#dde3ea;background:#f4f6f8;color:#6e7782}
     .mini-btn.square{border-radius:10px;padding:0 8px;min-height:34px;font-size:16px;font-weight:800;letter-spacing:-0.03em;display:inline-flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap}
     .mini-btn.edit-square{border-color:#b9dcff;background:#ecf6ff;color:#3a8fe6}
-    .mini-btn.memo-square{border-color:#e8dc7e;background:#fff4a8;color:#7a6500}
+    .mini-btn.memo-square{border-color:#e8dc7e;background:#fff4a8;color:#7a6500;position:relative}
+    .memo-fresh-star{
+      position:absolute;
+      top:-5px;
+      right:-4px;
+      font-size:8px;
+      line-height:1;
+      color:#0f7cff;
+      text-shadow:0 1px 2px rgba(15,23,42,.16);
+      pointer-events:none;
+    }
     .mini-btn.share-square{border-color:#cde8b0;background:#e9f8d7;color:#5e8d1b}
     .mini-btn.compact{min-height:30px;padding:0 10px;font-size:12px;border-radius:999px;flex:0 0 auto}
     .mini-btn.visibility-text-btn{
@@ -2237,6 +2247,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     const calendarInlineLoading = document.getElementById('calendarInlineLoading');
     const propertyMemoModal = document.getElementById('propertyMemoModal');
     const propertyMemoTextarea = document.getElementById('propertyMemoTextarea');
+    const PROPERTY_MEMO_READ_STORAGE_KEY = 'MK_DASHBOARD_MEMO_READ_V1';
+    const PROPERTY_MEMO_FRESH_MS = 24 * 60 * 60 * 1000;
     let propertyMemoEditingItem = null;
     let propertyMemoHistoryArmed = false;
 
@@ -3452,6 +3464,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         requesterNote: text(raw.requesterNote),
 
         memo: text(raw.memo),
+        memoUpdatedAt: text(raw.memoUpdatedAt),
 
         channelYoutube: text(raw.channelYoutube),
         channelInstagram: text(raw.channelInstagram),
@@ -3977,6 +3990,71 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       return Number.isNaN(t) ? null : t;
     }
 
+    function readPropertyMemoReadMap(){
+      try{
+        const parsed = JSON.parse(localStorage.getItem(PROPERTY_MEMO_READ_STORAGE_KEY) || '{}');
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+      }catch(e){
+        return {};
+      }
+    }
+
+    function writePropertyMemoReadMap(map){
+      try{
+        localStorage.setItem(PROPERTY_MEMO_READ_STORAGE_KEY, JSON.stringify(map || {}));
+      }catch(e){}
+    }
+
+    function getPropertyMemoUpdatedTime(item){
+      return parseDateValue(item && item.memoUpdatedAt);
+    }
+
+    function isPropertyMemoFreshUnread(item){
+      if(!text(item && item.memo)) return false;
+
+      const memoUpdatedTime = getPropertyMemoUpdatedTime(item);
+      if(!memoUpdatedTime) return false;
+
+      if(Date.now() - memoUpdatedTime > PROPERTY_MEMO_FRESH_MS) return false;
+
+      const listingNumber = text(item && item.listingNumber);
+      if(!listingNumber) return false;
+
+      const readMap = readPropertyMemoReadMap();
+      const readTime = parseDateValue(readMap[listingNumber]);
+
+      return !(readTime && readTime >= memoUpdatedTime);
+    }
+
+    function markPropertyMemoRead(item){
+      const listingNumber = text(item && item.listingNumber);
+      if(!listingNumber) return;
+
+      const memoUpdatedTime = getPropertyMemoUpdatedTime(item);
+      const readTime = Math.max(Date.now(), memoUpdatedTime ? memoUpdatedTime + 1 : Date.now());
+      const readMap = readPropertyMemoReadMap();
+      readMap[listingNumber] = new Date(readTime).toISOString();
+      writePropertyMemoReadMap(readMap);
+    }
+
+    function removePropertyMemoFreshStar(listingNumber){
+      const key = text(listingNumber);
+      if(!key || !dashboardRoot) return;
+
+      const cards = dashboardRoot.querySelectorAll('.property-card');
+      cards.forEach(function(card){
+        if(text(card.getAttribute('data-listing-number')) !== key) return;
+        const star = card.querySelector('.memo-fresh-star');
+        if(star) star.remove();
+      });
+    }
+
+    function buildPropertyMemoFreshStar(item){
+      return isPropertyMemoFreshUnread(item)
+        ? '<span class="memo-fresh-star" aria-hidden="true">★</span>'
+        : '';
+    }
+
     function formatDateGroup(value){
       const ts = parseDateValue(value);
       if(!ts) return '날짜 미확인';
@@ -4356,7 +4434,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         +       '<div class="action-left">'
         +         '<button class="mini-btn visibility-text-btn active-show" type="button" onclick="event.stopPropagation(); markVisible(\'' + encodeURIComponent(item.listingNumber) + '\')">보임</button>'
         +         '<button class="mini-btn visibility-text-btn" type="button" onclick="event.stopPropagation(); markHidden(\'' + encodeURIComponent(item.listingNumber) + '\')">숨김</button>'
-        +         '<button class="mini-btn square memo-square" type="button" onclick="event.stopPropagation(); openPropertyMemoModal(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">📌</span><span class="btn-text">메모</span></button>'
+        +         '<button class="mini-btn square memo-square" type="button" onclick="event.stopPropagation(); openPropertyMemoModal(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">📌</span><span class="btn-text">메모</span>' + buildPropertyMemoFreshStar(item) + '</button>'
         +         '<button class="mini-btn square share-square" type="button" onclick="event.stopPropagation(); sharePreview(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">💫</span><span class="btn-text">공유</span></button>'
         +         '<button class="mini-btn square edit-square" type="button" onclick="event.stopPropagation(); openPreview(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">👀</span><span class="btn-text">보기</span></button>'
         +       '</div>'
@@ -4619,6 +4697,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         return;
       }
       propertyMemoEditingItem = item;
+      markPropertyMemoRead(item);
+      removePropertyMemoFreshStar(item.listingNumber);
       if(propertyMemoTextarea) propertyMemoTextarea.value = text(item.memo);
       if(propertyMemoModal) propertyMemoModal.classList.add('show');
       if(!propertyMemoHistoryArmed){
@@ -4678,6 +4758,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         }
         item.memo = memo;
         item.updatedAt = text(data.updatedAt) || new Date().toISOString();
+        item.memoUpdatedAt = text(data.memoUpdatedAt) || item.updatedAt;
+        markPropertyMemoRead(item);
         closePropertyMemoModal();
         renderDashboard();
       }catch(err){

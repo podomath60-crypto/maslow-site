@@ -146,16 +146,16 @@
     .link-btn{height:34px;padding:0 10px;border-radius:10px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
     .article-no-btn{border:0;background:transparent;color:#1d4ed8;font-size:13px;font-weight:950;text-decoration:underline;text-underline-offset:3px;padding:4px 0;cursor:pointer}
     .article-no-btn:hover{color:#1e40af}
-    .map-head{width:56px;min-width:56px;padding-left:0;padding-right:0}
-    .map-cell{width:56px;min-width:56px;text-align:center;vertical-align:middle;padding-left:0;padding-right:0}
-    .map-btn-wrap{display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
+    .map-head{width:48px;min-width:48px;padding-left:0;padding-right:0}
+    .map-cell{width:48px;min-width:48px;text-align:center;vertical-align:middle;padding-left:0;padding-right:0}
+    .map-btn-wrap{display:inline-flex;align-items:center;justify-content:center;gap:4px;vertical-align:middle;transform:translateX(-10px)}
     .naver-map-btn{width:18px;height:18px;border:0;border-radius:4px;background:#0b7cff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(37,99,235,.13);cursor:pointer;line-height:1;padding:0;vertical-align:middle}
     .naver-map-btn svg{width:12px;height:12px;display:block}
     .naver-map-btn:hover{background:#075fd1}
     .naver-map-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(37,99,235,.16)}
-    .ddangya-map-btn{background:#f97316;color:#fff;font-size:9px;font-weight:950;font-family:inherit;letter-spacing:-.08em}
+    .ddangya-map-btn{background:#f97316;box-shadow:0 2px 6px rgba(249,115,22,.16)}
     .ddangya-map-btn:hover{background:#ea580c}
-    .ddangya-map-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(249,115,22,.18)}
+    .ddangya-map-btn:focus{box-shadow:0 0 0 3px rgba(249,115,22,.18)}
 
 
     .desktop-layout{max-width:1452px;margin:0 auto;display:grid;grid-template-columns:240px 900px 280px;gap:16px;align-items:start}
@@ -2270,14 +2270,14 @@
           : '<span class="muted">-</span>';
         var addr = getAddressText(item) || '주소 미확인';
         var pnu = pnuValue(item);
+        var ddangyaBtn = /^\d{19}$/.test(pnu)
+          ? '<button class="naver-map-btn ddangya-map-btn" type="button" title="땅야에서 보기" data-ddangya-pnu="' + escapeHtml(pnu) + '" aria-label="땅야에서 보기"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2.75c-3.05 0-5.5 2.36-5.5 5.28 0 3.93 5.5 13.22 5.5 13.22s5.5-9.29 5.5-13.22c0-2.92-2.45-5.28-5.5-5.28Zm0 7.42a2.05 2.05 0 1 1 0-4.1 2.05 2.05 0 0 1 0 4.1Z"/></svg></button>'
+          : '';
         var naverMapBtn = addr && addr !== '주소 미확인'
           ? '<button class="naver-map-btn" type="button" title="네이버지도에서 주소 검색" data-map-address="' + escapeHtml(addr) + '" aria-label="네이버지도에서 주소 검색"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2.75c-3.05 0-5.5 2.36-5.5 5.28 0 3.93 5.5 13.22 5.5 13.22s5.5-9.29 5.5-13.22c0-2.92-2.45-5.28-5.5-5.28Zm0 7.42a2.05 2.05 0 1 1 0-4.1 2.05 2.05 0 0 1 0 4.1Z"/></svg></button>'
           : '';
-        var ddangyaMapBtn = /^\d{19}$/.test(pnu)
-          ? '<button class="naver-map-btn ddangya-map-btn" type="button" title="땅야에서 PNU로 조회" data-ddangya-pnu="' + escapeHtml(pnu) + '" aria-label="땅야에서 PNU로 조회">땅</button>'
-          : '';
-        var mapBtn = (ddangyaMapBtn || naverMapBtn)
-          ? '<span class="map-btn-wrap">' + ddangyaMapBtn + naverMapBtn + '</span>'
+        var mapBtn = ddangyaBtn || naverMapBtn
+          ? '<span class="map-btn-wrap">' + ddangyaBtn + naverMapBtn + '</span>'
           : '';
         var favRowClass = isResultFavorite(item) ? ' class="favorite-row"' : '';
         return '<tr' + favRowClass + '>' +

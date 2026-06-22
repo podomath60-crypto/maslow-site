@@ -4756,11 +4756,29 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         if(!data || data.ok !== true){
           throw new Error((data && (data.message || data.error)) || '메모 저장 실패');
         }
-        item.memo = memo;
-        item.updatedAt = text(data.updatedAt) || new Date().toISOString();
-        item.memoUpdatedAt = text(data.memoUpdatedAt) || item.updatedAt;
         closePropertyMemoModal();
-        renderDashboard();
+
+        try{
+          const latestData = await fetchLatestPropertyListOnly();
+          const latestItems = Array.isArray(latestData && latestData.items) ? latestData.items : [];
+          const latestRaw = latestItems.find(function(x){
+            return text(x && x.listingNumber) === listingNumber;
+          });
+          if(latestRaw){
+            patchSingleDashboardCard(normalizeItem(latestRaw));
+          }else{
+            item.memo = memo;
+            item.updatedAt = text(data.updatedAt) || item.updatedAt;
+            item.memoUpdatedAt = text(data.memoUpdatedAt) || item.memoUpdatedAt;
+            renderDashboard();
+          }
+        }catch(refreshErr){
+          console.error(refreshErr);
+          item.memo = memo;
+          item.updatedAt = text(data.updatedAt) || item.updatedAt;
+          item.memoUpdatedAt = text(data.memoUpdatedAt) || item.memoUpdatedAt;
+          renderDashboard();
+        }
       }catch(err){
         console.error(err);
         alert((err && err.message) ? err.message : '메모 저장 중 문제가 발생했습니다.');

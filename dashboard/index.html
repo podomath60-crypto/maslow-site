@@ -367,18 +367,9 @@
     .mini-btn.gray{border-color:#dde3ea;background:#f4f6f8;color:#6e7782}
     .mini-btn.square{border-radius:10px;padding:0 8px;min-height:34px;font-size:16px;font-weight:800;letter-spacing:-0.03em;display:inline-flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap}
     .mini-btn.edit-square{border-color:#b9dcff;background:#ecf6ff;color:#3a8fe6}
-    .mini-btn.memo-square{border-color:#e8dc7e;background:#fff4a8;color:#7a6500;position:relative}
-    .memo-new-star{
-      position:absolute;
-      top:-5px;
-      right:-5px;
-      width:9px;
-      height:9px;
-      border-radius:999px;
-      background:#0f7cff;
-      box-shadow:0 0 0 2px #fff, 0 2px 6px rgba(15,124,255,.35);
-      pointer-events:none;
-    }
+    .mini-btn.memo-square{border-color:#e8dc7e;background:#fff4a8;color:#7a6500}
+    .mini-btn.memo-square{position:relative}
+    .memo-new-star{position:absolute;top:-4px;right:-4px;width:9px;height:9px;border-radius:999px;background:#1677ff;box-shadow:0 0 0 2px #fff}
     .mini-btn.share-square{border-color:#cde8b0;background:#e9f8d7;color:#5e8d1b}
     .mini-btn.compact{min-height:30px;padding:0 10px;font-size:12px;border-radius:999px;flex:0 0 auto}
     .mini-btn.visibility-text-btn{
@@ -2177,8 +2168,6 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     const DASHBOARD_ITEMS_CACHE_KEY = 'MK_DASHBOARD_ITEMS_CACHE_V2';
     const DASHBOARD_RETURN_STATE_KEY = 'MK_DASHBOARD_RETURN_STATE_V2';
     const DASHBOARD_SAVE_REQUEST_KEY = 'MK_ADMIN_SAVE_REQUESTED_FOR_DASHBOARD_V1';
-    const MEMO_SEEN_STORAGE_KEY = 'MK_PROPERTY_MEMO_SEEN_V1';
-    const MEMO_NEW_WINDOW_MS = 24 * 60 * 60 * 1000;
     let dashboardReturnState = null;
     let dashboardRestoredFromReturnState = false;
     let dashboardReturnSearchTextRestored = false;
@@ -3396,18 +3385,13 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       return String(v == null ? '' : v).trim();
     }
 
-    function parseJsonArraySafe(value){
-      try{
-        const parsed = typeof value === 'string' ? JSON.parse(value || '[]') : value;
-        return Array.isArray(parsed) ? parsed : [];
-      }catch(e){
-        return [];
-      }
-    }
+    const MEMO_SEEN_STORAGE_KEY = 'maslow.propertyMemoSeen.v1';
+    const MEMO_NEW_WINDOW_MS = 24 * 60 * 60 * 1000;
 
     function readMemoSeenMap(){
       try{
-        const parsed = JSON.parse(localStorage.getItem(MEMO_SEEN_STORAGE_KEY) || '{}');
+        const raw = localStorage.getItem(MEMO_SEEN_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
         return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
       }catch(e){
         return {};
@@ -3420,13 +3404,6 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       }catch(e){}
     }
 
-    function getMemoSeenValue(listingNumber){
-      const key = text(listingNumber);
-      if(!key) return '';
-      const map = readMemoSeenMap();
-      return text(map[key]);
-    }
-
     function markMemoSeen(listingNumber, memoUpdatedAt){
       const key = text(listingNumber);
       const stamp = text(memoUpdatedAt);
@@ -3436,19 +3413,25 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       writeMemoSeenMap(map);
     }
 
-    function isMemoUpdatedWithinWindow(memoUpdatedAt){
-      const ts = parseDateValue(memoUpdatedAt);
-      if(!ts) return false;
-      const diff = Date.now() - ts;
-      return diff >= 0 && diff <= MEMO_NEW_WINDOW_MS;
+    function shouldShowMemoNewStar(item){
+      if(!item) return false;
+      const listingNumber = text(item.listingNumber);
+      const stamp = text(item.memoUpdatedAt);
+      if(!listingNumber || !stamp) return false;
+      const time = Date.parse(stamp);
+      if(!Number.isFinite(time)) return false;
+      if(Date.now() - time > MEMO_NEW_WINDOW_MS) return false;
+      const seen = readMemoSeenMap();
+      return text(seen[listingNumber]) !== stamp;
     }
 
-    function shouldShowMemoStar(item){
-      const listingNumber = text(item && item.listingNumber);
-      const memoUpdatedAt = text(item && item.memoUpdatedAt);
-      if(!listingNumber || !memoUpdatedAt) return false;
-      if(!isMemoUpdatedWithinWindow(memoUpdatedAt)) return false;
-      return getMemoSeenValue(listingNumber) !== memoUpdatedAt;
+    function parseJsonArraySafe(value){
+      try{
+        const parsed = typeof value === 'string' ? JSON.parse(value || '[]') : value;
+        return Array.isArray(parsed) ? parsed : [];
+      }catch(e){
+        return [];
+      }
     }
 
     function normalizeItem(raw){
@@ -3464,7 +3447,6 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         status: text(raw.status || 'hidden').toLowerCase(),
         createdAt: text(raw.createdAt),
         updatedAt: text(raw.updatedAt),
-        memoUpdatedAt: text(raw.memoUpdatedAt),
         lastEditor: text(raw.lastEditedBy || raw.updatedBy || raw.editorName || ''),
         heroUrl: hero,
 
@@ -3512,6 +3494,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         requesterNote: text(raw.requesterNote),
 
         memo: text(raw.memo),
+        memoUpdatedAt: text(raw.memoUpdatedAt),
 
         channelYoutube: text(raw.channelYoutube),
         channelInstagram: text(raw.channelInstagram),
@@ -4390,7 +4373,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       }).join('');
       const ownSiteState = getChannelStateByItem(item, 'ownSite');
       const ownSiteClass = ownSiteState.done ? '' : ' is-not-yet';
-      const memoStarHtml = shouldShowMemoStar(item) ? '<span class="memo-new-star" aria-hidden="true"></span>' : '';
+      const memoStarHtml = shouldShowMemoNewStar(item) ? '<span class="memo-new-star" aria-hidden="true"></span>' : '';
 
       return ''
         + '<article class="property-card" data-listing-number="' + escapeHtml(item.listingNumber || '') + '">'
@@ -4680,9 +4663,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         return;
       }
       propertyMemoEditingItem = item;
-      if(shouldShowMemoStar(item)){
+      if(shouldShowMemoNewStar(item)){
         markMemoSeen(item.listingNumber, item.memoUpdatedAt);
-        patchSingleDashboardCard(item);
+        renderDashboard();
       }
       if(propertyMemoTextarea) propertyMemoTextarea.value = text(item.memo);
       if(propertyMemoModal) propertyMemoModal.classList.add('show');
@@ -4743,9 +4726,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         }
         item.memo = memo;
         item.updatedAt = text(data.updatedAt) || new Date().toISOString();
-        item.memoUpdatedAt = text(data.memoUpdatedAt) || item.memoUpdatedAt;
-        if(text(data.memoUpdatedAt)){
-          markMemoSeen(item.listingNumber, data.memoUpdatedAt);
+        item.memoUpdatedAt = text(data.memoUpdatedAt) || text(item.memoUpdatedAt);
+        if(item.memoUpdatedAt){
+          markMemoSeen(item.listingNumber, item.memoUpdatedAt);
         }
         closePropertyMemoModal();
         renderDashboard();

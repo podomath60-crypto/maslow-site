@@ -4759,7 +4759,6 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         item.memo = memo;
         item.updatedAt = text(data.updatedAt) || new Date().toISOString();
         item.memoUpdatedAt = text(data.memoUpdatedAt) || item.updatedAt;
-        markPropertyMemoRead(item);
         closePropertyMemoModal();
         renderDashboard();
       }catch(err){

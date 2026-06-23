@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+  <meta name="naverbot" content="noindex, nofollow, noarchive, nosnippet" />
+  <title>Maslow Project</title>
+  <link rel="icon" href="/favicon.ico" />
+  <style>
+    :root{
+      --bg:#ffffff;
+      --line:#e6ebf1;
+      --text:#111318;
+      --muted:#66707a;
+      --blue:#0f7cff;
+      --green:#00f06a;
+      --soft-green:#e9fff2;
+      --shadow:0 14px 30px rgba(15,23,42,.05);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:#fff;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;letter-spacing:-.02em}
+    a{text-decoration:none;color:inherit}
+    button,input{font:inherit}
+    button{border:none;background:none;cursor:pointer}
+    .page{min-height:100vh;background:linear-gradient(180deg,#fff 0%,#f9fbff 100%)}
+    .shell{width:100%;max-width:980px;margin:0 auto;padding:0 20px 54px}
+    .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;min-height:76px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid rgba(230,235,241,.9)}
+    .brand-icons{display:flex;align-items:center;gap:10px}
+    .brand-icon-link{width:42px;height:42px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);font-weight:1000}
+    .brand-icon-dashboard{width:118px;flex:0 0 118px;background:#00f06a;border-color:#00f06a;color:#07110b;font-size:15px;letter-spacing:-.035em;box-shadow:0 14px 30px rgba(0,240,106,.22)}
+    .brand-icon-taxcheckup{width:63px;flex:0 0 63px;background:#183a8f;border-color:#183a8f;color:#fff;font-size:18px}
+    .topbar-title{font-size:15px;font-weight:1000;color:#111318;white-space:nowrap}
+    .hero-spacer{height:18px}
+    .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0 18px}
+    .panel-card{position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:132px;padding:22px 22px 20px;border:1px solid var(--line);border-radius:28px;background:#fff;box-shadow:var(--shadow);text-align:left;transition:transform .18s ease, box-shadow .18s ease}
+    .panel-card:hover{transform:translateY(-2px);box-shadow:0 18px 34px rgba(15,23,42,.08)}
+    .panel-card.primary{background:linear-gradient(180deg,#f5fff9 0%,#eafff2 100%);border-color:#9cffc5}
+    .panel-eyebrow{font-size:12px;font-weight:900;color:#7d8792;letter-spacing:.08em;text-transform:uppercase}
+    .panel-title-row{display:flex;align-items:center;gap:12px;margin-top:10px}
+    .panel-icon{width:42px;height:42px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;background:#f1f5f9;font-size:24px;flex:0 0 42px}
+    .primary .panel-icon{background:#00f06a;color:#07110b}
+    .panel-title{font-size:28px;line-height:1.1;font-weight:1000;letter-spacing:-.06em}
+    .panel-desc{margin-top:10px;font-size:14px;line-height:1.55;color:#66707a;font-weight:700}
+    .search-wrap{margin:0 auto 14px}
+    .search-box{width:100%;min-height:60px;padding:0 20px;border:1px solid var(--line);border-radius:999px;background:#fff;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px}
+    .search-icon{font-size:18px}
+    .search-input{flex:1;min-height:44px;display:flex;align-items:center;outline:none;font-size:17px;font-weight:800;color:#111318}
+    .search-input:empty:before{content:attr(data-placeholder);color:#a0a8b2;font-weight:800}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 auto 20px}
+    .chip-row{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px}
+    .filter-chip{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid #dce6f1;background:#fff;color:#3f4852;font-size:13px;font-weight:900;white-space:nowrap}
+    .filter-chip.active{border-color:#00d45d;background:#00f06a;color:#07110b}
+    .toolbar-meta{flex:0 0 auto;font-size:13px;font-weight:900;color:#7a8490}
+    .date-group{margin:24px 0 28px}
+    .date-heading{font-size:17px;font-weight:1000;margin:0 0 12px;color:#222831}
+    .project-list{display:grid;gap:14px}
+    .property-card{border:1px solid var(--line);border-radius:28px;background:#fff;box-shadow:var(--shadow);overflow:hidden;transition:transform .18s ease, box-shadow .18s ease}
+    .property-card:hover{transform:translateY(-2px);box-shadow:0 18px 34px rgba(15,23,42,.08)}
+    .property-main{display:flex;gap:18px;padding:18px 18px 14px;cursor:pointer}
+    .project-badge{width:112px;min-height:112px;border-radius:22px;background:linear-gradient(180deg,#00f06a 0%,#b8ffd4 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;flex:0 0 112px;color:#07110b;font-weight:1000;letter-spacing:-.04em}
+    .project-badge small{font-size:12px;letter-spacing:.04em;text-transform:uppercase;opacity:.72}
+    .project-badge strong{font-size:27px;line-height:1}
+    .card-content{min-width:0;flex:1}
+    .title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .card-title{margin:0;font-size:22px;line-height:1.2;font-weight:1000;letter-spacing:-.055em}
+    .status-chip{min-height:28px;padding:0 10px;border-radius:999px;background:#eef6ff;color:#146ce8;font-size:12px;font-weight:1000;display:inline-flex;align-items:center;white-space:nowrap}
+    .status-chip.hot{background:#fff1d6;color:#9b5c00}
+    .status-chip.pause{background:#f2f3f5;color:#5b6570}
+    .info-line{margin-top:9px;font-size:15px;line-height:1.45;color:#303943;font-weight:800}
+    .info-line.muted{color:#68727d;font-weight:750}
+    .summary-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .mini-pill{min-height:28px;padding:0 10px;border-radius:999px;background:#f7f9fc;border:1px solid #e6ebf1;color:#3d4650;font-size:12px;font-weight:900;display:inline-flex;align-items:center}
+    .card-bottom{border-top:1px solid #edf1f5;padding:12px 18px 16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;background:#fbfcfe}
+    .mini-btn{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid #dce6f1;background:#fff;color:#111318;font-size:13px;font-weight:1000}
+    .mini-btn.primary{border-color:#00d45d;background:#00f06a;color:#07110b}
+    .empty-note{padding:30px;border:1px dashed #dce6f1;border-radius:24px;text-align:center;color:#7a8490;font-weight:800;background:#fff}
+    @media (min-width:861px){
+      .shell{max-width:1600px}
+      .panel-grid,.search-wrap,.toolbar{max-width:980px;margin-left:auto;margin-right:auto}
+      .panel-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+      .project-list{max-width:980px;margin:0 auto}
+      .panel-card{min-height:132px}
+      .panel-title{font-size:28px}
+    }
+    @media (max-width:860px){
+      .shell{padding:0 16px 40px}
+      .topbar-title{display:none}
+      .brand-icons{gap:8px}
+      .brand-icon-link{width:38px;height:38px;border-radius:12px;flex:0 0 38px}
+      .brand-icon-dashboard{width:92px;flex-basis:92px;font-size:12px}
+      .panel-grid{grid-template-columns:1fr 1fr;gap:10px}
+      .panel-card{min-height:114px;padding:18px 16px 16px;border-radius:22px}
+      .panel-card.desktop-only{display:none}
+      .panel-title{font-size:24px}
+      .panel-icon{width:32px;height:32px;flex-basis:32px;font-size:20px}
+      .property-main{gap:12px;padding:14px}
+      .project-badge{width:86px;min-height:92px;flex-basis:86px;border-radius:18px}
+      .project-badge strong{font-size:22px}
+      .card-title{font-size:18px}
+      .status-chip{font-size:11px}
+      .info-line{font-size:13px}
+      .card-bottom{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap}
+      .mini-btn{flex:0 0 auto}
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="shell">
+      <div class="topbar">
+        <div class="brand-icons" aria-label="상단 바로가기">
+          <a href="/taxcheckup/" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-taxcheckup" aria-label="TAX 새창">TAX</a>
+          <a href="/dashboard/" class="brand-icon-link brand-icon-dashboard" aria-label="대시보드로 이동">DASHBOARD</a>
+        </div>
+        <div class="topbar-title">PROJECT</div>
+      </div>
+
+      <div class="hero-spacer"></div>
+
+      <section class="panel-grid">
+        <button class="panel-card primary panel-create" id="goProjectCreateBtn" type="button">
+          <div>
+            <div class="panel-eyebrow">Create</div>
+            <div class="panel-title-row"><span class="panel-icon">P</span><div class="panel-title">프로젝트 등록</div></div>
+          </div>
+          <div class="panel-desc">새 매수자·임차인 의뢰 프로젝트를 등록합니다.</div>
+        </button>
+        <button class="panel-card panel-calendar" id="calendarBtn" type="button"><div><div class="panel-eyebrow">Schedule</div><div class="panel-title-row"><span class="panel-icon">📅</span><div class="panel-title">캘린더</div></div></div><div class="panel-desc">일정 관리 영역입니다.</div></button>
+        <button class="panel-card desktop-only panel-kras compact-link" id="goKrasBtn" type="button"><div><div class="panel-eyebrow">KRAS</div><div class="panel-title-row"><span class="panel-icon">🏠</span><div class="panel-title">일사편리</div></div></div><div class="panel-desc">부동산종합공부로 이동합니다.</div></button>
+        <button class="panel-card desktop-only panel-rfine compact-link" id="goRfineBtn" type="button"><div><div class="panel-eyebrow">RFINE</div><div class="panel-title-row"><span class="panel-icon">🏢</span><div class="panel-title">부동산포스</div></div></div><div class="panel-desc">부동산포스로 이동합니다.</div></button>
+        <button class="panel-card panel-lookup compact-link" id="goListingLookupBtn" type="button"><div><div class="panel-eyebrow">Lookup</div><div class="panel-title-row"><span class="panel-icon">🔎</span><div class="panel-title">매물조회</div></div></div><div class="panel-desc">위치와 건축물정보를 제공합니다.</div></button>
+        <button class="panel-card desktop-only panel-tracker compact-link" id="goPropertyTrackerBtn" type="button"><div><div class="panel-eyebrow">Tracker</div><div class="panel-title-row"><span class="panel-icon">📍</span><div class="panel-title">매물추적</div></div></div><div class="panel-desc">매물추적으로 이동합니다.</div></button>
+        <button class="panel-card panel-ddangya compact-link" id="goDdangyaBtn" type="button"><div><div class="panel-eyebrow">Ddangya</div><div class="panel-title-row"><span class="panel-icon">🌿</span><div class="panel-title">땅야</div></div></div><div class="panel-desc">땅야로 이동합니다.</div></button>
+        <button class="panel-card desktop-only panel-price compact-link" id="goPriceLookupBtn" type="button"><div><div class="panel-eyebrow">Market Price</div><div class="panel-title-row"><span class="panel-icon">📈</span><div class="panel-title">시세조회</div></div></div><div class="panel-desc">시세조회로 이동합니다.</div></button>
+      </section>
+
+      <section class="search-wrap">
+        <div class="search-box">
+          <span class="search-icon">🔎</span>
+          <div id="searchInput" class="search-input" contenteditable="true" role="textbox" aria-label="프로젝트 검색" data-placeholder="고객명, 회사명, 희망지역, 프로젝트 메모 검색"></div>
+        </div>
+      </section>
+
+      <section class="toolbar">
+        <div class="chip-row" aria-label="프로젝트 필터">
+          <button class="filter-chip active" data-filter="all" type="button">기본정렬</button>
+          <button class="filter-chip" data-filter="updated" type="button">수정순</button>
+          <button class="filter-chip" data-filter="new" type="button">신규문의</button>
+          <button class="filter-chip" data-filter="recommend" type="button">추천중</button>
+          <button class="filter-chip" data-filter="visit" type="button">임장예정</button>
+          <button class="filter-chip" data-filter="deal" type="button">협의중</button>
+          <button class="filter-chip" data-filter="buy" type="button">매수</button>
+          <button class="filter-chip" data-filter="rent" type="button">임차</button>
+        </div>
+        <div id="toolbarMeta" class="toolbar-meta">전체 3건</div>
+      </section>
+
+      <main id="projectRoot"></main>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      listingLookupUrl: 'https://lookout-zeta.vercel.app',
+      propertyTrackerUrl: 'https://www.maslowkorea.site/search/',
+      ddangyaUrl: 'https://ddangya.com/',
+      priceLookupUrl: 'https://vos.land/',
+      krasUrl: 'https://www.kras.go.kr/mainView.do',
+      rfineUrl: 'https://new.rfine.kr/Pos/index.php'
+    };
+
+    const dummyProjects = [
+      {
+        id:'PJ-260623-001', date:'2026.06.23', type:'매수', title:'김OO / 군산·익산 공장 매수 의뢰', status:'추천중', hot:true,
+        region:'군산, 익산', budget:'20억~30억', spec:'대지 2,000평↑ / 건물 500평↑', core:'25톤 진입 · 야드 · 민원 없음',
+        stats:'추천매물 4건 / 탈락 2건 / 임장예정 1건', contact:'2026.06.23 통화', next:'익산 후보 3건 전송'
+      },
+      {
+        id:'PJ-260623-002', date:'2026.06.23', type:'임차', title:'박OO / 익산 창고 임차 프로젝트', status:'임장예정',
+        region:'익산 팔봉·왕궁', budget:'보증금 5천 / 월 500', spec:'건물 300평↑ / 진입로 우선', core:'즉시입주 · 넓은 야드 · 저렴한 월세',
+        stats:'추천매물 2건 / 탈락 1건 / 임장예정 1건', contact:'2026.06.22 카톡', next:'왕궁면 후보 임장 일정 확인'
+      },
+      {
+        id:'PJ-260623-003', date:'2026.06.22', type:'매수', title:'최OO / 군산 산단 인근 제조공장 검토', status:'보류', pause:true,
+        region:'군산 산단권', budget:'15억~22억', spec:'대지 1,000평↑ / 건물 250평↑', core:'전력 확인 · 소음 민원 낮은 곳',
+        stats:'추천매물 3건 / 탈락 3건 / 보류', contact:'2026.06.21 통화', next:'예산 상향 여부 재확인'
+      }
+    ];
+
+    let activeFilter = 'all';
+    let searchText = '';
+
+    function openProject(id){ location.href = '/matching?id=' + encodeURIComponent(id); }
+    function renderProjectCard(project){
+      const chipClass = project.hot ? 'status-chip hot' : project.pause ? 'status-chip pause' : 'status-chip';
+      return `
+        <article class="property-card" data-id="${project.id}">
+          <div class="property-main" onclick="openProject('${project.id}')">
+            <div class="project-badge"><small>PROJECT</small><strong>${project.type}</strong></div>
+            <div class="card-content">
+              <div class="title-row"><h3 class="card-title">${project.title}</h3><span class="${chipClass}">${project.status}</span></div>
+              <div class="info-line">${project.type} · ${project.budget}</div>
+              <div class="info-line muted">희망지역: ${project.region}</div>
+              <div class="info-line muted">희망스펙: ${project.spec}</div>
+              <div class="info-line muted">중요조건: ${project.core}</div>
+              <div class="summary-row">
+                <span class="mini-pill">${project.stats}</span>
+                <span class="mini-pill">최근연락: ${project.contact}</span>
+                <span class="mini-pill">다음액션: ${project.next}</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-bottom">
+            <button type="button" class="mini-btn">진행</button>
+            <button type="button" class="mini-btn">보류</button>
+            <button type="button" class="mini-btn">메모</button>
+            <button type="button" class="mini-btn">추천</button>
+            <button type="button" class="mini-btn primary" onclick="openProject('${project.id}')">관리</button>
+          </div>
+        </article>`;
+    }
+
+    function applyProjectFilter(project){
+      if(searchText){
+        const target = [project.title, project.region, project.budget, project.spec, project.core, project.stats, project.contact, project.next].join(' ');
+        if(!target.toLowerCase().includes(searchText.toLowerCase())) return false;
+      }
+      if(activeFilter === 'new') return project.status === '신규문의';
+      if(activeFilter === 'recommend') return project.status === '추천중';
+      if(activeFilter === 'visit') return project.status === '임장예정';
+      if(activeFilter === 'deal') return project.status.includes('협의');
+      if(activeFilter === 'buy') return project.type === '매수';
+      if(activeFilter === 'rent') return project.type === '임차';
+      return true;
+    }
+
+    function renderProjects(){
+      const root = document.getElementById('projectRoot');
+      let items = dummyProjects.filter(applyProjectFilter);
+      if(activeFilter === 'updated') items = [...items].reverse();
+      document.getElementById('toolbarMeta').textContent = `전체 ${items.length}건`;
+      if(!items.length){ root.innerHTML = '<div class="empty-note">표시할 프로젝트가 없습니다.</div>'; return; }
+      const groups = {};
+      items.forEach(item => { (groups[item.date] ||= []).push(item); });
+      root.innerHTML = Object.entries(groups).map(([date, list]) => `
+        <section class="date-group">
+          <h2 class="date-heading">${date}</h2>
+          <div class="project-list">${list.map(renderProjectCard).join('')}</div>
+        </section>
+      `).join('');
+    }
+
+    document.getElementById('goProjectCreateBtn').addEventListener('click', () => location.href = '/matching?mode=new');
+    document.getElementById('calendarBtn').addEventListener('click', () => alert('캘린더는 백엔드 연결 때 붙입니다.'));
+    document.getElementById('goListingLookupBtn').addEventListener('click', () => window.open(CONFIG.listingLookupUrl, '_blank', 'noopener'));
+    document.getElementById('goKrasBtn')?.addEventListener('click', () => window.open(CONFIG.krasUrl, '_blank', 'noopener'));
+    document.getElementById('goRfineBtn')?.addEventListener('click', () => window.open(CONFIG.rfineUrl, '_blank', 'noopener'));
+    document.getElementById('goPropertyTrackerBtn')?.addEventListener('click', () => window.open(CONFIG.propertyTrackerUrl, '_blank', 'noopener'));
+    document.getElementById('goDdangyaBtn').addEventListener('click', () => window.open(CONFIG.ddangyaUrl, '_blank', 'noopener'));
+    document.getElementById('goPriceLookupBtn')?.addEventListener('click', () => window.open(CONFIG.priceLookupUrl, '_blank', 'noopener'));
+
+    document.querySelectorAll('.filter-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter || 'all';
+        renderProjects();
+      });
+    });
+    document.getElementById('searchInput').addEventListener('input', e => {
+      searchText = e.currentTarget.textContent.trim();
+      renderProjects();
+    });
+
+    renderProjects();
+  </script>
+</body>
+</html>

@@ -2102,7 +2102,50 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     const searchInput = document.getElementById('searchInput');
     const createBtn = document.getElementById('goProjectCreateBtn');
     const topbarGreeting = document.getElementById('topbarGreeting');
-    if(topbarGreeting) topbarGreeting.textContent = 'PROJECT';
+
+    const PROJECT_AUTH_STORAGE_KEY = 'MK_ADMIN_DASHBOARD_UNLOCKED_V1';
+    const PROJECT_PASSWORD_MAP = {
+      '6857': '한정인 이사',
+      '0444': '박성연 대표',
+      '1053': '나득균 팀장',
+      '8198': '이유나 팀장'
+    };
+
+    const lockOverlay = document.getElementById('lockOverlay');
+    const lockInput = document.getElementById('lockInput');
+    const lockBtn = document.getElementById('lockBtn');
+    const lockError = document.getElementById('lockError');
+
+    function updateProjectGreeting(name){
+      if(!topbarGreeting) return;
+      topbarGreeting.textContent = name ? (name + '님, 반갑습니다.') : 'PROJECT';
+    }
+
+    function unlockProjectPage(){
+      const pw = String(lockInput && lockInput.value || '').trim();
+      const matched = PROJECT_PASSWORD_MAP[pw];
+      if(!matched){
+        if(lockError) lockError.textContent = '비밀번호가 올바르지 않습니다.';
+        return;
+      }
+      localStorage.setItem(PROJECT_AUTH_STORAGE_KEY, matched);
+      updateProjectGreeting(matched);
+      if(lockOverlay) lockOverlay.style.display = 'none';
+    }
+
+    if(lockBtn) lockBtn.addEventListener('click', unlockProjectPage);
+    if(lockInput) lockInput.addEventListener('keydown', function(e){
+      if(e.key === 'Enter') unlockProjectPage();
+    });
+
+    const restoredProjectUser = localStorage.getItem(PROJECT_AUTH_STORAGE_KEY) || '';
+    if(restoredProjectUser){
+      updateProjectGreeting(restoredProjectUser);
+      if(lockOverlay) lockOverlay.style.display = 'none';
+    }else{
+      updateProjectGreeting('');
+      if(lockInput) window.setTimeout(function(){ lockInput.focus(); }, 80);
+    }
     if(createBtn) createBtn.addEventListener('click', function(){ location.href = '/matching?mode=new'; });
     ['calendarBtn','goKrasBtn','goRfineBtn','goListingLookupBtn','goPropertyTrackerBtn','goDdangyaBtn','goPriceLookupBtn'].forEach(function(id){
       const btn = document.getElementById(id);

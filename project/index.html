@@ -183,9 +183,21 @@
     .brand-icon-taxcheckup .tax-mobile-label{display:none}
 
     .brand-icon-dashboardlink{
-      width:108px;
-      flex:0 0 108px;
+      width:156px;
+      min-width:156px;
+      flex:0 0 156px;
+      background:#00f97c;
+      border-color:#00f97c;
+      color:#07150d;
+      padding-left:18px;
+      padding-right:18px;
+      box-sizing:border-box;
+      letter-spacing:-0.045em;
+      white-space:nowrap;
+      overflow:visible;
     }
+    .brand-icon-dashboardlink .tax-full-label{display:inline}
+    .brand-icon-dashboardlink .tax-mobile-label{display:none}
     .dashboard-refresh-btn{
       padding:0;
       overflow:hidden;
@@ -1709,6 +1721,19 @@
       }
       .brand-icon-taxcheckup .tax-full-label{display:none}
       .brand-icon-taxcheckup .tax-mobile-label{display:inline}
+    }
+    @media(min-width:861px) and (max-width:900px){
+      .brand-icon-dashboardlink{
+        display:flex;
+        width:156px;
+        min-width:156px;
+        flex:0 0 156px;
+        height:42px;
+        border-radius:14px;
+        font-size:18px;
+      }
+      .brand-icon-dashboardlink .tax-full-label{display:inline}
+      .brand-icon-dashboardlink .tax-mobile-label{display:none}
     }
 
   </style>

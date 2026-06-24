@@ -3230,6 +3230,35 @@
         rentPriceState = { deposit: '', monthly: '' };
       }
 
+      function cleanRentAmountPart_(value){
+        var text = plainText(value || '').trim();
+        if(!text) return '';
+        text = text.replace(/^(보증금|월세)\s*/i, '').trim();
+        text = text.replace(/([0-9,])\s*원$/i, '$1').trim();
+        return text;
+      }
+
+      function parseRentPriceText_(priceText){
+        var result = { deposit: '', monthly: '' };
+        var parts = String(priceText || '').split('/').map(function(v){ return plainText(v).trim(); }).filter(Boolean);
+
+        parts.forEach(function(part, idx){
+          var cleaned = cleanRentAmountPart_(part);
+          if(!cleaned) return;
+          if(/보증금/i.test(part)){
+            result.deposit = cleaned;
+          }else if(/월세/i.test(part)){
+            result.monthly = cleaned;
+          }else if(idx === 0 && !result.deposit){
+            result.deposit = cleaned;
+          }else if(idx === 1 && !result.monthly){
+            result.monthly = cleaned;
+          }
+        });
+
+        return result;
+      }
+
       function renderPriceFieldForDealType_(){
         if(!priceField) return;
         if(selectedDealType === '임대'){
@@ -3421,18 +3450,13 @@
         setEditableText_(summaryEls[2], item.summary3 || '');
 
         setEditableText_(addressField, item.address || '');
-        setDealType(item.dealType || '');
 
         if ((item.dealType || '').indexOf('임대') > -1) {
-          var priceText = String(item.price || '').trim();
-          var parts = priceText.split('/').map(function(v){ return plainText(v); }).filter(Boolean);
-          rentPriceState = {
-            deposit: parts[0] || '',
-            monthly: parts[1] || ''
-          };
-          priceField.textContent = priceText;
+          rentPriceState = parseRentPriceText_(item.price || '');
+          setDealType(item.dealType || '임대');
         } else {
           clearRentPriceState_();
+          setDealType(item.dealType || '');
           priceField.textContent = item.price || '';
         }
 

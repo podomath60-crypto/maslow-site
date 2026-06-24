@@ -2129,6 +2129,91 @@
     }
 
 
+    .lookup-fail-overlay{
+      position:fixed;
+      inset:0;
+      z-index:220;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+      background:rgba(17,19,24,.42);
+      backdrop-filter:blur(3px);
+      -webkit-backdrop-filter:blur(3px);
+    }
+    .lookup-fail-panel{
+      width:min(520px, 100%);
+      max-height:calc(100vh - 44px);
+      overflow:auto;
+      border-radius:22px;
+      background:#fff;
+      box-shadow:0 22px 64px rgba(0,0,0,.22);
+      padding:22px 20px 18px;
+    }
+    .lookup-fail-title{
+      margin:0 0 8px;
+      font-size:20px;
+      font-weight:900;
+      line-height:1.32;
+      color:#111318;
+      letter-spacing:-0.04em;
+    }
+    .lookup-fail-desc{
+      margin:0 0 14px;
+      font-size:14px;
+      font-weight:700;
+      line-height:1.55;
+      color:#4c5663;
+      letter-spacing:-0.03em;
+    }
+    .lookup-fail-box{
+      margin:12px 0;
+      padding:12px 13px;
+      border-radius:14px;
+      background:#f6f8fb;
+      border:1px solid #e8edf3;
+      font-size:13px;
+      font-weight:700;
+      line-height:1.55;
+      color:#333b46;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .lookup-fail-list{
+      margin:10px 0 0;
+      padding-left:18px;
+      font-size:13px;
+      font-weight:700;
+      line-height:1.65;
+      color:#4c5663;
+    }
+    .lookup-fail-actions{
+      display:flex;
+      gap:8px;
+      justify-content:flex-end;
+      margin-top:16px;
+    }
+    .lookup-fail-btn{
+      height:38px;
+      padding:0 14px;
+      border-radius:999px;
+      background:#111318;
+      color:#fff;
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:-0.03em;
+    }
+    .lookup-fail-btn.secondary{
+      background:#eef2f7;
+      color:#111318;
+    }
+    @media (max-width:860px){
+      .lookup-fail-overlay{padding:16px}
+      .lookup-fail-panel{border-radius:18px;padding:20px 16px 16px}
+      .lookup-fail-title{font-size:18px}
+    }
+
+
   </style>
   <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
   <link rel="icon" href="/favicon.ico?v=20260616">
@@ -5341,6 +5426,100 @@
         });
       }
 
+
+      function closeLookupFailurePanel_(){
+        var existing = document.getElementById('lookupFailureOverlay');
+        if(existing && existing.parentNode){
+          existing.parentNode.removeChild(existing);
+        }
+      }
+
+      function showLookupFailurePanel_(err){
+        closeLookupFailurePanel_();
+
+        var errors = (err && Array.isArray(err.lookupErrors)) ? err.lookupErrors : [];
+        var details = errors.length ? errors.join('\n') : lookupErrorText_(err);
+
+        var overlay = document.createElement('div');
+        overlay.id = 'lookupFailureOverlay';
+        overlay.className = 'lookup-fail-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', '건축물정보 조회 실패 안내');
+
+        var panel = document.createElement('div');
+        panel.className = 'lookup-fail-panel';
+
+        var title = document.createElement('h3');
+        title.className = 'lookup-fail-title';
+        title.textContent = '건축물정보 조회 실패';
+
+        var desc = document.createElement('p');
+        desc.className = 'lookup-fail-desc';
+        desc.textContent = '이 컴퓨터에서 GAS 직접 호출과 서버 우회 조회가 모두 실패했습니다. 새로고침하면 이 안내 패널은 사라집니다.';
+
+        var box = document.createElement('div');
+        box.className = 'lookup-fail-box';
+        box.textContent = details || '상세 오류 없음';
+
+        var list = document.createElement('ol');
+        list.className = 'lookup-fail-list';
+        [
+          '시크릿 모드에서 매물입력기를 다시 열어 조회해보세요.',
+          '광고차단·백신 웹보호·브라우저 보안 확장프로그램을 잠시 끄고 확인하세요.',
+          '크롬이 안 되면 Edge에서 같은 주소로 접속해 확인하세요.',
+          '계속 안 되면 이 오류 내용을 복사해서 개발자에게 전달하세요.'
+        ].forEach(function(text){
+          var li = document.createElement('li');
+          li.textContent = text;
+          list.appendChild(li);
+        });
+
+        var actions = document.createElement('div');
+        actions.className = 'lookup-fail-actions';
+
+        var copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'lookup-fail-btn secondary';
+        copyBtn.textContent = '오류 복사';
+        copyBtn.addEventListener('click', function(){
+          var text = '건축물정보 조회 실패\n' + (details || '상세 오류 없음');
+          if(navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(text).then(function(){
+              showToast('오류 내용 복사됨');
+            }).catch(function(){
+              showToast('복사 실패');
+            });
+          }else{
+            showToast('복사 미지원');
+          }
+        });
+
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'lookup-fail-btn';
+        closeBtn.textContent = '닫기';
+        closeBtn.addEventListener('click', closeLookupFailurePanel_);
+
+        actions.appendChild(copyBtn);
+        actions.appendChild(closeBtn);
+        panel.appendChild(title);
+        panel.appendChild(desc);
+        panel.appendChild(box);
+        panel.appendChild(list);
+        panel.appendChild(actions);
+        overlay.appendChild(panel);
+
+        overlay.addEventListener('click', function(e){
+          if(e.target === overlay){
+            closeLookupFailurePanel_();
+          }
+        });
+
+        document.body.appendChild(overlay);
+        closeBtn.focus();
+      }
+
       function lookupPublicPropertyWithFallback_(params){
         var firstError = null;
 
@@ -5637,8 +5816,10 @@
             console.error(err);
             if(err && err.lookupErrors){
               console.warn(err.lookupErrors.join('\n'));
+              showLookupFailurePanel_(err);
+            }else{
+              showToast((err && err.message) || '조회 실패');
             }
-            showToast((err && err.message) || '조회 실패');
           })
           .finally(function(){
             setAddressLookupLoading_(false);

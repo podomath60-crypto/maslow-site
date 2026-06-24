@@ -3713,7 +3713,29 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       updatePropertyChannel(listingNumber, channelKey, done, links);
     }
 
+    function applyPropertyStatusLocally(listingNumber, status){
+      const key = normalizeListingKey(listingNumber);
+      const nextStatus = text(status || 'hidden').toLowerCase();
+      if(!key) return false;
+
+      let changed = false;
+      rawItems = rawItems.map(function(item){
+        if(normalizeListingKey(item && item.listingNumber) === key){
+          changed = true;
+          return Object.assign({}, item, { status: nextStatus });
+        }
+        return item;
+      });
+
+      if(changed){
+        saveDashboardItemsCache();
+        renderDashboard();
+      }
+      return changed;
+    }
+
     function setPropertyStatus(listingNumber, status){
+      const decodedListingNumber = normalizeListingKey(listingNumber);
       currentLoadingText = '상태 변경중이에요.';
       startLoadingOverlay();
       return fetch(CONFIG.adminListUrl, {
@@ -3724,7 +3746,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         },
         body: JSON.stringify({
           action: 'updatePropertyStatus',
-          listingNumber: listingNumber,
+          listingNumber: decodedListingNumber,
           status: status
         })
       })
@@ -3736,7 +3758,14 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         if(!data || data.ok !== true){
           throw new Error((data && data.message) || '상태 변경 실패');
         }
-        return fetchAdminItems();
+
+        const updatedItem = data.item || data.property || data.updatedItem || null;
+        if(updatedItem && updatedItem.listingNumber){
+          patchSingleDashboardCard(normalizeItem(updatedItem));
+          saveDashboardItemsCache();
+        }else{
+          applyPropertyStatusLocally(decodedListingNumber, status);
+        }
       })
       .catch(function(err){
         console.error(err);

@@ -3587,6 +3587,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     }
 
     function openChannelModal(listingNumber, channelKey){
+      const decodedListingNumber = normalizeListingKey(listingNumber);
       const modal = document.getElementById('channelModal');
       const titleTextEl = document.getElementById('channelModalTitleText');
       const faviconEl = document.getElementById('channelModalFavicon');
@@ -3596,10 +3597,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
       const naverBlogCreateBox = document.getElementById('naverBlogCreateBox');
       const radios = document.querySelectorAll('input[name="channelDoneState"]');
-      const item = getItemByListingNumber(listingNumber);
+      const item = getItemByListingNumber(decodedListingNumber);
       const state = item ? getChannelStateByItem(item, channelKey) : { done:false, links:['','',''] };
 
-      channelModalListingNumber = listingNumber;
+      channelModalListingNumber = decodedListingNumber;
       channelModalChannelKey = channelKey;
 
       if(titleTextEl) titleTextEl.textContent = CHANNEL_LABEL_MAP[channelKey] || '채널';
@@ -3640,6 +3641,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     }
 
     function updatePropertyChannel(listingNumber, channelKey, done, links){
+      const decodedListingNumber = normalizeListingKey(listingNumber);
       currentLoadingText = '상태 변경중이에요.';
       startLoadingOverlay();
       return fetch(CONFIG.adminListUrl, {
@@ -3650,7 +3652,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         },
         body: JSON.stringify({
           action: 'updatePropertyChannel',
-          listingNumber: listingNumber,
+          listingNumber: decodedListingNumber,
           channelKey: channelKey,
           done: done,
           links: links
@@ -3665,7 +3667,16 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
           throw new Error((data && data.message) || '채널 저장 실패');
         }
         closeChannelModal();
-        return fetchAdminItems();
+        const fieldName = CHANNEL_FIELD_MAP[channelKey];
+        const channelValue = JSON.stringify({
+          done: !!done,
+          links: [text(links && links[0]), text(links && links[1]), text(links && links[2])]
+        });
+        const fallback = { updatedAt: text(data.updatedAt) || new Date().toISOString() };
+        if(fieldName){
+          fallback[fieldName] = channelValue;
+        }
+        patchCardFromMutationResponse(decodedListingNumber, data, fallback);
       })
       .catch(function(err){
         console.error(err);
@@ -3713,27 +3724,6 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       updatePropertyChannel(listingNumber, channelKey, done, links);
     }
 
-    function applyPropertyStatusLocally(listingNumber, status){
-      const key = normalizeListingKey(listingNumber);
-      const nextStatus = text(status || 'hidden').toLowerCase();
-      if(!key) return false;
-
-      let changed = false;
-      rawItems = rawItems.map(function(item){
-        if(normalizeListingKey(item && item.listingNumber) === key){
-          changed = true;
-          return Object.assign({}, item, { status: nextStatus });
-        }
-        return item;
-      });
-
-      if(changed){
-        saveDashboardItemsCache();
-        renderDashboard();
-      }
-      return changed;
-    }
-
     function setPropertyStatus(listingNumber, status){
       const decodedListingNumber = normalizeListingKey(listingNumber);
       currentLoadingText = '상태 변경중이에요.';
@@ -3758,13 +3748,12 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         if(!data || data.ok !== true){
           throw new Error((data && data.message) || '상태 변경 실패');
         }
-
-        const updatedItem = data.item || data.property || data.updatedItem || null;
-        if(updatedItem && updatedItem.listingNumber){
-          patchSingleDashboardCard(normalizeItem(updatedItem));
-          saveDashboardItemsCache();
-        }else{
-          applyPropertyStatusLocally(decodedListingNumber, status);
+        patchCardFromMutationResponse(decodedListingNumber, data, {
+          status: text(status).toLowerCase(),
+          updatedAt: text(data.updatedAt) || new Date().toISOString()
+        });
+        if(text(status).toLowerCase() === 'invisible'){
+          removeDashboardCardInPlace(decodedListingNumber);
         }
       })
       .catch(function(err){
@@ -3980,13 +3969,65 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     }
 
     function patchSingleDashboardCard(updatedItem){
-      const key = text(updatedItem && updatedItem.listingNumber);
+      const key = normalizeListingKey(updatedItem && updatedItem.listingNumber);
+      if(!key) return;
+      replaceItemInRawItems(updatedItem);
+      patchDashboardCardInPlace(key);
+    }
+
+    function updateRawItemFieldsByListingNumber(listingNumber, fields){
+      const key = normalizeListingKey(listingNumber);
+      if(!key) return null;
+      let updated = null;
+      rawItems = rawItems.map(function(item){
+        if(normalizeListingKey(item && item.listingNumber) === key){
+          updated = Object.assign({}, item, fields || {}, { listingNumber: text(item && item.listingNumber) || key });
+          return updated;
+        }
+        return item;
+      });
+      if(updated){
+        saveDashboardItemsCache();
+      }
+      return updated;
+    }
+
+    function patchDashboardCardInPlace(listingNumber){
+      const key = normalizeListingKey(listingNumber);
       if(!key) return;
       const card = findCardElementByListingNumber(key);
-      replaceItemInRawItems(updatedItem);
-      if(card){
-        card.outerHTML = buildCard(updatedItem);
+      const item = getItemByListingNumber(key);
+      if(card && item){
+        card.outerHTML = buildCard(item);
       }
+    }
+
+    function removeDashboardCardInPlace(listingNumber){
+      const card = findCardElementByListingNumber(listingNumber);
+      if(card){
+        card.remove();
+      }
+    }
+
+    function isFullDashboardItemPayload(value){
+      if(!value || typeof value !== 'object') return false;
+      return !!(
+        text(value.listingNumber) &&
+        text(value.title) &&
+        (text(value.address) || text(value.price) || text(value.createdAt) || text(value.photoUrlsJson))
+      );
+    }
+
+    function patchCardFromMutationResponse(listingNumber, data, fallbackFields){
+      const key = normalizeListingKey(listingNumber);
+      const serverItem = data && (data.item || data.updatedItem || data.property);
+      if(isFullDashboardItemPayload(serverItem)){
+        patchSingleDashboardCard(normalizeItem(serverItem));
+        return getItemByListingNumber(key);
+      }
+      const updated = updateRawItemFieldsByListingNumber(key, fallbackFields || {});
+      patchDashboardCardInPlace(key);
+      return updated;
     }
 
     function fetchLatestPropertyListOnly(){
@@ -4697,7 +4738,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       propertyMemoEditingItem = item;
       if(shouldShowMemoNewStar(item)){
         markMemoSeen(item.listingNumber, item.memoUpdatedAt);
-        renderDashboard();
+        patchDashboardCardInPlace(item.listingNumber);
       }
       if(propertyMemoTextarea) propertyMemoTextarea.value = text(item.memo);
       if(propertyMemoModal) propertyMemoModal.classList.add('show');
@@ -4756,11 +4797,16 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         if(!data || data.ok !== true){
           throw new Error((data && (data.message || data.error)) || '메모 저장 실패');
         }
+        const updatedMemoAt = text(data.memoUpdatedAt) || text(item.memoUpdatedAt);
         item.memo = memo;
         item.updatedAt = text(data.updatedAt) || new Date().toISOString();
-        item.memoUpdatedAt = text(data.memoUpdatedAt) || text(item.memoUpdatedAt);
+        item.memoUpdatedAt = updatedMemoAt;
+        patchCardFromMutationResponse(listingNumber, data, {
+          memo: memo,
+          updatedAt: item.updatedAt,
+          memoUpdatedAt: updatedMemoAt
+        });
         closePropertyMemoModal();
-        renderDashboard();
       }catch(err){
         console.error(err);
         alert((err && err.message) ? err.message : '메모 저장 중 문제가 발생했습니다.');

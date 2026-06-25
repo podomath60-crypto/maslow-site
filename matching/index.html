@@ -59,13 +59,26 @@
     .summary-grid{display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px}
 
     .project-flat{display:grid;gap:12px}
-    .project-hero{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px;align-items:start;border-bottom:1px solid #edf2f7;padding-bottom:12px}
+    .project-hero{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start;border-bottom:1px solid #edf2f7;padding-bottom:12px}
     .project-hero-left{min-width:0;display:grid;gap:6px}
     .project-title-input{font-size:32px;line-height:1.06;font-weight:1000;letter-spacing:-.065em;outline:none;padding:1px 0;min-height:36px}
-    .project-title-input:focus,.inline-value:focus,.project-summary-text [contenteditable]:focus,.memo-note-body:focus{background:#fff7d6;box-shadow:0 0 0 2px rgba(245,158,11,.16);border-radius:6px}
+    .project-title-input:focus,.inline-value:focus,.project-summary-text [contenteditable]:focus,.memo-note:focus{background:#fff7d6;box-shadow:0 0 0 2px rgba(245,158,11,.16);border-radius:6px}
     .project-summary-text{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:13px;font-weight:950;color:#202833;line-height:1.35}
     .project-summary-text [contenteditable]{outline:none;padding:1px 2px;min-height:18px}
     .project-summary-text .sep{color:#b5bdc7;font-weight:900}
+    .title-contact-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+    .title-contact-item{display:grid;grid-template-columns:62px minmax(0,1fr);gap:7px;align-items:center;min-height:26px;font-size:13px;font-weight:950;color:#27303a}
+    .title-contact-label{font-size:11px;font-weight:1000;color:#87929e;white-space:nowrap}
+    .today-btn{margin-left:6px;min-height:22px;padding:0 7px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#4b5563;font-size:11px;font-weight:1000;vertical-align:middle}
+    .picker-value{cursor:pointer;position:relative;padding-right:16px}
+    .picker-value::after{content:"▾";position:absolute;right:2px;top:2px;font-size:10px;color:#88919c}
+    .picker-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .picker-option{min-height:38px;border:1px solid #dfe8f2;border-radius:14px;background:#fff;color:#27303a;font-size:13px;font-weight:950;display:flex;align-items:center;justify-content:center;padding:0 10px}
+    .picker-option.active{background:#111318;border-color:#111318;color:#fff}
+    .picker-option.check{justify-content:flex-start;gap:8px}
+    .picker-option.check::before{content:"";width:14px;height:14px;border-radius:5px;border:1px solid #c7d2df;background:#fff;flex:0 0 auto}
+    .picker-option.check.active::before{background:#00f97c;border-color:#00f97c;box-shadow:inset 0 0 0 3px #111318}
+    .business-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-self:start}
     .business-card-slot{height:150px;border:2px dashed #d7e0eb;background:#fafcff;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;align-self:start}
     .business-card-slot:hover{background:#f5f9ff;border-color:#b7c7da}
     .business-card-slot img{display:none;width:100%;height:100%;object-fit:contain;background:#fff}
@@ -81,9 +94,7 @@
     .project-line:last-child{border-bottom:none}
     .inline-label{font-size:11px;font-weight:1000;color:#88919c;padding-top:4px;white-space:nowrap}
     .inline-value{font-size:14px;line-height:1.35;font-weight:950;color:#27303a;outline:none;padding:1px 2px;min-height:22px;white-space:pre-wrap;word-break:keep-all}
-    .memo-note{margin-top:10px;background:#fff8bf;border:1px solid #f3df75;box-shadow:0 9px 18px rgba(161,124,0,.08);padding:9px 10px 10px;min-height:74px;transform:rotate(-.35deg)}
-    .memo-note-title{font-size:11px;font-weight:1000;color:#8a6d00;margin-bottom:4px}
-    .memo-note-body{font-size:13px;line-height:1.45;font-weight:900;color:#3a3000;outline:none;min-height:40px;white-space:pre-wrap;word-break:keep-all}
+    .memo-note{margin-top:10px;background:#fff8bf;border:1px solid #f3df75;box-shadow:0 9px 18px rgba(161,124,0,.08);padding:10px 11px;min-height:78px;transform:rotate(-.35deg);font-size:13px;line-height:1.45;font-weight:900;color:#3a3000;outline:none;white-space:pre-wrap;word-break:keep-all}
     .inline-hint{display:none}
     .info-card{border:1px solid #edf2f7;border-radius:20px;background:#fbfdff;padding:14px;min-height:86px;position:relative}
     .info-label{font-size:12px;font-weight:1000;color:#88919c;margin-bottom:7px}
@@ -149,8 +160,8 @@
     .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.38);backdrop-filter:blur(4px)}
     .modal.show{display:flex}.modal-card{width:min(640px,calc(100vw - 32px));max-height:86vh;overflow:auto;background:#fff;border-radius:24px;border:1px solid #dbe5ee;box-shadow:0 24px 70px rgba(15,23,42,.26);padding:20px;display:grid;gap:14px}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.modal-title{font-size:22px;font-weight:1000;letter-spacing:-.05em}.modal-desc{font-size:13px;color:#7b8794;font-weight:800;line-height:1.55;margin-top:4px}.modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px}.close-x{width:34px;height:34px;border-radius:12px;background:#f3f6fa;color:#4b5563;font-weight:1000}
 
-    @media(max-width:1100px){.project-summary{grid-template-columns:1fr}.project-hero{grid-template-columns:1fr}.business-card-slot{width:310px;max-width:100%}.candidate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
-    @media(max-width:760px){.business-card-slot{width:100%;height:132px}.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.shell{padding:14px 12px 42px}.section{border-radius:22px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.summary-grid,.project-line-grid,.candidate-grid,.metric-row,.edit-row,.modal-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
+    @media(max-width:1100px){.project-summary{grid-template-columns:1fr}.project-hero{grid-template-columns:1fr}.business-card-grid{width:360px;max-width:100%}.business-card-slot{max-width:100%}.candidate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
+    @media(max-width:760px){.title-contact-row{grid-template-columns:1fr}.business-card-grid{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}.business-card-slot{height:132px}.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.shell{padding:14px 12px 42px}.section{border-radius:22px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.summary-grid,.project-line-grid,.candidate-grid,.metric-row,.edit-row,.modal-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
   </style>
 </head>
 <body>
@@ -193,13 +204,27 @@
                 <span class="sep">·</span>
                 <span contenteditable="true" data-inline-field="coreNeeds">25톤 진입 · 야드 · 민원 없음</span>
               </div>
+              <div class="title-contact-row">
+                <div class="title-contact-item"><span class="title-contact-label">최근연락</span><span contenteditable="true" data-inline-field="lastContact">06.23 통화 — 예산 30억까지 가능</span></div>
+                <div class="title-contact-item"><span class="title-contact-label">다음액션</span><span contenteditable="true" data-inline-field="nextAction">익산 후보 3건 정리</span></div>
+              </div>
             </div>
-            <div class="business-card-slot" id="businessCardSlot" role="button" tabindex="0" aria-label="명함 이미지 넣기">
-              <input id="businessCardInput" type="file" accept="image/*" hidden>
-              <img id="businessCardPreview" alt="명함 이미지 미리보기">
-              <div class="business-card-empty">
-                <b>명함</b>
-                <span>클릭해서 이미지 넣기</span>
+            <div class="business-card-grid" aria-label="명함 이미지 영역">
+              <div class="business-card-slot" data-business-card-slot="1" role="button" tabindex="0" aria-label="명함 이미지 1 넣기">
+                <input data-business-card-input="1" type="file" accept="image/*" hidden>
+                <img data-business-card-preview="1" alt="명함 이미지 1 미리보기">
+                <div class="business-card-empty">
+                  <b>명함 1</b>
+                  <span>이미지 넣기</span>
+                </div>
+              </div>
+              <div class="business-card-slot" data-business-card-slot="2" role="button" tabindex="0" aria-label="명함 이미지 2 넣기">
+                <input data-business-card-input="2" type="file" accept="image/*" hidden>
+                <img data-business-card-preview="2" alt="명함 이미지 2 미리보기">
+                <div class="business-card-empty">
+                  <b>명함 2</b>
+                  <span>이미지 넣기</span>
+                </div>
               </div>
             </div>
           </div>
@@ -209,20 +234,17 @@
               <div class="project-col-title">의뢰 접수</div>
               <div class="project-line">
                 <div class="inline-label">최초문의</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="inquiryDate">2026.06.23</div>
+                <div><span class="inline-value" contenteditable="true" data-inline-field="inquiryDate">2026.06.23</span><button type="button" class="today-btn" id="todayInquiryBtn">오늘</button></div>
               </div>
               <div class="project-line">
                 <div class="inline-label">문의루트</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="inquiryRoutesText">전화, 블로그</div>
+                <div class="inline-value picker-value" tabindex="0" data-inline-field="inquiryRoutesText" data-picker="routes">전화, 블로그</div>
               </div>
               <div class="project-line">
                 <div class="inline-label">의뢰구분</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="inquiryType">매수 의뢰</div>
+                <div class="inline-value picker-value" tabindex="0" data-inline-field="inquiryType" data-picker="inquiryType">매수 의뢰</div>
               </div>
-              <div class="memo-note">
-                <div class="memo-note-title">메모</div>
-                <div class="memo-note-body" contenteditable="true" data-inline-field="inquiryMemo">블로그 보고 전화. 군산권 먼저 보고 익산까지 확장 검토.</div>
-              </div>
+              <div class="memo-note" contenteditable="true" data-inline-field="inquiryMemo">블로그 보고 전화. 군산권 먼저 보고 익산까지 확장 검토.</div>
             </div>
 
             <div class="project-col">
@@ -241,15 +263,15 @@
               </div>
               <div class="project-line">
                 <div class="inline-label">고객주체</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="clientCategory">법인</div>
+                <div class="inline-value picker-value" tabindex="0" data-inline-field="clientCategory" data-picker="clientCategory">법인</div>
               </div>
               <div class="project-line">
                 <div class="inline-label">관계</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="requesterRelation">회사 담당자</div>
+                <div class="inline-value picker-value" tabindex="0" data-inline-field="requesterRelation" data-picker="requesterRelation">회사 담당자</div>
               </div>
               <div class="project-line">
                 <div class="inline-label">업종</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="industry">식품제조</div>
+                <div class="inline-value picker-value" tabindex="0" data-inline-field="industry" data-picker="industry">식품제조</div>
               </div>
             </div>
 
@@ -278,14 +300,6 @@
               <div class="project-line">
                 <div class="inline-label">핵심조건</div>
                 <div class="inline-value" contenteditable="true" data-inline-field="coreNeeds">25톤 진입 · 야드 · 민원 없음</div>
-              </div>
-              <div class="project-line">
-                <div class="inline-label">최근연락</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="lastContact">06.23 통화 — 예산 30억까지 가능</div>
-              </div>
-              <div class="project-line">
-                <div class="inline-label">다음액션</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="nextAction">익산 후보 3건 정리</div>
               </div>
             </div>
           </div>
@@ -353,6 +367,12 @@
     const STORAGE_UNDO_KEY = 'matchingUndo:PJ-DEMO-001';
     const STORAGE_REDO_KEY = 'matchingRedo:PJ-DEMO-001';
     const routes = ['전화','문자','카카오톡','블로그','유튜브','네이버부동산','한방','자사사이트(net)','자사사이트(site)','소개','기존고객','현장문의','부동산포스','불분명','기타'];
+    const pickerOptions = {
+      inquiryType:['매수 의뢰','임차 의뢰','매도 의뢰','임대 의뢰','투자 문의','정보 문의','기타'],
+      clientCategory:['개인','개인사업자','법인','법인 설립 예정','확인 필요'],
+      requesterRelation:['본인','대리인','회사 담당자','대표자','중개사','확인 필요','기타'],
+      industry:['식품제조','금속가공','자동차부품','기계제조','물류창고','단순창고','냉동냉장','폐기물 관련','화학 관련','기타']
+    };
     const initialState = {
       project:{
         title:'김OO / 군산·익산 공장 매수 의뢰', status:'후보탐색중', inquiryDate:'2026.06.23', inquiryRoutes:['전화','블로그'], inquiryType:'매수 의뢰', inquiryMemo:'블로그 보고 전화. 군산권 먼저 보고 익산까지 확장 검토.', clientName:'김OO', phone:'010-0000-0000', companyName:'OO식품', clientCategory:'법인', requesterRelation:'회사 담당자', industry:'식품제조', dealType:'매매', budget:'20억~30억', regions:'군산 · 익산', usePurpose:'식품공장', land:'대지 2,000평 이상', building:'건물 500평 이상', areaSummary:'대지 2,000평↑ / 건물 500평↑', coreNeeds:'25톤 진입 · 야드 · 민원 없음', lastContact:'06.23 통화 — 예산 30억까지 가능, 익산도 검토', nextAction:'익산 후보 3건 정리 후 전송'
@@ -400,20 +420,45 @@
 
 
     let inlineBefore = null;
+    let activePickerField = '';
+    let activePickerValues = [];
+    function formatToday(){ const d=new Date(); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); return `${yyyy}.${mm}.${dd}`; }
+    function openProjectPicker(field){
+      activePickerField = field;
+      const p = state.project;
+      if(field === 'inquiryRoutesText'){
+        activePickerValues = [...(p.inquiryRoutes || [])];
+        modalMode = 'projectPicker';
+        modalTitle.textContent = '문의루트';
+        modalDesc.textContent = '중복 선택 가능';
+        modalContent.innerHTML = `<div class="picker-grid">${routes.map(opt=>`<button type="button" class="picker-option check ${activePickerValues.includes(opt)?'active':''}" data-pick-route="${opt}">${opt}</button>`).join('')}</div>`;
+        modal.classList.add('show');
+        return;
+      }
+      const optionMap = {inquiryType:'의뢰구분', clientCategory:'고객주체', requesterRelation:'관계', industry:'업종'};
+      const options = pickerOptions[field] || [];
+      activePickerValues = [p[field] || ''];
+      modalMode = 'projectPicker';
+      modalTitle.textContent = optionMap[field] || '선택';
+      modalDesc.textContent = '';
+      modalContent.innerHTML = `<div class="picker-grid">${options.map(opt=>`<button type="button" class="picker-option ${activePickerValues[0]===opt?'active':''}" data-pick-single="${opt}">${opt}</button>`).join('')}</div>`;
+      modal.classList.add('show');
+    }
     document.addEventListener('focusin', e=>{
       const el=e.target.closest('[data-inline-field]');
       if(!el) return;
+      if(el.dataset.picker){ setTimeout(()=>openProjectPicker(el.dataset.inlineField), 0); return; }
       inlineBefore={field:el.dataset.inlineField, value:el.textContent.trim()};
     });
     document.addEventListener('keydown', e=>{
       const el=e.target.closest('[data-inline-field]');
-      if(!el) return;
+      if(!el || el.dataset.picker) return;
       if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); el.blur(); }
       if(e.key==='Escape'){ e.preventDefault(); if(inlineBefore && inlineBefore.field===el.dataset.inlineField) el.textContent=inlineBefore.value; el.blur(); }
     });
     document.addEventListener('focusout', e=>{
       const el=e.target.closest('[data-inline-field]');
-      if(!el || !inlineBefore) return;
+      if(!el || el.dataset.picker || !inlineBefore) return;
       const field=el.dataset.inlineField;
       const value=el.textContent.trim();
       if(field===inlineBefore.field && value!==inlineBefore.value){
@@ -425,6 +470,10 @@
       inlineBefore=null;
     });
     document.addEventListener('click', e=>{
+      const routePick=e.target.closest('[data-pick-route]');
+      if(routePick){ const v=routePick.dataset.pickRoute; activePickerValues = activePickerValues.includes(v) ? activePickerValues.filter(x=>x!==v) : [...activePickerValues, v]; routePick.classList.toggle('active'); return; }
+      const singlePick=e.target.closest('[data-pick-single]');
+      if(singlePick){ activePickerValues=[singlePick.dataset.pickSingle]; document.querySelectorAll('[data-pick-single]').forEach(btn=>btn.classList.toggle('active', btn===singlePick)); return; }
       const filter=e.target.closest('[data-filter]'); if(filter){ activeFilter=filter.dataset.filter; renderCandidates(); }
       const reject=e.target.closest('[data-reject]'); if(reject){ openCandidateInline(reject.dataset.reject,'reject'); }
       const owner=e.target.closest('[data-owner]'); if(owner){ openCandidateInline(owner.dataset.owner,'owner'); }
@@ -442,6 +491,7 @@
     document.addEventListener('click', e=>{ if(e.target.matches('[data-close-inline]')) e.target.closest('.candidate-card').classList.remove('inline-open'); const sr=e.target.closest('[data-save-reject]'); if(sr){ const card=sr.closest('.candidate-card'); const c=state.candidates.find(x=>x.id===sr.dataset.saveReject); markChange('탈락 처리'); c.rejected=true; c.stage='탈락'; c.rejectReason=card.querySelector('[data-r-reason]').value; c.reconsiderType=card.querySelector('[data-r-type]').value; c.rejectMemo=card.querySelector('[data-r-memo]').value; renderAll(); } const so=e.target.closest('[data-save-owner]'); if(so){ const card=so.closest('.candidate-card'); const c=state.candidates.find(x=>x.id===so.dataset.saveOwner); markChange('소유자 연락 저장'); c.ownerStatus=`${card.querySelector('[data-o-result]').value} · ${card.querySelector('[data-o-intent]').value} · ${card.querySelector('[data-o-price]').value}`; c.stage='소유자확인완료'; renderAll(); } });
     function addCandidate(sourceType){ const next=state.candidates.length+1; const map={direct_register:'직접등록', manual_search:'매물검색', algorithm:'알고리즘추천'}; state.candidates.push({id:'C-'+String(next).padStart(3,'0'),propertyId:'MK-260623-'+String(100+next),title:sourceType==='algorithm'?'알고리즘 추천 후보 '+next:sourceType==='manual_search'?'검색 연결 매물 '+next:'프로젝트 직접등록 매물 '+next,price:'확인 필요',area:'대지/건물 확인 필요',sourceType,sourceLabel:map[sourceType],score:sourceType==='algorithm'?72:0,stage:'검토전',ownerStatus:'미접촉',proposal:false,visit:'미정',confirm:'상세 조건 확인 필요',rejected:false,rejectReason:'',rejectMemo:'',reconsiderType:''}); }
     function addVisitRound(){ markChange('임장 라운드 추가'); const n=state.visits.length+1; const selected=state.candidates.filter(c=>c.proposal&&!c.rejected).slice(0,4); state.visits.push({id:'V-'+String(n).padStart(3,'0'),roundNo:n,title:n+'차 임장',date:'일정 협의',status:'예정',companions:'',summary:'제안선정 매물 중심으로 임장 예정',nextAction:'일정 확정',items:selected.map(c=>({property:c.title,reaction:'예정',memo:'방문 예정'}))}); renderAll(); }
+    document.getElementById('todayInquiryBtn').addEventListener('click',()=>{ markChange('최초문의 오늘 입력'); state.project.inquiryDate=formatToday(); renderAll(); });
     document.getElementById('algorithmBtn').addEventListener('click',()=>{ markChange('알고리즘 추천 전부 추가'); addCandidate('algorithm'); addCandidate('algorithm'); renderAll(); });
     document.getElementById('addVisitBtn').addEventListener('click',addVisitRound); document.getElementById('visitFromSelectedBtn').addEventListener('click',addVisitRound);
     document.getElementById('undoBtn').addEventListener('click',()=>{ if(!undoStack.length)return; const item=undoStack.pop(); redoStack.push({after:clone(state), label:item.label}); state=clone(item.before); dirty=true; persistUndo(); renderAll(); });
@@ -450,22 +500,31 @@
     window.addEventListener('beforeunload',e=>{ if(!dirty)return; e.preventDefault(); e.returnValue='저장하지 않은 변경사항이 있습니다.'; });
     const modal=document.getElementById('simpleModal'), modalTitle=document.getElementById('modalTitle'), modalDesc=document.getElementById('modalDesc'), modalContent=document.getElementById('modalContent'); let modalMode='';
     function openModal(mode){ modalMode=mode; const titles={register:'매물입력기로 새 등록',quick:'간편 새 매물 등록',search:'전체 매물에서 검색'}; modalTitle.textContent=titles[mode]; modalDesc.textContent= mode==='register'?'매물입력기로 이동합니다.':mode==='search'?'매물번호나 주소로 검색합니다.':'기본 정보만 입력합니다.'; modalContent.innerHTML= mode==='search'?'<div class="modal-grid"><input class="edit-field" placeholder="매물번호 / 주소 / 지역"><select class="edit-field"><option>전체</option><option>매매</option><option>임대</option></select></div><div class="confirm-box" style="margin-top:10px">검색 결과 예시: MK-260623-777 / 군산 오식도동 공장 / 22억</div>':'<div class="modal-grid"><input class="edit-field" placeholder="매물명"><input class="edit-field" placeholder="소재지"><input class="edit-field" placeholder="가격"><input class="edit-field" placeholder="대지/건물"></div>'; modal.classList.add('show'); }
-    document.querySelectorAll('[data-open-modal]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.openModal))); function closeModal(){modal.classList.remove('show')} document.getElementById('modalClose').onclick=closeModal; document.getElementById('modalCancel').onclick=closeModal; document.getElementById('modalApply').onclick=()=>{ markChange('후보매물 추가'); addCandidate(modalMode==='search'?'manual_search':'direct_register'); closeModal(); renderAll(); };
+    document.querySelectorAll('[data-open-modal]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.openModal))); function closeModal(){modal.classList.remove('show')} document.getElementById('modalClose').onclick=closeModal; document.getElementById('modalCancel').onclick=closeModal; document.getElementById('modalApply').onclick=()=>{
+      if(modalMode==='projectPicker'){
+        markChange('프로젝트 선택값 수정');
+        if(activePickerField==='inquiryRoutesText') state.project.inquiryRoutes=[...activePickerValues];
+        else state.project[activePickerField]=activePickerValues[0] || '';
+        closeModal(); renderAll(); return;
+      }
+      markChange('후보매물 추가'); addCandidate(modalMode==='search'?'manual_search':'direct_register'); closeModal(); renderAll();
+    };
 
-    const businessCardSlot=document.getElementById('businessCardSlot');
-    const businessCardInput=document.getElementById('businessCardInput');
-    const businessCardPreview=document.getElementById('businessCardPreview');
-    if(businessCardSlot && businessCardInput && businessCardPreview){
-      businessCardSlot.addEventListener('click',()=>businessCardInput.click());
-      businessCardSlot.addEventListener('keydown',e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); businessCardInput.click(); }});
-      businessCardInput.addEventListener('change',()=>{
-        const file=businessCardInput.files && businessCardInput.files[0];
+    document.querySelectorAll('[data-business-card-slot]').forEach(slot=>{
+      const key=slot.dataset.businessCardSlot;
+      const input=document.querySelector(`[data-business-card-input="${key}"]`);
+      const preview=document.querySelector(`[data-business-card-preview="${key}"]`);
+      if(!input || !preview) return;
+      slot.addEventListener('click',()=>input.click());
+      slot.addEventListener('keydown',e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); input.click(); }});
+      input.addEventListener('change',()=>{
+        const file=input.files && input.files[0];
         if(!file) return;
         const reader=new FileReader();
-        reader.onload=()=>{ businessCardPreview.src=reader.result; businessCardSlot.classList.add('has-image'); markChange('명함 이미지 추가'); };
+        reader.onload=()=>{ preview.src=reader.result; slot.classList.add('has-image'); markChange(`명함 ${key} 이미지 추가`); };
         reader.readAsDataURL(file);
       });
-    }
+    });
     renderAll();
   </script>
 </body>

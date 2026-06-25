@@ -91,10 +91,13 @@
     .contact-log-no{width:24px;height:24px;border-radius:999px;background:#111318;color:#fff;font-size:11px;font-weight:1000;display:flex;align-items:center;justify-content:center;margin-top:1px}
     .contact-log-existing{width:100%;min-height:38px;border:0;background:transparent;outline:none;resize:vertical;padding:1px 0;font-size:13px;line-height:1.45;font-weight:850;color:#27303a;white-space:pre-wrap;overflow-wrap:anywhere}
     .contact-empty{border:1px dashed #dbe5ee;border-radius:14px;background:#fbfdff;color:#88919c;font-size:13px;font-weight:900;padding:13px;text-align:center}
-    .contact-add-box{border-top:1px solid #edf2f7;padding-top:13px;display:grid;gap:8px}
-    .contact-add-grid{display:grid;grid-template-columns:120px 120px minmax(0,1fr);gap:8px}
-    .contact-small-btn{min-height:38px;border:1px solid #dbe5ee;border-radius:12px;background:#fff;font-size:12px;font-weight:1000;color:#4b5563;padding:0 10px;white-space:nowrap}
-    @media(max-width:760px){.contact-add-grid{grid-template-columns:1fr}.contact-add-grid .wide{grid-column:auto}}
+    .contact-add-box{border-top:1px solid #edf2f7;padding-top:13px;display:grid;gap:9px}
+    .contact-add-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .contact-date-wrap{display:flex;align-items:center;gap:6px;min-width:0}
+    .contact-date-wrap .edit-field{width:132px;min-width:132px}
+    .contact-add-grid{display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px}
+    .contact-small-btn{min-height:34px;border:1px solid #dbe5ee;border-radius:11px;background:#fff;font-size:12px;font-weight:1000;color:#4b5563;padding:0 10px;white-space:nowrap}
+    @media(max-width:760px){.contact-add-head{align-items:flex-start;flex-direction:column}.contact-add-grid{grid-template-columns:1fr}.contact-date-wrap .edit-field{width:150px;min-width:150px}}
     .business-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-self:start}
     .business-card-slot{height:150px;border:2px dashed #d7e0eb;background:#fafcff;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;align-self:start}
     .business-card-slot:hover{background:#f5f9ff;border-color:#b7c7da}
@@ -495,9 +498,11 @@
             <div class="contact-log-list">${listHtml}</div>
           </section>
           <section class="contact-add-box">
-            <div class="contact-modal-title">새 연락 추가</div>
+            <div class="contact-add-head">
+              <div class="contact-modal-title" style="margin-bottom:0">새 연락 추가</div>
+              <div class="contact-date-wrap"><input class="edit-field" id="newContactDate" value="${formatToday()}" placeholder="날짜"><button type="button" class="contact-small-btn" id="newContactToday">오늘</button></div>
+            </div>
             <div class="contact-add-grid">
-              <div style="display:flex;gap:6px"><input class="edit-field" id="newContactDate" value="${formatToday()}" placeholder="날짜"><button type="button" class="contact-small-btn" id="newContactToday">오늘</button></div>
               <select class="edit-field" id="newContactType"><option>통화</option><option>문자</option><option>카카오톡</option><option>방문</option><option>자료전송</option><option>조건변경</option><option>가격협의</option><option>재문의</option><option>보류</option><option>기타</option></select>
               <input class="edit-field" id="newContactContent" placeholder="연락 내용">
             </div>

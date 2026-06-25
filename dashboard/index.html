@@ -4081,42 +4081,53 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
       const today = getTodayDateKey();
       const monthKey = getCurrentMonthKeyFromDate(today);
+      let initialOverlayStopped = false;
 
-      return Promise.all([
-        fetch(CONFIG.adminListUrl, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'text/plain;charset=UTF-8'
-          },
-          body: JSON.stringify({
-            action: 'listAdminProperties'
-          })
-        }).then(function(res){
-          if(!res.ok) throw new Error('매물 불러오기 실패: ' + res.status);
-          return res.json();
-        }),
+      function stopInitialOverlayOnce(){
+        if(initialOverlayStopped) return;
+        initialOverlayStopped = true;
+        stopLoadingOverlay();
+      }
 
-        requestCalendarOverview(monthKey, true).then(function(data){
-          return { data: data, loadedAll: true };
-        }).catch(function(){
-          return requestCalendarOverview(monthKey, false).then(function(data){
-            return { data: data, loadedAll: false };
-          });
+      const calendarOverviewPromise = requestCalendarOverview(monthKey, true).then(function(data){
+        return { data: data, loadedAll: true };
+      }).catch(function(){
+        return requestCalendarOverview(monthKey, false).then(function(data){
+          return { data: data, loadedAll: false };
+        });
+      });
+
+      const propertyPromise = fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=UTF-8'
+        },
+        body: JSON.stringify({
+          action: 'listAdminProperties'
         })
-      ])
-      .then(function(results){
-        const propertyData = results[0] || {};
-        const calendarResult = results[1] || {};
-        const calendarData = calendarResult.data || calendarResult;
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('매물 불러오기 실패: ' + res.status);
+        return res.json();
+      });
 
+      return propertyPromise
+      .then(function(propertyData){
         const items = Array.isArray(propertyData && propertyData.items) ? propertyData.items : [];
         rawItems = items.map(normalizeItem);
         saveDashboardItemsCache();
-
-        applyCalendarOverviewData(calendarData, monthKey, calendarResult.loadedAll !== false);
-
         renderDashboard();
+        stopInitialOverlayOnce();
+
+        calendarOverviewPromise
+        .then(function(calendarResult){
+          const calendarData = calendarResult.data || calendarResult;
+          applyCalendarOverviewData(calendarData, monthKey, calendarResult.loadedAll !== false);
+        })
+        .catch(function(err){
+          console.error(err);
+        });
       })
       .catch(function(err){
         console.error(err);
@@ -4124,9 +4135,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         toolbarMeta.textContent = '불러오기 실패';
       })
       .finally(function(){
-        stopLoadingOverlay();
+        stopInitialOverlayOnce();
       });
     }
+
 
     function safeJsonParse(value, fallback){
       try{

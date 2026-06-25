@@ -1,1783 +1,364 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>매칭 작업실</title>
-<!DOCTYPE html>
-<html lang="ko">
-<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <!-- SEO: 관리자/작업용 페이지 검색 제외 -->
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
-  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
-  <meta name="naverbot" content="noindex, nofollow, noarchive, nosnippet" />
-
-  <title>Maslow Headquarters Dashboard</title>
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Maslow Korea" />
-  <meta property="og:title" content="Maslow Headquarters Dashboard" />
-  <meta property="og:description" content="Maslow Headquarters Dashboard" />
-  <meta property="og:url" content="https://www.maslowkorea.site/dashboard" />
-  <meta property="og:image" content="https://www.maslowkorea.site/dashboard/assets/og-maslow-headquarters-dashboard.png" />
-  <meta property="og:image:secure_url" content="https://www.maslowkorea.site/dashboard/assets/og-maslow-headquarters-dashboard.png" />
-  <meta property="og:image:type" content="image/png" />
-  <meta property="og:image:width" content="1672" />
-  <meta property="og:image:height" content="941" />
-  <meta property="og:image:alt" content="Maslow Headquarters Dashboard OG image" />
-
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Maslow Headquarters Dashboard" />
-  <meta name="twitter:description" content="Maslow Headquarters Dashboard" />
-  <meta name="twitter:image" content="https://www.maslowkorea.site/dashboard/assets/og-maslow-headquarters-dashboard.png" />
-  <meta name="twitter:image:alt" content="Maslow Headquarters Dashboard OG image" />
+  <title>PROJECT 매칭 작업실</title>
   <style>
     :root{
-      --bg:#ffffff;
+      --bg:#f7f9fc;
+      --card:#ffffff;
       --line:#e6ebf1;
       --text:#111318;
-      --muted:#67707b;
+      --muted:#66707a;
+      --soft:#f2f5f9;
       --blue:#0f7cff;
-      --shadow:0 14px 30px rgba(15,23,42,.05);
+      --green:#00f97c;
+      --red:#ef4444;
+      --amber:#f59e0b;
+      --shadow:0 14px 30px rgba(15,23,42,.06);
     }
     *{box-sizing:border-box}
-    html,body{
-      margin:0;
-      padding:0;
-      background:#fff;
-      color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif !important;
-      letter-spacing:-0.02em;
-    }
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;letter-spacing:-.025em}
     a{text-decoration:none;color:inherit}
-    button,input{font:inherit}
+    button,input,textarea,select{font:inherit}
     button{border:none;background:none;cursor:pointer}
-    img{display:block;max-width:100%}
+    .page{min-height:100vh;background:linear-gradient(180deg,#fff 0%,#f7f9fc 100%)}
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid rgba(230,235,241,.95)}
+    .topbar-inner{max-width:1380px;margin:0 auto;min-height:74px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+    .brand-title{font-size:18px;font-weight:1000;color:#5f6873;white-space:nowrap}
+    .brand-icons{display:flex;align-items:center;gap:10px}
+    .brand-icon-link{height:42px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);font-weight:1000;line-height:1;transition:.18s ease}
+    .brand-icon-link:hover{transform:translateY(-1px)}
+    .brand-icon-project{width:146px;min-width:146px;flex:0 0 146px;background:var(--green);border-color:var(--green);color:#07150d;padding:0 18px;letter-spacing:-.045em;white-space:nowrap}
+    .tax-mobile-label{display:none}
+    .save-cluster{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .save-state{font-size:12px;font-weight:900;color:#7b8794;white-space:nowrap}
+    .top-btn{min-height:36px;padding:0 13px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#344052;font-size:13px;font-weight:950;box-shadow:0 8px 18px rgba(15,23,42,.04)}
+    .top-btn.primary{background:#111318;color:#fff;border-color:#111318}
+    .top-btn:disabled{opacity:.42;cursor:not-allowed}
 
-    .page{min-height:100vh;background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%)}
-    .shell{width:100%;max-width:980px;margin:0 auto;padding:0 20px 48px}
+    .shell{width:100%;max-width:1380px;margin:0 auto;padding:22px 22px 56px;display:grid;gap:18px}
+    .section{background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden}
+    .section-head{padding:18px 20px;border-bottom:1px solid #edf2f7;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .section-kicker{font-size:12px;font-weight:1000;color:#7d8792;letter-spacing:.08em;text-transform:uppercase}
+    .section-title{margin:3px 0 0;font-size:24px;line-height:1.15;font-weight:1000;letter-spacing:-.055em}
+    .section-desc{font-size:13px;font-weight:800;color:#7b8794;line-height:1.5}
+    .section-body{padding:18px 20px 20px}
 
-    .topbar{
-      position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
-      min-height:76px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
-      border-bottom:1px solid rgba(230,235,241,.9)
-    }
-    .topbar-left{
-      display:flex;
-      align-items:center;
-      justify-content:flex-start;
-      width:auto;
-      min-width:120px;
-      flex:0 0 auto;
-    }
-    .topbar-right{
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      flex:1 1 auto;
-      min-width:0;
-    }
-    .topbar-greeting{
-      display:inline-flex;
-      align-items:center;
-      min-height:44px;
-      padding:0 4px;
-      font-size:15px;
-      font-weight:800;
-      color:#5f6873;
-      letter-spacing:-0.03em;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      max-width:100%;
-    }
-    .brand-link{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;font-size:18px;font-weight:900;color:#111}
+    .project-summary{display:grid;grid-template-columns:1.25fr .9fr;gap:14px}
+    .summary-main{display:grid;gap:14px}
+    .project-name{font-size:32px;line-height:1.08;font-weight:1000;letter-spacing:-.065em}
+    .summary-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .chip{display:inline-flex;align-items:center;min-height:30px;padding:0 11px;border-radius:999px;background:#f3f7fb;border:1px solid #e2eaf2;color:#4b5563;font-size:13px;font-weight:950;white-space:nowrap}
+    .chip.blue{background:#eef5ff;border-color:#cfe2ff;color:#0f64d8}
+    .chip.green{background:#eafff3;border-color:#bdf8d8;color:#087a3b}
+    .chip.red{background:#fff1f1;border-color:#ffd2d2;color:#d43737}
+    .chip.dark{background:#111318;border-color:#111318;color:#fff}
+    .summary-grid{display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px}
+    .info-card{border:1px solid #edf2f7;border-radius:20px;background:#fbfdff;padding:14px;min-height:86px;position:relative}
+    .info-label{font-size:12px;font-weight:1000;color:#88919c;margin-bottom:7px}
+    .info-value{font-size:15px;line-height:1.45;font-weight:950;color:#27303a;word-break:keep-all}
+    .edit-mini{position:absolute;right:10px;top:10px;width:28px;height:28px;border-radius:10px;background:#fff;border:1px solid #e1e8f0;color:#6b7280;font-size:13px;font-weight:1000}
+    .inline-editor{display:none;margin-top:10px;padding:12px;border-radius:16px;background:#fff;border:1px solid #dfe8f2;gap:10px}
+    .info-card.editing .inline-editor{display:grid}
+    .edit-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .edit-field{min-height:38px;border:1px solid #dbe5ee;border-radius:12px;padding:0 10px;background:#fff;color:#111318;font-weight:850;font-size:14px;width:100%}
+    .edit-field.textarea{min-height:76px;padding:10px;resize:vertical;line-height:1.5}
+    .check-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+    .check-pill{min-height:32px;border:1px solid #e1e8f0;border-radius:999px;padding:0 9px;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:900;background:#fff;color:#4b5563}
+    .inline-actions{display:flex;justify-content:flex-end;gap:8px}
+    .small-btn{min-height:32px;padding:0 11px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#48515d;font-size:12px;font-weight:950}
+    .small-btn.primary{background:#0f7cff;border-color:#0f7cff;color:#fff}
 
-    .brand-icons{
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    .brand-icon-link{
-      width:42px;
-      height:42px;
-      border-radius:14px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      background:#fff;
-      border:1px solid var(--line);
-      box-shadow:var(--shadow);
-      transition:transform .18s ease, box-shadow .18s ease;
-      flex:0 0 42px;
-    }
-    .brand-icon-link:hover{
-      transform:translateY(-1px);
-      box-shadow:0 18px 34px rgba(15,23,42,.08);
-    }
-    .brand-icon-link svg{
-      width:26px;
-      height:26px;
-      display:block;
-    }
-    .brand-icon-factory{
-      color:#3a8fe6;
-      border-color:#cfe2ff;
-      background:#eef6ff;
-    }
-    .brand-icon-building{
-      color:#b8841a;
-      border-color:#ead7aa;
-      background:#fff8e8;
-    }
-    .brand-icon-vfactory{
-      border:none;
-      background:transparent;
-      box-shadow:none;
-      padding:0;
-      overflow:visible;
-    }
-    .brand-icon-vfactory:hover{
-      box-shadow:none;
-    }
-    .brand-icon-vfactory img{
-      width:42px;
-      height:42px;
-      object-fit:cover;
-      border-radius:14px;
-      transform:scale(1.12);
-      transform-origin:center;
-      flex:0 0 auto;
-    }
-    .brand-icon-naverblog{
-      background:#19ce60;
-      border-color:#19ce60;
-      color:#fff;
-      font-size:24px;
-      font-weight:1000;
-      letter-spacing:-0.04em;
-      line-height:1;
-      font-family:Arial, Helvetica, sans-serif;
-    }
+    .metric-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:16px}
+    .metric{border:1px solid #edf2f7;border-radius:18px;background:#fff;padding:12px 12px 11px}
+    .metric-num{font-size:24px;font-weight:1000;letter-spacing:-.04em}
+    .metric-label{font-size:12px;font-weight:900;color:#7b8794;margin-top:2px}
+    .action-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .action-strip-left,.action-strip-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .main-action{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#253041;font-size:14px;font-weight:1000;box-shadow:0 8px 18px rgba(15,23,42,.04)}
+    .main-action.blue{background:#eef5ff;border-color:#cfe2ff;color:#0f64d8}
+    .main-action.green{background:#ecfff5;border-color:#bdf8d8;color:#087a3b}
+    .main-action.dark{background:#111318;border-color:#111318;color:#fff}
+    .filter-chip{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#5d6670;font-size:13px;font-weight:950}
+    .filter-chip.active{background:#111318;border-color:#111318;color:#fff}
+    .candidate-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .candidate-card{position:relative;border:1px solid #e6ebf1;border-radius:24px;background:#fff;box-shadow:0 10px 22px rgba(15,23,42,.04);padding:15px;display:grid;gap:10px;overflow:hidden;min-height:246px}
+    .candidate-card.is-rejected{opacity:.92}
+    .candidate-card.is-rejected::after{content:"";position:absolute;inset:0;background:rgba(10,12,16,.58);border-radius:inherit;pointer-events:none;z-index:3}
+    .rejected-panel{display:none;position:absolute;inset:auto 12px 12px 12px;z-index:4;border-radius:18px;background:rgba(17,19,24,.86);color:#fff;padding:12px;box-shadow:0 16px 34px rgba(0,0,0,.18)}
+    .candidate-card.is-rejected .rejected-panel{display:block}
+    .candidate-card.is-rejected .candidate-content{filter:grayscale(.2)}
+    .candidate-content{position:relative;z-index:1;display:grid;gap:10px}
+    .cand-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+    .cand-title{font-size:19px;line-height:1.22;font-weight:1000;letter-spacing:-.05em}
+    .cand-no{font-size:11px;font-weight:1000;color:#8a94a1;margin-top:3px}
+    .score-badge{min-height:30px;padding:0 10px;border-radius:999px;background:#eef5ff;border:1px solid #cfe2ff;color:#0f64d8;font-size:13px;font-weight:1000;white-space:nowrap}
+    .cand-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+    .meta-box{border-radius:14px;background:#f6f8fb;padding:9px 10px;font-size:12px;font-weight:900;color:#4f5863;line-height:1.45}
+    .meta-box b{display:block;color:#111318;font-size:13px;margin-bottom:2px}
+    .confirm-box{border:1px dashed #dbe5ee;border-radius:16px;background:#fbfdff;padding:10px;font-size:13px;line-height:1.55;color:#4f5863;font-weight:850}
+    .cand-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px}
+    .card-btn{min-height:32px;padding:0 10px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#344052;font-size:12px;font-weight:950;position:relative;z-index:5}
+    .card-btn.red{border-color:#ffd2d2;background:#fff1f1;color:#d43737}
+    .card-btn.dark{border-color:#111318;background:#111318;color:#fff}
+    .card-btn.green{border-color:#bdf8d8;background:#ecfff5;color:#087a3b}
+    .card-inline{display:none;position:relative;z-index:6;border:1px solid #dfe8f2;background:#fff;border-radius:18px;padding:12px;gap:8px}
+    .candidate-card.inline-open .card-inline{display:grid}
+    .rejected-title{font-size:18px;font-weight:1000;margin-bottom:5px}.rejected-meta{font-size:13px;line-height:1.5;font-weight:800;color:rgba(255,255,255,.86)}
 
-    .brand-icon-ownerletter{
-      background:#6f7f3f;
-      border-color:#6f7f3f;
-      color:#fff;
-      font-size:24px;
-      font-weight:1000;
-      letter-spacing:-0.04em;
-      line-height:1;
-      font-family:Arial, Helvetica, sans-serif;
-    }
-    .brand-icon-taxcheckup{
-      width:63px;
-      height:42px;
-      flex:0 0 63px;
-      border-radius:14px;
-      background:#183a8f;
-      border-color:#183a8f;
-      color:#fff;
-      font-size:18px;
-      font-weight:1000;
-      letter-spacing:-0.03em;
-      line-height:1;
-      font-family:Arial,Helvetica,sans-serif;
-    }
-    .brand-icon-taxcheckup .tax-mobile-label{display:none}
+    .visit-list{display:grid;gap:12px}
+    .visit-card{border:1px solid #e6ebf1;border-radius:24px;background:#fff;padding:16px;box-shadow:0 10px 22px rgba(15,23,42,.04)}
+    .visit-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .visit-title{font-size:20px;font-weight:1000;letter-spacing:-.05em}.visit-meta{font-size:13px;font-weight:850;color:#66707a;line-height:1.6;margin-top:4px}
+    .visit-items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+    .visit-item{border-radius:16px;background:#f6f8fb;padding:10px;font-size:13px;font-weight:900;color:#4f5863;line-height:1.45}.visit-item b{color:#111318}
+    .visit-detail{display:none;margin-top:12px;border-top:1px solid #eef2f6;padding-top:12px}.visit-card.open .visit-detail{display:grid;gap:10px}
 
-    .brand-icon-dashboardlink{
-      width:108px;
-      flex:0 0 108px;
-    }
-    .dashboard-refresh-btn{
-      padding:0;
-      overflow:hidden;
-    }
-    .dashboard-refresh-btn img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      border-radius:14px;
-    }
+    .contract-empty{border:1px dashed #d3dce7;border-radius:22px;background:#fbfdff;padding:22px;color:#7b8794;font-weight:900;line-height:1.65;text-align:center}
 
-    .hero-spacer{height:18px}
-    .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0 18px}
-    .panel-card{
-      position:relative;display:flex;flex-direction:column;justify-content:space-between;
-      min-height:132px;padding:22px 22px 20px;border:1px solid var(--line);border-radius:28px;
-      background:#fff;box-shadow:var(--shadow);text-align:left;transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease
-    }
-    .panel-card:hover{transform:translateY(-2px);box-shadow:0 18px 34px rgba(15,23,42,.08)}
-    .panel-card.primary{background:linear-gradient(180deg,#f7fbff 0%,#eef6ff 100%);border-color:#cfe2ff}
-    .panel-eyebrow{font-size:12px;font-weight:900;color:#7d8792;letter-spacing:.08em;text-transform:uppercase}
-    .panel-title{margin-top:10px;font-size:30px;line-height:1.08;font-weight:900;color:#111318;letter-spacing:-0.05em}
-    .panel-desc{margin-top:10px;font-size:14px;line-height:1.65;color:#66707a;font-weight:700}
+    .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.38);backdrop-filter:blur(4px)}
+    .modal.show{display:flex}.modal-card{width:min(640px,calc(100vw - 32px));max-height:86vh;overflow:auto;background:#fff;border-radius:24px;border:1px solid #dbe5ee;box-shadow:0 24px 70px rgba(15,23,42,.26);padding:20px;display:grid;gap:14px}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.modal-title{font-size:22px;font-weight:1000;letter-spacing:-.05em}.modal-desc{font-size:13px;color:#7b8794;font-weight:800;line-height:1.55;margin-top:4px}.modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px}.close-x{width:34px;height:34px;border-radius:12px;background:#f3f6fa;color:#4b5563;font-weight:1000}
 
-    .panel-card.desktop-only{display:none}
-    .panel-title-row{display:flex;align-items:center;gap:12px;margin-top:10px}
-    .panel-title-row .panel-title{margin-top:0}
-    .panel-icon-svg{width:42px;height:42px;flex:0 0 42px;display:block;filter:drop-shadow(0 5px 8px rgba(15,23,42,.10))}
-    .panel-card.compact-link{min-height:132px}
-
-    .panel-icon-wrap{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      margin-top:2px;
-    }
-    .panel-icon{
-      width:28px;
-      height:28px;
-      color:#6e7883;
-      flex:0 0 28px;
-    }
-
-    .search-wrap{margin:0 0 14px}
-    .search-box{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      width:min(230px,100%);
-      min-height:60px;
-      padding:0 18px;
-      border:1.5px solid #d9e4ef;
-      border-radius:999px;
-      background:#fff;
-      box-shadow:0 8px 20px rgba(15,23,42,.03);
-      transition:width .24s ease, box-shadow .24s ease, border-color .24s ease;
-    }
-    .search-box:focus-within{
-      width:min(100%, 720px);
-      border-color:#bfdcff;
-      box-shadow:0 12px 24px rgba(15,124,255,.08)
-    }
-    .search-icon{flex:0 0 auto;font-size:18px;color:#7b8794;width:auto}
-    .search-input{
-      flex:1 1 auto;
-      width:100%;
-      border:none;
-      outline:none;
-      background:transparent;
-      color:#111318;
-      font-size:17px;
-      font-weight:800;
-      letter-spacing:-0.03em
-    }
-    .search-input::placeholder{color:rgba(123,135,148,.55);font-weight:600}
-    .search-input[contenteditable]{
-      min-height:24px;
-      display:flex;
-      align-items:center;
-      cursor:text;
-      white-space:nowrap;
-      overflow:hidden;
-    }
-    .search-input[contenteditable]:empty::before{
-      content:attr(data-placeholder);
-      color:rgba(123,135,148,.55);
-      font-weight:600;
-      pointer-events:none;
-    }
-
-    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 18px}
-    .chip-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .filter-chip{
-      min-height:36px;padding:0 14px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;
-      color:#5d6670;font-size:14px;font-weight:900;letter-spacing:-0.02em;transition:.18s ease
-    }
-    .filter-chip.active{background:#0f7cff;border-color:#0f7cff;color:#fff;box-shadow:0 10px 20px rgba(15,124,255,.16)}
-    .toolbar-meta{font-size:13px;color:#7b8794;font-weight:800;letter-spacing:-0.02em}
-
-    .group{margin:0 0 26px}
-    .group-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:0 2px}
-    .group-title{font-size:22px;line-height:1.2;font-weight:900;color:#202227;letter-spacing:-0.04em}
-    .group-count{font-size:13px;color:#7b8794;font-weight:900}
-
-    .card-list{display:grid;grid-template-columns:1fr;gap:12px}
-    .property-card{border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
-    .property-card.is-card-refreshing{position:relative}
-    .property-card.is-card-refreshing::before{
-      content:'';position:absolute;inset:0;z-index:4;background:rgba(255,255,255,.66);backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px)
-    }
-    .property-card.is-card-refreshing::after{
-      content:'수정내용 반영중';position:absolute;left:50%;top:50%;z-index:5;transform:translate(-50%,-50%);
-      min-height:34px;padding:0 14px 0 38px;border-radius:999px;background:#fff;color:#0f7cff;border:1px solid #cfe2ff;
-      box-shadow:0 12px 24px rgba(15,124,255,.16);font-size:12px;font-weight:900;white-space:nowrap
-    }
-    .property-card.is-card-refreshing .property-main::after{
-      content:'';position:absolute;left:calc(50% - 42px);top:50%;z-index:6;width:14px;height:14px;margin-top:-7px;
-      border-radius:50%;border:2px solid #cfe2ff;border-top-color:#0f7cff;animation:cardRefreshSpin .72s linear infinite
-    }
-    @keyframes cardRefreshSpin{to{transform:rotate(360deg)}}
-    .property-main{
-      display:grid;grid-template-columns:112px 1fr;gap:14px;padding:14px;align-items:start;cursor:default
-    }
-    .thumb{width:112px;height:112px;border-radius:18px;background:#edf2f7 center/cover no-repeat;overflow:hidden;flex:0 0 112px}
-    .property-copy-thumb{
-      cursor:pointer;
-      -webkit-user-select:none;
-      user-select:none;
-      -webkit-touch-callout:none;
-      touch-action:manipulation;
-    }
-    .property-edit-link{cursor:pointer}
-    .property-edit-link:hover{text-decoration:underline}
-    .card-content{min-width:0;display:grid;gap:8px}
-    .title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-    .card-title{
-      margin:0;font-size:24px;line-height:1.16;font-weight:900;color:#17191d;letter-spacing:-0.05em;word-break:keep-all
-    }
-    .status-chip{
-      flex:0 0 auto;min-height:24px;padding:0 8px;border-radius:999px;font-size:11px;font-weight:900;
-      display:inline-flex;align-items:center;justify-content:center;white-space:nowrap
-    }
-    .status-chip.visible{background:#eef5ff;color:#0f7cff;border:1px solid #cfe2ff}
-    .status-chip.hidden{background:#f3f5f8;color:#7f8792;border:1px solid #dde3ea}
-    .address-map-row{display:flex;align-items:flex-start;gap:6px;min-width:0;line-height:1.55}
-    .card-address{font-size:15px;line-height:1.55;color:#505862;font-weight:700;word-break:keep-all;min-width:0;flex:1 1 auto}
-    .address-map-actions{display:inline-flex;flex-direction:column;align-items:center;gap:3px;flex:0 0 22px;margin-top:1px;margin-left:auto}
-    .dashboard-map-btn{
-      width:22px;height:22px;border:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;
-      box-shadow:0 2px 6px rgba(15,23,42,.13);cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex:0 0 22px
-    }
-    .dashboard-map-btn svg{width:14px;height:14px;display:block}
-    .dashboard-map-btn.ddangya-map-btn{background:#f97316}
-    .dashboard-map-btn.ddangya-map-btn:hover{background:#ea580c}
-    .dashboard-map-btn.naver-map-btn{background:#0b7cff}
-    .dashboard-map-btn.naver-map-btn:hover{background:#075fd1}
-    .dashboard-map-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(37,99,235,.16)}
-    .card-deal-price{
-      font-size:15px;
-      line-height:1.5;
-      font-weight:900;
-      color:#ff3c3c;
-      letter-spacing:-0.03em;
-      word-break:keep-all;
-    }
-    .card-meta{font-size:13px;line-height:1.5;color:#7b8794;font-weight:800;letter-spacing:-0.02em}
-    .card-meta strong{color:#4f5863;font-weight:900}
-
-    .card-bottom{border-top:1px solid #eef2f6;padding:10px 14px 12px;display:grid;gap:10px}
-    .action-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-    .action-left{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
-    .mini-btn{
-      min-height:34px;padding:0 12px;border-radius:999px;border:1px solid #dce6f1;background:#fff;
-      color:#111318;font-size:13px;font-weight:900;letter-spacing:-0.02em
-    }
-    .mini-btn.visibility-btn{
-      min-height:30px;
-      padding:0 7px;
-      font-size:12px;
-      border-radius:999px;
-      flex:0 0 auto;
-    }
-    .mini-btn.blue{border-color:#cfe2ff;background:#eef5ff;color:#0f7cff}
-    .mini-btn.gray{border-color:#dde3ea;background:#f4f6f8;color:#6e7782}
-    .mini-btn.square{border-radius:10px;padding:0 8px;min-height:34px;font-size:16px;font-weight:800;letter-spacing:-0.03em;display:inline-flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap}
-    .mini-btn.edit-square{border-color:#b9dcff;background:#ecf6ff;color:#3a8fe6}
-    .mini-btn.memo-square{border-color:#e8dc7e;background:#fff4a8;color:#7a6500}
-    .memo-btn-wrap{position:relative;display:inline-flex;align-items:center;overflow:visible;flex:0 0 auto}
-    .memo-new-star{position:absolute;top:-2px;right:-7px;z-index:20;color:#1677ff;font-size:12px;line-height:1;font-weight:900;background:transparent;border-radius:0;box-shadow:none;text-shadow:0 0 2px #fff,0 0 2px #fff;pointer-events:none}
-    .mini-btn.share-square{border-color:#cde8b0;background:#e9f8d7;color:#5e8d1b}
-    .mini-btn.compact{min-height:30px;padding:0 10px;font-size:12px;border-radius:999px;flex:0 0 auto}
-    .mini-btn.visibility-text-btn{
-      min-height:34px;
-      padding:0 4px;
-      border:none;
-      background:transparent;
-      border-radius:0;
-      color:#5f6873;
-      font-size:16px;
-      font-weight:800;
-      letter-spacing:-0.03em;
-      flex:0 0 auto;
-      white-space:nowrap;
-    }
-    .mini-btn.visibility-text-btn.active-show{
-      color:#0f7cff;
-    }
-    .mini-btn .btn-emoji,
-    .mini-btn .btn-text{
-      display:inline;
-      line-height:1;
-    }
-
-    .memo-modal{
-      position:fixed;
-      inset:0;
-      z-index:12160;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
-      background:rgba(17,24,39,.22);
-      backdrop-filter:blur(3px);
-      -webkit-backdrop-filter:blur(3px);
-    }
-    .memo-modal.show{display:flex}
-    .memo-modal-card{
-      width:min(440px, calc(100vw - 28px));
-      min-height:320px;
-      padding:22px 20px 18px;
-      border:1px solid #f1e3a8;
-      border-radius:18px;
-      background:#fff8bf;
-      box-shadow:0 18px 40px rgba(15,23,42,.18);
-      display:grid;
-      gap:12px;
-      transform:rotate(-0.4deg);
-    }
-    .memo-modal-head{font-size:22px;font-weight:900;color:#6f5a00}
-    .memo-textarea{
-      width:100%;min-height:220px;resize:vertical;border:none;outline:none;background:transparent;
-      color:#5d4b00;font-size:17px;line-height:1.65;font-family:inherit;font-weight:600;
-    }
-    .memo-textarea::placeholder{color:rgba(93,75,0,.25)}
-    .memo-modal-actions{display:flex;justify-content:flex-end;gap:16px}
-    .memo-btn{min-height:32px;padding:0 4px;border:none;background:transparent;font-size:15px;font-weight:700;color:#7a6500}
-    .memo-btn.primary{color:#0f7cff}
-
-    .property-copy-modal{
-      position:fixed;
-      inset:0;
-      z-index:12170;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
-      background:rgba(15,23,42,.35);
-      backdrop-filter:blur(4px);
-      -webkit-backdrop-filter:blur(4px);
-    }
-    .property-copy-modal.show{display:flex}
-    .property-copy-card{
-      width:min(420px, calc(100vw - 32px));
-      padding:24px 22px 20px;
-      border:1px solid #dbe7f4;
-      border-radius:22px;
-      background:#fff;
-      box-shadow:0 22px 58px rgba(15,23,42,.24);
-      display:grid;
-      gap:14px;
-    }
-    .property-copy-head{font-size:22px;font-weight:1000;color:#17191d;letter-spacing:-0.04em}
-    .property-copy-desc{font-size:15px;line-height:1.65;color:#5f6873;font-weight:750;letter-spacing:-0.03em;white-space:pre-line}
-    .property-copy-number{
-      padding:10px 12px;
-      border-radius:14px;
-      background:#f5f8fc;
-      color:#3f4852;
-      font-size:13px;
-      line-height:1.45;
-      font-weight:900;
-      word-break:break-all;
-    }
-    .property-copy-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:2px}
-    .property-copy-btn{
-      min-height:40px;
-      padding:0 16px;
-      border-radius:999px;
-      border:1px solid #dce6f1;
-      background:#fff;
-      color:#4f5863;
-      font-size:14px;
-      font-weight:950;
-      letter-spacing:-0.02em;
-    }
-    .property-copy-btn.primary{border-color:#0f7cff;background:#0f7cff;color:#fff}
-
-    .channel-row{
-      display:grid;
-      grid-template-columns:repeat(9, 56px);
-      justify-content:flex-start;
-      gap:8px;
-    }
-    .channel-icon{
-      position:relative;
-      aspect-ratio:1 / 1;
-      width:56px;
-      min-width:56px;
-      max-width:56px;
-      min-height:56px;
-      max-height:56px;
-      height:56px;
-      margin:0;
-      border-radius:14px;
-      border:1px solid #e4eaf1;
-      background:#fafcff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:0;
-      overflow:hidden;
-      flex:0 0 56px;
-    }
-    .channel-favicon{
-      position:absolute;
-      left:50%;
-      top:50%;
-      width:90%;
-      height:90%;
-      transform:translate(-50%, -50%);
-      object-fit:cover;
-      border-radius:4px;
-      flex:none
-    }
-    .site-chip{
-      position:relative;
-      aspect-ratio:1 / 1;
-      width:56px;
-      min-width:56px;
-      max-width:56px;
-      min-height:56px;
-      max-height:56px;
-      height:56px;
-      border-radius:14px;
-      border:1px solid #e4eaf1;
-      background:#fff;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:0;
-      overflow:hidden;
-      flex:0 0 56px
-    }
-    .site-favicon{
-      position:absolute;
-      left:50%;
-      top:50%;
-      width:90%;
-      height:90%;
-      transform:translate(-50%, -50%);
-      object-fit:cover;
-      border-radius:4px;
-      flex:none
-    }
-    .empty{border:1px dashed #d9e3ed;border-radius:24px;background:#fff;padding:30px 18px;text-align:center;color:#7b8794;font-size:15px;font-weight:800}
-
-    .loading-overlay{
-      position:fixed;
-      inset:0;
-      z-index:12050;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
-      background:rgba(255,255,255,.72);
-      backdrop-filter:blur(3px);
-      -webkit-backdrop-filter:blur(3px);
-    }
-    .loading-overlay.show{display:flex}
-    .loading-panel{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:12px;
-      text-align:center;
-    }
-    .loading-buddy{
-      width:74px;
-      height:74px;
-      object-fit:cover;
-      border-radius:18px;
-      animation:buddyBounce 1.15s ease-in-out infinite;
-      box-shadow:0 10px 22px rgba(15,124,255,.16);
-    }
-    .loading-text{
-      min-height:24px;
-      font-size:18px;
-      font-weight:800;
-      line-height:1.4;
-      color:#2b8fe8;
-      letter-spacing:-0.03em;
-    }
-    @keyframes buddyBounce{
-      0%,100%{transform:translateY(0) scale(1)}
-      20%{transform:translateY(-3px) scale(1.01)}
-      50%{transform:translateY(-10px) scale(1.04)}
-      75%{transform:translateY(-4px) scale(1.01)}
-    }
-
-    .calendar-inline-loading{
-      position:absolute;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      background:rgba(255,255,255,.42);
-      pointer-events:none;
-      z-index:4;
-    }
-    .calendar-inline-loading.show{display:flex}
-    .calendar-inline-spinner{
-      width:24px;
-      height:24px;
-      border-radius:999px;
-      border:2.5px solid rgba(15,124,255,.18);
-      border-top-color:#0f7cff;
-      animation:calendarSpin .7s linear infinite;
-    }
-    @keyframes calendarSpin{
-      from{transform:rotate(0deg)}
-      to{transform:rotate(360deg)}
-    }
-
-    .lock-overlay{
-      position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;
-      background:rgba(255,255,255,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)
-    }
-    .lock-card{
-      width:min(420px,100%);border:1px solid #e6ebf1;border-radius:30px;background:#fff;
-      box-shadow:0 24px 48px rgba(15,23,42,.12);padding:24px 22px 22px
-    }
-    .lock-title{font-size:26px;line-height:1.1;font-weight:900;color:#17191d;letter-spacing:-0.05em;margin:0 0 12px}
-    .lock-desc{font-size:14px;line-height:1.65;color:#66707a;font-weight:700;margin:0 0 16px}
-    .lock-input{
-      width:100%;min-height:56px;border:1.5px solid #dbe5ee;border-radius:18px;padding:0 16px;outline:none;
-      font-size:20px;font-weight:900;letter-spacing:.08em;text-align:center;background:#fff;margin:0 0 12px
-    }
-    .lock-btn{width:100%;min-height:52px;border-radius:18px;background:#0f7cff;color:#fff;font-size:16px;font-weight:900;letter-spacing:-0.02em}
-    .lock-error{margin-top:10px;font-size:13px;color:#d64545;font-weight:800;min-height:18px;text-align:center}
-
-    .more-wrap{
-      display:flex;
-      justify-content:center;
-      margin:8px 0 28px;
-    }
-    .more-btn{
-      min-height:42px;
-      padding:0 18px;
-      border-radius:999px;
-      border:1px solid #dce6f1;
-      background:#fff;
-      color:#111318;
-      font-size:14px;
-      font-weight:900;
-      letter-spacing:-0.02em;
-    }
-
-    .channel-icon.is-not-yet .channel-favicon,
-    .site-chip.is-not-yet .site-favicon{
-      opacity:.26;
-      filter:none;
-    }
-
-    .channel-modal{
-      position:fixed;
-      inset:0;
-      z-index:12120;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
-      background:rgba(17,24,39,.38);
-      backdrop-filter:blur(4px);
-      -webkit-backdrop-filter:blur(4px);
-    }
-    .channel-modal.show{display:flex}
-    .channel-modal-card{
-      width:min(520px, calc(100vw - 32px));
-      max-height:min(80vh, 680px);
-      overflow:auto;
-      background:#fff;
-      border:1px solid #e6ebf1;
-      border-radius:26px;
-      box-shadow:0 24px 48px rgba(15,23,42,.14);
-      padding:22px 24px 20px;
-    }
-    .channel-modal-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin:0 0 14px;
-    }
-    .channel-modal-title{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      font-size:24px;
-      line-height:1.15;
-      font-weight:900;
-      color:#17191d;
-      letter-spacing:-0.04em;
-    }
-    .channel-modal-favicon{
-      width:28px;
-      height:28px;
-      border-radius:8px;
-      object-fit:cover;
-      flex:0 0 28px;
-      border:1px solid #e5ebf2;
-      background:#fff;
-    }
-    .channel-modal-close{
-      width:36px;
-      height:36px;
-      border-radius:999px;
-      border:1px solid #dce6f1;
-      background:#fff;
-      color:#111318;
-      font-size:18px;
-      font-weight:900;
-      flex:0 0 36px;
-    }
-    .channel-status-row{
-      display:flex;
-      align-items:center;
-      gap:18px;
-      flex-wrap:wrap;
-      margin:0 0 16px;
-      padding:4px 2px;
-    }
-    .channel-radio{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      width:auto;
-      font-size:15px;
-      font-weight:900;
-      color:#23262b;
-    }
-    .channel-radio input{
-      width:18px;
-      height:18px;
-      margin:0;
-      accent-color:#0f7cff;
-    }
-    .channel-links{
-      display:grid;
-      gap:10px;
-      margin:0 0 18px;
-    }
-    .channel-link-row{
-      display:grid;
-      grid-template-columns:minmax(0, 1fr) auto;
-      gap:8px;
-      align-items:center;
-    }
-    .channel-link-input{
-      width:100%;
-      min-height:46px;
-      border:1.5px solid #dbe5ee;
-      border-radius:14px;
-      padding:0 14px;
-      outline:none;
-      background:#fff;
-      color:#111318;
-      font-size:14px;
-      font-weight:700;
-      letter-spacing:-0.02em;
-    }
-    .channel-go-btn{
-      min-height:46px;
-      padding:0 14px;
-      border-radius:14px;
-      border:1px solid #dce6f1;
-      background:#fff;
-      color:#111318;
-      font-size:13px;
-      font-weight:900;
-      letter-spacing:-0.02em;
-      white-space:nowrap;
-    }
-    .channel-actions{
-      display:flex;
-      justify-content:flex-end;
-      gap:10px;
-    }
-    .channel-action-btn{
-      min-height:42px;
-      padding:0 16px;
-      border-radius:999px;
-      font-size:14px;
-      font-weight:900;
-      letter-spacing:-0.02em;
-      border:1px solid #dce6f1;
-      background:#fff;
-      color:#111318;
-    }
-    .channel-action-btn.primary{
-      border-color:#0f7cff;
-      background:#0f7cff;
-      color:#fff;
-    }
-
-
-    @media (min-width:861px){
-      .shell{
-        max-width:1600px;
-      }
-      .panel-grid,
-      .search-wrap,
-      .toolbar{
-        max-width:980px;
-        margin-left:auto;
-        margin-right:auto;
-      }
-      .panel-grid{
-        grid-template-columns:repeat(4, minmax(0, 1fr));
-      }
-      .panel-card.desktop-only{
-        display:flex;
-      }
-      .panel-card{
-        min-height:132px;
-      }
-      .panel-card.panel-create{order:1}
-      .panel-card.panel-calendar{order:2}
-      .panel-card.panel-kras{order:3}
-      .panel-card.panel-rfine{order:4}
-      .panel-card.panel-lookup{order:5}
-      .panel-card.panel-tracker{order:6}
-      .panel-card.panel-ddangya{order:7}
-      .panel-card.panel-price{order:8}
-      .panel-grid .panel-title{
-        font-size:28px;
-      }
-      .panel-grid .panel-desc{
-        font-size:13px;
-      }
-      .card-list{
-        grid-template-columns:repeat(5, minmax(0, 1fr));
-        gap:12px;
-      }
-      .property-card{
-        min-width:0;
-      }
-      .property-main{
-        display:grid;
-        grid-template-columns:112px minmax(0, 1fr);
-        grid-template-areas:
-          "thumb addr"
-          "thumb price"
-          "thumb meta"
-          "title title";
-        column-gap:12px;
-        row-gap:6px;
-        padding:12px;
-        align-items:start;
-      }
-      .thumb{
-        grid-area:thumb;
-      }
-      .card-content{
-        display:contents;
-      }
-      .title-row{
-        grid-area:title;
-        width:100%;
-        min-width:0;
-        margin-top:2px;
-      }
-      .card-title{
-        font-size:18px;
-        line-height:1.28;
-        letter-spacing:-0.04em;
-        white-space:normal;
-        overflow:visible;
-        word-break:keep-all;
-        overflow-wrap:anywhere;
-      }
-      .status-chip{
-        cursor:pointer;
-      }
-      .card-address{
-        grid-area:addr;
-        font-size:13px;
-        line-height:1.38;
-        white-space:normal;
-        overflow:visible;
-        word-break:keep-all;
-        overflow-wrap:anywhere;
-      }
-      .card-deal-price{
-        grid-area:price;
-        font-size:13px;
-        line-height:1.35;
-        white-space:normal;
-        overflow:visible;
-        word-break:keep-all;
-        overflow-wrap:anywhere;
-      }
-      .card-meta{
-        grid-area:meta;
-        font-size:12px;
-        line-height:1.35;
-        white-space:normal;
-        overflow:visible;
-        word-break:keep-all;
-        overflow-wrap:anywhere;
-      }
-      .card-bottom{
-        padding:9px 12px 12px;
-        gap:8px;
-      }
-      .action-row{
-        justify-content:flex-start;
-      }
-      .action-left{
-        overflow:visible;
-      }
-      .mini-btn.visibility-text-btn{
-        display:none;
-      }
-      .mini-btn.square{
-        min-height:30px;
-        padding:0 8px;
-        font-size:12px;
-        border-radius:9px;
-      }
-      .channel-row{
-        grid-template-columns:repeat(5, 32px);
-        gap:6px;
-      }
-      .channel-icon,
-      .site-chip{
-        width:32px;
-        min-width:32px;
-        max-width:32px;
-        height:32px;
-        min-height:32px;
-        max-height:32px;
-        border-radius:9px;
-      }
-      .channel-favicon,
-      .site-favicon{
-        width:88%;
-        height:88%;
-      }
-    }
-
-    @media (max-width:860px){
-      .shell{padding:0 16px 40px}
-      .panel-grid{grid-template-columns:1fr 1fr;gap:10px}
-      .panel-card.desktop-only{display:none}
-      .panel-title-row{gap:8px}
-      .panel-icon-svg{width:32px;height:32px;flex-basis:32px}
-      .panel-card{min-height:114px;padding:18px 16px 16px;border-radius:22px}
-      .panel-title{font-size:24px}
-      .topbar-greeting{font-size:13px}
-      .brand-icons{gap:8px}
-      .brand-icon-link{
-        width:38px;
-        height:38px;
-        border-radius:12px;
-        flex:0 0 38px;
-      }
-      .brand-icon-link svg{
-        width:23px;
-        height:23px;
-      }
-      .brand-icon-vfactory{
-        padding:0;
-        overflow:hidden;
-      }
-      .brand-icon-vfactory img{
-        width:100%;
-        height:100%;
-        object-fit:cover;
-        border-radius:11px;
-      }
-      .brand-icon-naverblog{
-        display:none;
-      }
-      .brand-icon-ownerletter{
-        display:none !important;
-      }
-      .dashboard-refresh-btn.desktop-only{
-        display:none !important;
-      }
-      .search-box{width:min(220px,100%);min-height:54px;padding:0 16px}
-      .search-box:focus-within{width:min(100%, 420px)}
-      .property-main{
-        position:relative;
-        grid-template-columns:90px minmax(0, 1fr);
-        grid-template-areas:
-          "thumb title"
-          "thumb addr"
-          "thumb price"
-          "thumb meta";
-        column-gap:12px;
-        row-gap:6px;
-        padding:12px;
-        min-height:152px;
-        align-items:start;
-      }
-      .thumb{grid-area:thumb;width:90px;height:90px;border-radius:16px}
-      .card-content{display:contents}
-      .title-row{grid-area:title;width:100%;min-width:0}
-      .address-map-row{display:contents}
-      .address-map-actions{
-        position:absolute;
-        left:12px;
-        top:108px;
-        width:90px;
-        max-width:90px;
-        display:flex;
-        flex-direction:row;
-        align-items:center;
-        justify-content:center;
-        gap:6px;
-        margin:0;
-      }
-      .dashboard-map-btn{
-        width:32px;
-        height:32px;
-        flex:0 0 32px;
-        border-radius:9px;
-      }
-      .dashboard-map-btn svg{width:20px;height:20px}
-      .card-title{font-size:20px}
-      .card-address{grid-area:addr;font-size:14px}
-      .card-deal-price{grid-area:price;font-size:14px}
-      .card-meta{grid-area:meta}
-      .action-row{
-        gap:6px;
-      }
-      .action-left{
-        gap:6px;
-        align-items:stretch;
-      }
-      .mini-btn.visibility-text-btn{
-        display:none !important;
-      }
-      .mini-btn.square{
-        min-height:34px;
-        padding:0 8px;
-        display:inline-flex;
-        flex-direction:row;
-        align-items:center;
-        justify-content:center;
-        gap:2px;
-        line-height:1;
-        font-size:16px;
-        font-weight:800;
-        letter-spacing:-0.03em;
-        white-space:nowrap;
-      }
-      .mini-btn.square .btn-emoji{
-        display:inline;
-        font-size:1em;
-        line-height:1;
-      }
-      .mini-btn.square .btn-text{
-        display:inline;
-        font-size:1em;
-        line-height:1;
-        letter-spacing:inherit;
-      }
-      .mini-btn.visibility-btn{
-        min-height:29px;
-        padding:0 6px;
-        line-height:1.05;
-      }
-      .channel-row{
-        grid-template-columns:repeat(9, minmax(0, 1fr));
-        gap:4px;
-      }
-      .channel-icon{
-        position:relative;
-        aspect-ratio:1 / 1;
-        width:100%;
-        min-width:0;
-        max-width:none;
-        height:auto;
-        min-height:auto;
-        max-height:none;
-        margin:0;
-        border-radius:10px;
-        padding:0;
-        flex:none;
-      }
-      .channel-favicon{
-        position:absolute;
-        inset:0;
-        width:100%;
-        height:100%;
-        object-fit:cover;
-        transform:none;
-        flex-basis:auto;
-      }
-      .site-chip{
-        position:relative;
-        aspect-ratio:1 / 1;
-        width:100%;
-        min-width:0;
-        max-width:none;
-        height:auto;
-        min-height:auto;
-        max-height:none;
-        margin:0;
-        border-radius:10px;
-        padding:0;
-        flex:none;
-      }
-      .site-favicon{
-        position:absolute;
-        inset:0;
-        width:100%;
-        height:100%;
-        object-fit:cover;
-        transform:none;
-        flex-basis:auto;
-      }
-      .loading-buddy{
-        width:64px;
-        height:64px;
-        border-radius:16px;
-      }
-      .loading-text{
-        font-size:16px;
-      }
-      .more-btn{
-        min-height:38px;
-        padding:0 16px;
-        font-size:13px;
-      }
-      .channel-modal{
-        padding:16px;
-      }
-      .channel-modal-card{
-        width:min(520px, calc(100vw - 20px));
-        max-height:min(78vh, 640px);
-        border-radius:22px;
-        padding:20px 18px 18px;
-      }
-      .channel-modal-title{
-        font-size:20px;
-      }
-      .channel-status-row{
-        gap:14px;
-      }
-      .channel-radio{
-        font-size:14px;
-      }
-      .channel-link-input{
-        min-height:42px;
-        font-size:13px;
-      }
-      .channel-go-btn{
-        min-height:42px;
-        padding:0 12px;
-        font-size:12px;
-      }
-      .channel-action-btn{
-        min-height:40px;
-        padding:0 14px;
-        font-size:13px;
-      }
-    }
-  
-  .calendar-modal{
-    position:fixed;
-    inset:0;
-    z-index:12100;
-    display:none;
-    background:#f7f8fb;
-  }
-  .calendar-modal.show{display:block}
-  .calendar-modal-sheet{
-    width:100vw;
-    height:100dvh;
-    min-height:100dvh;
-    overflow:auto;
-    -webkit-overflow-scrolling:touch;
-    background:#f7f8fb;
-  }
-  .calendar-modal-topbar{
-    position:sticky;
-    top:0;
-    z-index:3;
-    min-height:72px;
-    background:rgba(247,248,251,.92);
-    backdrop-filter:blur(10px);
-    border-bottom:1px solid #e7ebf1;
-  }
-  .calendar-modal-topbar-inner{
-    max-width:980px;
-    margin:0 auto;
-    padding:0 20px;
-    min-height:72px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-  }
-  .calendar-modal-back{
-    min-height:42px;
-    padding:0 14px;
-    border-radius:999px;
-    border:1px solid #d8e0ea;
-    background:#fff;
-    color:#111318;
-    font-size:14px;
-    font-weight:800;
-    letter-spacing:-0.02em;
-  }
-  .calendar-modal-title{
-    flex:1 1 auto;
-    text-align:center;
-    font-size:18px;
-    font-weight:900;
-    color:#17191d;
-    letter-spacing:-0.04em;
-  }
-  .calendar-modal-spacer{width:72px;flex:0 0 72px}
-  .calendar-modal-inner{
-    width:100%;
-    max-width:980px;
-    margin:0 auto;
-    padding:16px 20px 32px;
-  }
-
-  .calendar-notice-wrap{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:12px;
-    padding:4px 0 14px 14px;
-  }
-  .calendar-notice-main{min-width:0}
-  .calendar-notice-label{
-    font-size:11px;
-    font-weight:800;
-    letter-spacing:.08em;
-    color:#8b95a1;
-    text-transform:uppercase;
-    margin-bottom:6px;
-  }
-  .calendar-notice-text{
-    font-size:18px;
-    line-height:1.35;
-    font-weight:800;
-    color:#17191d;
-    word-break:keep-all;
-  }
-  .calendar-notice-link{
-    display:none;
-    margin-top:6px;
-    font-size:13px;
-    line-height:1.45;
-    color:#0f7cff;
-    font-weight:700;
-    word-break:break-all;
-  }
-  .calendar-notice-pencil{
-    width:34px;
-    height:34px;
-    border-radius:999px;
-    border:1px solid #d8e0ea;
-    background:#fff;
-    color:#5f6873;
-    font-size:16px;
-    font-weight:800;
-    flex:0 0 34px;
-  }
-  .calendar-notice-edit{
-    display:none;
-    gap:8px;
-    padding:0 0 14px;
-  }
-  .calendar-notice-edit.show{display:grid}
-  .calendar-notice-input{
-    width:100%;
-    min-height:44px;
-    padding:0 14px;
-    border:1.5px solid #dbe5ee;
-    border-radius:14px;
-    background:#fff;
-    color:#111318;
-    font-size:14px;
-    font-weight:700;
-    outline:none;
-  }
-  .calendar-notice-actions{
-    display:flex;
-    justify-content:flex-end;
-    gap:8px;
-  }
-  .calendar-notice-btn{
-    min-height:36px;
-    padding:0 14px;
-    border-radius:999px;
-    border:1px solid #dce6f1;
-    background:#fff;
-    color:#111318;
-    font-size:13px;
-    font-weight:800;
-  }
-  .calendar-notice-btn.primary{
-    border-color:#0f7cff;
-    background:#0f7cff;
-    color:#fff;
-  }
-
-  .calendar-shell{
-    border:1px solid #e5e9ef;
-    border-radius:30px;
-    background:#fdfefe;
-    box-shadow:0 14px 30px rgba(15,23,42,.04);
-    padding:18px 18px 16px;
-  }
-  .calendar-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    margin-bottom:14px;
-  }
-  .calendar-nav{
-    width:42px;
-    height:42px;
-    border-radius:999px;
-    border:1px solid #dde4ec;
-    background:#fff;
-    color:#111318;
-    font-size:24px;
-    line-height:1;
-    font-weight:500;
-  }
-  .calendar-month-label{
-    font-size:17px;
-    font-weight:800;
-    color:#17191d;
-    letter-spacing:-0.03em;
-  }
-  .calendar-weekdays{
-    display:grid;
-    grid-template-columns:repeat(7,minmax(0,1fr));
-    gap:0;
-    padding:0 2px 8px;
-    border-bottom:1px solid #edf1f5;
-  }
-  .calendar-weekday{
-    text-align:center;
-    font-size:12px;
-    font-weight:700;
-    color:#7f8792;
-    padding:0 0 6px;
-  }
-  .calendar-grid{
-    display:grid;
-    grid-template-columns:repeat(7,minmax(0,1fr));
-    gap:0;
-  }
-  .calendar-cell{
-    min-height:74px;
-    padding:4px 5px 4px;
-    border-right:1px solid #eef2f6;
-    border-bottom:1px solid #eef2f6;
-    background:transparent;
-    text-align:left;
-    display:flex;
-    flex-direction:column;
-    gap:2px;
-    border-radius:0;
-  }
-  .calendar-cell:nth-child(7n){border-right:none}
-  .calendar-cell.is-empty{background:transparent}
-  .calendar-cell.is-selected{
-    outline:none;
-    border-radius:0;
-    background:#eef5ff;
-  }
-  .calendar-day-number{
-    display:flex;
-    align-items:center;
-    justify-content:flex-start;
-    gap:4px;
-    font-size:16px;
-    line-height:1.15;
-    font-weight:700;
-    color:#111318;
-    letter-spacing:-0.02em;
-  }
-  .calendar-day-star{
-    font-size:.9em;
-    line-height:1;
-    font-weight:900;
-    color:#0f7cff;
-    transform:translateY(-.5px);
-  }
-  .calendar-cell.is-today .calendar-day-number{
-    color:#0f7cff;
-  }
-  .calendar-lines{
-    margin-top:3px;
-    display:grid;
-    gap:2px;
-    line-height:1.22;
-  }
-  .calendar-line{
-    font-size:11.5px;
-    line-height:1.32;
-    font-weight:400;
-    color:#5f6873;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .calendar-line.zero{display:none}
-  .calendar-detail-card{
-    margin-top:14px;
-    border:1px solid #e5e9ef;
-    border-radius:24px;
-    background:#fff;
-    box-shadow:0 14px 30px rgba(15,23,42,.04);
-    padding:16px;
-    display:grid;
-    gap:12px;
-  }
-  .calendar-detail-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    flex-wrap:wrap;
-  }
-  .calendar-detail-date{
-    font-size:21px;
-    line-height:1.28;
-    font-weight:900;
-    color:#17191d;
-    letter-spacing:-0.04em;
-  }
-  .calendar-detail-meta{
-    font-size:13px;
-    color:#7b8794;
-    font-weight:800;
-  }
-  .calendar-subtitle{
-    font-size:16px;
-    line-height:1.3;
-    font-weight:900;
-    color:#202227;
-    letter-spacing:-0.03em;
-  }
-  .calendar-property-list,
-  .calendar-thread-list{
-    display:grid;
-    gap:10px;
-  }
-  .calendar-property-item{
-    display:grid;
-    grid-template-columns:72px 1fr;
-    gap:10px;
-    padding:10px;
-    border:1px solid #e9edf2;
-    border-radius:18px;
-    background:#fbfcfe;
-  }
-  .calendar-property-thumb{
-    width:72px;
-    height:72px;
-    border-radius:14px;
-    background:#edf2f7 center/cover no-repeat;
-  }
-  .calendar-property-body{display:grid;gap:5px;min-width:0}
-  .calendar-property-title{font-size:16px;font-weight:800;color:#17191d;line-height:1.2;word-break:keep-all}
-  .calendar-property-address{font-size:13px;font-weight:600;color:#5a6570;line-height:1.45;word-break:keep-all}
-  .calendar-property-price{font-size:13px;font-weight:800;color:#ff3c3c;line-height:1.4}
-  .calendar-property-meta{font-size:12px;font-weight:700;color:#7b8794;line-height:1.4}
-
-  .calendar-thread-write{
-    display:grid;
-    gap:8px;
-    padding:12px;
-    border:1px solid #e9edf2;
-    border-radius:18px;
-    background:#fbfcfe;
-  }
-  .calendar-writer-chip{
-    display:inline-flex;
-    align-items:center;
-    min-height:28px;
-    padding:0 10px;
-    border-radius:999px;
-    border:1px solid #e1e8f0;
-    background:#fff;
-    color:#4c5b69;
-    font-size:12px;
-    font-weight:800;
-    width:max-content;
-  }
-  .calendar-thread-textarea{
-    width:100%;
-    min-height:84px;
-    resize:vertical;
-    border:1.5px solid #dbe5ee;
-    border-radius:14px;
-    padding:12px 14px;
-    outline:none;
-    background:#fff;
-    color:#111318;
-    font-size:14px;
-    font-weight:700;
-    line-height:1.5;
-    font-family:inherit;
-  }
-  .calendar-thread-textarea::placeholder{
-    color:rgba(123,135,148,.18);
-    font-weight:500;
-  }
-  .calendar-thread-editor-actions{
-    display:flex;
-    align-items:center;
-    justify-content:flex-end;
-    gap:16px;
-    margin-top:2px;
-  }
-  .calendar-thread-submit,
-  .calendar-thread-delete{
-    min-height:32px;
-    padding:0 4px;
-    border:none;
-    background:transparent;
-    font-size:15px;
-    font-weight:700;
-  }
-  .calendar-thread-submit{
-    color:#0f7cff;
-  }
-  .calendar-thread-delete{
-    color:#7b8794;
-  }
-  .calendar-thread-delete.is-hidden{
-    display:none;
-  }
-  .calendar-thread-write{
-    display:none;
-  }
-  .calendar-thread-write.show{
-    display:grid;
-  }
-  .calendar-thread-fab{
-    position:fixed;
-    right:18px;
-    bottom:70px;
-    z-index:8;
-    width:54px;
-    height:54px;
-    border-radius:999px;
-    border:1px solid #d8e2ec;
-    background:#0f7cff;
-    color:#fff;
-    box-shadow:0 14px 30px rgba(15,124,255,.22);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    font-size:40px;
-    font-weight:900;
-    line-height:1;
-  }
-  .calendar-modal.show .calendar-thread-fab{
-    display:flex;
-  }
-  .calendar-thread-fab.is-open{
-    background:#fff;
-    color:#0f7cff;
-  }
-
-  .calendar-thread-item{
-    padding:12px 14px;
-    border:1px solid #e9edf2;
-    border-radius:18px;
-    background:#fff;
-    display:grid;
-    gap:7px;
-  }
-  .calendar-thread-item.is-own{
-    cursor:pointer;
-  }
-  .calendar-thread-actions{
-    display:flex;
-    align-items:center;
-    justify-content:flex-end;
-    gap:12px;
-    margin-top:2px;
-  }
-  .calendar-thread-action{
-    border:none;
-    background:transparent;
-    padding:0;
-    color:#7b8794;
-    font-size:13px;
-    font-weight:700;
-  }
-  .calendar-thread-action.delete{color:#d64545}
-  .calendar-thread-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    flex-wrap:wrap;
-  }
-  .calendar-thread-writer{font-size:14px;font-weight:800;color:#17191d}
-  .calendar-thread-time{font-size:12px;font-weight:700;color:#7b8794}
-  .calendar-thread-content{font-size:22px;line-height:1.55;font-weight:500;color:#4f5863;white-space:pre-wrap;word-break:break-word}
-  .calendar-section-divider{
-    height:1px;
-    background:#eef2f6;
-    margin:18px 0 16px;
-  }
-  .calendar-empty{
-    padding:16px;
-    border:1px dashed #d9e3ed;
-    border-radius:16px;
-    background:#fff;
-    color:#7b8794;
-    font-size:14px;
-    font-weight:700;
-    text-align:center;
-  }
-
-
-  .calendar-thread-item.is-editing{
-    border-color:#bfdcff;
-    background:#f7fbff;
-    box-shadow:0 10px 24px rgba(15,124,255,.08);
-  }
-  .calendar-thread-inline-editor{
-    display:grid;
-    gap:8px;
-    margin-top:2px;
-  }
-  .calendar-thread-inline-textarea{
-    width:100%;
-    min-height:96px;
-    resize:vertical;
-    border:1.5px solid #bfdcff;
-    border-radius:14px;
-    padding:12px 14px;
-    outline:none;
-    background:#fff;
-    color:#111318;
-    font-size:22px;
-    font-weight:500;
-    line-height:1.5;
-    font-family:inherit;
-  }
-  .calendar-thread-inline-textarea::placeholder{
-    color:rgba(123,135,148,.18);
-    font-weight:500;
-  }
-  .calendar-thread-inline-actions{
-    display:flex;
-    align-items:center;
-    justify-content:flex-end;
-    gap:16px;
-  }
-  .calendar-thread-inline-btn{
-    min-height:32px;
-    padding:0 4px;
-    border:none;
-    background:transparent;
-    font-size:15px;
-    font-weight:700;
-  }
-  .calendar-thread-inline-btn.save{color:#0f7cff;}
-  .calendar-thread-inline-btn.delete{color:#7b8794;}
-  .calendar-thread-inline-btn.close{color:#7b8794;}
-
-  @media (max-width:860px){
-    .calendar-modal-topbar-inner{padding:0 16px}
-    .calendar-modal-inner{padding:14px 16px 28px}
-    .calendar-modal-spacer{width:58px;flex:0 0 58px}
-    .calendar-modal-title{font-size:17px}
-    .calendar-shell{padding:14px 12px 12px;border-radius:26px}
-    .calendar-head{margin-bottom:10px}
-    .calendar-nav{width:38px;height:38px;font-size:22px}
-    .calendar-month-label{font-size:16px}
-    .calendar-weekdays{padding:0 2px 6px}
-    .calendar-weekday{font-size:11px}
-    .calendar-cell{min-height:86px;padding:7px 5px 7px}
-    .calendar-cell.is-selected{outline:none;border-radius:0;background:#eef5ff}
-    .calendar-day-number{font-size:14px}
-    .calendar-cell{min-height:68px;padding:4px 4px 4px;gap:1px}
-    .calendar-line{font-size:11px; line-height:1.3}
-    .calendar-detail-card{padding:14px;border-radius:20px}
-    .calendar-detail-date{font-size:18px}
-  }
-
-      @media(max-width:900px){
-      .brand-icon-taxcheckup{
-        width:36.1px;
-        height:36.1px;
-        flex:0 0 36.1px;
-        border-radius:11.4px;
-        font-size:17.1px;
-        box-shadow:var(--shadow);
-      }
-      .brand-icon-taxcheckup .tax-full-label{display:none}
-      .brand-icon-taxcheckup .tax-mobile-label{display:inline}
-    }
-
-  </style>
-
-  <link rel="icon" href="/favicon.ico?v=20260616">
-  <link rel="shortcut icon" href="/favicon.ico?v=20260616">
-  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png?v=20260616">
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=20260616">
-  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48.png?v=20260616">
-  <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png?v=20260616">
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=20260616">
-
-  <style>
-    .matching-workspace{max-width:1180px;margin:18px auto 40px;display:grid;grid-template-columns:320px 1fr;gap:16px}
-    .matching-panel{border:1px solid var(--line);border-radius:28px;background:#fff;box-shadow:var(--shadow);padding:20px}
-    .matching-panel h2{margin:0 0 12px;font-size:24px;letter-spacing:-.05em}
-    .matching-panel h3{margin:0 0 10px;font-size:18px;letter-spacing:-.04em}
-    .matching-kv{display:grid;gap:8px;font-size:14px;font-weight:800;color:#505862;line-height:1.5}
-    .matching-tab-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-    .matching-card{border:1px solid #eef2f6;border-radius:20px;padding:14px;background:#fbfdff;margin-top:10px}
-    .matching-card-title{font-weight:1000;font-size:17px;letter-spacing:-.04em;margin-bottom:6px}
-    .matching-muted{color:#7b8794;font-size:13px;font-weight:800;line-height:1.55}
-    @media(max-width:860px){.matching-workspace{grid-template-columns:1fr;margin:12px 0 32px}}
+    @media(max-width:1100px){.project-summary{grid-template-columns:1fr}.candidate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
+    @media(max-width:760px){.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.shell{padding:14px 12px 42px}.section{border-radius:22px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.summary-grid,.candidate-grid,.metric-row,.edit-row,.modal-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
   </style>
 </head>
 <body>
   <div class="page">
-    <div class="shell">
-      <div class="topbar">
-        <div class="topbar-left">
-          <div class="brand-icons" aria-label="프로젝트 바로가기">
-            <a href="/project/" class="brand-icon-link brand-icon-taxcheckup brand-icon-dashboardlink" aria-label="프로젝트로 이동"><span class="tax-full-label">PROJECT</span><span class="tax-mobile-label">P</span></a>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand-icons">
+          <a href="/project/" class="brand-icon-link brand-icon-project" aria-label="프로젝트로 이동"><span class="tax-full-label">PROJECT</span><span class="tax-mobile-label">P</span></a>
+          <div class="brand-title">매칭 작업실</div>
+        </div>
+        <div class="save-cluster">
+          <span id="saveState" class="save-state">서버 기준 데이터 · 변경사항 없음</span>
+          <button id="undoBtn" class="top-btn" disabled>되돌리기</button>
+          <button id="redoBtn" class="top-btn" disabled>다시실행</button>
+          <button id="saveBtn" class="top-btn primary">저장</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="section" id="sectionProject">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">SECTION 1</div>
+            <div class="section-title">프로젝트 정보</div>
+          </div>
+          <div class="section-desc">의뢰인 · 문의루트 · 요구사항 · 연락사항은 확인내용만 표시하고, 수정할 때만 인라인 편집합니다.</div>
+        </div>
+        <div class="section-body project-summary">
+          <div class="summary-main">
+            <div>
+              <div class="project-name" data-bind="title">김OO / 군산·익산 공장 매수 의뢰</div>
+              <div class="summary-line" style="margin-top:10px">
+                <span class="chip blue" data-bind="status">후보탐색중</span>
+                <span class="chip green" data-bind="budget">20억~30억</span>
+                <span class="chip" data-bind="regions">군산 · 익산</span>
+                <span class="chip" data-bind="usePurpose">식품공장</span>
+                <span class="chip dark" data-bind="coreNeeds">25톤 진입 · 야드 · 민원 없음</span>
+              </div>
+            </div>
+            <div class="summary-grid">
+              <article class="info-card" data-edit-block="basic">
+                <button class="edit-mini" data-edit="basic">✎</button>
+                <div class="info-label">의뢰 접수</div>
+                <div class="info-value" data-bind="basicSummary">2026.06.23 14:20 / 전화, 블로그 / 접수자 한이사</div>
+                <div class="inline-editor">
+                  <div class="edit-row"><input class="edit-field" data-field="inquiryDate" value="2026.06.23"><input class="edit-field" data-field="inquiryTime" value="14:20"></div>
+                  <div class="check-grid" id="routeChecks"></div>
+                  <div class="edit-row"><input class="edit-field" data-field="receivedBy" value="한이사"><input class="edit-field" data-field="manager" value="한이사"></div>
+                  <div class="inline-actions"><button class="small-btn" data-cancel>취소</button><button class="small-btn primary" data-apply="basic">저장</button></div>
+                </div>
+              </article>
+              <article class="info-card" data-edit-block="client">
+                <button class="edit-mini" data-edit="client">✎</button>
+                <div class="info-label">의뢰인</div>
+                <div class="info-value" data-bind="clientSummary">OO식품 김OO / 법인 / 회사 담당자 / 010-0000-0000</div>
+                <div class="inline-editor">
+                  <div class="edit-row"><input class="edit-field" data-field="clientName" value="김OO"><input class="edit-field" data-field="phone" value="010-0000-0000"></div>
+                  <div class="edit-row"><input class="edit-field" data-field="companyName" value="OO식품"><input class="edit-field" data-field="industry" value="식품제조"></div>
+                  <div class="edit-row"><select class="edit-field" data-field="clientCategory"><option>개인</option><option>개인사업자</option><option selected>법인</option><option>법인 설립 예정</option><option>확인 필요</option></select><select class="edit-field" data-field="requesterRelation"><option>본인</option><option>대리인</option><option selected>회사 담당자</option><option>대표자</option><option>중개사</option><option>확인 필요</option><option>기타</option></select></div>
+                  <div class="inline-actions"><button class="small-btn" data-cancel>취소</button><button class="small-btn primary" data-apply="client">저장</button></div>
+                </div>
+              </article>
+              <article class="info-card" data-edit-block="contact">
+                <button class="edit-mini" data-edit="contact">✎</button>
+                <div class="info-label">연락사항</div>
+                <div class="info-value" data-bind="contactSummary">최근 06.23 통화 / 다음: 익산 후보 3건 정리 후 전송</div>
+                <div class="inline-editor">
+                  <textarea class="edit-field textarea" data-field="lastContact" >06.23 통화 — 예산 30억까지 가능, 익산도 검토</textarea>
+                  <textarea class="edit-field textarea" data-field="nextAction" >익산 후보 3건 정리 후 전송</textarea>
+                  <div class="inline-actions"><button class="small-btn" data-cancel>취소</button><button class="small-btn primary" data-apply="contact">저장</button></div>
+                </div>
+              </article>
+            </div>
+          </div>
+          <div class="summary-grid" style="grid-template-columns:1fr">
+            <article class="info-card" data-edit-block="needs">
+              <button class="edit-mini" data-edit="needs">✎</button>
+              <div class="info-label">큰 요구조건</div>
+              <div class="info-value" data-bind="needsSummary">매매 / 20억~30억 / 군산·익산 / 대지 2,000평↑ / 건물 500평↑ / 25톤 진입 / 야드 필요</div>
+              <div class="inline-editor">
+                <div class="edit-row"><select class="edit-field" data-field="dealType"><option selected>매매</option><option>임대</option><option>둘 다</option></select><input class="edit-field" data-field="budget" value="20억~30억"></div>
+                <div class="edit-row"><input class="edit-field" data-field="regions" value="군산 · 익산"><input class="edit-field" data-field="usePurpose" value="식품공장"></div>
+                <div class="edit-row"><input class="edit-field" data-field="land" value="대지 2,000평 이상"><input class="edit-field" data-field="building" value="건물 500평 이상"></div>
+                <textarea class="edit-field textarea" data-field="coreNeeds">25톤 진입 · 야드 · 민원 없음</textarea>
+                <div class="inline-actions"><button class="small-btn" data-cancel>취소</button><button class="small-btn primary" data-apply="needs">저장</button></div>
+              </div>
+            </article>
+            <article class="info-card">
+              <div class="info-label">저장 정책</div>
+              <div class="info-value">페이지 진입·이동 시 서버에서 다시 불러오기 / 로컬스토리지는 현재 편집 세션의 되돌리기 기록에만 사용</div>
+            </article>
           </div>
         </div>
-        <div class="topbar-right"><div class="topbar-greeting">MATCHING</div></div>
-      </div>
-      <div class="matching-workspace">
-        <aside class="matching-panel">
-          <h2>매칭 작업실</h2>
-          <div class="matching-kv">
-            <div>프로젝트: 신규 프로젝트</div>
-            <div>상태: 조건정리중</div>
-            <div>희망지역: 군산 / 익산</div>
-            <div>예산: 미입력</div>
-            <div>다음액션: 희망스펙 정리</div>
+      </section>
+
+      <section class="section" id="sectionCandidates">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">SECTION 2</div>
+            <div class="section-title">매물 매칭 · 검토 · 추적</div>
           </div>
-        </aside>
-        <main class="matching-panel">
-          <div class="matching-tab-row">
-            <button class="filter-chip active" type="button">개요</button>
-            <button class="filter-chip" type="button">희망스펙</button>
-            <button class="filter-chip" type="button">추천매물</button>
-            <button class="filter-chip" type="button">연락기록</button>
-            <button class="filter-chip" type="button">임장기록</button>
-            <button class="filter-chip" type="button">매칭판단</button>
+          <div class="section-desc">직접등록 · 매물검색 · 알고리즘추천 매물을 전부 보여주고, 탈락해도 제거하지 않습니다.</div>
+        </div>
+        <div class="section-body">
+          <div class="metric-row" id="candidateMetrics"></div>
+          <div class="action-strip">
+            <div class="action-strip-left">
+              <button class="main-action dark" data-open-modal="register">매물입력기로 새 등록</button>
+              <button class="main-action green" data-open-modal="quick">간편 새 매물 등록</button>
+              <button class="main-action blue" data-open-modal="search">전체 매물에서 검색</button>
+              <button class="main-action" id="algorithmBtn">알고리즘 추천 전부 올리기</button>
+            </div>
+            <div class="action-strip-right" id="candidateFilters"></div>
           </div>
-          <h2>프로젝트 입력기 껍데기</h2>
-          <div class="matching-card"><div class="matching-card-title">추천매물 패널</div><div class="matching-muted">자동 후보 불러오기 / 기존 매물 선택 / 새 유력매물 추가 버튼이 들어갈 자리.</div></div>
-          <div class="matching-card"><div class="matching-card-title">연락·임장 타임라인</div><div class="matching-muted">통화, 카톡, 자료전송, 임장 기록을 쌓을 자리.</div></div>
-          <div class="matching-card"><div class="matching-card-title">매칭판단</div><div class="matching-muted">고객 희망조건과 추천매물 조건을 비교하는 표가 들어갈 자리.</div></div>
-        </main>
-      </div>
+          <div class="candidate-grid" id="candidateGrid"></div>
+        </div>
+      </section>
+
+      <section class="section" id="sectionVisits">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">SECTION 3</div>
+            <div class="section-title">임장</div>
+          </div>
+          <div class="section-desc">1차·2차·3차 임장 라운드를 누적하고, 매물별 반응은 펼쳐서 기록합니다.</div>
+        </div>
+        <div class="section-body">
+          <div class="action-strip">
+            <div class="action-strip-left"><button class="main-action blue" id="addVisitBtn">임장 라운드 추가</button><button class="main-action" id="visitFromSelectedBtn">제안선정 매물로 임장 만들기</button></div>
+          </div>
+          <div class="visit-list" id="visitList"></div>
+        </div>
+      </section>
+
+      <section class="section" id="sectionContract">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">SECTION 4</div>
+            <div class="section-title">계약</div>
+          </div>
+        </div>
+        <div class="section-body"><div class="contract-empty">계약 섹션은 지금 비워둡니다.<br>계약검토, 조건협의, 계약진행, 계약완료 기록은 추후 연결합니다.</div></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="simpleModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head"><div><div class="modal-title" id="modalTitle">작업</div><div class="modal-desc" id="modalDesc">선택 또는 입력 후 후보매물로 연결합니다.</div></div><button class="close-x" id="modalClose">×</button></div>
+      <div id="modalContent"></div>
+      <div class="modal-actions"><button class="small-btn" id="modalCancel">닫기</button><button class="small-btn primary" id="modalApply">반영</button></div>
     </div>
   </div>
+
+  <script>
+    const STORAGE_UNDO_KEY = 'matchingUndo:PJ-DEMO-001';
+    const STORAGE_REDO_KEY = 'matchingRedo:PJ-DEMO-001';
+    const routes = ['전화','문자','카카오톡','블로그','유튜브','네이버부동산','한방','자사사이트(net)','자사사이트(site)','소개','기존고객','현장문의','부동산포스','불분명','기타'];
+    const initialState = {
+      project:{
+        title:'김OO / 군산·익산 공장 매수 의뢰', status:'후보탐색중', inquiryDate:'2026.06.23', inquiryTime:'14:20', inquiryRoutes:['전화','블로그'], receivedBy:'한이사', manager:'한이사', clientName:'김OO', phone:'010-0000-0000', companyName:'OO식품', clientCategory:'법인', requesterRelation:'회사 담당자', industry:'식품제조', dealType:'매매', budget:'20억~30억', regions:'군산 · 익산', usePurpose:'식품공장', land:'대지 2,000평 이상', building:'건물 500평 이상', coreNeeds:'25톤 진입 · 야드 · 민원 없음', lastContact:'06.23 통화 — 예산 30억까지 가능, 익산도 검토', nextAction:'익산 후보 3건 정리 후 전송'
+      },
+      candidates:[
+        {id:'C-001', propertyId:'MK-260623-001', title:'오식도동 공장', price:'20억', area:'대지 1,980평 / 건물 420평', sourceType:'algorithm', sourceLabel:'알고리즘추천', score:84, stage:'검토중', ownerStatus:'미접촉', proposal:false, visit:'미정', confirm:'예산 적합 · 지역 적합 · 야드 좋음 / 전력 확인 필요', rejected:false, rejectReason:'', rejectMemo:'', reconsiderType:''},
+        {id:'C-002', propertyId:'MK-260623-002', title:'익산 왕궁면 식품공장 후보', price:'25억', area:'대지 2,300평 / 건물 610평', sourceType:'manual_search', sourceLabel:'매물검색', score:78, stage:'소유자확인필요', ownerStatus:'연락시도', proposal:true, visit:'1차 임장 후보', confirm:'면적 적합 · 식품공장 가능성 / 폐수 가능 여부 확인', rejected:false, rejectReason:'', rejectMemo:'', reconsiderType:''},
+        {id:'C-003', propertyId:'MK-260623-003', title:'팔봉동 창고', price:'18억', area:'대지 1,500평 / 건물 500평', sourceType:'direct_register', sourceLabel:'직접등록', score:61, stage:'탈락', ownerStatus:'통화완료', proposal:false, visit:'미정', confirm:'가격 적합 / 진입로와 야드 부족', rejected:true, rejectReason:'진입로 문제', rejectMemo:'25톤 진입이 애매함. 조건 바뀌면 재검토.', reconsiderType:'조건 바뀌면 가능'},
+        {id:'C-004', propertyId:'MK-260623-004', title:'소룡동 공장', price:'28억', area:'대지 2,800평 / 건물 700평', sourceType:'algorithm', sourceLabel:'알고리즘추천', score:88, stage:'고객제안선정', ownerStatus:'통화완료 · 임장 가능', proposal:true, visit:'임장예정', confirm:'지역 적합 · 면적 우수 · 진입 좋음 / 가격 협의 필요', rejected:false, rejectReason:'', rejectMemo:'', reconsiderType:''}
+      ],
+      visits:[
+        {id:'V-001', roundNo:1, title:'1차 임장', date:'2026.06.26 14:00', status:'완료', companions:'김OO, 한이사', summary:'오식도동 선호. 왕궁면은 보류. 팔봉동은 탈락.', nextAction:'오식도동 전력 확인 후 가격협의 검토', items:[{property:'오식도동 공장', reaction:'긍정', memo:'야드 넓음 / 전력 확인 필요'},{property:'왕궁면 공장', reaction:'보류', memo:'위치는 좋으나 폐수 가능 여부 확인'},{property:'팔봉동 창고', reaction:'탈락', memo:'진입로 문제'}]}
+      ]
+    };
+    let state = structuredClone(initialState);
+    let undoStack = [];
+    let redoStack = [];
+    let activeFilter = '전체';
+    let dirty = false;
+
+    function clone(v){ return structuredClone(v); }
+    function markChange(label){ undoStack.push({label, before:clone(state), time:new Date().toISOString()}); if(undoStack.length>100) undoStack.shift(); redoStack=[]; dirty=true; persistUndo(); updateSaveState(); }
+    function persistUndo(){ localStorage.setItem(STORAGE_UNDO_KEY, JSON.stringify(undoStack)); localStorage.setItem(STORAGE_REDO_KEY, JSON.stringify(redoStack)); }
+    function updateSaveState(){ document.getElementById('undoBtn').disabled = undoStack.length===0; document.getElementById('redoBtn').disabled = redoStack.length===0; document.getElementById('saveState').textContent = dirty ? '서버 미저장 · 되돌리기 가능' : '서버 기준 데이터 · 변경사항 없음'; }
+    function renderProject(){ const p=state.project; document.querySelector('[data-bind="title"]').textContent=p.title; document.querySelector('[data-bind="status"]').textContent=p.status; document.querySelector('[data-bind="budget"]').textContent=p.budget; document.querySelector('[data-bind="regions"]').textContent=p.regions; document.querySelector('[data-bind="usePurpose"]').textContent=p.usePurpose; document.querySelector('[data-bind="coreNeeds"]').textContent=p.coreNeeds; document.querySelector('[data-bind="basicSummary"]').textContent=`${p.inquiryDate} ${p.inquiryTime} / ${p.inquiryRoutes.join(', ')} / 접수자 ${p.receivedBy}`; document.querySelector('[data-bind="clientSummary"]').textContent=`${p.companyName} ${p.clientName} / ${p.clientCategory} / ${p.requesterRelation} / ${p.phone}`; document.querySelector('[data-bind="contactSummary"]').textContent=`최근 ${p.lastContact.split('—')[0].trim()} / 다음: ${p.nextAction}`; document.querySelector('[data-bind="needsSummary"]').textContent=`${p.dealType} / ${p.budget} / ${p.regions} / ${p.land} / ${p.building} / ${p.coreNeeds}`; }
+    function renderRouteChecks(){ const wrap=document.getElementById('routeChecks'); wrap.innerHTML=routes.map(r=>`<label class="check-pill"><input type="checkbox" value="${r}" ${state.project.inquiryRoutes.includes(r)?'checked':''}> ${r}</label>`).join(''); }
+    function candidateCounts(){ const total=state.candidates.length, rejected=state.candidates.filter(c=>c.rejected).length, proposal=state.candidates.filter(c=>c.proposal&&!c.rejected).length, owner=state.candidates.filter(c=>String(c.stage).includes('소유자')&&!c.rejected).length, visit=state.candidates.filter(c=>String(c.visit).includes('임장')&&!c.rejected).length, active=total-rejected; return {total, active, owner, proposal, visit, rejected}; }
+    function renderMetrics(){ const c=candidateCounts(); document.getElementById('candidateMetrics').innerHTML=[['전체',c.total],['검토대상',c.active],['소유자확인',c.owner],['제안선정',c.proposal],['임장',c.visit],['탈락',c.rejected]].map(x=>`<div class="metric"><div class="metric-num">${x[1]}</div><div class="metric-label">${x[0]}</div></div>`).join(''); }
+    function renderFilters(){ const filters=['전체','검토중','소유자확인필요','고객제안선정','임장예정','보류','탈락']; document.getElementById('candidateFilters').innerHTML=filters.map(f=>`<button class="filter-chip ${activeFilter===f?'active':''}" data-filter="${f}">${f}</button>`).join(''); }
+    function getFilteredCandidates(){ return state.candidates.filter(c=>{ if(activeFilter==='전체') return true; if(activeFilter==='탈락') return c.rejected; if(activeFilter==='임장예정') return String(c.visit).includes('임장') && !c.rejected; return c.stage===activeFilter && !c.rejected; }); }
+    function renderCandidates(){ renderMetrics(); renderFilters(); const grid=document.getElementById('candidateGrid'); grid.innerHTML=getFilteredCandidates().map(c=>`
+      <article class="candidate-card ${c.rejected?'is-rejected':''}" data-candidate="${c.id}">
+        <div class="candidate-content">
+          <div class="cand-head"><div><div class="cand-title">${c.title} / ${c.price}</div><div class="cand-no">매물번호 ${c.propertyId}</div></div><div class="score-badge">${c.score}점</div></div>
+          <div class="summary-line"><span class="chip ${c.sourceType==='algorithm'?'blue':c.sourceType==='direct_register'?'green':''}">${c.sourceLabel}</span><span class="chip">${c.stage}</span></div>
+          <div class="cand-meta"><div class="meta-box"><b>면적</b>${c.area}</div><div class="meta-box"><b>소유자 연락</b>${c.ownerStatus}</div><div class="meta-box"><b>고객제안</b>${c.proposal?'선정':'미선정'}</div><div class="meta-box"><b>임장</b>${c.visit}</div></div>
+          <div class="confirm-box">확인내용<br>${c.confirm}</div>
+          <div class="cand-actions"><button class="card-btn dark" data-admin="${c.propertyId}">매물입력기</button><button class="card-btn" data-owner="${c.id}">소유자 연락</button><button class="card-btn green" data-proposal="${c.id}">제안선정</button><button class="card-btn" data-hold="${c.id}">보류</button><button class="card-btn red" data-reject="${c.id}">탈락</button></div>
+          <div class="card-inline"></div>
+        </div>
+        <div class="rejected-panel"><div class="rejected-title">탈락</div><div class="rejected-meta">사유: ${c.rejectReason||'미기록'}<br>재검토: ${c.reconsiderType||'미정'}<br>${c.rejectMemo||''}</div><div class="cand-actions" style="margin-top:10px"><button class="card-btn green" data-restore="${c.id}">탈락해제</button><button class="card-btn" data-recheck="${c.id}">재검토</button><button class="card-btn dark" data-admin="${c.propertyId}">매물입력기</button></div></div>
+      </article>`).join(''); }
+    function renderVisits(){ const list=document.getElementById('visitList'); list.innerHTML=state.visits.map(v=>`<article class="visit-card" data-visit="${v.id}"><div class="visit-top"><div><div class="visit-title">${v.title}</div><div class="visit-meta">${v.date} / ${v.status} / 동행자 ${v.companions}<br>전체 반응: ${v.summary}<br>다음 액션: ${v.nextAction}</div></div><div><button class="small-btn" data-toggle-visit="${v.id}">상세 펼치기</button><button class="small-btn primary" data-next-visit="${v.id}">다음 차수 만들기</button></div></div><div class="visit-items">${v.items.map(i=>`<div class="visit-item"><b>${i.property}</b><br>${i.reaction} · ${i.memo}</div>`).join('')}</div><div class="visit-detail"><textarea class="edit-field textarea">${v.summary}\n${v.nextAction}</textarea><div class="inline-actions"><button class="small-btn primary" data-save-visit="${v.id}">임장 메모 저장</button></div></div></article>`).join(''); }
+    function renderAll(){ renderProject(); renderRouteChecks(); renderCandidates(); renderVisits(); updateSaveState(); }
+
+    document.addEventListener('click', e=>{
+      const edit=e.target.closest('[data-edit]'); if(edit){ document.querySelectorAll('.info-card.editing').forEach(x=>x.classList.remove('editing')); edit.closest('.info-card').classList.add('editing'); renderRouteChecks(); }
+      if(e.target.matches('[data-cancel]')) e.target.closest('.info-card').classList.remove('editing');
+      const apply=e.target.closest('[data-apply]'); if(apply){ const block=apply.dataset.apply; const card=apply.closest('.info-card'); markChange(block+' 수정'); card.querySelectorAll('[data-field]').forEach(f=>{ state.project[f.dataset.field]=f.value; }); if(block==='basic'){ state.project.inquiryRoutes=[...document.querySelectorAll('#routeChecks input:checked')].map(x=>x.value); } card.classList.remove('editing'); renderAll(); }
+      const filter=e.target.closest('[data-filter]'); if(filter){ activeFilter=filter.dataset.filter; renderCandidates(); }
+      const reject=e.target.closest('[data-reject]'); if(reject){ openCandidateInline(reject.dataset.reject,'reject'); }
+      const owner=e.target.closest('[data-owner]'); if(owner){ openCandidateInline(owner.dataset.owner,'owner'); }
+      const proposal=e.target.closest('[data-proposal]'); if(proposal){ const c=state.candidates.find(x=>x.id===proposal.dataset.proposal); markChange('고객제안 선정'); c.proposal=true; c.stage='고객제안선정'; renderAll(); }
+      const hold=e.target.closest('[data-hold]'); if(hold){ const c=state.candidates.find(x=>x.id===hold.dataset.hold); markChange('보류 처리'); c.stage='보류'; renderAll(); }
+      const restore=e.target.closest('[data-restore]'); if(restore){ const c=state.candidates.find(x=>x.id===restore.dataset.restore); markChange('탈락 해제'); c.rejected=false; c.stage='검토중'; renderAll(); }
+      const recheck=e.target.closest('[data-recheck]'); if(recheck){ const c=state.candidates.find(x=>x.id===recheck.dataset.recheck); markChange('재검토 이동'); c.rejected=false; c.stage='재검토'; renderAll(); }
+      const admin=e.target.closest('[data-admin]'); if(admin){ const id=admin.dataset.admin; window.location.href=`/admin?propertyId=${encodeURIComponent(id)}&returnProject=PJ-DEMO-001`; }
+      const toggle=e.target.closest('[data-toggle-visit]'); if(toggle){ toggle.closest('.visit-card').classList.toggle('open'); }
+      const next=e.target.closest('[data-next-visit]'); if(next){ addVisitRound(); }
+    });
+    function openCandidateInline(id,type){ const card=document.querySelector(`[data-candidate="${id}"]`); const box=card.querySelector('.card-inline'); document.querySelectorAll('.candidate-card.inline-open').forEach(c=>{ if(c!==card)c.classList.remove('inline-open'); }); const c=state.candidates.find(x=>x.id===id); if(type==='reject'){ box.innerHTML=`<select class="edit-field" data-r-reason><option>가격 초과</option><option>지역 불일치</option><option>면적 부족</option><option>전력 부족</option><option>진입로 문제</option><option>야드 부족</option><option>층고 부족</option><option>업종 부적합</option><option>민원 우려</option><option>소유자 조건 불리</option><option>임장 불가</option><option>자료 부족</option><option>이미 본 매물</option><option>고객 성향과 불일치</option><option>기타</option></select><select class="edit-field" data-r-type><option>완전 제외</option><option selected>조건 바뀌면 가능</option><option>가격 조정 시 가능</option><option>소유자 조건 바뀌면 가능</option><option>보류 후 재검토</option></select><textarea class="edit-field textarea" data-r-memo placeholder="탈락 메모"></textarea><div class="inline-actions"><button class="small-btn" data-close-inline>취소</button><button class="small-btn primary" data-save-reject="${id}">탈락 저장</button></div>`; }
+      if(type==='owner'){ box.innerHTML=`<div class="edit-row"><input class="edit-field" data-o-date value="2026.06.23"><select class="edit-field" data-o-result><option>미접촉</option><option>연락시도</option><option selected>통화완료</option><option>부재</option><option>재연락필요</option><option>거절</option><option>확인완료</option></select></div><div class="edit-row"><select class="edit-field" data-o-intent><option>매각의사 있음</option><option>임대의사 있음</option><option>둘 다 가능</option><option>조건 맞으면 가능</option><option>의사 없음</option><option>확인 필요</option></select><input class="edit-field" data-o-price placeholder="희망가격" value="${c.price}"></div><textarea class="edit-field textarea" data-o-memo placeholder="소유자 연락 메모"></textarea><div class="inline-actions"><button class="small-btn" data-close-inline>취소</button><button class="small-btn primary" data-save-owner="${id}">저장</button></div>`; }
+      card.classList.add('inline-open'); }
+    document.addEventListener('click', e=>{ if(e.target.matches('[data-close-inline]')) e.target.closest('.candidate-card').classList.remove('inline-open'); const sr=e.target.closest('[data-save-reject]'); if(sr){ const card=sr.closest('.candidate-card'); const c=state.candidates.find(x=>x.id===sr.dataset.saveReject); markChange('탈락 처리'); c.rejected=true; c.stage='탈락'; c.rejectReason=card.querySelector('[data-r-reason]').value; c.reconsiderType=card.querySelector('[data-r-type]').value; c.rejectMemo=card.querySelector('[data-r-memo]').value; renderAll(); } const so=e.target.closest('[data-save-owner]'); if(so){ const card=so.closest('.candidate-card'); const c=state.candidates.find(x=>x.id===so.dataset.saveOwner); markChange('소유자 연락 저장'); c.ownerStatus=`${card.querySelector('[data-o-result]').value} · ${card.querySelector('[data-o-intent]').value} · ${card.querySelector('[data-o-price]').value}`; c.stage='소유자확인완료'; renderAll(); } });
+    function addCandidate(sourceType){ const next=state.candidates.length+1; const map={direct_register:'직접등록', manual_search:'매물검색', algorithm:'알고리즘추천'}; state.candidates.push({id:'C-'+String(next).padStart(3,'0'),propertyId:'MK-260623-'+String(100+next),title:sourceType==='algorithm'?'알고리즘 추천 후보 '+next:sourceType==='manual_search'?'검색 연결 매물 '+next:'프로젝트 직접등록 매물 '+next,price:'확인 필요',area:'대지/건물 확인 필요',sourceType,sourceLabel:map[sourceType],score:sourceType==='algorithm'?72:0,stage:'검토전',ownerStatus:'미접촉',proposal:false,visit:'미정',confirm:'상세 조건 확인 필요',rejected:false,rejectReason:'',rejectMemo:'',reconsiderType:''}); }
+    function addVisitRound(){ markChange('임장 라운드 추가'); const n=state.visits.length+1; const selected=state.candidates.filter(c=>c.proposal&&!c.rejected).slice(0,4); state.visits.push({id:'V-'+String(n).padStart(3,'0'),roundNo:n,title:n+'차 임장',date:'일정 협의',status:'예정',companions:'',summary:'제안선정 매물 중심으로 임장 예정',nextAction:'일정 확정',items:selected.map(c=>({property:c.title,reaction:'예정',memo:'방문 예정'}))}); renderAll(); }
+    document.getElementById('algorithmBtn').addEventListener('click',()=>{ markChange('알고리즘 추천 전부 추가'); addCandidate('algorithm'); addCandidate('algorithm'); renderAll(); });
+    document.getElementById('addVisitBtn').addEventListener('click',addVisitRound); document.getElementById('visitFromSelectedBtn').addEventListener('click',addVisitRound);
+    document.getElementById('undoBtn').addEventListener('click',()=>{ if(!undoStack.length)return; const item=undoStack.pop(); redoStack.push({after:clone(state), label:item.label}); state=clone(item.before); dirty=true; persistUndo(); renderAll(); });
+    document.getElementById('redoBtn').addEventListener('click',()=>{ if(!redoStack.length)return; const item=redoStack.pop(); undoStack.push({before:clone(state), label:item.label}); state=clone(item.after); dirty=true; persistUndo(); renderAll(); });
+    document.getElementById('saveBtn').addEventListener('click',()=>{ dirty=false; undoStack=[]; redoStack=[]; persistUndo(); updateSaveState(); alert('저장 처리 자리입니다. 실제 연결 시 현재 화면 상태를 서버/시트에 저장합니다.'); });
+    window.addEventListener('beforeunload',e=>{ if(!dirty)return; e.preventDefault(); e.returnValue='저장하지 않은 변경사항이 있습니다.'; });
+    const modal=document.getElementById('simpleModal'), modalTitle=document.getElementById('modalTitle'), modalDesc=document.getElementById('modalDesc'), modalContent=document.getElementById('modalContent'); let modalMode='';
+    function openModal(mode){ modalMode=mode; const titles={register:'매물입력기로 새 등록',quick:'간편 새 매물 등록',search:'전체 매물에서 검색'}; modalTitle.textContent=titles[mode]; modalDesc.textContent= mode==='register'?'실제 연결 시 매물입력기로 이동하고 저장 후 현재 프로젝트 후보로 자동 연결합니다.':mode==='search'?'전체 매물 DB에서 propertyId를 검색해 현재 프로젝트 후보로 연결합니다.':'최소 정보로 전체 매물 DB에 등록하고 현재 프로젝트 후보로 연결합니다.'; modalContent.innerHTML= mode==='search'?'<div class="modal-grid"><input class="edit-field" placeholder="매물번호 / 주소 / 지역"><select class="edit-field"><option>전체</option><option>매매</option><option>임대</option></select></div><div class="confirm-box" style="margin-top:10px">검색 결과 예시: MK-260623-777 / 군산 오식도동 공장 / 22억</div>':'<div class="modal-grid"><input class="edit-field" placeholder="매물명"><input class="edit-field" placeholder="소재지"><input class="edit-field" placeholder="가격"><input class="edit-field" placeholder="대지/건물"></div>'; modal.classList.add('show'); }
+    document.querySelectorAll('[data-open-modal]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.openModal))); function closeModal(){modal.classList.remove('show')} document.getElementById('modalClose').onclick=closeModal; document.getElementById('modalCancel').onclick=closeModal; document.getElementById('modalApply').onclick=()=>{ markChange('후보매물 추가'); addCandidate(modalMode==='search'?'manual_search':'direct_register'); closeModal(); renderAll(); };
+    renderAll();
+  </script>
 </body>
 </html>

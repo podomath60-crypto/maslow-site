@@ -1043,14 +1043,16 @@
       .dashboard-memo-mobile{display:none}
       .dashboard-memo-desktop{
         display:grid;
+        grid-template-rows:auto 1fr auto;
         position:absolute;
         left:20px;
-        top:94px;
+        top:105px;
         width:260px;
-        min-height:278px;
+        height:322px;
+        min-height:322px;
         z-index:1;
       }
-      .dashboard-memo-desktop .dashboard-memo-textarea{min-height:176px}
+      .dashboard-memo-desktop .dashboard-memo-textarea{min-height:0;height:100%}
     }
 
     @media (max-width:860px){

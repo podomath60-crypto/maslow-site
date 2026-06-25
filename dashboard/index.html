@@ -51,7 +51,7 @@
     img{display:block;max-width:100%}
 
     .page{min-height:100vh;background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%)}
-    .shell{width:100%;max-width:980px;margin:0 auto;padding:0 20px 48px}
+    .shell{position:relative;width:100%;max-width:980px;margin:0 auto;padding:0 20px 48px}
 
     .topbar{
       position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
@@ -210,6 +210,96 @@
     .panel-title-row .panel-title{margin-top:0}
     .panel-icon-svg{width:42px;height:42px;flex:0 0 42px;display:block;filter:drop-shadow(0 5px 8px rgba(15,23,42,.10))}
     .panel-card.compact-link{min-height:132px}
+
+    .dashboard-memo-pad{
+      display:grid;
+      gap:10px;
+      padding:18px 18px 16px;
+      border:1px solid #f0e4a8;
+      border-radius:24px;
+      background:#fff7b8;
+      box-shadow:var(--shadow);
+    }
+    .dashboard-memo-desktop{display:none}
+    .dashboard-memo-mobile{margin:0 0 14px}
+    .dashboard-memo-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .dashboard-memo-title{
+      font-size:19px;
+      line-height:1.2;
+      font-weight:1000;
+      color:#6f5a00;
+      letter-spacing:-0.04em;
+    }
+    .dashboard-memo-state{
+      min-height:18px;
+      font-size:12px;
+      line-height:1.35;
+      font-weight:800;
+      color:#9a7d00;
+      letter-spacing:-0.02em;
+      white-space:nowrap;
+    }
+    .dashboard-memo-textarea{
+      width:100%;
+      min-height:132px;
+      resize:vertical;
+      border:none;
+      outline:none;
+      padding:0;
+      background:transparent;
+      color:#5d4b00;
+      font-family:inherit;
+      font-size:15px;
+      line-height:1.58;
+      font-weight:650;
+      letter-spacing:-0.02em;
+    }
+    .dashboard-memo-textarea::placeholder{color:rgba(93,75,0,.35)}
+    .dashboard-memo-actions{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .dashboard-memo-save{
+      min-height:32px;
+      padding:0 2px;
+      border:none;
+      background:transparent;
+      color:#0f7cff;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-0.02em;
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+    }
+    .dashboard-memo-save:disabled{opacity:.55;cursor:default}
+    .dashboard-memo-spinner{
+      display:none;
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      border:2px solid rgba(15,124,255,.22);
+      border-top-color:#0f7cff;
+      animation:dashboardMemoSpin .7s linear infinite;
+    }
+    .dashboard-memo-pad.is-saving .dashboard-memo-spinner{display:inline-block}
+    .dashboard-memo-updated{
+      min-height:18px;
+      font-size:12px;
+      line-height:1.35;
+      font-weight:800;
+      color:#9a7d00;
+      text-align:right;
+      letter-spacing:-0.02em;
+    }
+    @keyframes dashboardMemoSpin{to{transform:rotate(360deg)}}
 
     .panel-icon-wrap{
       display:flex;
@@ -808,6 +898,13 @@
         margin-left:auto;
         margin-right:auto;
       }
+      .dashboard-memo-mobile{
+        max-width:980px;
+        margin-left:auto;
+        margin-right:auto;
+        margin-bottom:14px;
+      }
+      .dashboard-memo-textarea{min-height:120px}
       .panel-grid{
         grid-template-columns:repeat(4, minmax(0, 1fr));
       }
@@ -940,6 +1037,20 @@
         width:88%;
         height:88%;
       }
+    }
+
+    @media (min-width:1200px){
+      .dashboard-memo-mobile{display:none}
+      .dashboard-memo-desktop{
+        display:grid;
+        position:absolute;
+        left:20px;
+        top:94px;
+        width:260px;
+        min-height:278px;
+        z-index:1;
+      }
+      .dashboard-memo-desktop .dashboard-memo-textarea{min-height:176px}
     }
 
     @media (max-width:860px){
@@ -1757,6 +1868,30 @@
 
       <div class="hero-spacer"></div>
 
+      <section id="dashboardMemoDesktop" class="dashboard-memo-pad dashboard-memo-desktop" aria-label="대시보드 메모">
+        <div class="dashboard-memo-head">
+          <div class="dashboard-memo-title">메모</div>
+          <div id="dashboardMemoStateDesktop" class="dashboard-memo-state"></div>
+        </div>
+        <textarea id="dashboardMemoTextareaDesktop" class="dashboard-memo-textarea" placeholder="메모를 입력하세요"></textarea>
+        <div class="dashboard-memo-actions">
+          <button id="dashboardMemoSaveDesktop" type="button" class="dashboard-memo-save"><span class="dashboard-memo-spinner" aria-hidden="true"></span><span class="dashboard-memo-save-text">수정저장</span></button>
+          <div id="dashboardMemoUpdatedDesktop" class="dashboard-memo-updated"></div>
+        </div>
+      </section>
+
+      <section id="dashboardMemoMobile" class="dashboard-memo-pad dashboard-memo-mobile" aria-label="대시보드 메모">
+        <div class="dashboard-memo-head">
+          <div class="dashboard-memo-title">메모</div>
+          <div id="dashboardMemoStateMobile" class="dashboard-memo-state"></div>
+        </div>
+        <textarea id="dashboardMemoTextareaMobile" class="dashboard-memo-textarea" placeholder="메모를 입력하세요"></textarea>
+        <div class="dashboard-memo-actions">
+          <button id="dashboardMemoSaveMobile" type="button" class="dashboard-memo-save"><span class="dashboard-memo-spinner" aria-hidden="true"></span><span class="dashboard-memo-save-text">수정저장</span></button>
+          <div id="dashboardMemoUpdatedMobile" class="dashboard-memo-updated"></div>
+        </div>
+      </section>
+
       <section class="panel-grid">
         <button class="panel-card primary panel-create" id="goAdminBtn" type="button">
           <div>
@@ -2244,6 +2379,30 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     const propertyMemoTextarea = document.getElementById('propertyMemoTextarea');
     let propertyMemoEditingItem = null;
     let propertyMemoHistoryArmed = false;
+
+    const dashboardMemoPads = [
+      document.getElementById('dashboardMemoDesktop'),
+      document.getElementById('dashboardMemoMobile')
+    ].filter(Boolean);
+    const dashboardMemoTextareas = [
+      document.getElementById('dashboardMemoTextareaDesktop'),
+      document.getElementById('dashboardMemoTextareaMobile')
+    ].filter(Boolean);
+    const dashboardMemoSaveButtons = [
+      document.getElementById('dashboardMemoSaveDesktop'),
+      document.getElementById('dashboardMemoSaveMobile')
+    ].filter(Boolean);
+    const dashboardMemoStateEls = [
+      document.getElementById('dashboardMemoStateDesktop'),
+      document.getElementById('dashboardMemoStateMobile')
+    ].filter(Boolean);
+    const dashboardMemoUpdatedEls = [
+      document.getElementById('dashboardMemoUpdatedDesktop'),
+      document.getElementById('dashboardMemoUpdatedMobile')
+    ].filter(Boolean);
+    let dashboardMemoSaving = false;
+    let dashboardMemoLoaded = false;
+    let dashboardMemoUpdatedAt = '';
 
     const propertyCopyConfirmModal = document.getElementById('propertyCopyConfirmModal');
     const propertyCopyListingNumberText = document.getElementById('propertyCopyListingNumberText');
@@ -3387,6 +3546,144 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     function text(v){
       return String(v == null ? '' : v).trim();
     }
+
+    function rawText(v){
+      return String(v == null ? '' : v);
+    }
+
+    function formatDashboardMemoUpdatedAt(value){
+      const s = text(value);
+      if(!s) return '';
+      const ts = new Date(s).getTime();
+      if(Number.isNaN(ts)) return s;
+      const d = new Date(ts);
+      return '마지막 저장 ' +
+        (d.getMonth() + 1) + '.' + d.getDate() + ' ' +
+        String(d.getHours()).padStart(2, '0') + ':' +
+        String(d.getMinutes()).padStart(2, '0');
+    }
+
+    function setDashboardMemoState(message){
+      dashboardMemoStateEls.forEach(function(el){
+        el.textContent = message || '';
+      });
+    }
+
+    function setDashboardMemoUpdatedText(updatedAt){
+      const label = formatDashboardMemoUpdatedAt(updatedAt);
+      dashboardMemoUpdatedEls.forEach(function(el){
+        el.textContent = label;
+      });
+    }
+
+    function setDashboardMemoSaving(isSaving){
+      dashboardMemoSaving = !!isSaving;
+      dashboardMemoPads.forEach(function(pad){
+        pad.classList.toggle('is-saving', dashboardMemoSaving);
+      });
+      dashboardMemoSaveButtons.forEach(function(btn){
+        btn.disabled = dashboardMemoSaving;
+        const label = btn.querySelector('.dashboard-memo-save-text');
+        if(label) label.textContent = dashboardMemoSaving ? '저장중...' : '수정저장';
+      });
+    }
+
+    function setDashboardMemoValue(value, sourceEl){
+      const nextValue = rawText(value);
+      dashboardMemoTextareas.forEach(function(textarea){
+        if(textarea !== sourceEl && textarea.value !== nextValue){
+          textarea.value = nextValue;
+        }
+      });
+    }
+
+    function bindDashboardMemoPad(){
+      dashboardMemoTextareas.forEach(function(textarea){
+        textarea.addEventListener('input', function(){
+          setDashboardMemoValue(textarea.value, textarea);
+        });
+      });
+      dashboardMemoSaveButtons.forEach(function(btn){
+        btn.addEventListener('click', saveDashboardMemo);
+      });
+    }
+
+    async function loadDashboardMemo(){
+      if(!dashboardMemoTextareas.length) return;
+      if(dashboardMemoLoaded) return;
+      setDashboardMemoState('불러오는 중');
+      try{
+        const res = await fetch(CONFIG.adminListUrl, {
+          method:'POST',
+          mode:'cors',
+          headers:{ 'Content-Type':'text/plain;charset=UTF-8' },
+          body: JSON.stringify({ action:'getDashboardMemo' })
+        });
+        if(!res.ok) throw new Error('대시보드 메모 조회 실패: ' + res.status);
+        const data = await res.json();
+        if(!data || data.ok !== true){
+          throw new Error((data && (data.message || data.error)) || '대시보드 메모 조회 실패');
+        }
+        dashboardMemoLoaded = true;
+        dashboardMemoUpdatedAt = text(data.updatedAt);
+        setDashboardMemoValue(rawText(data.memo));
+        setDashboardMemoUpdatedText(dashboardMemoUpdatedAt);
+        setDashboardMemoState('');
+      }catch(err){
+        console.error(err);
+        setDashboardMemoState('불러오기 실패');
+      }
+    }
+
+    async function saveDashboardMemo(){
+      if(dashboardMemoSaving) return;
+      const writerCode = getUnlockedWriterCode();
+      if(!writerCode){
+        alert('작성자 코드가 없습니다.');
+        return;
+      }
+      const activeTextarea = dashboardMemoTextareas.find(function(textarea){
+        return document.activeElement === textarea;
+      }) || dashboardMemoTextareas[0];
+      const memo = activeTextarea ? rawText(activeTextarea.value) : '';
+
+      setDashboardMemoSaving(true);
+      setDashboardMemoState('');
+      try{
+        const res = await fetch(CONFIG.adminListUrl, {
+          method:'POST',
+          mode:'cors',
+          headers:{ 'Content-Type':'text/plain;charset=UTF-8' },
+          body: JSON.stringify({
+            action:'updateDashboardMemo',
+            memoId:'dashboard_main',
+            memo:memo,
+            writerCode:writerCode
+          })
+        });
+        if(!res.ok) throw new Error('대시보드 메모 저장 실패: ' + res.status);
+        const data = await res.json();
+        if(!data || data.ok !== true){
+          throw new Error((data && (data.message || data.error)) || '대시보드 메모 저장 실패');
+        }
+        dashboardMemoLoaded = true;
+        dashboardMemoUpdatedAt = text(data.updatedAt) || new Date().toISOString();
+        setDashboardMemoValue(memo);
+        setDashboardMemoUpdatedText(dashboardMemoUpdatedAt);
+        setDashboardMemoState('저장됨');
+        window.setTimeout(function(){
+          setDashboardMemoState('');
+        }, 1200);
+      }catch(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '대시보드 메모 저장 중 문제가 발생했습니다.');
+        setDashboardMemoState('저장 실패');
+      }finally{
+        setDashboardMemoSaving(false);
+      }
+    }
+
+    bindDashboardMemoPad();
 
     const MEMO_SEEN_STORAGE_KEY = 'maslow.propertyMemoSeen.v1';
     const MEMO_NEW_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -4894,6 +5191,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       localStorage.setItem(CONFIG.authStorageKey, matched);
       updateGreeting();
       lockOverlay.style.display = 'none';
+      loadDashboardMemo();
       fetchAdminItems();
     }
 
@@ -4907,6 +5205,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       updateGreeting();
       lockOverlay.style.display = 'none';
       const restoredDashboard = restoreDashboardFromReturnState();
+      loadDashboardMemo();
       if(restoredDashboard){
         refreshReturnedEditedCardIfNeeded();
       }else{

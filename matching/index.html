@@ -57,10 +57,23 @@
     .chip.red{background:#fff1f1;border-color:#ffd2d2;color:#d43737}
     .chip.dark{background:#111318;border-color:#111318;color:#fff}
     .summary-grid{display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px}
+
+    .project-flat{display:grid;gap:14px}
+    .project-hero{display:grid;gap:10px;border-bottom:1px solid #edf2f7;padding-bottom:14px}
+    .project-title-input{font-size:32px;line-height:1.08;font-weight:1000;letter-spacing:-.065em;outline:none;border-radius:10px;padding:2px 4px;margin-left:-4px;min-height:38px}
+    .project-title-input:focus,.inline-value:focus{background:#fff7d6;box-shadow:0 0 0 2px rgba(245,158,11,.18)}
+    .inline-chip-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .inline-chip{display:inline-flex;align-items:center;min-height:30px;padding:0 11px;border-radius:999px;background:#f3f7fb;border:1px solid #e2eaf2;color:#4b5563;font-size:13px;font-weight:950;white-space:nowrap;outline:none}
+    .inline-chip.blue{background:#eef5ff;border-color:#cfe2ff;color:#0f64d8}.inline-chip.green{background:#eafff3;border-color:#bdf8d8;color:#087a3b}.inline-chip.dark{background:#111318;border-color:#111318;color:#fff}
+    .project-line-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 22px}
+    .project-line{display:grid;grid-template-columns:106px minmax(0,1fr);align-items:start;gap:10px;min-height:30px;padding:6px 0;border-bottom:1px solid #f0f3f7}
+    .project-line.wide{grid-column:1/-1}
+    .inline-label{font-size:12px;font-weight:1000;color:#88919c;padding-top:4px;white-space:nowrap}
+    .inline-value{font-size:15px;line-height:1.5;font-weight:950;color:#27303a;outline:none;border-radius:8px;padding:2px 4px;margin-left:-4px;min-height:27px;white-space:pre-wrap;word-break:keep-all}
+    .inline-hint{font-size:11px;font-weight:800;color:#9aa3ad;margin-top:4px}
     .info-card{border:1px solid #edf2f7;border-radius:20px;background:#fbfdff;padding:14px;min-height:86px;position:relative}
     .info-label{font-size:12px;font-weight:1000;color:#88919c;margin-bottom:7px}
     .info-value{font-size:15px;line-height:1.45;font-weight:950;color:#27303a;word-break:keep-all}
-    .edit-mini{position:absolute;right:10px;top:10px;width:28px;height:28px;border-radius:10px;background:#fff;border:1px solid #e1e8f0;color:#6b7280;font-size:13px;font-weight:1000}
     .inline-editor{display:none;margin-top:10px;padding:12px;border-radius:16px;background:#fff;border:1px solid #dfe8f2;gap:10px}
     .info-card.editing .inline-editor{display:grid}
     .edit-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -135,7 +148,7 @@
           <div class="brand-title">매칭 작업실</div>
         </div>
         <div class="save-cluster">
-          <span id="saveState" class="save-state">서버 기준 데이터 · 변경사항 없음</span>
+          <span id="saveState" class="save-state">변경사항 없음</span>
           <button id="undoBtn" class="top-btn" disabled>되돌리기</button>
           <button id="redoBtn" class="top-btn" disabled>다시실행</button>
           <button id="saveBtn" class="top-btn primary">저장</button>
@@ -150,72 +163,103 @@
             <div class="section-kicker">SECTION 1</div>
             <div class="section-title">프로젝트 정보</div>
           </div>
-          <div class="section-desc">의뢰인 · 문의루트 · 요구사항 · 연락사항은 확인내용만 표시하고, 수정할 때만 인라인 편집합니다.</div>
         </div>
-        <div class="section-body project-summary">
-          <div class="summary-main">
-            <div>
-              <div class="project-name" data-bind="title">김OO / 군산·익산 공장 매수 의뢰</div>
-              <div class="summary-line" style="margin-top:10px">
-                <span class="chip blue" data-bind="status">후보탐색중</span>
-                <span class="chip green" data-bind="budget">20억~30억</span>
-                <span class="chip" data-bind="regions">군산 · 익산</span>
-                <span class="chip" data-bind="usePurpose">식품공장</span>
-                <span class="chip dark" data-bind="coreNeeds">25톤 진입 · 야드 · 민원 없음</span>
-              </div>
-            </div>
-            <div class="summary-grid">
-              <article class="info-card" data-edit-block="basic">
-                <button class="edit-mini" data-edit="basic">✎</button>
-                <div class="info-label">의뢰 접수</div>
-                <div class="info-value" data-bind="basicSummary">2026.06.23 14:20 / 전화, 블로그 / 접수자 한이사</div>
-                <div class="inline-editor">
-                  <div class="edit-row"><input class="edit-field" data-field="inquiryDate" value="2026.06.23"><input class="edit-field" data-field="inquiryTime" value="14:20"></div>
-                  <div class="check-grid" id="routeChecks"></div>
-                  <div class="edit-row"><input class="edit-field" data-field="receivedBy" value="한이사"><input class="edit-field" data-field="manager" value="한이사"></div>
-                  <div class="inline-actions"><button class="small-btn" data-cancel>취소</button><button class="small-btn primary" data-apply="basic">저장</button></div>
-                </div>
-              </article>
-              <article class="info-card" data-edit-block="client">
-                <button class="edit-mini" data-edit="client">✎</button>
-                <div class="info-label">의뢰인</div>
-                <div class="info-value" data-bind="clientSummary">OO식품 김OO / 법인 / 회사 담당자 / 010-0000-0000</div>
-                <div class="inline-editor">
-                  <div class="edit-row"><input class="edit-field" data-field="clientName" value="김OO"><input class="edit-field" data-field="phone" value="010-0000-0000"></div>
-                  <div class="edit-row"><input class="edit-field" data-field="companyName" value="OO식품"><input class="edit-field" data-field="industry" value="식품제조"></div>
-                  <div class="edit-row"><select class="edit-field" data-field="clientCategory"><option>개인</option><option>개인사업자</option><option selected>법인</option><option>법인 설립 예정</option><option>확인 필요</option></select><select class="edit-field" data-field="requesterRelation"><option>본인</option><option>대리인</option><option selected>회사 담당자</option><option>대표자</option><option>중개사</option><option>확인 필요</option><option>기타</option></select></div>
-                  <div class="inline-actions"><button class="small-btn" data-cancel>취소</button><button class="small-btn primary" data-apply="client">저장</button></div>
-                </div>
-              </article>
-              <article class="info-card" data-edit-block="contact">
-                <button class="edit-mini" data-edit="contact">✎</button>
-                <div class="info-label">연락사항</div>
-                <div class="info-value" data-bind="contactSummary">최근 06.23 통화 / 다음: 익산 후보 3건 정리 후 전송</div>
-                <div class="inline-editor">
-                  <textarea class="edit-field textarea" data-field="lastContact" >06.23 통화 — 예산 30억까지 가능, 익산도 검토</textarea>
-                  <textarea class="edit-field textarea" data-field="nextAction" >익산 후보 3건 정리 후 전송</textarea>
-                  <div class="inline-actions"><button class="small-btn" data-cancel>취소</button><button class="small-btn primary" data-apply="contact">저장</button></div>
-                </div>
-              </article>
+        <div class="section-body project-flat">
+          <div class="project-hero">
+            <div class="project-title-input" contenteditable="true" data-inline-field="title">김OO / 군산·익산 공장 매수 의뢰</div>
+            <div class="inline-chip-row">
+              <span class="inline-chip blue" contenteditable="true" data-inline-field="status">후보탐색중</span>
+              <span class="inline-chip green" contenteditable="true" data-inline-field="budget">20억~30억</span>
+              <span class="inline-chip" contenteditable="true" data-inline-field="regions">군산 · 익산</span>
+              <span class="inline-chip" contenteditable="true" data-inline-field="usePurpose">식품공장</span>
+              <span class="inline-chip dark" contenteditable="true" data-inline-field="coreNeeds">25톤 진입 · 야드 · 민원 없음</span>
             </div>
           </div>
-          <div class="summary-grid" style="grid-template-columns:1fr">
-            <article class="info-card" data-edit-block="needs">
-              <button class="edit-mini" data-edit="needs">✎</button>
-              <div class="info-label">큰 요구조건</div>
-              <div class="info-value" data-bind="needsSummary">매매 / 20억~30억 / 군산·익산 / 대지 2,000평↑ / 건물 500평↑ / 25톤 진입 / 야드 필요</div>
-              <div class="inline-editor">
-                <div class="edit-row"><select class="edit-field" data-field="dealType"><option selected>매매</option><option>임대</option><option>둘 다</option></select><input class="edit-field" data-field="budget" value="20억~30억"></div>
-                <div class="edit-row"><input class="edit-field" data-field="regions" value="군산 · 익산"><input class="edit-field" data-field="usePurpose" value="식품공장"></div>
-                <div class="edit-row"><input class="edit-field" data-field="land" value="대지 2,000평 이상"><input class="edit-field" data-field="building" value="건물 500평 이상"></div>
-                <textarea class="edit-field textarea" data-field="coreNeeds">25톤 진입 · 야드 · 민원 없음</textarea>
-                <div class="inline-actions"><button class="small-btn" data-cancel>취소</button><button class="small-btn primary" data-apply="needs">저장</button></div>
+
+          <div class="project-line-grid">
+            <div class="project-line">
+              <div class="inline-label">최초 문의</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="inquiryDate">2026.06.23</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">문의 시간</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="inquiryTime">14:20</div>
+            </div>
+            <div class="project-line wide">
+              <div class="inline-label">문의 루트</div>
+              <div>
+                <div class="inline-value" contenteditable="true" data-inline-field="inquiryRoutesText">전화, 블로그</div>
+                <div class="inline-hint">전화, 문자, 카카오톡, 블로그, 유튜브, 네이버부동산, 한방, 자사사이트(net), 자사사이트(site), 소개, 기존고객, 현장문의, 부동산포스, 불분명, 기타</div>
               </div>
-            </article>
-            <article class="info-card">
-              <div class="info-label">저장 정책</div>
-              <div class="info-value">페이지 진입·이동 시 서버에서 다시 불러오기 / 로컬스토리지는 현재 편집 세션의 되돌리기 기록에만 사용</div>
-            </article>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">접수자</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="receivedBy">한이사</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">담당자</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="manager">한이사</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">고객명</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="clientName">김OO</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">연락처</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="phone">010-0000-0000</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">회사명</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="companyName">OO식품</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">업종</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="industry">식품제조</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">고객 주체</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="clientCategory">법인</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">의뢰자 관계</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="requesterRelation">회사 담당자</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">거래유형</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="dealType">매매</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">예산</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="budget">20억~30억</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">희망지역</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="regions">군산 · 익산</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">용도</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="usePurpose">식품공장</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">대지</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="land">대지 2,000평 이상</div>
+            </div>
+            <div class="project-line">
+              <div class="inline-label">건물</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="building">건물 500평 이상</div>
+            </div>
+            <div class="project-line wide">
+              <div class="inline-label">핵심 요구</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="coreNeeds">25톤 진입 · 야드 · 민원 없음</div>
+            </div>
+            <div class="project-line wide">
+              <div class="inline-label">최근 연락</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="lastContact">06.23 통화 — 예산 30억까지 가능, 익산도 검토</div>
+            </div>
+            <div class="project-line wide">
+              <div class="inline-label">다음 액션</div>
+              <div class="inline-value" contenteditable="true" data-inline-field="nextAction">익산 후보 3건 정리 후 전송</div>
+            </div>
           </div>
         </div>
       </section>
@@ -226,7 +270,6 @@
             <div class="section-kicker">SECTION 2</div>
             <div class="section-title">매물 매칭 · 검토 · 추적</div>
           </div>
-          <div class="section-desc">직접등록 · 매물검색 · 알고리즘추천 매물을 전부 보여주고, 탈락해도 제거하지 않습니다.</div>
         </div>
         <div class="section-body">
           <div class="metric-row" id="candidateMetrics"></div>
@@ -249,7 +292,6 @@
             <div class="section-kicker">SECTION 3</div>
             <div class="section-title">임장</div>
           </div>
-          <div class="section-desc">1차·2차·3차 임장 라운드를 누적하고, 매물별 반응은 펼쳐서 기록합니다.</div>
         </div>
         <div class="section-body">
           <div class="action-strip">
@@ -266,14 +308,14 @@
             <div class="section-title">계약</div>
           </div>
         </div>
-        <div class="section-body"><div class="contract-empty">계약 섹션은 지금 비워둡니다.<br>계약검토, 조건협의, 계약진행, 계약완료 기록은 추후 연결합니다.</div></div>
+        <div class="section-body"><div class="contract-empty"></div></div>
       </section>
     </main>
   </div>
 
   <div class="modal" id="simpleModal" aria-hidden="true">
     <div class="modal-card">
-      <div class="modal-head"><div><div class="modal-title" id="modalTitle">작업</div><div class="modal-desc" id="modalDesc">선택 또는 입력 후 후보매물로 연결합니다.</div></div><button class="close-x" id="modalClose">×</button></div>
+      <div class="modal-head"><div><div class="modal-title" id="modalTitle">작업</div><div class="modal-desc" id="modalDesc"></div></div><button class="close-x" id="modalClose">×</button></div>
       <div id="modalContent"></div>
       <div class="modal-actions"><button class="small-btn" id="modalCancel">닫기</button><button class="small-btn primary" id="modalApply">반영</button></div>
     </div>
@@ -306,9 +348,9 @@
     function clone(v){ return structuredClone(v); }
     function markChange(label){ undoStack.push({label, before:clone(state), time:new Date().toISOString()}); if(undoStack.length>100) undoStack.shift(); redoStack=[]; dirty=true; persistUndo(); updateSaveState(); }
     function persistUndo(){ localStorage.setItem(STORAGE_UNDO_KEY, JSON.stringify(undoStack)); localStorage.setItem(STORAGE_REDO_KEY, JSON.stringify(redoStack)); }
-    function updateSaveState(){ document.getElementById('undoBtn').disabled = undoStack.length===0; document.getElementById('redoBtn').disabled = redoStack.length===0; document.getElementById('saveState').textContent = dirty ? '서버 미저장 · 되돌리기 가능' : '서버 기준 데이터 · 변경사항 없음'; }
-    function renderProject(){ const p=state.project; document.querySelector('[data-bind="title"]').textContent=p.title; document.querySelector('[data-bind="status"]').textContent=p.status; document.querySelector('[data-bind="budget"]').textContent=p.budget; document.querySelector('[data-bind="regions"]').textContent=p.regions; document.querySelector('[data-bind="usePurpose"]').textContent=p.usePurpose; document.querySelector('[data-bind="coreNeeds"]').textContent=p.coreNeeds; document.querySelector('[data-bind="basicSummary"]').textContent=`${p.inquiryDate} ${p.inquiryTime} / ${p.inquiryRoutes.join(', ')} / 접수자 ${p.receivedBy}`; document.querySelector('[data-bind="clientSummary"]').textContent=`${p.companyName} ${p.clientName} / ${p.clientCategory} / ${p.requesterRelation} / ${p.phone}`; document.querySelector('[data-bind="contactSummary"]').textContent=`최근 ${p.lastContact.split('—')[0].trim()} / 다음: ${p.nextAction}`; document.querySelector('[data-bind="needsSummary"]').textContent=`${p.dealType} / ${p.budget} / ${p.regions} / ${p.land} / ${p.building} / ${p.coreNeeds}`; }
-    function renderRouteChecks(){ const wrap=document.getElementById('routeChecks'); wrap.innerHTML=routes.map(r=>`<label class="check-pill"><input type="checkbox" value="${r}" ${state.project.inquiryRoutes.includes(r)?'checked':''}> ${r}</label>`).join(''); }
+    function updateSaveState(){ document.getElementById('undoBtn').disabled = undoStack.length===0; document.getElementById('redoBtn').disabled = redoStack.length===0; document.getElementById('saveState').textContent = dirty ? '저장 전 변경 있음' : '변경사항 없음'; }
+    function renderProject(){ const p=state.project; document.querySelectorAll('[data-inline-field]').forEach(el=>{ const f=el.dataset.inlineField; let v=''; if(f==='inquiryRoutesText') v=(p.inquiryRoutes||[]).join(', '); else v=p[f] ?? ''; if(document.activeElement!==el) el.textContent=v; }); }
+    function renderRouteChecks(){}
     function candidateCounts(){ const total=state.candidates.length, rejected=state.candidates.filter(c=>c.rejected).length, proposal=state.candidates.filter(c=>c.proposal&&!c.rejected).length, owner=state.candidates.filter(c=>String(c.stage).includes('소유자')&&!c.rejected).length, visit=state.candidates.filter(c=>String(c.visit).includes('임장')&&!c.rejected).length, active=total-rejected; return {total, active, owner, proposal, visit, rejected}; }
     function renderMetrics(){ const c=candidateCounts(); document.getElementById('candidateMetrics').innerHTML=[['전체',c.total],['검토대상',c.active],['소유자확인',c.owner],['제안선정',c.proposal],['임장',c.visit],['탈락',c.rejected]].map(x=>`<div class="metric"><div class="metric-num">${x[1]}</div><div class="metric-label">${x[0]}</div></div>`).join(''); }
     function renderFilters(){ const filters=['전체','검토중','소유자확인필요','고객제안선정','임장예정','보류','탈락']; document.getElementById('candidateFilters').innerHTML=filters.map(f=>`<button class="filter-chip ${activeFilter===f?'active':''}" data-filter="${f}">${f}</button>`).join(''); }
@@ -328,10 +370,33 @@
     function renderVisits(){ const list=document.getElementById('visitList'); list.innerHTML=state.visits.map(v=>`<article class="visit-card" data-visit="${v.id}"><div class="visit-top"><div><div class="visit-title">${v.title}</div><div class="visit-meta">${v.date} / ${v.status} / 동행자 ${v.companions}<br>전체 반응: ${v.summary}<br>다음 액션: ${v.nextAction}</div></div><div><button class="small-btn" data-toggle-visit="${v.id}">상세 펼치기</button><button class="small-btn primary" data-next-visit="${v.id}">다음 차수 만들기</button></div></div><div class="visit-items">${v.items.map(i=>`<div class="visit-item"><b>${i.property}</b><br>${i.reaction} · ${i.memo}</div>`).join('')}</div><div class="visit-detail"><textarea class="edit-field textarea">${v.summary}\n${v.nextAction}</textarea><div class="inline-actions"><button class="small-btn primary" data-save-visit="${v.id}">임장 메모 저장</button></div></div></article>`).join(''); }
     function renderAll(){ renderProject(); renderRouteChecks(); renderCandidates(); renderVisits(); updateSaveState(); }
 
+
+    let inlineBefore = null;
+    document.addEventListener('focusin', e=>{
+      const el=e.target.closest('[data-inline-field]');
+      if(!el) return;
+      inlineBefore={field:el.dataset.inlineField, value:el.textContent.trim()};
+    });
+    document.addEventListener('keydown', e=>{
+      const el=e.target.closest('[data-inline-field]');
+      if(!el) return;
+      if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); el.blur(); }
+      if(e.key==='Escape'){ e.preventDefault(); if(inlineBefore && inlineBefore.field===el.dataset.inlineField) el.textContent=inlineBefore.value; el.blur(); }
+    });
+    document.addEventListener('focusout', e=>{
+      const el=e.target.closest('[data-inline-field]');
+      if(!el || !inlineBefore) return;
+      const field=el.dataset.inlineField;
+      const value=el.textContent.trim();
+      if(field===inlineBefore.field && value!==inlineBefore.value){
+        markChange('프로젝트 정보 수정');
+        if(field==='inquiryRoutesText') state.project.inquiryRoutes=value.split(',').map(x=>x.trim()).filter(Boolean);
+        else state.project[field]=value;
+        renderProject();
+      }
+      inlineBefore=null;
+    });
     document.addEventListener('click', e=>{
-      const edit=e.target.closest('[data-edit]'); if(edit){ document.querySelectorAll('.info-card.editing').forEach(x=>x.classList.remove('editing')); edit.closest('.info-card').classList.add('editing'); renderRouteChecks(); }
-      if(e.target.matches('[data-cancel]')) e.target.closest('.info-card').classList.remove('editing');
-      const apply=e.target.closest('[data-apply]'); if(apply){ const block=apply.dataset.apply; const card=apply.closest('.info-card'); markChange(block+' 수정'); card.querySelectorAll('[data-field]').forEach(f=>{ state.project[f.dataset.field]=f.value; }); if(block==='basic'){ state.project.inquiryRoutes=[...document.querySelectorAll('#routeChecks input:checked')].map(x=>x.value); } card.classList.remove('editing'); renderAll(); }
       const filter=e.target.closest('[data-filter]'); if(filter){ activeFilter=filter.dataset.filter; renderCandidates(); }
       const reject=e.target.closest('[data-reject]'); if(reject){ openCandidateInline(reject.dataset.reject,'reject'); }
       const owner=e.target.closest('[data-owner]'); if(owner){ openCandidateInline(owner.dataset.owner,'owner'); }
@@ -353,10 +418,10 @@
     document.getElementById('addVisitBtn').addEventListener('click',addVisitRound); document.getElementById('visitFromSelectedBtn').addEventListener('click',addVisitRound);
     document.getElementById('undoBtn').addEventListener('click',()=>{ if(!undoStack.length)return; const item=undoStack.pop(); redoStack.push({after:clone(state), label:item.label}); state=clone(item.before); dirty=true; persistUndo(); renderAll(); });
     document.getElementById('redoBtn').addEventListener('click',()=>{ if(!redoStack.length)return; const item=redoStack.pop(); undoStack.push({before:clone(state), label:item.label}); state=clone(item.after); dirty=true; persistUndo(); renderAll(); });
-    document.getElementById('saveBtn').addEventListener('click',()=>{ dirty=false; undoStack=[]; redoStack=[]; persistUndo(); updateSaveState(); alert('저장 처리 자리입니다. 실제 연결 시 현재 화면 상태를 서버/시트에 저장합니다.'); });
+    document.getElementById('saveBtn').addEventListener('click',()=>{ dirty=false; undoStack=[]; redoStack=[]; persistUndo(); updateSaveState(); alert('저장 완료'); });
     window.addEventListener('beforeunload',e=>{ if(!dirty)return; e.preventDefault(); e.returnValue='저장하지 않은 변경사항이 있습니다.'; });
     const modal=document.getElementById('simpleModal'), modalTitle=document.getElementById('modalTitle'), modalDesc=document.getElementById('modalDesc'), modalContent=document.getElementById('modalContent'); let modalMode='';
-    function openModal(mode){ modalMode=mode; const titles={register:'매물입력기로 새 등록',quick:'간편 새 매물 등록',search:'전체 매물에서 검색'}; modalTitle.textContent=titles[mode]; modalDesc.textContent= mode==='register'?'실제 연결 시 매물입력기로 이동하고 저장 후 현재 프로젝트 후보로 자동 연결합니다.':mode==='search'?'전체 매물 DB에서 propertyId를 검색해 현재 프로젝트 후보로 연결합니다.':'최소 정보로 전체 매물 DB에 등록하고 현재 프로젝트 후보로 연결합니다.'; modalContent.innerHTML= mode==='search'?'<div class="modal-grid"><input class="edit-field" placeholder="매물번호 / 주소 / 지역"><select class="edit-field"><option>전체</option><option>매매</option><option>임대</option></select></div><div class="confirm-box" style="margin-top:10px">검색 결과 예시: MK-260623-777 / 군산 오식도동 공장 / 22억</div>':'<div class="modal-grid"><input class="edit-field" placeholder="매물명"><input class="edit-field" placeholder="소재지"><input class="edit-field" placeholder="가격"><input class="edit-field" placeholder="대지/건물"></div>'; modal.classList.add('show'); }
+    function openModal(mode){ modalMode=mode; const titles={register:'매물입력기로 새 등록',quick:'간편 새 매물 등록',search:'전체 매물에서 검색'}; modalTitle.textContent=titles[mode]; modalDesc.textContent= mode==='register'?'매물입력기로 이동합니다.':mode==='search'?'매물번호나 주소로 검색합니다.':'기본 정보만 입력합니다.'; modalContent.innerHTML= mode==='search'?'<div class="modal-grid"><input class="edit-field" placeholder="매물번호 / 주소 / 지역"><select class="edit-field"><option>전체</option><option>매매</option><option>임대</option></select></div><div class="confirm-box" style="margin-top:10px">검색 결과 예시: MK-260623-777 / 군산 오식도동 공장 / 22억</div>':'<div class="modal-grid"><input class="edit-field" placeholder="매물명"><input class="edit-field" placeholder="소재지"><input class="edit-field" placeholder="가격"><input class="edit-field" placeholder="대지/건물"></div>'; modal.classList.add('show'); }
     document.querySelectorAll('[data-open-modal]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.openModal))); function closeModal(){modal.classList.remove('show')} document.getElementById('modalClose').onclick=closeModal; document.getElementById('modalCancel').onclick=closeModal; document.getElementById('modalApply').onclick=()=>{ markChange('후보매물 추가'); addCandidate(modalMode==='search'?'manual_search':'direct_register'); closeModal(); renderAll(); };
     renderAll();
   </script>

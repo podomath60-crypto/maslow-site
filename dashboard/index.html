@@ -228,6 +228,13 @@
       justify-content:space-between;
       gap:10px;
     }
+    .dashboard-memo-head-right{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:8px;
+      min-width:0;
+    }
     .dashboard-memo-title{
       font-size:19px;
       line-height:1.2;
@@ -263,7 +270,7 @@
     .dashboard-memo-actions{
       display:flex;
       align-items:center;
-      justify-content:space-between;
+      justify-content:flex-end;
       gap:10px;
     }
     .dashboard-memo-save{
@@ -1873,11 +1880,13 @@
       <section id="dashboardMemoDesktop" class="dashboard-memo-pad dashboard-memo-desktop" aria-label="대시보드 메모">
         <div class="dashboard-memo-head">
           <div class="dashboard-memo-title">메모</div>
-          <div id="dashboardMemoStateDesktop" class="dashboard-memo-state"></div>
+          <div class="dashboard-memo-head-right">
+            <div id="dashboardMemoStateDesktop" class="dashboard-memo-state"></div>
+            <button id="dashboardMemoSaveDesktop" type="button" class="dashboard-memo-save"><span class="dashboard-memo-spinner" aria-hidden="true"></span><span class="dashboard-memo-save-text">수정저장</span></button>
+          </div>
         </div>
         <textarea id="dashboardMemoTextareaDesktop" class="dashboard-memo-textarea" placeholder="메모를 입력하세요"></textarea>
         <div class="dashboard-memo-actions">
-          <button id="dashboardMemoSaveDesktop" type="button" class="dashboard-memo-save"><span class="dashboard-memo-spinner" aria-hidden="true"></span><span class="dashboard-memo-save-text">수정저장</span></button>
           <div id="dashboardMemoUpdatedDesktop" class="dashboard-memo-updated"></div>
         </div>
       </section>
@@ -1885,11 +1894,13 @@
       <section id="dashboardMemoMobile" class="dashboard-memo-pad dashboard-memo-mobile" aria-label="대시보드 메모">
         <div class="dashboard-memo-head">
           <div class="dashboard-memo-title">메모</div>
-          <div id="dashboardMemoStateMobile" class="dashboard-memo-state"></div>
+          <div class="dashboard-memo-head-right">
+            <div id="dashboardMemoStateMobile" class="dashboard-memo-state"></div>
+            <button id="dashboardMemoSaveMobile" type="button" class="dashboard-memo-save"><span class="dashboard-memo-spinner" aria-hidden="true"></span><span class="dashboard-memo-save-text">수정저장</span></button>
+          </div>
         </div>
         <textarea id="dashboardMemoTextareaMobile" class="dashboard-memo-textarea" placeholder="메모를 입력하세요"></textarea>
         <div class="dashboard-memo-actions">
-          <button id="dashboardMemoSaveMobile" type="button" class="dashboard-memo-save"><span class="dashboard-memo-spinner" aria-hidden="true"></span><span class="dashboard-memo-save-text">수정저장</span></button>
           <div id="dashboardMemoUpdatedMobile" class="dashboard-memo-updated"></div>
         </div>
       </section>

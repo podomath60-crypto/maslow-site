@@ -93,7 +93,6 @@
     .contact-empty{border:1px dashed #dbe5ee;border-radius:14px;background:#fbfdff;color:#88919c;font-size:13px;font-weight:900;padding:13px;text-align:center}
     .contact-add-box{border-top:1px solid #edf2f7;padding-top:13px;display:grid;gap:8px}
     .contact-add-grid{display:grid;grid-template-columns:120px 120px minmax(0,1fr);gap:8px}
-    .contact-add-grid .wide{grid-column:1 / -1}
     .contact-small-btn{min-height:38px;border:1px solid #dbe5ee;border-radius:12px;background:#fff;font-size:12px;font-weight:1000;color:#4b5563;padding:0 10px;white-space:nowrap}
     @media(max-width:760px){.contact-add-grid{grid-template-columns:1fr}.contact-add-grid .wide{grid-column:auto}}
     .business-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-self:start}
@@ -501,7 +500,6 @@
               <div style="display:flex;gap:6px"><input class="edit-field" id="newContactDate" value="${formatToday()}" placeholder="날짜"><button type="button" class="contact-small-btn" id="newContactToday">오늘</button></div>
               <select class="edit-field" id="newContactType"><option>통화</option><option>문자</option><option>카카오톡</option><option>방문</option><option>자료전송</option><option>조건변경</option><option>가격협의</option><option>재문의</option><option>보류</option><option>기타</option></select>
               <input class="edit-field" id="newContactContent" placeholder="연락 내용">
-              <input class="edit-field wide" id="newContactNext" placeholder="다음 액션">
             </div>
           </section>
         </div>`;
@@ -574,10 +572,9 @@
         const date=(document.getElementById('newContactDate')?.value || '').trim();
         const type=(document.getElementById('newContactType')?.value || '').trim();
         const content=(document.getElementById('newContactContent')?.value || '').trim();
-        const next=(document.getElementById('newContactNext')?.value || '').trim();
         const logs=[...existing];
         if(content){
-          logs.push(`${date ? date + ' ' : ''}${type || '연락'} — ${content}${next ? ' / 다음: ' + next : ''}`);
+          logs.push(`${date ? date + ' ' : ''}${type || '연락'} — ${content}`);
         }
         markChange('최근연락 수정');
         state.project.contactLogs = logs;

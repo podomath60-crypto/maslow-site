@@ -84,6 +84,18 @@
     .picker-etc-input:focus{border-color:#111318;box-shadow:0 0 0 3px rgba(17,19,24,.08)}
     .contact-log-textarea{width:100%;min-height:320px;border:1px solid #dfe8f2;border-radius:16px;padding:14px 15px;font-size:14px;line-height:1.55;font-weight:850;color:#111827;outline:none;resize:vertical;white-space:pre-wrap}
     .contact-log-textarea:focus{border-color:#111318;box-shadow:0 0 0 3px rgba(17,19,24,.08)}
+    .contact-modal-wrap{display:grid;gap:16px}
+    .contact-modal-title{font-size:13px;font-weight:1000;color:#111318;letter-spacing:-.04em;margin-bottom:7px}
+    .contact-log-list{display:grid;gap:8px;max-height:260px;overflow:auto;padding-right:3px}
+    .contact-log-row{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;align-items:start;border:1px solid #edf2f7;background:#fbfdff;border-radius:14px;padding:8px 10px}
+    .contact-log-no{width:24px;height:24px;border-radius:999px;background:#111318;color:#fff;font-size:11px;font-weight:1000;display:flex;align-items:center;justify-content:center;margin-top:1px}
+    .contact-log-existing{width:100%;min-height:38px;border:0;background:transparent;outline:none;resize:vertical;padding:1px 0;font-size:13px;line-height:1.45;font-weight:850;color:#27303a;white-space:pre-wrap;overflow-wrap:anywhere}
+    .contact-empty{border:1px dashed #dbe5ee;border-radius:14px;background:#fbfdff;color:#88919c;font-size:13px;font-weight:900;padding:13px;text-align:center}
+    .contact-add-box{border-top:1px solid #edf2f7;padding-top:13px;display:grid;gap:8px}
+    .contact-add-grid{display:grid;grid-template-columns:120px 120px minmax(0,1fr);gap:8px}
+    .contact-add-grid .wide{grid-column:1 / -1}
+    .contact-small-btn{min-height:38px;border:1px solid #dbe5ee;border-radius:12px;background:#fff;font-size:12px;font-weight:1000;color:#4b5563;padding:0 10px;white-space:nowrap}
+    @media(max-width:760px){.contact-add-grid{grid-template-columns:1fr}.contact-add-grid .wide{grid-column:auto}}
     .business-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-self:start}
     .business-card-slot{height:150px;border:2px dashed #d7e0eb;background:#fafcff;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;align-self:start}
     .business-card-slot:hover{background:#f5f9ff;border-color:#b7c7da}
@@ -440,6 +452,8 @@
     let activePickerField = '';
     let activePickerValues = [];
     function formatToday(){ const d=new Date(); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); return `${yyyy}.${mm}.${dd}`; }
+    function escapeHtml(value){ return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function escapeAttr(value){ return escapeHtml(value).replace(/"/g,'&quot;'); }
     function pickerEtcHtml(value=''){ return `<div class="picker-etc-box"><div class="picker-etc-label">기타 직접 입력</div><input class="picker-etc-input" data-picker-etc-input value="${String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" placeholder="기타 내용을 입력"></div>`; }
     function currentEtcValueFor(field, options){ const v=state.project[field] || ''; if(field==='inquiryRoutesText') return state.project.inquiryRouteEtc || ''; if(options && v && !options.includes(v)) return v; return ''; }
     function openProjectPicker(field){
@@ -470,11 +484,32 @@
     function openContactLogModal(){
       modalMode='contactLog';
       modalTitle.textContent='최근연락';
-      modalDesc.textContent='기존 연락 내용을 한 번에 확인하고 수정';
-      const logs = Array.isArray(state.project.contactLogs) && state.project.contactLogs.length ? state.project.contactLogs.join('\n') : (state.project.lastContact || '');
-      modalContent.innerHTML = `<textarea class="contact-log-textarea" id="contactLogText" placeholder="연락 내용을 줄바꿈으로 계속 기록">${String(logs||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>`;
+      modalDesc.textContent='기존 연락기록 / 새 연락 추가';
+      const logs = Array.isArray(state.project.contactLogs) && state.project.contactLogs.length ? state.project.contactLogs : (state.project.lastContact ? [state.project.lastContact] : []);
+      const listHtml = logs.length
+        ? logs.map((log,idx)=>`<div class="contact-log-row"><div class="contact-log-no">${idx+1}</div><textarea class="contact-log-existing" data-contact-existing>${escapeHtml(log)}</textarea></div>`).join('')
+        : `<div class="contact-empty">기존 연락기록 없음</div>`;
+      modalContent.innerHTML = `
+        <div class="contact-modal-wrap">
+          <section>
+            <div class="contact-modal-title">기존 연락기록</div>
+            <div class="contact-log-list">${listHtml}</div>
+          </section>
+          <section class="contact-add-box">
+            <div class="contact-modal-title">새 연락 추가</div>
+            <div class="contact-add-grid">
+              <div style="display:flex;gap:6px"><input class="edit-field" id="newContactDate" value="${formatToday()}" placeholder="날짜"><button type="button" class="contact-small-btn" id="newContactToday">오늘</button></div>
+              <select class="edit-field" id="newContactType"><option>통화</option><option>문자</option><option>카카오톡</option><option>방문</option><option>자료전송</option><option>조건변경</option><option>가격협의</option><option>재문의</option><option>보류</option><option>기타</option></select>
+              <input class="edit-field" id="newContactContent" placeholder="연락 내용">
+              <input class="edit-field wide" id="newContactNext" placeholder="다음 액션">
+            </div>
+          </section>
+        </div>`;
       modal.classList.add('show');
-      setTimeout(()=>document.getElementById('contactLogText')?.focus(), 0);
+      setTimeout(()=>{
+        document.getElementById('newContactContent')?.focus();
+        document.getElementById('newContactToday')?.addEventListener('click',()=>{ const el=document.getElementById('newContactDate'); if(el) el.value=formatToday(); });
+      }, 0);
     }
     document.addEventListener('focusin', e=>{
       const el=e.target.closest('[data-inline-field]');
@@ -535,10 +570,18 @@
     function openModal(mode){ modalMode=mode; const titles={register:'매물입력기로 새 등록',quick:'간편 새 매물 등록',search:'전체 매물에서 검색'}; modalTitle.textContent=titles[mode]; modalDesc.textContent= mode==='register'?'매물입력기로 이동합니다.':mode==='search'?'매물번호나 주소로 검색합니다.':'기본 정보만 입력합니다.'; modalContent.innerHTML= mode==='search'?'<div class="modal-grid"><input class="edit-field" placeholder="매물번호 / 주소 / 지역"><select class="edit-field"><option>전체</option><option>매매</option><option>임대</option></select></div><div class="confirm-box" style="margin-top:10px">검색 결과 예시: MK-260623-777 / 군산 오식도동 공장 / 22억</div>':'<div class="modal-grid"><input class="edit-field" placeholder="매물명"><input class="edit-field" placeholder="소재지"><input class="edit-field" placeholder="가격"><input class="edit-field" placeholder="대지/건물"></div>'; modal.classList.add('show'); }
     document.querySelectorAll('[data-open-modal]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.openModal))); function closeModal(){modal.classList.remove('show')} document.getElementById('modalClose').onclick=closeModal; document.getElementById('modalCancel').onclick=closeModal; document.getElementById('modalApply').onclick=()=>{
       if(modalMode==='contactLog'){
-        const txt=(document.getElementById('contactLogText')?.value || '').trim();
+        const existing = Array.from(document.querySelectorAll('[data-contact-existing]')).map(el=>(el.value || '').trim()).filter(Boolean);
+        const date=(document.getElementById('newContactDate')?.value || '').trim();
+        const type=(document.getElementById('newContactType')?.value || '').trim();
+        const content=(document.getElementById('newContactContent')?.value || '').trim();
+        const next=(document.getElementById('newContactNext')?.value || '').trim();
+        const logs=[...existing];
+        if(content){
+          logs.push(`${date ? date + ' ' : ''}${type || '연락'} — ${content}${next ? ' / 다음: ' + next : ''}`);
+        }
         markChange('최근연락 수정');
-        state.project.contactLogs = txt ? txt.split(/\n+/).map(x=>x.trim()).filter(Boolean) : [];
-        state.project.lastContact = state.project.contactLogs[0] || '';
+        state.project.contactLogs = logs;
+        state.project.lastContact = logs[logs.length - 1] || '';
         closeModal(); renderAll(); return;
       }
       if(modalMode==='projectPicker'){

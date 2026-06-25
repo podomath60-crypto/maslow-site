@@ -78,6 +78,12 @@
     .picker-option.check{justify-content:flex-start;gap:8px}
     .picker-option.check::before{content:"";width:14px;height:14px;border-radius:5px;border:1px solid #c7d2df;background:#fff;flex:0 0 auto}
     .picker-option.check.active::before{background:#00f97c;border-color:#00f97c;box-shadow:inset 0 0 0 3px #111318}
+    .picker-etc-box{margin-top:12px;border-top:1px solid #edf2f7;padding-top:12px;display:grid;gap:7px}
+    .picker-etc-label{font-size:12px;font-weight:1000;color:#6b7480;letter-spacing:-.03em}
+    .picker-etc-input{width:100%;min-height:40px;border:1px solid #dfe8f2;border-radius:13px;padding:0 12px;font-size:14px;font-weight:900;color:#111827;outline:none}
+    .picker-etc-input:focus{border-color:#111318;box-shadow:0 0 0 3px rgba(17,19,24,.08)}
+    .contact-log-textarea{width:100%;min-height:320px;border:1px solid #dfe8f2;border-radius:16px;padding:14px 15px;font-size:14px;line-height:1.55;font-weight:850;color:#111827;outline:none;resize:vertical;white-space:pre-wrap}
+    .contact-log-textarea:focus{border-color:#111318;box-shadow:0 0 0 3px rgba(17,19,24,.08)}
     .business-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-self:start}
     .business-card-slot{height:150px;border:2px dashed #d7e0eb;background:#fafcff;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;align-self:start}
     .business-card-slot:hover{background:#f5f9ff;border-color:#b7c7da}
@@ -87,14 +93,14 @@
     .business-card-empty{display:grid;gap:4px;text-align:center;color:#7f8a96;font-size:12px;font-weight:900}
     .business-card-empty b{font-size:15px;color:#27303a}
     .project-line-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:1px solid #edf2f7;border-bottom:1px solid #edf2f7}
-    .project-col{padding:10px 14px 12px;display:grid;align-content:start;gap:2px;min-height:168px;border-right:1px solid #edf2f7;background:transparent}
+    .project-col{padding:10px 14px 12px;display:grid;align-content:start;gap:2px;min-height:168px;min-width:0;border-right:1px solid #edf2f7;background:transparent}
     .project-col:last-child{border-right:none}
     .project-col-title{font-size:15px;font-weight:1000;color:#111318;letter-spacing:-.04em;margin:0 0 7px;padding-bottom:5px;border-bottom:2px solid #111318}
     .project-line{display:grid;grid-template-columns:68px minmax(0,1fr);align-items:start;gap:8px;min-height:25px;padding:2px 0;border-bottom:1px solid #f0f3f7}
     .project-line:last-child{border-bottom:none}
     .inline-label{font-size:11px;font-weight:1000;color:#88919c;padding-top:4px;white-space:nowrap}
     .inline-value{font-size:14px;line-height:1.35;font-weight:950;color:#27303a;outline:none;padding:1px 2px;min-height:22px;white-space:pre-wrap;word-break:keep-all}
-    .memo-note{margin-top:10px;background:#fff8bf;border:1px solid #f3df75;box-shadow:0 9px 18px rgba(161,124,0,.08);padding:10px 11px;min-height:78px;transform:rotate(-.35deg);font-size:13px;line-height:1.45;font-weight:900;color:#3a3000;outline:none;white-space:pre-wrap;word-break:keep-all}
+    .memo-note{margin-top:10px;display:block;width:100%;max-width:100%;box-sizing:border-box;background:#fff8bf;border:1px solid #f3df75;box-shadow:0 9px 18px rgba(161,124,0,.08);padding:10px 11px;min-height:92px;height:auto;overflow:visible;transform:none;font-size:13px;line-height:1.48;font-weight:900;color:#3a3000;outline:none;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
     .inline-hint{display:none}
     .info-card{border:1px solid #edf2f7;border-radius:20px;background:#fbfdff;padding:14px;min-height:86px;position:relative}
     .info-label{font-size:12px;font-weight:1000;color:#88919c;margin-bottom:7px}
@@ -159,6 +165,9 @@
 
     .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.38);backdrop-filter:blur(4px)}
     .modal.show{display:flex}.modal-card{width:min(640px,calc(100vw - 32px));max-height:86vh;overflow:auto;background:#fff;border-radius:24px;border:1px solid #dbe5ee;box-shadow:0 24px 70px rgba(15,23,42,.26);padding:20px;display:grid;gap:14px}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.modal-title{font-size:22px;font-weight:1000;letter-spacing:-.05em}.modal-desc{font-size:13px;color:#7b8794;font-weight:800;line-height:1.55;margin-top:4px}.modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px}.close-x{width:34px;height:34px;border-radius:12px;background:#f3f6fa;color:#4b5563;font-weight:1000}
+    .business-card-viewer .modal-card{width:min(920px,calc(100vw - 36px));padding:14px;gap:10px}
+    .business-card-viewer-frame{height:min(62vh,560px);border-radius:18px;background:#f6f8fb;border:1px solid #e5ebf2;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .business-card-viewer-frame img{max-width:100%;max-height:100%;object-fit:contain;display:block;background:#fff}
 
     @media(max-width:1100px){.project-summary{grid-template-columns:1fr}.project-hero{grid-template-columns:1fr}.business-card-grid{width:360px;max-width:100%}.business-card-slot{max-width:100%}.candidate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
     @media(max-width:760px){.title-contact-row{grid-template-columns:1fr}.business-card-grid{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}.business-card-slot{height:132px}.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.shell{padding:14px 12px 42px}.section{border-radius:22px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.summary-grid,.project-line-grid,.candidate-grid,.metric-row,.edit-row,.modal-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
@@ -363,6 +372,14 @@
     </div>
   </div>
 
+  <div class="modal business-card-viewer" id="businessCardViewer" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head"><div><div class="modal-title" id="businessCardViewerTitle">명함</div></div><button class="close-x" id="businessCardViewerClose">×</button></div>
+      <div class="business-card-viewer-frame"><img id="businessCardViewerImage" alt="명함 크게 보기"></div>
+      <div class="modal-actions"><button class="small-btn" id="businessCardViewerChange">이미지 변경</button><button class="small-btn primary" id="businessCardViewerDone">닫기</button></div>
+    </div>
+  </div>
+
   <script>
     const STORAGE_UNDO_KEY = 'matchingUndo:PJ-DEMO-001';
     const STORAGE_REDO_KEY = 'matchingRedo:PJ-DEMO-001';
@@ -375,7 +392,7 @@
     };
     const initialState = {
       project:{
-        title:'김OO / 군산·익산 공장 매수 의뢰', status:'후보탐색중', inquiryDate:'2026.06.23', inquiryRoutes:['전화','블로그'], inquiryType:'매수 의뢰', inquiryMemo:'블로그 보고 전화. 군산권 먼저 보고 익산까지 확장 검토.', clientName:'김OO', phone:'010-0000-0000', companyName:'OO식품', clientCategory:'법인', requesterRelation:'회사 담당자', industry:'식품제조', dealType:'매매', budget:'20억~30억', regions:'군산 · 익산', usePurpose:'식품공장', land:'대지 2,000평 이상', building:'건물 500평 이상', areaSummary:'대지 2,000평↑ / 건물 500평↑', coreNeeds:'25톤 진입 · 야드 · 민원 없음', lastContact:'06.23 통화 — 예산 30억까지 가능, 익산도 검토', nextAction:'익산 후보 3건 정리 후 전송'
+        title:'김OO / 군산·익산 공장 매수 의뢰', status:'후보탐색중', inquiryDate:'2026.06.23', inquiryRoutes:['전화','블로그'], inquiryRouteEtc:'', inquiryType:'매수 의뢰', inquiryMemo:'블로그 보고 전화. 군산권 먼저 보고 익산까지 확장 검토.', clientName:'김OO', phone:'010-0000-0000', companyName:'OO식품', clientCategory:'법인', requesterRelation:'회사 담당자', industry:'식품제조', dealType:'매매', budget:'20억~30억', regions:'군산 · 익산', usePurpose:'식품공장', land:'대지 2,000평 이상', building:'건물 500평 이상', areaSummary:'대지 2,000평↑ / 건물 500평↑', coreNeeds:'25톤 진입 · 야드 · 민원 없음', lastContact:'06.23 통화 — 예산 30억까지 가능, 익산도 검토', nextAction:'익산 후보 3건 정리 후 전송', contactLogs:['06.23 통화 — 예산 30억까지 가능, 익산도 검토','06.24 문자 — 익산 후보 정리 후 보내기로 함']
       },
       candidates:[
         {id:'C-001', propertyId:'MK-260623-001', title:'오식도동 공장', price:'20억', area:'대지 1,980평 / 건물 420평', sourceType:'algorithm', sourceLabel:'알고리즘추천', score:84, stage:'검토중', ownerStatus:'미접촉', proposal:false, visit:'미정', confirm:'예산 적합 · 지역 적합 · 야드 좋음 / 전력 확인 필요', rejected:false, rejectReason:'', rejectMemo:'', reconsiderType:''},
@@ -397,7 +414,7 @@
     function markChange(label){ undoStack.push({label, before:clone(state), time:new Date().toISOString()}); if(undoStack.length>100) undoStack.shift(); redoStack=[]; dirty=true; persistUndo(); updateSaveState(); }
     function persistUndo(){ localStorage.setItem(STORAGE_UNDO_KEY, JSON.stringify(undoStack)); localStorage.setItem(STORAGE_REDO_KEY, JSON.stringify(redoStack)); }
     function updateSaveState(){ document.getElementById('undoBtn').disabled = undoStack.length===0; document.getElementById('redoBtn').disabled = redoStack.length===0; document.getElementById('saveState').textContent = dirty ? '저장 전 변경 있음' : '변경사항 없음'; }
-    function renderProject(){ const p=state.project; document.querySelectorAll('[data-inline-field]').forEach(el=>{ const f=el.dataset.inlineField; let v=''; if(f==='inquiryRoutesText') v=(p.inquiryRoutes||[]).join(', '); else v=p[f] ?? ''; if(document.activeElement!==el) el.textContent=v; }); }
+    function renderProject(){ const p=state.project; document.querySelectorAll('[data-inline-field]').forEach(el=>{ const f=el.dataset.inlineField; let v=''; if(f==='inquiryRoutesText') v=(p.inquiryRoutes||[]).map(x=>x==='기타' && p.inquiryRouteEtc ? `기타: ${p.inquiryRouteEtc}` : x).join(', '); else v=p[f] ?? ''; if(document.activeElement!==el) el.textContent=v; }); }
     function renderRouteChecks(){}
     function candidateCounts(){ const total=state.candidates.length, rejected=state.candidates.filter(c=>c.rejected).length, proposal=state.candidates.filter(c=>c.proposal&&!c.rejected).length, owner=state.candidates.filter(c=>String(c.stage).includes('소유자')&&!c.rejected).length, visit=state.candidates.filter(c=>String(c.visit).includes('임장')&&!c.rejected).length, active=total-rejected; return {total, active, owner, proposal, visit, rejected}; }
     function renderMetrics(){ const c=candidateCounts(); document.getElementById('candidateMetrics').innerHTML=[['전체',c.total],['검토대상',c.active],['소유자확인',c.owner],['제안선정',c.proposal],['임장',c.visit],['탈락',c.rejected]].map(x=>`<div class="metric"><div class="metric-num">${x[1]}</div><div class="metric-label">${x[0]}</div></div>`).join(''); }
@@ -423,6 +440,8 @@
     let activePickerField = '';
     let activePickerValues = [];
     function formatToday(){ const d=new Date(); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); return `${yyyy}.${mm}.${dd}`; }
+    function pickerEtcHtml(value=''){ return `<div class="picker-etc-box"><div class="picker-etc-label">기타 직접 입력</div><input class="picker-etc-input" data-picker-etc-input value="${String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" placeholder="기타 내용을 입력"></div>`; }
+    function currentEtcValueFor(field, options){ const v=state.project[field] || ''; if(field==='inquiryRoutesText') return state.project.inquiryRouteEtc || ''; if(options && v && !options.includes(v)) return v; return ''; }
     function openProjectPicker(field){
       activePickerField = field;
       const p = state.project;
@@ -431,36 +450,50 @@
         modalMode = 'projectPicker';
         modalTitle.textContent = '문의루트';
         modalDesc.textContent = '중복 선택 가능';
-        modalContent.innerHTML = `<div class="picker-grid">${routes.map(opt=>`<button type="button" class="picker-option check ${activePickerValues.includes(opt)?'active':''}" data-pick-route="${opt}">${opt}</button>`).join('')}</div>`;
+        modalContent.innerHTML = `<div class="picker-grid">${routes.map(opt=>`<button type="button" class="picker-option check ${activePickerValues.includes(opt)?'active':''}" data-pick-route="${opt}">${opt}</button>`).join('')}</div>${pickerEtcHtml(p.inquiryRouteEtc || '')}`;
         modal.classList.add('show');
+        if(activePickerValues.includes('기타')) setTimeout(()=>modalContent.querySelector('[data-picker-etc-input]')?.focus(), 0);
         return;
       }
       const optionMap = {inquiryType:'의뢰구분', clientCategory:'고객주체', requesterRelation:'관계', industry:'업종'};
       const options = pickerOptions[field] || [];
-      activePickerValues = [p[field] || ''];
+      const currentValue = p[field] || '';
+      const isCustom = currentValue && !options.includes(currentValue);
+      activePickerValues = [isCustom ? '기타' : currentValue];
       modalMode = 'projectPicker';
       modalTitle.textContent = optionMap[field] || '선택';
       modalDesc.textContent = '';
-      modalContent.innerHTML = `<div class="picker-grid">${options.map(opt=>`<button type="button" class="picker-option ${activePickerValues[0]===opt?'active':''}" data-pick-single="${opt}">${opt}</button>`).join('')}</div>`;
+      modalContent.innerHTML = `<div class="picker-grid">${options.map(opt=>`<button type="button" class="picker-option ${activePickerValues[0]===opt?'active':''}" data-pick-single="${opt}">${opt}</button>`).join('')}</div>${options.includes('기타') ? pickerEtcHtml(isCustom ? currentValue : '') : ''}`;
       modal.classList.add('show');
+      if(activePickerValues[0]==='기타') setTimeout(()=>modalContent.querySelector('[data-picker-etc-input]')?.focus(), 0);
+    }
+    function openContactLogModal(){
+      modalMode='contactLog';
+      modalTitle.textContent='최근연락';
+      modalDesc.textContent='기존 연락 내용을 한 번에 확인하고 수정';
+      const logs = Array.isArray(state.project.contactLogs) && state.project.contactLogs.length ? state.project.contactLogs.join('\n') : (state.project.lastContact || '');
+      modalContent.innerHTML = `<textarea class="contact-log-textarea" id="contactLogText" placeholder="연락 내용을 줄바꿈으로 계속 기록">${String(logs||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>`;
+      modal.classList.add('show');
+      setTimeout(()=>document.getElementById('contactLogText')?.focus(), 0);
     }
     document.addEventListener('focusin', e=>{
       const el=e.target.closest('[data-inline-field]');
       if(!el) return;
+      if(el.dataset.inlineField==='lastContact'){ setTimeout(openContactLogModal, 0); return; }
       if(el.dataset.picker){ setTimeout(()=>openProjectPicker(el.dataset.inlineField), 0); return; }
-      inlineBefore={field:el.dataset.inlineField, value:el.textContent.trim()};
+      inlineBefore={field:el.dataset.inlineField, value:el.innerText.trim()};
     });
     document.addEventListener('keydown', e=>{
       const el=e.target.closest('[data-inline-field]');
       if(!el || el.dataset.picker) return;
-      if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); el.blur(); }
+      if(e.key==='Enter' && !e.shiftKey && !el.classList.contains('memo-note')){ e.preventDefault(); el.blur(); }
       if(e.key==='Escape'){ e.preventDefault(); if(inlineBefore && inlineBefore.field===el.dataset.inlineField) el.textContent=inlineBefore.value; el.blur(); }
     });
     document.addEventListener('focusout', e=>{
       const el=e.target.closest('[data-inline-field]');
       if(!el || el.dataset.picker || !inlineBefore) return;
       const field=el.dataset.inlineField;
-      const value=el.textContent.trim();
+      const value=(el.innerText || el.textContent || '').trim();
       if(field===inlineBefore.field && value!==inlineBefore.value){
         markChange('프로젝트 정보 수정');
         if(field==='inquiryRoutesText') state.project.inquiryRoutes=value.split(',').map(x=>x.trim()).filter(Boolean);
@@ -471,9 +504,9 @@
     });
     document.addEventListener('click', e=>{
       const routePick=e.target.closest('[data-pick-route]');
-      if(routePick){ const v=routePick.dataset.pickRoute; activePickerValues = activePickerValues.includes(v) ? activePickerValues.filter(x=>x!==v) : [...activePickerValues, v]; routePick.classList.toggle('active'); return; }
+      if(routePick){ const v=routePick.dataset.pickRoute; activePickerValues = activePickerValues.includes(v) ? activePickerValues.filter(x=>x!==v) : [...activePickerValues, v]; routePick.classList.toggle('active'); if(v==='기타' && activePickerValues.includes('기타')) setTimeout(()=>modalContent.querySelector('[data-picker-etc-input]')?.focus(),0); return; }
       const singlePick=e.target.closest('[data-pick-single]');
-      if(singlePick){ activePickerValues=[singlePick.dataset.pickSingle]; document.querySelectorAll('[data-pick-single]').forEach(btn=>btn.classList.toggle('active', btn===singlePick)); return; }
+      if(singlePick){ activePickerValues=[singlePick.dataset.pickSingle]; document.querySelectorAll('[data-pick-single]').forEach(btn=>btn.classList.toggle('active', btn===singlePick)); if(activePickerValues[0]==='기타') setTimeout(()=>modalContent.querySelector('[data-picker-etc-input]')?.focus(),0); return; }
       const filter=e.target.closest('[data-filter]'); if(filter){ activeFilter=filter.dataset.filter; renderCandidates(); }
       const reject=e.target.closest('[data-reject]'); if(reject){ openCandidateInline(reject.dataset.reject,'reject'); }
       const owner=e.target.closest('[data-owner]'); if(owner){ openCandidateInline(owner.dataset.owner,'owner'); }
@@ -501,27 +534,79 @@
     const modal=document.getElementById('simpleModal'), modalTitle=document.getElementById('modalTitle'), modalDesc=document.getElementById('modalDesc'), modalContent=document.getElementById('modalContent'); let modalMode='';
     function openModal(mode){ modalMode=mode; const titles={register:'매물입력기로 새 등록',quick:'간편 새 매물 등록',search:'전체 매물에서 검색'}; modalTitle.textContent=titles[mode]; modalDesc.textContent= mode==='register'?'매물입력기로 이동합니다.':mode==='search'?'매물번호나 주소로 검색합니다.':'기본 정보만 입력합니다.'; modalContent.innerHTML= mode==='search'?'<div class="modal-grid"><input class="edit-field" placeholder="매물번호 / 주소 / 지역"><select class="edit-field"><option>전체</option><option>매매</option><option>임대</option></select></div><div class="confirm-box" style="margin-top:10px">검색 결과 예시: MK-260623-777 / 군산 오식도동 공장 / 22억</div>':'<div class="modal-grid"><input class="edit-field" placeholder="매물명"><input class="edit-field" placeholder="소재지"><input class="edit-field" placeholder="가격"><input class="edit-field" placeholder="대지/건물"></div>'; modal.classList.add('show'); }
     document.querySelectorAll('[data-open-modal]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.openModal))); function closeModal(){modal.classList.remove('show')} document.getElementById('modalClose').onclick=closeModal; document.getElementById('modalCancel').onclick=closeModal; document.getElementById('modalApply').onclick=()=>{
+      if(modalMode==='contactLog'){
+        const txt=(document.getElementById('contactLogText')?.value || '').trim();
+        markChange('최근연락 수정');
+        state.project.contactLogs = txt ? txt.split(/\n+/).map(x=>x.trim()).filter(Boolean) : [];
+        state.project.lastContact = state.project.contactLogs[0] || '';
+        closeModal(); renderAll(); return;
+      }
       if(modalMode==='projectPicker'){
+        const etcInput = modalContent.querySelector('[data-picker-etc-input]');
+        const etcValue = etcInput ? etcInput.value.trim() : '';
         markChange('프로젝트 선택값 수정');
-        if(activePickerField==='inquiryRoutesText') state.project.inquiryRoutes=[...activePickerValues];
-        else state.project[activePickerField]=activePickerValues[0] || '';
+        if(activePickerField==='inquiryRoutesText'){
+          state.project.inquiryRoutes=[...activePickerValues];
+          state.project.inquiryRouteEtc = activePickerValues.includes('기타') ? etcValue : '';
+        } else {
+          state.project[activePickerField] = activePickerValues[0]==='기타' && etcValue ? etcValue : (activePickerValues[0] || '');
+        }
         closeModal(); renderAll(); return;
       }
       markChange('후보매물 추가'); addCandidate(modalMode==='search'?'manual_search':'direct_register'); closeModal(); renderAll();
     };
+
+    const businessCardViewer=document.getElementById('businessCardViewer');
+    const businessCardViewerImage=document.getElementById('businessCardViewerImage');
+    const businessCardViewerTitle=document.getElementById('businessCardViewerTitle');
+    const businessCardViewerClose=document.getElementById('businessCardViewerClose');
+    const businessCardViewerDone=document.getElementById('businessCardViewerDone');
+    const businessCardViewerChange=document.getElementById('businessCardViewerChange');
+    let activeBusinessCardKey=null;
+    function openBusinessCardViewer(key,src){
+      activeBusinessCardKey=key;
+      businessCardViewerTitle.textContent=`명함 ${key}`;
+      businessCardViewerImage.src=src;
+      businessCardViewer.classList.add('show');
+    }
+    function closeBusinessCardViewer(){
+      businessCardViewer.classList.remove('show');
+      businessCardViewerImage.removeAttribute('src');
+    }
+    businessCardViewerClose.onclick=closeBusinessCardViewer;
+    businessCardViewerDone.onclick=closeBusinessCardViewer;
+    businessCardViewerChange.onclick=()=>{
+      if(!activeBusinessCardKey) return;
+      const input=document.querySelector(`[data-business-card-input="${activeBusinessCardKey}"]`);
+      if(input) input.click();
+    };
+    businessCardViewer.addEventListener('click',e=>{ if(e.target===businessCardViewer) closeBusinessCardViewer(); });
 
     document.querySelectorAll('[data-business-card-slot]').forEach(slot=>{
       const key=slot.dataset.businessCardSlot;
       const input=document.querySelector(`[data-business-card-input="${key}"]`);
       const preview=document.querySelector(`[data-business-card-preview="${key}"]`);
       if(!input || !preview) return;
-      slot.addEventListener('click',()=>input.click());
-      slot.addEventListener('keydown',e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); input.click(); }});
+      slot.addEventListener('click',()=>{
+        if(slot.classList.contains('has-image') && preview.src){
+          openBusinessCardViewer(key,preview.src);
+          return;
+        }
+        input.click();
+      });
+      slot.addEventListener('keydown',e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); slot.click(); }});
       input.addEventListener('change',()=>{
         const file=input.files && input.files[0];
         if(!file) return;
         const reader=new FileReader();
-        reader.onload=()=>{ preview.src=reader.result; slot.classList.add('has-image'); markChange(`명함 ${key} 이미지 추가`); };
+        reader.onload=()=>{
+          preview.src=reader.result;
+          slot.classList.add('has-image');
+          markChange(`명함 ${key} 이미지 추가`);
+          if(businessCardViewer.classList.contains('show') && activeBusinessCardKey===key){
+            businessCardViewerImage.src=reader.result;
+          }
+        };
         reader.readAsDataURL(file);
       });
     });

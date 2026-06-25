@@ -65,12 +65,16 @@
     .inline-chip-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .inline-chip{display:inline-flex;align-items:center;min-height:30px;padding:0 11px;border-radius:999px;background:#f3f7fb;border:1px solid #e2eaf2;color:#4b5563;font-size:13px;font-weight:950;white-space:nowrap;outline:none}
     .inline-chip.blue{background:#eef5ff;border-color:#cfe2ff;color:#0f64d8}.inline-chip.green{background:#eafff3;border-color:#bdf8d8;color:#087a3b}.inline-chip.dark{background:#111318;border-color:#111318;color:#fff}
-    .project-line-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 22px}
-    .project-line{display:grid;grid-template-columns:106px minmax(0,1fr);align-items:start;gap:10px;min-height:30px;padding:6px 0;border-bottom:1px solid #f0f3f7}
-    .project-line.wide{grid-column:1/-1}
-    .inline-label{font-size:12px;font-weight:1000;color:#88919c;padding-top:4px;white-space:nowrap}
-    .inline-value{font-size:15px;line-height:1.5;font-weight:950;color:#27303a;outline:none;border-radius:8px;padding:2px 4px;margin-left:-4px;min-height:27px;white-space:pre-wrap;word-break:keep-all}
-    .inline-hint{font-size:11px;font-weight:800;color:#9aa3ad;margin-top:4px}
+    .project-line-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .project-col{border:1px solid #edf2f7;border-radius:18px;background:#fbfdff;padding:10px 12px;display:grid;align-content:start;gap:4px;min-height:176px}
+    .project-col-title{font-size:14px;font-weight:1000;color:#111318;letter-spacing:-.04em;margin-bottom:2px}
+    .project-line{display:grid;grid-template-columns:72px minmax(0,1fr);align-items:start;gap:8px;min-height:25px;padding:3px 0;border-bottom:1px solid #f0f3f7}
+    .project-line:last-child{border-bottom:none}
+    .project-line.memo-line{grid-template-columns:72px minmax(0,1fr);align-items:stretch;margin-top:4px;border-bottom:none}
+    .inline-label{font-size:11px;font-weight:1000;color:#88919c;padding-top:4px;white-space:nowrap}
+    .inline-value{font-size:14px;line-height:1.35;font-weight:950;color:#27303a;outline:none;border-radius:7px;padding:1px 4px;margin-left:-4px;min-height:22px;white-space:pre-wrap;word-break:keep-all}
+    .inline-value.memo{min-height:54px;background:#fff;border:1px solid #eef2f6;padding:7px 8px;margin-left:0;font-size:13px;line-height:1.45}
+    .inline-hint{display:none}
     .info-card{border:1px solid #edf2f7;border-radius:20px;background:#fbfdff;padding:14px;min-height:86px;position:relative}
     .info-label{font-size:12px;font-weight:1000;color:#88919c;margin-bottom:7px}
     .info-value{font-size:15px;line-height:1.45;font-weight:950;color:#27303a;word-break:keep-all}
@@ -136,7 +140,7 @@
     .modal.show{display:flex}.modal-card{width:min(640px,calc(100vw - 32px));max-height:86vh;overflow:auto;background:#fff;border-radius:24px;border:1px solid #dbe5ee;box-shadow:0 24px 70px rgba(15,23,42,.26);padding:20px;display:grid;gap:14px}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.modal-title{font-size:22px;font-weight:1000;letter-spacing:-.05em}.modal-desc{font-size:13px;color:#7b8794;font-weight:800;line-height:1.55;margin-top:4px}.modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px}.close-x{width:34px;height:34px;border-radius:12px;background:#f3f6fa;color:#4b5563;font-weight:1000}
 
     @media(max-width:1100px){.project-summary{grid-template-columns:1fr}.candidate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
-    @media(max-width:760px){.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.shell{padding:14px 12px 42px}.section{border-radius:22px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.summary-grid,.candidate-grid,.metric-row,.edit-row,.modal-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
+    @media(max-width:760px){.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.shell{padding:14px 12px 42px}.section{border-radius:22px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.summary-grid,.project-line-grid,.candidate-grid,.metric-row,.edit-row,.modal-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
   </style>
 </head>
 <body>
@@ -177,88 +181,88 @@
           </div>
 
           <div class="project-line-grid">
-            <div class="project-line">
-              <div class="inline-label">최초 문의</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="inquiryDate">2026.06.23</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">문의 시간</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="inquiryTime">14:20</div>
-            </div>
-            <div class="project-line wide">
-              <div class="inline-label">문의 루트</div>
-              <div>
+            <div class="project-col">
+              <div class="project-col-title">의뢰 접수</div>
+              <div class="project-line">
+                <div class="inline-label">최초문의</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="inquiryDate">2026.06.23</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">문의루트</div>
                 <div class="inline-value" contenteditable="true" data-inline-field="inquiryRoutesText">전화, 블로그</div>
-                <div class="inline-hint">전화, 문자, 카카오톡, 블로그, 유튜브, 네이버부동산, 한방, 자사사이트(net), 자사사이트(site), 소개, 기존고객, 현장문의, 부동산포스, 불분명, 기타</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">의뢰구분</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="inquiryType">매수 의뢰</div>
+              </div>
+              <div class="project-line memo-line">
+                <div class="inline-label">메모</div>
+                <div class="inline-value memo" contenteditable="true" data-inline-field="inquiryMemo">블로그 보고 전화. 군산권 먼저 보고 익산까지 확장 검토.</div>
               </div>
             </div>
-            <div class="project-line">
-              <div class="inline-label">접수자</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="receivedBy">한이사</div>
+
+            <div class="project-col">
+              <div class="project-col-title">의뢰인</div>
+              <div class="project-line">
+                <div class="inline-label">고객명</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="clientName">김OO</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">연락처</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="phone">010-0000-0000</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">회사명</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="companyName">OO식품</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">고객주체</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="clientCategory">법인</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">관계</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="requesterRelation">회사 담당자</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">업종</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="industry">식품제조</div>
+              </div>
             </div>
-            <div class="project-line">
-              <div class="inline-label">담당자</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="manager">한이사</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">고객명</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="clientName">김OO</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">연락처</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="phone">010-0000-0000</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">회사명</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="companyName">OO식품</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">업종</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="industry">식품제조</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">고객 주체</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="clientCategory">법인</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">의뢰자 관계</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="requesterRelation">회사 담당자</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">거래유형</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="dealType">매매</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">예산</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="budget">20억~30억</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">희망지역</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="regions">군산 · 익산</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">용도</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="usePurpose">식품공장</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">대지</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="land">대지 2,000평 이상</div>
-            </div>
-            <div class="project-line">
-              <div class="inline-label">건물</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="building">건물 500평 이상</div>
-            </div>
-            <div class="project-line wide">
-              <div class="inline-label">핵심 요구</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="coreNeeds">25톤 진입 · 야드 · 민원 없음</div>
-            </div>
-            <div class="project-line wide">
-              <div class="inline-label">최근 연락</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="lastContact">06.23 통화 — 예산 30억까지 가능, 익산도 검토</div>
-            </div>
-            <div class="project-line wide">
-              <div class="inline-label">다음 액션</div>
-              <div class="inline-value" contenteditable="true" data-inline-field="nextAction">익산 후보 3건 정리 후 전송</div>
+
+            <div class="project-col">
+              <div class="project-col-title">요구 조건</div>
+              <div class="project-line">
+                <div class="inline-label">거래</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="dealType">매매</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">예산</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="budget">20억~30억</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">지역</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="regions">군산 · 익산</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">용도</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="usePurpose">식품공장</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">면적</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="areaSummary">대지 2,000평↑ / 건물 500평↑</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">핵심조건</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="coreNeeds">25톤 진입 · 야드 · 민원 없음</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">최근연락</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="lastContact">06.23 통화 — 예산 30억까지 가능</div>
+              </div>
+              <div class="project-line">
+                <div class="inline-label">다음액션</div>
+                <div class="inline-value" contenteditable="true" data-inline-field="nextAction">익산 후보 3건 정리</div>
+              </div>
             </div>
           </div>
         </div>
@@ -327,7 +331,7 @@
     const routes = ['전화','문자','카카오톡','블로그','유튜브','네이버부동산','한방','자사사이트(net)','자사사이트(site)','소개','기존고객','현장문의','부동산포스','불분명','기타'];
     const initialState = {
       project:{
-        title:'김OO / 군산·익산 공장 매수 의뢰', status:'후보탐색중', inquiryDate:'2026.06.23', inquiryTime:'14:20', inquiryRoutes:['전화','블로그'], receivedBy:'한이사', manager:'한이사', clientName:'김OO', phone:'010-0000-0000', companyName:'OO식품', clientCategory:'법인', requesterRelation:'회사 담당자', industry:'식품제조', dealType:'매매', budget:'20억~30억', regions:'군산 · 익산', usePurpose:'식품공장', land:'대지 2,000평 이상', building:'건물 500평 이상', coreNeeds:'25톤 진입 · 야드 · 민원 없음', lastContact:'06.23 통화 — 예산 30억까지 가능, 익산도 검토', nextAction:'익산 후보 3건 정리 후 전송'
+        title:'김OO / 군산·익산 공장 매수 의뢰', status:'후보탐색중', inquiryDate:'2026.06.23', inquiryRoutes:['전화','블로그'], inquiryType:'매수 의뢰', inquiryMemo:'블로그 보고 전화. 군산권 먼저 보고 익산까지 확장 검토.', clientName:'김OO', phone:'010-0000-0000', companyName:'OO식품', clientCategory:'법인', requesterRelation:'회사 담당자', industry:'식품제조', dealType:'매매', budget:'20억~30억', regions:'군산 · 익산', usePurpose:'식품공장', land:'대지 2,000평 이상', building:'건물 500평 이상', areaSummary:'대지 2,000평↑ / 건물 500평↑', coreNeeds:'25톤 진입 · 야드 · 민원 없음', lastContact:'06.23 통화 — 예산 30억까지 가능, 익산도 검토', nextAction:'익산 후보 3건 정리 후 전송'
       },
       candidates:[
         {id:'C-001', propertyId:'MK-260623-001', title:'오식도동 공장', price:'20억', area:'대지 1,980평 / 건물 420평', sourceType:'algorithm', sourceLabel:'알고리즘추천', score:84, stage:'검토중', ownerStatus:'미접촉', proposal:false, visit:'미정', confirm:'예산 적합 · 지역 적합 · 야드 좋음 / 전력 확인 필요', rejected:false, rejectReason:'', rejectMemo:'', reconsiderType:''},

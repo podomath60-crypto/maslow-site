@@ -58,22 +58,32 @@
     .chip.dark{background:#111318;border-color:#111318;color:#fff}
     .summary-grid{display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px}
 
-    .project-flat{display:grid;gap:14px}
-    .project-hero{display:grid;gap:10px;border-bottom:1px solid #edf2f7;padding-bottom:14px}
-    .project-title-input{font-size:32px;line-height:1.08;font-weight:1000;letter-spacing:-.065em;outline:none;border-radius:10px;padding:2px 4px;margin-left:-4px;min-height:38px}
-    .project-title-input:focus,.inline-value:focus{background:#fff7d6;box-shadow:0 0 0 2px rgba(245,158,11,.18)}
-    .inline-chip-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .inline-chip{display:inline-flex;align-items:center;min-height:30px;padding:0 11px;border-radius:999px;background:#f3f7fb;border:1px solid #e2eaf2;color:#4b5563;font-size:13px;font-weight:950;white-space:nowrap;outline:none}
-    .inline-chip.blue{background:#eef5ff;border-color:#cfe2ff;color:#0f64d8}.inline-chip.green{background:#eafff3;border-color:#bdf8d8;color:#087a3b}.inline-chip.dark{background:#111318;border-color:#111318;color:#fff}
-    .project-line-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-    .project-col{border:1px solid #edf2f7;border-radius:18px;background:#fbfdff;padding:10px 12px;display:grid;align-content:start;gap:4px;min-height:176px}
-    .project-col-title{font-size:14px;font-weight:1000;color:#111318;letter-spacing:-.04em;margin-bottom:2px}
-    .project-line{display:grid;grid-template-columns:72px minmax(0,1fr);align-items:start;gap:8px;min-height:25px;padding:3px 0;border-bottom:1px solid #f0f3f7}
+    .project-flat{display:grid;gap:12px}
+    .project-hero{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px;align-items:start;border-bottom:1px solid #edf2f7;padding-bottom:12px}
+    .project-hero-left{min-width:0;display:grid;gap:6px}
+    .project-title-input{font-size:32px;line-height:1.06;font-weight:1000;letter-spacing:-.065em;outline:none;padding:1px 0;min-height:36px}
+    .project-title-input:focus,.inline-value:focus,.project-summary-text [contenteditable]:focus,.memo-note-body:focus{background:#fff7d6;box-shadow:0 0 0 2px rgba(245,158,11,.16);border-radius:6px}
+    .project-summary-text{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:13px;font-weight:950;color:#202833;line-height:1.35}
+    .project-summary-text [contenteditable]{outline:none;padding:1px 2px;min-height:18px}
+    .project-summary-text .sep{color:#b5bdc7;font-weight:900}
+    .business-card-slot{height:150px;border:2px dashed #d7e0eb;background:#fafcff;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;align-self:start}
+    .business-card-slot:hover{background:#f5f9ff;border-color:#b7c7da}
+    .business-card-slot img{display:none;width:100%;height:100%;object-fit:contain;background:#fff}
+    .business-card-slot.has-image img{display:block}
+    .business-card-slot.has-image .business-card-empty{display:none}
+    .business-card-empty{display:grid;gap:4px;text-align:center;color:#7f8a96;font-size:12px;font-weight:900}
+    .business-card-empty b{font-size:15px;color:#27303a}
+    .project-line-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:1px solid #edf2f7;border-bottom:1px solid #edf2f7}
+    .project-col{padding:10px 14px 12px;display:grid;align-content:start;gap:2px;min-height:168px;border-right:1px solid #edf2f7;background:transparent}
+    .project-col:last-child{border-right:none}
+    .project-col-title{font-size:15px;font-weight:1000;color:#111318;letter-spacing:-.04em;margin:0 0 7px;padding-bottom:5px;border-bottom:2px solid #111318}
+    .project-line{display:grid;grid-template-columns:68px minmax(0,1fr);align-items:start;gap:8px;min-height:25px;padding:2px 0;border-bottom:1px solid #f0f3f7}
     .project-line:last-child{border-bottom:none}
-    .project-line.memo-line{grid-template-columns:72px minmax(0,1fr);align-items:stretch;margin-top:4px;border-bottom:none}
     .inline-label{font-size:11px;font-weight:1000;color:#88919c;padding-top:4px;white-space:nowrap}
-    .inline-value{font-size:14px;line-height:1.35;font-weight:950;color:#27303a;outline:none;border-radius:7px;padding:1px 4px;margin-left:-4px;min-height:22px;white-space:pre-wrap;word-break:keep-all}
-    .inline-value.memo{min-height:54px;background:#fff;border:1px solid #eef2f6;padding:7px 8px;margin-left:0;font-size:13px;line-height:1.45}
+    .inline-value{font-size:14px;line-height:1.35;font-weight:950;color:#27303a;outline:none;padding:1px 2px;min-height:22px;white-space:pre-wrap;word-break:keep-all}
+    .memo-note{margin-top:10px;background:#fff8bf;border:1px solid #f3df75;box-shadow:0 9px 18px rgba(161,124,0,.08);padding:9px 10px 10px;min-height:74px;transform:rotate(-.35deg)}
+    .memo-note-title{font-size:11px;font-weight:1000;color:#8a6d00;margin-bottom:4px}
+    .memo-note-body{font-size:13px;line-height:1.45;font-weight:900;color:#3a3000;outline:none;min-height:40px;white-space:pre-wrap;word-break:keep-all}
     .inline-hint{display:none}
     .info-card{border:1px solid #edf2f7;border-radius:20px;background:#fbfdff;padding:14px;min-height:86px;position:relative}
     .info-label{font-size:12px;font-weight:1000;color:#88919c;margin-bottom:7px}
@@ -139,8 +149,8 @@
     .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.38);backdrop-filter:blur(4px)}
     .modal.show{display:flex}.modal-card{width:min(640px,calc(100vw - 32px));max-height:86vh;overflow:auto;background:#fff;border-radius:24px;border:1px solid #dbe5ee;box-shadow:0 24px 70px rgba(15,23,42,.26);padding:20px;display:grid;gap:14px}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.modal-title{font-size:22px;font-weight:1000;letter-spacing:-.05em}.modal-desc{font-size:13px;color:#7b8794;font-weight:800;line-height:1.55;margin-top:4px}.modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px}.close-x{width:34px;height:34px;border-radius:12px;background:#f3f6fa;color:#4b5563;font-weight:1000}
 
-    @media(max-width:1100px){.project-summary{grid-template-columns:1fr}.candidate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
-    @media(max-width:760px){.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.shell{padding:14px 12px 42px}.section{border-radius:22px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.summary-grid,.project-line-grid,.candidate-grid,.metric-row,.edit-row,.modal-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
+    @media(max-width:1100px){.project-summary{grid-template-columns:1fr}.project-hero{grid-template-columns:1fr}.business-card-slot{width:310px;max-width:100%}.candidate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
+    @media(max-width:760px){.business-card-slot{width:100%;height:132px}.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.shell{padding:14px 12px 42px}.section{border-radius:22px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.summary-grid,.project-line-grid,.candidate-grid,.metric-row,.edit-row,.modal-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
   </style>
 </head>
 <body>
@@ -170,18 +180,32 @@
         </div>
         <div class="section-body project-flat">
           <div class="project-hero">
-            <div class="project-title-input" contenteditable="true" data-inline-field="title">김OO / 군산·익산 공장 매수 의뢰</div>
-            <div class="inline-chip-row">
-              <span class="inline-chip blue" contenteditable="true" data-inline-field="status">후보탐색중</span>
-              <span class="inline-chip green" contenteditable="true" data-inline-field="budget">20억~30억</span>
-              <span class="inline-chip" contenteditable="true" data-inline-field="regions">군산 · 익산</span>
-              <span class="inline-chip" contenteditable="true" data-inline-field="usePurpose">식품공장</span>
-              <span class="inline-chip dark" contenteditable="true" data-inline-field="coreNeeds">25톤 진입 · 야드 · 민원 없음</span>
+            <div class="project-hero-left">
+              <div class="project-title-input" contenteditable="true" data-inline-field="title">김OO / 군산·익산 공장 매수 의뢰</div>
+              <div class="project-summary-text">
+                <span contenteditable="true" data-inline-field="status">후보탐색중</span>
+                <span class="sep">·</span>
+                <span contenteditable="true" data-inline-field="budget">20억~30억</span>
+                <span class="sep">·</span>
+                <span contenteditable="true" data-inline-field="regions">군산 · 익산</span>
+                <span class="sep">·</span>
+                <span contenteditable="true" data-inline-field="usePurpose">식품공장</span>
+                <span class="sep">·</span>
+                <span contenteditable="true" data-inline-field="coreNeeds">25톤 진입 · 야드 · 민원 없음</span>
+              </div>
+            </div>
+            <div class="business-card-slot" id="businessCardSlot" role="button" tabindex="0" aria-label="명함 이미지 넣기">
+              <input id="businessCardInput" type="file" accept="image/*" hidden>
+              <img id="businessCardPreview" alt="명함 이미지 미리보기">
+              <div class="business-card-empty">
+                <b>명함</b>
+                <span>클릭해서 이미지 넣기</span>
+              </div>
             </div>
           </div>
 
           <div class="project-line-grid">
-            <div class="project-col">
+            <div class="project-col project-col-request">
               <div class="project-col-title">의뢰 접수</div>
               <div class="project-line">
                 <div class="inline-label">최초문의</div>
@@ -195,9 +219,9 @@
                 <div class="inline-label">의뢰구분</div>
                 <div class="inline-value" contenteditable="true" data-inline-field="inquiryType">매수 의뢰</div>
               </div>
-              <div class="project-line memo-line">
-                <div class="inline-label">메모</div>
-                <div class="inline-value memo" contenteditable="true" data-inline-field="inquiryMemo">블로그 보고 전화. 군산권 먼저 보고 익산까지 확장 검토.</div>
+              <div class="memo-note">
+                <div class="memo-note-title">메모</div>
+                <div class="memo-note-body" contenteditable="true" data-inline-field="inquiryMemo">블로그 보고 전화. 군산권 먼저 보고 익산까지 확장 검토.</div>
               </div>
             </div>
 
@@ -427,6 +451,21 @@
     const modal=document.getElementById('simpleModal'), modalTitle=document.getElementById('modalTitle'), modalDesc=document.getElementById('modalDesc'), modalContent=document.getElementById('modalContent'); let modalMode='';
     function openModal(mode){ modalMode=mode; const titles={register:'매물입력기로 새 등록',quick:'간편 새 매물 등록',search:'전체 매물에서 검색'}; modalTitle.textContent=titles[mode]; modalDesc.textContent= mode==='register'?'매물입력기로 이동합니다.':mode==='search'?'매물번호나 주소로 검색합니다.':'기본 정보만 입력합니다.'; modalContent.innerHTML= mode==='search'?'<div class="modal-grid"><input class="edit-field" placeholder="매물번호 / 주소 / 지역"><select class="edit-field"><option>전체</option><option>매매</option><option>임대</option></select></div><div class="confirm-box" style="margin-top:10px">검색 결과 예시: MK-260623-777 / 군산 오식도동 공장 / 22억</div>':'<div class="modal-grid"><input class="edit-field" placeholder="매물명"><input class="edit-field" placeholder="소재지"><input class="edit-field" placeholder="가격"><input class="edit-field" placeholder="대지/건물"></div>'; modal.classList.add('show'); }
     document.querySelectorAll('[data-open-modal]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.openModal))); function closeModal(){modal.classList.remove('show')} document.getElementById('modalClose').onclick=closeModal; document.getElementById('modalCancel').onclick=closeModal; document.getElementById('modalApply').onclick=()=>{ markChange('후보매물 추가'); addCandidate(modalMode==='search'?'manual_search':'direct_register'); closeModal(); renderAll(); };
+
+    const businessCardSlot=document.getElementById('businessCardSlot');
+    const businessCardInput=document.getElementById('businessCardInput');
+    const businessCardPreview=document.getElementById('businessCardPreview');
+    if(businessCardSlot && businessCardInput && businessCardPreview){
+      businessCardSlot.addEventListener('click',()=>businessCardInput.click());
+      businessCardSlot.addEventListener('keydown',e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); businessCardInput.click(); }});
+      businessCardInput.addEventListener('change',()=>{
+        const file=businessCardInput.files && businessCardInput.files[0];
+        if(!file) return;
+        const reader=new FileReader();
+        reader.onload=()=>{ businessCardPreview.src=reader.result; businessCardSlot.classList.add('has-image'); markChange('명함 이미지 추가'); };
+        reader.readAsDataURL(file);
+      });
+    }
     renderAll();
   </script>
 </body>

@@ -18,63 +18,30 @@ function getInput(req) {
   return req.query || {};
 }
 
-function regionText(region) {
-  const r = region || {};
-  return [
-    r.area1 && r.area1.name,
-    r.area2 && r.area2.name,
-    r.area3 && r.area3.name,
-    r.area4 && r.area4.name
-  ].filter(Boolean).join(' ');
-}
-
-function landNumber(land) {
-  const l = land || {};
-  const n1 = l.number1 || '';
-  const n2 = l.number2 || '';
-  return n1 ? `${n1}${n2 ? '-' + n2 : ''}` : '';
-}
-
-function buildJibunAddress(result) {
-  if (!result) return '';
-  const base = regionText(result.region);
-  const num = landNumber(result.land);
-  return [base, num].filter(Boolean).join(' ').trim();
-}
-
-function buildRoadAddressWithoutBuilding(result) {
-  if (!result) return '';
-  const region = result.region || {};
-  const land = result.land || {};
-  const area1 = region.area1 && region.area1.name ? region.area1.name : '';
-  const area2 = region.area2 && region.area2.name ? region.area2.name : '';
-  const area3 = region.area3 && region.area3.name ? region.area3.name : '';
-  const roadName = land.name || '';
-  const number = landNumber(land);
-  return [area1, area2, area3, roadName, number].filter(Boolean).join(' ').trim();
-}
-
 function pickAddress(payload) {
   const results = payload && Array.isArray(payload.results) ? payload.results : [];
   if (!results.length) return '';
 
-  // 현재위치 출발지는 경로조회 안정성을 위해 건물명/상호명이 붙는 도로명 주소보다
-  // 지번 주소를 우선 사용한다. 예: 전북특별자치도 군산시 나운동 805-1
-  const addrResult = results.find((r) => r && r.name === 'addr');
-  const jibun = buildJibunAddress(addrResult);
-  if (jibun) return jibun;
-
-  // 일부 응답은 name이 다르게 오거나 addr 결과가 없을 수 있으므로,
-  // land.number가 있는 결과에서 지번 형태를 한 번 더 시도한다.
   for (const r of results) {
-    const candidate = buildJibunAddress(r);
-    if (candidate && /\d/.test(candidate)) return candidate;
-  }
+    const region = r.region || {};
+    const land = r.land || {};
+    const area1 = region.area1 && region.area1.name ? region.area1.name : '';
+    const area2 = region.area2 && region.area2.name ? region.area2.name : '';
+    const area3 = region.area3 && region.area3.name ? region.area3.name : '';
+    const area4 = region.area4 && region.area4.name ? region.area4.name : '';
 
-  // 마지막 대안: 도로명 주소를 쓰되 건물명(addition0)은 절대 붙이지 않는다.
-  const roadResult = results.find((r) => r && r.name === 'roadaddr') || results[0];
-  const road = buildRoadAddressWithoutBuilding(roadResult);
-  if (road) return road;
+    const roadName = land.name || '';
+    const number1 = land.number1 || '';
+    const number2 = land.number2 || '';
+    const building = land.addition0 && land.addition0.value ? land.addition0.value : '';
+
+    const roadNumber = number1 ? `${number1}${number2 ? '-' + number2 : ''}` : '';
+    const roadAddress = [area1, area2, area3, roadName, roadNumber].filter(Boolean).join(' ');
+    if (roadName && roadNumber) return building ? `${roadAddress} ${building}` : roadAddress;
+
+    const jibun = [area1, area2, area3, area4, roadNumber].filter(Boolean).join(' ');
+    if (jibun) return jibun;
+  }
 
   return '';
 }
@@ -104,7 +71,7 @@ module.exports = async function handler(req, res) {
 
   const params = new URLSearchParams();
   params.set('coords', `${lng},${lat}`);
-  params.set('orders', 'addr,roadaddr');
+  params.set('orders', 'roadaddr,addr');
   params.set('output', 'json');
 
   const controller = new AbortController();

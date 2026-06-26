@@ -94,38 +94,60 @@
 }
 
 
-/* mobile result position and panel fold */
-.mobileFoldBtn{display:none}
+
+/* mobile panel drag divider */
+.mobilePanelHandle{display:none}
 @media(max-width:760px){
-  .app{overflow:hidden}
-  .mapWrap,.panel{transition:height .22s ease,min-height .22s ease,max-height .22s ease}
-  .mobileFoldBtn{
+  .app{
+    display:block;
+    overflow:hidden;
+    --mobile-map-height:44vh;
+  }
+  .mapWrap{
+    height:var(--mobile-map-height);
+    min-height:10vh;
+    max-height:90vh;
+  }
+  .panel{
+    height:calc(100vh - var(--mobile-map-height));
+    min-height:10vh;
+    max-height:90vh;
+    overflow:hidden;
+  }
+  .body{
+    height:calc(100% - 72px);
+    max-height:none;
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .mobilePanelHandle{
     display:flex;
     position:absolute;
     left:50%;
-    bottom:-16px;
-    z-index:40;
-    width:34px;
-    height:34px;
+    bottom:-6px;
+    z-index:45;
+    width:10vw;
+    min-width:34px;
+    max-width:54px;
+    height:10px;
     transform:translateX(-50%);
     align-items:center;
     justify-content:center;
     border:1px solid #d1d5db;
-    border-radius:999px;
+    border-radius:3px;
     background:#fff;
-    color:#111827;
-    box-shadow:0 8px 22px rgba(15,23,42,.16);
-    font-size:21px;
-    line-height:1;
-    font-weight:900;
+    box-shadow:0 2px 8px rgba(15,23,42,.10);
     padding:0;
+    touch-action:none;
+    cursor:ns-resize;
   }
-  .body{
-    display:flex;
-    flex-direction:column;
-    max-height:calc(56vh - 84px);
-    overflow:auto;
-    -webkit-overflow-scrolling:touch;
+  .mobilePanelHandle::before{
+    content:"";
+    width:72%;
+    height:2px;
+    border-radius:999px;
+    background:#6b7280;
+    display:block;
   }
   .result.show{
     order:-1;
@@ -140,21 +162,6 @@
     overflow:auto;
     -webkit-overflow-scrolling:touch;
   }
-  body.mobilePanelCollapsed .mapWrap{
-    height:82vh;
-  }
-  body.mobilePanelCollapsed .panel{
-    height:18vh;
-    min-height:18vh;
-    max-height:18vh;
-    overflow:hidden;
-  }
-  body.mobilePanelCollapsed .body{
-    display:none;
-  }
-  body.mobilePanelCollapsed .mobileFoldBtn{
-    bottom:-16px;
-  }
 }
 
 </style>
@@ -166,7 +173,7 @@
     <div class="mapbar"><strong>경로설정</strong><span id="mapStatus">네이버 지도 로딩 중</span></div>
     <div class="mapGuide" id="mapGuide"><img class="mapCarpetHero" src="/route-setting/magic-carpet.png" alt="" aria-hidden="true"><strong class="magicTitle">매직 카펫</strong><span>계산이 끝나면 추천 순서대로 지도에 핀이 표시됩니다.</span></div>
     <div class="legend"><span><i class="dot a"></i>출발</span><span><i class="dot s"></i>방문</span><span><i class="dot z"></i>도착</span></div>
-    <button class="mobileFoldBtn" id="mobileFoldBtn" type="button" aria-label="아래 패널 접기" aria-expanded="true">⌄</button>
+    <button class="mobilePanelHandle" id="mobilePanelHandle" type="button" aria-label="패널 크기 조절"></button>
   </section>
 
   <aside class="panel">
@@ -336,12 +343,7 @@ function renderResult(best,returnToStart){
   latestResult={...best,returnToStart};
   totalTimeEl.textContent=formatDuration(best.durationMs);
   if(window.matchMedia&&window.matchMedia('(max-width:760px)').matches){
-    document.body.classList.remove('mobilePanelCollapsed');
-    if(mobileFoldBtn){
-      mobileFoldBtn.textContent='⌄';
-      mobileFoldBtn.setAttribute('aria-expanded','true');
-      mobileFoldBtn.setAttribute('aria-label','아래 패널 접기');
-    }
+    setMobilePanelState('middle');
   }
   $('resultSummary').textContent=`${best.route.length}개 지점 · ${best.orderCount.toLocaleString('ko-KR')}개 순서 비교`;
   $('routeList').innerHTML=best.route.map((p,i)=>{
@@ -578,16 +580,91 @@ visitsInput.addEventListener('blur',()=>{
 
 $('findRoute').onclick=findRoute;
 
-const mobileFoldBtn=$('mobileFoldBtn');
-if(mobileFoldBtn){
-  mobileFoldBtn.onclick=()=>{
-    const collapsed=document.body.classList.toggle('mobilePanelCollapsed');
-    mobileFoldBtn.textContent=collapsed?'⌃':'⌄';
-    mobileFoldBtn.setAttribute('aria-expanded', String(!collapsed));
-    mobileFoldBtn.setAttribute('aria-label', collapsed?'아래 패널 펼치기':'아래 패널 접기');
-    setTimeout(refreshMap,260);
-  };
+
+const mobilePanelHandle=$('mobilePanelHandle');
+const mobilePanelStates={top:90,middle:44,bottom:10};
+let mobilePanelDragActive=false;
+
+function isMobileLayout(){
+  return !!(window.matchMedia&&window.matchMedia('(max-width:760px)').matches);
 }
+
+function clampMapPercent(value){
+  return Math.max(10,Math.min(90,value));
+}
+
+function setMobileMapPercent(value){
+  if(!isMobileLayout())return;
+  document.documentElement.style.setProperty('--mobile-map-height',`${clampMapPercent(value)}vh`);
+  setTimeout(refreshMap,80);
+}
+
+function setMobilePanelState(state){
+  if(!isMobileLayout())return;
+  setMobileMapPercent(mobilePanelStates[state]||mobilePanelStates.middle);
+}
+
+function nearestMobilePanelState(percent){
+  const states=Object.entries(mobilePanelStates);
+  let best=states[0];
+  for(const item of states){
+    if(Math.abs(item[1]-percent)<Math.abs(best[1]-percent))best=item;
+  }
+  return best[0];
+}
+
+function pointerY(e){
+  if(e.touches&&e.touches.length)return e.touches[0].clientY;
+  if(e.changedTouches&&e.changedTouches.length)return e.changedTouches[0].clientY;
+  return e.clientY;
+}
+
+if(mobilePanelHandle){
+  const startDrag=e=>{
+    if(!isMobileLayout())return;
+    mobilePanelDragActive=true;
+    mobilePanelHandle.setPointerCapture&&e.pointerId!==undefined&&mobilePanelHandle.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  };
+  const moveDrag=e=>{
+    if(!mobilePanelDragActive||!isMobileLayout())return;
+    const y=pointerY(e);
+    const percent=clampMapPercent((y/window.innerHeight)*100);
+    document.documentElement.style.setProperty('--mobile-map-height',`${percent}vh`);
+    refreshMap();
+    e.preventDefault();
+  };
+  const endDrag=e=>{
+    if(!mobilePanelDragActive)return;
+    mobilePanelDragActive=false;
+    const y=pointerY(e);
+    const percent=clampMapPercent((y/window.innerHeight)*100);
+    setMobilePanelState(nearestMobilePanelState(percent));
+    e.preventDefault();
+  };
+
+  mobilePanelHandle.addEventListener('pointerdown',startDrag);
+  window.addEventListener('pointermove',moveDrag,{passive:false});
+  window.addEventListener('pointerup',endDrag,{passive:false});
+  window.addEventListener('pointercancel',endDrag,{passive:false});
+
+  mobilePanelHandle.addEventListener('click',()=>{
+    if(!isMobileLayout())return;
+    const current=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-map-height'))||mobilePanelStates.middle;
+    const state=nearestMobilePanelState(current);
+    const next=state==='middle'?'top':state==='top'?'bottom':'middle';
+    setMobilePanelState(next);
+  });
+}
+
+window.addEventListener('resize',()=>{
+  if(isMobileLayout()){
+    const current=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-map-height'))||mobilePanelStates.middle;
+    setMobileMapPercent(current);
+  }else{
+    document.documentElement.style.removeProperty('--mobile-map-height');
+  }
+});
 
 $('officeStart').onclick=()=>{startInput.value='전북 군산시 나운동 805-1';resetResult();startInput.focus()};
 $('currentStart').onclick=setCurrentLocationAsStart;

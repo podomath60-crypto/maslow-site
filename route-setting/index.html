@@ -696,7 +696,7 @@ function removeVisitAt(index){
   items.splice(index,1);
   setVisitsFromItems(items,items.length>0);
   visitValueBeforeInput=visitsInput.value;
-  resetResult();
+  
   showStatus('방문지를 제거했습니다.','ok');
 }
 function getVisitDeleteMarkPositions(){
@@ -948,7 +948,7 @@ function appendVisitAddress(address){
   if(!items.some(v=>v.toLowerCase()===key))items.push(value);
   setVisitsFromItems(items,items.length>0);
   visitValueBeforeInput=visitsInput.value;
-  resetResult();
+  
   visitsInput.focus();
   showStatus('지도에서 선택한 지점을 방문지에 추가했습니다.','ok');
 }
@@ -1225,7 +1225,7 @@ async function setCurrentLocationTo(target){
     showStatus('현재 위치를 주소로 변환 중...');
     const item=await reverseGeocode(lat,lng);
     targetInput.value=item.address||`현재위치: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-    resetResult();
+    
     showStatus(`현재 위치를 ${isEnd?'도착지':'출발지'}에 입력했습니다.`,'ok');
     const maps=getNaverMaps();
     if(maps&&naverMap){
@@ -1271,7 +1271,7 @@ function scheduleVisitPasteComma(){
     addCommaAfterVisitPaste();
     formatVisitsInput(true);
     visitValueBeforeInput=visitsInput.value;
-    resetResult();
+    
   },80);
 }
 
@@ -1291,7 +1291,7 @@ visitsInput.addEventListener('paste',e=>{
     formatVisitsInput(true);
     visitValueBeforeInput=visitsInput.value;
     visitsInput.focus();
-    resetResult();
+    
     return;
   }
 
@@ -1314,7 +1314,7 @@ visitsInput.addEventListener('input',e=>{
   }
 
   visitValueBeforeInput=visitsInput.value;
-  resetResult();
+  
 });
 
 visitsInput.addEventListener('mousemove',updateVisitDeleteCursor);
@@ -1333,7 +1333,7 @@ visitsInput.addEventListener('click',()=>{
 visitsInput.addEventListener('blur',()=>{
   formatVisitsInput(true);
   visitValueBeforeInput=visitsInput.value;
-  resetResult();
+  
 });
 
 $('findRoute').onclick=findRoute;
@@ -1482,9 +1482,9 @@ window.addEventListener('resize',()=>{
   }
 });
 
-$('officeStart').onclick=()=>{startInput.value='전북특별자치도 군산시 나운동 805-1';resetResult();startInput.focus()};
+$('officeStart').onclick=()=>{startInput.value='전북특별자치도 군산시 나운동 805-1';startInput.focus()};
 $('currentStart').onclick=setCurrentLocationAsStart;
-$('officeEnd').onclick=()=>{if(returnChk.checked){showStatus('출발지로 복귀가 체크되어 있어 도착지를 입력할 수 없습니다.','err');return;}endInput.value='전북특별자치도 군산시 나운동 805-1';resetResult();endInput.focus()};
+$('officeEnd').onclick=()=>{if(returnChk.checked){showStatus('출발지로 복귀가 체크되어 있어 도착지를 입력할 수 없습니다.','err');return;}endInput.value='전북특별자치도 군산시 나운동 805-1';endInput.focus()};
 $('currentEnd').onclick=setCurrentLocationAsEnd;
 
 $('copyResult').onclick=async()=>{if(!latestResult)return;await navigator.clipboard.writeText(resultText());showStatus('추천 결과를 복사했습니다.','ok')};

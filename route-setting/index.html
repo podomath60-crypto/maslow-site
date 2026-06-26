@@ -96,7 +96,7 @@
 
 
 /* mobile panel drag divider */
-.mobilePanelHandle{display:none}
+.mobilePanelDragZone,.mobilePanelHandle{display:none}
 @media(max-width:760px){
   .app{
     display:block;
@@ -107,18 +107,34 @@
     height:var(--mobile-map-height);
     min-height:10vh;
     max-height:90vh;
+    overflow:visible;
+    z-index:5;
   }
   .panel{
     height:calc(100vh - var(--mobile-map-height));
     min-height:10vh;
     max-height:90vh;
     overflow:hidden;
+    position:relative;
+    z-index:1;
   }
   .body{
     height:calc(100% - 72px);
     max-height:none;
     overflow:auto;
     -webkit-overflow-scrolling:touch;
+  }
+  .mobilePanelDragZone{
+    display:block;
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:-20px;
+    z-index:44;
+    height:40px;
+    background:transparent;
+    touch-action:none;
+    cursor:ns-resize;
   }
   .mobilePanelHandle{
     display:flex;
@@ -133,11 +149,12 @@
     transform:translateX(-50%);
     align-items:center;
     justify-content:center;
-    border:1px solid #d1d5db;
+    border:1px solid #7c3aed;
     border-radius:3px;
-    background:#fff;
+    background:#8b5cf6;
     box-shadow:0 2px 8px rgba(15,23,42,.10);
     padding:0;
+    pointer-events:none;
     touch-action:none;
     cursor:ns-resize;
   }
@@ -146,7 +163,7 @@
     width:72%;
     height:2px;
     border-radius:999px;
-    background:#6b7280;
+    background:#ffffff;
     display:block;
   }
   .result.show{
@@ -173,7 +190,8 @@
     <div class="mapbar"><strong>경로설정</strong><span id="mapStatus">네이버 지도 로딩 중</span></div>
     <div class="mapGuide" id="mapGuide"><img class="mapCarpetHero" src="/route-setting/magic-carpet.png" alt="" aria-hidden="true"><strong class="magicTitle">매직 카펫</strong><span>계산이 끝나면 추천 순서대로 지도에 핀이 표시됩니다.</span></div>
     <div class="legend"><span><i class="dot a"></i>출발</span><span><i class="dot s"></i>방문</span><span><i class="dot z"></i>도착</span></div>
-    <button class="mobilePanelHandle" id="mobilePanelHandle" type="button" aria-label="패널 크기 조절"></button>
+    <div class="mobilePanelDragZone" id="mobilePanelDragZone" aria-hidden="true"></div>
+    <button class="mobilePanelHandle" id="mobilePanelHandle" type="button" aria-label="패널 크기 조절" tabindex="-1"></button>
   </section>
 
   <aside class="panel">
@@ -582,6 +600,8 @@ $('findRoute').onclick=findRoute;
 
 
 const mobilePanelHandle=$('mobilePanelHandle');
+const mobilePanelDragZone=$('mobilePanelDragZone');
+const mobilePanelRoot=document.querySelector('.app');
 const mobilePanelStates={top:90,middle:44,bottom:10};
 let mobilePanelDragActive=false;
 
@@ -595,7 +615,7 @@ function clampMapPercent(value){
 
 function setMobileMapPercent(value){
   if(!isMobileLayout())return;
-  document.documentElement.style.setProperty('--mobile-map-height',`${clampMapPercent(value)}vh`);
+  mobilePanelRoot.style.setProperty('--mobile-map-height',`${clampMapPercent(value)}vh`);
   setTimeout(refreshMap,80);
 }
 
@@ -619,18 +639,19 @@ function pointerY(e){
   return e.clientY;
 }
 
-if(mobilePanelHandle){
+const mobilePanelDragSurface=mobilePanelDragZone||mobilePanelHandle;
+if(mobilePanelDragSurface){
   const startDrag=e=>{
     if(!isMobileLayout())return;
     mobilePanelDragActive=true;
-    mobilePanelHandle.setPointerCapture&&e.pointerId!==undefined&&mobilePanelHandle.setPointerCapture(e.pointerId);
+    mobilePanelDragSurface.setPointerCapture&&e.pointerId!==undefined&&mobilePanelDragSurface.setPointerCapture(e.pointerId);
     e.preventDefault();
   };
   const moveDrag=e=>{
     if(!mobilePanelDragActive||!isMobileLayout())return;
     const y=pointerY(e);
     const percent=clampMapPercent((y/window.innerHeight)*100);
-    document.documentElement.style.setProperty('--mobile-map-height',`${percent}vh`);
+    mobilePanelRoot.style.setProperty('--mobile-map-height',`${percent}vh`);
     refreshMap();
     e.preventDefault();
   };
@@ -643,26 +664,18 @@ if(mobilePanelHandle){
     e.preventDefault();
   };
 
-  mobilePanelHandle.addEventListener('pointerdown',startDrag);
+  mobilePanelDragSurface.addEventListener('pointerdown',startDrag);
   window.addEventListener('pointermove',moveDrag,{passive:false});
   window.addEventListener('pointerup',endDrag,{passive:false});
   window.addEventListener('pointercancel',endDrag,{passive:false});
-
-  mobilePanelHandle.addEventListener('click',()=>{
-    if(!isMobileLayout())return;
-    const current=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-map-height'))||mobilePanelStates.middle;
-    const state=nearestMobilePanelState(current);
-    const next=state==='middle'?'top':state==='top'?'bottom':'middle';
-    setMobilePanelState(next);
-  });
 }
 
 window.addEventListener('resize',()=>{
   if(isMobileLayout()){
-    const current=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-map-height'))||mobilePanelStates.middle;
+    const current=parseFloat(getComputedStyle(mobilePanelRoot).getPropertyValue('--mobile-map-height'))||mobilePanelStates.middle;
     setMobileMapPercent(current);
   }else{
-    document.documentElement.style.removeProperty('--mobile-map-height');
+    mobilePanelRoot.style.removeProperty('--mobile-map-height');
   }
 });
 

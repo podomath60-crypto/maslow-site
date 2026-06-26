@@ -93,6 +93,70 @@
   .head{padding-left:0;padding-right:0}
 }
 
+
+/* mobile result position and panel fold */
+.mobileFoldBtn{display:none}
+@media(max-width:760px){
+  .app{overflow:hidden}
+  .mapWrap,.panel{transition:height .22s ease,min-height .22s ease,max-height .22s ease}
+  .mobileFoldBtn{
+    display:flex;
+    position:absolute;
+    left:50%;
+    bottom:-16px;
+    z-index:40;
+    width:34px;
+    height:34px;
+    transform:translateX(-50%);
+    align-items:center;
+    justify-content:center;
+    border:1px solid #d1d5db;
+    border-radius:999px;
+    background:#fff;
+    color:#111827;
+    box-shadow:0 8px 22px rgba(15,23,42,.16);
+    font-size:21px;
+    line-height:1;
+    font-weight:900;
+    padding:0;
+  }
+  .body{
+    display:flex;
+    flex-direction:column;
+    max-height:calc(56vh - 84px);
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .result.show{
+    order:-1;
+    margin-top:0;
+    margin-bottom:14px;
+  }
+  .result.show .resultHeader{
+    align-items:flex-start;
+  }
+  .result.show .routeList{
+    max-height:42vh;
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  body.mobilePanelCollapsed .mapWrap{
+    height:82vh;
+  }
+  body.mobilePanelCollapsed .panel{
+    height:18vh;
+    min-height:18vh;
+    max-height:18vh;
+    overflow:hidden;
+  }
+  body.mobilePanelCollapsed .body{
+    display:none;
+  }
+  body.mobilePanelCollapsed .mobileFoldBtn{
+    bottom:-16px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -102,6 +166,7 @@
     <div class="mapbar"><strong>경로설정</strong><span id="mapStatus">네이버 지도 로딩 중</span></div>
     <div class="mapGuide" id="mapGuide"><img class="mapCarpetHero" src="/route-setting/magic-carpet.png" alt="" aria-hidden="true"><strong class="magicTitle">매직 카펫</strong><span>계산이 끝나면 추천 순서대로 지도에 핀이 표시됩니다.</span></div>
     <div class="legend"><span><i class="dot a"></i>출발</span><span><i class="dot s"></i>방문</span><span><i class="dot z"></i>도착</span></div>
+    <button class="mobileFoldBtn" id="mobileFoldBtn" type="button" aria-label="아래 패널 접기" aria-expanded="true">⌄</button>
   </section>
 
   <aside class="panel">
@@ -160,7 +225,7 @@
       </div>
 
       <button class="primary" id="findRoute">최단경로 찾기</button>
-      <div class="fine">붙여넣은 경유지 주소를 콤마 기준으로 정리한 뒤, 가능한 방문 순서 중 총시간이 가장 짧은 순서를 추천합니다.</div>
+      <div class="fine">붙여넣은 경유지 주소를 정규화 한 뒤, 가능한 방문 순서 중 총시간이 가장 짧은 순서를 추천합니다.</div>
 
       <div class="result" id="result">
         <div class="resultHeader"><h2>추천 순서</h2><div class="summary" id="resultSummary"></div></div>
@@ -270,6 +335,14 @@ function routeTextHtml(meta){
 function renderResult(best,returnToStart){
   latestResult={...best,returnToStart};
   totalTimeEl.textContent=formatDuration(best.durationMs);
+  if(window.matchMedia&&window.matchMedia('(max-width:760px)').matches){
+    document.body.classList.remove('mobilePanelCollapsed');
+    if(mobileFoldBtn){
+      mobileFoldBtn.textContent='⌄';
+      mobileFoldBtn.setAttribute('aria-expanded','true');
+      mobileFoldBtn.setAttribute('aria-label','아래 패널 접기');
+    }
+  }
   $('resultSummary').textContent=`${best.route.length}개 지점 · ${best.orderCount.toLocaleString('ko-KR')}개 순서 비교`;
   $('routeList').innerHTML=best.route.map((p,i)=>{
     const meta=makeRouteLabel(p,i,best.route.length,returnToStart);
@@ -504,6 +577,18 @@ visitsInput.addEventListener('blur',()=>{
 });
 
 $('findRoute').onclick=findRoute;
+
+const mobileFoldBtn=$('mobileFoldBtn');
+if(mobileFoldBtn){
+  mobileFoldBtn.onclick=()=>{
+    const collapsed=document.body.classList.toggle('mobilePanelCollapsed');
+    mobileFoldBtn.textContent=collapsed?'⌃':'⌄';
+    mobileFoldBtn.setAttribute('aria-expanded', String(!collapsed));
+    mobileFoldBtn.setAttribute('aria-label', collapsed?'아래 패널 펼치기':'아래 패널 접기');
+    setTimeout(refreshMap,260);
+  };
+}
+
 $('officeStart').onclick=()=>{startInput.value='전북 군산시 나운동 805-1';resetResult();startInput.focus()};
 $('currentStart').onclick=setCurrentLocationAsStart;
 $('officeEnd').onclick=()=>{if(returnChk.checked){showStatus('출발지로 복귀가 체크되어 있어 도착지를 입력할 수 없습니다.','err');return;}endInput.value='전북 군산시 나운동 805-1';resetResult();endInput.focus()};

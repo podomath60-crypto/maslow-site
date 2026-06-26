@@ -348,6 +348,14 @@
   }
 }
 
+
+/* Mobile first-load overlay fix: keep panel above map provider bottom controls */
+@media(max-width:760px){
+  .panel{z-index:2000;}
+  .mobilePanelDragZone{z-index:2010;}
+  .mobilePanelHandle{z-index:2011;}
+}
+
 </style>
 </head>
 <body>
@@ -985,6 +993,11 @@ const mobilePanelDragZone=$('mobilePanelDragZone');
 const mobilePanelRoot=document.querySelector('.app');
 const mobilePanelStates={top:88,middle:50,bottom:10};
 let mobilePanelDragActive=false;
+
+if(window.matchMedia&&window.matchMedia('(max-width:760px)').matches&&mobilePanelRoot){
+  mobilePanelRoot.dataset.mobilePanelState='middle';
+  mobilePanelRoot.style.setProperty('--mobile-panel-top','50vh');
+}
 
 function isMobileLayout(){
   return !!(window.matchMedia&&window.matchMedia('(max-width:760px)').matches);

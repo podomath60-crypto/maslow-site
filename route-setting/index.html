@@ -101,25 +101,34 @@
   .app{
     display:block;
     overflow:hidden;
-    --mobile-map-height:44vh;
+    position:relative;
+    height:100vh;
+    --mobile-panel-top:50vh;
   }
   .mapWrap{
-    height:var(--mobile-map-height);
-    min-height:10vh;
-    max-height:100vh;
-    overflow:visible;
+    height:50vh;
+    min-height:50vh;
+    max-height:50vh;
+    border-right:0;
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+    position:relative;
     z-index:5;
   }
   .panel{
-    height:calc(100vh - var(--mobile-map-height));
-    min-height:10vh;
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:calc(100vh - var(--mobile-panel-top));
+    min-height:0;
     max-height:90vh;
-    overflow:hidden;
-    position:relative;
-    z-index:1;
+    overflow:visible;
+    z-index:50;
   }
   .app[data-mobile-panel-state="top"] .mapWrap{
     height:100vh;
+    min-height:100vh;
     max-height:100vh;
   }
   .app[data-mobile-panel-state="top"] .panel{
@@ -138,8 +147,8 @@
     position:absolute;
     left:0;
     right:0;
-    bottom:-20px;
-    z-index:44;
+    top:-20px;
+    z-index:60;
     height:40px;
     background:transparent;
     touch-action:none;
@@ -149,8 +158,8 @@
     display:flex;
     position:absolute;
     left:50%;
-    bottom:-6px;
-    z-index:45;
+    top:-6px;
+    z-index:61;
     width:10vw;
     min-width:34px;
     max-width:54px;
@@ -176,11 +185,11 @@
     display:block;
   }
   .app[data-mobile-panel-state="top"] .mobilePanelDragZone{
-    bottom:0;
+    top:-44px;
     height:44px;
   }
   .app[data-mobile-panel-state="top"] .mobilePanelHandle{
-    bottom:6px;
+    top:-14px;
   }
   .result.show{
     order:-1;
@@ -206,11 +215,11 @@
     <div class="mapbar"><strong>경로설정</strong><span id="mapStatus">네이버 지도 로딩 중</span></div>
     <div class="mapGuide" id="mapGuide"><img class="mapCarpetHero" src="/route-setting/magic-carpet.png" alt="" aria-hidden="true"><strong class="magicTitle">매직 카펫</strong><span>계산이 끝나면 추천 순서대로 지도에 핀이 표시됩니다.</span></div>
     <div class="legend"><span><i class="dot a"></i>출발</span><span><i class="dot s"></i>방문</span><span><i class="dot z"></i>도착</span></div>
-    <div class="mobilePanelDragZone" id="mobilePanelDragZone" aria-hidden="true"></div>
-    <button class="mobilePanelHandle" id="mobilePanelHandle" type="button" aria-label="패널 크기 조절" tabindex="-1"></button>
   </section>
 
   <aside class="panel">
+    <div class="mobilePanelDragZone" id="mobilePanelDragZone" aria-hidden="true"></div>
+    <button class="mobilePanelHandle" id="mobilePanelHandle" type="button" aria-label="패널 크기 조절" tabindex="-1"></button>
     <div class="head">
       <div class="headLine"><h1>🪄 최단 경로</h1><div class="totalLine"><small>총 예상시간</small><span id="totalTime">--</span></div></div>
     </div>
@@ -618,7 +627,7 @@ $('findRoute').onclick=findRoute;
 const mobilePanelHandle=$('mobilePanelHandle');
 const mobilePanelDragZone=$('mobilePanelDragZone');
 const mobilePanelRoot=document.querySelector('.app');
-const mobilePanelStates={top:100,middle:44,bottom:10};
+const mobilePanelStates={top:100,middle:50,bottom:10};
 let mobilePanelDragActive=false;
 
 function isMobileLayout(){
@@ -631,7 +640,7 @@ function clampMapPercent(value){
 
 function setMobileMapPercent(value){
   if(!isMobileLayout())return;
-  mobilePanelRoot.style.setProperty('--mobile-map-height',`${clampMapPercent(value)}vh`);
+  mobilePanelRoot.style.setProperty('--mobile-panel-top',`${clampMapPercent(value)}vh`);
   setTimeout(refreshMap,80);
 }
 
@@ -670,7 +679,7 @@ if(mobilePanelDragSurface){
     if(!mobilePanelDragActive||!isMobileLayout())return;
     const y=pointerY(e);
     const percent=clampMapPercent((y/window.innerHeight)*100);
-    mobilePanelRoot.style.setProperty('--mobile-map-height',`${percent}vh`);
+    mobilePanelRoot.style.setProperty('--mobile-panel-top',`${percent}vh`);
     refreshMap();
     e.preventDefault();
   };
@@ -691,10 +700,10 @@ if(mobilePanelDragSurface){
 
 window.addEventListener('resize',()=>{
   if(isMobileLayout()){
-    const current=parseFloat(getComputedStyle(mobilePanelRoot).getPropertyValue('--mobile-map-height'))||mobilePanelStates.middle;
+    const current=parseFloat(getComputedStyle(mobilePanelRoot).getPropertyValue('--mobile-panel-top'))||mobilePanelStates.middle;
     setMobileMapPercent(current);
   }else{
-    mobilePanelRoot.style.removeProperty('--mobile-map-height');
+    mobilePanelRoot.style.removeProperty('--mobile-panel-top');
     delete mobilePanelRoot.dataset.mobilePanelState;
   }
 });

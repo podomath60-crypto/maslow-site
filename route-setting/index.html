@@ -821,6 +821,44 @@
   }
 }
 
+
+/* Print map override: use a live Naver map with numbered pins only, no route line */
+@media print{
+  .printMapBox{
+    width:100%;
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    overflow:hidden;
+    background:#f8fafc;
+    margin-bottom:8px;
+    page-break-inside:avoid;
+  }
+  .printMapLive{
+    width:100%;
+    height:118mm;
+    background:#f8fafc;
+  }
+}
+
+
+/* Offscreen print sheet layout so the print map can render before window.print() */
+.printSheet.offscreen{
+  position:fixed;
+  left:-200vw;
+  top:0;
+  width:190mm;
+  display:block!important;
+  visibility:hidden;
+  pointer-events:none;
+  z-index:-1;
+  background:#fff;
+}
+.printSheet.offscreen .printMapLive{
+  width:100%;
+  height:118mm;
+  background:#f8fafc;
+}
+
 </style>
 </head>
 <body>
@@ -1505,13 +1543,13 @@ async function printRouteResult(){
   const mapImage=await captureCurrentMapImage();
   removePrintSheet();
   const sheet=document.createElement('section');
-  sheet.className='printSheet';
+  sheet.className='printSheet offscreen';
   const now=new Date();
   const dateText=now.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   sheet.innerHTML=`<div class="printPage">
     <div class="printTop">
       <div class="printTitle">최단 경로 추천 순서</div>
-      <div class="printMeta">출력일 ${esc(dateText)}<br>지도와 추천순서는 현재 화면 기준입니다.</div>
+      <div class="printMeta">출력일 ${esc(dateText)}지도와 추천순서는 </div>
     </div>
     <div class="printGrid">
       <div class="printMapBox">${mapImage?`<img src="${esc(mapImage)}" alt="지도">`:`<div style="padding:16px;font-size:13px;font-weight:800;color:#64748b">지도 이미지를 캡처하지 못했습니다. 화면의 지도와 함께 추천순서를 확인해 주세요.</div>`}</div>
@@ -2033,7 +2071,7 @@ async function printRouteResult(){
   sheet.innerHTML=`<div class="printPage">
     <div class="printTop">
       <div class="printTitle">최단 경로 추천 순서</div>
-      <div class="printMeta">출력일 ${esc(dateText)}<br>프린트 버튼을 누른 순간의 지도 화면</div>
+      <div class="printMeta">출력일 ${esc(dateText)}</div>
     </div>
     <div class="printMapBox">
       <div class="printMapInner">
@@ -2055,6 +2093,154 @@ async function printRouteResult(){
   document.body.appendChild(sheet);
   setTimeout(()=>window.print(),80);
 }
+
+
+/* Print map override: render a separate Naver map with numbered pins only */
+let printMapInstance=null;
+let printMapMarkers=[];
+
+function destroyPrintMap(){
+  printMapMarkers.forEach(m=>{try{m.setMap(null)}catch(e){}});
+  printMapMarkers=[];
+  printMapInstance=null;
+}
+
+function makePrintPinIcon(index){
+  const label=String(index+1);
+  const html=`<div style="position:relative;width:28px;height:36px;">
+    <div style="position:absolute;left:50%;top:0;width:24px;height:24px;transform:translateX(-50%) rotate(-45deg);border-radius:999px 999px 999px 0;background:#2563eb;border:2px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.24);"></div>
+    <div style="position:absolute;left:50%;top:4px;transform:translateX(-50%);min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:950;line-height:1;color:#fff;">${esc(label)}</div>
+  </div>`;
+  const maps=getNaverMaps();
+  return {
+    content:html,
+    anchor:maps?new maps.Point(14,34):undefined
+  };
+}
+
+function buildPrintRouteItemHtml(routeItem,index,total,returnToStart,segments){
+  const meta=makeRouteLabel(routeItem,index,total,returnToStart);
+  const seg=segments[index];
+  const segText=seg?`<div class="printSegment">다음 구간 ${esc(seg.summary.durationText)} · ${esc(seg.summary.distanceText)}</div>`:'';
+  return `<div class="printRouteItem">
+    <div class="printBadge">${index+1}</div>
+    <div>
+      <span class="printRouteLabel">${esc(meta.text)}</span>
+      <div class="printRouteText">${esc(routeItem.address||routeItem.resolvedAddress||'')}</div>
+      ${segText}
+    </div>
+  </div>`;
+}
+
+function makePrintRouteHtml(){
+  if(!latestResult)return '';
+  const route=latestResult.route||[];
+  const useTwoCols=route.length>=4;
+  const splitIndex=useTwoCols?Math.ceil(route.length/2):route.length;
+  const col1=route.slice(0,splitIndex).map((item,i)=>buildPrintRouteItemHtml(item,i,route.length,latestResult.returnToStart,latestResult.segments)).join('');
+  const col2=useTwoCols?route.slice(splitIndex).map((item,i)=>buildPrintRouteItemHtml(item,splitIndex+i,route.length,latestResult.returnToStart,latestResult.segments)).join(''):'';
+  return `<div class="printColumns ${useTwoCols?'twoCol':''}">
+    <div class="printColumn">${col1}</div>
+    ${useTwoCols?`<div class="printColumn">${col2}</div>`:''}
+  </div>`;
+}
+
+function renderPrintMapPins(){
+  const maps=getNaverMaps();
+  if(!maps||!latestResult)return false;
+  const mapEl=document.getElementById('printMapLive');
+  if(!mapEl)return false;
+
+  destroyPrintMap();
+
+  const route=latestResult.route||[];
+  const center=route[0]&&hasCoord(route[0])?new maps.LatLng(route[0].lat,route[0].lng):new maps.LatLng(36.5,127.8);
+  printMapInstance=new maps.Map(mapEl,{
+    center,
+    zoom:11,
+    draggable:false,
+    pinchZoom:false,
+    scrollWheel:false,
+    keyboardShortcuts:false,
+    disableDoubleTapZoom:true,
+    disableDoubleClickZoom:true,
+    mapDataControl:false,
+    scaleControl:false,
+    logoControl:false
+  });
+
+  const bounds=new maps.LatLngBounds();
+  route.forEach((item,index)=>{
+    if(!hasCoord(item))return;
+    const pos=new maps.LatLng(item.lat,item.lng);
+    bounds.extend(pos);
+    const marker=new maps.Marker({
+      position:pos,
+      map:printMapInstance,
+      title:`${index+1}. ${item.address||item.resolvedAddress||''}`,
+      icon:makePrintPinIcon(index)
+    });
+    printMapMarkers.push(marker);
+  });
+
+  try{
+    if(route.length>1){
+      printMapInstance.fitBounds(bounds,{top:40,right:40,bottom:40,left:40});
+    }else if(route.length===1){
+      printMapInstance.setCenter(new maps.LatLng(route[0].lat,route[0].lng));
+      printMapInstance.setZoom(13);
+    }
+  }catch(e){}
+  return true;
+}
+
+async function printRouteResult(){
+  if(!latestResult){
+    showStatus('출력할 추천순서가 없습니다. 최단경로를 먼저 찾으세요.','err');
+    return;
+  }
+  removePrintSheet();
+  destroyPrintMap();
+
+  const sheet=document.createElement('section');
+  sheet.className='printSheet';
+  const now=new Date();
+  const dateText=now.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  const routeCount=(latestResult.route||[]).length;
+
+  sheet.innerHTML=`<div class="printPage">
+    <div class="printTop">
+      <div class="printTitle">최단 경로 추천 순서</div>
+      <div class="printMeta">출력일 ${esc(dateText)}</div>
+    </div>
+    <div class="printMapBox">
+      <div id="printMapLive" class="printMapLive" aria-label="출력용 지도"></div>
+    </div>
+    <div class="printRouteSection">
+      <div class="printSummary">
+        <span>총 예상시간 ${esc(formatDuration(latestResult.durationMs))}</span>
+        <span>총 거리 ${esc(formatDistance(latestResult.distanceM))}</span>
+        <span>${routeCount}개 지점</span>
+        <span>${routeCount<=3?'경로 1열':'경로 2열'}</span>
+      </div>
+      ${makePrintRouteHtml()}
+    </div>
+  </div>`;
+  document.body.appendChild(sheet);
+
+  const ok=renderPrintMapPins();
+  if(!ok){
+    showStatus('출력용 지도를 만들지 못했습니다.','err');
+    return;
+  }
+
+  setTimeout(()=>{sheet.classList.remove('offscreen');window.print();},700);
+}
+
+window.addEventListener('afterprint',()=>{
+  destroyPrintMap();
+  removePrintSheet();
+});
 
 window.addEventListener('resize',refreshMap);
 initNaverMap();

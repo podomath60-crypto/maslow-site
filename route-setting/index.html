@@ -18,7 +18,94 @@
 <style>
 :root{--green:#03c75a;--blue:#2563eb;--dark:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f4f6f8;--danger:#e11d48;--amber:#f59e0b}
 *{box-sizing:border-box}html,body{height:100%;overscroll-behavior:none}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--dark);overscroll-behavior:none}button,input,textarea{font-family:inherit}.app{width:100vw;height:100vh;display:grid;grid-template-columns:65% 35%;overflow:hidden;overscroll-behavior:none}
-.mapWrap{position:relative;height:100vh;border-right:1px solid var(--line);overflow:hidden;background:#eef2f7}.naverMapCanvas{position:absolute;inset:0;z-index:2;width:100%;height:100%;min-height:320px;background:#f8f9fa;display:block;transform:translateZ(0)}.mapbar{display:none}.mapbar strong{font-size:15px}.mapbar span{margin-left:8px;font-size:12px;color:var(--muted)}.mapGuide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:18;width:min(560px,72%);padding:18px 20px;border:1px solid rgba(148,163,184,.55);border-radius:18px;background:rgba(255,255,255,.88);box-shadow:0 12px 34px rgba(15,23,42,.12);text-align:center;color:#475569;line-height:1.55;pointer-events:none}.mapGuide strong{display:block;color:#0f172a;margin-bottom:4px}.mapGuide.hide{display:none}.legend{position:absolute;left:18px;bottom:18px;z-index:20;background:rgba(255,255,255,.94);border:1px solid var(--line);box-shadow:0 12px 34px rgba(15,23,42,.12);border-radius:14px;padding:10px 13px;font-size:12px;color:#475569;display:flex;gap:10px}.dot{display:inline-block;width:12px;height:12px;border-radius:99px;margin-right:4px;vertical-align:-2px}.dot.a{background:var(--green)}.dot.s{background:var(--blue)}.dot.z{background:#111827}
+.mapWrap{position:relative;height:100vh;border-right:1px solid var(--line);overflow:hidden;background:#eef2f7}
+.mapZoomSlider{
+  position:absolute;
+  left:18px;
+  bottom:58px;
+  z-index:31;
+  width:320px;
+  max-width:calc(100vw - 36px);
+  padding:10px 12px 9px;
+  border:1px solid rgba(15,23,42,.18);
+  border-radius:14px;
+  background:rgba(255,255,255,.94);
+  box-shadow:0 10px 28px rgba(15,23,42,.18);
+  backdrop-filter:blur(8px);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.mapZoomSlider .zoomMinus,
+.mapZoomSlider .zoomPlus{
+  flex:0 0 auto;
+  width:26px;
+  height:26px;
+  border:0;
+  border-radius:999px;
+  background:#111827;
+  color:#fff;
+  font-size:18px;
+  font-weight:900;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+.mapZoomSlider input[type=range]{
+  flex:1 1 auto;
+  width:250px;
+  height:28px;
+  margin:0;
+  accent-color:#dc2626;
+  cursor:pointer;
+}
+.mapZoomSlider input[type=range]::-webkit-slider-runnable-track{
+  height:8px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#fecaca,#dc2626);
+}
+.mapZoomSlider input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:28px;
+  height:28px;
+  margin-top:-10px;
+  border-radius:50%;
+  border:3px solid #fff;
+  background:#dc2626;
+  box-shadow:0 3px 10px rgba(15,23,42,.35);
+}
+.mapZoomSlider input[type=range]::-moz-range-track{
+  height:8px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#fecaca,#dc2626);
+}
+.mapZoomSlider input[type=range]::-moz-range-thumb{
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  border:3px solid #fff;
+  background:#dc2626;
+  box-shadow:0 3px 10px rgba(15,23,42,.35);
+}
+.mapZoomSlider .zoomValue{
+  flex:0 0 34px;
+  text-align:right;
+  font-size:12px;
+  font-weight:900;
+  color:#111827;
+}
+@media(max-width:720px){
+  .mapZoomSlider{
+    left:12px;
+    bottom:62px;
+    width:300px;
+    padding:9px 10px;
+  }
+}
+.naverMapCanvas{position:absolute;inset:0;z-index:2;width:100%;height:100%;min-height:320px;background:#f8f9fa;display:block;transform:translateZ(0)}.mapbar{display:none}.mapbar strong{font-size:15px}.mapbar span{margin-left:8px;font-size:12px;color:var(--muted)}.mapGuide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:18;width:min(560px,72%);padding:18px 20px;border:1px solid rgba(148,163,184,.55);border-radius:18px;background:rgba(255,255,255,.88);box-shadow:0 12px 34px rgba(15,23,42,.12);text-align:center;color:#475569;line-height:1.55;pointer-events:none}.mapGuide strong{display:block;color:#0f172a;margin-bottom:4px}.mapGuide.hide{display:none}.legend{position:absolute;left:18px;bottom:18px;z-index:20;background:rgba(255,255,255,.94);border:1px solid var(--line);box-shadow:0 12px 34px rgba(15,23,42,.12);border-radius:14px;padding:10px 13px;font-size:12px;color:#475569;display:flex;gap:10px}.dot{display:inline-block;width:12px;height:12px;border-radius:99px;margin-right:4px;vertical-align:-2px}.dot.a{background:var(--green)}.dot.s{background:var(--blue)}.dot.z{background:#111827}
 .panel{height:100vh;background:#fff;display:flex;flex-direction:column;overflow:hidden;padding-right:16px;overscroll-behavior:none}.head{padding:18px 22px 13px 16px;border-bottom:1px solid var(--line)}.headLine{display:flex;align-items:baseline;gap:20px}.head h1{margin:0;font-size:22px;letter-spacing:-.04em;white-space:nowrap}.totalLine{display:flex;align-items:baseline;gap:8px;color:#15803d;font-weight:950;line-height:1;white-space:nowrap}.totalLine small{font-size:12px;color:#64748b;font-weight:900}.totalLine span{font-size:30px;letter-spacing:-.055em}.body{flex:1;overflow:auto;padding:14px 18px 118px 12px;overscroll-behavior:contain}.section{margin-bottom:12px}.label{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;font-size:13px;font-weight:950;letter-spacing:-.03em}.hint{font-size:11px;color:#64748b;font-weight:700}.inputRow{display:flex;gap:7px;align-items:center}.inputRow .input{flex:1;min-width:0}.locBtn{width:38px;height:38px;border:1px solid #d1d5db;border-radius:11px;background:#f8fafc;color:#0f172a;display:grid;place-items:center;cursor:pointer;flex:0 0 38px}.locBtn:hover{background:#f0fdf4;border-color:#86efac;color:#15803d}.locBtn.currentBtn:hover{background:#eff6ff;border-color:#bfdbfe;color:#2563eb}.locBtn:disabled{opacity:.55;cursor:wait}.locBtn svg{width:20px;height:20px;display:block}.input,.textarea{width:100%;border:1px solid #d1d5db;border-radius:11px;background:#fff;outline:none;font-size:15px}.input{height:42px;padding:9px 11px}.textarea{height:96px;min-height:96px;max-height:96px;resize:none;padding:11px 12px;line-height:1.5;overflow:auto}.input:focus,.textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(3,199,90,.12)}.input:disabled{background:#f1f5f9;color:#64748b}.check{display:flex;gap:7px;align-items:center;margin-top:7px;font-size:12px;color:#334155;font-weight:800}.check input{width:15px;height:15px;accent-color:var(--green)}.primary{width:100%;height:44px;border:0;border-radius:13px;background:var(--green);color:#fff;font-size:14px;font-weight:950;cursor:pointer}.primary:disabled{opacity:.62;cursor:not-allowed}.status{margin:0 0 12px;padding:9px 10px;border-radius:11px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;font-size:12px;font-weight:850;display:none}.status.show{display:block}.status.ok{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.status.err{background:#fff1f2;border-color:#fecdd3;color:#be123c}.progress{height:6px;border-radius:99px;background:#e5e7eb;overflow:hidden;margin-top:7px}.progress span{display:block;height:100%;width:0;background:var(--green);transition:width .18s ease}.result{display:none;margin-top:14px}.body>.result{margin-top:0;margin-bottom:12px}.result.show{display:block}.resultHeader{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:8px}.resultHeader h2{margin:0;font-size:16px;letter-spacing:-.04em}.summary{font-size:12px;color:#475569;font-weight:850;white-space:nowrap}.routeList{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}.routeItem{position:relative;min-height:43px;border-bottom:1px solid #eef2f7;background:#fff}.routeItem:last-child{border-bottom:0}.routeMain{display:flex;align-items:center;gap:8px;min-width:0;padding:9px 186px 9px 12px}.routeBadge{display:inline-flex;width:26px;height:26px;border-radius:8px;align-items:center;justify-content:center;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:950;flex:0 0 26px}.routeBadge.a{background:#f0fdf4;color:#15803d}.routeBadge.z{background:#f1f5f9;color:#0f172a}.routeText{min-width:0;font-size:12px;line-height:1.35;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.routeText .muted{color:#64748b;font-weight:800}.segmentBetween{position:absolute;right:12px;top:100%;width:172px;height:34px;transform:translateY(-17px);z-index:5;display:flex;align-items:center;justify-content:flex-end;pointer-events:none}.segmentBlank{display:none}.segmentRight{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:8px;width:100%;height:34px;padding-left:22px;pointer-events:auto}.segmentBracket{position:absolute;left:0;top:0;bottom:0;width:18px;border-right:3px solid #0ea5e9;border-top:3px solid #0ea5e9;border-bottom:3px solid #0ea5e9}.segmentText{color:#1d4ed8;font-size:12px;font-weight:950;line-height:1.1;text-align:right;white-space:nowrap;background:#fff;padding:0 2px}.segOpen{width:31px;height:31px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc;cursor:pointer;font-size:15px;line-height:1;display:grid;place-items:center;flex:0 0 31px}.segOpen:hover{background:#eff6ff;border-color:#bfdbfe}.actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}.secondary{height:38px;border:1px solid #dbe3ef;border-radius:11px;background:#f8fafc;color:#0f172a;font-size:12px;font-weight:950;cursor:pointer}.secondary.dark{background:#111827;color:#fff;border-color:#111827}.fine{margin-top:8px;font-size:11px;color:#64748b;line-height:1.45}.warn{color:#be123c;font-weight:900}.addressErrorBox{border:1px solid #fecdd3;background:#fff1f2;color:#9f1239;border-radius:14px;padding:12px 13px;font-size:13px;line-height:1.5;font-weight:850}.addressErrorBox strong{display:block;margin-bottom:5px;font-size:14px;color:#be123c}.addressErrorAddress{margin-top:8px;padding:9px 10px;border-radius:10px;background:#fff;border:1px solid #fecdd3;color:#0f172a;font-weight:900;word-break:break-all}.addressErrorGuide{margin-top:8px;color:#64748b;font-size:12px;font-weight:800}
 @media(max-width:1100px){.app{grid-template-columns:60% 40%}.totalLine span{font-size:26px}.textarea{height:86px;min-height:86px;max-height:86px}}
 @media(max-width:760px){.app{display:block;overflow:auto}.mapWrap{height:44vh;border-right:0;border-bottom:1px solid var(--line)}.mapbar,.legend{display:none}.panel{height:auto;min-height:56vh}.body{padding-bottom:32px}.headLine{flex-wrap:wrap;gap:8px 16px}.input,.textarea{font-size:16px}.input{height:44px}.textarea{height:104px;min-height:104px;max-height:104px}}
@@ -1106,6 +1193,12 @@
 <main class="app">
   <section class="mapWrap" id="mapWrap">
     <div class="naverMapCanvas" id="naverMap" aria-label="네이버 지도"></div>
+    <div class="mapZoomSlider" id="mapZoomSlider" aria-label="지도 확대 축소">
+      <button class="zoomMinus" id="mapZoomMinus" type="button" aria-label="지도 축소">−</button>
+      <input id="mapZoomRange" type="range" min="6" max="19" step="0.1" value="11" aria-label="지도 확대 축소 슬라이더">
+      <button class="zoomPlus" id="mapZoomPlus" type="button" aria-label="지도 확대">+</button>
+      <span class="zoomValue" id="mapZoomValue">11</span>
+    </div>
     <div class="mapbar"><strong>경로설정</strong><span id="mapStatus">네이버 지도 로딩 중</span></div>
     <div class="mapGuide" id="mapGuide"><img class="mapCarpetHero" src="/route-setting/magic-carpet.png" alt="" aria-hidden="true"><strong class="magicTitle">매직 카펫</strong><span>계산이 끝나면 추천 순서대로 지도에 핀이 표시됩니다.</span></div>
     <div class="legend"><span><i class="dot a"></i>출발</span><span><i class="dot s"></i>방문</span><span><i class="dot z"></i>도착</span></div>
@@ -1188,58 +1281,90 @@ const statusEl=$('status'), totalTimeEl=$('totalTime'), resultEl=$('result'), pa
 const mapWrap=$('mapWrap'), mapGuide=$('mapGuide');
 let naverMap=null, markers=[], polylines=[], latestResult=null;
 let mapClickBubble=null, mapClickTouchPin=null, pendingMapClickVisit=null;
-let mapWheelZoomInstalled=false;
+let mapZoomSliderInstalled=false;
+let mapZoomSliderApplying=false;
 
-function getMapWheelOrigin(e){
+function getMapZoomBounds(){
+  const min=6;
+  const max=19;
   try{
-    const maps=getNaverMaps();
-    const projection=naverMap&&naverMap.getProjection&&naverMap.getProjection();
-    if(!maps||!projection||!mapWrap)return null;
-    const rect=mapWrap.getBoundingClientRect();
-    const x=e.clientX-rect.left;
-    const y=e.clientY-rect.top;
-    return projection.fromOffsetToCoord(new maps.Point(x,y));
-  }catch(err){
-    try{return naverMap&&naverMap.getCenter&&naverMap.getCenter()}catch(e2){return null}
+    const optMin=naverMap&&naverMap.getOptions&&naverMap.getOptions('minZoom');
+    const optMax=naverMap&&naverMap.getOptions&&naverMap.getOptions('maxZoom');
+    return {
+      min:Number.isFinite(Number(optMin))?Number(optMin):min,
+      max:Number.isFinite(Number(optMax))?Number(optMax):max
+    };
+  }catch(e){
+    return {min,max};
   }
 }
 
-function installFineMapWheelZoom(){
-  if(mapWheelZoomInstalled||!mapWrap)return;
-  mapWheelZoomInstalled=true;
-
-  mapWrap.addEventListener('wheel',e=>{
-    if(!naverMap)return;
-    if(e.ctrlKey||e.metaKey)return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    const dy=Number(e.deltaY)||0;
-    if(!dy)return;
-
-    // 스크롤을 누적하지 않는다. 들어온 휠 입력 1회마다 바로 작은 상대 줌만 적용한다.
-    const delta=Math.max(-0.16,Math.min(0.16,-dy*0.0016));
-    const origin=getMapWheelOrigin(e);
-
-    try{
-      if(naverMap.zoomBy){
-        naverMap.zoomBy(delta,origin||undefined,false);
-      }else{
-        const current=Number(naverMap.getZoom&&naverMap.getZoom());
-        if(Number.isFinite(current)&&naverMap.setZoom){
-          naverMap.setZoom(current+delta,false);
-        }
-      }
-    }catch(err){
-      try{
-        const current=Number(naverMap.getZoom&&naverMap.getZoom());
-        if(Number.isFinite(current)&&naverMap.setZoom){
-          naverMap.setZoom(current+(delta>0?1:-1),false);
-        }
-      }catch(e2){}
+function setMapZoomFromSlider(value){
+  if(!naverMap)return;
+  const z=Number(value);
+  if(!Number.isFinite(z))return;
+  mapZoomSliderApplying=true;
+  try{
+    const center=naverMap.getCenter&&naverMap.getCenter();
+    if(center&&naverMap.morph){
+      naverMap.morph(center,z,{duration:0});
+    }else if(naverMap.setZoom){
+      naverMap.setZoom(z);
     }
-  },{passive:false});
+  }catch(e){
+    try{if(naverMap.setZoom)naverMap.setZoom(z)}catch(err){}
+  }
+  setTimeout(()=>{mapZoomSliderApplying=false;},30);
+}
+
+function syncMapZoomSlider(){
+  if(!naverMap)return;
+  const range=$('mapZoomRange');
+  const value=$('mapZoomValue');
+  if(!range)return;
+  const bounds=getMapZoomBounds();
+  range.min=String(bounds.min);
+  range.max=String(bounds.max);
+  const z=Number(naverMap.getZoom&&naverMap.getZoom());
+  if(Number.isFinite(z)){
+    const shown=Math.round(z*10)/10;
+    range.value=String(shown);
+    if(value)value.textContent=String(shown);
+  }
+}
+
+function installMapZoomSlider(){
+  if(mapZoomSliderInstalled)return;
+  const range=$('mapZoomRange');
+  const minus=$('mapZoomMinus');
+  const plus=$('mapZoomPlus');
+  if(!range)return;
+  mapZoomSliderInstalled=true;
+
+  range.addEventListener('input',()=>setMapZoomFromSlider(range.value));
+  range.addEventListener('change',()=>setMapZoomFromSlider(range.value));
+
+  if(minus)minus.addEventListener('click',()=>{
+    const next=Math.max(Number(range.min)||6,(Number(range.value)||11)-0.5);
+    range.value=String(Math.round(next*10)/10);
+    setMapZoomFromSlider(range.value);
+    syncMapZoomSlider();
+  });
+  if(plus)plus.addEventListener('click',()=>{
+    const next=Math.min(Number(range.max)||19,(Number(range.value)||11)+0.5);
+    range.value=String(Math.round(next*10)/10);
+    setMapZoomFromSlider(range.value);
+    syncMapZoomSlider();
+  });
+
+  const maps=getNaverMaps();
+  try{
+    if(maps&&maps.Event&&naverMap){
+      maps.Event.addListener(naverMap,'zoom_changed',()=>{if(!mapZoomSliderApplying)syncMapZoomSlider()});
+      maps.Event.addListener(naverMap,'idle',syncMapZoomSlider);
+    }
+  }catch(e){}
+  syncMapZoomSlider();
 }
 let lastMapPointerPixel=null;
 let routeRunSeq=0;
@@ -1951,7 +2076,7 @@ async function findRoute(){
   }finally{if(runId===routeRunSeq)setBusy(false);endInput.disabled=returnChk.checked}
 }
 
-function waitForNaverMaps(retry=0){const maps=getNaverMaps();const el=$('naverMap');if(maps&&el&&el.clientWidth>0&&el.clientHeight>0){naverMap=new maps.Map(el,{center:new maps.LatLng(35.9676,126.7367),zoom:11,scrollWheel:false});installFineMapWheelZoom();installMapVisitClick();$('mapStatus').textContent='네이버 지도 연결됨';refreshMap();return}if(retry<35){setTimeout(()=>waitForNaverMaps(retry+1),120);return}$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 객체 또는 지도 영역 크기를 확인하지 못했습니다.','err')}
+function waitForNaverMaps(retry=0){const maps=getNaverMaps();const el=$('naverMap');if(maps&&el&&el.clientWidth>0&&el.clientHeight>0){naverMap=new maps.Map(el,{center:new maps.LatLng(35.9676,126.7367),zoom:11});installMapZoomSlider();installMapVisitClick();$('mapStatus').textContent='네이버 지도 연결됨';refreshMap();return}if(retry<35){setTimeout(()=>waitForNaverMaps(retry+1),120);return}$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 객체 또는 지도 영역 크기를 확인하지 못했습니다.','err')}
 async function initNaverMap(){try{const cfg=await fetch('/api/route-setting/config').then(r=>r.json());if(!cfg.ok||!cfg.clientId)throw new Error(cfg.message||'지도 Client ID가 없습니다.');const script=document.createElement('script');script.src=`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(cfg.clientId)}`;script.async=true;script.onload=()=>waitForNaverMaps();script.onerror=()=>{$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 스크립트 로딩 실패','err')};document.head.appendChild(script)}catch(e){$('mapStatus').textContent='지도 연결 대기';showStatus(e.message,'err')}}
 
 

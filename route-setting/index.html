@@ -393,52 +393,73 @@ function addCommaBlankAfterPaste(){
   visitsInput.selectionStart=visitsInput.selectionEnd=visitsInput.value.length;
 }
 
+let visitValueBeforeInput=visitsInput.value;
 let visitPasteTimer=null;
 
 function schedulePasteComma(){
   clearTimeout(visitPasteTimer);
   visitPasteTimer=setTimeout(()=>{
     addCommaBlankAfterPaste();
+    visitValueBeforeInput=visitsInput.value;
     resetResult();
-  },120);
+  },80);
 }
 
-visitsInput.addEventListener('input',e=>{
-  // 일반 타이핑/수정 중에는 콤마를 절대 강제로 붙이지 않는다.
-  if(e.inputType==='insertFromPaste'){
-    schedulePasteComma();
-    return;
-  }
-
-  const before=visitsInput.value;
-  const after=before.replace(/\r/g,'\n').replace(/\n+/g,', ');
-  if(after!==before){
-    visitsInput.value=after;
-    visitsInput.selectionStart=visitsInput.selectionEnd=visitsInput.value.length;
-  }
-  resetResult();
+visitsInput.addEventListener('beforeinput',()=>{
+  visitValueBeforeInput=visitsInput.value;
 });
 
 visitsInput.addEventListener('paste',e=>{
   const pasted=(e.clipboardData||window.clipboardData)?.getData('text')||'';
 
-  // clipboardData가 잡히는 PC/안드로이드/크롬 계열: 직접 넣고 즉시 콤마 추가.
   if(pasted){
     e.preventDefault();
     const s=visitsInput.selectionStart||0;
     const t=visitsInput.selectionEnd||s;
     visitsInput.value=visitsInput.value.slice(0,s)+pasted+visitsInput.value.slice(t);
     addCommaBlankAfterPaste();
+    visitValueBeforeInput=visitsInput.value;
     visitsInput.focus();
     resetResult();
     return;
   }
 
-  // clipboardData가 안 잡히는 모바일: 기본 붙여넣기를 허용하고, 직후 콤마만 붙인다.
+  // iOS/Samsung 일부 환경은 clipboardData가 비어 있다. 기본 붙여넣기 후 input에서 잡는다.
   schedulePasteComma();
 });
 
-visitsInput.addEventListener('blur',resetResult);
+visitsInput.addEventListener('input',e=>{
+  const before=visitValueBeforeInput||'';
+  const current=visitsInput.value;
+  const inserted=current.length-before.length;
+
+  const after=current.replace(/\r/g,'\n').replace(/\n+/g,', ');
+  if(after!==current){
+    visitsInput.value=after;
+    visitsInput.selectionStart=visitsInput.selectionEnd=visitsInput.value.length;
+  }
+
+  // 모바일에서 paste 이벤트가 안 뜨는 경우를 위한 최종 감지.
+  // 일반 타이핑은 inputType=insertText + data 1글자라서 제외된다.
+  const isPaste =
+    e.inputType==='insertFromPaste' ||
+    e.inputType==='insertFromDrop' ||
+    (typeof e.data==='string' && e.data.length>=2) ||
+    (!e.inputType && inserted>=8);
+
+  if(isPaste){
+    schedulePasteComma();
+    return;
+  }
+
+  visitValueBeforeInput=visitsInput.value;
+  resetResult();
+});
+
+visitsInput.addEventListener('blur',()=>{
+  visitValueBeforeInput=visitsInput.value;
+  resetResult();
+});
 
 $('findRoute').onclick=findRoute;
 $('officeStart').onclick=()=>{startInput.value='전북 군산시 나운동 805-1';resetResult();startInput.focus()};

@@ -344,35 +344,18 @@ async function setCurrentLocationAsStart(){
 
 returnChk.onchange=()=>{endInput.disabled=returnChk.checked;if(returnChk.checked)endInput.value='';resetResult()};
 [startInput,endInput].forEach(el=>el.addEventListener('input',resetResult));
-function forceVisitCommaBlank(){
+function appendCommaAfterPaste(){
   const items=uniqueLines(visitsInput.value);
   visitsInput.value=items.length?items.join(', ')+', ':'';
   visitsInput.selectionStart=visitsInput.selectionEnd=visitsInput.value.length;
 }
 
-let visitsBeforeInputValue='';
-let visitsInputTimer=null;
-
-visitsInput.addEventListener('beforeinput',()=>{
-  visitsBeforeInputValue=visitsInput.value;
-});
-
 visitsInput.addEventListener('input',e=>{
   const before=visitsInput.value;
-  let after=before.replace(/\r/g,'\n').replace(/\n+/g,', ');
+  const after=before.replace(/\r/g,'\n').replace(/\n+/g,', ');
   if(after!==before){
     visitsInput.value=after;
     visitsInput.selectionStart=visitsInput.selectionEnd=visitsInput.value.length;
-  }
-
-  const prev=visitsBeforeInputValue||'';
-  const insertedLength=Math.abs(visitsInput.value.length-prev.length);
-  const looksLikePaste=e.inputType==='insertFromPaste'||(e.data&&e.data.length>1)||insertedLength>3;
-
-  clearTimeout(visitsInputTimer);
-  if(looksLikePaste){
-    visitsInputTimer=setTimeout(()=>{forceVisitCommaBlank();resetResult()},30);
-    return;
   }
   resetResult();
 });
@@ -380,26 +363,24 @@ visitsInput.addEventListener('input',e=>{
 visitsInput.addEventListener('paste',e=>{
   const pasted=(e.clipboardData||window.clipboardData)?.getData('text')||'';
   if(!pasted){
-    setTimeout(()=>{forceVisitCommaBlank();resetResult()},30);
+    setTimeout(()=>{appendCommaAfterPaste();resetResult()},30);
     return;
   }
+
   e.preventDefault();
-  const current=uniqueLines(visitsInput.value);
-  const added=uniqueLines(pasted);
-  const merged=[];
-  const seen=new Set();
-  [...current,...added].forEach(a=>{
-    const key=a.toLowerCase();
-    if(!seen.has(key)){seen.add(key);merged.push(a)}
-  });
-  visitsInput.value=merged.length?merged.join(', ')+', ':'';
+
+  const before=visitsInput.value.slice(0,visitsInput.selectionStart||0);
+  const after=visitsInput.value.slice(visitsInput.selectionEnd||visitsInput.selectionStart||0);
+  const nextValue=`${before}${pasted}${after}`;
+
+  visitsInput.value=nextValue;
+  appendCommaAfterPaste();
   visitsInput.focus();
-  visitsInput.selectionStart=visitsInput.selectionEnd=visitsInput.value.length;
   resetResult();
 });
 
-visitsInput.addEventListener('change',()=>{forceVisitCommaBlank();resetResult()});
-visitsInput.addEventListener('blur',()=>{forceVisitCommaBlank();resetResult()});
+visitsInput.addEventListener('blur',resetResult);
+
 $('findRoute').onclick=findRoute;
 $('officeStart').onclick=()=>{startInput.value='전북 군산시 나운동 805-1';resetResult();startInput.focus()};
 $('currentStart').onclick=setCurrentLocationAsStart;

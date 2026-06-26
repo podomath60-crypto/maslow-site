@@ -249,6 +249,13 @@ function forceVisitCommaBlank(){
   visitsInput.selectionStart=visitsInput.selectionEnd=visitsInput.value.length;
 }
 
+let visitsBeforeInputValue='';
+let visitsInputTimer=null;
+
+visitsInput.addEventListener('beforeinput',()=>{
+  visitsBeforeInputValue=visitsInput.value;
+});
+
 visitsInput.addEventListener('input',e=>{
   const before=visitsInput.value;
   let after=before.replace(/\r/g,'\n').replace(/\n+/g,', ');
@@ -256,16 +263,26 @@ visitsInput.addEventListener('input',e=>{
     visitsInput.value=after;
     visitsInput.selectionStart=visitsInput.selectionEnd=visitsInput.value.length;
   }
-  if(e.inputType==='insertFromPaste'){
-    setTimeout(()=>{forceVisitCommaBlank();resetResult()},0);
+
+  const prev=visitsBeforeInputValue||'';
+  const insertedLength=Math.abs(visitsInput.value.length-prev.length);
+  const looksLikePaste=e.inputType==='insertFromPaste'||(e.data&&e.data.length>1)||insertedLength>3;
+
+  clearTimeout(visitsInputTimer);
+  if(looksLikePaste){
+    visitsInputTimer=setTimeout(()=>{forceVisitCommaBlank();resetResult()},30);
     return;
   }
   resetResult();
 });
 
 visitsInput.addEventListener('paste',e=>{
+  const pasted=(e.clipboardData||window.clipboardData)?.getData('text')||'';
+  if(!pasted){
+    setTimeout(()=>{forceVisitCommaBlank();resetResult()},30);
+    return;
+  }
   e.preventDefault();
-  const pasted=(e.clipboardData||window.clipboardData).getData('text')||'';
   const current=uniqueLines(visitsInput.value);
   const added=uniqueLines(pasted);
   const merged=[];
@@ -280,6 +297,7 @@ visitsInput.addEventListener('paste',e=>{
   resetResult();
 });
 
+visitsInput.addEventListener('change',()=>{forceVisitCommaBlank();resetResult()});
 visitsInput.addEventListener('blur',()=>{forceVisitCommaBlank();resetResult()});
 $('findRoute').onclick=findRoute;
 $('officeStart').onclick=()=>{startInput.value='전북 군산시 나운동 805-1';resetResult();startInput.focus()};

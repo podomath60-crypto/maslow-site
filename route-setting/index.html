@@ -7,7 +7,7 @@
 <style>
 :root{--green:#03c75a;--blue:#2563eb;--dark:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f4f6f8;--danger:#e11d48;--amber:#f59e0b}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--dark)}button,input{font-family:inherit}.app{width:100vw;height:100vh;display:grid;grid-template-columns:65% 35%;overflow:hidden}
-.mapWrap{position:relative;height:100vh;border-right:1px solid var(--line);overflow:hidden;background:#eef2f7}.map{position:absolute;inset:0}.mapFallback{position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.55)),linear-gradient(90deg,rgba(148,163,184,.22) 1px,transparent 1px),linear-gradient(rgba(148,163,184,.22) 1px,transparent 1px),radial-gradient(circle at 25% 35%,#bbf7d0 0,transparent 24%),radial-gradient(circle at 72% 42%,#bae6fd 0,transparent 26%),radial-gradient(circle at 45% 75%,#fed7aa 0,transparent 24%),#eef2f7;background-size:auto,48px 48px,48px 48px,auto,auto,auto,auto}
+.mapWrap{position:relative;height:100vh;border-right:1px solid var(--line);overflow:hidden;background:#eef2f7}.map{position:absolute;inset:0;z-index:1}.mapFallback{position:absolute;inset:0;z-index:0;background:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.55)),linear-gradient(90deg,rgba(148,163,184,.22) 1px,transparent 1px),linear-gradient(rgba(148,163,184,.22) 1px,transparent 1px),radial-gradient(circle at 25% 35%,#bbf7d0 0,transparent 24%),radial-gradient(circle at 72% 42%,#bae6fd 0,transparent 26%),radial-gradient(circle at 45% 75%,#fed7aa 0,transparent 24%),#eef2f7;background-size:auto,48px 48px,48px 48px,auto,auto,auto,auto}
 .mapbar{position:absolute;left:18px;top:18px;z-index:20;background:rgba(255,255,255,.94);border:1px solid var(--line);box-shadow:0 12px 34px rgba(15,23,42,.12);border-radius:14px;padding:10px 13px}.mapbar strong{font-size:15px}.mapbar span{margin-left:8px;font-size:12px;color:var(--muted)}
 .note{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,70%);padding:20px;border:1px dashed #94a3b8;border-radius:20px;background:rgba(255,255,255,.72);text-align:center;line-height:1.55;color:#475569;pointer-events:none}.note.hide{display:none}
 .pin{position:absolute;z-index:15;width:38px;height:38px;border-radius:999px 999px 999px 0;transform:translate(-50%,-100%) rotate(-45deg);display:grid;place-items:center;box-shadow:0 8px 22px rgba(0,0,0,.2);border:3px solid #fff}.pin span{transform:rotate(45deg);color:#fff;font-weight:900;font-size:13px}.pin.start{background:var(--green)}.pin.stop{background:var(--blue)}.pin.end{background:#111827}.routeLine{position:absolute;z-index:8;left:0;top:0;width:100%;height:100%;pointer-events:none}.legend{position:absolute;left:18px;bottom:18px;z-index:20;background:rgba(255,255,255,.94);border:1px solid var(--line);box-shadow:0 12px 34px rgba(15,23,42,.12);border-radius:14px;padding:10px 13px;font-size:12px;color:#475569;display:flex;gap:10px}.dot{display:inline-block;width:12px;height:12px;border-radius:99px;margin-right:4px;vertical-align:-2px}.dot.a{background:var(--green)}.dot.s{background:var(--blue)}.dot.z{background:#111827}
@@ -25,7 +25,7 @@
   <div class="map" id="naverMap"></div>
   <svg class="routeLine" id="routeLine"></svg>
   <div class="mapbar"><strong>경로설정</strong><span id="mapStatus">네이버 지도 로딩 중</span></div>
-  <div class="note" id="mapNote"><strong>지도 연결 준비 중</strong><br>Vercel 환경변수와 네이버 Web 서비스 URL이 맞으면 지도가 표시됩니다.<br>위치찾기 후 A / 1 / 2 / Z 핀이 지도에 표시됩니다.</div>
+  <div class="note" id="mapNote"><strong>네이버 지도 연결 중</strong><br>지도 연결이 끝나면 이 안내가 사라집니다.<br>주소를 입력하고 위치찾기를 누르면 핀이 표시됩니다.</div>
   <div class="legend"><span><i class="dot a"></i>출발</span><span><i class="dot s"></i>경유</span><span><i class="dot z"></i>도착</span></div>
 </section>
 <aside class="panel">
@@ -36,14 +36,14 @@
     <div class="routeFlow">
       <div class="card fixed">
         <div class="cardTop"><div class="badge a">A</div><div class="title">출발지</div><div class="topActions"><button class="mini" id="findStart">위치찾기</button></div></div>
-        <input id="start" value="전북 군산시 나운동 805-1" placeholder="출발지 주소 입력">
+        <input id="start" value="" placeholder="출발지 주소 입력">
         <div class="meta" id="startMeta">위치찾기를 누르면 좌표가 확정됩니다.</div>
       </div>
       <div id="stops"></div>
       <button class="add" id="add">+ 경유지 추가</button>
       <div class="card fixed">
         <div class="cardTop"><div class="badge z" id="endBadge">A</div><div class="title" id="endTitle">출발지 복귀</div><div class="topActions"><button class="mini seg" id="endSegment">구간지도</button><button class="mini" id="findEnd">위치찾기</button></div></div>
-        <input id="end" value="전북 군산시 나운동 805-1" placeholder="도착지 주소 입력">
+        <input id="end" value="" placeholder="도착지 주소 입력">
         <div class="meta" id="endMeta">복귀 체크 시 출발지와 같은 좌표를 사용합니다.</div>
         <label class="check"><input type="checkbox" id="return" checked>출발지로 복귀</label>
       </div>
@@ -62,10 +62,10 @@
 <script>
 const $=(id)=>document.getElementById(id);
 const stopsEl=$('stops'), mapWrap=$('mapWrap'), routeLine=$('routeLine'), startInput=$('start'), endInput=$('end'), ret=$('return');
-let naverMap=null, markers=[], polylines=[], nextId=3;
-let startPoint={id:'start',type:'start',address:'전북 군산시 나운동 805-1'};
-let endPoint={id:'end',type:'end',address:'전북 군산시 나운동 805-1'};
-let stops=[{id:1,address:'전북특별자치도 군산시 오식도동 868'},{id:2,address:'전북특별자치도 군산시 산북동 3067-2'},{id:3,address:'전북특별자치도 군산시 오식도동 857-22'}];
+let naverMap=null, markers=[], polylines=[], nextId=0;
+let startPoint={id:'start',type:'start',address:''};
+let endPoint={id:'end',type:'end',address:''};
+let stops=[];
 const fallbackPos=[{x:78,y:58},{x:32,y:42},{x:51,y:64},{x:39,y:28},{x:66,y:36},{x:24,y:70},{x:58,y:76},{x:72,y:24},{x:44,y:52},{x:20,y:34}];
 function esc(v){return String(v||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
 function showStatus(msg,type){const el=$('status');el.className='status show '+(type||'');el.textContent=msg;clearTimeout(showStatus.timer);showStatus.timer=setTimeout(()=>{el.className='status'},4200)}
@@ -86,8 +86,8 @@ stopsEl.ondragover=e=>{e.preventDefault();const dragging=stopsEl.querySelector('
 stopsEl.ondrop=e=>{e.preventDefault();const order=[...stopsEl.querySelectorAll('.stopCard')].map(c=>Number(c.dataset.id));stops=order.map(id=>stops.find(s=>s.id===id)).filter(Boolean);renderAll()}
 function getNaverMaps(){return window.naver&&window.naver.maps?window.naver.maps:null}
 function makeIcon(label,type){const maps=getNaverMaps();const color=type==='start'?'#03c75a':type==='stop'?'#2563eb':'#111827';return {content:`<div style="width:34px;height:34px;border-radius:999px 999px 999px 0;transform:rotate(-45deg);background:${color};border:3px solid #fff;box-shadow:0 8px 20px rgba(0,0,0,.22);display:grid;place-items:center"><span style="transform:rotate(45deg);color:#fff;font-weight:900;font-size:12px">${label}</span></div>`,anchor:maps?new maps.Point(17,34):undefined}}
-function clearMap(){markers.forEach(m=>m.setMap(null));polylines.forEach(l=>l.setMap(null));markers=[];polylines=[]}
-function renderMap(){clearMap();const maps=getNaverMaps();const pts=route();const coordPts=pts.filter(hasCoord);if(naverMap&&maps&&coordPts.length){$('mapNote').classList.add('hide');coordPts.forEach(p=>{markers.push(new maps.Marker({position:new maps.LatLng(p.lat,p.lng),map:naverMap,title:`${p.label}. ${p.address}`,icon:makeIcon(p.label,p.type)}))});const bounds=new maps.LatLngBounds();coordPts.forEach(p=>bounds.extend(new maps.LatLng(p.lat,p.lng)));if(coordPts.length===1){naverMap.setCenter(new maps.LatLng(coordPts[0].lat,coordPts[0].lng));naverMap.setZoom(13)}else{naverMap.fitBounds(bounds,{top:70,right:70,bottom:70,left:70})}drawNaverLines(pts)}else{drawFallback(pts)}renderPrint(pts)}
+function clearMap(){markers.forEach(m=>m.setMap(null));polylines.forEach(l=>l.setMap(null));markers=[];polylines=[];mapWrap.querySelectorAll('.pin').forEach(p=>p.remove());routeLine.innerHTML=''}
+function renderMap(){clearMap();const maps=getNaverMaps();const pts=route();const coordPts=pts.filter(hasCoord);if(naverMap&&maps){$('mapNote').classList.add('hide');$('mapFallback').style.display='none';if(coordPts.length){coordPts.forEach(p=>{markers.push(new maps.Marker({position:new maps.LatLng(p.lat,p.lng),map:naverMap,title:`${p.label}. ${p.address}`,icon:makeIcon(p.label,p.type)}))});const bounds=new maps.LatLngBounds();coordPts.forEach(p=>bounds.extend(new maps.LatLng(p.lat,p.lng)));if(coordPts.length===1){naverMap.setCenter(new maps.LatLng(coordPts[0].lat,coordPts[0].lng));naverMap.setZoom(13)}else{naverMap.fitBounds(bounds,{top:70,right:70,bottom:70,left:70})}drawNaverLines(pts)}}else{$('mapNote').classList.remove('hide');drawFallback(pts)}renderPrint(pts)}
 function drawNaverLines(pts){const maps=getNaverMaps();if(!maps||!naverMap)return;for(let i=1;i<pts.length;i++){const p=pts[i];let path=p.routePathFromPrev;if(p.id==='return')path=startPoint.routePathFromPrev;if(!path&&hasCoord(pts[i-1])&&hasCoord(p))path=[{lat:pts[i-1].lat,lng:pts[i-1].lng},{lat:p.lat,lng:p.lng}];if(path&&path.length){polylines.push(new maps.Polyline({map:naverMap,path:path.map(x=>new maps.LatLng(x.lat,x.lng)),strokeColor:'#0f172a',strokeWeight:4,strokeOpacity:.55,strokeStyle:'shortdash'}))}}}
 function drawFallback(pts){const fallbackPts=pts.map((p,i)=>({...p,pos:i===pts.length-1&&ret.checked?fallbackPos[0]:fallbackPos[Math.min(i,fallbackPos.length-1)]}));fallbackPts.forEach(p=>{const pin=document.createElement('div');pin.className=`pin ${p.type}`;pin.style.left=p.pos.x+'%';pin.style.top=p.pos.y+'%';pin.title=p.label+'. '+p.address;pin.innerHTML=`<span>${p.label}</span>`;mapWrap.appendChild(pin)});const w=mapWrap.clientWidth||1000,h=mapWrap.clientHeight||700;routeLine.setAttribute('viewBox',`0 0 ${w} ${h}`);if(fallbackPts.length>1){const poly=document.createElementNS('http://www.w3.org/2000/svg','polyline');poly.setAttribute('points',fallbackPts.map(p=>`${p.pos.x/100*w},${p.pos.y/100*h}`).join(' '));poly.setAttribute('fill','none');poly.setAttribute('stroke','#0f172a');poly.setAttribute('stroke-width','3');poly.setAttribute('stroke-dasharray','8 8');poly.setAttribute('stroke-linecap','round');poly.setAttribute('stroke-linejoin','round');poly.setAttribute('opacity','.45');routeLine.appendChild(poly)}}
 function renderPrint(pts){$('pDate').textContent=new Date().toLocaleDateString('ko-KR');const pm=$('pMap');pm.innerHTML='';const printable=pts.map((p,i)=>({...p,pos:i===pts.length-1&&ret.checked?fallbackPos[0]:fallbackPos[Math.min(i,fallbackPos.length-1)]}));printable.forEach(p=>{const pin=document.createElement('div');pin.className=`pPin ${p.type}`;pin.style.left=p.pos.x+'%';pin.style.top=p.pos.y+'%';pin.textContent=p.label;pm.appendChild(pin)});$('pRoute').innerHTML=pts.map(p=>`<div class="pItem"><strong>${esc(p.label)}</strong>${esc(p.address)}</div>`).join('')}

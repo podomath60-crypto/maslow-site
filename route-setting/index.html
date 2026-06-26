@@ -106,7 +106,7 @@
   .mapWrap{
     height:var(--mobile-map-height);
     min-height:10vh;
-    max-height:90vh;
+    max-height:100vh;
     overflow:visible;
     z-index:5;
   }
@@ -117,6 +117,15 @@
     overflow:hidden;
     position:relative;
     z-index:1;
+  }
+  .app[data-mobile-panel-state="top"] .mapWrap{
+    height:100vh;
+    max-height:100vh;
+  }
+  .app[data-mobile-panel-state="top"] .panel{
+    height:0;
+    min-height:0;
+    max-height:0;
   }
   .body{
     height:calc(100% - 72px);
@@ -165,6 +174,13 @@
     border-radius:999px;
     background:#ffffff;
     display:block;
+  }
+  .app[data-mobile-panel-state="top"] .mobilePanelDragZone{
+    bottom:0;
+    height:44px;
+  }
+  .app[data-mobile-panel-state="top"] .mobilePanelHandle{
+    bottom:6px;
   }
   .result.show{
     order:-1;
@@ -602,7 +618,7 @@ $('findRoute').onclick=findRoute;
 const mobilePanelHandle=$('mobilePanelHandle');
 const mobilePanelDragZone=$('mobilePanelDragZone');
 const mobilePanelRoot=document.querySelector('.app');
-const mobilePanelStates={top:90,middle:44,bottom:10};
+const mobilePanelStates={top:100,middle:44,bottom:10};
 let mobilePanelDragActive=false;
 
 function isMobileLayout(){
@@ -610,7 +626,7 @@ function isMobileLayout(){
 }
 
 function clampMapPercent(value){
-  return Math.max(10,Math.min(90,value));
+  return Math.max(10,Math.min(100,value));
 }
 
 function setMobileMapPercent(value){
@@ -621,7 +637,9 @@ function setMobileMapPercent(value){
 
 function setMobilePanelState(state){
   if(!isMobileLayout())return;
-  setMobileMapPercent(mobilePanelStates[state]||mobilePanelStates.middle);
+  const nextState=mobilePanelStates[state]!==undefined?state:'middle';
+  mobilePanelRoot.dataset.mobilePanelState=nextState;
+  setMobileMapPercent(mobilePanelStates[nextState]);
 }
 
 function nearestMobilePanelState(percent){
@@ -644,6 +662,7 @@ if(mobilePanelDragSurface){
   const startDrag=e=>{
     if(!isMobileLayout())return;
     mobilePanelDragActive=true;
+    mobilePanelRoot.dataset.mobilePanelState='dragging';
     mobilePanelDragSurface.setPointerCapture&&e.pointerId!==undefined&&mobilePanelDragSurface.setPointerCapture(e.pointerId);
     e.preventDefault();
   };
@@ -676,6 +695,7 @@ window.addEventListener('resize',()=>{
     setMobileMapPercent(current);
   }else{
     mobilePanelRoot.style.removeProperty('--mobile-map-height');
+    delete mobilePanelRoot.dataset.mobilePanelState;
   }
 });
 

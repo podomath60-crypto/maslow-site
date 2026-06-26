@@ -336,6 +336,17 @@
   will-change:width,transform;
 }
 
+
+/* Mobile middle panel: extend map under the panel so map's bottom controls stay hidden behind panel.
+   Top/large map state remains unchanged, so provider/scale controls are visible only when the map is large. */
+@media(max-width:760px){
+  .app[data-mobile-panel-state="middle"] .mapWrap{
+    height:calc(var(--mobile-panel-top) + 44px);
+    min-height:calc(var(--mobile-panel-top) + 44px);
+    max-height:calc(var(--mobile-panel-top) + 44px);
+  }
+}
+
 </style>
 </head>
 <body>

@@ -1100,82 +1100,12 @@
   }
 }
 
-
-/* Patch: custom dense scale + wheel zoom 0.5, capture phase */
-.customScaleControl{
-  position:absolute;
-  right:18px;
-  bottom:18px;
-  z-index:34;
-  min-width:150px;
-  padding:8px 10px 7px;
-  border:1px solid rgba(15,23,42,.18);
-  border-radius:10px;
-  background:rgba(255,255,255,.94);
-  box-shadow:0 8px 22px rgba(15,23,42,.18);
-  backdrop-filter:blur(8px);
-  color:#111827;
-  pointer-events:none;
-}
-.customScaleControl .scaleLabel{
-  margin-bottom:4px;
-  text-align:right;
-  font-size:11px;
-  font-weight:900;
-  line-height:1;
-  color:#111827;
-}
-.customScaleControl .scaleBar{
-  position:relative;
-  height:10px;
-  margin-left:auto;
-  border-left:2px solid #111827;
-  border-right:2px solid #111827;
-  border-bottom:3px solid #111827;
-  border-radius:0 0 2px 2px;
-}
-.customScaleControl .scaleTicks{
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:-3px;
-  display:flex;
-  justify-content:space-between;
-  height:10px;
-}
-.customScaleControl .scaleTicks i{
-  display:block;
-  width:2px;
-  height:8px;
-  background:#111827;
-}
-.customScaleControl .scaleZoom{
-  margin-top:3px;
-  text-align:right;
-  font-size:10px;
-  font-weight:800;
-  color:#475569;
-}
-@media(max-width:720px){
-  .customScaleControl{
-    right:12px;
-    bottom:14px;
-    min-width:132px;
-    padding:7px 9px 6px;
-  }
-}
-
 </style>
 </head>
 <body>
 <main class="app">
   <section class="mapWrap" id="mapWrap">
     <div class="naverMapCanvas" id="naverMap" aria-label="네이버 지도"></div>
-    <div class="customScaleControl" id="customScaleControl" aria-hidden="true">
-      <div class="scaleLabel" id="customScaleLabel">--</div>
-      <div class="scaleBar" id="customScaleBar"><span class="scaleTicks"><i></i><i></i><i></i></span></div>
-      <div class="scaleZoom" id="customScaleZoom">zoom --</div>
-    </div>
     <div class="mapbar"><strong>경로설정</strong><span id="mapStatus">네이버 지도 로딩 중</span></div>
     <div class="mapGuide" id="mapGuide"><img class="mapCarpetHero" src="/route-setting/magic-carpet.png" alt="" aria-hidden="true"><strong class="magicTitle">매직 카펫</strong><span>계산이 끝나면 추천 순서대로 지도에 핀이 표시됩니다.</span></div>
     <div class="legend"><span><i class="dot a"></i>출발</span><span><i class="dot s"></i>방문</span><span><i class="dot z"></i>도착</span></div>
@@ -1258,147 +1188,6 @@ const statusEl=$('status'), totalTimeEl=$('totalTime'), resultEl=$('result'), pa
 const mapWrap=$('mapWrap'), mapGuide=$('mapGuide');
 let naverMap=null, markers=[], polylines=[], latestResult=null;
 let mapClickBubble=null, mapClickTouchPin=null, pendingMapClickVisit=null;
-let fineWheelZoomInstalled=false;
-
-function getMapZoomBoundsFine(){
-  const fallback={min:6,max:19};
-  try{
-    const minOpt=naverMap&&naverMap.getOptions&&naverMap.getOptions('minZoom');
-    const maxOpt=naverMap&&naverMap.getOptions&&naverMap.getOptions('maxZoom');
-    return {
-      min:Number.isFinite(Number(minOpt))?Number(minOpt):fallback.min,
-      max:Number.isFinite(Number(maxOpt))?Number(maxOpt):fallback.max
-    };
-  }catch(e){
-    return fallback;
-  }
-}
-
-function formatScaleDistance(meters){
-  const m=Number(meters);
-  if(!Number.isFinite(m)||m<=0)return '--';
-  if(m>=1000){
-    const km=m/1000;
-    if(km>=10)return `${Math.round(km)} km`;
-    return `${Math.round(km*10)/10} km`.replace('.0','');
-  }
-  return `${Math.round(m)} m`;
-}
-
-function chooseDenseScaleMeters(targetMeters){
-  const target=Number(targetMeters);
-  if(!Number.isFinite(target)||target<=0)return 100;
-  const exp=Math.floor(Math.log10(target));
-  const base=Math.pow(10,exp);
-  const steps=[1,1.5,2,2.5,3,4,5,7.5,10];
-  let best=steps[0]*base;
-  for(const s of steps){
-    const v=s*base;
-    if(v<=target)best=v;
-  }
-  return best;
-}
-
-function updateCustomScaleControl(){
-  if(!naverMap)return;
-  const wrap=mapWrap||$('mapWrap');
-  const label=$('customScaleLabel');
-  const bar=$('customScaleBar');
-  const zoomText=$('customScaleZoom');
-  if(!wrap||!label||!bar)return;
-
-  let center=null;
-  let zoom=11;
-  try{
-    center=naverMap.getCenter&&naverMap.getCenter();
-    zoom=Number(naverMap.getZoom&&naverMap.getZoom());
-  }catch(e){}
-  if(!center||!Number.isFinite(zoom))return;
-
-  const lat=Number(center.lat&&center.lat());
-  if(!Number.isFinite(lat))return;
-
-  const metersPerPx=Math.cos(lat*Math.PI/180)*156543.03392804097/Math.pow(2,zoom);
-  const targetPx=Math.max(110,Math.min(180,Math.round((wrap.clientWidth||900)*0.16)));
-  const scaleMeters=chooseDenseScaleMeters(metersPerPx*targetPx);
-  const widthPx=Math.max(74,Math.min(190,Math.round(scaleMeters/metersPerPx)));
-
-  label.textContent=formatScaleDistance(scaleMeters);
-  bar.style.width=`${widthPx}px`;
-  if(zoomText)zoomText.textContent=`zoom ${Math.round(zoom*10)/10}`;
-}
-
-function getCurrentZoomNumber(){
-  try{
-    const z=Number(naverMap&&naverMap.getZoom&&naverMap.getZoom());
-    return Number.isFinite(z)?z:null;
-  }catch(e){
-    return null;
-  }
-}
-
-function applyWheelZoom05(direction){
-  if(!naverMap)return;
-  const current=getCurrentZoomNumber();
-  if(current===null)return;
-
-  const bounds=getMapZoomBoundsFine();
-  const target=Math.max(bounds.min,Math.min(bounds.max,current+(direction*0.5)));
-  if(target===current)return;
-
-  try{
-    if(naverMap.zoomBy){
-      naverMap.zoomBy(target-current, undefined, false);
-    }else if(naverMap.setZoom){
-      naverMap.setZoom(target,false);
-    }
-  }catch(e){
-    try{
-      if(naverMap.setZoom)naverMap.setZoom(target,false);
-    }catch(err){}
-  }
-
-  setTimeout(updateCustomScaleControl,0);
-  setTimeout(updateCustomScaleControl,120);
-}
-
-function handleFineWheelZoom05(e){
-  if(!naverMap)return;
-  if(e.ctrlKey||e.metaKey)return;
-
-  const dy=Number(e.deltaY!==undefined?e.deltaY:(-e.wheelDelta));
-  if(!dy)return;
-
-  e.preventDefault();
-  e.stopPropagation();
-  if(e.stopImmediatePropagation)e.stopImmediatePropagation();
-
-  applyWheelZoom05(dy<0?1:-1);
-}
-
-function installWheelZoom05(){
-  if(fineWheelZoomInstalled)return;
-  const el=$('naverMap')||mapWrap;
-  if(!el)return;
-  fineWheelZoomInstalled=true;
-
-  // 네이버 지도가 wheel 이벤트를 내부에서 먼저 가져가기 전에 capture 단계에서 잡는다.
-  el.addEventListener('wheel',handleFineWheelZoom05,{passive:false,capture:true});
-  el.addEventListener('mousewheel',handleFineWheelZoom05,{passive:false,capture:true});
-}
-
-function installDenseScaleControl(){
-  const maps=getNaverMaps();
-  try{
-    if(maps&&maps.Event&&naverMap){
-      maps.Event.addListener(naverMap,'zoom_changed',updateCustomScaleControl);
-      maps.Event.addListener(naverMap,'bounds_changed',updateCustomScaleControl);
-      maps.Event.addListener(naverMap,'idle',updateCustomScaleControl);
-    }
-  }catch(e){}
-  updateCustomScaleControl();
-}
-
 let lastMapPointerPixel=null;
 let routeRunSeq=0;
 
@@ -2109,7 +1898,7 @@ async function findRoute(){
   }finally{if(runId===routeRunSeq)setBusy(false);endInput.disabled=returnChk.checked}
 }
 
-function waitForNaverMaps(retry=0){const maps=getNaverMaps();const el=$('naverMap');if(maps&&el&&el.clientWidth>0&&el.clientHeight>0){naverMap=new maps.Map(el,{center:new maps.LatLng(35.9676,126.7367),zoom:11,scaleControl:false,scrollWheel:false});installDenseScaleControl();installWheelZoom05();installMapVisitClick();$('mapStatus').textContent='네이버 지도 연결됨';refreshMap();return}if(retry<35){setTimeout(()=>waitForNaverMaps(retry+1),120);return}$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 객체 또는 지도 영역 크기를 확인하지 못했습니다.','err')}
+function waitForNaverMaps(retry=0){const maps=getNaverMaps();const el=$('naverMap');if(maps&&el&&el.clientWidth>0&&el.clientHeight>0){naverMap=new maps.Map(el,{center:new maps.LatLng(35.9676,126.7367),zoom:11});installMapVisitClick();$('mapStatus').textContent='네이버 지도 연결됨';refreshMap();return}if(retry<35){setTimeout(()=>waitForNaverMaps(retry+1),120);return}$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 객체 또는 지도 영역 크기를 확인하지 못했습니다.','err')}
 async function initNaverMap(){try{const cfg=await fetch('/api/route-setting/config').then(r=>r.json());if(!cfg.ok||!cfg.clientId)throw new Error(cfg.message||'지도 Client ID가 없습니다.');const script=document.createElement('script');script.src=`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(cfg.clientId)}`;script.async=true;script.onload=()=>waitForNaverMaps();script.onerror=()=>{$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 스크립트 로딩 실패','err')};document.head.appendChild(script)}catch(e){$('mapStatus').textContent='지도 연결 대기';showStatus(e.message,'err')}}
 
 

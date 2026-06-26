@@ -60,35 +60,51 @@
   display:flex;
   left:14px;
   top:14px;
-  width:62px;
-  height:62px;
-  padding:7px;
-  border-radius:18px;
+  width:87px;
+  height:87px;
+  padding:0;
+  border:0;
+  border-radius:0;
   transform:none;
   z-index:35;
   pointer-events:auto;
   cursor:pointer;
-  background:rgba(255,255,255,.94)!important;
-  box-shadow:0 14px 30px rgba(15,23,42,.18);
-  transition:left .42s cubic-bezier(.2,.8,.2,1),top .42s cubic-bezier(.2,.8,.2,1),width .42s cubic-bezier(.2,.8,.2,1),height .42s cubic-bezier(.2,.8,.2,1),padding .42s cubic-bezier(.2,.8,.2,1),border-radius .42s cubic-bezier(.2,.8,.2,1),transform .42s cubic-bezier(.2,.8,.2,1),box-shadow .42s cubic-bezier(.2,.8,.2,1);
+  background:transparent!important;
+  backdrop-filter:none;
+  box-shadow:none;
+  transition:none;
 }
 .mapGuide.mapGuideDocked .mapCarpetHero{
-  width:48px;
-  max-width:48px;
+  width:67px;
+  max-width:67px;
   filter:drop-shadow(0 8px 12px rgba(15,23,42,.22));
   animation:carpetDockPulse 4s ease-in-out infinite;
 }
 .mapGuide.mapGuideDocked strong,.mapGuide.mapGuideDocked span{display:none}
-.mapGuide.mapGuideDocking{animation:carpetDockPop .42s ease-out both}
-@keyframes carpetDockPop{
-  0%{transform:translate(-50%,-50%) scale(1)}
-  42%{transform:translate(-50%,-50%) scale(1.13)}
-  100%{transform:none}
+.mapGuide.mapGuideDocking{animation:carpetDockJourney 2.5s ease-in-out both}
+@keyframes carpetDockJourney{
+  0%{left:50%;top:50%;width:min(560px,72%);height:auto;padding:18px 20px;border:1px solid rgba(148,163,184,.55);border-radius:18px;transform:translate(-50%,-50%) scale(1) rotate(-2deg);background:rgba(255,255,255,.92);box-shadow:0 12px 34px rgba(15,23,42,.12)}
+  12%{left:50%;top:50%;transform:translate(-50%,-50%) scale(1.18) rotate(5deg)}
+  28%{left:57%;top:42%;transform:translate(-50%,-50%) scale(.98) rotate(-8deg)}
+  44%{left:43%;top:36%;transform:translate(-50%,-50%) scale(.92) rotate(7deg)}
+  61%{left:36%;top:55%;transform:translate(-50%,-50%) scale(.78) rotate(-9deg)}
+  78%{left:22%;top:27%;width:150px;height:110px;padding:0;border:0;border-radius:0;transform:translate(-50%,-50%) scale(.64) rotate(6deg);background:transparent;box-shadow:none}
+  100%{left:14px;top:14px;width:87px;height:87px;padding:0;border:0;border-radius:0;transform:none;background:transparent;box-shadow:none}
 }
 @keyframes carpetDockPulse{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-3px) rotate(1.5deg)}}
 @media(max-width:760px){
   .mapGuide.mapGuideDocked{left:12px;top:12px;width:56px;height:56px;padding:6px;border-radius:16px}
   .mapGuide.mapGuideDocked .mapCarpetHero{width:44px;max-width:44px}
+  .mapGuide.mapGuideDocking{animation:carpetDockJourneyMobile 2.5s ease-in-out both}
+  @keyframes carpetDockJourneyMobile{
+    0%{left:50%;top:50%;width:min(340px,72%);height:auto;padding:18px 20px;border:1px solid rgba(148,163,184,.55);border-radius:18px;transform:translate(-50%,-50%) scale(1) rotate(-2deg);background:rgba(255,255,255,.92);box-shadow:0 12px 34px rgba(15,23,42,.12)}
+    12%{left:50%;top:50%;transform:translate(-50%,-50%) scale(1.16) rotate(5deg)}
+    28%{left:58%;top:42%;transform:translate(-50%,-50%) scale(.96) rotate(-8deg)}
+    44%{left:42%;top:36%;transform:translate(-50%,-50%) scale(.9) rotate(7deg)}
+    61%{left:36%;top:55%;transform:translate(-50%,-50%) scale(.76) rotate(-9deg)}
+    78%{left:23%;top:28%;width:112px;height:84px;padding:0;border:0;border-radius:0;transform:translate(-50%,-50%) scale(.62) rotate(6deg);background:transparent;box-shadow:none}
+    100%{left:12px;top:12px;width:56px;height:56px;padding:6px;border:0;border-radius:16px;transform:none;background:transparent;box-shadow:none}
+  }
 }
 
 /* mobile route list clean */

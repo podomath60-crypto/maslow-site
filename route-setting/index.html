@@ -319,18 +319,18 @@ function resetResult(){latestResult=null;totalTimeEl.textContent='--';resultEl.c
 function parseInputs(){
   const start=normalizeAddress(startInput.value);
   const visits=uniqueLines(visitsInput.value);
-  const returnToStart=returnChk.checked;
-  const end=returnToStart?start:normalizeAddress(endInput.value);
+  const returnChecked=returnChk.checked;
+  const typedEnd=normalizeAddress(endInput.value);
+  const sameStartEnd=!returnChecked&&start&&typedEnd&&start.toLowerCase()===typedEnd.toLowerCase();
+  const returnToStart=returnChecked||sameStartEnd;
+  const end=returnToStart?start:typedEnd;
 
   if(!start)throw new Error('출발지를 입력하세요.');
   if(visits.length>8)throw new Error('경유지는 최대 8개까지 계산합니다.');
   if(!returnToStart&&!end)throw new Error('도착지를 입력하거나 출발지로 복귀를 체크하세요.');
-  if(returnToStart&&!visits.length)throw new Error('출발지로 복귀 계산은 경유지가 1개 이상 필요합니다.');
+  if(returnToStart&&!visits.length)throw new Error('출발지와 도착지가 같거나 출발지로 복귀하는 계산은 경유지가 1개 이상 필요합니다.');
 
-  const all=[start,...visits,end];
-  const normalized=new Set();
-  for(const a of all){const key=a.toLowerCase();if(normalized.has(key))continue;normalized.add(key)}
-  return {start,visits,end,returnToStart};
+  return {start,visits,end,returnToStart,sameStartEnd};
 }
 
 async function geocodeAddress(address,label,index,total){
@@ -500,8 +500,12 @@ async function findRoute(){
   try{
     resetResult();setBusy(true);
     const input=parseInputs();
-    const labels=['A',...input.visits.map((_,i)=>String.fromCharCode(66+i)),input.returnToStart?'A':'Z'];
-    const raw=[input.start,...input.visits,input.end];
+    const labels=input.returnToStart
+      ? ['A',...input.visits.map((_,i)=>String.fromCharCode(66+i))]
+      : ['A',...input.visits.map((_,i)=>String.fromCharCode(66+i)),'Z'];
+    const raw=input.returnToStart
+      ? [input.start,...input.visits]
+      : [input.start,...input.visits,input.end];
     const totalGeo=raw.length;const resolved=[];
     for(let i=0;i<raw.length;i++){
       assertActive();

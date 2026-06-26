@@ -1101,7 +1101,7 @@
 }
 
 
-/* Print area selection */
+/* Final print-area capture patch: select area, capture current map image, overlay existing red pins. */
 .printAreaOverlay{
   position:absolute;
   inset:0;
@@ -1112,9 +1112,7 @@
   user-select:none;
   touch-action:none;
 }
-.printAreaOverlay.active{
-  display:block;
-}
+.printAreaOverlay.active{display:block}
 .printAreaBox{
   position:absolute;
   display:none;
@@ -1123,20 +1121,16 @@
   box-shadow:0 0 0 9999px rgba(15,23,42,.22);
   box-sizing:border-box;
 }
-.printAreaBox.active{
-  display:block;
-}
+.printAreaBox.active{display:block}
 .printAreaActions{
   position:absolute;
   right:6px;
   bottom:6px;
   display:none;
   gap:5px;
-  z-index:2;
+  z-index:3;
 }
-.printAreaBox.ready .printAreaActions{
-  display:flex;
-}
+.printAreaBox.ready .printAreaActions{display:flex}
 .printAreaActions button{
   border:0;
   border-radius:8px;
@@ -1147,30 +1141,111 @@
   cursor:pointer;
   box-shadow:0 3px 10px rgba(15,23,42,.22);
 }
-.printAreaActions .printAreaDo{
-  background:#7c3aed;
+.printAreaActions .printAreaDo{background:#7c3aed;color:#fff}
+.printAreaActions .printAreaCancel{background:#fff;color:#334155;border:1px solid rgba(148,163,184,.65)}
+
+.routeToast{
+  position:fixed;
+  left:50%;
+  top:76px;
+  transform:translateX(-50%) translateY(-8px);
+  z-index:9999;
+  max-width:min(420px,calc(100vw - 32px));
+  padding:12px 16px;
+  border-radius:14px;
+  background:rgba(17,24,39,.94);
   color:#fff;
-}
-.printAreaActions .printAreaCancel{
-  background:#fff;
-  color:#334155;
-  border:1px solid rgba(148,163,184,.65);
-}
-@media(max-width:720px){
-  .printAreaActions button{
-    padding:6px 9px;
-    font-size:12px;
-  }
-}
-
-
-/* Print area selection toast line breaks */
-.status,
-.toast,
-#status,
-#routeStatus,
-#mapStatus{
+  font-size:14px;
+  font-weight:900;
+  line-height:1.45;
+  text-align:center;
   white-space:pre-line;
+  box-shadow:0 14px 36px rgba(15,23,42,.32);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .16s ease, transform .16s ease;
+}
+.routeToast.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+
+.printCapturePinLayer{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+.printCapturePin{
+  position:absolute;
+  transform:translate(-50%,-94%);
+  pointer-events:none;
+}
+
+@media print{
+  @page{size:A4 portrait!important;margin:10mm!important}
+  html,body{width:auto!important;height:auto!important;overflow:visible!important;background:#fff!important}
+  body.printCaptureMode>*:not(.printSheet){display:none!important}
+  body.printCaptureMode .printSheet.printCaptureSheet{
+    display:block!important;
+    position:static!important;
+    left:auto!important;
+    top:auto!important;
+    width:100%!important;
+    visibility:visible!important;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:#0f172a;
+    background:#fff!important;
+  }
+  body.printCaptureMode .printSheet.printCaptureSheet .printPage{width:100%!important}
+  body.printCaptureMode .printSheet.printCaptureSheet .printTop{
+    display:flex!important;
+    align-items:flex-end!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    margin:0 0 5mm 0!important;
+    padding-bottom:3mm!important;
+    border-bottom:2px solid #0f172a!important;
+  }
+  body.printCaptureMode .printSheet.printCaptureSheet .printTitle{
+    font-size:16px!important;
+    font-weight:1000!important;
+  }
+  body.printCaptureMode .printSheet.printCaptureSheet .printMeta{
+    font-size:10px!important;
+    color:#64748b!important;
+    font-weight:800!important;
+  }
+  body.printCaptureMode .printSheet.printCaptureSheet .printMapBox{
+    position:relative!important;
+    width:100%!important;
+    height:var(--print-map-height-mm)!important;
+    border:1px solid #cbd5e1!important;
+    border-radius:10px!important;
+    overflow:hidden!important;
+    background:#f8fafc!important;
+    margin:0 0 8mm 0!important;
+    box-sizing:border-box!important;
+    page-break-inside:avoid!important;
+  }
+  body.printCaptureMode .printSheet.printCaptureSheet .printMapCapture{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    object-fit:fill!important;
+  }
+  body.printCaptureMode .printSheet.printCaptureSheet .printRouteSection{
+    display:block!important;
+    width:100%!important;
+  }
+  body.printCaptureMode .printSheet.printCaptureSheet .printSummary{
+    display:flex!important;
+    gap:8px!important;
+    flex-wrap:wrap!important;
+    margin-bottom:4mm!important;
+    font-size:11px!important;
+    font-weight:900!important;
+    color:#15803d!important;
+  }
 }
 
 </style>
@@ -1857,196 +1932,7 @@ function makePrintRouteHtml(){
   }).join('');
 }
 
-
-let printAreaSelectState=null;
-
-function getPrintSelectionRectFromState(){
-  if(!printAreaSelectState)return null;
-  const s=printAreaSelectState;
-  const left=Math.min(s.startX,s.endX);
-  const top=Math.min(s.startY,s.endY);
-  const width=Math.abs(s.endX-s.startX);
-  const height=Math.abs(s.endY-s.startY);
-  if(width<24||height<24)return null;
-  return {left,top,width,height,right:left+width,bottom:top+height};
-}
-
-function updatePrintAreaBox(){
-  const box=$('printAreaBox');
-  if(!box)return;
-  const rect=getPrintSelectionRectFromState();
-  if(!rect){
-    box.classList.remove('active','ready');
-    return;
-  }
-  box.classList.add('active');
-  box.style.left=`${rect.left}px`;
-  box.style.top=`${rect.top}px`;
-  box.style.width=`${rect.width}px`;
-  box.style.height=`${rect.height}px`;
-  if(printAreaSelectState&&printAreaSelectState.ready){
-    box.classList.add('ready');
-  }else{
-    box.classList.remove('ready');
-  }
-}
-
-function cancelPrintAreaSelect(){
-  const overlay=$('printAreaOverlay');
-  const box=$('printAreaBox');
-  if(overlay)overlay.classList.remove('active');
-  if(box){
-    box.classList.remove('active','ready');
-    box.removeAttribute('style');
-  }
-  printAreaSelectState=null;
-}
-
-function getSelectedPrintViewport(){
-  const maps=getNaverMaps();
-  const rect=getPrintSelectionRectFromState();
-  if(!maps||!naverMap||!rect)return null;
-
-  try{
-    const projection=naverMap.getProjection&&naverMap.getProjection();
-    if(!projection||!projection.fromOffsetToCoord)return null;
-
-    const sw=projection.fromOffsetToCoord(new maps.Point(rect.left,rect.bottom));
-    const ne=projection.fromOffsetToCoord(new maps.Point(rect.right,rect.top));
-    const center=projection.fromOffsetToCoord(new maps.Point(rect.left+(rect.width/2),rect.top+(rect.height/2)));
-    const zoom=naverMap.getZoom&&naverMap.getZoom();
-
-    const swLat=sw.lat(), swLng=sw.lng();
-    const neLat=ne.lat(), neLng=ne.lng();
-
-    return {
-      width:Math.round(rect.width),
-      height:Math.round(rect.height),
-      aspect:rect.width/rect.height,
-      center:center?{lat:center.lat(),lng:center.lng()}:null,
-      zoom:Number.isFinite(zoom)?zoom:11,
-      bounds:{sw:{lat:swLat,lng:swLng},ne:{lat:neLat,lng:neLng}},
-      filterBounds:{
-        minLat:Math.min(swLat,neLat),
-        maxLat:Math.max(swLat,neLat),
-        minLng:Math.min(swLng,neLng),
-        maxLng:Math.max(swLng,neLng)
-      }
-    };
-  }catch(e){
-    return null;
-  }
-}
-
-function startPrintAreaSelect(){
-  if(!latestResult){
-    showStatus('출력할 추천순서가 없습니다. 최단경로를 먼저 찾으세요.','err');
-    return;
-  }
-  showStatus('인쇄할 영역을 선택\n경로와 함께 인쇄됨','ok');
-
-  const overlay=$('printAreaOverlay');
-  const box=$('printAreaBox');
-  if(!overlay||!box||!mapWrap){
-    printRouteResultActual(getCurrentMapViewportSnapshot());
-    return;
-  }
-
-  printAreaSelectState={startX:0,startY:0,endX:0,endY:0,dragging:false,ready:false};
-  box.classList.remove('active','ready');
-  box.removeAttribute('style');
-  overlay.classList.add('active');
-
-  const getLocalPoint=(ev)=>{
-    const r=mapWrap.getBoundingClientRect();
-    const x=Math.max(0,Math.min(r.width,ev.clientX-r.left));
-    const y=Math.max(0,Math.min(r.height,ev.clientY-r.top));
-    return {x,y};
-  };
-
-  const onPointerDown=(ev)=>{
-    if(ev.target&&ev.target.closest&&ev.target.closest('.printAreaActions'))return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    const p=getLocalPoint(ev);
-    printAreaSelectState={startX:p.x,startY:p.y,endX:p.x,endY:p.y,dragging:true,ready:false};
-    updatePrintAreaBox();
-    try{overlay.setPointerCapture(ev.pointerId)}catch(e){}
-  };
-
-  const onPointerMove=(ev)=>{
-    if(!printAreaSelectState||!printAreaSelectState.dragging)return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    const p=getLocalPoint(ev);
-    printAreaSelectState.endX=p.x;
-    printAreaSelectState.endY=p.y;
-    updatePrintAreaBox();
-  };
-
-  const onPointerUp=(ev)=>{
-    if(!printAreaSelectState||!printAreaSelectState.dragging)return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    const p=getLocalPoint(ev);
-    printAreaSelectState.endX=p.x;
-    printAreaSelectState.endY=p.y;
-    printAreaSelectState.dragging=false;
-    printAreaSelectState.ready=!!getPrintSelectionRectFromState();
-    updatePrintAreaBox();
-    try{overlay.releasePointerCapture(ev.pointerId)}catch(e){}
-  };
-
-  overlay.onpointerdown=onPointerDown;
-  overlay.onpointermove=onPointerMove;
-  overlay.onpointerup=onPointerUp;
-  overlay.onpointercancel=onPointerUp;
-
-  const doBtn=$('printAreaDo');
-  const cancelBtn=$('printAreaCancel');
-  if(doBtn)doBtn.onclick=(ev)=>{
-    ev.preventDefault();
-    ev.stopPropagation();
-    const viewport=getSelectedPrintViewport();
-    cancelPrintAreaSelect();
-    if(!viewport){
-      showStatus('인쇄할 지도 영역을 다시 선택해 주세요.','err');
-      return;
-    }
-    printRouteResultActual(viewport);
-  };
-  if(cancelBtn)cancelBtn.onclick=(ev)=>{
-    ev.preventDefault();
-    ev.stopPropagation();
-    cancelPrintAreaSelect();
-  };
-}
-
-
-function waitForPrintMapReady(viewport){
-  return new Promise(resolve=>{
-    const maps=getNaverMaps();
-    const apply=()=>{
-      try{
-        const mapEl=document.getElementById('printMapLive');
-        if(mapEl&&maps&&printMapInstance){
-          maps.Event.trigger(printMapInstance,'resize');
-          if(viewport&&viewport.bounds){
-            const sw=new maps.LatLng(viewport.bounds.sw.lat,viewport.bounds.sw.lng);
-            const ne=new maps.LatLng(viewport.bounds.ne.lat,viewport.bounds.ne.lng);
-            printMapInstance.fitBounds(new maps.LatLngBounds(sw,ne),{top:8,right:8,bottom:8,left:8});
-          }
-        }
-      }catch(e){}
-    };
-    apply();
-    setTimeout(apply,120);
-    setTimeout(apply,360);
-    setTimeout(()=>{apply();resolve();},900);
-  });
-}
-
-async function printRouteResultActual(viewportOverride){
+async function printRouteResult(){
   if(!latestResult){
     showStatus('출력할 추천순서가 없습니다. 최단경로를 먼저 찾으세요.','err');
     return;
@@ -2855,16 +2741,6 @@ function getPrintPointLabel(item,index,total,returnToStart){
   return meta.label;
 }
 
-function isPointInsidePrintBounds(item,viewport){
-  if(!viewport||!viewport.filterBounds)return true;
-  if(!hasCoord(item))return false;
-  const lat=Number(item.lat);
-  const lng=Number(item.lng);
-  const b=viewport.filterBounds;
-  if(!Number.isFinite(lat)||!Number.isFinite(lng))return false;
-  return lat>=b.minLat&&lat<=b.maxLat&&lng>=b.minLng&&lng<=b.maxLng;
-}
-
 function normalizePrintGroupLabels(items){
   const seen=new Set();
   const labels=[];
@@ -2952,7 +2828,6 @@ function buildPrintMarkerGroups(route,viewport){
 
   (route||[]).forEach((item,index)=>{
     if(!hasCoord(item))return;
-    if(!isPointInsidePrintBounds(item,viewport))return;
     const label=getPrintPointLabel(item,index,total,returnToStart);
     const pt=getPrintPointPixel(item,viewport,route);
     const lat=Number(item.lat);
@@ -3157,7 +3032,7 @@ async function printRouteResult(){
   removePrintSheet();
   destroyPrintMap();
 
-  const viewport=viewportOverride||getCurrentMapViewportSnapshot();
+  const viewport=getCurrentMapViewportSnapshot();
   const mapHeightMm=getPrintMapHeightMm(viewport);
   const routeCount=(latestResult.route||[]).length;
   const sheet=document.createElement('section');
@@ -3192,14 +3067,355 @@ async function printRouteResult(){
     return;
   }
 
-  sheet.classList.remove('offscreen');
-  await waitForPrintMapReady(viewport);
-  window.print();
+  setTimeout(()=>{
+    sheet.classList.remove('offscreen');
+    window.print();
+  },850);
 }
 
-async function printRouteResult(){
-  startPrintAreaSelect();
+
+/* Final print selection implementation: capture selected current map area, then reuse existing print pin HTML logic. */
+let routeToastTimer=null;
+let printAreaSelectState=null;
+
+function showRouteToast(message){
+  let toast=document.getElementById('routeToast');
+  if(!toast){
+    toast=document.createElement('div');
+    toast.id='routeToast';
+    toast.className='routeToast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent=String(message||'');
+  toast.classList.add('show');
+  clearTimeout(routeToastTimer);
+  routeToastTimer=setTimeout(()=>toast.classList.remove('show'),2600);
 }
+
+function getPrintSelectionRectFromState(){
+  if(!printAreaSelectState)return null;
+  const s=printAreaSelectState;
+  const left=Math.min(s.startX,s.endX);
+  const top=Math.min(s.startY,s.endY);
+  const width=Math.abs(s.endX-s.startX);
+  const height=Math.abs(s.endY-s.startY);
+  if(width<24||height<24)return null;
+  return {left,top,width,height,right:left+width,bottom:top+height};
+}
+
+function updatePrintAreaBox(){
+  const box=$('printAreaBox');
+  if(!box)return;
+  const rect=getPrintSelectionRectFromState();
+  if(!rect){
+    box.classList.remove('active','ready');
+    return;
+  }
+  box.classList.add('active');
+  box.style.left=`${rect.left}px`;
+  box.style.top=`${rect.top}px`;
+  box.style.width=`${rect.width}px`;
+  box.style.height=`${rect.height}px`;
+  if(printAreaSelectState&&printAreaSelectState.ready){
+    box.classList.add('ready');
+  }else{
+    box.classList.remove('ready');
+  }
+}
+
+function cancelPrintAreaSelect(){
+  const overlay=$('printAreaOverlay');
+  const box=$('printAreaBox');
+  if(overlay){
+    overlay.classList.remove('active');
+    overlay.onpointerdown=null;
+    overlay.onpointermove=null;
+    overlay.onpointerup=null;
+    overlay.onpointercancel=null;
+  }
+  if(box){
+    box.classList.remove('active','ready');
+    box.removeAttribute('style');
+  }
+  printAreaSelectState=null;
+}
+
+function removePrintCaptureSheet(){
+  const old=document.querySelector('.printSheet.printCaptureSheet');
+  if(old&&old.parentNode)old.parentNode.removeChild(old);
+}
+
+function cleanupPrintCaptureMode(){
+  document.body.classList.remove('printCaptureMode');
+  document.body.style.removeProperty('--print-map-height-mm');
+  removePrintCaptureSheet();
+}
+
+function escapeDataAttrValue(value){
+  return String(value||'').replace(/"/g,'&quot;');
+}
+
+function loadHtml2CanvasIfNeeded(){
+  if(window.html2canvas)return Promise.resolve(window.html2canvas);
+  return new Promise((resolve,reject)=>{
+    const old=document.getElementById('html2canvasLoader');
+    if(old){
+      old.addEventListener('load',()=>resolve(window.html2canvas));
+      old.addEventListener('error',reject);
+      return;
+    }
+    const s=document.createElement('script');
+    s.id='html2canvasLoader';
+    s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+    s.onload=()=>resolve(window.html2canvas);
+    s.onerror=()=>reject(new Error('html2canvas 로딩 실패'));
+    document.head.appendChild(s);
+  });
+}
+
+async function captureSelectedMapArea(rect){
+  if(!mapWrap||!rect)return '';
+  const overlay=$('printAreaOverlay');
+  const previousDisplay=overlay?overlay.style.display:'';
+  if(overlay)overlay.style.display='none';
+
+  try{
+    const html2canvas=await loadHtml2CanvasIfNeeded();
+    const canvas=await html2canvas(mapWrap,{
+      backgroundColor:null,
+      useCORS:true,
+      allowTaint:true,
+      logging:false,
+      scale:Math.min(2,Math.max(1,window.devicePixelRatio||1)),
+      x:rect.left,
+      y:rect.top,
+      width:rect.width,
+      height:rect.height,
+      scrollX:0,
+      scrollY:0
+    });
+    return canvas.toDataURL('image/png');
+  }catch(e){
+    // fallback: crop the first map canvas if the map renderer exposes one.
+    try{
+      const source=mapWrap.querySelector('canvas');
+      if(!source)return '';
+      const ratioX=source.width/mapWrap.clientWidth;
+      const ratioY=source.height/mapWrap.clientHeight;
+      const c=document.createElement('canvas');
+      c.width=Math.max(1,Math.round(rect.width*ratioX));
+      c.height=Math.max(1,Math.round(rect.height*ratioY));
+      const ctx=c.getContext('2d');
+      ctx.drawImage(
+        source,
+        rect.left*ratioX,rect.top*ratioY,rect.width*ratioX,rect.height*ratioY,
+        0,0,c.width,c.height
+      );
+      return c.toDataURL('image/png');
+    }catch(err){
+      return '';
+    }
+  }finally{
+    if(overlay)overlay.style.display=previousDisplay;
+  }
+}
+
+function getRoutePointOffset(item){
+  if(!naverMap||!item||!hasCoord(item))return null;
+  const maps=getNaverMaps();
+  try{
+    const projection=naverMap.getProjection&&naverMap.getProjection();
+    if(!projection||!projection.fromCoordToOffset)return null;
+    const coord=new maps.LatLng(item.lat,item.lng);
+    const pt=projection.fromCoordToOffset(coord);
+    return {x:pt.x,y:pt.y};
+  }catch(e){
+    return null;
+  }
+}
+
+function buildCapturePrintMarkerGroups(rect){
+  const groups=[];
+  const route=(latestResult&&latestResult.route)||[];
+  const total=route.length;
+  const returnToStart=!!(latestResult&&latestResult.returnToStart);
+  const overlapX=Math.max(24,Math.min(42,rect.width*0.045));
+  const overlapY=Math.max(28,Math.min(48,rect.height*0.085));
+
+  route.forEach((item,index)=>{
+    if(!hasCoord(item))return;
+    const pt=getRoutePointOffset(item);
+    if(!pt)return;
+    if(pt.x<rect.left||pt.x>rect.right||pt.y<rect.top||pt.y>rect.bottom)return;
+
+    const localX=pt.x-rect.left;
+    const localY=pt.y-rect.top;
+    const label=getPrintPointLabel(item,index,total,returnToStart);
+
+    let group=groups.find(g=>Math.abs(g.x-localX)<=overlapX&&Math.abs(g.y-localY)<=overlapY);
+    if(!group){
+      group={x:localX,y:localY,sumX:0,sumY:0,count:0,items:[]};
+      groups.push(group);
+    }
+    group.items.push({item,index,label});
+    group.sumX+=localX;
+    group.sumY+=localY;
+    group.count+=1;
+    group.x=group.sumX/group.count;
+    group.y=group.sumY/group.count;
+  });
+
+  groups.forEach(group=>{
+    group.labels=normalizePrintGroupLabels(group.items);
+  });
+  return groups;
+}
+
+function buildCapturePinLayerHtml(rect){
+  const groups=buildCapturePrintMarkerGroups(rect);
+  const pins=groups.map(group=>{
+    const labels=group.labels&&group.labels.length?group.labels:normalizePrintGroupLabels(group.items);
+    const html=labels.length>1?makeMultiLabelPrintPinContent(labels):makeStrongPrintPinContent(labels[0]||'');
+    const left=(group.x/rect.width)*100;
+    const top=(group.y/rect.height)*100;
+    const title=escapeDataAttrValue(group.items.map(x=>`${x.label}. ${x.item.address||x.item.resolvedAddress||''}`).join(' / '));
+    return `<div class="printCapturePin" title="${title}" style="left:${left.toFixed(4)}%;top:${top.toFixed(4)}%">${html}</div>`;
+  }).join('');
+  return `<div class="printCapturePinLayer">${pins}</div>`;
+}
+
+async function printSelectedMapCapture(){
+  const rect=getPrintSelectionRectFromState();
+  if(!rect){
+    showRouteToast('인쇄할 영역을 선택\n경로와 함께 인쇄됨');
+    return;
+  }
+
+  const image=await captureSelectedMapArea(rect);
+  if(!image){
+    showRouteToast('지도 캡쳐 실패\n영역을 다시 선택');
+    return;
+  }
+
+  cancelPrintAreaSelect();
+  removePrintSheet();
+  removePrintCaptureSheet();
+
+  const mapHeightMm=Math.max(45,Math.min(245,190/(rect.width/rect.height)));
+  document.body.style.setProperty('--print-map-height-mm',`${mapHeightMm}mm`);
+
+  const sheet=document.createElement('section');
+  sheet.className='printSheet printCaptureSheet';
+  const now=new Date();
+  const dateText=now.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  const routeCount=(latestResult.route||[]).length;
+
+  sheet.innerHTML=`<div class="printPage">
+    <div class="printTop">
+      <div class="printTitle">최단 경로 추천 순서</div>
+      <div class="printMeta">출력일 ${esc(dateText)}</div>
+    </div>
+    <div class="printMapBox" style="height:${mapHeightMm.toFixed(2)}mm">
+      <img class="printMapCapture" src="${esc(image)}" alt="선택한 지도 영역">
+      ${buildCapturePinLayerHtml(rect)}
+    </div>
+    <div class="printRouteSection">
+      <div class="printSummary">
+        <span>총 예상시간 ${esc(formatDuration(latestResult.durationMs))}</span>
+        <span>총 거리 ${esc(formatDistance(latestResult.distanceM))}</span>
+        <span>${routeCount}개 지점</span>
+        <span>${routeCount<=3?'경로 1열':'경로 2열'}</span>
+      </div>
+      ${makePrintRouteHtml()}
+    </div>
+  </div>`;
+
+  document.body.appendChild(sheet);
+  document.body.classList.add('printCaptureMode');
+
+  setTimeout(()=>window.print(),180);
+}
+
+function startPrintAreaSelectFinal(){
+  if(!latestResult){
+    showStatus('출력할 추천순서가 없습니다. 최단경로를 먼저 찾으세요.','err');
+    return;
+  }
+
+  const overlay=$('printAreaOverlay');
+  const box=$('printAreaBox');
+  if(!overlay||!box||!mapWrap)return;
+
+  cleanupPrintCaptureMode();
+  showRouteToast('인쇄할 영역을 선택\n경로와 함께 인쇄됨');
+
+  printAreaSelectState={startX:0,startY:0,endX:0,endY:0,dragging:false,ready:false};
+  box.classList.remove('active','ready');
+  box.removeAttribute('style');
+  overlay.classList.add('active');
+
+  const getLocalPoint=(ev)=>{
+    const r=mapWrap.getBoundingClientRect();
+    return {
+      x:Math.max(0,Math.min(r.width,ev.clientX-r.left)),
+      y:Math.max(0,Math.min(r.height,ev.clientY-r.top))
+    };
+  };
+
+  overlay.onpointerdown=(ev)=>{
+    if(ev.target&&ev.target.closest&&ev.target.closest('.printAreaActions'))return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const p=getLocalPoint(ev);
+    printAreaSelectState={startX:p.x,startY:p.y,endX:p.x,endY:p.y,dragging:true,ready:false};
+    updatePrintAreaBox();
+    try{overlay.setPointerCapture(ev.pointerId)}catch(e){}
+  };
+  overlay.onpointermove=(ev)=>{
+    if(!printAreaSelectState||!printAreaSelectState.dragging)return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const p=getLocalPoint(ev);
+    printAreaSelectState.endX=p.x;
+    printAreaSelectState.endY=p.y;
+    updatePrintAreaBox();
+  };
+  overlay.onpointerup=(ev)=>{
+    if(!printAreaSelectState||!printAreaSelectState.dragging)return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const p=getLocalPoint(ev);
+    printAreaSelectState.endX=p.x;
+    printAreaSelectState.endY=p.y;
+    printAreaSelectState.dragging=false;
+    printAreaSelectState.ready=!!getPrintSelectionRectFromState();
+    updatePrintAreaBox();
+    try{overlay.releasePointerCapture(ev.pointerId)}catch(e){}
+  };
+  overlay.onpointercancel=overlay.onpointerup;
+
+  const doBtn=$('printAreaDo');
+  const cancelBtn=$('printAreaCancel');
+  if(doBtn)doBtn.onclick=(ev)=>{
+    ev.preventDefault();
+    ev.stopPropagation();
+    printSelectedMapCapture();
+  };
+  if(cancelBtn)cancelBtn.onclick=(ev)=>{
+    ev.preventDefault();
+    ev.stopPropagation();
+    cancelPrintAreaSelect();
+  };
+}
+
+printRouteResult=async function(){
+  startPrintAreaSelectFinal();
+};
+if($('printRoute'))$('printRoute').onclick=printRouteResult;
+
+window.addEventListener('afterprint',()=>{
+  cleanupPrintCaptureMode();
+});
 
 window.addEventListener('resize',refreshMap);
 initNaverMap();

@@ -23,6 +23,28 @@
   .mapCarpetHero{width:min(132px,34vw)}
 }
 
+
+.magicTitle{
+  font-size:24px;
+  font-weight:950;
+  letter-spacing:-.04em;
+  line-height:1.15;
+  background:linear-gradient(90deg,#312e81,#7c3aed,#f59e0b,#312e81);
+  background-size:240% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent!important;
+  animation:magicTextShine 4.2s ease-in-out infinite;
+  filter:drop-shadow(0 4px 10px rgba(124,58,237,.16));
+}
+@keyframes magicTextShine{
+  0%,72%,100%{background-position:0% 50%;filter:drop-shadow(0 4px 10px rgba(124,58,237,.16))}
+  36%{background-position:100% 50%;filter:drop-shadow(0 6px 16px rgba(245,158,11,.30))}
+}
+@media(max-width:760px){
+  .magicTitle{font-size:20px}
+}
+
 </style>
 </head>
 <body>
@@ -30,7 +52,7 @@
   <section class="mapWrap" id="mapWrap">
     <div class="naverMapCanvas" id="naverMap" aria-label="네이버 지도"></div>
     <div class="mapbar"><strong>경로설정</strong><span id="mapStatus">네이버 지도 로딩 중</span></div>
-    <div class="mapGuide" id="mapGuide"><img class="mapCarpetHero" src="/route-setting/magic-carpet.png" alt="" aria-hidden="true"><strong>주소를 입력하고 최단경로 찾기를 누르세요.</strong><span>계산이 끝나면 추천 순서대로 지도에 핀이 표시됩니다.</span></div>
+    <div class="mapGuide" id="mapGuide"><img class="mapCarpetHero" src="/route-setting/magic-carpet.png" alt="" aria-hidden="true"><strong class="magicTitle">매직 카펫</strong><span>계산이 끝나면 추천 순서대로 지도에 핀이 표시됩니다.</span></div>
     <div class="legend"><span><i class="dot a"></i>출발</span><span><i class="dot s"></i>방문</span><span><i class="dot z"></i>도착</span></div>
   </section>
 

@@ -274,8 +274,14 @@
 
 
 
-/* Clean carpet-only guide: no box, no text, image-only flutter/rotate. */
-.mapGuide,
+/* Carpet guide behavior:
+   - Initial state keeps the centered rectangular overlay.
+   - Once docking starts, the overlay box/text disappear and only the carpet flies.
+   - Docked state remains carpet-only and clickable for reload. */
+.mapCarpetHero{
+  transform-origin:50% 58%;
+  animation:carpetOnlyFlutter 2.2s ease-in-out infinite!important;
+}
 .mapGuide.mapGuideDocking,
 .mapGuide.mapGuideDocked{
   background:transparent!important;
@@ -286,19 +292,12 @@
   padding:0!important;
   border-radius:0!important;
   overflow:visible!important;
-  text-align:center;
 }
-.mapGuide strong,
-.mapGuide span,
 .mapGuide.mapGuideDocking strong,
 .mapGuide.mapGuideDocking span,
 .mapGuide.mapGuideDocked strong,
 .mapGuide.mapGuideDocked span{
   display:none!important;
-}
-.mapCarpetHero{
-  transform-origin:50% 58%;
-  animation:carpetOnlyFlutter 2.2s ease-in-out infinite!important;
 }
 .mapGuide.mapGuideDocking .mapCarpetHero{
   animation:carpetDockHeroJourneyClean 2.5s ease-in-out both!important;
@@ -1018,9 +1017,9 @@ window.addEventListener('resize',()=>{
   }
 });
 
-$('officeStart').onclick=()=>{startInput.value='전북 군산시 나운동 805-1';resetResult();startInput.focus()};
+$('officeStart').onclick=()=>{startInput.value='전북특별자치도 군산시 나운동 805-1';resetResult();startInput.focus()};
 $('currentStart').onclick=setCurrentLocationAsStart;
-$('officeEnd').onclick=()=>{if(returnChk.checked){showStatus('출발지로 복귀가 체크되어 있어 도착지를 입력할 수 없습니다.','err');return;}endInput.value='전북 군산시 나운동 805-1';resetResult();endInput.focus()};
+$('officeEnd').onclick=()=>{if(returnChk.checked){showStatus('출발지로 복귀가 체크되어 있어 도착지를 입력할 수 없습니다.','err');return;}endInput.value='전북특별자치도 군산시 나운동 805-1';resetResult();endInput.focus()};
 $('currentEnd').onclick=setCurrentLocationAsEnd;
 
 $('copyResult').onclick=async()=>{if(!latestResult)return;await navigator.clipboard.writeText(resultText());showStatus('추천 결과를 복사했습니다.','ok')};

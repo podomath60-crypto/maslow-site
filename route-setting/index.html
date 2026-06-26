@@ -563,7 +563,23 @@ const statusEl=$('status'), totalTimeEl=$('totalTime'), resultEl=$('result'), pa
 const mapWrap=$('mapWrap'), mapGuide=$('mapGuide');
 let naverMap=null, markers=[], polylines=[], latestResult=null;
 let mapClickBubble=null, mapClickTouchPin=null, pendingMapClickVisit=null;
+let lastMapPointerPixel=null;
 let routeRunSeq=0;
+
+function rememberMapPointerPixel(e){
+  if(!mapWrap||!e)return;
+  const rect=mapWrap.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const y=e.clientY-rect.top;
+  if(x<0||y<0||x>rect.width||y>rect.height)return;
+  lastMapPointerPixel={x,y,ts:Date.now()};
+}
+
+function getFreshMapPointerPixel(){
+  if(!lastMapPointerPixel)return null;
+  if(Date.now()-lastMapPointerPixel.ts>900)return null;
+  return {x:lastMapPointerPixel.x,y:lastMapPointerPixel.y};
+}
 
 function dockMapGuide(){
   if(!mapGuide||mapGuide.classList.contains('mapGuideDocked')||mapGuide.classList.contains('mapGuideDocking'))return;
@@ -664,11 +680,13 @@ function dockMapGuide(){
       carpet.style.maxWidth='';
       carpet.style.transform='';
     }
+    refreshMap();
   }
   requestAnimationFrame(step);
 }
 if(mapWrap&&mapGuide){
   mapWrap.addEventListener('pointerdown',e=>{
+    rememberMapPointerPixel(e);
     if(mapGuide.contains(e.target))return;
     dockMapGuide();
   },{capture:true});
@@ -975,11 +993,12 @@ function positionMapClickBubble(pixel){
   }
 }
 
-function showMapClickBubble(latlng){
+function showMapClickBubble(latlng,screenPixel=null){
   hideMapClickBubble();
   pendingMapClickVisit={lat:latlng.lat(),lng:latlng.lng(),latlng};
   const projection=naverMap&&naverMap.getProjection?naverMap.getProjection():null;
-  const pixel=projection&&projection.fromCoordToOffset?projection.fromCoordToOffset(latlng):null;
+  const projectedPixel=projection&&projection.fromCoordToOffset?projection.fromCoordToOffset(latlng):null;
+  const pixel=screenPixel||projectedPixel;
 
   if(isMobileMapLayout()){
     const pin=document.createElement('div');
@@ -1030,7 +1049,8 @@ function handleMapVisitClick(e){
     ignoreNextMapVisitClick=false;
     return;
   }
-  showMapClickBubble(e.coord);
+  refreshMap();
+  showMapClickBubble(e.coord,getFreshMapPointerPixel());
   showStatus('선택한 지점을 방문지에 추가하려면 OK를 눌러 주세요.','ok');
 }
 
@@ -1051,7 +1071,16 @@ document.addEventListener('pointerdown',e=>{
 
 
 function clearMap(){markers.forEach(m=>m.setMap(null));polylines.forEach(l=>l.setMap(null));markers=[];polylines=[];hideMapClickBubble()}
-function refreshMap(){const maps=getNaverMaps();if(!maps||!naverMap)return;setTimeout(()=>{try{maps.Event.trigger(naverMap,'resize')}catch(e){}},60);setTimeout(()=>{try{maps.Event.trigger(naverMap,'resize')}catch(e){}},260)}
+function refreshMap(){
+  const maps=getNaverMaps();if(!maps||!naverMap)return;
+  const fire=()=>{try{maps.Event.trigger(naverMap,'resize')}catch(e){}};
+  fire();
+  requestAnimationFrame(fire);
+  setTimeout(fire,60);
+  setTimeout(fire,180);
+  setTimeout(fire,420);
+  setTimeout(fire,760);
+}
 function renderMapResult(best,returnToStart){
   const maps=getNaverMaps();if(!maps||!naverMap)return;clearMap();mapGuide.classList.add('hide');
   const bounds=new maps.LatLngBounds();
@@ -1361,7 +1390,9 @@ function clampMapPercent(value){
 function setMobileMapPercent(value){
   if(!isMobileLayout())return;
   mobilePanelRoot.style.setProperty('--mobile-panel-top',`${clampMapPercent(value)}vh`);
+  refreshMap();
   setTimeout(refreshMap,80);
+  setTimeout(refreshMap,320);
 }
 
 function setMobilePanelState(state){

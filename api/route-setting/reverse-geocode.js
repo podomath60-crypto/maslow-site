@@ -18,29 +18,62 @@ function getInput(req) {
   return req.query || {};
 }
 
+function compactJoin(parts) {
+  return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function regionParts(region) {
+  const area1 = region.area1 && region.area1.name ? region.area1.name : '';
+  const area2 = region.area2 && region.area2.name ? region.area2.name : '';
+  const area3 = region.area3 && region.area3.name ? region.area3.name : '';
+  const area4 = region.area4 && region.area4.name ? region.area4.name : '';
+  return { area1, area2, area3, area4 };
+}
+
+function landNumber(land) {
+  const n1 = land.number1 || '';
+  const n2 = land.number2 || '';
+  return n1 ? `${n1}${n2 ? '-' + n2 : ''}` : '';
+}
+
+function makeJibunAddress(result) {
+  const region = result.region || {};
+  const land = result.land || {};
+  const { area1, area2, area3, area4 } = regionParts(region);
+  const number = landNumber(land);
+  return compactJoin([area1, area2, area3, area4, number]);
+}
+
+function makeRoadAddress(result) {
+  const region = result.region || {};
+  const land = result.land || {};
+  const { area1, area2, area3 } = regionParts(region);
+  const roadName = land.name || '';
+  const number = landNumber(land);
+  return roadName && number ? compactJoin([area1, area2, area3, roadName, number]) : '';
+}
+
 function pickAddress(payload) {
   const results = payload && Array.isArray(payload.results) ? payload.results : [];
   if (!results.length) return '';
 
   for (const r of results) {
-    const region = r.region || {};
-    const land = r.land || {};
-    const area1 = region.area1 && region.area1.name ? region.area1.name : '';
-    const area2 = region.area2 && region.area2.name ? region.area2.name : '';
-    const area3 = region.area3 && region.area3.name ? region.area3.name : '';
-    const area4 = region.area4 && region.area4.name ? region.area4.name : '';
+    if (r.name === 'addr') {
+      const jibun = makeJibunAddress(r);
+      if (jibun) return jibun;
+    }
+  }
 
-    const roadName = land.name || '';
-    const number1 = land.number1 || '';
-    const number2 = land.number2 || '';
-    const building = land.addition0 && land.addition0.value ? land.addition0.value : '';
+  for (const r of results) {
+    const jibun = makeJibunAddress(r);
+    if (jibun && /\d/.test(jibun)) return jibun;
+  }
 
-    const roadNumber = number1 ? `${number1}${number2 ? '-' + number2 : ''}` : '';
-    const roadAddress = [area1, area2, area3, roadName, roadNumber].filter(Boolean).join(' ');
-    if (roadName && roadNumber) return building ? `${roadAddress} ${building}` : roadAddress;
-
-    const jibun = [area1, area2, area3, area4, roadNumber].filter(Boolean).join(' ');
-    if (jibun) return jibun;
+  for (const r of results) {
+    if (r.name === 'roadaddr') {
+      const road = makeRoadAddress(r);
+      if (road) return road;
+    }
   }
 
   return '';
@@ -71,7 +104,7 @@ module.exports = async function handler(req, res) {
 
   const params = new URLSearchParams();
   params.set('coords', `${lng},${lat}`);
-  params.set('orders', 'roadaddr,addr');
+  params.set('orders', 'addr,roadaddr');
   params.set('output', 'json');
 
   const controller = new AbortController();

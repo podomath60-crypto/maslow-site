@@ -82,9 +82,9 @@ async function callGeocode(query, clientId, clientSecret, signal) {
   return { payload, addresses };
 }
 
-function pickDisplayAddress(item, fallback) {
-  // 경로 조회/네이버 길찾기 URL 안정성을 위해 화면과 이후 링크에는 지번주소를 우선 사용한다.
-  // 좌표 계산은 Geocoding 결과 x/y를 쓰므로 도로명 입력도 정상 계산된다.
+function pickResolvedAddress(item, fallback) {
+  // 좌표 계산은 Geocoding 결과 x/y를 사용한다.
+  // 화면 표시는 사용자가 입력한 원문 주소를 유지하고, 지번/도로명은 내부 보조값으로만 둔다.
   return item.jibunAddress || item.roadAddress || fallback;
 }
 
@@ -149,7 +149,8 @@ module.exports = async function handler(req, res) {
       query,
       matchedQuery,
       item: {
-        address: pickDisplayAddress(first, matchedQuery),
+        address: query,
+        resolvedAddress: pickResolvedAddress(first, matchedQuery),
         roadAddress: first.roadAddress || '',
         jibunAddress: first.jibunAddress || '',
         englishAddress: first.englishAddress || '',
@@ -157,7 +158,8 @@ module.exports = async function handler(req, res) {
         lng
       },
       candidates: addresses.slice(0, 5).map((a) => ({
-        address: pickDisplayAddress(a, matchedQuery),
+        address: query,
+        resolvedAddress: pickResolvedAddress(a, matchedQuery),
         roadAddress: a.roadAddress || '',
         jibunAddress: a.jibunAddress || '',
         lat: Number(a.y),

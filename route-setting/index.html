@@ -198,10 +198,12 @@ function parseInputs(){
   const visits=uniqueLines(visitsInput.value);
   const returnToStart=returnChk.checked;
   const end=returnToStart?start:normalizeAddress(endInput.value);
+
   if(!start)throw new Error('출발지를 입력하세요.');
-  if(!visits.length)throw new Error('경유지 주소를 입력하세요.');
   if(visits.length>8)throw new Error('경유지는 최대 8개까지 계산합니다.');
   if(!returnToStart&&!end)throw new Error('도착지를 입력하거나 출발지로 복귀를 체크하세요.');
+  if(returnToStart&&!visits.length)throw new Error('출발지로 복귀 계산은 경유지가 1개 이상 필요합니다.');
+
   const all=[start,...visits,end];
   const normalized=new Set();
   for(const a of all){const key=a.toLowerCase();if(normalized.has(key))continue;normalized.add(key)}
@@ -333,7 +335,11 @@ async function findRoute(){
     const end=input.returnToStart?start:{id:'Z',role:'end',...resolved[resolved.length-1]};
     const nodes=input.returnToStart?[start,...visits]:[start,...visits,end];
     const pairs=[];
-    for(const a of nodes){for(const b of nodes){if(a.id!==b.id)pairs.push([a,b])}}
+    if(!visits.length){
+      pairs.push([start,end]);
+    }else{
+      for(const a of nodes){for(const b of nodes){if(a.id!==b.id)pairs.push([a,b])}}
+    }
     const matrix=new Map();
     await mapLimit(pairs,4,async(pair)=>{const [a,b]=pair;const data=await directionBetween(a,b);matrix.set(coordKey(a,b),data);return data},(done,total,pair)=>{showProgress(`구간 시간 조회 중 ${done}/${total} · ${pair[0].label||pair[0].id} → ${pair[1].label||pair[1].id}`,done,total)});
     showStatus('추천 순서 계산 중...');

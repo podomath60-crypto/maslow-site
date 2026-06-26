@@ -19,7 +19,13 @@ function getInput(req) {
 }
 
 function normalizeQuery(value) {
-  return String(value || '').trim().replace(/\s+/g, ' ');
+  return String(value || '')
+    .replace(/[，]/g, ',')
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\[[^\]]*\]/g, ' ')
+    .replace(/[,\s]+$/g, '')
+    .trim()
+    .replace(/\s+/g, ' ');
 }
 
 function uniquePush(list, value) {
@@ -29,27 +35,77 @@ function uniquePush(list, value) {
   if (!list.some((x) => x.toLowerCase() === key)) list.push(v);
 }
 
+function aliasProvinceCandidates(q) {
+  const out = [];
+  const pairs = [
+    ['전북특별자치도', '전북'],
+    ['전라북도', '전북'],
+    ['강원특별자치도', '강원'],
+    ['충청북도', '충북'],
+    ['충청남도', '충남'],
+    ['전라남도', '전남'],
+    ['경상북도', '경북'],
+    ['경상남도', '경남'],
+    ['제주특별자치도', '제주'],
+    ['서울특별시', '서울'],
+    ['부산광역시', '부산'],
+    ['대구광역시', '대구'],
+    ['인천광역시', '인천'],
+    ['광주광역시', '광주'],
+    ['대전광역시', '대전'],
+    ['울산광역시', '울산'],
+    ['세종특별자치시', '세종']
+  ];
+  for (const [longName, shortName] of pairs) {
+    if (q.includes(longName)) out.push(q.replaceAll(longName, shortName));
+    if (q.includes(shortName)) out.push(q.replaceAll(shortName, longName));
+  }
+  return out;
+}
+
+function roadCoreCandidates(q) {
+  const out = [];
+
+  // 도로명 주소 뒤 건물명/상호명 제거.
+  // 예: 전북특별자치도 군산시 나운동 대학로 342 동아26빌딩
+  // → 전북특별자치도 군산시 나운동 대학로 342
+  const roadOnly = q.match(/^(.+?\s[가-힣A-Za-z0-9·.\-]+(?:대로|로|길)\s*\d+(?:-\d+)?)(?:\s*번지)?(?:\s+.*)?$/);
+  if (roadOnly && roadOnly[1]) out.push(roadOnly[1]);
+
+  // 도로명과 건물번호 사이 공백이 없는 경우 보정.
+  // 예: 대학로342 → 대학로 342
+  const spacedRoadNo = q.replace(/([가-힣A-Za-z0-9·.\-]+(?:대로|로|길))\s*(\d+(?:-\d+)?)(?=\s|$)/g, '$1 $2');
+  if (spacedRoadNo !== q) out.push(spacedRoadNo);
+
+  const roadOnlySpaced = spacedRoadNo.match(/^(.+?\s[가-힣A-Za-z0-9·.\-]+(?:대로|로|길)\s+\d+(?:-\d+)?)(?:\s*번지)?(?:\s+.*)?$/);
+  if (roadOnlySpaced && roadOnlySpaced[1]) out.push(roadOnlySpaced[1]);
+
+  // 도로명 주소에 동/읍/면/리 명칭이 끼어 있으면 제거한 후보도 시도.
+  // 예: 전북특별자치도 군산시 나운동 대학로 342
+  // → 전북특별자치도 군산시 대학로 342
+  for (const item of [q, ...out]) {
+    const m = item.match(/^(.+?(?:시|군|구))\s+\S+(?:읍|면|동|가|리)\s+(.+?\s[가-힣A-Za-z0-9·.\-]+(?:대로|로|길)\s*\d+(?:-\d+)?)(?:\s*번지)?(?:\s+.*)?$/);
+    if (m && m[1] && m[2]) out.push(`${m[1]} ${m[2]}`);
+  }
+
+  return out;
+}
+
 function buildQueryCandidates(query) {
   const q = normalizeQuery(query);
   const list = [];
   uniquePush(list, q);
 
-  // 도로명 주소 뒤에 건물명/상호명이 붙으면 Geocoding 실패가 잦다.
-  // 예: 전북특별자치도 군산시 나운동 대학로 342 동아26빌딩
-  // → 전북특별자치도 군산시 나운동 대학로 342
-  const roadOnly = q.match(/^(.+?\s(?:[가-힣A-Za-z0-9·.\-]+(?:대로|로|길))\s*\d+(?:-\d+)?)(?:\s+.+)?$/);
-  if (roadOnly && roadOnly[1]) uniquePush(list, roadOnly[1]);
+  const firstPass = [
+    ...roadCoreCandidates(q),
+    ...aliasProvinceCandidates(q)
+  ];
 
-  // 도로명 주소에 동/읍/면/리 명칭이 끼어 있으면 제거한 후보도 시도한다.
-  // 예: 전북특별자치도 군산시 나운동 대학로 342
-  // → 전북특별자치도 군산시 대학로 342
-  const withoutDong = q.match(/^(.+?(?:시|군|구))\s+\S+(?:읍|면|동|가|리)\s+(.+?\s(?:[가-힣A-Za-z0-9·.\-]+(?:대로|로|길))\s*\d+(?:-\d+)?)(?:\s+.+)?$/);
-  if (withoutDong && withoutDong[1] && withoutDong[2]) uniquePush(list, `${withoutDong[1]} ${withoutDong[2]}`);
+  for (const c of firstPass) uniquePush(list, c);
 
-  // 위 정규식이 놓친 경우를 위해 roadOnly 후보에서도 동 제거를 한 번 더 시도한다.
-  if (roadOnly && roadOnly[1]) {
-    const r = roadOnly[1].match(/^(.+?(?:시|군|구))\s+\S+(?:읍|면|동|가|리)\s+(.+)$/);
-    if (r && r[1] && r[2]) uniquePush(list, `${r[1]} ${r[2]}`);
+  // 별칭 후보에도 도로명 보정을 다시 적용.
+  for (const c of firstPass) {
+    for (const r of roadCoreCandidates(c)) uniquePush(list, r);
   }
 
   return list;

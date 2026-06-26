@@ -1004,11 +1004,8 @@
 }
 
 
-/* FINAL PRINT PATCH: A4 portrait, same current map viewport ratio, pins only */
-.printSheet.finalPrintSheet{
-  display:none;
-}
-.printSheet.finalPrintSheet.offscreen{
+/* Print patch: A4 portrait, desktop viewport width fully fitted, pins-only map */
+.printSheet.printViewportSheet.offscreen{
   position:fixed;
   left:-200vw;
   top:0;
@@ -1019,145 +1016,74 @@
   z-index:-1;
   background:#fff;
 }
+.printSheet.printViewportSheet.offscreen .printMapLive{
+  width:100%;
+}
 @media print{
-  @page{
-    size:A4 portrait !important;
-    margin:10mm !important;
-  }
-  html,body{
-    width:auto!important;
-    height:auto!important;
-    overflow:visible!important;
-    background:#fff!important;
-  }
-  body>*:not(.finalPrintSheet){
-    display:none!important;
-  }
-  .finalPrintSheet{
+  @page{size:A4 portrait!important;margin:10mm!important}
+  html,body{width:auto!important;height:auto!important;overflow:visible!important;background:#fff!important}
+  body>*:not(.printSheet){display:none!important}
+  .printSheet.printViewportSheet{
     display:block!important;
-    visibility:visible!important;
     position:static!important;
+    left:auto!important;
+    top:auto!important;
     width:100%!important;
+    visibility:visible!important;
     font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
     color:#0f172a;
     background:#fff!important;
   }
-  .finalPrintSheet .printPage{
-    width:100%;
+  .printSheet.printViewportSheet .printPage{width:100%!important}
+  .printSheet.printViewportSheet .printTop{
+    display:flex!important;
+    align-items:flex-end!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    margin-bottom:7px!important;
+    border-bottom:2px solid #0f172a!important;
+    padding-bottom:6px!important;
   }
-  .finalPrintSheet .printMapBox{
-    width:100%;
-    border:1px solid #cbd5e1;
-    border-radius:10px;
-    overflow:hidden;
-    background:#f8fafc;
-    margin:0 0 8mm 0;
-    page-break-inside:avoid;
+  .printSheet.printViewportSheet .printTitle{font-size:18px!important;font-weight:950!important;letter-spacing:-.04em!important}
+  .printSheet.printViewportSheet .printMeta{font-size:11px!important;color:#475569!important;font-weight:800!important;text-align:right!important;line-height:1.35!important}
+  .printSheet.printViewportSheet .printMapBox{
+    width:100%!important;
+    border:1px solid #cbd5e1!important;
+    border-radius:10px!important;
+    overflow:hidden!important;
+    background:#f8fafc!important;
+    margin-bottom:8px!important;
+    page-break-inside:avoid!important;
   }
-  .finalPrintSheet .printMapLive{
-    width:100%;
-    height:auto;
-    min-height:70mm;
-    max-height:132mm;
-    background:#f8fafc;
+  .printSheet.printViewportSheet .printMapLive{
+    width:100%!important;
+    background:#f8fafc!important;
   }
-  .finalPrintSheet .printTop{
-    display:flex;
-    align-items:flex-end;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:7px;
-    border-bottom:2px solid #0f172a;
-    padding-bottom:6px;
+  .printSheet.printViewportSheet .printRouteSection{
+    border:1px solid #cbd5e1!important;
+    border-radius:10px!important;
+    padding:8px 9px 9px!important;
+    box-sizing:border-box!important;
+    page-break-inside:avoid!important;
   }
-  .finalPrintSheet .printTitle{
-    font-size:18px;
-    font-weight:950;
-    letter-spacing:-.04em;
+  .printSheet.printViewportSheet .printSummary{
+    display:flex!important;
+    gap:8px 10px!important;
+    flex-wrap:wrap!important;
+    margin-bottom:8px!important;
+    font-size:11px!important;
+    font-weight:900!important;
+    color:#15803d!important;
   }
-  .finalPrintSheet .printMeta{
-    font-size:11px;
-    color:#475569;
-    font-weight:800;
-    text-align:right;
-    line-height:1.35;
-  }
-  .finalPrintSheet .printRouteSection{
-    border:1px solid #cbd5e1;
-    border-radius:10px;
-    padding:8px 9px 9px;
-    box-sizing:border-box;
-  }
-  .finalPrintSheet .printSummary{
-    display:flex;
-    gap:8px 10px;
-    flex-wrap:wrap;
-    margin-bottom:8px;
-    font-size:11px;
-    font-weight:900;
-    color:#15803d;
-  }
-  .finalPrintSheet .printColumns{
-    display:grid;
-    grid-template-columns:1fr;
-    gap:10px;
-    align-items:start;
-  }
-  .finalPrintSheet .printColumns.twoCol{
-    grid-template-columns:1fr 1fr;
-  }
-  .finalPrintSheet .printColumn{
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-  }
-  .finalPrintSheet .printRouteItem{
-    display:grid;
-    grid-template-columns:26px 1fr;
-    gap:6px;
-    align-items:start;
-    border-bottom:1px solid #eef2f7;
-    padding:4px 0 5px;
-    page-break-inside:avoid;
-  }
-  .finalPrintSheet .printRouteItem:last-child{
-    border-bottom:0;
-  }
-  .finalPrintSheet .printBadge{
-    width:24px;
-    height:24px;
-    border-radius:8px;
-    background:#eff6ff;
-    color:#1d4ed8;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:11px;
-    font-weight:950;
-  }
-  .finalPrintSheet .printBadge.a{background:#f0fdf4;color:#15803d}
-  .finalPrintSheet .printBadge.z{background:#f1f5f9;color:#0f172a}
-  .finalPrintSheet .printRouteLabel{
-    display:block;
-    margin-bottom:1px;
-    font-size:10px;
-    color:#64748b;
-    font-weight:900;
-  }
-  .finalPrintSheet .printRouteText{
-    font-size:10.5px;
-    line-height:1.34;
-    word-break:break-all;
-    font-weight:760;
-    color:#0f172a;
-  }
-  .finalPrintSheet .printSegment{
-    margin-top:2px;
-    color:#1d4ed8;
-    font-size:9.5px;
-    font-weight:900;
-    line-height:1.25;
-  }
+  .printSheet.printViewportSheet .printColumns{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;align-items:start!important}
+  .printSheet.printViewportSheet .printColumns.twoCol{grid-template-columns:1fr 1fr!important}
+  .printSheet.printViewportSheet .printColumn{display:flex!important;flex-direction:column!important;gap:4px!important}
+  .printSheet.printViewportSheet .printRouteItem{display:grid!important;grid-template-columns:26px 1fr!important;gap:6px!important;align-items:start!important;border-bottom:1px solid #eef2f7!important;padding:4px 0 5px!important;page-break-inside:avoid!important}
+  .printSheet.printViewportSheet .printRouteItem:last-child{border-bottom:0!important}
+  .printSheet.printViewportSheet .printBadge{width:24px!important;height:24px!important;border-radius:8px!important;background:#eff6ff!important;color:#1d4ed8!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:11px!important;font-weight:950!important;flex:0 0 24px!important}
+  .printSheet.printViewportSheet .printRouteText{font-size:10.5px!important;line-height:1.34!important;word-break:break-all!important;font-weight:760!important;color:#0f172a!important}
+  .printSheet.printViewportSheet .printRouteLabel{display:block!important;margin-bottom:1px!important;font-size:10px!important;color:#64748b!important;font-weight:900!important}
+  .printSheet.printViewportSheet .printSegment{margin-top:2px!important;color:#1d4ed8!important;font-size:9.5px!important;font-weight:900!important;line-height:1.25!important}
 }
 
 </style>
@@ -2597,60 +2523,103 @@ window.addEventListener('afterprint',()=>{
 });
 
 
-/* FINAL PRINT PATCH
-   - print button moment: copy current Naver map center/zoom and visible map ratio
-   - output: A4 portrait
-   - map: separate Naver map with same viewport, numbered pins only
-   - removed from print map: route polylines, mapGuide/mapbar/legend, click bubble, district/route overlays from app DOM
-*/
-let finalPrintMapInstance=null;
-let finalPrintMapMarkers=[];
-
-function destroyFinalPrintMap(){
-  finalPrintMapMarkers.forEach(marker=>{try{marker.setMap(null)}catch(e){}});
-  finalPrintMapMarkers=[];
-  finalPrintMapInstance=null;
+/* Print patch: render the current desktop map viewport into A4, pins only. */
+function getCurrentMapViewportSnapshot(){
+  const maps=getNaverMaps();
+  const rect=mapWrap?mapWrap.getBoundingClientRect():null;
+  const width=Math.max(1,Math.round(rect&&rect.width?rect.width:1200));
+  const height=Math.max(1,Math.round(rect&&rect.height?rect.height:700));
+  const aspect=width/height;
+  const fallback={width,height,aspect,center:null,zoom:11,bounds:null};
+  if(!maps||!naverMap)return fallback;
+  try{
+    const center=naverMap.getCenter&&naverMap.getCenter();
+    const zoom=naverMap.getZoom&&naverMap.getZoom();
+    const bounds=naverMap.getBounds&&naverMap.getBounds();
+    let sw=null,ne=null;
+    if(bounds){
+      sw=bounds.getSW?bounds.getSW():(bounds._sw||null);
+      ne=bounds.getNE?bounds.getNE():(bounds._ne||null);
+    }
+    return {
+      width,height,aspect,
+      center:center?{lat:center.lat(),lng:center.lng()}:null,
+      zoom:Number.isFinite(zoom)?zoom:11,
+      bounds:(sw&&ne)?{sw:{lat:sw.lat(),lng:sw.lng()},ne:{lat:ne.lat(),lng:ne.lng()}}:null
+    };
+  }catch(e){
+    return fallback;
+  }
 }
 
-function removeFinalPrintSheet(){
-  document.querySelectorAll('.finalPrintSheet').forEach(el=>{
-    if(el&&el.parentNode)el.parentNode.removeChild(el);
+function getPrintMapHeightMm(viewport){
+  const usableWidthMm=190;
+  const aspect=Math.max(.35,Math.min(4,viewport&&viewport.aspect?viewport.aspect:1.7));
+  const raw=usableWidthMm/aspect;
+  return Math.max(82,Math.min(142,raw));
+}
+
+function normalizePrintClusterKey(item){
+  const lat=Number(item&&item.lat);
+  const lng=Number(item&&item.lng);
+  if(!Number.isFinite(lat)||!Number.isFinite(lng))return '';
+  return `${lat.toFixed(6)},${lng.toFixed(6)}`;
+}
+
+function buildPrintMarkerGroups(route){
+  const groups=[];
+  const byKey=new Map();
+  (route||[]).forEach((item,index)=>{
+    if(!hasCoord(item))return;
+    const key=normalizePrintClusterKey(item);
+    if(!key)return;
+    let group=byKey.get(key);
+    if(!group){
+      group={lat:Number(item.lat),lng:Number(item.lng),items:[]};
+      byKey.set(key,group);
+      groups.push(group);
+    }
+    group.items.push({item,index,label:String(index+1)});
   });
+  return groups;
 }
 
-function getCurrentMapViewportForPrint(){
-  const rect=mapWrap?mapWrap.getBoundingClientRect():{width:0,height:0};
-  const width=Math.max(1,Math.round(rect.width||0));
-  const height=Math.max(1,Math.round(rect.height||0));
-  const ratio=Math.max(.55,Math.min(2.4,width/height));
+function makeStrongPrintPinContent(label){
+  const safe=esc(label);
+  return `<div style="position:relative;width:42px;height:52px;">
+    <div style="position:absolute;left:50%;top:0;width:34px;height:34px;transform:translateX(-50%) rotate(-45deg);border-radius:999px 999px 999px 0;background:#2563eb;border:3px solid #fff;box-shadow:0 7px 18px rgba(15,23,42,.36);"></div>
+    <div style="position:absolute;left:50%;top:5px;transform:translateX(-50%);min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:1000;line-height:1;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.65),1px 0 0 rgba(0,0,0,.35),-1px 0 0 rgba(0,0,0,.35),0 -1px 0 rgba(0,0,0,.35);letter-spacing:-.02em;">${safe}</div>
+  </div>`;
+}
+
+function makeClusterBubbleContent(labels){
+  const text=labels.map(esc).join(' · ');
+  return `<div style="position:relative;transform:translateY(-8px);">
+    <div style="display:inline-flex;align-items:center;justify-content:center;min-width:44px;max-width:126px;min-height:30px;padding:5px 9px;border-radius:14px;background:#fff;border:3px solid #2563eb;box-shadow:0 7px 20px rgba(15,23,42,.30);font-size:15px;font-weight:1000;color:#1d4ed8;line-height:1.1;text-align:center;white-space:normal;text-shadow:0 0 0 #1d4ed8;">${text}</div>
+    <div style="position:absolute;left:50%;bottom:-8px;width:14px;height:14px;background:#fff;border-right:3px solid #2563eb;border-bottom:3px solid #2563eb;transform:translateX(-50%) rotate(45deg);"></div>
+  </div>`;
+}
+
+function makePrintMarkerIconForGroup(group){
   const maps=getNaverMaps();
+  if(group.items.length>1){
+    return {
+      content:makeClusterBubbleContent(group.items.map(x=>x.label)),
+      anchor:maps?new maps.Point(28,46):undefined
+    };
+  }
   return {
-    width,
-    height,
-    ratio,
-    center:(naverMap&&naverMap.getCenter)?naverMap.getCenter():null,
-    zoom:(naverMap&&naverMap.getZoom)?naverMap.getZoom():null,
-    mapTypeId:(naverMap&&naverMap.getMapTypeId)?naverMap.getMapTypeId():undefined,
-    maps
+    content:makeStrongPrintPinContent(group.items[0].label),
+    anchor:maps?new maps.Point(21,50):undefined
   };
 }
 
-function makeFinalPrintPinIcon(label,type){
-  const maps=getNaverMaps();
-  const color=type==='start'?'#03c75a':type==='end'?'#111827':'#2563eb';
-  return {
-    content:`<div style="width:36px;height:36px;border-radius:999px 999px 999px 0;transform:rotate(-45deg);background:${color};border:3px solid #fff;box-shadow:0 8px 20px rgba(0,0,0,.22);display:grid;place-items:center"><span style="transform:rotate(45deg);color:#fff;font-weight:950;font-size:12px">${esc(label)}</span></div>`,
-    anchor:maps?new maps.Point(18,36):undefined
-  };
-}
-
-function buildFinalPrintRouteItemHtml(routeItem,index,total,returnToStart,segments){
+function buildPrintRouteItemHtml(routeItem,index,total,returnToStart,segments){
   const meta=makeRouteLabel(routeItem,index,total,returnToStart);
-  const badgeClass=meta.type==='start'?'a':meta.type==='end'?'z':'';
   const seg=segments[index];
   const segText=seg?`<div class="printSegment">다음 구간 ${esc(seg.summary.durationText)} · ${esc(seg.summary.distanceText)}</div>`:'';
   return `<div class="printRouteItem">
-    <div class="printBadge ${badgeClass}">${esc(meta.label)}</div>
+    <div class="printBadge">${index+1}</div>
     <div>
       <span class="printRouteLabel">${esc(meta.text)}</span>
       <div class="printRouteText">${esc(routeItem.address||routeItem.resolvedAddress||'')}</div>
@@ -2659,32 +2628,41 @@ function buildFinalPrintRouteItemHtml(routeItem,index,total,returnToStart,segmen
   </div>`;
 }
 
-function makeFinalPrintRouteHtml(){
+function makePrintRouteHtml(){
   if(!latestResult)return '';
   const route=latestResult.route||[];
   const useTwoCols=route.length>=4;
   const splitIndex=useTwoCols?Math.ceil(route.length/2):route.length;
-  const col1=route.slice(0,splitIndex).map((item,i)=>buildFinalPrintRouteItemHtml(item,i,route.length,latestResult.returnToStart,latestResult.segments||[])).join('');
-  const col2=useTwoCols?route.slice(splitIndex).map((item,i)=>buildFinalPrintRouteItemHtml(item,splitIndex+i,route.length,latestResult.returnToStart,latestResult.segments||[])).join(''):'';
+  const col1=route.slice(0,splitIndex).map((item,i)=>buildPrintRouteItemHtml(item,i,route.length,latestResult.returnToStart,latestResult.segments||[])).join('');
+  const col2=useTwoCols?route.slice(splitIndex).map((item,i)=>buildPrintRouteItemHtml(item,splitIndex+i,route.length,latestResult.returnToStart,latestResult.segments||[])).join(''):'';
   return `<div class="printColumns ${useTwoCols?'twoCol':''}">
     <div class="printColumn">${col1}</div>
     ${useTwoCols?`<div class="printColumn">${col2}</div>`:''}
   </div>`;
 }
 
-function renderFinalPrintMap(viewport){
-  const maps=viewport.maps||getNaverMaps();
-  const mapEl=document.getElementById('finalPrintMapLive');
-  if(!maps||!mapEl||!latestResult)return false;
+function destroyPrintMap(){
+  (printMapMarkers||[]).forEach(m=>{try{m.setMap(null)}catch(e){}});
+  printMapMarkers=[];
+  printMapInstance=null;
+}
 
-  destroyFinalPrintMap();
+function renderPrintViewportMap(viewport){
+  const maps=getNaverMaps();
+  if(!maps||!latestResult)return false;
+  const mapEl=document.getElementById('printMapLive');
+  if(!mapEl)return false;
+  destroyPrintMap();
 
-  const route=(latestResult.route||[]).filter((p,i)=>!(latestResult.returnToStart&&i===latestResult.route.length-1));
-  const fallback=route.find(hasCoord);
-  const center=viewport.center || (fallback?new maps.LatLng(fallback.lat,fallback.lng):new maps.LatLng(36.5,127.8));
-  const options={
+  const route=latestResult.route||[];
+  const first=route.find(hasCoord);
+  const center=viewport&&viewport.center
+    ? new maps.LatLng(viewport.center.lat,viewport.center.lng)
+    : first?new maps.LatLng(first.lat,first.lng):new maps.LatLng(36.5,127.8);
+
+  printMapInstance=new maps.Map(mapEl,{
     center,
-    zoom:viewport.zoom||11,
+    zoom:(viewport&&Number.isFinite(viewport.zoom))?viewport.zoom:11,
     draggable:false,
     pinchZoom:false,
     scrollWheel:false,
@@ -2694,33 +2672,41 @@ function renderFinalPrintMap(viewport){
     mapDataControl:false,
     scaleControl:false,
     logoControl:false
-  };
-  if(viewport.mapTypeId)options.mapTypeId=viewport.mapTypeId;
-
-  finalPrintMapInstance=new maps.Map(mapEl,options);
-
-  route.forEach((item,index)=>{
-    if(!hasCoord(item))return;
-    const meta=makeRouteLabel(item,index,latestResult.route.length,latestResult.returnToStart);
-    const marker=new maps.Marker({
-      position:new maps.LatLng(item.lat,item.lng),
-      map:finalPrintMapInstance,
-      title:`${meta.label}. ${item.address||item.resolvedAddress||''}`,
-      icon:makeFinalPrintPinIcon(meta.label,meta.type)
-    });
-    finalPrintMapMarkers.push(marker);
   });
 
-  const resize=()=>{
-    try{maps.Event.trigger(finalPrintMapInstance,'resize')}catch(e){}
-    try{finalPrintMapInstance.setCenter(center)}catch(e){}
-    try{if(viewport.zoom)finalPrintMapInstance.setZoom(viewport.zoom)}catch(e){}
+  const groups=buildPrintMarkerGroups(route);
+  groups.forEach(group=>{
+    const pos=new maps.LatLng(group.lat,group.lng);
+    const marker=new maps.Marker({
+      position:pos,
+      map:printMapInstance,
+      title:group.items.map(x=>`${x.label}. ${x.item.address||x.item.resolvedAddress||''}`).join(' / '),
+      icon:makePrintMarkerIconForGroup(group)
+    });
+    printMapMarkers.push(marker);
+  });
+
+  const applyViewport=()=>{
+    try{maps.Event.trigger(printMapInstance,'resize')}catch(e){}
+    try{
+      if(viewport&&viewport.bounds){
+        const sw=new maps.LatLng(viewport.bounds.sw.lat,viewport.bounds.sw.lng);
+        const ne=new maps.LatLng(viewport.bounds.ne.lat,viewport.bounds.ne.lng);
+        const bounds=new maps.LatLngBounds(sw,ne);
+        printMapInstance.fitBounds(bounds,{top:8,right:8,bottom:8,left:8});
+      }else if(route.length>1){
+        const bounds=new maps.LatLngBounds();
+        route.filter(hasCoord).forEach(p=>bounds.extend(new maps.LatLng(p.lat,p.lng)));
+        printMapInstance.fitBounds(bounds,{top:38,right:38,bottom:38,left:38});
+      }else if(first){
+        printMapInstance.setCenter(new maps.LatLng(first.lat,first.lng));
+        printMapInstance.setZoom(13);
+      }
+    }catch(e){}
   };
-  resize();
-  requestAnimationFrame(resize);
-  setTimeout(resize,80);
-  setTimeout(resize,240);
-  setTimeout(resize,520);
+  applyViewport();
+  setTimeout(applyViewport,80);
+  setTimeout(applyViewport,260);
   return true;
 }
 
@@ -2730,25 +2716,24 @@ async function printRouteResult(){
     return;
   }
 
-  const viewport=getCurrentMapViewportForPrint();
-  removeFinalPrintSheet();
-  removePrintSheet&&removePrintSheet();
-  destroyFinalPrintMap();
-  if(typeof destroyPrintMap==='function')destroyPrintMap();
+  removePrintSheet();
+  destroyPrintMap();
 
+  const viewport=getCurrentMapViewportSnapshot();
+  const mapHeightMm=getPrintMapHeightMm(viewport);
   const routeCount=(latestResult.route||[]).length;
+  const sheet=document.createElement('section');
+  sheet.className='printSheet printViewportSheet offscreen';
   const now=new Date();
   const dateText=now.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
 
-  const sheet=document.createElement('section');
-  sheet.className='printSheet finalPrintSheet offscreen';
   sheet.innerHTML=`<div class="printPage">
     <div class="printTop">
       <div class="printTitle">최단 경로 추천 순서</div>
       <div class="printMeta">출력일 ${esc(dateText)}</div>
     </div>
-    <div class="printMapBox">
-      <div id="finalPrintMapLive" class="printMapLive" style="aspect-ratio:${viewport.width}/${viewport.height};height:auto"></div>
+    <div class="printMapBox" style="height:${mapHeightMm.toFixed(2)}mm">
+      <div id="printMapLive" class="printMapLive" aria-label="출력용 지도" style="height:${mapHeightMm.toFixed(2)}mm"></div>
     </div>
     <div class="printRouteSection">
       <div class="printSummary">
@@ -2757,28 +2742,23 @@ async function printRouteResult(){
         <span>${routeCount}개 지점</span>
         <span>${routeCount<=3?'경로 1열':'경로 2열'}</span>
       </div>
-      ${makeFinalPrintRouteHtml()}
+      ${makePrintRouteHtml()}
     </div>
   </div>`;
   document.body.appendChild(sheet);
 
-  if(!renderFinalPrintMap(viewport)){
-    showStatus('출력용 지도를 만들지 못했습니다. 네이버 지도가 로딩된 뒤 다시 눌러 주세요.','err');
+  const ok=renderPrintViewportMap(viewport);
+  if(!ok){
+    removePrintSheet();
+    showStatus('출력용 지도를 만들지 못했습니다.','err');
     return;
   }
 
   setTimeout(()=>{
     sheet.classList.remove('offscreen');
     window.print();
-  },650);
+  },850);
 }
-
-window.addEventListener('afterprint',()=>{
-  removeFinalPrintSheet();
-  destroyFinalPrintMap();
-});
-
-if($('printRoute'))$('printRoute').onclick=printRouteResult;
 
 window.addEventListener('resize',refreshMap);
 initNaverMap();

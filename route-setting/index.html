@@ -2566,9 +2566,36 @@ function normalizePrintClusterKey(item){
   return `${lat.toFixed(6)},${lng.toFixed(6)}`;
 }
 
+function getPrintPointLabel(item,index,total,returnToStart){
+  const meta=makeRouteLabel(item,index,total,returnToStart);
+  return meta.label;
+}
+
+function normalizePrintGroupLabels(items){
+  const seen=new Set();
+  const labels=[];
+  items.forEach(x=>{
+    const label=String(x.label||'').trim();
+    if(!label)return;
+    // 출발지와 도착지가 같은 좌표로 묶이면 A만 표시한다.
+    if(label==='Z'&&seen.has('A'))return;
+    if(label==='A'&&seen.has('Z')){
+      const zIndex=labels.indexOf('Z');
+      if(zIndex>=0)labels.splice(zIndex,1);
+      seen.delete('Z');
+    }
+    if(seen.has(label))return;
+    seen.add(label);
+    labels.push(label);
+  });
+  return labels;
+}
+
 function buildPrintMarkerGroups(route){
   const groups=[];
   const byKey=new Map();
+  const total=(route||[]).length;
+  const returnToStart=!!(latestResult&&latestResult.returnToStart);
   (route||[]).forEach((item,index)=>{
     if(!hasCoord(item))return;
     const key=normalizePrintClusterKey(item);
@@ -2579,47 +2606,50 @@ function buildPrintMarkerGroups(route){
       byKey.set(key,group);
       groups.push(group);
     }
-    group.items.push({item,index,label:String(index+1)});
+    group.items.push({item,index,label:getPrintPointLabel(item,index,total,returnToStart)});
   });
+  groups.forEach(group=>{group.labels=normalizePrintGroupLabels(group.items)});
   return groups;
 }
 
 function makeStrongPrintPinContent(label){
   const safe=esc(label);
-  return `<div style="position:relative;width:42px;height:52px;">
-    <div style="position:absolute;left:50%;top:0;width:34px;height:34px;transform:translateX(-50%) rotate(-45deg);border-radius:999px 999px 999px 0;background:#2563eb;border:3px solid #fff;box-shadow:0 7px 18px rgba(15,23,42,.36);"></div>
-    <div style="position:absolute;left:50%;top:5px;transform:translateX(-50%);min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:1000;line-height:1;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.65),1px 0 0 rgba(0,0,0,.35),-1px 0 0 rgba(0,0,0,.35),0 -1px 0 rgba(0,0,0,.35);letter-spacing:-.02em;">${safe}</div>
+  return `<div style="position:relative;width:46px;height:56px;">
+    <div style="position:absolute;left:50%;top:0;width:38px;height:38px;transform:translateX(-50%) rotate(-45deg);border-radius:999px 999px 999px 0;background:#dc2626;border:3px solid #fff;box-shadow:0 7px 18px rgba(15,23,42,.38);"></div>
+    <div style="position:absolute;left:50%;top:5px;transform:translateX(-50%);min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:1000;line-height:1;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.7),1px 0 1px rgba(0,0,0,.45),-1px 0 1px rgba(0,0,0,.45),0 -1px 1px rgba(0,0,0,.45);letter-spacing:-.02em;">${safe}</div>
   </div>`;
 }
 
 function makeClusterBubbleContent(labels){
   const text=labels.map(esc).join(' · ');
   return `<div style="position:relative;transform:translateY(-8px);">
-    <div style="display:inline-flex;align-items:center;justify-content:center;min-width:44px;max-width:126px;min-height:30px;padding:5px 9px;border-radius:14px;background:#fff;border:3px solid #2563eb;box-shadow:0 7px 20px rgba(15,23,42,.30);font-size:15px;font-weight:1000;color:#1d4ed8;line-height:1.1;text-align:center;white-space:normal;text-shadow:0 0 0 #1d4ed8;">${text}</div>
-    <div style="position:absolute;left:50%;bottom:-8px;width:14px;height:14px;background:#fff;border-right:3px solid #2563eb;border-bottom:3px solid #2563eb;transform:translateX(-50%) rotate(45deg);"></div>
+    <div style="display:inline-flex;align-items:center;justify-content:center;min-width:48px;max-width:146px;min-height:34px;padding:6px 10px;border-radius:16px;background:#dc2626;border:3px solid #fff;box-shadow:0 7px 20px rgba(15,23,42,.34);font-size:17px;font-weight:1000;color:#fff;line-height:1.1;text-align:center;white-space:normal;text-shadow:0 1px 1px rgba(0,0,0,.7),1px 0 1px rgba(0,0,0,.45),-1px 0 1px rgba(0,0,0,.45),0 -1px 1px rgba(0,0,0,.45);">${text}</div>
+    <div style="position:absolute;left:50%;bottom:-8px;width:14px;height:14px;background:#dc2626;border-right:3px solid #fff;border-bottom:3px solid #fff;transform:translateX(-50%) rotate(45deg);"></div>
   </div>`;
 }
 
 function makePrintMarkerIconForGroup(group){
   const maps=getNaverMaps();
-  if(group.items.length>1){
+  const labels=group.labels&&group.labels.length?group.labels:normalizePrintGroupLabels(group.items);
+  if(labels.length>1){
     return {
-      content:makeClusterBubbleContent(group.items.map(x=>x.label)),
-      anchor:maps?new maps.Point(28,46):undefined
+      content:makeClusterBubbleContent(labels),
+      anchor:maps?new maps.Point(30,50):undefined
     };
   }
   return {
-    content:makeStrongPrintPinContent(group.items[0].label),
-    anchor:maps?new maps.Point(21,50):undefined
+    content:makeStrongPrintPinContent(labels[0]||''),
+    anchor:maps?new maps.Point(23,54):undefined
   };
 }
 
 function buildPrintRouteItemHtml(routeItem,index,total,returnToStart,segments){
   const meta=makeRouteLabel(routeItem,index,total,returnToStart);
   const seg=segments[index];
+  const badgeClass=meta.type==='start'?'a':meta.type==='end'?'z':'';
   const segText=seg?`<div class="printSegment">다음 구간 ${esc(seg.summary.durationText)} · ${esc(seg.summary.distanceText)}</div>`:'';
   return `<div class="printRouteItem">
-    <div class="printBadge">${index+1}</div>
+    <div class="printBadge ${badgeClass}">${esc(meta.label)}</div>
     <div>
       <span class="printRouteLabel">${esc(meta.text)}</span>
       <div class="printRouteText">${esc(routeItem.address||routeItem.resolvedAddress||'')}</div>

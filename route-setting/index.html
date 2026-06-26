@@ -1190,26 +1190,17 @@ let naverMap=null, markers=[], polylines=[], latestResult=null;
 let mapClickBubble=null, mapClickTouchPin=null, pendingMapClickVisit=null;
 let mapWheelZoomInstalled=false;
 
-function getMapZoomBounds(){
-  const min=6;
-  const max=19;
+function getMapWheelOrigin(e){
   try{
-    const optMin=naverMap&&naverMap.getOptions&&naverMap.getOptions('minZoom');
-    const optMax=naverMap&&naverMap.getOptions&&naverMap.getOptions('maxZoom');
-    return {
-      min:Number.isFinite(Number(optMin))?Number(optMin):min,
-      max:Number.isFinite(Number(optMax))?Number(optMax):max
-    };
-  }catch(e){
-    return {min,max};
-  }
-}
-
-function getMapCenterSafe(){
-  try{
-    return naverMap&&naverMap.getCenter&&naverMap.getCenter();
-  }catch(e){
-    return null;
+    const maps=getNaverMaps();
+    const projection=naverMap&&naverMap.getProjection&&naverMap.getProjection();
+    if(!maps||!projection||!mapWrap)return null;
+    const rect=mapWrap.getBoundingClientRect();
+    const x=e.clientX-rect.left;
+    const y=e.clientY-rect.top;
+    return projection.fromOffsetToCoord(new maps.Point(x,y));
+  }catch(err){
+    try{return naverMap&&naverMap.getCenter&&naverMap.getCenter()}catch(e2){return null}
   }
 }
 
@@ -1220,32 +1211,32 @@ function installFineMapWheelZoom(){
   mapWrap.addEventListener('wheel',e=>{
     if(!naverMap)return;
     if(e.ctrlKey||e.metaKey)return;
+
     e.preventDefault();
     e.stopPropagation();
 
     const dy=Number(e.deltaY)||0;
     if(!dy)return;
 
-    const current=Number(naverMap.getZoom&&naverMap.getZoom());
-    if(!Number.isFinite(current))return;
+    // 스크롤을 누적하지 않는다. 들어온 휠 입력 1회마다 바로 작은 상대 줌만 적용한다.
+    const delta=Math.max(-0.16,Math.min(0.16,-dy*0.0016));
+    const origin=getMapWheelOrigin(e);
 
-    const bounds=getMapZoomBounds();
-
-    // 스크롤 입력을 쌓아두지 않고, 그 순간의 현재 줌에서 아주 작은 소수점 단위만 바로 이동.
-    const delta=Math.max(-0.08,Math.min(0.08,-dy*0.0009));
-    const next=Math.max(bounds.min,Math.min(bounds.max,current+delta));
-    if(next===current)return;
-
-    const center=getMapCenterSafe();
     try{
-      if(center&&naverMap.morph){
-        naverMap.morph(center,next,{duration:0});
-      }else if(naverMap.setZoom){
-        naverMap.setZoom(next);
+      if(naverMap.zoomBy){
+        naverMap.zoomBy(delta,origin||undefined,false);
+      }else{
+        const current=Number(naverMap.getZoom&&naverMap.getZoom());
+        if(Number.isFinite(current)&&naverMap.setZoom){
+          naverMap.setZoom(current+delta,false);
+        }
       }
     }catch(err){
       try{
-        if(naverMap.setZoom)naverMap.setZoom(next);
+        const current=Number(naverMap.getZoom&&naverMap.getZoom());
+        if(Number.isFinite(current)&&naverMap.setZoom){
+          naverMap.setZoom(current+(delta>0?1:-1),false);
+        }
       }catch(e2){}
     }
   },{passive:false});

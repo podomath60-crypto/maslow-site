@@ -1113,6 +1113,7 @@
   touch-action:none;
 }
 .printAreaOverlay.active{display:block}
+.printAreaOverlay.active ~ .placeSearchFab{display:none}
 .printAreaBox{
   position:absolute;
   display:none;
@@ -1255,8 +1256,13 @@
   position:absolute;
   right:16px;
   top:16px;
-  z-index:48;
+  z-index:120;
+  width:54px;
+  height:54px;
+  min-width:28px;
+  min-height:28px;
   border:1px solid rgba(124,58,237,.32);
+  border-radius:15px;
   background:rgba(255,255,255,.96);
   color:#581c87;
   box-shadow:0 12px 30px rgba(88,28,135,.18);
@@ -1265,6 +1271,7 @@
   justify-content:center;
   cursor:pointer;
   user-select:none;
+  pointer-events:auto;
   -webkit-tap-highlight-color:transparent;
 }
 .placeSearchFab:active{transform:translateY(1px)}
@@ -1348,7 +1355,7 @@
 .placeResultActions button{height:34px;border:1px solid #ddd6fe;border-radius:10px;background:#faf5ff;color:#581c87;font-size:12px;font-weight:950;cursor:pointer}
 .placeResultActions button:hover{background:#f3e8ff}
 @media(max-width:760px){
-  .placeSearchFab{right:12px;top:12px;z-index:1800}
+  .placeSearchFab{right:12px;top:12px;z-index:120;width:35px;height:35px;border-radius:10px}
   .placeSearchBackdrop{align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 66px) 12px 14px;background:rgba(15,23,42,.38)}
   .placeSearchModal{width:100%;max-height:calc(100vh - 88px);border-radius:16px}
   .placeSearchForm{padding:12px;gap:7px}
@@ -2384,6 +2391,7 @@ function syncPlaceSearchFabSize(){
   const base=getDockedCarpetRenderSize();
   if(!base)return;
   const size=Math.max(28,Math.round(base*.8));
+  btn.style.display='flex';
   btn.style.width=size+'px';
   btn.style.height=size+'px';
   btn.style.borderRadius=Math.round(size*.28)+'px';

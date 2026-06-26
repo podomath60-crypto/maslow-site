@@ -2605,35 +2605,129 @@ function normalizePrintGroupLabels(items){
   return labels;
 }
 
-function buildPrintMarkerGroups(route){
+function printMercatorX(lng){
+  return (Number(lng)+180)/360;
+}
+
+function printMercatorY(lat){
+  const clamped=Math.max(-85.05112878,Math.min(85.05112878,Number(lat)));
+  const rad=clamped*Math.PI/180;
+  return (1-Math.log(Math.tan(rad)+1/Math.cos(rad))/Math.PI)/2;
+}
+
+function getPrintViewportMercatorBox(viewport, route){
+  if(viewport&&viewport.bounds&&viewport.bounds.sw&&viewport.bounds.ne){
+    const west=printMercatorX(viewport.bounds.sw.lng);
+    const east=printMercatorX(viewport.bounds.ne.lng);
+    const north=printMercatorY(viewport.bounds.ne.lat);
+    const south=printMercatorY(viewport.bounds.sw.lat);
+    return {
+      minX:Math.min(west,east),
+      maxX:Math.max(west,east),
+      minY:Math.min(north,south),
+      maxY:Math.max(north,south)
+    };
+  }
+
+  const xs=[];
+  const ys=[];
+  (route||[]).forEach(item=>{
+    if(!hasCoord(item))return;
+    xs.push(printMercatorX(item.lng));
+    ys.push(printMercatorY(item.lat));
+  });
+  if(!xs.length||!ys.length)return null;
+
+  const minX=Math.min(...xs),maxX=Math.max(...xs);
+  const minY=Math.min(...ys),maxY=Math.max(...ys);
+  const padX=Math.max((maxX-minX)*0.10,0.00015);
+  const padY=Math.max((maxY-minY)*0.10,0.00015);
+  return {minX:minX-padX,maxX:maxX+padX,minY:minY-padY,maxY:maxY+padY};
+}
+
+function getPrintPointPixel(item,viewport,route){
+  const box=getPrintViewportMercatorBox(viewport,route);
+  const mapEl=document.getElementById('printNaverMap');
+  const mapWidth=mapEl&&mapEl.clientWidth?mapEl.clientWidth:900;
+  const mapHeight=mapEl&&mapEl.clientHeight?mapEl.clientHeight:520;
+  if(!box||box.maxX===box.minX||box.maxY===box.minY)return null;
+
+  const x=(printMercatorX(item.lng)-box.minX)/(box.maxX-box.minX)*mapWidth;
+  const y=(printMercatorY(item.lat)-box.minY)/(box.maxY-box.minY)*mapHeight;
+  if(!Number.isFinite(x)||!Number.isFinite(y))return null;
+  return {x,y};
+}
+
+function buildPrintMarkerGroups(route,viewport){
   const groups=[];
-  const byKey=new Map();
   const total=(route||[]).length;
   const returnToStart=!!(latestResult&&latestResult.returnToStart);
+  const mapEl=document.getElementById('printNaverMap');
+  const mapWidth=mapEl&&mapEl.clientWidth?mapEl.clientWidth:900;
+  const mapHeight=mapEl&&mapEl.clientHeight?mapEl.clientHeight:520;
+
+  // 핀 머리 폭/높이를 기준으로, 실제 인쇄 지도에서 서로 가리는 거리면 한 핀에 묶는다.
+  const overlapX=Math.max(24,Math.min(42,mapWidth*0.045));
+  const overlapY=Math.max(28,Math.min(48,mapHeight*0.085));
+
   (route||[]).forEach((item,index)=>{
     if(!hasCoord(item))return;
-    const key=normalizePrintClusterKey(item);
-    if(!key)return;
-    let group=byKey.get(key);
+    const label=getPrintPointLabel(item,index,total,returnToStart);
+    const pt=getPrintPointPixel(item,viewport,route);
+    const lat=Number(item.lat);
+    const lng=Number(item.lng);
+
+    let group=null;
+    if(pt){
+      group=groups.find(g=>Math.abs(g.px-pt.x)<=overlapX&&Math.abs(g.py-pt.y)<=overlapY);
+    }
+
+    // 위 픽셀 계산이 안 되는 경우만 같은 좌표로 묶는다.
     if(!group){
-      group={lat:Number(item.lat),lng:Number(item.lng),items:[]};
-      byKey.set(key,group);
+      const key=normalizePrintClusterKey(item);
+      group=groups.find(g=>g.coordKey&&g.coordKey===key) || null;
+    }
+
+    if(!group){
+      group={
+        lat,lng,
+        sumLat:0,sumLng:0,count:0,
+        px:pt?pt.x:0,py:pt?pt.y:0,
+        sumPx:0,sumPy:0,pxCount:0,
+        coordKey:normalizePrintClusterKey(item),
+        items:[]
+      };
       groups.push(group);
     }
-    group.items.push({item,index,label:getPrintPointLabel(item,index,total,returnToStart)});
+
+    group.items.push({item,index,label});
+    group.sumLat+=lat;
+    group.sumLng+=lng;
+    group.count+=1;
+    if(pt){
+      group.sumPx+=pt.x;
+      group.sumPy+=pt.y;
+      group.pxCount+=1;
+      group.px=group.sumPx/group.pxCount;
+      group.py=group.sumPy/group.pxCount;
+    }
+    group.lat=group.sumLat/group.count;
+    group.lng=group.sumLng/group.count;
   });
-  groups.forEach(group=>{group.labels=normalizePrintGroupLabels(group.items)});
+
+  groups.forEach(group=>{
+    group.labels=normalizePrintGroupLabels(group.items);
+  });
   return groups;
 }
 
 function makeStrongPrintPinContent(label){
   const safe=esc(label);
-  // 핀 외형은 이전 대비 약 80%로 축소하고, 글자 크기는 그대로 유지한다.
-  // CSS background가 아니라 inline SVG fill을 써서 PDF/인쇄에서 배경 그래픽 옵션 영향이 적게 한다.
-  return `<div style="width:37px;height:45px;filter:drop-shadow(0 5px 10px rgba(15,23,42,.38));">
-    <svg xmlns="http://www.w3.org/2000/svg" width="37" height="45" viewBox="0 0 37 45" role="img" aria-label="${safe}" style="display:block;overflow:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-      <path d="M18.5 42 L9.2 31.2 C3.4 26.8 1.2 21.9 1.2 15.3 C1.2 6.9 8.2 1.2 18.5 1.2 C28.8 1.2 35.8 6.9 35.8 15.3 C35.8 21.9 33.6 26.8 27.8 31.2 Z" fill="#dc2626" stroke="#ffffff" stroke-width="2.4"/>
-      <text x="18.5" y="21.2" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="18" font-weight="1000" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="0.8" paint-order="stroke fill" letter-spacing="-.02em">${safe}</text>
+  // 현재 핀 외형의 80% 크기로 한 번 더 줄이고, 글자 크기는 그대로 유지한다.
+  return `<div style="width:30px;height:36px;filter:drop-shadow(0 4px 8px rgba(15,23,42,.38));">
+    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="36" viewBox="0 0 30 36" role="img" aria-label="${safe}" style="display:block;overflow:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+      <path d="M15 33.6 L7.4 25 C2.8 21.5 1 17.6 1 12.3 C1 5.6 6.7 1 15 1 C23.3 1 29 5.6 29 12.3 C29 17.6 27.2 21.5 22.6 25 Z" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+      <text x="15" y="17.1" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="18" font-weight="1000" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="0.8" paint-order="stroke fill" letter-spacing="-.02em">${safe}</text>
     </svg>
   </div>`;
 }
@@ -2641,20 +2735,20 @@ function makeStrongPrintPinContent(label){
 function makeMultiLabelPrintPinContent(labels){
   const raw=(labels||[]).map(x=>String(x||'').trim()).filter(Boolean).join(',');
   const safe=esc(raw);
-  const w=Math.max(37,Math.min(92,Math.round(raw.length*10+18)));
-  const h=45;
+  const w=Math.max(30,Math.min(90,Math.round(raw.length*8+16)));
+  const h=36;
   const cx=w/2;
-  const bodyTop=1.2;
-  const bodyBottom=29.4;
-  const radius=Math.min(14,Math.max(10,w*0.24));
-  const left=1.2;
-  const right=w-1.2;
-  const tipY=42;
-  const tailHalf=8;
-  return `<div style="width:${w}px;height:${h}px;filter:drop-shadow(0 5px 10px rgba(15,23,42,.38));">
+  const bodyTop=1;
+  const bodyBottom=23.5;
+  const radius=Math.min(11.5,Math.max(8,w*0.22));
+  const left=1;
+  const right=w-1;
+  const tipY=33.6;
+  const tailHalf=6.5;
+  return `<div style="width:${w}px;height:${h}px;filter:drop-shadow(0 4px 8px rgba(15,23,42,.38));">
     <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${safe}" style="display:block;overflow:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-      <path d="M ${left+radius} ${bodyTop} H ${right-radius} A ${radius} ${radius} 0 0 1 ${right} ${bodyTop+radius} V ${bodyBottom-radius} A ${radius} ${radius} 0 0 1 ${right-radius} ${bodyBottom} H ${cx+tailHalf} L ${cx} ${tipY} L ${cx-tailHalf} ${bodyBottom} H ${left+radius} A ${radius} ${radius} 0 0 1 ${left} ${bodyBottom-radius} V ${bodyTop+radius} A ${radius} ${radius} 0 0 1 ${left+radius} ${bodyTop} Z" fill="#dc2626" stroke="#ffffff" stroke-width="2.4" stroke-linejoin="round"/>
-      <text x="${cx}" y="16.8" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="18" font-weight="1000" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="0.8" paint-order="stroke fill" letter-spacing="-.02em">${safe}</text>
+      <path d="M ${left+radius} ${bodyTop} H ${right-radius} A ${radius} ${radius} 0 0 1 ${right} ${bodyTop+radius} V ${bodyBottom-radius} A ${radius} ${radius} 0 0 1 ${right-radius} ${bodyBottom} H ${cx+tailHalf} L ${cx} ${tipY} L ${cx-tailHalf} ${bodyBottom} H ${left+radius} A ${radius} ${radius} 0 0 1 ${left} ${bodyBottom-radius} V ${bodyTop+radius} A ${radius} ${radius} 0 0 1 ${left+radius} ${bodyTop} Z" fill="#dc2626" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+      <text x="${cx}" y="14.2" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="18" font-weight="1000" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="0.8" paint-order="stroke fill" letter-spacing="-.02em">${safe}</text>
     </svg>
   </div>`;
 }
@@ -2664,15 +2758,15 @@ function makePrintMarkerIconForGroup(group){
   const labels=group.labels&&group.labels.length?group.labels:normalizePrintGroupLabels(group.items);
   if(labels.length>1){
     const raw=labels.join(',');
-    const w=Math.max(37,Math.min(92,Math.round(raw.length*10+18)));
+    const w=Math.max(30,Math.min(90,Math.round(raw.length*8+16)));
     return {
       content:makeMultiLabelPrintPinContent(labels),
-      anchor:maps?new maps.Point(Math.round(w/2),43):undefined
+      anchor:maps?new maps.Point(Math.round(w/2),34):undefined
     };
   }
   return {
     content:makeStrongPrintPinContent(labels[0]||''),
-    anchor:maps?new maps.Point(19,43):undefined
+    anchor:maps?new maps.Point(15,34):undefined
   };
 }
 
@@ -2737,7 +2831,7 @@ function renderPrintViewportMap(viewport){
     logoControl:false
   });
 
-  const groups=buildPrintMarkerGroups(route);
+  const groups=buildPrintMarkerGroups(route,viewport);
   groups.forEach(group=>{
     const pos=new maps.LatLng(group.lat,group.lng);
     const marker=new maps.Marker({

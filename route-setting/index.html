@@ -2638,18 +2638,23 @@ function makeStrongPrintPinContent(label){
   </div>`;
 }
 
-function makeClusterBubbleContent(labels){
-  const text=labels.map(esc).join(' · ');
-  const raw=labels.join(' · ');
-  // 말풍선 외형도 이전 대비 약 80% 축소, 텍스트 크기는 그대로 유지.
-  const w=Math.max(38,Math.min(117,Math.round(raw.length*12+22)));
-  const h=32;
+function makeMultiLabelPrintPinContent(labels){
+  const raw=(labels||[]).map(x=>String(x||'').trim()).filter(Boolean).join(',');
+  const safe=esc(raw);
+  const w=Math.max(37,Math.min(92,Math.round(raw.length*10+18)));
+  const h=45;
   const cx=w/2;
-  return `<div style="width:${w}px;height:${h+12}px;transform:translateY(-6px);filter:drop-shadow(0 5px 11px rgba(15,23,42,.34));">
-    <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h+12}" viewBox="0 0 ${w} ${h+12}" role="img" aria-label="${text}" style="display:block;overflow:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-      <rect x="1.5" y="1.5" width="${w-3}" height="${h}" rx="14" ry="14" fill="#dc2626" stroke="#ffffff" stroke-width="3"/>
-      <path d="M${cx-7} ${h-1} L${cx} ${h+10} L${cx+7} ${h-1} Z" fill="#dc2626" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
-      <text x="${cx}" y="18" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="17" font-weight="1000" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="0.8" paint-order="stroke fill">${text}</text>
+  const bodyTop=1.2;
+  const bodyBottom=29.4;
+  const radius=Math.min(14,Math.max(10,w*0.24));
+  const left=1.2;
+  const right=w-1.2;
+  const tipY=42;
+  const tailHalf=8;
+  return `<div style="width:${w}px;height:${h}px;filter:drop-shadow(0 5px 10px rgba(15,23,42,.38));">
+    <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${safe}" style="display:block;overflow:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+      <path d="M ${left+radius} ${bodyTop} H ${right-radius} A ${radius} ${radius} 0 0 1 ${right} ${bodyTop+radius} V ${bodyBottom-radius} A ${radius} ${radius} 0 0 1 ${right-radius} ${bodyBottom} H ${cx+tailHalf} L ${cx} ${tipY} L ${cx-tailHalf} ${bodyBottom} H ${left+radius} A ${radius} ${radius} 0 0 1 ${left} ${bodyBottom-radius} V ${bodyTop+radius} A ${radius} ${radius} 0 0 1 ${left+radius} ${bodyTop} Z" fill="#dc2626" stroke="#ffffff" stroke-width="2.4" stroke-linejoin="round"/>
+      <text x="${cx}" y="16.8" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="18" font-weight="1000" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="0.8" paint-order="stroke fill" letter-spacing="-.02em">${safe}</text>
     </svg>
   </div>`;
 }
@@ -2658,11 +2663,11 @@ function makePrintMarkerIconForGroup(group){
   const maps=getNaverMaps();
   const labels=group.labels&&group.labels.length?group.labels:normalizePrintGroupLabels(group.items);
   if(labels.length>1){
-    const raw=labels.join(' · ');
-    const w=Math.max(38,Math.min(117,Math.round(raw.length*12+22)));
+    const raw=labels.join(',');
+    const w=Math.max(37,Math.min(92,Math.round(raw.length*10+18)));
     return {
-      content:makeClusterBubbleContent(labels),
-      anchor:maps?new maps.Point(Math.round(w/2),42):undefined
+      content:makeMultiLabelPrintPinContent(labels),
+      anchor:maps?new maps.Point(Math.round(w/2),43):undefined
     };
   }
   return {

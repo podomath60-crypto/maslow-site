@@ -1086,6 +1086,20 @@
   .printSheet.printViewportSheet .printSegment{margin-top:2px!important;color:#1d4ed8!important;font-size:9.5px!important;font-weight:900!important;line-height:1.25!important}
 }
 
+/* Print color preservation: keep map tiles and SVG marker colors in PDF/print. */
+.printSheet,.printSheet *{
+  -webkit-print-color-adjust:exact!important;
+  print-color-adjust:exact!important;
+  color-adjust:exact!important;
+}
+@media print{
+  .printSheet,.printSheet *{
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+    color-adjust:exact!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2614,17 +2628,29 @@ function buildPrintMarkerGroups(route){
 
 function makeStrongPrintPinContent(label){
   const safe=esc(label);
-  return `<div style="position:relative;width:46px;height:56px;">
-    <div style="position:absolute;left:50%;top:0;width:38px;height:38px;transform:translateX(-50%) rotate(-45deg);border-radius:999px 999px 999px 0;background:#dc2626;border:3px solid #fff;box-shadow:0 7px 18px rgba(15,23,42,.38);"></div>
-    <div style="position:absolute;left:50%;top:5px;transform:translateX(-50%);min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:1000;line-height:1;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.7),1px 0 1px rgba(0,0,0,.45),-1px 0 1px rgba(0,0,0,.45),0 -1px 1px rgba(0,0,0,.45);letter-spacing:-.02em;">${safe}</div>
+  // 핀 외형은 이전 대비 약 80%로 축소하고, 글자 크기는 그대로 유지한다.
+  // CSS background가 아니라 inline SVG fill을 써서 PDF/인쇄에서 배경 그래픽 옵션 영향이 적게 한다.
+  return `<div style="width:37px;height:45px;filter:drop-shadow(0 5px 10px rgba(15,23,42,.38));">
+    <svg xmlns="http://www.w3.org/2000/svg" width="37" height="45" viewBox="0 0 37 45" role="img" aria-label="${safe}" style="display:block;overflow:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+      <path d="M18.5 42 L9.2 31.2 C3.4 26.8 1.2 21.9 1.2 15.3 C1.2 6.9 8.2 1.2 18.5 1.2 C28.8 1.2 35.8 6.9 35.8 15.3 C35.8 21.9 33.6 26.8 27.8 31.2 Z" fill="#dc2626" stroke="#ffffff" stroke-width="2.4"/>
+      <text x="18.5" y="21.2" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="18" font-weight="1000" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="0.8" paint-order="stroke fill" letter-spacing="-.02em">${safe}</text>
+    </svg>
   </div>`;
 }
 
 function makeClusterBubbleContent(labels){
   const text=labels.map(esc).join(' · ');
-  return `<div style="position:relative;transform:translateY(-8px);">
-    <div style="display:inline-flex;align-items:center;justify-content:center;min-width:48px;max-width:146px;min-height:34px;padding:6px 10px;border-radius:16px;background:#dc2626;border:3px solid #fff;box-shadow:0 7px 20px rgba(15,23,42,.34);font-size:17px;font-weight:1000;color:#fff;line-height:1.1;text-align:center;white-space:normal;text-shadow:0 1px 1px rgba(0,0,0,.7),1px 0 1px rgba(0,0,0,.45),-1px 0 1px rgba(0,0,0,.45),0 -1px 1px rgba(0,0,0,.45);">${text}</div>
-    <div style="position:absolute;left:50%;bottom:-8px;width:14px;height:14px;background:#dc2626;border-right:3px solid #fff;border-bottom:3px solid #fff;transform:translateX(-50%) rotate(45deg);"></div>
+  const raw=labels.join(' · ');
+  // 말풍선 외형도 이전 대비 약 80% 축소, 텍스트 크기는 그대로 유지.
+  const w=Math.max(38,Math.min(117,Math.round(raw.length*12+22)));
+  const h=32;
+  const cx=w/2;
+  return `<div style="width:${w}px;height:${h+12}px;transform:translateY(-6px);filter:drop-shadow(0 5px 11px rgba(15,23,42,.34));">
+    <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h+12}" viewBox="0 0 ${w} ${h+12}" role="img" aria-label="${text}" style="display:block;overflow:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+      <rect x="1.5" y="1.5" width="${w-3}" height="${h}" rx="14" ry="14" fill="#dc2626" stroke="#ffffff" stroke-width="3"/>
+      <path d="M${cx-7} ${h-1} L${cx} ${h+10} L${cx+7} ${h-1} Z" fill="#dc2626" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+      <text x="${cx}" y="18" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="17" font-weight="1000" fill="#ffffff" stroke="rgba(0,0,0,.55)" stroke-width="0.8" paint-order="stroke fill">${text}</text>
+    </svg>
   </div>`;
 }
 
@@ -2632,14 +2658,16 @@ function makePrintMarkerIconForGroup(group){
   const maps=getNaverMaps();
   const labels=group.labels&&group.labels.length?group.labels:normalizePrintGroupLabels(group.items);
   if(labels.length>1){
+    const raw=labels.join(' · ');
+    const w=Math.max(38,Math.min(117,Math.round(raw.length*12+22)));
     return {
       content:makeClusterBubbleContent(labels),
-      anchor:maps?new maps.Point(30,50):undefined
+      anchor:maps?new maps.Point(Math.round(w/2),42):undefined
     };
   }
   return {
     content:makeStrongPrintPinContent(labels[0]||''),
-    anchor:maps?new maps.Point(23,54):undefined
+    anchor:maps?new maps.Point(19,43):undefined
   };
 }
 

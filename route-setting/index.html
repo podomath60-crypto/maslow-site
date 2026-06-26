@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>경로설정 - 최단 경로</title>
 <meta property="og:type" content="website" />
 <meta property="og:title" content="매직 카펫 최적임장경로 계산기" />
@@ -357,6 +357,45 @@
 }
 
 
+
+/* Mobile carpet must stay fixed on the viewport after docking.
+   It must not disappear when map/result code adds .hide or when the mobile panel moves. */
+@media(max-width:760px){
+  .mapGuide.mapGuideDocked,
+  .mapGuide.mapGuideDocked.hide{
+    position:fixed!important;
+    display:flex!important;
+    left:12px!important;
+    top:calc(env(safe-area-inset-top, 0px) + 6px)!important;
+    width:44px!important;
+    height:44px!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    transform:none!important;
+    z-index:5000!important;
+    pointer-events:auto!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    overflow:visible!important;
+  }
+  .mapGuide.mapGuideDocked .mapCarpetHero,
+  .mapGuide.mapGuideDocked.hide .mapCarpetHero{
+    display:block!important;
+    width:44px!important;
+    max-width:44px!important;
+    height:auto!important;
+  }
+  .mapGuide.mapGuideDocked strong,
+  .mapGuide.mapGuideDocked span,
+  .mapGuide.mapGuideDocked.hide strong,
+  .mapGuide.mapGuideDocked.hide span{
+    display:none!important;
+  }
+}
+
 /* Map click visit add bubble */
 .mapClickBubble{
   position:absolute;
@@ -469,10 +508,182 @@
 }
 
 
+
+/* Mobile: block browser/page zoom. Map's own JS pinch zoom still receives touch events. */
+@media(max-width:760px){
+  html,body{
+    touch-action:manipulation;
+    overscroll-behavior:none;
+  }
+  .app{
+    touch-action:manipulation;
+    overscroll-behavior:none;
+  }
+  .mapWrap,
+  .naverMapCanvas{
+    touch-action:none;
+    overscroll-behavior:none;
+  }
+}
+
 /* Map cursor: red pin instead of grab hand */
 .naverMapCanvas,
 .naverMapCanvas *{
   cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath fill='%23ef4444' stroke='%23ffffff' stroke-width='2' d='M16 3c-5.1 0-9.2 4.1-9.2 9.2 0 6.7 9.2 16.8 9.2 16.8s9.2-10.1 9.2-16.8C25.2 7.1 21.1 3 16 3z'/%3E%3Ccircle cx='16' cy='12.3' r='3.3' fill='%23ffffff'/%3E%3C/svg%3E") 16 30, crosshair!important;
+}
+
+
+.printBtn{
+  display:none;
+  width:34px;
+  height:34px;
+  border:1px solid #dbe3ef;
+  border-radius:10px;
+  background:#f8fafc;
+  color:#0f172a;
+  font-size:17px;
+  line-height:1;
+  cursor:pointer;
+  align-items:center;
+  justify-content:center;
+  margin-left:2px;
+}
+.printBtn.show{
+  display:inline-flex;
+}
+.printBtn:hover{
+  background:#eff6ff;
+  border-color:#bfdbfe;
+}
+@media(max-width:760px){
+  .printBtn{display:none!important}
+  .panel{
+    touch-action:pan-y;
+  }
+}
+
+.printSheet{
+  display:none;
+}
+
+@media print{
+  @page{
+    size:A4 landscape;
+    margin:10mm;
+  }
+  html,body{
+    width:auto!important;
+    height:auto!important;
+    overflow:visible!important;
+    background:#fff!important;
+  }
+  body>*:not(.printSheet){
+    display:none!important;
+  }
+  .printSheet{
+    display:block!important;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:#0f172a;
+  }
+  .printPage{
+    width:100%;
+  }
+  .printTop{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:8px;
+    border-bottom:2px solid #0f172a;
+    padding-bottom:7px;
+  }
+  .printTitle{
+    font-size:20px;
+    font-weight:950;
+    letter-spacing:-.04em;
+  }
+  .printMeta{
+    font-size:12px;
+    color:#475569;
+    font-weight:800;
+    text-align:right;
+    line-height:1.35;
+  }
+  .printGrid{
+    display:grid;
+    grid-template-columns:58% 42%;
+    gap:10px;
+    align-items:start;
+  }
+  .printMapBox{
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    overflow:hidden;
+    height:165mm;
+    background:#f8fafc;
+  }
+  .printMapBox img{
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+  .printRouteBox{
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    padding:8px 9px;
+    min-height:165mm;
+    box-sizing:border-box;
+  }
+  .printSummary{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:7px;
+    font-size:12px;
+    font-weight:900;
+    color:#15803d;
+  }
+  .printRouteList{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .printRouteItem{
+    display:grid;
+    grid-template-columns:28px 1fr;
+    gap:6px;
+    align-items:start;
+    border-bottom:1px solid #eef2f7;
+    padding:4px 0 5px;
+    page-break-inside:avoid;
+  }
+  .printBadge{
+    width:24px;
+    height:24px;
+    border-radius:8px;
+    background:#eff6ff;
+    color:#1d4ed8;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    font-weight:950;
+  }
+  .printBadge.a{background:#f0fdf4;color:#15803d}
+  .printBadge.z{background:#f1f5f9;color:#0f172a}
+  .printRouteText{
+    font-size:11px;
+    line-height:1.32;
+    word-break:break-all;
+    font-weight:750;
+  }
+  .printSegment{
+    margin-top:2px;
+    color:#1d4ed8;
+    font-size:10px;
+    font-weight:900;
+  }
 }
 
 </style>
@@ -490,7 +701,7 @@
     <div class="mobilePanelDragZone" id="mobilePanelDragZone" aria-hidden="true"></div>
     <button class="mobilePanelHandle" id="mobilePanelHandle" type="button" aria-label="패널 크기 조절" tabindex="-1"></button>
     <div class="head">
-      <div class="headLine"><h1>🪄 최단 경로</h1><div class="totalLine"><small>총 예상시간</small><span id="totalTime">--</span></div></div>
+      <div class="headLine"><h1>🪄 최단 경로</h1><div class="totalLine"><small>총 예상시간</small><span id="totalTime">--</span><button class="printBtn" id="printRoute" type="button" title="A4 가로 출력" aria-label="A4 가로 출력">🖨️</button></div></div>
     </div>
     <div class="body" id="panelBody">
       <div class="result" id="result">
@@ -784,7 +995,7 @@ function coordKey(a,b){return `${a.id}->${b.id}`}
 function hasCoord(p){return p&&Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng))}
 function getNaverMaps(){return window.naver&&window.naver.maps?window.naver.maps:null}
 function setBusy(b){$('findRoute').disabled=b;startInput.disabled=b;visitsInput.disabled=b;endInput.disabled=b||returnChk.checked;returnChk.disabled=b;if($('currentStart'))$('currentStart').disabled=b;if($('officeEnd'))$('officeEnd').disabled=b||returnChk.checked;if($('currentEnd'))$('currentEnd').disabled=b||returnChk.checked}
-function resetResult(){latestResult=null;totalTimeEl.textContent='--';resultEl.classList.remove('show');clearMap();mapGuide.classList.remove('hide')}
+function resetResult(){latestResult=null;totalTimeEl.textContent='--';setPrintButtonVisible(false);resultEl.classList.remove('show');clearMap();mapGuide.classList.remove('hide')}
 function scrollPanelTop(){if(panelBody)panelBody.scrollTo({top:0,behavior:'auto'})}
 function focusPanelTopSoon(){scrollPanelTop();setTimeout(scrollPanelTop,0);setTimeout(scrollPanelTop,80)}
 
@@ -815,6 +1026,7 @@ function parseInputs(){
 function showInputValidationError(message){
   totalTimeEl.textContent='--';
   latestResult=null;
+  setPrintButtonVisible(false);
   $('resultSummary').textContent='입력 확인 필요';
   $('routeList').innerHTML=`<div class="addressErrorBox"><strong>최단경로 계산을 시작하지 않았습니다.</strong><div>${esc(message||'입력값을 확인해 주세요.')}</div><div class="addressErrorGuide">필수 주소를 입력한 뒤 최단경로 찾기를 다시 눌러 주세요.</div></div>`;
   resultEl.classList.add('show');
@@ -924,6 +1136,7 @@ function routeTextHtml(meta){
 function renderResult(best,returnToStart){
   latestResult={...best,returnToStart};
   totalTimeEl.textContent=formatDuration(best.durationMs);
+  setPrintButtonVisible(true);
   if(window.matchMedia&&window.matchMedia('(max-width:760px)').matches){
     setMobilePanelState('middle');
   }
@@ -1081,8 +1294,14 @@ function refreshMap(){
   setTimeout(fire,420);
   setTimeout(fire,760);
 }
+function keepMobileDockedCarpetVisible(){
+  if(isMobileMapLayout&&isMobileMapLayout()&&mapGuide&&mapGuide.classList.contains('mapGuideDocked')){
+    mapGuide.classList.remove('hide');
+  }
+}
+
 function renderMapResult(best,returnToStart){
-  const maps=getNaverMaps();if(!maps||!naverMap)return;clearMap();mapGuide.classList.add('hide');
+  const maps=getNaverMaps();if(!maps||!naverMap)return;clearMap();mapGuide.classList.add('hide');keepMobileDockedCarpetVisible();
   const bounds=new maps.LatLngBounds();
   best.route.forEach((p,i)=>{if(returnToStart&&i===best.route.length-1)return;const meta=makeRouteLabel(p,i,best.route.length,returnToStart);const pos=new maps.LatLng(p.lat,p.lng);bounds.extend(pos);markers.push(new maps.Marker({position:pos,map:naverMap,title:`${meta.label}. ${p.address}`,icon:makeIcon(meta.label,meta.type)}))});
   best.segments.forEach(seg=>{const path=(seg.path&&seg.path.length?seg.path:[seg.from,seg.to]).filter(hasCoord);if(path.length){polylines.push(new maps.Polyline({map:naverMap,path:path.map(x=>new maps.LatLng(x.lat,x.lng)),strokeColor:'#0f172a',strokeWeight:4,strokeOpacity:.58,strokeStyle:'solid'}))}});
@@ -1109,6 +1328,70 @@ function openSegmentNaver(idx){
   const url=buildSegmentDirectionsUrl(latestResult.segments[idx],idx);
   if(url&&url!=='#')window.open(url,'_blank','noopener,noreferrer');
 }
+
+function setPrintButtonVisible(visible){
+  const btn=$('printRoute');
+  if(!btn)return;
+  btn.classList.toggle('show',!!visible);
+}
+
+async function captureCurrentMapImage(){
+  if(!mapWrap)return '';
+  const canvas=mapWrap.querySelector('canvas');
+  if(canvas&&canvas.toDataURL){
+    try{return canvas.toDataURL('image/png')}catch(e){}
+  }
+  const img=mapWrap.querySelector('img[src]');
+  return img?img.src:'';
+}
+
+function removePrintSheet(){
+  const old=document.querySelector('.printSheet');
+  if(old&&old.parentNode)old.parentNode.removeChild(old);
+}
+
+function makePrintRouteHtml(){
+  if(!latestResult)return '';
+  const r=latestResult;
+  return r.route.map((p,i)=>{
+    const meta=makeRouteLabel(p,i,r.route.length,r.returnToStart);
+    const badgeClass=meta.type==='start'?'a':meta.type==='end'?'z':'';
+    const seg=r.segments[i];
+    const segText=seg?`<div class="printSegment">다음 구간 ${esc(seg.summary.durationText)} · ${esc(seg.summary.distanceText)}</div>`:'';
+    return `<div class="printRouteItem"><div class="printBadge ${badgeClass}">${esc(meta.label)}</div><div><div class="printRouteText">${esc(meta.text)}</div>${segText}</div></div>`;
+  }).join('');
+}
+
+async function printRouteResult(){
+  if(!latestResult){
+    showStatus('출력할 추천순서가 없습니다. 최단경로를 먼저 찾으세요.','err');
+    return;
+  }
+  const mapImage=await captureCurrentMapImage();
+  removePrintSheet();
+  const sheet=document.createElement('section');
+  sheet.className='printSheet';
+  const now=new Date();
+  const dateText=now.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  sheet.innerHTML=`<div class="printPage">
+    <div class="printTop">
+      <div class="printTitle">최단 경로 추천 순서</div>
+      <div class="printMeta">출력일 ${esc(dateText)}<br>지도와 추천순서는 현재 화면 기준입니다.</div>
+    </div>
+    <div class="printGrid">
+      <div class="printMapBox">${mapImage?`<img src="${esc(mapImage)}" alt="지도">`:`<div style="padding:16px;font-size:13px;font-weight:800;color:#64748b">지도 이미지를 캡처하지 못했습니다. 화면의 지도와 함께 추천순서를 확인해 주세요.</div>`}</div>
+      <div class="printRouteBox">
+        <div class="printSummary"><span>총 예상시간 ${esc(formatDuration(latestResult.durationMs))}</span><span>총 거리 ${esc(formatDistance(latestResult.distanceM))}</span><span>${latestResult.route.length}개 지점</span></div>
+        <div class="printRouteList">${makePrintRouteHtml()}</div>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(sheet);
+  setTimeout(()=>window.print(),80);
+}
+
+window.addEventListener('afterprint',removePrintSheet);
+
 function resultText(){
   if(!latestResult)return '';
   const r=latestResult;const lines=[];lines.push('최단 경로 결과','');lines.push(`총 예상 운행시간: ${formatDuration(r.durationMs)}`);lines.push(`총 예상 거리: ${formatDistance(r.distanceM)}`,'');lines.push('추천 순서');
@@ -1440,17 +1723,21 @@ function installMobilePullRefreshGuard(){
   const isFormControl=el=>!!(el&&el.closest&&el.closest('input,textarea,select,button'));
 
   panelEl.addEventListener('touchstart',e=>{
-    if(!isMobileLayout()||!e.touches||e.touches.length!==1)return;
+    if(!isMobileLayout())return;
+    if(e.touches&&e.touches.length>1){e.preventDefault();return;}
+    if(!e.touches||e.touches.length!==1)return;
     if(isFormControl(e.target))return;
     const t=e.touches[0];
     startY=t.clientY;
     startX=t.clientX;
     targetScrollable=findScrollable(e.target);
     startScrollTop=targetScrollable?targetScrollable.scrollTop:0;
-  },{passive:true});
+  },{passive:false});
 
   panelEl.addEventListener('touchmove',e=>{
-    if(!isMobileLayout()||!e.touches||e.touches.length!==1)return;
+    if(!isMobileLayout())return;
+    if(e.touches&&e.touches.length>1){e.preventDefault();return;}
+    if(!e.touches||e.touches.length!==1)return;
     if(isFormControl(e.target))return;
     const t=e.touches[0];
     const dy=t.clientY-startY;
@@ -1470,6 +1757,36 @@ function installMobilePullRefreshGuard(){
 }
 
 installMobilePullRefreshGuard();
+
+function preventMobilePageZoom(){
+  if(!isMobileLayout())return;
+
+  // iOS Safari page zoom gesture.
+  ['gesturestart','gesturechange','gestureend'].forEach(type=>{
+    document.addEventListener(type,e=>{
+      e.preventDefault();
+    },{passive:false});
+  });
+
+  // Browser page pinch fallback. Do not stop propagation, so Naver map can still handle its own pinch zoom.
+  document.addEventListener('touchmove',e=>{
+    if(e.touches&&e.touches.length>1){
+      e.preventDefault();
+    }
+  },{passive:false});
+
+  // Double-tap page zoom guard.
+  let lastTouchEnd=0;
+  document.addEventListener('touchend',e=>{
+    const now=Date.now();
+    if(now-lastTouchEnd<=300){
+      e.preventDefault();
+    }
+    lastTouchEnd=now;
+  },{passive:false});
+}
+
+preventMobilePageZoom();
 
 const mobilePanelDragSurface=mobilePanelDragZone||mobilePanelHandle;
 if(mobilePanelDragSurface){
@@ -1519,6 +1836,7 @@ $('officeEnd').onclick=()=>{if(returnChk.checked){showStatus('출발지로 복�
 $('currentEnd').onclick=setCurrentLocationAsEnd;
 
 $('copyResult').onclick=async()=>{if(!latestResult)return;await navigator.clipboard.writeText(resultText());showStatus('추천 결과를 복사했습니다.','ok')};
+if($('printRoute'))$('printRoute').onclick=printRouteResult;
 window.addEventListener('resize',refreshMap);
 initNaverMap();
 </script>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>경로설정 - 최단경로 매직카펫</title>
+<title>경로설정 - 최단 경로</title>
 <style>
 :root{--green:#03c75a;--blue:#2563eb;--dark:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f4f6f8;--danger:#e11d48;--amber:#f59e0b}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--dark)}button,input,textarea{font-family:inherit}.app{width:100vw;height:100vh;display:grid;grid-template-columns:65% 35%;overflow:hidden}
@@ -18,6 +18,11 @@
 .mapCarpetHero{width:min(220px,56vw);height:auto;display:block;filter:drop-shadow(0 18px 24px rgba(15,23,42,.18));animation:carpetFloat 3.8s ease-in-out infinite}
 @keyframes carpetFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(1.5deg)}}
 
+
+@media(max-width:760px){
+  .mapCarpetHero{width:min(132px,34vw)}
+}
+
 </style>
 </head>
 <body>
@@ -31,7 +36,7 @@
 
   <aside class="panel">
     <div class="head">
-      <div class="headLine"><h1>🪄 최단경로 매직카펫</h1><div class="totalLine"><small>총 예상시간</small><span id="totalTime">--</span></div></div>
+      <div class="headLine"><h1>🪄 최단 경로</h1><div class="totalLine"><small>총 예상시간</small><span id="totalTime">--</span></div></div>
     </div>
     <div class="body">
       <div id="status" class="status"></div>
@@ -216,7 +221,7 @@ function openSegmentNaver(idx){
 }
 function resultText(){
   if(!latestResult)return '';
-  const r=latestResult;const lines=[];lines.push('최단경로 매직카펫 결과','');lines.push(`총 예상 운행시간: ${formatDuration(r.durationMs)}`);lines.push(`총 예상 거리: ${formatDistance(r.distanceM)}`,'');lines.push('추천 순서');
+  const r=latestResult;const lines=[];lines.push('최단 경로 결과','');lines.push(`총 예상 운행시간: ${formatDuration(r.durationMs)}`);lines.push(`총 예상 거리: ${formatDistance(r.distanceM)}`,'');lines.push('추천 순서');
   r.route.forEach((p,i)=>{const meta=makeRouteLabel(p,i,r.route.length,r.returnToStart);lines.push(`${meta.label}. ${meta.text}`)});lines.push('','구간별 시간');
   r.segments.forEach((s,i)=>{const from=makeRouteLabel(s.from,i,r.route.length,r.returnToStart).label;const to=makeRouteLabel(s.to,i+1,r.route.length,r.returnToStart).label;lines.push(`${from} → ${to}: ${s.summary.durationText} · ${s.summary.distanceText}`)});
   return lines.join('\n');

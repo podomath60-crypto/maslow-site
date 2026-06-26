@@ -1100,12 +1100,83 @@
   }
 }
 
+
+/* Print area selection */
+.printAreaOverlay{
+  position:absolute;
+  inset:0;
+  z-index:80;
+  display:none;
+  cursor:crosshair;
+  background:rgba(15,23,42,.18);
+  user-select:none;
+  touch-action:none;
+}
+.printAreaOverlay.active{
+  display:block;
+}
+.printAreaBox{
+  position:absolute;
+  display:none;
+  border:2px solid #7c3aed;
+  background:rgba(124,58,237,.08);
+  box-shadow:0 0 0 9999px rgba(15,23,42,.22);
+  box-sizing:border-box;
+}
+.printAreaBox.active{
+  display:block;
+}
+.printAreaActions{
+  position:absolute;
+  right:6px;
+  bottom:6px;
+  display:none;
+  gap:5px;
+  z-index:2;
+}
+.printAreaBox.ready .printAreaActions{
+  display:flex;
+}
+.printAreaActions button{
+  border:0;
+  border-radius:8px;
+  padding:5px 9px;
+  font-size:12px;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+  box-shadow:0 3px 10px rgba(15,23,42,.22);
+}
+.printAreaActions .printAreaDo{
+  background:#7c3aed;
+  color:#fff;
+}
+.printAreaActions .printAreaCancel{
+  background:#fff;
+  color:#334155;
+  border:1px solid rgba(148,163,184,.65);
+}
+@media(max-width:720px){
+  .printAreaActions button{
+    padding:6px 9px;
+    font-size:12px;
+  }
+}
+
 </style>
 </head>
 <body>
 <main class="app">
   <section class="mapWrap" id="mapWrap">
     <div class="naverMapCanvas" id="naverMap" aria-label="네이버 지도"></div>
+    <div class="printAreaOverlay" id="printAreaOverlay" aria-hidden="true">
+      <div class="printAreaBox" id="printAreaBox">
+        <div class="printAreaActions" id="printAreaActions">
+          <button class="printAreaDo" id="printAreaDo" type="button">인쇄</button>
+          <button class="printAreaCancel" id="printAreaCancel" type="button">취소</button>
+        </div>
+      </div>
+    </div>
     <div class="mapbar"><strong>경로설정</strong><span id="mapStatus">네이버 지도 로딩 중</span></div>
     <div class="mapGuide" id="mapGuide"><img class="mapCarpetHero" src="/route-setting/magic-carpet.png" alt="" aria-hidden="true"><strong class="magicTitle">매직 카펫</strong><span>계산이 끝나면 추천 순서대로 지도에 핀이 표시됩니다.</span></div>
     <div class="legend"><span><i class="dot a"></i>출발</span><span><i class="dot s"></i>방문</span><span><i class="dot z"></i>도착</span></div>
@@ -1776,7 +1847,171 @@ function makePrintRouteHtml(){
   }).join('');
 }
 
-async function printRouteResult(){
+
+let printAreaSelectState=null;
+
+function getPrintSelectionRectFromState(){
+  if(!printAreaSelectState)return null;
+  const s=printAreaSelectState;
+  const left=Math.min(s.startX,s.endX);
+  const top=Math.min(s.startY,s.endY);
+  const width=Math.abs(s.endX-s.startX);
+  const height=Math.abs(s.endY-s.startY);
+  if(width<24||height<24)return null;
+  return {left,top,width,height,right:left+width,bottom:top+height};
+}
+
+function updatePrintAreaBox(){
+  const box=$('printAreaBox');
+  if(!box)return;
+  const rect=getPrintSelectionRectFromState();
+  if(!rect){
+    box.classList.remove('active','ready');
+    return;
+  }
+  box.classList.add('active');
+  box.style.left=`${rect.left}px`;
+  box.style.top=`${rect.top}px`;
+  box.style.width=`${rect.width}px`;
+  box.style.height=`${rect.height}px`;
+  if(printAreaSelectState&&printAreaSelectState.ready){
+    box.classList.add('ready');
+  }else{
+    box.classList.remove('ready');
+  }
+}
+
+function cancelPrintAreaSelect(){
+  const overlay=$('printAreaOverlay');
+  const box=$('printAreaBox');
+  if(overlay)overlay.classList.remove('active');
+  if(box){
+    box.classList.remove('active','ready');
+    box.removeAttribute('style');
+  }
+  printAreaSelectState=null;
+}
+
+function getSelectedPrintViewport(){
+  const maps=getNaverMaps();
+  const rect=getPrintSelectionRectFromState();
+  if(!maps||!naverMap||!rect)return null;
+
+  try{
+    const projection=naverMap.getProjection&&naverMap.getProjection();
+    if(!projection||!projection.fromOffsetToCoord)return null;
+
+    const sw=projection.fromOffsetToCoord(new maps.Point(rect.left,rect.bottom));
+    const ne=projection.fromOffsetToCoord(new maps.Point(rect.right,rect.top));
+    const center=projection.fromOffsetToCoord(new maps.Point(rect.left+(rect.width/2),rect.top+(rect.height/2)));
+    const zoom=naverMap.getZoom&&naverMap.getZoom();
+
+    const swLat=sw.lat(), swLng=sw.lng();
+    const neLat=ne.lat(), neLng=ne.lng();
+
+    return {
+      width:Math.round(rect.width),
+      height:Math.round(rect.height),
+      aspect:rect.width/rect.height,
+      center:center?{lat:center.lat(),lng:center.lng()}:null,
+      zoom:Number.isFinite(zoom)?zoom:11,
+      bounds:{sw:{lat:swLat,lng:swLng},ne:{lat:neLat,lng:neLng}},
+      filterBounds:{
+        minLat:Math.min(swLat,neLat),
+        maxLat:Math.max(swLat,neLat),
+        minLng:Math.min(swLng,neLng),
+        maxLng:Math.max(swLng,neLng)
+      }
+    };
+  }catch(e){
+    return null;
+  }
+}
+
+function startPrintAreaSelect(){
+  if(!latestResult){
+    showStatus('출력할 추천순서가 없습니다. 최단경로를 먼저 찾으세요.','err');
+    return;
+  }
+
+  const overlay=$('printAreaOverlay');
+  const box=$('printAreaBox');
+  if(!overlay||!box||!mapWrap){
+    printRouteResultActual(getCurrentMapViewportSnapshot());
+    return;
+  }
+
+  printAreaSelectState={startX:0,startY:0,endX:0,endY:0,dragging:false,ready:false};
+  box.classList.remove('active','ready');
+  box.removeAttribute('style');
+  overlay.classList.add('active');
+
+  const getLocalPoint=(ev)=>{
+    const r=mapWrap.getBoundingClientRect();
+    const x=Math.max(0,Math.min(r.width,ev.clientX-r.left));
+    const y=Math.max(0,Math.min(r.height,ev.clientY-r.top));
+    return {x,y};
+  };
+
+  const onPointerDown=(ev)=>{
+    if(ev.target&&ev.target.closest&&ev.target.closest('.printAreaActions'))return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const p=getLocalPoint(ev);
+    printAreaSelectState={startX:p.x,startY:p.y,endX:p.x,endY:p.y,dragging:true,ready:false};
+    updatePrintAreaBox();
+    try{overlay.setPointerCapture(ev.pointerId)}catch(e){}
+  };
+
+  const onPointerMove=(ev)=>{
+    if(!printAreaSelectState||!printAreaSelectState.dragging)return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const p=getLocalPoint(ev);
+    printAreaSelectState.endX=p.x;
+    printAreaSelectState.endY=p.y;
+    updatePrintAreaBox();
+  };
+
+  const onPointerUp=(ev)=>{
+    if(!printAreaSelectState||!printAreaSelectState.dragging)return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const p=getLocalPoint(ev);
+    printAreaSelectState.endX=p.x;
+    printAreaSelectState.endY=p.y;
+    printAreaSelectState.dragging=false;
+    printAreaSelectState.ready=!!getPrintSelectionRectFromState();
+    updatePrintAreaBox();
+    try{overlay.releasePointerCapture(ev.pointerId)}catch(e){}
+  };
+
+  overlay.onpointerdown=onPointerDown;
+  overlay.onpointermove=onPointerMove;
+  overlay.onpointerup=onPointerUp;
+  overlay.onpointercancel=onPointerUp;
+
+  const doBtn=$('printAreaDo');
+  const cancelBtn=$('printAreaCancel');
+  if(doBtn)doBtn.onclick=(ev)=>{
+    ev.preventDefault();
+    ev.stopPropagation();
+    const viewport=getSelectedPrintViewport();
+    cancelPrintAreaSelect();
+    if(!viewport){
+      showStatus('인쇄할 지도 영역을 다시 선택해 주세요.','err');
+      return;
+    }
+    printRouteResultActual(viewport);
+  };
+  if(cancelBtn)cancelBtn.onclick=(ev)=>{
+    ev.preventDefault();
+    ev.stopPropagation();
+    cancelPrintAreaSelect();
+  };
+}
+
+async function printRouteResultActual(viewportOverride){
   if(!latestResult){
     showStatus('출력할 추천순서가 없습니다. 최단경로를 먼저 찾으세요.','err');
     return;
@@ -2585,6 +2820,16 @@ function getPrintPointLabel(item,index,total,returnToStart){
   return meta.label;
 }
 
+function isPointInsidePrintBounds(item,viewport){
+  if(!viewport||!viewport.filterBounds)return true;
+  if(!hasCoord(item))return false;
+  const lat=Number(item.lat);
+  const lng=Number(item.lng);
+  const b=viewport.filterBounds;
+  if(!Number.isFinite(lat)||!Number.isFinite(lng))return false;
+  return lat>=b.minLat&&lat<=b.maxLat&&lng>=b.minLng&&lng<=b.maxLng;
+}
+
 function normalizePrintGroupLabels(items){
   const seen=new Set();
   const labels=[];
@@ -2672,6 +2917,7 @@ function buildPrintMarkerGroups(route,viewport){
 
   (route||[]).forEach((item,index)=>{
     if(!hasCoord(item))return;
+    if(!isPointInsidePrintBounds(item,viewport))return;
     const label=getPrintPointLabel(item,index,total,returnToStart);
     const pt=getPrintPointPixel(item,viewport,route);
     const lat=Number(item.lat);
@@ -2876,7 +3122,7 @@ async function printRouteResult(){
   removePrintSheet();
   destroyPrintMap();
 
-  const viewport=getCurrentMapViewportSnapshot();
+  const viewport=viewportOverride||getCurrentMapViewportSnapshot();
   const mapHeightMm=getPrintMapHeightMm(viewport);
   const routeCount=(latestResult.route||[]).length;
   const sheet=document.createElement('section');
@@ -2915,6 +3161,10 @@ async function printRouteResult(){
     sheet.classList.remove('offscreen');
     window.print();
   },850);
+}
+
+async function printRouteResult(){
+  startPrintAreaSelect();
 }
 
 window.addEventListener('resize',refreshMap);

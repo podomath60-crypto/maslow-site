@@ -104,6 +104,7 @@
     position:relative;
     height:100vh;
     --mobile-panel-top:50vh;
+    --mobile-panel-collapsed-height:72px;
   }
   .mapWrap{
     height:50vh;
@@ -132,15 +133,21 @@
     max-height:100vh;
   }
   .app[data-mobile-panel-state="top"] .panel{
-    height:0;
-    min-height:0;
-    max-height:0;
+    height:var(--mobile-panel-collapsed-height);
+    min-height:var(--mobile-panel-collapsed-height);
+    max-height:var(--mobile-panel-collapsed-height);
   }
   .body{
     height:calc(100% - 72px);
     max-height:none;
     overflow:auto;
     -webkit-overflow-scrolling:touch;
+  }
+  .app[data-mobile-panel-state="top"] .body{
+    display:none;
+  }
+  .app[data-mobile-panel-state="top"] .head{
+    border-top:1px solid var(--line);
   }
   .mobilePanelDragZone{
     display:block;

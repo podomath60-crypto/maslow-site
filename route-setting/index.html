@@ -104,7 +104,7 @@
     position:relative;
     height:100vh;
     --mobile-panel-top:50vh;
-    --mobile-panel-collapsed-height:72px;
+    --mobile-panel-collapsed-height:112px;
   }
   .mapWrap{
     height:50vh;
@@ -128,9 +128,9 @@
     z-index:50;
   }
   .app[data-mobile-panel-state="top"] .mapWrap{
-    height:100vh;
-    min-height:100vh;
-    max-height:100vh;
+    height:calc(100vh - var(--mobile-panel-collapsed-height));
+    min-height:calc(100vh - var(--mobile-panel-collapsed-height));
+    max-height:calc(100vh - var(--mobile-panel-collapsed-height));
   }
   .app[data-mobile-panel-state="top"] .panel{
     height:var(--mobile-panel-collapsed-height);
@@ -735,7 +735,7 @@ $('findRoute').onclick=findRoute;
 const mobilePanelHandle=$('mobilePanelHandle');
 const mobilePanelDragZone=$('mobilePanelDragZone');
 const mobilePanelRoot=document.querySelector('.app');
-const mobilePanelStates={top:100,middle:50,bottom:10};
+const mobilePanelStates={top:88,middle:50,bottom:10};
 let mobilePanelDragActive=false;
 
 function isMobileLayout(){
@@ -743,7 +743,7 @@ function isMobileLayout(){
 }
 
 function clampMapPercent(value){
-  return Math.max(10,Math.min(100,value));
+  return Math.max(10,Math.min(88,value));
 }
 
 function setMobileMapPercent(value){

@@ -1261,7 +1261,7 @@
   height:54px;
   min-width:28px;
   min-height:28px;
-  border:1px solid rgba(124,58,237,.32);
+  border:0;
   border-radius:15px;
   background:rgba(255,255,255,.96);
   color:#581c87;
@@ -1275,11 +1275,11 @@
   -webkit-tap-highlight-color:transparent;
 }
 .placeSearchFab:active{transform:translateY(1px)}
-.placeSearchFab svg{display:block;width:54%;height:54%;stroke:currentColor;stroke-width:2.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.placeSearchFab svg{display:block;width:82%;height:82%;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .placeSearchBackdrop{
   position:fixed;
   inset:0;
-  z-index:9200;
+  z-index:999999;
   display:none;
   align-items:center;
   justify-content:center;
@@ -1289,6 +1289,8 @@
 }
 .placeSearchBackdrop.active{display:flex}
 .placeSearchModal{
+  position:relative;
+  z-index:1000000;
   width:min(560px,calc(100vw - 32px));
   max-height:min(720px,calc(100vh - 56px));
   display:flex;
@@ -1321,17 +1323,21 @@
   cursor:pointer;
 }
 .placeSearchForm{display:flex;gap:8px;padding:13px 16px;border-bottom:1px solid #f1f5f9}
+.placeSearchInputWrap{position:relative;flex:1;min-width:0}
 .placeSearchInput{
-  flex:1;
+  width:100%;
   min-width:0;
   height:42px;
   border:1px solid #d1d5db;
   border-radius:12px;
-  padding:9px 11px;
+  padding:9px 42px 9px 11px;
   outline:none;
   font-size:15px;
 }
 .placeSearchInput:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+.placeSearchClear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:0;border-radius:999px;background:rgba(15,23,42,.08);color:#334155;font-size:16px;font-weight:1000;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.placeSearchClear:hover{background:rgba(15,23,42,.14)}
+.placeSearchCount{padding:0 2px 10px;font-size:12px;font-weight:950;color:#581c87}
 .placeSearchRun{
   width:74px;
   height:42px;
@@ -1381,17 +1387,20 @@
         </div>
       </div>
     </div>
-    <button id="placeSearchFab" class="placeSearchFab" type="button" aria-label="업체명 검색" title="업체명 검색">
+    <button id="placeSearchFab" class="placeSearchFab" type="button" aria-label="장소 검색" title="장소 검색">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M16 16l5 5"></path></svg>
     </button>
     <div id="placeSearchBackdrop" class="placeSearchBackdrop" aria-hidden="true">
       <div class="placeSearchModal" role="dialog" aria-modal="true" aria-labelledby="placeSearchTitle">
         <div class="placeSearchHead">
-          <strong id="placeSearchTitle">업체명 검색</strong>
+          <strong id="placeSearchTitle">장소 검색</strong>
           <button id="placeSearchClose" class="placeSearchClose" type="button" aria-label="닫기">×</button>
         </div>
         <div class="placeSearchForm">
-          <input id="placeSearchInput" class="placeSearchInput" type="text" placeholder="업체명 또는 상호명" autocomplete="off">
+          <div class="placeSearchInputWrap">
+            <input id="placeSearchInput" class="placeSearchInput" type="text" placeholder="장소명 또는 상호명" autocomplete="off">
+            <button id="placeSearchClear" class="placeSearchClear" type="button" aria-label="검색어 지우기">×</button>
+          </div>
           <button id="placeSearchRun" class="placeSearchRun" type="button">검색</button>
         </div>
         <div id="placeSearchResults" class="placeSearchResults"></div>
@@ -2406,7 +2415,7 @@ function openPlaceSearchModal(){
   if(!backdrop)return;
   backdrop.classList.add('active');
   backdrop.setAttribute('aria-hidden','false');
-  renderPlaceSearchMessage('업체명 또는 상호명을 입력해 검색하세요.');
+  renderPlaceSearchMessage('장소명 또는 상호명을 입력해 검색하세요.');
   syncPlaceSearchFabSize();
   setTimeout(()=>{$('placeSearchInput')&&$('placeSearchInput').focus();},30);
 }
@@ -2431,8 +2440,9 @@ function renderPlaceSearchResults(items){
     renderPlaceSearchMessage('검색 결과가 없습니다.','placeSearchEmpty');
     return;
   }
-  box.innerHTML=lastPlaceSearchItems.map((item,idx)=>{
-    const title=stripHtmlTags(item.title||item.name||'업체명 없음');
+  const countHtml=`<div class="placeSearchCount">장소 검색 결과 ${lastPlaceSearchItems.length}개</div>`;
+  box.innerHTML=countHtml+lastPlaceSearchItems.map((item,idx)=>{
+    const title=stripHtmlTags(item.title||item.name||'장소명 없음');
     const road=normalizeAddress(item.roadAddress||'');
     const jibun=normalizeAddress(item.address||'');
     const phone=normalizeAddress(item.telephone||item.phone||'');
@@ -2509,11 +2519,13 @@ function bindPlaceSearchUi(){
   const close=$('placeSearchClose');
   const run=$('placeSearchRun');
   const input=$('placeSearchInput');
+  const clear=$('placeSearchClear');
   const backdrop=$('placeSearchBackdrop');
   const results=$('placeSearchResults');
   if(fab)fab.addEventListener('click',openPlaceSearchModal);
   if(close)close.addEventListener('click',closePlaceSearchModal);
   if(run)run.addEventListener('click',runPlaceSearch);
+  if(clear)clear.addEventListener('click',()=>{if(input){input.value='';input.focus();}renderPlaceSearchMessage('장소명 또는 상호명을 입력해 검색하세요.');});
   if(input)input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runPlaceSearch();}});
   if(backdrop)backdrop.addEventListener('click',e=>{if(e.target===backdrop)closePlaceSearchModal();});
   if(results)results.addEventListener('click',e=>{

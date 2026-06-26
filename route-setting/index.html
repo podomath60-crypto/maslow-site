@@ -682,12 +682,12 @@ if(mapWrap&&mapGuide){
 
 function esc(v){return String(v||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
 function normalizeAddress(v){return String(v||'').trim().replace(/\s+/g,' ')}
-function stripVisitDeleteMark(v){return normalizeAddress(String(v||'').replace(/\s*×\s*$/,''))}
+function stripVisitDeleteMark(v){return normalizeAddress(String(v||'').replace(/\s*(?:×|X)\s*$/,''))}
 function uniqueLines(text){const seen=new Set(), out=[];String(text||'').replace(/\r/g,'\n').split(/[\n,]+/).map(stripVisitDeleteMark).filter(Boolean).forEach(a=>{const key=a.toLowerCase();if(!seen.has(key)){seen.add(key);out.push(a)}});return out}
 function setVisitsFromItems(items,addComma=false){
   const clean=[];const seen=new Set();
   (items||[]).map(stripVisitDeleteMark).filter(Boolean).forEach(a=>{const key=a.toLowerCase();if(!seen.has(key)){seen.add(key);clean.push(a)}});
-  visitsInput.value=clean.length?clean.map(v=>`${v} ×`).join(', ')+(addComma?', ':''):'';
+  visitsInput.value=clean.length?clean.map(v=>`${v} X`).join(', ')+(addComma?', ':''):'';
 }
 function formatVisitsInput(addComma=false){setVisitsFromItems(uniqueLines(visitsInput.value),addComma)}
 function removeVisitAt(index){
@@ -699,16 +699,64 @@ function removeVisitAt(index){
   resetResult();
   showStatus('방문지를 제거했습니다.','ok');
 }
-function removeVisitByDeleteMarkPosition(pos){
+function getVisitDeleteMarkPositions(){
   const value=String(visitsInput.value||'');
   const marks=[];
   for(let i=0;i<value.length;i++){
-    if(value[i]==='×')marks.push(i);
+    if(value[i]==='×'||value[i]==='X')marks.push(i);
   }
+  return marks;
+}
+
+function removeVisitByDeleteMarkPosition(pos){
+  const marks=getVisitDeleteMarkPositions();
   const markIndex=marks.findIndex(markPos=>Math.abs(pos-markPos)<=1||pos===markPos+1);
   if(markIndex<0)return false;
   removeVisitAt(markIndex);
   return true;
+}
+
+function isVisitDeleteMarkCaretPosition(pos){
+  const marks=getVisitDeleteMarkPositions();
+  return marks.some(markPos=>Math.abs(pos-markPos)<=1||pos===markPos+1);
+}
+
+function getTextareaCaretPositionFromPointer(textarea,event){
+  if(!textarea||!event)return -1;
+  const previousStart=textarea.selectionStart;
+  const previousEnd=textarea.selectionEnd;
+  let pos=-1;
+
+  if(document.caretPositionFromPoint){
+    const caret=document.caretPositionFromPoint(event.clientX,event.clientY);
+    if(caret&&Number.isFinite(caret.offset))pos=caret.offset;
+  }else if(document.caretRangeFromPoint){
+    const range=document.caretRangeFromPoint(event.clientX,event.clientY);
+    if(range&&Number.isFinite(range.startOffset))pos=range.startOffset;
+  }
+
+  if(!Number.isFinite(pos)||pos<0){
+    const rect=textarea.getBoundingClientRect();
+    const style=window.getComputedStyle(textarea);
+    const lineHeight=parseFloat(style.lineHeight)||parseFloat(style.fontSize)*1.5||22;
+    const charWidth=Math.max(7,(parseFloat(style.fontSize)||15)*0.58);
+    const x=Math.max(0,event.clientX-rect.left-(parseFloat(style.paddingLeft)||0)+textarea.scrollLeft);
+    const y=Math.max(0,event.clientY-rect.top-(parseFloat(style.paddingTop)||0)+textarea.scrollTop);
+    const line=Math.floor(y/lineHeight);
+    const col=Math.round(x/charWidth);
+    const lines=String(textarea.value||'').replace(/\r/g,'\n').split('\n');
+    pos=0;
+    for(let i=0;i<Math.min(line,lines.length);i++)pos+=lines[i].length+1;
+    pos+=Math.min(col,(lines[line]||'').length);
+  }
+
+  try{textarea.setSelectionRange(previousStart,previousEnd)}catch(e){}
+  return pos;
+}
+
+function updateVisitDeleteCursor(e){
+  const pos=getTextareaCaretPositionFromPointer(visitsInput,e);
+  visitsInput.style.cursor=isVisitDeleteMarkCaretPosition(pos)?'pointer':'';
 }
 function showStatus(msg,type=''){statusEl.className='status show'+(type?' '+type:'');statusEl.innerHTML=esc(msg)}
 function showProgress(msg,done,total){const pct=total?Math.round(done/total*100):0;statusEl.className='status show';statusEl.innerHTML=`${esc(msg)}<div class="progress"><span style="width:${pct}%"></span></div>`}
@@ -1269,10 +1317,16 @@ visitsInput.addEventListener('input',e=>{
   resetResult();
 });
 
+visitsInput.addEventListener('mousemove',updateVisitDeleteCursor);
+visitsInput.addEventListener('mouseleave',()=>{
+  visitsInput.style.cursor='';
+});
+
 visitsInput.addEventListener('click',()=>{
   setTimeout(()=>{
     const pos=visitsInput.selectionStart||0;
     removeVisitByDeleteMarkPosition(pos);
+    visitsInput.style.cursor='';
   },0);
 });
 

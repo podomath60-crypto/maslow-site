@@ -301,8 +301,11 @@
 .mapGuide.mapGuideDocked span{
   display:none!important;
 }
+.mapGuide.mapGuideDocking{
+  animation:carpetDockJourneySmooth 3s cubic-bezier(.42,0,.18,1) both!important;
+}
 .mapGuide.mapGuideDocking .mapCarpetHero{
-  animation:carpetDockHeroJourneyClean 2.5s ease-in-out both!important;
+  animation:carpetDockHeroJourneySmooth 3s ease-in-out both!important;
 }
 .mapGuide.mapGuideDocked .mapCarpetHero{
   animation:carpetOnlyDockedFlutter 2.4s ease-in-out infinite!important;
@@ -320,27 +323,68 @@
   50%{transform:translateY(1px) rotate(-6deg) skewX(4deg)}
   75%{transform:translateY(-2px) rotate(4deg) skewX(-2deg)}
 }
-@keyframes carpetDockHeroJourneyClean{
-  0%{width:min(220px,56vw);max-width:min(220px,56vw);transform:translateY(0) rotate(-5deg) skewX(0deg)}
-  12%{transform:translateY(-12px) rotate(13deg) skewX(-5deg)}
-  28%{transform:translate(14px,-5px) rotate(-16deg) skewX(5deg)}
-  44%{transform:translate(-16px,-13px) rotate(15deg) skewX(-4deg)}
-  61%{transform:translate(10px,8px) rotate(-18deg) skewX(5deg)}
-  78%{width:96px;max-width:96px;transform:translate(-4px,-6px) rotate(10deg) skewX(-3deg)}
-  100%{width:67px;max-width:67px;transform:translateY(0) rotate(-3deg) skewX(0deg)}
+@keyframes carpetDockJourneySmooth{
+  0%{
+    left:50%;top:50%;width:min(560px,72%);height:auto;padding:18px 20px;border:1px solid rgba(148,163,184,.55);border-radius:18px;
+    transform:translate(-50%,-50%) scale(1) rotate(-2deg);background:transparent;box-shadow:none;
+  }
+  8%{left:56%;top:43%;transform:translate(-50%,-50%) scale(1.12) rotate(6deg)}
+  18%{left:68%;top:35%;transform:translate(-50%,-50%) scale(1.04) rotate(58deg)}
+  30%{left:75%;top:45%;transform:translate(-50%,-50%) scale(.98) rotate(168deg)}
+  42%{left:66%;top:56%;transform:translate(-50%,-50%) scale(.92) rotate(282deg)}
+  54%{left:55%;top:43%;transform:translate(-50%,-50%) scale(.86) rotate(366deg)}
+  66%{left:42%;top:31%;transform:translate(-50%,-50%) scale(.76) rotate(386deg)}
+  79%{left:28%;top:23%;width:150px;height:110px;padding:0;border:0;border-radius:0;transform:translate(-50%,-50%) scale(.66) rotate(352deg);background:transparent;box-shadow:none}
+  91%{left:16%;top:18%;width:116px;height:92px;padding:0;border:0;border-radius:0;transform:translate(-50%,-50%) scale(.58) rotate(368deg);background:transparent;box-shadow:none}
+  100%{left:14px;top:14px;width:87px;height:87px;padding:0;border:0;border-radius:0;transform:none;background:transparent;box-shadow:none}
+}
+@keyframes carpetDockHeroJourneySmooth{
+  0%{width:min(220px,56vw);max-width:min(220px,56vw);transform:translate3d(0,0,0) rotate(-4deg) skewX(0deg)}
+  8%{transform:translate3d(0,-10px,0) rotate(10deg) skewX(-3deg)}
+  18%{transform:translate3d(4px,-16px,0) rotate(18deg) skewX(-5deg)}
+  30%{transform:translate3d(8px,-2px,0) rotate(4deg) skewX(4deg)}
+  42%{transform:translate3d(-6px,10px,0) rotate(-12deg) skewX(5deg)}
+  54%{transform:translate3d(-10px,-8px,0) rotate(8deg) skewX(-4deg)}
+  66%{transform:translate3d(5px,-12px,0) rotate(-10deg) skewX(4deg)}
+  79%{width:96px;max-width:96px;transform:translate3d(-3px,-7px,0) rotate(8deg) skewX(-3deg)}
+  91%{transform:translate3d(2px,-3px,0) rotate(-5deg) skewX(2deg)}
+  100%{width:67px;max-width:67px;transform:translate3d(0,0,0) rotate(-3deg) skewX(0deg)}
 }
 @media(max-width:760px){
-  @keyframes carpetDockHeroJourneyClean{
-    0%{width:min(132px,34vw);max-width:min(132px,34vw);transform:translateY(0) rotate(-5deg) skewX(0deg)}
-    12%{transform:translateY(-9px) rotate(13deg) skewX(-5deg)}
-    28%{transform:translate(11px,-4px) rotate(-16deg) skewX(5deg)}
-    44%{transform:translate(-13px,-10px) rotate(15deg) skewX(-4deg)}
-    61%{transform:translate(8px,7px) rotate(-18deg) skewX(5deg)}
-    78%{width:66px;max-width:66px;transform:translate(-3px,-5px) rotate(10deg) skewX(-3deg)}
-    100%{width:44px;max-width:44px;transform:translateY(0) rotate(-3deg) skewX(0deg)}
+  .mapGuide.mapGuideDocking{
+    animation:carpetDockJourneySmoothMobile 3s cubic-bezier(.42,0,.18,1) both!important;
+  }
+  .mapGuide.mapGuideDocking .mapCarpetHero{
+    animation:carpetDockHeroJourneySmoothMobile 3s ease-in-out both!important;
+  }
+  @keyframes carpetDockJourneySmoothMobile{
+    0%{
+      left:50%;top:50%;width:min(340px,72%);height:auto;padding:18px 20px;border:1px solid rgba(148,163,184,.55);border-radius:18px;
+      transform:translate(-50%,-50%) scale(1) rotate(-2deg);background:transparent;box-shadow:none;
+    }
+    8%{left:57%;top:43%;transform:translate(-50%,-50%) scale(1.1) rotate(6deg)}
+    18%{left:70%;top:35%;transform:translate(-50%,-50%) scale(1.02) rotate(58deg)}
+    30%{left:78%;top:45%;transform:translate(-50%,-50%) scale(.96) rotate(168deg)}
+    42%{left:68%;top:56%;transform:translate(-50%,-50%) scale(.9) rotate(282deg)}
+    54%{left:55%;top:43%;transform:translate(-50%,-50%) scale(.84) rotate(366deg)}
+    66%{left:40%;top:30%;transform:translate(-50%,-50%) scale(.74) rotate(386deg)}
+    79%{left:27%;top:22%;width:112px;height:84px;padding:0;border:0;border-radius:0;transform:translate(-50%,-50%) scale(.64) rotate(352deg);background:transparent;box-shadow:none}
+    91%{left:16%;top:17%;width:82px;height:64px;padding:0;border:0;border-radius:0;transform:translate(-50%,-50%) scale(.56) rotate(368deg);background:transparent;box-shadow:none}
+    100%{left:12px;top:6px;width:44px;height:44px;padding:0;border:0;border-radius:0;transform:none;background:transparent;box-shadow:none}
+  }
+  @keyframes carpetDockHeroJourneySmoothMobile{
+    0%{width:min(132px,34vw);max-width:min(132px,34vw);transform:translate3d(0,0,0) rotate(-4deg) skewX(0deg)}
+    8%{transform:translate3d(0,-8px,0) rotate(10deg) skewX(-3deg)}
+    18%{transform:translate3d(3px,-12px,0) rotate(18deg) skewX(-5deg)}
+    30%{transform:translate3d(6px,-2px,0) rotate(4deg) skewX(4deg)}
+    42%{transform:translate3d(-5px,8px,0) rotate(-12deg) skewX(5deg)}
+    54%{transform:translate3d(-8px,-6px,0) rotate(8deg) skewX(-4deg)}
+    66%{transform:translate3d(4px,-9px,0) rotate(-10deg) skewX(4deg)}
+    79%{width:66px;max-width:66px;transform:translate3d(-3px,-5px,0) rotate(8deg) skewX(-3deg)}
+    91%{transform:translate3d(2px,-2px,0) rotate(-5deg) skewX(2deg)}
+    100%{width:44px;max-width:44px;transform:translate3d(0,0,0) rotate(-3deg) skewX(0deg)}
   }
 }
-
 </style>
 </head>
 <body>

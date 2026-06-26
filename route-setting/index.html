@@ -373,13 +373,43 @@ async function setCurrentLocationAsStart(){
 
 returnChk.onchange=()=>{endInput.disabled=returnChk.checked;if(returnChk.checked)endInput.value='';resetResult()};
 [startInput,endInput].forEach(el=>el.addEventListener('input',resetResult));
-function appendCommaAfterPaste(){
-  const items=uniqueLines(visitsInput.value);
-  visitsInput.value=items.length?items.join(', ')+', ':'';
+function normalizeVisitSeparators(value){
+  return String(value||'')
+    .replace(/\r/g,'\n')
+    .replace(/\n+/g,', ')
+    .replace(/,\s*,+/g,', ')
+    .replace(/\s+,/g,',')
+    .replace(/,\s*/g,', ');
+}
+
+function addCommaBlankAfterPaste(){
+  let value=normalizeVisitSeparators(visitsInput.value).trim();
+  if(!value){
+    visitsInput.value='';
+    return;
+  }
+  value=value.replace(/,+\s*$/,'');
+  visitsInput.value=value+', ';
   visitsInput.selectionStart=visitsInput.selectionEnd=visitsInput.value.length;
 }
 
+let visitPasteTimer=null;
+
+function schedulePasteComma(){
+  clearTimeout(visitPasteTimer);
+  visitPasteTimer=setTimeout(()=>{
+    addCommaBlankAfterPaste();
+    resetResult();
+  },120);
+}
+
 visitsInput.addEventListener('input',e=>{
+  // 일반 타이핑/수정 중에는 콤마를 절대 강제로 붙이지 않는다.
+  if(e.inputType==='insertFromPaste'){
+    schedulePasteComma();
+    return;
+  }
+
   const before=visitsInput.value;
   const after=before.replace(/\r/g,'\n').replace(/\n+/g,', ');
   if(after!==before){
@@ -391,21 +421,21 @@ visitsInput.addEventListener('input',e=>{
 
 visitsInput.addEventListener('paste',e=>{
   const pasted=(e.clipboardData||window.clipboardData)?.getData('text')||'';
-  if(!pasted){
-    setTimeout(()=>{appendCommaAfterPaste();resetResult()},30);
+
+  // clipboardData가 잡히는 PC/안드로이드/크롬 계열: 직접 넣고 즉시 콤마 추가.
+  if(pasted){
+    e.preventDefault();
+    const s=visitsInput.selectionStart||0;
+    const t=visitsInput.selectionEnd||s;
+    visitsInput.value=visitsInput.value.slice(0,s)+pasted+visitsInput.value.slice(t);
+    addCommaBlankAfterPaste();
+    visitsInput.focus();
+    resetResult();
     return;
   }
 
-  e.preventDefault();
-
-  const before=visitsInput.value.slice(0,visitsInput.selectionStart||0);
-  const after=visitsInput.value.slice(visitsInput.selectionEnd||visitsInput.selectionStart||0);
-  const nextValue=`${before}${pasted}${after}`;
-
-  visitsInput.value=nextValue;
-  appendCommaAfterPaste();
-  visitsInput.focus();
-  resetResult();
+  // clipboardData가 안 잡히는 모바일: 기본 붙여넣기를 허용하고, 직후 콤마만 붙인다.
+  schedulePasteComma();
 });
 
 visitsInput.addEventListener('blur',resetResult);

@@ -1163,6 +1163,16 @@
   }
 }
 
+
+/* Print area selection toast line breaks */
+.status,
+.toast,
+#status,
+#routeStatus,
+#mapStatus{
+  white-space:pre-line;
+}
+
 </style>
 </head>
 <body>
@@ -1933,6 +1943,7 @@ function startPrintAreaSelect(){
     showStatus('출력할 추천순서가 없습니다. 최단경로를 먼저 찾으세요.','err');
     return;
   }
+  showStatus('인쇄할 영역을 선택\n경로와 함께 인쇄됨','ok');
 
   const overlay=$('printAreaOverlay');
   const box=$('printAreaBox');
@@ -2009,6 +2020,30 @@ function startPrintAreaSelect(){
     ev.stopPropagation();
     cancelPrintAreaSelect();
   };
+}
+
+
+function waitForPrintMapReady(viewport){
+  return new Promise(resolve=>{
+    const maps=getNaverMaps();
+    const apply=()=>{
+      try{
+        const mapEl=document.getElementById('printMapLive');
+        if(mapEl&&maps&&printMapInstance){
+          maps.Event.trigger(printMapInstance,'resize');
+          if(viewport&&viewport.bounds){
+            const sw=new maps.LatLng(viewport.bounds.sw.lat,viewport.bounds.sw.lng);
+            const ne=new maps.LatLng(viewport.bounds.ne.lat,viewport.bounds.ne.lng);
+            printMapInstance.fitBounds(new maps.LatLngBounds(sw,ne),{top:8,right:8,bottom:8,left:8});
+          }
+        }
+      }catch(e){}
+    };
+    apply();
+    setTimeout(apply,120);
+    setTimeout(apply,360);
+    setTimeout(()=>{apply();resolve();},900);
+  });
 }
 
 async function printRouteResultActual(viewportOverride){
@@ -3157,10 +3192,9 @@ async function printRouteResult(){
     return;
   }
 
-  setTimeout(()=>{
-    sheet.classList.remove('offscreen');
-    window.print();
-  },850);
+  sheet.classList.remove('offscreen');
+  await waitForPrintMapReady(viewport);
+  window.print();
 }
 
 async function printRouteResult(){

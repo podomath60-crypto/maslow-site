@@ -682,12 +682,12 @@ if(mapWrap&&mapGuide){
 
 function esc(v){return String(v||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
 function normalizeAddress(v){return String(v||'').trim().replace(/\s+/g,' ')}
-function stripVisitDeleteMark(v){return normalizeAddress(String(v||'').replace(/\s*(?:×|X)\s*$/,''))}
+function stripVisitDeleteMark(v){return normalizeAddress(String(v||'').replace(/\s*(?:×|X|❌)\s*$/,''))}
 function uniqueLines(text){const seen=new Set(), out=[];String(text||'').replace(/\r/g,'\n').split(/[\n,]+/).map(stripVisitDeleteMark).filter(Boolean).forEach(a=>{const key=a.toLowerCase();if(!seen.has(key)){seen.add(key);out.push(a)}});return out}
 function setVisitsFromItems(items,addComma=false){
   const clean=[];const seen=new Set();
   (items||[]).map(stripVisitDeleteMark).filter(Boolean).forEach(a=>{const key=a.toLowerCase();if(!seen.has(key)){seen.add(key);clean.push(a)}});
-  visitsInput.value=clean.length?clean.map(v=>`${v} X`).join(', ')+(addComma?', ':''):'';
+  visitsInput.value=clean.length?clean.map(v=>`${v} ❌`).join(', ')+(addComma?', ':''):'';
 }
 function formatVisitsInput(addComma=false){setVisitsFromItems(uniqueLines(visitsInput.value),addComma)}
 function removeVisitAt(index){
@@ -703,14 +703,14 @@ function getVisitDeleteMarkPositions(){
   const value=String(visitsInput.value||'');
   const marks=[];
   for(let i=0;i<value.length;i++){
-    if(value[i]==='×'||value[i]==='X')marks.push(i);
+    if(value[i]==='×'||value[i]==='X'||value[i]==='❌')marks.push(i);
   }
   return marks;
 }
 
 function removeVisitByDeleteMarkPosition(pos){
   const marks=getVisitDeleteMarkPositions();
-  const markIndex=marks.findIndex(markPos=>Math.abs(pos-markPos)<=1||pos===markPos+1);
+  const markIndex=marks.findIndex(markPos=>Math.abs(pos-markPos)<=2||pos===markPos+1);
   if(markIndex<0)return false;
   removeVisitAt(markIndex);
   return true;
@@ -718,7 +718,7 @@ function removeVisitByDeleteMarkPosition(pos){
 
 function isVisitDeleteMarkCaretPosition(pos){
   const marks=getVisitDeleteMarkPositions();
-  return marks.some(markPos=>Math.abs(pos-markPos)<=1||pos===markPos+1);
+  return marks.some(markPos=>Math.abs(pos-markPos)<=2||pos===markPos+1);
 }
 
 function getTextareaCaretPositionFromPointer(textarea,event){

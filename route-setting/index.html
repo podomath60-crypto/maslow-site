@@ -1147,27 +1147,28 @@
 .routeToast{
   position:fixed;
   left:50%;
-  top:76px;
-  transform:translateX(-50%) translateY(-8px);
+  top:50%;
+  transform:translate(-50%,-50%) scale(.98);
   z-index:9999;
   max-width:min(420px,calc(100vw - 32px));
-  padding:12px 16px;
-  border-radius:14px;
-  background:rgba(17,24,39,.94);
-  color:#fff;
+  padding:14px 18px;
+  border:2px solid #7c3aed;
+  border-radius:16px;
+  background:rgba(255,255,255,.98);
+  color:#581c87;
   font-size:14px;
-  font-weight:900;
+  font-weight:1000;
   line-height:1.45;
   text-align:center;
   white-space:pre-line;
-  box-shadow:0 14px 36px rgba(15,23,42,.32);
+  box-shadow:0 16px 38px rgba(88,28,135,.22);
   opacity:0;
   pointer-events:none;
   transition:opacity .16s ease, transform .16s ease;
 }
 .routeToast.show{
   opacity:1;
-  transform:translateX(-50%) translateY(0);
+  transform:translate(-50%,-50%) scale(1);
 }
 
 .printCapturePinLayer{
@@ -1248,6 +1249,117 @@
   }
 }
 
+
+/* Place search: right-top magnifier button and modal. */
+.placeSearchFab{
+  position:absolute;
+  right:16px;
+  top:16px;
+  z-index:48;
+  border:1px solid rgba(124,58,237,.32);
+  background:rgba(255,255,255,.96);
+  color:#581c87;
+  box-shadow:0 12px 30px rgba(88,28,135,.18);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.placeSearchFab:active{transform:translateY(1px)}
+.placeSearchFab svg{display:block;width:54%;height:54%;stroke:currentColor;stroke-width:2.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.placeSearchBackdrop{
+  position:fixed;
+  inset:0;
+  z-index:9200;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(15,23,42,.34);
+  box-sizing:border-box;
+}
+.placeSearchBackdrop.active{display:flex}
+.placeSearchModal{
+  width:min(560px,calc(100vw - 32px));
+  max-height:min(720px,calc(100vh - 56px));
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:2px solid #7c3aed;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 24px 70px rgba(15,23,42,.32);
+}
+.placeSearchHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 16px 12px;
+  border-bottom:1px solid #ede9fe;
+}
+.placeSearchHead strong{font-size:16px;font-weight:1000;letter-spacing:-.04em;color:#3b0764}
+.placeSearchClose{
+  width:34px;
+  height:34px;
+  border:1px solid #ddd6fe;
+  border-radius:11px;
+  background:#faf5ff;
+  color:#581c87;
+  font-size:22px;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+}
+.placeSearchForm{display:flex;gap:8px;padding:13px 16px;border-bottom:1px solid #f1f5f9}
+.placeSearchInput{
+  flex:1;
+  min-width:0;
+  height:42px;
+  border:1px solid #d1d5db;
+  border-radius:12px;
+  padding:9px 11px;
+  outline:none;
+  font-size:15px;
+}
+.placeSearchInput:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+.placeSearchRun{
+  width:74px;
+  height:42px;
+  border:0;
+  border-radius:12px;
+  background:#7c3aed;
+  color:#fff;
+  font-size:14px;
+  font-weight:950;
+  cursor:pointer;
+}
+.placeSearchRun:disabled{opacity:.58;cursor:wait}
+.placeSearchResults{overflow:auto;padding:12px 14px 15px;background:#fff}
+.placeSearchEmpty,.placeSearchError,.placeSearchLoading{padding:18px 10px;text-align:center;color:#64748b;font-size:13px;font-weight:850;line-height:1.5}
+.placeSearchError{color:#be123c}
+.placeResult{border:1px solid #e2e8f0;border-radius:15px;background:#fff;padding:12px 12px 11px;margin-bottom:10px;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+.placeResultTitle{font-size:14px;font-weight:1000;color:#111827;line-height:1.35;word-break:break-word}
+.placeResultAddress{margin-top:7px;font-size:13px;font-weight:900;color:#0f172a;line-height:1.4;word-break:break-word}
+.placeResultSub,.placeResultPhone{margin-top:3px;font-size:12px;font-weight:800;color:#64748b;line-height:1.35;word-break:break-word}
+.placeResultActions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px}
+.placeResultActions button{height:34px;border:1px solid #ddd6fe;border-radius:10px;background:#faf5ff;color:#581c87;font-size:12px;font-weight:950;cursor:pointer}
+.placeResultActions button:hover{background:#f3e8ff}
+@media(max-width:760px){
+  .placeSearchFab{right:12px;top:12px;z-index:1800}
+  .placeSearchBackdrop{align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 66px) 12px 14px;background:rgba(15,23,42,.38)}
+  .placeSearchModal{width:100%;max-height:calc(100vh - 88px);border-radius:16px}
+  .placeSearchForm{padding:12px;gap:7px}
+  .placeSearchInput{font-size:16px;height:44px}
+  .placeSearchRun{height:44px;width:68px}
+  .placeSearchResults{padding:10px 10px 12px}
+  .placeResultActions{gap:6px}
+  .placeResultActions button{font-size:11px;height:33px}
+  .routeToast.printToast{display:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -1260,6 +1372,22 @@
           <button class="printAreaDo" id="printAreaDo" type="button">인쇄</button>
           <button class="printAreaCancel" id="printAreaCancel" type="button">취소</button>
         </div>
+      </div>
+    </div>
+    <button id="placeSearchFab" class="placeSearchFab" type="button" aria-label="업체명 검색" title="업체명 검색">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M16 16l5 5"></path></svg>
+    </button>
+    <div id="placeSearchBackdrop" class="placeSearchBackdrop" aria-hidden="true">
+      <div class="placeSearchModal" role="dialog" aria-modal="true" aria-labelledby="placeSearchTitle">
+        <div class="placeSearchHead">
+          <strong id="placeSearchTitle">업체명 검색</strong>
+          <button id="placeSearchClose" class="placeSearchClose" type="button" aria-label="닫기">×</button>
+        </div>
+        <div class="placeSearchForm">
+          <input id="placeSearchInput" class="placeSearchInput" type="text" placeholder="업체명 또는 상호명" autocomplete="off">
+          <button id="placeSearchRun" class="placeSearchRun" type="button">검색</button>
+        </div>
+        <div id="placeSearchResults" class="placeSearchResults"></div>
       </div>
     </div>
     <div class="mapbar"><strong>경로설정</strong><span id="mapStatus">네이버 지도 로딩 중</span></div>
@@ -2218,6 +2346,182 @@ visitsInput.addEventListener('blur',()=>{
   
 });
 
+
+/* Place search: Naver local search modal. Existing route/geocode/print logic is not changed. */
+let placeSearchBusy=false;
+let lastPlaceSearchItems=[];
+
+function stripHtmlTags(value){
+  return String(value||'').replace(/<[^>]*>/g,'').replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim();
+}
+function getPlaceResultAddress(item){
+  return normalizeAddress(item&&((item.roadAddress||'')||(item.address||'')));
+}
+function getDockedCarpetRenderSize(){
+  const dockedCarpet=document.querySelector('.mapGuide.mapGuideDocked .mapCarpetHero');
+  if(dockedCarpet){
+    const dockedRect=dockedCarpet.getBoundingClientRect();
+    const dockedBase=Math.max(dockedRect.width||0,dockedRect.height||0);
+    if(dockedBase)return dockedBase;
+  }
+  const carpet=document.querySelector('.mapCarpetHero');
+  if(!carpet)return 0;
+  const probeGuide=document.createElement('div');
+  probeGuide.className='mapGuide mapGuideDocked';
+  probeGuide.setAttribute('aria-hidden','true');
+  probeGuide.style.cssText='position:fixed!important;left:-9999px!important;top:-9999px!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;display:flex!important;';
+  const probeCarpet=carpet.cloneNode(false);
+  probeGuide.appendChild(probeCarpet);
+  document.body.appendChild(probeGuide);
+  const rect=probeCarpet.getBoundingClientRect();
+  const base=Math.max(rect.width||0,rect.height||0);
+  probeGuide.remove();
+  return base;
+}
+function syncPlaceSearchFabSize(){
+  const btn=$('placeSearchFab');
+  if(!btn)return;
+  const base=getDockedCarpetRenderSize();
+  if(!base)return;
+  const size=Math.max(28,Math.round(base*.8));
+  btn.style.width=size+'px';
+  btn.style.height=size+'px';
+  btn.style.borderRadius=Math.round(size*.28)+'px';
+}
+function renderPlaceSearchMessage(message,cls='placeSearchEmpty'){
+  const box=$('placeSearchResults');
+  if(!box)return;
+  box.innerHTML=`<div class="${cls}">${esc(message)}</div>`;
+}
+function openPlaceSearchModal(){
+  const backdrop=$('placeSearchBackdrop');
+  if(!backdrop)return;
+  backdrop.classList.add('active');
+  backdrop.setAttribute('aria-hidden','false');
+  renderPlaceSearchMessage('업체명 또는 상호명을 입력해 검색하세요.');
+  syncPlaceSearchFabSize();
+  setTimeout(()=>{$('placeSearchInput')&&$('placeSearchInput').focus();},30);
+}
+function closePlaceSearchModal(){
+  const backdrop=$('placeSearchBackdrop');
+  if(!backdrop)return;
+  backdrop.classList.remove('active');
+  backdrop.setAttribute('aria-hidden','true');
+}
+function setPlaceSearchBusy(busy){
+  placeSearchBusy=!!busy;
+  const btn=$('placeSearchRun');
+  const input=$('placeSearchInput');
+  if(btn)btn.disabled=placeSearchBusy;
+  if(input)input.disabled=placeSearchBusy;
+}
+function renderPlaceSearchResults(items){
+  const box=$('placeSearchResults');
+  if(!box)return;
+  lastPlaceSearchItems=Array.isArray(items)?items:[];
+  if(!lastPlaceSearchItems.length){
+    renderPlaceSearchMessage('검색 결과가 없습니다.','placeSearchEmpty');
+    return;
+  }
+  box.innerHTML=lastPlaceSearchItems.map((item,idx)=>{
+    const title=stripHtmlTags(item.title||item.name||'업체명 없음');
+    const road=normalizeAddress(item.roadAddress||'');
+    const jibun=normalizeAddress(item.address||'');
+    const phone=normalizeAddress(item.telephone||item.phone||'');
+    const mainAddress=road||jibun;
+    return `<div class="placeResult" data-place-idx="${idx}">
+      <div class="placeResultTitle">${esc(title)}</div>
+      ${mainAddress?`<div class="placeResultAddress">${esc(mainAddress)}</div>`:''}
+      ${jibun&&jibun!==mainAddress?`<div class="placeResultSub">지번 ${esc(jibun)}</div>`:''}
+      ${phone?`<div class="placeResultPhone">${esc(phone)}</div>`:''}
+      <div class="placeResultActions">
+        <button type="button" data-place-action="start" data-place-idx="${idx}">출발지로</button>
+        <button type="button" data-place-action="visit" data-place-idx="${idx}">경유지 추가</button>
+        <button type="button" data-place-action="end" data-place-idx="${idx}">도착지로</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function runPlaceSearch(){
+  const input=$('placeSearchInput');
+  const q=normalizeAddress(input&&input.value);
+  if(!q){
+    renderPlaceSearchMessage('검색어를 입력하세요.','placeSearchError');
+    return;
+  }
+  setPlaceSearchBusy(true);
+  renderPlaceSearchMessage('검색 중입니다.','placeSearchLoading');
+  try{
+    const res=await fetch('/api/place-search?q='+encodeURIComponent(q));
+    const data=await res.json().catch(()=>null);
+    if(!res.ok||!data||data.ok===false){
+      renderPlaceSearchMessage((data&&data.message)||'검색하지 못했습니다.','placeSearchError');
+      return;
+    }
+    renderPlaceSearchResults(data.items||[]);
+  }catch(err){
+    renderPlaceSearchMessage('검색 연결에 실패했습니다.','placeSearchError');
+  }finally{
+    setPlaceSearchBusy(false);
+  }
+}
+function setRouteInputValue(input,value){
+  if(!input)return;
+  input.value=normalizeAddress(value);
+  input.dispatchEvent(new Event('input',{bubbles:true}));
+  input.dispatchEvent(new Event('change',{bubbles:true}));
+}
+function applyPlaceSearchItem(action,idx){
+  const item=lastPlaceSearchItems[Number(idx)];
+  const address=getPlaceResultAddress(item);
+  if(!address){
+    showRouteToast('주소가 없는 검색 결과입니다.');
+    return;
+  }
+  if(action==='start'){
+    setRouteInputValue(startInput,address);
+    closePlaceSearchModal();
+    showRouteToast('출발지에 추가했습니다');
+    return;
+  }
+  if(action==='visit'){
+    appendVisitAddress(address);
+    closePlaceSearchModal();
+    showRouteToast('경유지에 추가했습니다');
+    return;
+  }
+  if(action==='end'){
+    setRouteInputValue(endInput,address);
+    closePlaceSearchModal();
+    showRouteToast('도착지에 추가했습니다');
+  }
+}
+function bindPlaceSearchUi(){
+  const fab=$('placeSearchFab');
+  const close=$('placeSearchClose');
+  const run=$('placeSearchRun');
+  const input=$('placeSearchInput');
+  const backdrop=$('placeSearchBackdrop');
+  const results=$('placeSearchResults');
+  if(fab)fab.addEventListener('click',openPlaceSearchModal);
+  if(close)close.addEventListener('click',closePlaceSearchModal);
+  if(run)run.addEventListener('click',runPlaceSearch);
+  if(input)input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runPlaceSearch();}});
+  if(backdrop)backdrop.addEventListener('click',e=>{if(e.target===backdrop)closePlaceSearchModal();});
+  if(results)results.addEventListener('click',e=>{
+    const btn=e.target&&e.target.closest?e.target.closest('[data-place-action]'):null;
+    if(!btn)return;
+    applyPlaceSearchItem(btn.dataset.placeAction,btn.dataset.placeIdx);
+  });
+  window.addEventListener('resize',syncPlaceSearchFabSize);
+  window.addEventListener('load',syncPlaceSearchFabSize);
+  syncPlaceSearchFabSize();
+  setTimeout(syncPlaceSearchFabSize,100);
+  setTimeout(syncPlaceSearchFabSize,600);
+  setTimeout(syncPlaceSearchFabSize,3200);
+}
+bindPlaceSearchUi();
+
 $('findRoute').onclick=findRoute;
 
 
@@ -3078,7 +3382,7 @@ async function printRouteResult(){
 let routeToastTimer=null;
 let printAreaSelectState=null;
 
-function showRouteToast(message){
+function showRouteToast(message,type){
   let toast=document.getElementById('routeToast');
   if(!toast){
     toast=document.createElement('div');
@@ -3086,6 +3390,8 @@ function showRouteToast(message){
     toast.className='routeToast';
     document.body.appendChild(toast);
   }
+  toast.className='routeToast';
+  if(type)toast.classList.add(String(type));
   toast.textContent=String(message||'');
   toast.classList.add('show');
   clearTimeout(routeToastTimer);
@@ -3287,7 +3593,7 @@ function buildCapturePinLayerHtml(rect){
 async function printSelectedMapCapture(){
   const rect=getPrintSelectionRectFromState();
   if(!rect){
-    showRouteToast('인쇄할 영역을 선택\n경로와 함께 인쇄됨');
+    showRouteToast('인쇄할 영역을 선택\n경로와 함께 인쇄됨','printToast');
     return;
   }
 
@@ -3347,7 +3653,7 @@ function startPrintAreaSelectFinal(){
   if(!overlay||!box||!mapWrap)return;
 
   cleanupPrintCaptureMode();
-  showRouteToast('인쇄할 영역을 선택\n경로와 함께 인쇄됨');
+  showRouteToast('인쇄할 영역을 선택\n경로와 함께 인쇄됨','printToast');
 
   printAreaSelectState={startX:0,startY:0,endX:0,endY:0,dragging:false,ready:false};
   box.classList.remove('active','ready');

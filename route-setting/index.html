@@ -59,9 +59,9 @@
 .mapGuide.mapGuideDocked{
   display:flex;
   left:14px;
-  top:14px;
-  width:87px;
-  height:87px;
+  top:6px;
+  width:67px;
+  height:67px;
   padding:0;
   border:0;
   border-radius:0;
@@ -70,9 +70,11 @@
   pointer-events:auto;
   cursor:pointer;
   background:transparent!important;
-  backdrop-filter:none;
-  box-shadow:none;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
   transition:none;
+  overflow:visible;
 }
 .mapGuide.mapGuideDocked .mapCarpetHero{
   width:67px;
@@ -81,7 +83,11 @@
   animation:carpetDockPulse 4s ease-in-out infinite;
 }
 .mapGuide.mapGuideDocked strong,.mapGuide.mapGuideDocked span{display:none}
-.mapGuide.mapGuideDocking{animation:carpetDockJourney 2.5s ease-in-out both}
+ .mapGuide.mapGuideDocking{animation:carpetDockJourney 2.5s ease-in-out both;pointer-events:none;background:transparent!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;overflow:visible}
+.mapGuide.mapGuideDocking .mapCarpetHero{animation:carpetDockHeroJourney 2.5s ease-in-out both}
+.mapGuide.mapGuideDocking strong,.mapGuide.mapGuideDocking span{animation:carpetDockTextFade 2.5s ease-in-out both}
+@keyframes carpetDockHeroJourney{0%{width:min(220px,56vw);max-width:min(220px,56vw);transform:translateY(0) rotate(-4deg)}12%{transform:translateY(-10px) rotate(10deg)}28%{transform:translate(12px,-4px) rotate(-13deg)}44%{transform:translate(-14px,-12px) rotate(12deg)}61%{transform:translate(8px,8px) rotate(-15deg)}78%{width:96px;max-width:96px;transform:translate(-4px,-6px) rotate(9deg)}100%{width:67px;max-width:67px;transform:translateY(0) rotate(-2deg)}}
+@keyframes carpetDockTextFade{0%,18%{opacity:1}28%,100%{opacity:0}}
 @keyframes carpetDockJourney{
   0%{left:50%;top:50%;width:min(560px,72%);height:auto;padding:18px 20px;border:1px solid rgba(148,163,184,.55);border-radius:18px;transform:translate(-50%,-50%) scale(1) rotate(-2deg);background:rgba(255,255,255,.92);box-shadow:0 12px 34px rgba(15,23,42,.12)}
   12%{left:50%;top:50%;transform:translate(-50%,-50%) scale(1.18) rotate(5deg)}
@@ -93,17 +99,19 @@
 }
 @keyframes carpetDockPulse{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-3px) rotate(1.5deg)}}
 @media(max-width:760px){
-  .mapGuide.mapGuideDocked{left:12px;top:12px;width:56px;height:56px;padding:6px;border-radius:16px}
+  .mapGuide.mapGuideDocked{left:12px;top:6px;width:44px;height:44px;padding:0;border-radius:0;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;overflow:visible}
   .mapGuide.mapGuideDocked .mapCarpetHero{width:44px;max-width:44px}
-  .mapGuide.mapGuideDocking{animation:carpetDockJourneyMobile 2.5s ease-in-out both}
+  .mapGuide.mapGuideDocking{animation:carpetDockJourneyMobile 2.5s ease-in-out both;pointer-events:none}
+  .mapGuide.mapGuideDocking .mapCarpetHero{animation:carpetDockHeroJourneyMobile 2.5s ease-in-out both}
+  @keyframes carpetDockHeroJourneyMobile{0%{width:min(132px,34vw);max-width:min(132px,34vw);transform:translateY(0) rotate(-4deg)}12%{transform:translateY(-8px) rotate(10deg)}28%{transform:translate(10px,-3px) rotate(-13deg)}44%{transform:translate(-12px,-10px) rotate(12deg)}61%{transform:translate(7px,7px) rotate(-15deg)}78%{width:66px;max-width:66px;transform:translate(-3px,-5px) rotate(9deg)}100%{width:44px;max-width:44px;transform:translateY(0) rotate(-2deg)}}
   @keyframes carpetDockJourneyMobile{
     0%{left:50%;top:50%;width:min(340px,72%);height:auto;padding:18px 20px;border:1px solid rgba(148,163,184,.55);border-radius:18px;transform:translate(-50%,-50%) scale(1) rotate(-2deg);background:rgba(255,255,255,.92);box-shadow:0 12px 34px rgba(15,23,42,.12)}
     12%{left:50%;top:50%;transform:translate(-50%,-50%) scale(1.16) rotate(5deg)}
     28%{left:58%;top:42%;transform:translate(-50%,-50%) scale(.96) rotate(-8deg)}
     44%{left:42%;top:36%;transform:translate(-50%,-50%) scale(.9) rotate(7deg)}
     61%{left:36%;top:55%;transform:translate(-50%,-50%) scale(.76) rotate(-9deg)}
-    78%{left:23%;top:28%;width:112px;height:84px;padding:0;border:0;border-radius:0;transform:translate(-50%,-50%) scale(.62) rotate(6deg);background:transparent;box-shadow:none}
-    100%{left:12px;top:12px;width:56px;height:56px;padding:6px;border:0;border-radius:16px;transform:none;background:transparent;box-shadow:none}
+    78%{left:23%;top:24%;width:112px;height:84px;padding:0;border:0;border-radius:0;transform:translate(-50%,-50%) scale(.62) rotate(6deg);background:transparent;box-shadow:none}
+    100%{left:12px;top:6px;width:44px;height:44px;padding:0;border:0;border-radius:0;transform:none;background:transparent;box-shadow:none}
   }
 }
 
@@ -264,6 +272,74 @@
   }
 }
 
+
+
+/* Clean carpet-only guide: no box, no text, image-only flutter/rotate. */
+.mapGuide,
+.mapGuide.mapGuideDocking,
+.mapGuide.mapGuideDocked{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  padding:0!important;
+  border-radius:0!important;
+  overflow:visible!important;
+  text-align:center;
+}
+.mapGuide strong,
+.mapGuide span,
+.mapGuide.mapGuideDocking strong,
+.mapGuide.mapGuideDocking span,
+.mapGuide.mapGuideDocked strong,
+.mapGuide.mapGuideDocked span{
+  display:none!important;
+}
+.mapCarpetHero{
+  transform-origin:50% 58%;
+  animation:carpetOnlyFlutter 2.2s ease-in-out infinite!important;
+}
+.mapGuide.mapGuideDocking .mapCarpetHero{
+  animation:carpetDockHeroJourneyClean 2.5s ease-in-out both!important;
+}
+.mapGuide.mapGuideDocked .mapCarpetHero{
+  animation:carpetOnlyDockedFlutter 2.4s ease-in-out infinite!important;
+}
+@keyframes carpetOnlyFlutter{
+  0%,100%{transform:translateY(0) rotate(-3deg) skewX(0deg)}
+  18%{transform:translateY(-5px) rotate(5deg) skewX(-3deg)}
+  38%{transform:translateY(2px) rotate(-7deg) skewX(4deg)}
+  58%{transform:translateY(-7px) rotate(6deg) skewX(-4deg)}
+  78%{transform:translateY(1px) rotate(-4deg) skewX(3deg)}
+}
+@keyframes carpetOnlyDockedFlutter{
+  0%,100%{transform:translateY(0) rotate(-3deg) skewX(0deg)}
+  25%{transform:translateY(-3px) rotate(5deg) skewX(-3deg)}
+  50%{transform:translateY(1px) rotate(-6deg) skewX(4deg)}
+  75%{transform:translateY(-2px) rotate(4deg) skewX(-2deg)}
+}
+@keyframes carpetDockHeroJourneyClean{
+  0%{width:min(220px,56vw);max-width:min(220px,56vw);transform:translateY(0) rotate(-5deg) skewX(0deg)}
+  12%{transform:translateY(-12px) rotate(13deg) skewX(-5deg)}
+  28%{transform:translate(14px,-5px) rotate(-16deg) skewX(5deg)}
+  44%{transform:translate(-16px,-13px) rotate(15deg) skewX(-4deg)}
+  61%{transform:translate(10px,8px) rotate(-18deg) skewX(5deg)}
+  78%{width:96px;max-width:96px;transform:translate(-4px,-6px) rotate(10deg) skewX(-3deg)}
+  100%{width:67px;max-width:67px;transform:translateY(0) rotate(-3deg) skewX(0deg)}
+}
+@media(max-width:760px){
+  @keyframes carpetDockHeroJourneyClean{
+    0%{width:min(132px,34vw);max-width:min(132px,34vw);transform:translateY(0) rotate(-5deg) skewX(0deg)}
+    12%{transform:translateY(-9px) rotate(13deg) skewX(-5deg)}
+    28%{transform:translate(11px,-4px) rotate(-16deg) skewX(5deg)}
+    44%{transform:translate(-13px,-10px) rotate(15deg) skewX(-4deg)}
+    61%{transform:translate(8px,7px) rotate(-18deg) skewX(5deg)}
+    78%{width:66px;max-width:66px;transform:translate(-3px,-5px) rotate(10deg) skewX(-3deg)}
+    100%{width:44px;max-width:44px;transform:translateY(0) rotate(-3deg) skewX(0deg)}
+  }
+}
+
 </style>
 </head>
 <body>
@@ -354,10 +430,14 @@ let naverMap=null, markers=[], polylines=[], latestResult=null;
 let routeRunSeq=0;
 
 function dockMapGuide(){
-  if(!mapGuide||mapGuide.classList.contains('mapGuideDocked'))return;
+  if(!mapGuide||mapGuide.classList.contains('mapGuideDocked')||mapGuide.classList.contains('mapGuideDocking'))return;
   mapGuide.classList.remove('hide');
-  mapGuide.classList.add('mapGuideDocking','mapGuideDocked');
-  setTimeout(()=>mapGuide&&mapGuide.classList.remove('mapGuideDocking'),460);
+  mapGuide.classList.add('mapGuideDocking');
+  setTimeout(()=>{
+    if(!mapGuide)return;
+    mapGuide.classList.add('mapGuideDocked');
+    mapGuide.classList.remove('mapGuideDocking');
+  },2500);
 }
 if(mapWrap&&mapGuide){
   mapWrap.addEventListener('pointerdown',e=>{

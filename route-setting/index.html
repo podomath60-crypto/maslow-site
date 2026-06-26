@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>경로설정 - 임장 동선표</title>
+<title>경로설정 - 최단경로 매직카펫</title>
 <style>
 :root{--green:#03c75a;--blue:#2563eb;--dark:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f4f6f8;--danger:#e11d48;--amber:#f59e0b}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--dark)}button,input,textarea{font-family:inherit}.app{width:100vw;height:100vh;display:grid;grid-template-columns:65% 35%;overflow:hidden}
@@ -24,7 +24,7 @@
 
   <aside class="panel">
     <div class="head">
-      <div class="headLine"><h1>임장 동선표</h1><div class="totalLine"><small>총 예상시간</small><span id="totalTime">--</span></div></div>
+      <div class="headLine"><h1>🪄 최단경로 매직카펫</h1><div class="totalLine"><small>총 예상시간</small><span id="totalTime">--</span></div></div>
     </div>
     <div class="body">
       <div id="status" class="status"></div>
@@ -233,7 +233,7 @@ async function findRoute(){
     await mapLimit(pairs,4,async(pair)=>{const [a,b]=pair;const data=await directionBetween(a,b);matrix.set(coordKey(a,b),data);return data},(done,total,pair)=>{showProgress(`구간 시간 조회 중 ${done}/${total} · ${pair[0].label||pair[0].id} → ${pair[1].label||pair[1].id}`,done,total)});
     showStatus('추천 순서 계산 중...');
     const best=evaluateBest(start,visits,end,matrix);
-    showStatus('임장동선 계산 완료','ok');
+    showStatus(`${best.orderCount.toLocaleString('ko-KR')}개 경로 검토 후 최적 경로 도출 완료`,'ok');
     renderResult(best,input.returnToStart);
   }catch(e){showStatus(e.message||'임장동선 계산 중 오류가 발생했습니다.','err')}finally{setBusy(false);endInput.disabled=returnChk.checked}
 }

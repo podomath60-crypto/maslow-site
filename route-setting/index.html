@@ -300,6 +300,7 @@ const startInput=$('start'), visitsInput=$('visits'), endInput=$('end'), returnC
 const statusEl=$('status'), totalTimeEl=$('totalTime'), resultEl=$('result');
 const mapWrap=$('mapWrap'), mapGuide=$('mapGuide');
 let naverMap=null, markers=[], polylines=[], latestResult=null;
+let routeRunSeq=0;
 
 function esc(v){return String(v||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
 function normalizeAddress(v){return String(v||'').trim().replace(/\s+/g,' ')}
@@ -360,8 +361,31 @@ function showAddressLookupError(err){
 async function directionBetween(a,b){
   const res=await fetch('/api/route-setting/directions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({start:{lat:a.lat,lng:a.lng},goal:{lat:b.lat,lng:b.lng}})});
   const data=await res.json().catch(()=>null);
-  if(!res.ok||!data||!data.ok||!data.summary)throw new Error(`${a.label} → ${b.label} 구간 경로를 확인하지 못했습니다.`);
+  if(!res.ok||!data||!data.ok||!data.summary){
+    const err=new Error(`${a.label} → ${b.label} 구간 시간을 확인하지 못했습니다.`);
+    err.code='DIRECTION_FAILED';
+    err.from=a;
+    err.to=b;
+    err.status=res.status;
+    err.responseMessage=data&&data.message?data.message:'';
+    throw err;
+  }
   return data;
+}
+
+function showDirectionLookupError(err){
+  const from=err&&err.from?err.from:null;
+  const to=err&&err.to?err.to:null;
+  const fromLabel=from&&(from.label||from.id)?(from.label||from.id):'출발';
+  const toLabel=to&&(to.label||to.id)?(to.label||to.id):'도착';
+  const fromAddress=from?(from.address||from.originalAddress||from.resolvedAddress||''):'';
+  const toAddress=to?(to.address||to.originalAddress||to.resolvedAddress||''):'';
+  totalTimeEl.textContent='--';
+  latestResult=null;
+  $('resultSummary').textContent='시간 조회 확인 필요';
+  $('routeList').innerHTML=`<div class="addressErrorBox"><strong>구간 시간을 확인하지 못해 최단경로 계산을 중단했습니다.</strong><div>${esc(fromLabel)} → ${esc(toLabel)} 구간 차량 경로를 확인해 주세요.</div><div class="addressErrorAddress">${esc(fromLabel)}: ${esc(fromAddress)}<br>${esc(toLabel)}: ${esc(toAddress)}</div><div class="addressErrorGuide">주소 좌표 변환은 완료됐지만, 네이버 경로/시간 조회에서 이 구간 응답이 실패했습니다. 두 지점이 차량 경로로 연결되는지, 주소가 실제 진입 가능한 위치인지 확인해 주세요.</div></div>`;
+  resultEl.classList.add('show');
+  showStatus(`구간 시간을 확인하지 못했습니다. ${fromLabel} → ${toLabel} 구간을 확인해 주세요.`,'err');
 }
 
 async function mapLimit(items,limit,worker,onProgress){
@@ -465,13 +489,34 @@ function resultText(){
 }
 
 async function findRoute(){
+  const runId=++routeRunSeq;
+  const assertActive=()=>{
+    if(runId!==routeRunSeq){
+      const err=new Error('이전 최단경로 계산을 중단했습니다.');
+      err.code='ROUTE_CANCELLED';
+      throw err;
+    }
+  };
   try{
     resetResult();setBusy(true);
     const input=parseInputs();
     const labels=['A',...input.visits.map((_,i)=>String.fromCharCode(66+i)),input.returnToStart?'A':'Z'];
     const raw=[input.start,...input.visits,input.end];
     const totalGeo=raw.length;const resolved=[];
-    for(let i=0;i<raw.length;i++)resolved.push(await geocodeAddress(raw[i],labels[i],i+1,totalGeo));
+    for(let i=0;i<raw.length;i++){
+      assertActive();
+      const item=await geocodeAddress(raw[i],labels[i],i+1,totalGeo);
+      assertActive();
+      if(!hasCoord(item)){
+        const err=new Error(`${labels[i]} 주소 좌표를 확인하지 못했습니다: ${raw[i]}`);
+        err.code='GEOCODE_NOT_FOUND';
+        err.label=labels[i];
+        err.address=raw[i];
+        throw err;
+      }
+      resolved.push(item);
+    }
+    assertActive();
     const start={id:'A',role:'start',...resolved[0]};
     const visits=resolved.slice(1,1+input.visits.length).map((p,i)=>({id:`V${i+1}`,role:'visit',...p}));
     const end=input.returnToStart?start:{id:'Z',role:'end',...resolved[resolved.length-1]};
@@ -483,18 +528,37 @@ async function findRoute(){
       for(const a of nodes){for(const b of nodes){if(a.id!==b.id)pairs.push([a,b])}}
     }
     const matrix=new Map();
-    await mapLimit(pairs,4,async(pair)=>{const [a,b]=pair;const data=await directionBetween(a,b);matrix.set(coordKey(a,b),data);return data},(done,total,pair)=>{showProgress(`구간 시간 조회 중 ${done}/${total} · ${pair[0].label||pair[0].id} → ${pair[1].label||pair[1].id}`,done,total)});
+    await mapLimit(pairs,4,async(pair)=>{
+      assertActive();
+      const [a,b]=pair;
+      const data=await directionBetween(a,b);
+      assertActive();
+      matrix.set(coordKey(a,b),data);
+      return data;
+    },(done,total,pair)=>{
+      if(runId!==routeRunSeq)return;
+      showProgress(`구간 시간 조회 중 ${done}/${total} · ${pair[0].label||pair[0].id} → ${pair[1].label||pair[1].id}`,done,total);
+    });
+    assertActive();
     showStatus('추천 순서 계산 중...');
     const best=evaluateBest(start,visits,end,matrix);
+    assertActive();
     showStatus(`${best.orderCount.toLocaleString('ko-KR')}개 경로 검토 후 최적 경로 도출 완료`,'ok');
     renderResult(best,input.returnToStart);
   }catch(e){
     if(e&&e.code==='GEOCODE_NOT_FOUND'){
+      routeRunSeq++;
       showAddressLookupError(e);
+    }else if(e&&e.code==='DIRECTION_FAILED'){
+      routeRunSeq++;
+      showDirectionLookupError(e);
+    }else if(e&&e.code==='ROUTE_CANCELLED'){
+      return;
     }else{
+      routeRunSeq++;
       showStatus(e.message||'최단경로 계산 중 오류가 발생했습니다.','err');
     }
-  }finally{setBusy(false);endInput.disabled=returnChk.checked}
+  }finally{if(runId===routeRunSeq)setBusy(false);endInput.disabled=returnChk.checked}
 }
 
 function waitForNaverMaps(retry=0){const maps=getNaverMaps();const el=$('naverMap');if(maps&&el&&el.clientWidth>0&&el.clientHeight>0){naverMap=new maps.Map(el,{center:new maps.LatLng(35.9676,126.7367),zoom:11});$('mapStatus').textContent='네이버 지도 연결됨';refreshMap();return}if(retry<35){setTimeout(()=>waitForNaverMaps(retry+1),120);return}$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 객체 또는 지도 영역 크기를 확인하지 못했습니다.','err')}

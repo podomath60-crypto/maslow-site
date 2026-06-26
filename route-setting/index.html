@@ -356,6 +356,125 @@
   .mobilePanelHandle{z-index:2011;}
 }
 
+
+/* Map click visit add bubble */
+.mapClickBubble{
+  position:absolute;
+  z-index:2100;
+  width:220px;
+  max-width:calc(100vw - 28px);
+  padding:10px 11px 9px;
+  border:1px solid #cbd5e1;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 12px 30px rgba(15,23,42,.20);
+  color:#0f172a;
+  font-size:12px;
+  line-height:1.4;
+  transform:translate(-50%,-100%);
+  pointer-events:auto;
+}
+.mapClickBubble::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-7px;
+  width:12px;
+  height:12px;
+  transform:translateX(-50%) rotate(45deg);
+  background:#fff;
+  border-right:1px solid #cbd5e1;
+  border-bottom:1px solid #cbd5e1;
+}
+.mapClickBubble strong{
+  display:block;
+  margin-bottom:4px;
+  font-size:12px;
+  font-weight:950;
+}
+.mapClickBubble .mapClickBubbleAddress{
+  color:#475569;
+  word-break:break-all;
+}
+.mapClickBubble .mapClickBubbleActions{
+  display:flex;
+  justify-content:flex-end;
+  gap:6px;
+  margin-top:8px;
+}
+.mapClickBubble button{
+  height:28px;
+  border-radius:8px;
+  border:1px solid #dbe3ef;
+  background:#f8fafc;
+  color:#0f172a;
+  font-size:12px;
+  font-weight:900;
+  padding:0 10px;
+  cursor:pointer;
+}
+.mapClickBubble .ok{
+  border-color:#03c75a;
+  background:#03c75a;
+  color:#fff;
+}
+@media(max-width:760px){
+  .mapClickBubble{
+    width:204px;
+    font-size:11px;
+  }
+}
+
+
+/* Visit remove chips */
+.visitChipList{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:7px;
+}
+.visitChip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  max-width:100%;
+  min-height:28px;
+  padding:4px 6px 4px 9px;
+  border:1px solid #dbe3ef;
+  border-radius:999px;
+  background:#f8fafc;
+  color:#334155;
+  font-size:12px;
+  font-weight:850;
+}
+.visitChip button{
+  width:18px;
+  height:18px;
+  border:0;
+  border-radius:999px;
+  background:#e2e8f0;
+  color:#0f172a;
+  font-size:14px;
+  line-height:18px;
+  font-weight:950;
+  padding:0;
+  cursor:pointer;
+  flex:0 0 18px;
+}
+.visitChip button:hover{
+  background:#fecdd3;
+  color:#be123c;
+}
+.visitChip span{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+@media(max-width:760px){
+  .visitChipList{gap:5px}
+  .visitChip{font-size:11px}
+}
+
 </style>
 </head>
 <body>
@@ -406,6 +525,7 @@
       <div class="section">
         <div class="label">방문지 <span class="hint">순서 상관없이 경유지 주소 붙여넣기 · 최대 8개</span></div>
         <textarea class="textarea" id="visits" placeholder="순서 상관없이 경유지 주소만 붙여넣기&#10;예) 전북 군산시 오식도동 601-8, 전북 군산시 산북동 3531-6"></textarea>
+        <div class="visitChipList" id="visitChipList" aria-label="방문지 삭제 목록"></div>
       </div>
 
       <div class="section">
@@ -440,9 +560,10 @@
 <script>
 const $=id=>document.getElementById(id);
 const startInput=$('start'), visitsInput=$('visits'), endInput=$('end'), returnChk=$('returnToStart');
-const statusEl=$('status'), totalTimeEl=$('totalTime'), resultEl=$('result'), panelBody=$('panelBody');
+const statusEl=$('status'), totalTimeEl=$('totalTime'), resultEl=$('result'), panelBody=$('panelBody'), visitChipList=$('visitChipList');
 const mapWrap=$('mapWrap'), mapGuide=$('mapGuide');
 let naverMap=null, markers=[], polylines=[], latestResult=null;
+let mapClickBubble=null, pendingMapClickVisit=null;
 let routeRunSeq=0;
 
 function dockMapGuide(){
@@ -563,7 +684,25 @@ if(mapWrap&&mapGuide){
 function esc(v){return String(v||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
 function normalizeAddress(v){return String(v||'').trim().replace(/\s+/g,' ')}
 function uniqueLines(text){const seen=new Set(), out=[];String(text||'').replace(/\r/g,'\n').split(/[\n,]+/).map(normalizeAddress).filter(Boolean).forEach(a=>{const key=a.toLowerCase();if(!seen.has(key)){seen.add(key);out.push(a)}});return out}
-function formatVisitsInput(addComma=false){const items=uniqueLines(visitsInput.value);visitsInput.value=items.length?items.join(', ')+(addComma?', ':''):''}
+function setVisitsFromItems(items,addComma=false){
+  visitsInput.value=items.length?items.join(', ')+(addComma?', ':''):'';
+  renderVisitChips();
+}
+function formatVisitsInput(addComma=false){setVisitsFromItems(uniqueLines(visitsInput.value),addComma)}
+function renderVisitChips(){
+  if(!visitChipList)return;
+  const items=uniqueLines(visitsInput.value);
+  visitChipList.innerHTML=items.map((item,i)=>`<div class="visitChip"><span>${esc(item)}</span><button type="button" data-visit-remove="${i}" aria-label="방문지 삭제">×</button></div>`).join('');
+}
+function removeVisitAt(index){
+  const items=uniqueLines(visitsInput.value);
+  if(index<0||index>=items.length)return;
+  items.splice(index,1);
+  setVisitsFromItems(items,items.length>0);
+  visitValueBeforeInput=visitsInput.value;
+  resetResult();
+  showStatus('방문지를 제거했습니다.','ok');
+}
 function showStatus(msg,type=''){statusEl.className='status show'+(type?' '+type:'');statusEl.innerHTML=esc(msg)}
 function showProgress(msg,done,total){const pct=total?Math.round(done/total*100):0;statusEl.className='status show';statusEl.innerHTML=`${esc(msg)}<div class="progress"><span style="width:${pct}%"></span></div>`}
 function formatDuration(ms){const minutes=Math.max(0,Math.round(Number(ms||0)/60000));const h=Math.floor(minutes/60),m=minutes%60;return h?(m?`${h}시간 ${m}분`:`${h}시간`):`${m}분`}
@@ -730,7 +869,90 @@ function renderResult(best,returnToStart){
 }
 
 function makeIcon(label,type){const maps=getNaverMaps();const color=type==='start'?'#03c75a':type==='stop'?'#2563eb':'#111827';return {content:`<div style="width:36px;height:36px;border-radius:999px 999px 999px 0;transform:rotate(-45deg);background:${color};border:3px solid #fff;box-shadow:0 8px 20px rgba(0,0,0,.22);display:grid;place-items:center"><span style="transform:rotate(45deg);color:#fff;font-weight:950;font-size:12px">${esc(label)}</span></div>`,anchor:maps?new maps.Point(18,36):undefined}}
-function clearMap(){markers.forEach(m=>m.setMap(null));polylines.forEach(l=>l.setMap(null));markers=[];polylines=[]}
+
+function hideMapClickBubble(){
+  if(mapClickBubble&&mapClickBubble.parentNode)mapClickBubble.parentNode.removeChild(mapClickBubble);
+  mapClickBubble=null;
+  pendingMapClickVisit=null;
+}
+
+function appendVisitAddress(address){
+  const value=normalizeAddress(address);
+  if(!value)return;
+  const items=uniqueLines(visitsInput.value);
+  const key=value.toLowerCase();
+  if(!items.some(v=>v.toLowerCase()===key))items.push(value);
+  setVisitsFromItems(items,items.length>0);
+  visitValueBeforeInput=visitsInput.value;
+  resetResult();
+  visitsInput.focus();
+  showStatus('지도에서 선택한 지점을 방문지에 추가했습니다.','ok');
+}
+
+function positionMapClickBubble(pixel){
+  if(!mapClickBubble||!pixel)return;
+  const wrapRect=mapWrap.getBoundingClientRect();
+  const x=Math.max(116,Math.min(wrapRect.width-116,Number(pixel.x||0)));
+  const y=Math.max(92,Math.min(wrapRect.height-18,Number(pixel.y||0)-12));
+  mapClickBubble.style.left=x+'px';
+  mapClickBubble.style.top=y+'px';
+}
+
+function showMapClickBubble(latlng,address){
+  hideMapClickBubble();
+  pendingMapClickVisit={lat:latlng.lat(),lng:latlng.lng(),address};
+  const maps=getNaverMaps();
+  const projection=naverMap&&naverMap.getProjection?naverMap.getProjection():null;
+  const pixel=projection&&projection.fromCoordToOffset?projection.fromCoordToOffset(latlng):null;
+
+  const el=document.createElement('div');
+  el.className='mapClickBubble';
+  el.innerHTML=`<strong>방문지에 추가할까요?</strong><div class="mapClickBubbleAddress">${esc(address)}</div><div class="mapClickBubbleActions"><button type="button" class="ok">OK</button></div>`;
+  mapWrap.appendChild(el);
+  mapClickBubble=el;
+  positionMapClickBubble(pixel);
+
+  el.querySelector('.ok').addEventListener('click',e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    const item=pendingMapClickVisit;
+    hideMapClickBubble();
+    appendVisitAddress(item&&item.address?item.address:address);
+  });
+}
+
+async function handleMapVisitClick(e){
+  if(!naverMap||!e||!e.coord)return;
+  const lat=e.coord.lat();
+  const lng=e.coord.lng();
+  try{
+    showStatus('지도에서 선택한 지점을 주소로 변환 중...');
+    const item=await reverseGeocode(lat,lng);
+    const address=item.address||item.roadAddress||item.jibunAddress||`${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    showMapClickBubble(e.coord,address);
+    showStatus('지도에서 선택한 지점을 확인했습니다. OK를 누르면 방문지에 추가됩니다.','ok');
+  }catch(err){
+    hideMapClickBubble();
+    showStatus((err&&err.message)||'선택한 지점의 주소를 확인하지 못했습니다.','err');
+  }
+}
+
+function installMapVisitClick(){
+  const maps=getNaverMaps();
+  if(!maps||!naverMap||naverMap.__visitClickInstalled)return;
+  naverMap.__visitClickInstalled=true;
+  maps.Event.addListener(naverMap,'click',handleMapVisitClick);
+  maps.Event.addListener(naverMap,'dragstart',hideMapClickBubble);
+  maps.Event.addListener(naverMap,'zoom_changed',hideMapClickBubble);
+}
+
+document.addEventListener('pointerdown',e=>{
+  if(!mapClickBubble)return;
+  if(mapClickBubble.contains(e.target))return;
+  hideMapClickBubble();
+},{capture:true});
+
+function clearMap(){markers.forEach(m=>m.setMap(null));polylines.forEach(l=>l.setMap(null));markers=[];polylines=[];hideMapClickBubble()}
 function refreshMap(){const maps=getNaverMaps();if(!maps||!naverMap)return;setTimeout(()=>{try{maps.Event.trigger(naverMap,'resize')}catch(e){}},60);setTimeout(()=>{try{maps.Event.trigger(naverMap,'resize')}catch(e){}},260)}
 function renderMapResult(best,returnToStart){
   const maps=getNaverMaps();if(!maps||!naverMap)return;clearMap();mapGuide.classList.add('hide');
@@ -852,7 +1074,7 @@ async function findRoute(){
   }finally{if(runId===routeRunSeq)setBusy(false);endInput.disabled=returnChk.checked}
 }
 
-function waitForNaverMaps(retry=0){const maps=getNaverMaps();const el=$('naverMap');if(maps&&el&&el.clientWidth>0&&el.clientHeight>0){naverMap=new maps.Map(el,{center:new maps.LatLng(35.9676,126.7367),zoom:11});$('mapStatus').textContent='네이버 지도 연결됨';refreshMap();return}if(retry<35){setTimeout(()=>waitForNaverMaps(retry+1),120);return}$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 객체 또는 지도 영역 크기를 확인하지 못했습니다.','err')}
+function waitForNaverMaps(retry=0){const maps=getNaverMaps();const el=$('naverMap');if(maps&&el&&el.clientWidth>0&&el.clientHeight>0){naverMap=new maps.Map(el,{center:new maps.LatLng(35.9676,126.7367),zoom:11});installMapVisitClick();$('mapStatus').textContent='네이버 지도 연결됨';refreshMap();return}if(retry<35){setTimeout(()=>waitForNaverMaps(retry+1),120);return}$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 객체 또는 지도 영역 크기를 확인하지 못했습니다.','err')}
 async function initNaverMap(){try{const cfg=await fetch('/api/route-setting/config').then(r=>r.json());if(!cfg.ok||!cfg.clientId)throw new Error(cfg.message||'지도 Client ID가 없습니다.');const script=document.createElement('script');script.src=`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(cfg.clientId)}`;script.async=true;script.onload=()=>waitForNaverMaps();script.onerror=()=>{$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 스크립트 로딩 실패','err')};document.head.appendChild(script)}catch(e){$('mapStatus').textContent='지도 연결 대기';showStatus(e.message,'err')}}
 
 
@@ -955,6 +1177,7 @@ function scheduleVisitPasteComma(){
   visitPasteTimer=setTimeout(()=>{
     addCommaAfterVisitPaste();
     visitValueBeforeInput=visitsInput.value;
+    renderVisitChips();
     resetResult();
   },80);
 }
@@ -974,6 +1197,7 @@ visitsInput.addEventListener('paste',e=>{
     addCommaAfterVisitPaste();
     visitValueBeforeInput=visitsInput.value;
     visitsInput.focus();
+    renderVisitChips();
     resetResult();
     return;
   }
@@ -998,13 +1222,27 @@ visitsInput.addEventListener('input',e=>{
   }
 
   visitValueBeforeInput=visitsInput.value;
+  renderVisitChips();
   resetResult();
 });
 
 visitsInput.addEventListener('blur',()=>{
+  formatVisitsInput(false);
   visitValueBeforeInput=visitsInput.value;
+  renderVisitChips();
   resetResult();
 });
+
+
+if(visitChipList){
+  visitChipList.addEventListener('click',e=>{
+    const btn=e.target&&e.target.closest?e.target.closest('[data-visit-remove]'):null;
+    if(!btn)return;
+    e.preventDefault();
+    removeVisitAt(Number(btn.dataset.visitRemove));
+  });
+  renderVisitChips();
+}
 
 $('findRoute').onclick=findRoute;
 

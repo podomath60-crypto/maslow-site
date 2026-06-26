@@ -686,6 +686,141 @@
   }
 }
 
+
+/* Print layout override: A4 portrait, map on top, route list below in 1 or 2 columns */
+@media print{
+  @page{
+    size:A4 portrait !important;
+    margin:10mm !important;
+  }
+  .printSheet{
+    display:block!important;
+  }
+  .printPage{
+    width:100%;
+  }
+  .printTop{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:7px;
+    border-bottom:2px solid #0f172a;
+    padding-bottom:6px;
+  }
+  .printTitle{
+    font-size:18px;
+    font-weight:950;
+    letter-spacing:-.04em;
+  }
+  .printMeta{
+    font-size:11px;
+    color:#475569;
+    font-weight:800;
+    text-align:right;
+    line-height:1.35;
+  }
+  .printMapBox{
+    width:100%;
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    overflow:hidden;
+    background:#f8fafc;
+    margin-bottom:8px;
+    page-break-inside:avoid;
+  }
+  .printMapInner{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#f8fafc;
+  }
+  .printMapInner img{
+    display:block;
+    width:100%;
+    height:auto;
+    object-fit:contain;
+  }
+  .printRouteSection{
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    padding:8px 9px 9px;
+    box-sizing:border-box;
+  }
+  .printSummary{
+    display:flex;
+    gap:8px 10px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+    font-size:11px;
+    font-weight:900;
+    color:#15803d;
+  }
+  .printColumns{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    align-items:start;
+  }
+  .printColumns.twoCol{
+    grid-template-columns:1fr 1fr;
+  }
+  .printColumn{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .printRouteItem{
+    display:grid;
+    grid-template-columns:26px 1fr;
+    gap:6px;
+    align-items:start;
+    border-bottom:1px solid #eef2f7;
+    padding:4px 0 5px;
+    page-break-inside:avoid;
+  }
+  .printRouteItem:last-child{
+    border-bottom:0;
+  }
+  .printBadge{
+    width:24px;
+    height:24px;
+    border-radius:8px;
+    background:#eff6ff;
+    color:#1d4ed8;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    font-weight:950;
+    flex:0 0 24px;
+  }
+  .printBadge.a{background:#f0fdf4;color:#15803d}
+  .printBadge.z{background:#f1f5f9;color:#0f172a}
+  .printRouteText{
+    font-size:10.5px;
+    line-height:1.34;
+    word-break:break-all;
+    font-weight:760;
+    color:#0f172a;
+  }
+  .printRouteLabel{
+    display:block;
+    margin-bottom:1px;
+    font-size:10px;
+    color:#64748b;
+    font-weight:900;
+  }
+  .printSegment{
+    margin-top:2px;
+    color:#1d4ed8;
+    font-size:9.5px;
+    font-weight:900;
+    line-height:1.25;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1837,6 +1972,90 @@ $('currentEnd').onclick=setCurrentLocationAsEnd;
 
 $('copyResult').onclick=async()=>{if(!latestResult)return;await navigator.clipboard.writeText(resultText());showStatus('추천 결과를 복사했습니다.','ok')};
 if($('printRoute'))$('printRoute').onclick=printRouteResult;
+
+/* Print override: capture current visible map and print portrait layout */
+async function captureCurrentMapImage(){
+  if(!mapWrap)return {src:'', width:0, height:0};
+  const rect=mapWrap.getBoundingClientRect();
+  const width=Math.max(1, Math.round(rect.width||0));
+  const height=Math.max(1, Math.round(rect.height||0));
+
+  const canvas=mapWrap.querySelector('canvas');
+  if(canvas&&canvas.toDataURL){
+    try{
+      return {src:canvas.toDataURL('image/png'), width, height};
+    }catch(e){}
+  }
+  const img=mapWrap.querySelector('img[src]');
+  return {src:img?img.src:'', width, height};
+}
+
+function buildPrintRouteItemHtml(routeItem,index,total,returnToStart,segments){
+  const meta=makeRouteLabel(routeItem,index,total,returnToStart);
+  const badgeClass=meta.type==='start'?'a':meta.type==='end'?'z':'';
+  const seg=segments[index];
+  const segText=seg?`<div class="printSegment">다음 구간 ${esc(seg.summary.durationText)} · ${esc(seg.summary.distanceText)}</div>`:'';
+  return `<div class="printRouteItem">
+    <div class="printBadge ${badgeClass}">${esc(meta.label)}</div>
+    <div>
+      <span class="printRouteLabel">${esc(meta.text)}</span>
+      <div class="printRouteText">${esc(routeItem.address||routeItem.resolvedAddress||'')}</div>
+      ${segText}
+    </div>
+  </div>`;
+}
+
+function makePrintRouteHtml(){
+  if(!latestResult)return '';
+  const route=latestResult.route||[];
+  const useTwoCols=route.length>=4;
+  const splitIndex=useTwoCols?Math.ceil(route.length/2):route.length;
+  const col1=route.slice(0,splitIndex).map((item,i)=>buildPrintRouteItemHtml(item,i,route.length,latestResult.returnToStart,latestResult.segments)).join('');
+  const col2=useTwoCols?route.slice(splitIndex).map((item,i)=>buildPrintRouteItemHtml(item,splitIndex+i,route.length,latestResult.returnToStart,latestResult.segments)).join(''):'';
+  return `<div class="printColumns ${useTwoCols?'twoCol':''}">
+    <div class="printColumn">${col1}</div>
+    ${useTwoCols?`<div class="printColumn">${col2}</div>`:''}
+  </div>`;
+}
+
+async function printRouteResult(){
+  if(!latestResult){
+    showStatus('출력할 추천순서가 없습니다. 최단경로를 먼저 찾으세요.','err');
+    return;
+  }
+  const mapCapture=await captureCurrentMapImage();
+  removePrintSheet();
+  const sheet=document.createElement('section');
+  sheet.className='printSheet';
+  const now=new Date();
+  const dateText=now.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  const routeCount=(latestResult.route||[]).length;
+  sheet.innerHTML=`<div class="printPage">
+    <div class="printTop">
+      <div class="printTitle">최단 경로 추천 순서</div>
+      <div class="printMeta">출력일 ${esc(dateText)}<br>프린트 버튼을 누른 순간의 지도 화면</div>
+    </div>
+    <div class="printMapBox">
+      <div class="printMapInner">
+        ${mapCapture.src
+          ? `<img src="${esc(mapCapture.src)}" alt="지도 화면" width="${mapCapture.width}" height="${mapCapture.height}">`
+          : `<div style="padding:16px;font-size:12px;font-weight:800;color:#64748b">지도 이미지를 캡처하지 못했습니다.</div>`}
+      </div>
+    </div>
+    <div class="printRouteSection">
+      <div class="printSummary">
+        <span>총 예상시간 ${esc(formatDuration(latestResult.durationMs))}</span>
+        <span>총 거리 ${esc(formatDistance(latestResult.distanceM))}</span>
+        <span>${routeCount}개 지점</span>
+        <span>${routeCount<=3?'경로 1열':'경로 2열'}</span>
+      </div>
+      ${makePrintRouteHtml()}
+    </div>
+  </div>`;
+  document.body.appendChild(sheet);
+  setTimeout(()=>window.print(),80);
+}
+
 window.addEventListener('resize',refreshMap);
 initNaverMap();
 </script>

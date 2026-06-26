@@ -1101,83 +1101,67 @@
 }
 
 
-/* Safe patch: vertical purple zoom slider. No existing CSS is removed. */
-.mapZoomSlider{
+/* Dense custom scale + 0.5 wheel zoom patch */
+.customScaleControl{
   position:absolute;
   right:18px;
-  bottom:58px;
-  z-index:35;
-  width:54px;
-  height:224px;
-  padding:0;
-  border:1px solid rgba(88,28,135,.24);
-  border-radius:18px;
+  bottom:18px;
+  z-index:34;
+  min-width:150px;
+  padding:8px 10px 7px;
+  border:1px solid rgba(15,23,42,.18);
+  border-radius:10px;
   background:rgba(255,255,255,.94);
-  box-shadow:0 10px 28px rgba(88,28,135,.22);
+  box-shadow:0 8px 22px rgba(15,23,42,.18);
   backdrop-filter:blur(8px);
-}
-.mapZoomSlider input[type=range]{
-  position:absolute;
-  left:50%;
-  top:50%;
-  width:188px;
-  height:30px;
-  margin:0;
-  transform:translate(-50%,-50%) rotate(-90deg);
-  transform-origin:center center;
-  accent-color:#7c3aed;
-  cursor:pointer;
-}
-.mapZoomSlider input[type=range]::-webkit-slider-runnable-track{
-  height:8px;
-  border-radius:999px;
-  background:linear-gradient(90deg,#ddd6fe,#7c3aed);
-}
-.mapZoomSlider input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;
-  appearance:none;
-  width:28px;
-  height:28px;
-  margin-top:-10px;
-  border-radius:50%;
-  border:3px solid #fff;
-  background:#7c3aed;
-  box-shadow:0 3px 12px rgba(88,28,135,.42);
-}
-.mapZoomSlider input[type=range]::-moz-range-track{
-  height:8px;
-  border-radius:999px;
-  background:linear-gradient(90deg,#ddd6fe,#7c3aed);
-}
-.mapZoomSlider input[type=range]::-moz-range-thumb{
-  width:24px;
-  height:24px;
-  border-radius:50%;
-  border:3px solid #fff;
-  background:#7c3aed;
-  box-shadow:0 3px 12px rgba(88,28,135,.42);
-}
-.mapZoomSlider .zoomValue{
-  position:absolute;
-  left:50%;
-  bottom:7px;
-  transform:translateX(-50%);
-  min-width:30px;
-  text-align:center;
-  font-size:11px;
-  font-weight:900;
-  color:#581c87;
+  color:#111827;
   pointer-events:none;
 }
+.customScaleControl .scaleLabel{
+  margin-bottom:4px;
+  text-align:right;
+  font-size:11px;
+  font-weight:900;
+  line-height:1;
+  color:#111827;
+}
+.customScaleControl .scaleBar{
+  position:relative;
+  height:10px;
+  margin-left:auto;
+  border-left:2px solid #111827;
+  border-right:2px solid #111827;
+  border-bottom:3px solid #111827;
+  border-radius:0 0 2px 2px;
+}
+.customScaleControl .scaleTicks{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:-3px;
+  display:flex;
+  justify-content:space-between;
+  height:10px;
+}
+.customScaleControl .scaleTicks i{
+  display:block;
+  width:2px;
+  height:8px;
+  background:#111827;
+}
+.customScaleControl .scaleZoom{
+  margin-top:3px;
+  text-align:right;
+  font-size:10px;
+  font-weight:800;
+  color:#475569;
+}
 @media(max-width:720px){
-  .mapZoomSlider{
+  .customScaleControl{
     right:12px;
-    bottom:62px;
-    width:50px;
-    height:200px;
-  }
-  .mapZoomSlider input[type=range]{
-    width:166px;
+    bottom:14px;
+    min-width:132px;
+    padding:7px 9px 6px;
   }
 }
 
@@ -1187,9 +1171,10 @@
 <main class="app">
   <section class="mapWrap" id="mapWrap">
     <div class="naverMapCanvas" id="naverMap" aria-label="네이버 지도"></div>
-    <div class="mapZoomSlider" id="mapZoomSlider" aria-label="지도 확대 축소">
-      <input id="mapZoomRange" type="range" min="6" max="19" step="0.5" value="11" aria-label="지도 확대 축소 슬라이더">
-      <span class="zoomValue" id="mapZoomValue">11</span>
+    <div class="customScaleControl" id="customScaleControl" aria-hidden="true">
+      <div class="scaleLabel" id="customScaleLabel">--</div>
+      <div class="scaleBar" id="customScaleBar"><span class="scaleTicks"><i></i><i></i><i></i></span></div>
+      <div class="scaleZoom" id="customScaleZoom">zoom --</div>
     </div>
     <div class="mapbar"><strong>경로설정</strong><span id="mapStatus">네이버 지도 로딩 중</span></div>
     <div class="mapGuide" id="mapGuide"><img class="mapCarpetHero" src="/route-setting/magic-carpet.png" alt="" aria-hidden="true"><strong class="magicTitle">매직 카펫</strong><span>계산이 끝나면 추천 순서대로 지도에 핀이 표시됩니다.</span></div>
@@ -1273,16 +1258,9 @@ const statusEl=$('status'), totalTimeEl=$('totalTime'), resultEl=$('result'), pa
 const mapWrap=$('mapWrap'), mapGuide=$('mapGuide');
 let naverMap=null, markers=[], polylines=[], latestResult=null;
 let mapClickBubble=null, mapClickTouchPin=null, pendingMapClickVisit=null;
-let mapZoomSliderInstalled=false;
-let mapZoomSliderApplying=false;
+let fineWheelZoomInstalled=false;
 
-function snapMapZoomHalf(value){
-  const n=Number(value);
-  if(!Number.isFinite(n))return 11;
-  return Math.round(n*2)/2;
-}
-
-function getMapZoomBoundsForSlider(){
+function getMapZoomBoundsFine(){
   const fallback={min:6,max:19};
   try{
     const minOpt=naverMap&&naverMap.getOptions&&naverMap.getOptions('minZoom');
@@ -1296,67 +1274,111 @@ function getMapZoomBoundsForSlider(){
   }
 }
 
-function setMapZoomFromSlider(value){
-  if(!naverMap)return;
-  const bounds=getMapZoomBoundsForSlider();
-  const z=Math.max(bounds.min,Math.min(bounds.max,snapMapZoomHalf(value)));
-  const range=$('mapZoomRange');
-  const label=$('mapZoomValue');
+function snapZoom05(value){
+  const n=Number(value);
+  if(!Number.isFinite(n))return 11;
+  return Math.round(n*2)/2;
+}
 
-  mapZoomSliderApplying=true;
+function formatScaleDistance(meters){
+  const m=Number(meters);
+  if(!Number.isFinite(m)||m<=0)return '--';
+  if(m>=1000){
+    const km=m/1000;
+    if(km>=10)return `${Math.round(km)} km`;
+    if(km>=1)return `${Math.round(km*10)/10} km`.replace('.0','');
+  }
+  return `${Math.round(m)} m`;
+}
+
+function chooseDenseScaleMeters(targetMeters){
+  const target=Number(targetMeters);
+  if(!Number.isFinite(target)||target<=0)return 100;
+  const exp=Math.floor(Math.log10(target));
+  const base=Math.pow(10,exp);
+  // 기본 1/2/5 계열 사이에 1.5/2.5/3/4/7.5를 넣어 축척 단위를 촘촘하게 표시한다.
+  const steps=[1,1.5,2,2.5,3,4,5,7.5,10];
+  let best=steps[0]*base;
+  for(const s of steps){
+    const v=s*base;
+    if(v<=target)best=v;
+  }
+  return best;
+}
+
+function updateCustomScaleControl(){
+  if(!naverMap)return;
+  const wrap=mapWrap||$('mapWrap');
+  const label=$('customScaleLabel');
+  const bar=$('customScaleBar');
+  const zoomText=$('customScaleZoom');
+  if(!wrap||!label||!bar)return;
+
+  let center=null;
+  let zoom=11;
   try{
-    const center=naverMap.getCenter&&naverMap.getCenter();
-    if(center&&naverMap.morph){
-      naverMap.morph(center,z,{duration:0});
-    }else if(naverMap.setZoom){
-      naverMap.setZoom(z);
-    }
-  }catch(e){
-    try{if(naverMap.setZoom)naverMap.setZoom(z)}catch(err){}
-  }
+    center=naverMap.getCenter&&naverMap.getCenter();
+    zoom=Number(naverMap.getZoom&&naverMap.getZoom());
+  }catch(e){}
+  if(!center||!Number.isFinite(zoom))return;
 
-  if(range)range.value=String(z);
-  if(label)label.textContent=String(z);
-  setTimeout(()=>{mapZoomSliderApplying=false;},40);
+  const lat=Number(center.lat&&center.lat());
+  if(!Number.isFinite(lat))return;
+
+  // Web Mercator 기준 1px당 미터. 소수점 zoom도 그대로 반영한다.
+  const metersPerPx=Math.cos(lat*Math.PI/180)*156543.03392804097/Math.pow(2,zoom);
+  const targetPx=Math.max(110,Math.min(180,Math.round((wrap.clientWidth||900)*0.16)));
+  const scaleMeters=chooseDenseScaleMeters(metersPerPx*targetPx);
+  const widthPx=Math.max(74,Math.min(190,Math.round(scaleMeters/metersPerPx)));
+
+  label.textContent=formatScaleDistance(scaleMeters);
+  bar.style.width=`${widthPx}px`;
+  if(zoomText)zoomText.textContent=`zoom ${Math.round(zoom*10)/10}`;
 }
 
-function syncMapZoomSlider(){
+function applyWheelZoom05(direction){
   if(!naverMap)return;
-  const range=$('mapZoomRange');
-  const label=$('mapZoomValue');
-  if(!range)return;
-
-  const bounds=getMapZoomBoundsForSlider();
-  range.min=String(bounds.min);
-  range.max=String(bounds.max);
-  range.step='0.5';
-
   const current=Number(naverMap.getZoom&&naverMap.getZoom());
-  if(Number.isFinite(current)){
-    const shown=snapMapZoomHalf(current);
-    range.value=String(shown);
-    if(label)label.textContent=String(shown);
+  if(!Number.isFinite(current))return;
+  const bounds=getMapZoomBoundsFine();
+  const next=Math.max(bounds.min,Math.min(bounds.max,snapZoom05(current+(direction*0.5))));
+  if(next===current)return;
+
+  try{
+    naverMap.setZoom(next,false);
+  }catch(e){
+    try{naverMap.setZoom(next)}catch(err){}
   }
+  setTimeout(updateCustomScaleControl,0);
+  setTimeout(updateCustomScaleControl,120);
 }
 
-function installMapZoomSlider(){
-  if(mapZoomSliderInstalled)return;
-  const range=$('mapZoomRange');
-  if(!range)return;
-  mapZoomSliderInstalled=true;
+function installWheelZoom05(){
+  if(fineWheelZoomInstalled||!mapWrap)return;
+  fineWheelZoomInstalled=true;
 
-  range.step='0.5';
-  range.addEventListener('input',()=>setMapZoomFromSlider(range.value));
-  range.addEventListener('change',()=>setMapZoomFromSlider(range.value));
+  mapWrap.addEventListener('wheel',e=>{
+    if(!naverMap)return;
+    if(e.ctrlKey||e.metaKey)return;
+    e.preventDefault();
+    e.stopPropagation();
 
+    const dy=Number(e.deltaY)||0;
+    if(!dy)return;
+    applyWheelZoom05(dy<0?1:-1);
+  },{passive:false});
+}
+
+function installDenseScaleControl(){
   const maps=getNaverMaps();
   try{
     if(maps&&maps.Event&&naverMap){
-      maps.Event.addListener(naverMap,'zoom_changed',()=>{if(!mapZoomSliderApplying)syncMapZoomSlider();});
-      maps.Event.addListener(naverMap,'idle',syncMapZoomSlider);
+      maps.Event.addListener(naverMap,'zoom_changed',updateCustomScaleControl);
+      maps.Event.addListener(naverMap,'bounds_changed',updateCustomScaleControl);
+      maps.Event.addListener(naverMap,'idle',updateCustomScaleControl);
     }
   }catch(e){}
-  syncMapZoomSlider();
+  updateCustomScaleControl();
 }
 
 let lastMapPointerPixel=null;
@@ -2069,7 +2091,7 @@ async function findRoute(){
   }finally{if(runId===routeRunSeq)setBusy(false);endInput.disabled=returnChk.checked}
 }
 
-function waitForNaverMaps(retry=0){const maps=getNaverMaps();const el=$('naverMap');if(maps&&el&&el.clientWidth>0&&el.clientHeight>0){naverMap=new maps.Map(el,{center:new maps.LatLng(35.9676,126.7367),zoom:11});installMapZoomSlider();installMapVisitClick();$('mapStatus').textContent='네이버 지도 연결됨';refreshMap();return}if(retry<35){setTimeout(()=>waitForNaverMaps(retry+1),120);return}$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 객체 또는 지도 영역 크기를 확인하지 못했습니다.','err')}
+function waitForNaverMaps(retry=0){const maps=getNaverMaps();const el=$('naverMap');if(maps&&el&&el.clientWidth>0&&el.clientHeight>0){naverMap=new maps.Map(el,{center:new maps.LatLng(35.9676,126.7367),zoom:11,scaleControl:false,scrollWheel:false});installDenseScaleControl();installWheelZoom05();installMapVisitClick();$('mapStatus').textContent='네이버 지도 연결됨';refreshMap();return}if(retry<35){setTimeout(()=>waitForNaverMaps(retry+1),120);return}$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 객체 또는 지도 영역 크기를 확인하지 못했습니다.','err')}
 async function initNaverMap(){try{const cfg=await fetch('/api/route-setting/config').then(r=>r.json());if(!cfg.ok||!cfg.clientId)throw new Error(cfg.message||'지도 Client ID가 없습니다.');const script=document.createElement('script');script.src=`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(cfg.clientId)}`;script.async=true;script.onload=()=>waitForNaverMaps();script.onerror=()=>{$('mapStatus').textContent='지도 연결 실패';showStatus('네이버 지도 스크립트 로딩 실패','err')};document.head.appendChild(script)}catch(e){$('mapStatus').textContent='지도 연결 대기';showStatus(e.message,'err')}}
 
 

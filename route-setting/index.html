@@ -325,6 +325,17 @@
   @keyframes carpetDockHeroJourneyClean{0%{width:min(132px,34vw);max-width:min(132px,34vw);transform:translate3d(0,0,0) rotate(-3deg)}10%{transform:translate3d(7px,-6px,0) rotate(1deg)}24%{transform:translate3d(16px,-11px,0) rotate(5deg)}38%{transform:translate3d(25px,-4px,0) rotate(6deg)}52%{transform:translate3d(14px,9px,0) rotate(2deg)}66%{transform:translate3d(-4px,3px,0) rotate(-2deg)}80%{width:66px;max-width:66px;transform:translate3d(-6px,-5px,0) rotate(-4deg)}100%{width:44px;max-width:44px;transform:translate3d(0,0,0) rotate(-3deg)}}
 }
 
+
+/* JS cubic-bezier carpet docking: no segmented keyframe path */
+.mapGuide.mapGuideDocking{
+  animation:none!important;
+  will-change:left,top,width,height,transform;
+}
+.mapGuide.mapGuideDocking .mapCarpetHero{
+  animation:none!important;
+  will-change:width,transform;
+}
+
 </style>
 </head>
 <body>
@@ -417,12 +428,104 @@ let routeRunSeq=0;
 function dockMapGuide(){
   if(!mapGuide||mapGuide.classList.contains('mapGuideDocked')||mapGuide.classList.contains('mapGuideDocking'))return;
   mapGuide.classList.remove('hide');
+
+  const wrapRect=mapWrap.getBoundingClientRect();
+  const carpet=mapGuide.querySelector('.mapCarpetHero');
+  const guideRect=mapGuide.getBoundingClientRect();
+  const carpetRect=carpet?carpet.getBoundingClientRect():guideRect;
+  const isMobile=window.matchMedia('(max-width:760px)').matches;
+
+  const startW=carpetRect.width||guideRect.width;
+  const startH=carpetRect.height||guideRect.height;
+  const startX=carpetRect.left-wrapRect.left+startW/2;
+  const startY=carpetRect.top-wrapRect.top+startH/2;
+
+  const endW=isMobile?44:67;
+  const endH=endW;
+  const endLeft=isMobile?12:14;
+  const endTop=isMobile?6:14;
+  const endX=endLeft+endW/2;
+  const endY=endTop+endH/2;
+
+  // One continuous cubic Bezier curve: P0(start) -> P1(right/up) -> P2(right/down loop) -> P3(dock).
+  // No straight-line keyframe segments, so the carpet rides one smooth butterfly-like curve.
+  const p0={x:startX,y:startY};
+  const p1={x:Math.min(wrapRect.width-24,startX+wrapRect.width*.34),y:Math.max(24,startY-wrapRect.height*.34)};
+  const p2={x:Math.min(wrapRect.width-24,startX+wrapRect.width*.50),y:Math.min(wrapRect.height-24,startY+wrapRect.height*.34)};
+  const p3={x:endX,y:endY};
+
+  const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  const bezier=(a,b,c,d,t)=>{
+    const mt=1-t;
+    return mt*mt*mt*a+3*mt*mt*t*b+3*mt*t*t*c+t*t*t*d;
+  };
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const duration=3000;
+  let startedAt=0;
+
   mapGuide.classList.add('mapGuideDocking');
-  setTimeout(()=>{
-    if(!mapGuide)return;
+  mapGuide.style.left=(startX-startW/2)+'px';
+  mapGuide.style.top=(startY-startH/2)+'px';
+  mapGuide.style.width=startW+'px';
+  mapGuide.style.height=startH+'px';
+  mapGuide.style.transform='translate3d(0,0,0)';
+  if(carpet){
+    carpet.style.width=startW+'px';
+    carpet.style.maxWidth=startW+'px';
+    carpet.style.transform='translate3d(0,0,0) rotate(-3deg)';
+  }
+
+  function step(ts){
+    if(!startedAt)startedAt=ts;
+    const raw=Math.min(1,(ts-startedAt)/duration);
+    const t=ease(raw);
+    const x=bezier(p0.x,p1.x,p2.x,p3.x,t);
+    const y=bezier(p0.y,p1.y,p2.y,p3.y,t);
+    const w=lerp(startW,endW,t);
+    const h=lerp(startH,endH,t);
+
+    mapGuide.style.left=(x-w/2)+'px';
+    mapGuide.style.top=(y-h/2)+'px';
+    mapGuide.style.width=w+'px';
+    mapGuide.style.height=h+'px';
+    mapGuide.style.padding='0';
+    mapGuide.style.border='0';
+    mapGuide.style.background='transparent';
+    mapGuide.style.boxShadow='none';
+    mapGuide.style.transform='translate3d(0,0,0)';
+
+    if(carpet){
+      const wing=Math.sin(raw*Math.PI*4)*2.4;
+      const settle=lerp(1,.35,t);
+      const angle=lerp(-3, -3 + wing*settle, 1);
+      carpet.style.width=w+'px';
+      carpet.style.maxWidth=w+'px';
+      carpet.style.transform=`translate3d(0,0,0) rotate(${angle}deg)`;
+    }
+
+    if(raw<1){
+      requestAnimationFrame(step);
+      return;
+    }
+
     mapGuide.classList.add('mapGuideDocked');
     mapGuide.classList.remove('mapGuideDocking');
-  },3000);
+    mapGuide.style.left=endLeft+'px';
+    mapGuide.style.top=endTop+'px';
+    mapGuide.style.width=endW+'px';
+    mapGuide.style.height=endH+'px';
+    mapGuide.style.padding='';
+    mapGuide.style.border='';
+    mapGuide.style.background='';
+    mapGuide.style.boxShadow='';
+    mapGuide.style.transform='';
+    if(carpet){
+      carpet.style.width='';
+      carpet.style.maxWidth='';
+      carpet.style.transform='';
+    }
+  }
+  requestAnimationFrame(step);
 }
 if(mapWrap&&mapGuide){
   mapWrap.addEventListener('pointerdown',e=>{

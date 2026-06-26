@@ -1189,8 +1189,6 @@ const mapWrap=$('mapWrap'), mapGuide=$('mapGuide');
 let naverMap=null, markers=[], polylines=[], latestResult=null;
 let mapClickBubble=null, mapClickTouchPin=null, pendingMapClickVisit=null;
 let mapWheelZoomInstalled=false;
-let mapWheelVirtualZoom=null;
-let mapWheelZoomRaf=0;
 
 function getMapZoomBounds(){
   const min=6;
@@ -1215,25 +1213,6 @@ function getMapCenterSafe(){
   }
 }
 
-function applyFractionalMapWheelZoom(){
-  mapWheelZoomRaf=0;
-  if(!naverMap||!Number.isFinite(mapWheelVirtualZoom))return;
-
-  const center=getMapCenterSafe();
-  try{
-    if(center&&naverMap.morph){
-      // 모바일 핀치처럼 정수 줌 단계 사이 값을 직접 보낸다.
-      naverMap.morph(center,mapWheelVirtualZoom,{duration:0});
-    }else if(naverMap.setZoom){
-      naverMap.setZoom(mapWheelVirtualZoom);
-    }
-  }catch(e){
-    try{
-      if(naverMap.setZoom)naverMap.setZoom(mapWheelVirtualZoom);
-    }catch(err){}
-  }
-}
-
 function installFineMapWheelZoom(){
   if(mapWheelZoomInstalled||!mapWrap)return;
   mapWheelZoomInstalled=true;
@@ -1248,16 +1227,26 @@ function installFineMapWheelZoom(){
     if(!dy)return;
 
     const current=Number(naverMap.getZoom&&naverMap.getZoom());
-    if(!Number.isFinite(mapWheelVirtualZoom)){
-      mapWheelVirtualZoom=Number.isFinite(current)?current:11;
-    }
+    if(!Number.isFinite(current))return;
 
     const bounds=getMapZoomBounds();
-    const delta=Math.max(-0.18,Math.min(0.18,-dy*0.0022));
-    mapWheelVirtualZoom=Math.max(bounds.min,Math.min(bounds.max,mapWheelVirtualZoom+delta));
 
-    if(!mapWheelZoomRaf){
-      mapWheelZoomRaf=requestAnimationFrame(applyFractionalMapWheelZoom);
+    // 스크롤 입력을 쌓아두지 않고, 그 순간의 현재 줌에서 아주 작은 소수점 단위만 바로 이동.
+    const delta=Math.max(-0.08,Math.min(0.08,-dy*0.0009));
+    const next=Math.max(bounds.min,Math.min(bounds.max,current+delta));
+    if(next===current)return;
+
+    const center=getMapCenterSafe();
+    try{
+      if(center&&naverMap.morph){
+        naverMap.morph(center,next,{duration:0});
+      }else if(naverMap.setZoom){
+        naverMap.setZoom(next);
+      }
+    }catch(err){
+      try{
+        if(naverMap.setZoom)naverMap.setZoom(next);
+      }catch(e2){}
     }
   },{passive:false});
 }

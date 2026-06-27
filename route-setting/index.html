@@ -1251,31 +1251,31 @@
 }
 
 
-/* Place search: right-top magnifier button and modal. */
+/* Search history: right-top hamburger button and modal. */
 .placeSearchFab{
   position:absolute;
   right:16px;
   top:16px;
   z-index:120;
-  width:54px;
-  height:54px;
-  min-width:28px;
-  min-height:28px;
+  width:40px;
+  height:40px;
   border:0;
-  border-radius:15px;
+  border-radius:12px;
   background:rgba(255,255,255,.96);
   color:#581c87;
-  box-shadow:0 12px 30px rgba(88,28,135,.18);
+  box-shadow:0 10px 24px rgba(88,28,135,.16);
   display:flex;
+  flex-direction:column;
   align-items:center;
   justify-content:center;
+  gap:4px;
   cursor:pointer;
   user-select:none;
   pointer-events:auto;
   -webkit-tap-highlight-color:transparent;
 }
 .placeSearchFab:active{transform:translateY(1px)}
-.placeSearchFab svg{display:block;width:82%;height:82%;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.placeSearchFabLine{display:block;width:22px;height:3px;border-radius:999px;background:currentColor}
 .placeSearchBackdrop{
   position:fixed;
   inset:0;
@@ -1361,7 +1361,8 @@
 .placeResultActions button{height:34px;border:1px solid #ddd6fe;border-radius:10px;background:#faf5ff;color:#581c87;font-size:12px;font-weight:950;cursor:pointer}
 .placeResultActions button:hover{background:#f3e8ff}
 @media(max-width:760px){
-  .placeSearchFab{right:12px;top:12px;z-index:120;width:35px;height:35px;border-radius:10px}
+  .placeSearchFab{right:12px;top:12px;z-index:120;width:35px;height:35px;border-radius:10px;gap:3px}
+  .placeSearchFabLine{width:19px;height:2.5px}
   .placeSearchBackdrop{align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 66px) 12px 14px;background:rgba(15,23,42,.38)}
   .placeSearchModal{width:100%;max-height:calc(100vh - 88px);border-radius:16px}
   .placeSearchForm{padding:12px;gap:7px}
@@ -1387,13 +1388,15 @@
         </div>
       </div>
     </div>
-    <button id="placeSearchFab" class="placeSearchFab" type="button" aria-label="장소 검색" title="장소 검색">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M16 16l5 5"></path></svg>
+    <button id="placeSearchFab" class="placeSearchFab" type="button" aria-label="검색이력" title="검색이력">
+      <span class="placeSearchFabLine" aria-hidden="true"></span>
+      <span class="placeSearchFabLine" aria-hidden="true"></span>
+      <span class="placeSearchFabLine" aria-hidden="true"></span>
     </button>
     <div id="placeSearchBackdrop" class="placeSearchBackdrop" aria-hidden="true">
       <div class="placeSearchModal" role="dialog" aria-modal="true" aria-labelledby="placeSearchTitle">
         <div class="placeSearchHead">
-          <strong id="placeSearchTitle">장소 검색</strong>
+          <strong id="placeSearchTitle">검색이력</strong>
           <button id="placeSearchClose" class="placeSearchClose" type="button" aria-label="닫기">×</button>
         </div>
         <div class="placeSearchForm">
@@ -2126,6 +2129,7 @@ async function findRoute(){
   try{
     resetResult();
     const input=parseInputs();
+    saveRouteInputAddressesToHistory(input);
     showStatus('최단경로 계산을 시작합니다. 주소 좌표를 확인하는 중입니다.');
     focusPanelTopSoon();
     setBusy(true);
@@ -2181,6 +2185,7 @@ async function findRoute(){
     assertActive();
     showStatus(`${best.orderCount.toLocaleString('ko-KR')}개 경로 검토 후 최적 경로 도출 완료`,'ok');
     renderResult(best,input.returnToStart);
+    saveRouteResultAddressesToHistory(best);
   }catch(e){
     if(e&&e.code==='INPUT_VALIDATION'){
       showInputValidationError(e.message||'입력값을 확인해 주세요.');
@@ -2363,95 +2368,148 @@ visitsInput.addEventListener('blur',()=>{
 });
 
 
-/* Place search: Naver local search modal. Existing route/geocode/print logic is not changed. */
-let placeSearchBusy=false;
+/* Search history modal. Naver Search API is removed; this modal only uses typed/pasted addresses and local address history. */
 let lastPlaceSearchItems=[];
+const PLACE_HISTORY_KEY='routeSettingAddressHistory:v1';
 
 function stripHtmlTags(value){
   return String(value||'').replace(/<[^>]*>/g,'').replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim();
 }
 function getPlaceResultAddress(item){
-  return normalizeAddress(item&&((item.roadAddress||'')||(item.address||'')));
+  return normalizeAddress(item&&((item.roadAddress||'')||(item.address||'')||(item.title||'')));
 }
-function getDockedCarpetRenderSize(){
-  const dockedCarpet=document.querySelector('.mapGuide.mapGuideDocked .mapCarpetHero');
-  if(dockedCarpet){
-    const dockedRect=dockedCarpet.getBoundingClientRect();
-    const dockedBase=Math.max(dockedRect.width||0,dockedRect.height||0);
-    if(dockedBase)return dockedBase;
+function loadAddressHistory(){
+  try{
+    const raw=localStorage.getItem(PLACE_HISTORY_KEY);
+    const arr=JSON.parse(raw||'[]');
+    return Array.isArray(arr)?arr.filter(v=>normalizeAddress(v&&v.address)).map(v=>({
+      title:normalizeAddress(v.title||v.address),
+      address:normalizeAddress(v.address),
+      roadAddress:normalizeAddress(v.roadAddress||v.address),
+      source:normalizeAddress(v.source||'이력'),
+      savedAt:Number(v.savedAt||0)
+    })):[];
+  }catch(err){return [];}
+}
+function writeAddressHistory(items){
+  try{localStorage.setItem(PLACE_HISTORY_KEY,JSON.stringify(items.slice(0,80)));}catch(err){}
+}
+function normalizeHistoryRecord(record){
+  const address=normalizeAddress(record&&((record.roadAddress||'')||(record.address||'')||(record.title||'')));
+  if(!address)return null;
+  return {
+    title:normalizeAddress(record.title||address),
+    address,
+    roadAddress:normalizeAddress(record.roadAddress||address),
+    source:normalizeAddress(record.source||'이력'),
+    savedAt:Number(record.savedAt||Date.now())
+  };
+}
+function mergeAddressHistory(records){
+  const merged=[];
+  const seen=new Set();
+  records.forEach(record=>{
+    const item=normalizeHistoryRecord(record);
+    if(!item)return;
+    const key=item.address.toLowerCase();
+    if(seen.has(key))return;
+    seen.add(key);
+    merged.push(item);
+  });
+  return merged;
+}
+function saveAddressHistoryRecord(address,title,source='이력'){
+  const item=normalizeHistoryRecord({address,roadAddress:address,title:title||address,source,savedAt:Date.now()});
+  if(!item)return;
+  const existing=loadAddressHistory();
+  writeAddressHistory(mergeAddressHistory([item,...existing]));
+}
+function getCurrentRouteAddressRecords(){
+  const records=[];
+  const start=normalizeAddress(startInput&&startInput.value);
+  const end=normalizeAddress(endInput&&endInput.value);
+  if(start)records.push({title:'출발지',address:start,roadAddress:start,source:'현재 입력'});
+  uniqueLines(visitsInput&&visitsInput.value).forEach((address,idx)=>{
+    records.push({title:`경유지 ${idx+1}`,address,roadAddress:address,source:'현재 입력'});
+  });
+  if(end)records.push({title:'도착지',address:end,roadAddress:end,source:'현재 입력'});
+  return records;
+}
+function saveCurrentRouteAddressesToHistory(){
+  const current=getCurrentRouteAddressRecords();
+  if(!current.length)return;
+  writeAddressHistory(mergeAddressHistory([...current,...loadAddressHistory()]));
+}
+function getRouteInputAddressRecords(input,source='경로찾기 이력'){
+  const records=[];
+  if(!input)return records;
+  const start=normalizeAddress(input.start);
+  const end=normalizeAddress(input.end);
+  if(start)records.push({title:'출발지',address:start,roadAddress:start,source});
+  (input.visits||[]).map(normalizeAddress).filter(Boolean).forEach((address,idx)=>{
+    records.push({title:`경유지 ${idx+1}`,address,roadAddress:address,source});
+  });
+  if(end)records.push({title:'도착지',address:end,roadAddress:end,source});
+  return records;
+}
+function saveRouteInputAddressesToHistory(input){
+  const records=getRouteInputAddressRecords(input,'경로찾기 이력');
+  if(!records.length)return;
+  writeAddressHistory(mergeAddressHistory([...records,...loadAddressHistory()]));
+}
+function saveRouteResultAddressesToHistory(result){
+  const route=result&&Array.isArray(result.route)?result.route:[];
+  if(!route.length)return;
+  const records=route.map((item,idx)=>{
+    const address=normalizeAddress(item&&((item.address||'')||(item.resolvedAddress||'')));
+    if(!address)return null;
+    return {title:idx===0?'출발지':idx===route.length-1?'도착지':`경유지 ${idx}`,address,roadAddress:address,source:'경로찾기 완료'};
+  }).filter(Boolean);
+  if(!records.length)return;
+  writeAddressHistory(mergeAddressHistory([...records,...loadAddressHistory()]));
+}
+function getAddressHistoryItems(query=''){
+  const q=normalizeAddress(query).toLowerCase();
+  const current=getCurrentRouteAddressRecords();
+  const history=loadAddressHistory();
+  let items=mergeAddressHistory([...current,...history]);
+  if(q){
+    items=items.filter(item=>[
+      item.title,
+      item.address,
+      item.roadAddress,
+      item.source
+    ].join(' ').toLowerCase().includes(q));
   }
-  const carpet=document.querySelector('.mapCarpetHero');
-  if(!carpet)return 0;
-  const probeGuide=document.createElement('div');
-  probeGuide.className='mapGuide mapGuideDocked';
-  probeGuide.setAttribute('aria-hidden','true');
-  probeGuide.style.cssText='position:fixed!important;left:-9999px!important;top:-9999px!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;display:flex!important;';
-  const probeCarpet=carpet.cloneNode(false);
-  probeGuide.appendChild(probeCarpet);
-  document.body.appendChild(probeGuide);
-  const rect=probeCarpet.getBoundingClientRect();
-  const base=Math.max(rect.width||0,rect.height||0);
-  probeGuide.remove();
-  return base;
-}
-function syncPlaceSearchFabSize(){
-  const btn=$('placeSearchFab');
-  if(!btn)return;
-  const base=getDockedCarpetRenderSize();
-  if(!base)return;
-  const size=Math.max(28,Math.round(base*.8));
-  btn.style.display='flex';
-  btn.style.width=size+'px';
-  btn.style.height=size+'px';
-  btn.style.borderRadius=Math.round(size*.28)+'px';
+  return items;
 }
 function renderPlaceSearchMessage(message,cls='placeSearchEmpty'){
   const box=$('placeSearchResults');
   if(!box)return;
   box.innerHTML=`<div class="${cls}">${esc(message)}</div>`;
 }
-function openPlaceSearchModal(){
-  const backdrop=$('placeSearchBackdrop');
-  if(!backdrop)return;
-  backdrop.classList.add('active');
-  backdrop.setAttribute('aria-hidden','false');
-  renderPlaceSearchMessage('장소명 또는 상호명을 입력해 검색하세요.');
-  syncPlaceSearchFabSize();
-  setTimeout(()=>{$('placeSearchInput')&&$('placeSearchInput').focus();},30);
-}
-function closePlaceSearchModal(){
-  const backdrop=$('placeSearchBackdrop');
-  if(!backdrop)return;
-  backdrop.classList.remove('active');
-  backdrop.setAttribute('aria-hidden','true');
-}
-function setPlaceSearchBusy(busy){
-  placeSearchBusy=!!busy;
-  const btn=$('placeSearchRun');
-  const input=$('placeSearchInput');
-  if(btn)btn.disabled=placeSearchBusy;
-  if(input)input.disabled=placeSearchBusy;
-}
-function renderPlaceSearchResults(items){
+function renderAddressHistory(){
   const box=$('placeSearchResults');
+  const input=$('placeSearchInput');
   if(!box)return;
-  lastPlaceSearchItems=Array.isArray(items)?items:[];
+  const q=normalizeAddress(input&&input.value);
+  const historyItems=getAddressHistoryItems(q);
+  const manualItem=q?normalizeHistoryRecord({title:'입력값 사용',address:q,roadAddress:q,source:'검색창'}):null;
+  lastPlaceSearchItems=mergeAddressHistory([manualItem,...historyItems].filter(Boolean));
   if(!lastPlaceSearchItems.length){
-    renderPlaceSearchMessage('검색 결과가 없습니다.','placeSearchEmpty');
+    renderPlaceSearchMessage('저장된 주소 이력이 없습니다. 검색창에 주소를 붙여넣어 사용하세요.','placeSearchEmpty');
     return;
   }
-  const countHtml=`<div class="placeSearchCount">장소 검색 결과 ${lastPlaceSearchItems.length}개</div>`;
+  const countText=q?`검색이력 ${lastPlaceSearchItems.length}개 · 입력값 포함`:`검색이력 ${lastPlaceSearchItems.length}개`;
+  const countHtml=`<div class="placeSearchCount">${esc(countText)}</div>`;
   box.innerHTML=countHtml+lastPlaceSearchItems.map((item,idx)=>{
-    const title=stripHtmlTags(item.title||item.name||'장소명 없음');
-    const road=normalizeAddress(item.roadAddress||'');
-    const jibun=normalizeAddress(item.address||'');
-    const phone=normalizeAddress(item.telephone||item.phone||'');
-    const mainAddress=road||jibun;
+    const title=stripHtmlTags(item.title||item.source||'주소');
+    const address=normalizeAddress(item.roadAddress||item.address||'');
+    const source=normalizeAddress(item.source||'');
     return `<div class="placeResult" data-place-idx="${idx}">
       <div class="placeResultTitle">${esc(title)}</div>
-      ${mainAddress?`<div class="placeResultAddress">${esc(mainAddress)}</div>`:''}
-      ${jibun&&jibun!==mainAddress?`<div class="placeResultSub">지번 ${esc(jibun)}</div>`:''}
-      ${phone?`<div class="placeResultPhone">${esc(phone)}</div>`:''}
+      ${address?`<div class="placeResultAddress">${esc(address)}</div>`:''}
+      ${source?`<div class="placeResultSub">${esc(source)}</div>`:''}
       <div class="placeResultActions">
         <button type="button" data-place-action="start" data-place-idx="${idx}">출발지로</button>
         <button type="button" data-place-action="visit" data-place-idx="${idx}">경유지 추가</button>
@@ -2460,28 +2518,20 @@ function renderPlaceSearchResults(items){
     </div>`;
   }).join('');
 }
-async function runPlaceSearch(){
-  const input=$('placeSearchInput');
-  const q=normalizeAddress(input&&input.value);
-  if(!q){
-    renderPlaceSearchMessage('검색어를 입력하세요.','placeSearchError');
-    return;
-  }
-  setPlaceSearchBusy(true);
-  renderPlaceSearchMessage('검색 중입니다.','placeSearchLoading');
-  try{
-    const res=await fetch('/api/place-search?q='+encodeURIComponent(q));
-    const data=await res.json().catch(()=>null);
-    if(!res.ok||!data||data.ok===false){
-      renderPlaceSearchMessage((data&&data.message)||'검색하지 못했습니다.','placeSearchError');
-      return;
-    }
-    renderPlaceSearchResults(data.items||[]);
-  }catch(err){
-    renderPlaceSearchMessage('검색 연결에 실패했습니다.','placeSearchError');
-  }finally{
-    setPlaceSearchBusy(false);
-  }
+function openPlaceSearchModal(){
+  const backdrop=$('placeSearchBackdrop');
+  if(!backdrop)return;
+  saveCurrentRouteAddressesToHistory();
+  backdrop.classList.add('active');
+  backdrop.setAttribute('aria-hidden','false');
+  renderAddressHistory();
+  setTimeout(()=>{$('placeSearchInput')&&$('placeSearchInput').focus();},30);
+}
+function closePlaceSearchModal(){
+  const backdrop=$('placeSearchBackdrop');
+  if(!backdrop)return;
+  backdrop.classList.remove('active');
+  backdrop.setAttribute('aria-hidden','true');
 }
 function setRouteInputValue(input,value){
   if(!input)return;
@@ -2493,9 +2543,10 @@ function applyPlaceSearchItem(action,idx){
   const item=lastPlaceSearchItems[Number(idx)];
   const address=getPlaceResultAddress(item);
   if(!address){
-    showRouteToast('주소가 없는 검색 결과입니다.');
+    showRouteToast('주소가 없습니다.');
     return;
   }
+  saveAddressHistoryRecord(address,item&&item.title,'이력');
   if(action==='start'){
     setRouteInputValue(startInput,address);
     closePlaceSearchModal();
@@ -2524,21 +2575,23 @@ function bindPlaceSearchUi(){
   const results=$('placeSearchResults');
   if(fab)fab.addEventListener('click',openPlaceSearchModal);
   if(close)close.addEventListener('click',closePlaceSearchModal);
-  if(run)run.addEventListener('click',runPlaceSearch);
-  if(clear)clear.addEventListener('click',()=>{if(input){input.value='';input.focus();}renderPlaceSearchMessage('장소명 또는 상호명을 입력해 검색하세요.');});
-  if(input)input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runPlaceSearch();}});
+  if(run)run.addEventListener('click',renderAddressHistory);
+  if(clear)clear.addEventListener('click',()=>{if(input){input.value='';input.focus();}renderAddressHistory();});
+  if(input){
+    input.addEventListener('input',renderAddressHistory);
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();renderAddressHistory();}});
+  }
   if(backdrop)backdrop.addEventListener('click',e=>{if(e.target===backdrop)closePlaceSearchModal();});
   if(results)results.addEventListener('click',e=>{
     const btn=e.target&&e.target.closest?e.target.closest('[data-place-action]'):null;
     if(!btn)return;
     applyPlaceSearchItem(btn.dataset.placeAction,btn.dataset.placeIdx);
   });
-  window.addEventListener('resize',syncPlaceSearchFabSize);
-  window.addEventListener('load',syncPlaceSearchFabSize);
-  syncPlaceSearchFabSize();
-  setTimeout(syncPlaceSearchFabSize,100);
-  setTimeout(syncPlaceSearchFabSize,600);
-  setTimeout(syncPlaceSearchFabSize,3200);
+  [startInput,endInput,visitsInput].forEach(inputEl=>{
+    if(!inputEl)return;
+    inputEl.addEventListener('change',saveCurrentRouteAddressesToHistory);
+    inputEl.addEventListener('blur',saveCurrentRouteAddressesToHistory);
+  });
 }
 bindPlaceSearchUi();
 

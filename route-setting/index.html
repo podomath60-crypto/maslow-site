@@ -3556,16 +3556,14 @@ async function captureSelectedMapArea(rect){
   if(!mapWrap||!rect)return '';
   const overlay=$('printAreaOverlay');
   const previousDisplay=overlay?overlay.style.display:'';
-  const hiddenRouteMarkers=(markers||[]).slice();
-  const hiddenRoutePolylines=(polylines||[]).slice();
   const bubble=mapClickBubble;
   const previousBubbleDisplay=bubble?bubble.style.display:'';
+  const hiddenRouteMarkers=(markers||[]).slice();
+  const hiddenRoutePolylines=(polylines||[]).slice();
 
   if(overlay)overlay.style.display='none';
   if(bubble)bubble.style.display='none';
-
-  // 인쇄용 지도 배경에는 기존 화면의 파란 핀/경로선을 캡처하지 않는다.
-  // 배경은 현재 지도 타일만 캡처하고, 빨간 A/Z/번호 핀은 아래 buildCapturePinLayerHtml에서 다시 얹는다.
+  // 캡처 배경에는 현재 화면의 파란 마커/경로선만 빼고, 기존 빨간 A/Z/번호 핀 레이어는 그대로 유지한다.
   hiddenRouteMarkers.forEach(m=>{try{m.setMap(null)}catch(e){}});
   hiddenRoutePolylines.forEach(l=>{try{l.setMap(null)}catch(e){}});
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));

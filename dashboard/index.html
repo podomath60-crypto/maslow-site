@@ -1857,36 +1857,73 @@
     .calendar-detail-date{font-size:18px}
   }
 
-      @media(max-width:900px){
-      .brand-icon-link,
-      .brand-icon-vfactory,
-      .brand-icon-magiccarpet,
-      .brand-icon-factory,
-      .brand-icon-taxcheckup{
-        width:38px;
-        height:38px;
-        flex:0 0 38px;
-        border-radius:12px;
-        box-sizing:border-box;
+    /* Mobile top shortcut buttons: single clean spec for the 4 visible buttons */
+    @media(max-width:900px){
+      .brand-icons{
+        gap:8px!important;
+        align-items:center!important;
       }
-      .brand-icon-taxcheckup{
-        padding:0;
-        font-size:18px;
-        line-height:1;
-        box-shadow:var(--shadow);
+      .brand-icons .brand-icon-factory,
+      .brand-icons .brand-icon-magiccarpet-mobile,
+      .brand-icons .brand-icon-vfactory,
+      .brand-icons .brand-icon-taxcheckup{
+        width:44px!important;
+        height:44px!important;
+        min-width:44px!important;
+        max-width:44px!important;
+        flex:0 0 44px!important;
+        border-radius:12px!important;
+        padding:0!important;
+        margin:0!important;
+        border:none!important;
+        box-shadow:none!important;
+        box-sizing:border-box!important;
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        overflow:hidden!important;
+        line-height:1!important;
+        transform:none!important;
       }
-      .brand-icon-vfactory img{
-        width:38px;
-        height:38px;
-        border-radius:12px;
-        transform:none;
+      .brand-icons .brand-icon-factory:hover,
+      .brand-icons .brand-icon-magiccarpet-mobile:hover,
+      .brand-icons .brand-icon-vfactory:hover,
+      .brand-icons .brand-icon-taxcheckup:hover{
+        box-shadow:none!important;
+        transform:none!important;
       }
-      .brand-icon-magiccarpet img{
-        width:30px;
-        height:30px;
+      .brand-icons .brand-icon-factory svg{
+        width:28px!important;
+        height:28px!important;
+        display:block!important;
+        flex:0 0 28px!important;
       }
-      .brand-icon-taxcheckup .tax-full-label{display:none}
-      .brand-icon-taxcheckup .tax-mobile-label{display:inline}
+      .brand-icons .brand-icon-magiccarpet-mobile img{
+        width:34px!important;
+        height:34px!important;
+        object-fit:contain!important;
+        display:block!important;
+        flex:0 0 34px!important;
+      }
+      .brand-icons .brand-icon-vfactory img{
+        width:44px!important;
+        height:44px!important;
+        min-width:44px!important;
+        max-width:44px!important;
+        object-fit:cover!important;
+        border-radius:12px!important;
+        display:block!important;
+        flex:0 0 44px!important;
+        transform:none!important;
+      }
+      .brand-icons .brand-icon-taxcheckup{
+        font-size:24px!important;
+        font-weight:1000!important;
+        letter-spacing:0!important;
+        font-family:Arial,Helvetica,sans-serif!important;
+      }
+      .brand-icons .brand-icon-taxcheckup .tax-full-label{display:none!important}
+      .brand-icons .brand-icon-taxcheckup .tax-mobile-label{display:inline!important}
     }
 
   </style>

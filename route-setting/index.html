@@ -1871,7 +1871,7 @@ function renderResult(best,returnToStart){
   renderMapResult(best,returnToStart);
 }
 
-function makeIcon(label,type){const maps=getNaverMaps();const color=type==='start'?'#03c75a':type==='stop'?'#2563eb':'#111827';return {content:`<div style="width:36px;height:36px;border-radius:999px 999px 999px 0;transform:rotate(-45deg);background:${color};border:3px solid #fff;box-shadow:0 8px 20px rgba(0,0,0,.22);display:grid;place-items:center"><span style="transform:rotate(45deg);color:#fff;font-weight:950;font-size:12px">${esc(label)}</span></div>`,anchor:maps?new maps.Point(18,36):undefined}}
+function makeIcon(label,type,index){const maps=getNaverMaps();const color=type==='start'?'#03c75a':type==='stop'?'#2563eb':'#111827';const safeIndex=Number.isFinite(index)?String(index):'';return {content:`<div class="routeMapMarker" data-route-index="${esc(safeIndex)}" data-route-label="${esc(label)}" style="position:relative;width:36px;height:36px;pointer-events:none"><div style="position:absolute;left:0;top:0;width:36px;height:36px;border-radius:999px 999px 999px 0;transform:rotate(-45deg);background:${color};border:3px solid #fff;box-shadow:0 8px 20px rgba(0,0,0,.22);display:grid;place-items:center"><span style="transform:rotate(45deg);color:#fff;font-weight:950;font-size:12px">${esc(label)}</span></div></div>`,anchor:maps?new maps.Point(18,36):undefined}}
 
 let ignoreNextMapVisitClick=false;
 
@@ -2020,7 +2020,7 @@ function keepMobileDockedCarpetVisible(){
 function renderMapResult(best,returnToStart){
   const maps=getNaverMaps();if(!maps||!naverMap)return;clearMap();mapGuide.classList.add('hide');keepMobileDockedCarpetVisible();
   const bounds=new maps.LatLngBounds();
-  best.route.forEach((p,i)=>{if(returnToStart&&i===best.route.length-1)return;const meta=makeRouteLabel(p,i,best.route.length,returnToStart);const pos=new maps.LatLng(p.lat,p.lng);bounds.extend(pos);markers.push(new maps.Marker({position:pos,map:naverMap,title:`${meta.label}. ${p.address}`,icon:makeIcon(meta.label,meta.type)}))});
+  best.route.forEach((p,i)=>{if(returnToStart&&i===best.route.length-1)return;const meta=makeRouteLabel(p,i,best.route.length,returnToStart);const pos=new maps.LatLng(p.lat,p.lng);bounds.extend(pos);markers.push(new maps.Marker({position:pos,map:naverMap,title:`${meta.label}. ${p.address}`,icon:makeIcon(meta.label,meta.type,i)}))});
   best.segments.forEach(seg=>{const path=(seg.path&&seg.path.length?seg.path:[seg.from,seg.to]).filter(hasCoord);if(path.length){polylines.push(new maps.Polyline({map:naverMap,path:path.map(x=>new maps.LatLng(x.lat,x.lng)),strokeColor:'#0f172a',strokeWeight:4,strokeOpacity:.58,strokeStyle:'solid'}))}});
   try{if(best.route.length>1)naverMap.fitBounds(bounds,{top:70,right:70,bottom:70,left:70});else naverMap.setCenter(new maps.LatLng(best.route[0].lat,best.route[0].lng));}catch(e){}
   refreshMap();
@@ -3454,6 +3454,8 @@ async function printRouteResult(){
 /* Final print selection implementation: capture selected current map area, then reuse existing print pin HTML logic. */
 let routeToastTimer=null;
 let printAreaSelectState=null;
+let lastPrintCaptureMarkerGroups=null;
+let lastPrintCaptureRectKey='';
 
 function showRouteToast(message,type){
   let toast=document.getElementById('routeToast');
@@ -3525,6 +3527,8 @@ function removePrintCaptureSheet(){
 }
 
 function cleanupPrintCaptureMode(){
+  lastPrintCaptureMarkerGroups=null;
+  lastPrintCaptureRectKey='';
   document.body.classList.remove('printCaptureMode');
   document.body.style.removeProperty('--print-map-height-mm');
   removePrintCaptureSheet();
@@ -3552,6 +3556,58 @@ function loadHtml2CanvasIfNeeded(){
   });
 }
 
+
+function makePrintRectKey(rect){
+  if(!rect)return '';
+  return [rect.left,rect.top,rect.width,rect.height].map(v=>Math.round(Number(v)||0)).join(':');
+}
+
+function readRenderedPrintMarkerGroups(rect){
+  if(!mapWrap||!rect||!latestResult)return [];
+  const route=(latestResult&&latestResult.route)||[];
+  const total=route.length;
+  const returnToStart=!!(latestResult&&latestResult.returnToStart);
+  const mapRect=mapWrap.getBoundingClientRect();
+  const nodes=Array.from(mapWrap.querySelectorAll('.routeMapMarker'));
+  const overlapX=Math.max(24,Math.min(42,rect.width*0.045));
+  const overlapY=Math.max(28,Math.min(48,rect.height*0.085));
+  const groups=[];
+
+  nodes.forEach(node=>{
+    const rawIndex=node.getAttribute('data-route-index');
+    const index=Number(rawIndex);
+    if(!Number.isFinite(index)||!route[index])return;
+    if(returnToStart&&index===route.length-1)return;
+
+    const nodeRect=node.getBoundingClientRect();
+    const anchorX=(nodeRect.left-mapRect.left)+18;
+    const anchorY=(nodeRect.top-mapRect.top)+36;
+    if(anchorX<rect.left||anchorX>rect.right||anchorY<rect.top||anchorY>rect.bottom)return;
+
+    const localX=anchorX-rect.left;
+    const localY=anchorY-rect.top;
+    const item=route[index];
+    const label=getPrintPointLabel(item,index,total,returnToStart);
+
+    let group=groups.find(g=>Math.abs(g.x-localX)<=overlapX&&Math.abs(g.y-localY)<=overlapY);
+    if(!group){
+      group={x:localX,y:localY,sumX:0,sumY:0,count:0,items:[]};
+      groups.push(group);
+    }
+    group.items.push({item,index,label});
+    group.sumX+=localX;
+    group.sumY+=localY;
+    group.count+=1;
+    group.x=group.sumX/group.count;
+    group.y=group.sumY/group.count;
+  });
+
+  groups.forEach(group=>{
+    group.labels=normalizePrintGroupLabels(group.items);
+  });
+  return groups;
+}
+
 async function captureSelectedMapArea(rect){
   if(!mapWrap||!rect)return '';
   const overlay=$('printAreaOverlay');
@@ -3560,6 +3616,9 @@ async function captureSelectedMapArea(rect){
   const previousBubbleDisplay=bubble?bubble.style.display:'';
   const hiddenRouteMarkers=(markers||[]).slice();
   const hiddenRoutePolylines=(polylines||[]).slice();
+
+  lastPrintCaptureRectKey=makePrintRectKey(rect);
+  lastPrintCaptureMarkerGroups=readRenderedPrintMarkerGroups(rect);
 
   if(overlay)overlay.style.display='none';
   if(bubble)bubble.style.display='none';
@@ -3627,6 +3686,9 @@ function getRoutePointOffset(item){
 }
 
 function buildCapturePrintMarkerGroups(rect){
+  if(lastPrintCaptureMarkerGroups&&lastPrintCaptureRectKey===makePrintRectKey(rect)&&lastPrintCaptureMarkerGroups.length){
+    return lastPrintCaptureMarkerGroups;
+  }
   const groups=[];
   const route=(latestResult&&latestResult.route)||[];
   const total=route.length;

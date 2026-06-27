@@ -360,10 +360,12 @@
 @media(max-width:760px){
   .mapGuide.mapGuideDocked,
   .mapGuide.mapGuideDocked.hide{
+    --mobile-carpet-dock-left:24px;
+    --mobile-carpet-dock-top:calc(env(safe-area-inset-top, 0px) + 14px);
     position:fixed!important;
     display:flex!important;
-    left:24px!important;
-    top:calc(env(safe-area-inset-top, 0px) + 18px)!important;
+    left:var(--mobile-carpet-dock-left)!important;
+    top:var(--mobile-carpet-dock-top)!important;
     width:44px!important;
     height:44px!important;
     padding:0!important;
@@ -377,6 +379,8 @@
     backdrop-filter:none!important;
     -webkit-backdrop-filter:none!important;
     overflow:visible!important;
+    opacity:1!important;
+    visibility:visible!important;
   }
   .mapGuide.mapGuideDocked .mapCarpetHero,
   .mapGuide.mapGuideDocked.hide .mapCarpetHero{
@@ -1602,7 +1606,7 @@ function dockMapGuide(){
   const endW=isMobile?44:67;
   const endH=endW;
   const endLeft=isMobile?24:14;
-  const endTop=isMobile?18:14;
+  const endTop=isMobile?14:14;
   const endX=endLeft+endW/2;
   const endY=endTop+endH/2;
 

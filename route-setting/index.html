@@ -1150,7 +1150,7 @@
   left:50%;
   top:50%;
   transform:translate(-50%,-50%) scale(.98);
-  z-index:1000002;
+  z-index:2147483602;
   max-width:min(420px,calc(100vw - 32px));
   padding:14px 18px;
   border:2px solid #7c3aed;
@@ -1279,7 +1279,7 @@
 .placeSearchBackdrop{
   position:fixed;
   inset:0;
-  z-index:999999;
+  z-index:2147483600;
   display:none;
   align-items:center;
   justify-content:center;
@@ -1288,9 +1288,17 @@
   box-sizing:border-box;
 }
 .placeSearchBackdrop.active{display:flex}
+
+body.place-search-open{
+  overflow:hidden;
+  touch-action:none;
+}
+body.place-search-open .placeSearchBackdrop{
+  display:flex;
+}
 .placeSearchModal{
   position:relative;
-  z-index:1000000;
+  z-index:2147483601;
   width:min(560px,calc(100vw - 32px));
   max-height:min(720px,calc(100vh - 56px));
   display:flex;
@@ -1363,8 +1371,8 @@
 @media(max-width:760px){
   .placeSearchFab{right:12px;top:12px;z-index:120;width:35px;height:35px;border-radius:10px;gap:3px}
   .placeSearchFabLine{width:19px;height:2.5px}
-  .placeSearchBackdrop{align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 66px) 12px 14px;background:rgba(15,23,42,.38)}
-  .placeSearchModal{width:100%;max-height:calc(100vh - 88px);border-radius:16px}
+  .placeSearchBackdrop{position:fixed;inset:0;z-index:2147483600;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 14px) 12px 14px;background:rgba(15,23,42,.46)}
+  .placeSearchModal{position:relative;z-index:2147483601;width:100%;max-height:calc(100dvh - 28px - env(safe-area-inset-top,0px));border-radius:16px}
   .placeSearchForm{padding:12px;gap:7px}
   .placeSearchInput{font-size:16px;height:44px}
   .placeSearchRun{height:44px;width:68px}
@@ -2511,9 +2519,17 @@ function renderAddressHistory(){
     </div>`;
   }).join('');
 }
+function ensurePlaceSearchModalTopLayer(){
+  const backdrop=$('placeSearchBackdrop');
+  if(backdrop&&backdrop.parentNode!==document.body){
+    document.body.appendChild(backdrop);
+  }
+}
 function openPlaceSearchModal(){
+  ensurePlaceSearchModalTopLayer();
   const backdrop=$('placeSearchBackdrop');
   if(!backdrop)return;
+  document.body.classList.add('place-search-open');
   backdrop.classList.add('active');
   backdrop.setAttribute('aria-hidden','false');
   renderAddressHistory();
@@ -2524,6 +2540,7 @@ function closePlaceSearchModal(){
   if(!backdrop)return;
   backdrop.classList.remove('active');
   backdrop.setAttribute('aria-hidden','true');
+  document.body.classList.remove('place-search-open');
 }
 function setRouteInputValue(input,value){
   if(!input)return;
@@ -2558,6 +2575,7 @@ function applyPlaceSearchItem(action,idx){
   }
 }
 function bindPlaceSearchUi(){
+  ensurePlaceSearchModalTopLayer();
   const fab=$('placeSearchFab');
   const close=$('placeSearchClose');
   const run=$('placeSearchRun');

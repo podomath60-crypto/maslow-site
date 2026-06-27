@@ -362,8 +362,8 @@
   .mapGuide.mapGuideDocked.hide{
     position:fixed!important;
     display:flex!important;
-    left:12px!important;
-    top:calc(env(safe-area-inset-top, 0px) + 6px)!important;
+    left:24px!important;
+    top:calc(env(safe-area-inset-top, 0px) + 18px)!important;
     width:44px!important;
     height:44px!important;
     padding:0!important;
@@ -1440,11 +1440,11 @@ body.place-search-open .placeSearchBackdrop{
     transform: translate3d(var(--x,0px), var(--y,0px), 0) !important;
   }
 
-  /* carpet lift: 10% upward in map */
+  /* carpet dock position: slightly lower and to the right on mobile */
   .mapGuide.mapGuideDocked .mapCarpetHero{
     transform: translate3d(
-      calc(var(--x,0px)),
-      calc(var(--y,0px) - 10vh),
+      calc(var(--x,0px) + 8px),
+      calc(var(--y,0px) + 8px),
       0
     ) !important;
   }
@@ -1603,8 +1603,8 @@ function dockMapGuide(){
 
   const endW=isMobile?44:67;
   const endH=endW;
-  const endLeft=isMobile?12:14;
-  const endTop=isMobile?6:14;
+  const endLeft=isMobile?24:14;
+  const endTop=isMobile?18:14;
   const endX=endLeft+endW/2;
   const endY=endTop+endH/2;
 

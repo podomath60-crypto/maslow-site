@@ -384,6 +384,7 @@
     width:44px!important;
     max-width:44px!important;
     height:auto!important;
+    transform:translate3d(0,0,0)!important;
   }
   .mapGuide.mapGuideDocked strong,
   .mapGuide.mapGuideDocked span,
@@ -1440,13 +1441,10 @@ body.place-search-open .placeSearchBackdrop{
     transform: translate3d(var(--x,0px), var(--y,0px), 0) !important;
   }
 
-  /* carpet dock position: slightly lower and to the right on mobile */
+  /* carpet dock position is controlled by .mapGuide fixed left/top.
+     Keep hero transform neutral so it stops exactly at the flight endpoint. */
   .mapGuide.mapGuideDocked .mapCarpetHero{
-    transform: translate3d(
-      calc(var(--x,0px) + 8px),
-      calc(var(--y,0px) + 8px),
-      0
-    ) !important;
+    transform: translate3d(0,0,0) !important;
   }
 
 }

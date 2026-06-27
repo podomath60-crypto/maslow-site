@@ -360,7 +360,7 @@
 @media(max-width:760px){
   .mapGuide.mapGuideDocked,
   .mapGuide.mapGuideDocked.hide{
-    --mobile-carpet-dock-left:24px;
+    --mobile-carpet-dock-left:20px;
     --mobile-carpet-dock-top:calc(env(safe-area-inset-top, 0px) + 14px);
     position:fixed!important;
     display:flex!important;
@@ -1605,7 +1605,7 @@ function dockMapGuide(){
 
   const endW=isMobile?44:67;
   const endH=endW;
-  const endLeft=isMobile?24:14;
+  const endLeft=isMobile?20:14;
   const endTop=isMobile?14:14;
   const endX=endLeft+endW/2;
   const endY=endTop+endH/2;

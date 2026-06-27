@@ -3556,7 +3556,19 @@ async function captureSelectedMapArea(rect){
   if(!mapWrap||!rect)return '';
   const overlay=$('printAreaOverlay');
   const previousDisplay=overlay?overlay.style.display:'';
+  const hiddenRouteMarkers=(markers||[]).slice();
+  const hiddenRoutePolylines=(polylines||[]).slice();
+  const bubble=mapClickBubble;
+  const previousBubbleDisplay=bubble?bubble.style.display:'';
+
   if(overlay)overlay.style.display='none';
+  if(bubble)bubble.style.display='none';
+
+  // 인쇄용 지도 배경에는 기존 화면의 파란 핀/경로선을 캡처하지 않는다.
+  // 배경은 현재 지도 타일만 캡처하고, 빨간 A/Z/번호 핀은 아래 buildCapturePinLayerHtml에서 다시 얹는다.
+  hiddenRouteMarkers.forEach(m=>{try{m.setMap(null)}catch(e){}});
+  hiddenRoutePolylines.forEach(l=>{try{l.setMap(null)}catch(e){}});
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
 
   try{
     const html2canvas=await loadHtml2CanvasIfNeeded();
@@ -3595,6 +3607,9 @@ async function captureSelectedMapArea(rect){
       return '';
     }
   }finally{
+    hiddenRouteMarkers.forEach(m=>{try{m.setMap(naverMap)}catch(e){}});
+    hiddenRoutePolylines.forEach(l=>{try{l.setMap(naverMap)}catch(e){}});
+    if(bubble)bubble.style.display=previousBubbleDisplay;
     if(overlay)overlay.style.display=previousDisplay;
   }
 }

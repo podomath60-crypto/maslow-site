@@ -145,6 +145,22 @@
       transform-origin:center;
       flex:0 0 auto;
     }
+    .brand-icon-magiccarpet{
+      background:#fff;
+      border-color:#7c3aed;
+      color:#7c3aed;
+      padding:0;
+      overflow:hidden;
+    }
+    .brand-icon-magiccarpet img{
+      width:34px;
+      height:34px;
+      object-fit:contain;
+      display:block;
+    }
+    .brand-icon-magiccarpet-mobile{
+      display:none;
+    }
     .brand-icon-naverblog{
       background:#19ce60;
       border-color:#19ce60;
@@ -1092,6 +1108,19 @@
         object-fit:cover;
         border-radius:11px;
       }
+      .brand-icon-building{
+        display:none !important;
+      }
+      .brand-icon-magiccarpet-desktop{
+        display:none !important;
+      }
+      .brand-icon-magiccarpet-mobile{
+        display:inline-flex;
+      }
+      .brand-icon-magiccarpet img{
+        width:30px;
+        height:30px;
+      }
       .brand-icon-naverblog{
         display:none;
       }
@@ -1862,8 +1891,14 @@
                 <path d="M27 54V43.5c0-.83.67-1.5 1.5-1.5h3c.83 0 1.5.67 1.5 1.5V54" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round"/>
               </svg>
             </a>
+            <a href="/route-setting/" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-magiccarpet brand-icon-magiccarpet-mobile" aria-label="매직카펫 새창으로 이동">
+              <img src="/route-setting/magic-carpet.png" alt="매직카펫">
+            </a>
             <a href="https://www.maslow-vfactory.site" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-vfactory" aria-label="영상 딸깍이 새창으로 이동">
               <img src="https://www.maslow-vfactory.site/icons/icon-192.png" alt="영상 딸깍이">
+            </a>
+            <a href="/route-setting/" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-magiccarpet brand-icon-magiccarpet-desktop" aria-label="매직카펫 새창으로 이동">
+              <img src="/route-setting/magic-carpet.png" alt="매직카펫">
             </a>
             <a href="/naverbloginput" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-naverblog" aria-label="네이버 블로그 입력기 새창으로 이동">N</a>
             <a href="/owner-letter/" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-ownerletter" aria-label="소유주레터 새창으로 이동">L</a>

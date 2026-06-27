@@ -1879,7 +1879,88 @@
   }
 
 
-  </style>
+  
+
+    /* Mobile top shortcut buttons rebuilt as one component. */
+    .mobile-brand-icons{display:none}
+    @media (max-width:860px){
+      .topbar-left .brand-icons{display:none!important}
+      .mobile-brand-icons{
+        display:flex!important;
+        align-items:center;
+        justify-content:flex-start;
+        gap:8px;
+        height:35px;
+        flex:0 0 auto;
+      }
+      .mobile-top-btn{
+        width:35px!important;
+        height:35px!important;
+        min-width:35px!important;
+        max-width:35px!important;
+        flex:0 0 35px!important;
+        padding:0!important;
+        margin:0!important;
+        border:0!important;
+        box-shadow:none!important;
+        outline:0!important;
+        border-radius:10px!important;
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        overflow:hidden!important;
+        box-sizing:border-box!important;
+        line-height:1!important;
+        text-decoration:none!important;
+        transform:none!important;
+        transition:none!important;
+      }
+      .mobile-top-btn:hover{
+        transform:none!important;
+        box-shadow:none!important;
+      }
+      .mobile-top-btn svg,
+      .mobile-top-btn img{
+        display:block!important;
+        flex:0 0 auto!important;
+        margin:0!important;
+        padding:0!important;
+        transform:none!important;
+        box-shadow:none!important;
+        filter:none!important;
+      }
+      .mobile-top-btn-factory{background:#eef6ff!important;color:#3a8fe6!important}
+      .mobile-top-btn-factory svg{width:23px!important;height:23px!important}
+      .mobile-top-btn-carpet{background:#facc15!important;color:#111!important}
+      .mobile-top-btn-carpet img{
+        width:26px!important;
+        height:26px!important;
+        object-fit:contain!important;
+        animation:magicCarpetFlutter 1.45s ease-in-out infinite!important;
+        transform-origin:50% 58%!important;
+      }
+      .mobile-top-btn-vfactory{background:#a8ff19!important;color:#111!important}
+      .mobile-top-btn-vfactory img{
+        width:35px!important;
+        height:35px!important;
+        object-fit:cover!important;
+        border-radius:10px!important;
+      }
+      .mobile-top-btn-tax{background:#183a8f!important;color:#fff!important;font-family:Arial,Helvetica,sans-serif!important}
+      .mobile-tax-text{
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        width:35px!important;
+        height:35px!important;
+        font-size:22px!important;
+        font-weight:1000!important;
+        letter-spacing:0!important;
+        line-height:1!important;
+      }
+    }
+
+</style>
   <link rel="icon" href="/favicon.ico?v=20260616">
   <link rel="shortcut icon" href="/favicon.ico?v=20260616">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png?v=20260616">
@@ -1927,6 +2008,24 @@
             <a href="/naverbloginput" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-naverblog" aria-label="네이버 블로그 입력기 새창으로 이동">N</a>
             <a href="/owner-letter/" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-ownerletter" aria-label="소유주레터 새창으로 이동">L</a>
             <a href="/taxcheckup/" target="_blank" rel="noopener noreferrer" class="brand-icon-link brand-icon-taxcheckup" aria-label="택스체크업 새창으로 이동"><span class="tax-full-label">TAX</span><span class="tax-mobile-label">T</span></a>
+          </div>
+          <div class="mobile-brand-icons" aria-label="모바일 바로가기">
+            <a href="/" class="mobile-top-btn mobile-top-btn-factory" aria-label="산업용 메인으로 이동">
+              <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                <path d="M8 54V26.5c0-.9.73-1.63 1.63-1.63H20.5c.9 0 1.63.73 1.63 1.63V33l11.72-6.59c1.08-.61 2.4.17 2.4 1.41V33l11.72-6.59c1.08-.61 2.4.17 2.4 1.41V54" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>
+                <path d="M6 54H58" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+                <path d="M16 31.5H24M16 39.5H24M16 47.5H24M31 39.5H39M31 47.5H39M46 39.5H54M46 47.5H54" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+                <path d="M51 10v14" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+                <path d="M47 14h8" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+              </svg>
+            </a>
+            <a href="/route-setting/" target="_blank" rel="noopener noreferrer" class="mobile-top-btn mobile-top-btn-carpet" aria-label="매직카펫 새창으로 이동">
+              <img src="/route-setting/magic-carpet.png" alt="매직카펫">
+            </a>
+            <a href="https://www.maslow-vfactory.site" target="_blank" rel="noopener noreferrer" class="mobile-top-btn mobile-top-btn-vfactory" aria-label="영상 딸깍이 새창으로 이동">
+              <img src="https://www.maslow-vfactory.site/icons/icon-192.png" alt="영상 딸깍이">
+            </a>
+            <a href="/taxcheckup/" target="_blank" rel="noopener noreferrer" class="mobile-top-btn mobile-top-btn-tax" aria-label="택스체크업 새창으로 이동"><span class="mobile-tax-text">T</span></a>
           </div>
         </div>
         <div class="topbar-right">

@@ -1380,6 +1380,78 @@ body.place-search-open .placeSearchBackdrop{
 }
 
 </style>
+
+<style id="mobile_overlay_carpet_patch">
+@media(max-width:760px){
+
+  /* 1. overlay box scale down to 75% */
+  .mapGuide{
+    transform: translate(-50%,-50%) scale(0.75) !important;
+    transform-origin: center center;
+  }
+
+  /* 2. keep text & carpet full size inside (counter-scale) */
+  .mapGuide strong,
+  .mapGuide span{
+    font-size: 133% !important;
+  }
+
+  /* carpet 유지 크기 */
+  .mapCarpetHero{
+    width: min(132px, 34vw) !important;
+    height: auto !important;
+    transform: translate3d(var(--x,0px), var(--y,0px), 0) scale(1.05);
+    transform-origin: 50% 60%;
+  }
+
+  /* 3. carpet vertical lift + 10% horizontal adjustment */
+  .mapGuide.mapGuideDocked .mapCarpetHero{
+    transform: translate3d(
+      calc(var(--x,0px) + 10%),
+      calc(var(--y,0px) - 10%),
+      0
+    ) scale(1.05) !important;
+  }
+
+}
+</style>
+
+
+<style id="mobile_overlay_v2_patch">
+@media(max-width:760px){
+
+  /* overlay box 75% */
+  .mapGuide{
+    transform: translate(-50%,-50%) scale(0.75) !important;
+    transform-origin:center center;
+  }
+
+  /* text keeps visual size (counter scale) */
+  .mapGuide strong,
+  .mapGuide span,
+  .mapGuide div{
+    transform: scale(1.3333) !important;
+    transform-origin:center;
+  }
+
+  /* carpet size 유지 */
+  .mapCarpetHero{
+    width: min(132px,34vw) !important;
+    transform: translate3d(var(--x,0px), var(--y,0px), 0) !important;
+  }
+
+  /* carpet lift: 10% upward in map */
+  .mapGuide.mapGuideDocked .mapCarpetHero{
+    transform: translate3d(
+      calc(var(--x,0px)),
+      calc(var(--y,0px) - 10vh),
+      0
+    ) !important;
+  }
+
+}
+</style>
+
 </head>
 <body>
 <main class="app">

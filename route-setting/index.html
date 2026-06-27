@@ -1433,9 +1433,14 @@ body.place-search-open .placeSearchBackdrop{
 
   /* text keeps visual size (counter scale) */
   .mapGuide strong,
-  .mapGuide span,
   .mapGuide div{
     transform: scale(1.3333) !important;
+    transform-origin:center;
+  }
+
+  /* mobile overlay description text only: 50% */
+  .mapGuide span{
+    transform: scale(0.6667) !important;
     transform-origin:center;
   }
 

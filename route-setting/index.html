@@ -1150,7 +1150,7 @@
   left:50%;
   top:50%;
   transform:translate(-50%,-50%) scale(.98);
-  z-index:9999;
+  z-index:1000002;
   max-width:min(420px,calc(100vw - 32px));
   padding:14px 18px;
   border:2px solid #7c3aed;
@@ -1388,7 +1388,7 @@
         </div>
       </div>
     </div>
-    <button id="placeSearchFab" class="placeSearchFab" type="button" aria-label="검색이력" title="검색이력">
+    <button id="placeSearchFab" class="placeSearchFab" type="button" aria-label="조회이력" title="조회이력">
       <span class="placeSearchFabLine" aria-hidden="true"></span>
       <span class="placeSearchFabLine" aria-hidden="true"></span>
       <span class="placeSearchFabLine" aria-hidden="true"></span>
@@ -1396,7 +1396,7 @@
     <div id="placeSearchBackdrop" class="placeSearchBackdrop" aria-hidden="true">
       <div class="placeSearchModal" role="dialog" aria-modal="true" aria-labelledby="placeSearchTitle">
         <div class="placeSearchHead">
-          <strong id="placeSearchTitle">검색이력</strong>
+          <strong id="placeSearchTitle">조회이력</strong>
           <button id="placeSearchClose" class="placeSearchClose" type="button" aria-label="닫기">×</button>
         </div>
         <div class="placeSearchForm">
@@ -2368,7 +2368,7 @@ visitsInput.addEventListener('blur',()=>{
 });
 
 
-/* Search history modal. Naver Search API is removed; this modal only uses typed/pasted addresses and local address history. */
+/* Address lookup history modal. Naver Search API is removed; this modal only uses pasted address and local route lookup history. */
 let lastPlaceSearchItems=[];
 const PLACE_HISTORY_KEY='routeSettingAddressHistory:v1';
 
@@ -2470,15 +2470,12 @@ function saveRouteResultAddressesToHistory(result){
 }
 function getAddressHistoryItems(query=''){
   const q=normalizeAddress(query).toLowerCase();
-  const current=getCurrentRouteAddressRecords();
-  const history=loadAddressHistory();
-  let items=mergeAddressHistory([...current,...history]);
+  let items=mergeAddressHistory(loadAddressHistory());
   if(q){
     items=items.filter(item=>[
       item.title,
       item.address,
-      item.roadAddress,
-      item.source
+      item.roadAddress
     ].join(' ').toLowerCase().includes(q));
   }
   return items;
@@ -2494,22 +2491,18 @@ function renderAddressHistory(){
   if(!box)return;
   const q=normalizeAddress(input&&input.value);
   const historyItems=getAddressHistoryItems(q);
-  const manualItem=q?normalizeHistoryRecord({title:'입력값 사용',address:q,roadAddress:q,source:'검색창'}):null;
+  const manualItem=q?normalizeHistoryRecord({title:q,address:q,roadAddress:q,source:'입력값'}):null;
   lastPlaceSearchItems=mergeAddressHistory([manualItem,...historyItems].filter(Boolean));
   if(!lastPlaceSearchItems.length){
-    renderPlaceSearchMessage('저장된 주소 이력이 없습니다. 검색창에 주소를 붙여넣어 사용하세요.','placeSearchEmpty');
+    renderPlaceSearchMessage('저장된 조회이력이 없습니다. 검색창에 주소를 붙여넣어 사용하세요.','placeSearchEmpty');
     return;
   }
-  const countText=q?`검색이력 ${lastPlaceSearchItems.length}개 · 입력값 포함`:`검색이력 ${lastPlaceSearchItems.length}개`;
+  const countText=q?`조회이력 ${lastPlaceSearchItems.length}개 · 입력값 포함`:`조회이력 ${lastPlaceSearchItems.length}개`;
   const countHtml=`<div class="placeSearchCount">${esc(countText)}</div>`;
   box.innerHTML=countHtml+lastPlaceSearchItems.map((item,idx)=>{
-    const title=stripHtmlTags(item.title||item.source||'주소');
-    const address=normalizeAddress(item.roadAddress||item.address||'');
-    const source=normalizeAddress(item.source||'');
+    const address=normalizeAddress(item.roadAddress||item.address||item.title||'');
     return `<div class="placeResult" data-place-idx="${idx}">
-      <div class="placeResultTitle">${esc(title)}</div>
       ${address?`<div class="placeResultAddress">${esc(address)}</div>`:''}
-      ${source?`<div class="placeResultSub">${esc(source)}</div>`:''}
       <div class="placeResultActions">
         <button type="button" data-place-action="start" data-place-idx="${idx}">출발지로</button>
         <button type="button" data-place-action="visit" data-place-idx="${idx}">경유지 추가</button>
@@ -2521,7 +2514,6 @@ function renderAddressHistory(){
 function openPlaceSearchModal(){
   const backdrop=$('placeSearchBackdrop');
   if(!backdrop)return;
-  saveCurrentRouteAddressesToHistory();
   backdrop.classList.add('active');
   backdrop.setAttribute('aria-hidden','false');
   renderAddressHistory();
@@ -2549,20 +2541,20 @@ function applyPlaceSearchItem(action,idx){
   saveAddressHistoryRecord(address,item&&item.title,'이력');
   if(action==='start'){
     setRouteInputValue(startInput,address);
-    closePlaceSearchModal();
     showRouteToast('출발지에 추가했습니다');
+    renderAddressHistory();
     return;
   }
   if(action==='visit'){
     appendVisitAddress(address);
-    closePlaceSearchModal();
     showRouteToast('경유지에 추가했습니다');
+    renderAddressHistory();
     return;
   }
   if(action==='end'){
     setRouteInputValue(endInput,address);
-    closePlaceSearchModal();
     showRouteToast('도착지에 추가했습니다');
+    renderAddressHistory();
   }
 }
 function bindPlaceSearchUi(){
@@ -2586,11 +2578,6 @@ function bindPlaceSearchUi(){
     const btn=e.target&&e.target.closest?e.target.closest('[data-place-action]'):null;
     if(!btn)return;
     applyPlaceSearchItem(btn.dataset.placeAction,btn.dataset.placeIdx);
-  });
-  [startInput,endInput,visitsInput].forEach(inputEl=>{
-    if(!inputEl)return;
-    inputEl.addEventListener('change',saveCurrentRouteAddressesToHistory);
-    inputEl.addEventListener('blur',saveCurrentRouteAddressesToHistory);
   });
 }
 bindPlaceSearchUi();

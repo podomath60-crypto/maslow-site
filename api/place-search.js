@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       url.searchParams.set('query', q);
       url.searchParams.set('display', String(display));
       url.searchParams.set('start', String(start));
-      url.searchParams.set('sort', 'random');
+      url.searchParams.set('sort', 'accuracy');
 
       const upstream = await fetch(url.toString(), {
         method: 'GET',

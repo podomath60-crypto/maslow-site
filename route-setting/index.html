@@ -1278,6 +1278,102 @@
 }
 .placeSearchFab:active{transform:translateY(1px)}
 .placeSearchFabLine{display:block;width:22px;height:3px;border-radius:999px;background:currentColor}
+
+/* Recent route results inside hamburger modal */
+.recentRouteBox{
+  padding:12px 16px;
+  border-bottom:1px solid #ede9fe;
+  background:linear-gradient(180deg,#fff,#faf5ff);
+}
+.recentRouteTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+.recentRouteTop strong{
+  font-size:14px;
+  font-weight:1000;
+  letter-spacing:-.04em;
+  color:#3b0764;
+}
+.recentRouteTop small{
+  font-size:11px;
+  font-weight:800;
+  color:#64748b;
+}
+.recentRouteResults{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  max-height:220px;
+  overflow:auto;
+}
+.recentRouteEmpty{
+  padding:10px 11px;
+  border:1px dashed #ddd6fe;
+  border-radius:12px;
+  color:#64748b;
+  font-size:12px;
+  font-weight:800;
+  background:#fff;
+}
+.recentRouteItem{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+  align-items:center;
+  padding:9px 10px;
+  border:1px solid #ede9fe;
+  border-radius:13px;
+  background:#fff;
+}
+.recentRouteMain{
+  min-width:0;
+}
+.recentRouteTitle{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:13px;
+  font-weight:950;
+  color:#0f172a;
+  letter-spacing:-.035em;
+}
+.recentRouteMeta{
+  margin-top:3px;
+  font-size:11px;
+  font-weight:800;
+  color:#64748b;
+}
+.recentRouteActions{
+  display:flex;
+  gap:5px;
+}
+.recentRouteActions button{
+  border:1px solid #ddd6fe;
+  border-radius:10px;
+  padding:7px 9px;
+  background:#faf5ff;
+  color:#581c87;
+  font-size:12px;
+  font-weight:950;
+  cursor:pointer;
+}
+.recentRouteActions button[data-recent-route-action="delete"]{
+  padding:7px 8px;
+  color:#991b1b;
+  background:#fff1f2;
+  border-color:#fecdd3;
+}
+@media(max-width:760px){
+  .recentRouteBox{padding:10px 12px}
+  .recentRouteResults{max-height:170px}
+  .recentRouteItem{grid-template-columns:1fr;gap:7px}
+  .recentRouteActions{justify-content:flex-end}
+}
+
 .placeSearchBackdrop{
   position:fixed;
   inset:0;
@@ -1482,6 +1578,13 @@ body.place-search-open .placeSearchBackdrop{
         <div class="placeSearchHead">
           <strong id="placeSearchTitle">조회이력</strong>
           <button id="placeSearchClose" class="placeSearchClose" type="button" aria-label="닫기">×</button>
+        </div>
+        <div class="recentRouteBox" id="recentRouteBox">
+          <div class="recentRouteTop">
+            <strong>최근 추천경로</strong>
+            <small>최근 10건 저장</small>
+          </div>
+          <div id="recentRouteResults" class="recentRouteResults"></div>
         </div>
         <div class="placeSearchForm">
           <div class="placeSearchInputWrap">
@@ -1797,6 +1900,7 @@ function hasCoord(p){return p&&Number.isFinite(Number(p.lat))&&Number.isFinite(N
 function getNaverMaps(){return window.naver&&window.naver.maps?window.naver.maps:null}
 function setBusy(b){$('findRoute').disabled=b;startInput.disabled=b;visitsInput.disabled=b;endInput.disabled=b||returnChk.checked;returnChk.disabled=b;if($('currentStart'))$('currentStart').disabled=b;if($('officeEnd'))$('officeEnd').disabled=b||returnChk.checked;if($('currentEnd'))$('currentEnd').disabled=b||returnChk.checked}
 function resetResult(){latestResult=null;totalTimeEl.textContent='--';setPrintButtonVisible(false);resultEl.classList.remove('show');clearMap();mapGuide.classList.remove('hide')}
+function markRouteInputDirty(){if(!latestResult)return;showStatus('입력값이 변경되었습니다. 최단경로 찾기를 다시 누르면 새로 계산됩니다.','')}
 function scrollPanelTop(){if(panelBody)panelBody.scrollTo({top:0,behavior:'auto'})}
 function focusPanelTopSoon(){scrollPanelTop();setTimeout(scrollPanelTop,0);setTimeout(scrollPanelTop,80)}
 
@@ -2211,12 +2315,7 @@ async function findRoute(){
     }
   };
   try{
-    resetResult();
     const input=parseInputs();
-    saveRouteInputAddressesToHistory(input);
-    showStatus('최단경로 계산을 시작합니다. 주소 좌표를 확인하는 중입니다.');
-    focusPanelTopSoon();
-    setBusy(true);
     const labels=input.returnToStart
       ? ['A',...input.visits.map((_,i)=>String.fromCharCode(66+i))]
       : ['A',...input.visits.map((_,i)=>String.fromCharCode(66+i)),'Z'];
@@ -2226,6 +2325,11 @@ async function findRoute(){
     if(!input.start||!input.end||raw.some(v=>!normalizeAddress(v))){
       throw makeInputValidationError('출발지와 도착지가 모두 확인된 뒤 최단경로를 계산할 수 있습니다.');
     }
+    resetResult();
+    saveRouteInputAddressesToHistory(input);
+    showStatus('최단경로 계산을 시작합니다. 주소 좌표를 확인하는 중입니다.');
+    focusPanelTopSoon();
+    setBusy(true);
     const totalGeo=raw.length;const resolved=[];
     for(let i=0;i<raw.length;i++){
       assertActive();
@@ -2269,6 +2373,8 @@ async function findRoute(){
     assertActive();
     showStatus(`${best.orderCount.toLocaleString('ko-KR')}개 경로 검토 후 최적 경로 도출 완료`,'ok');
     renderResult(best,input.returnToStart);
+    saveRecentRouteResult(best,input.returnToStart,input);
+    renderRecentRouteResults();
     saveRouteResultAddressesToHistory(best);
   }catch(e){
     if(e&&e.code==='INPUT_VALIDATION'){
@@ -2360,8 +2466,9 @@ function setCurrentLocationAsStart(){return setCurrentLocationTo('start')}
 function setCurrentLocationAsEnd(){return setCurrentLocationTo('end')}
 
 
-returnChk.onchange=()=>{endInput.disabled=returnChk.checked;if($('officeEnd'))$('officeEnd').disabled=returnChk.checked;if($('currentEnd'))$('currentEnd').disabled=returnChk.checked;if(returnChk.checked)endInput.value='';resetResult()};
-[startInput,endInput].forEach(el=>el.addEventListener('input',resetResult));
+returnChk.onchange=()=>{endInput.disabled=returnChk.checked;if($('officeEnd'))$('officeEnd').disabled=returnChk.checked;if($('currentEnd'))$('currentEnd').disabled=returnChk.checked;if(returnChk.checked)endInput.value='';markRouteInputDirty()};
+[startInput,endInput].forEach(el=>el.addEventListener('input',markRouteInputDirty));
+visitsInput.addEventListener('input',markRouteInputDirty);
 function normalizePastedVisits(value){
   return String(value||'')
     .replace(/\r/g,'\n')
@@ -2451,6 +2558,129 @@ visitsInput.addEventListener('blur',()=>{
   
 });
 
+
+
+/* Recent route result history. Keeps last 10 completed route calculations and restores without API calls. */
+const RECENT_ROUTE_RESULTS_KEY='routeSettingRecentRouteResults:v1';
+
+function safeRouteJsonClone(value){
+  try{return JSON.parse(JSON.stringify(value));}catch(err){return null;}
+}
+function loadRecentRouteResults(){
+  try{
+    const raw=localStorage.getItem(RECENT_ROUTE_RESULTS_KEY);
+    const arr=JSON.parse(raw||'[]');
+    return Array.isArray(arr)?arr.filter(item=>item&&item.result&&Array.isArray(item.result.route)):[];
+  }catch(err){return [];}
+}
+function writeRecentRouteResults(items){
+  try{localStorage.setItem(RECENT_ROUTE_RESULTS_KEY,JSON.stringify((items||[]).slice(0,10)));}catch(err){}
+}
+function makeRecentRouteTitle(input,best){
+  const start=normalizeAddress(input&&input.start)||normalizeAddress(best&&best.route&&best.route[0]&&(best.route[0].address||best.route[0].resolvedAddress))||'출발';
+  const returnToStart=!!(input&&input.returnToStart);
+  const end=returnToStart?'출발지 복귀':(normalizeAddress(input&&input.end)||normalizeAddress(best&&best.route&&best.route[best.route.length-1]&&(best.route[best.route.length-1].address||best.route[best.route.length-1].resolvedAddress))||'도착');
+  const visitCount=input&&Array.isArray(input.visits)?input.visits.length:Math.max(0,((best&&best.route&&best.route.length)||2)-2);
+  return `${start} → ${end}${visitCount?` 외 ${visitCount}곳`:''}`;
+}
+function makeRecentRouteKey(input,best,returnToStart){
+  const visits=input&&Array.isArray(input.visits)?input.visits:[];
+  return [
+    normalizeAddress(input&&input.start),
+    visits.map(normalizeAddress).join('|'),
+    normalizeAddress(input&&input.end),
+    returnToStart?'R':'Z',
+    Number(best&&best.durationMs||0)
+  ].join('::').toLowerCase();
+}
+function saveRecentRouteResult(best,returnToStart,input){
+  const result=safeRouteJsonClone(best);
+  if(!result||!Array.isArray(result.route)||!result.route.length)return;
+  const savedInput={
+    start:normalizeAddress(input&&input.start),
+    visits:Array.isArray(input&&input.visits)?input.visits.map(normalizeAddress).filter(Boolean):[],
+    end:normalizeAddress(input&&input.end),
+    returnToStart:!!returnToStart
+  };
+  const item={
+    id:`rr_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+    savedAt:Date.now(),
+    key:makeRecentRouteKey(savedInput,result,returnToStart),
+    title:makeRecentRouteTitle(savedInput,result),
+    durationMs:Number(result.durationMs||0),
+    pointCount:Array.isArray(result.route)?result.route.length:0,
+    orderCount:Number(result.orderCount||0),
+    returnToStart:!!returnToStart,
+    input:savedInput,
+    result
+  };
+  const existing=loadRecentRouteResults().filter(v=>v&&v.key!==item.key);
+  writeRecentRouteResults([item,...existing]);
+}
+function formatRecentRouteTime(ts){
+  const d=new Date(Number(ts||0));
+  if(!Number.isFinite(d.getTime()))return '';
+  const pad=n=>String(n).padStart(2,'0');
+  return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function renderRecentRouteResults(){
+  const box=$('recentRouteResults');
+  if(!box)return;
+  const items=loadRecentRouteResults();
+  if(!items.length){
+    box.innerHTML='<div class="recentRouteEmpty">아직 저장된 추천경로가 없습니다. 최단경로 계산이 완료되면 여기에 최근 10건이 저장됩니다.</div>';
+    return;
+  }
+  box.innerHTML=items.map((item,idx)=>{
+    const title=item.title||makeRecentRouteTitle(item.input,item.result);
+    const meta=[
+      formatRecentRouteTime(item.savedAt),
+      item.durationMs?formatDuration(item.durationMs):'시간 정보 없음',
+      item.pointCount?`${item.pointCount}개 지점`:'',
+      item.orderCount?`${Number(item.orderCount).toLocaleString('ko-KR')}개 비교`:''
+    ].filter(Boolean).join(' · ');
+    return `<div class="recentRouteItem" data-recent-route-idx="${idx}">
+      <div class="recentRouteMain">
+        <div class="recentRouteTitle">${esc(title)}</div>
+        <div class="recentRouteMeta">${esc(meta)}</div>
+      </div>
+      <div class="recentRouteActions">
+        <button type="button" data-recent-route-action="load" data-recent-route-idx="${idx}">불러오기</button>
+        <button type="button" data-recent-route-action="delete" data-recent-route-idx="${idx}" aria-label="최근 추천경로 삭제">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function applyRecentRouteResult(idx){
+  const items=loadRecentRouteResults();
+  const item=items[Number(idx)];
+  if(!item||!item.result){
+    showRouteToast('불러올 추천경로가 없습니다.');
+    renderRecentRouteResults();
+    return;
+  }
+  if(item.input){
+    startInput.value=normalizeAddress(item.input.start);
+    setVisitsFromItems(Array.isArray(item.input.visits)?item.input.visits.map(normalizeAddress).filter(Boolean):[],true);
+    returnChk.checked=!!item.input.returnToStart;
+    endInput.disabled=returnChk.checked;
+    if($('officeEnd'))$('officeEnd').disabled=returnChk.checked;
+    if($('currentEnd'))$('currentEnd').disabled=returnChk.checked;
+    endInput.value=returnChk.checked?'':normalizeAddress(item.input.end);
+    visitValueBeforeInput=visitsInput.value;
+  }
+  latestResult=null;
+  renderResult(item.result,!!item.returnToStart);
+  showStatus('저장된 최근 추천경로를 불러왔습니다.','ok');
+  showRouteToast('최근 추천경로를 불러왔습니다');
+  closePlaceSearchModal();
+}
+function deleteRecentRouteResult(idx){
+  const items=loadRecentRouteResults();
+  items.splice(Number(idx),1);
+  writeRecentRouteResults(items);
+  renderRecentRouteResults();
+}
 
 /* Address lookup history modal. Naver Search API is removed; this modal only uses pasted address and local route lookup history. */
 let lastPlaceSearchItems=[];
@@ -2608,6 +2838,7 @@ function openPlaceSearchModal(){
   document.body.classList.add('place-search-open');
   backdrop.classList.add('active');
   backdrop.setAttribute('aria-hidden','false');
+  renderRecentRouteResults();
   renderAddressHistory();
   setTimeout(()=>{$('placeSearchInput')&&$('placeSearchInput').focus();},30);
 }
@@ -2659,6 +2890,7 @@ function bindPlaceSearchUi(){
   const clear=$('placeSearchClear');
   const backdrop=$('placeSearchBackdrop');
   const results=$('placeSearchResults');
+  const recentResults=$('recentRouteResults');
   if(fab)fab.addEventListener('click',openPlaceSearchModal);
   if(close)close.addEventListener('click',closePlaceSearchModal);
   if(run)run.addEventListener('click',renderAddressHistory);
@@ -2672,6 +2904,14 @@ function bindPlaceSearchUi(){
     const btn=e.target&&e.target.closest?e.target.closest('[data-place-action]'):null;
     if(!btn)return;
     applyPlaceSearchItem(btn.dataset.placeAction,btn.dataset.placeIdx);
+  });
+  if(recentResults)recentResults.addEventListener('click',e=>{
+    const btn=e.target&&e.target.closest?e.target.closest('[data-recent-route-action]'):null;
+    if(!btn)return;
+    const action=btn.dataset.recentRouteAction;
+    const idx=btn.dataset.recentRouteIdx;
+    if(action==='load')applyRecentRouteResult(idx);
+    if(action==='delete')deleteRecentRouteResult(idx);
   });
 }
 bindPlaceSearchUi();

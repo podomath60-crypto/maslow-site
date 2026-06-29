@@ -148,7 +148,7 @@
       color:#4f6280;
     }
     .mode-tabs{
-      margin-top:34px;
+      margin-top:112px;
       display:flex;
       justify-content:center;
       align-items:center;
@@ -739,7 +739,7 @@
         font-size:22px;
       }
       .mode-tabs{
-        margin-top:22px;
+        margin-top:72px;
         gap:9px;
       }
       .mode-tab{
@@ -921,6 +921,24 @@
       font-weight:900;
       letter-spacing:-0.04em;
       box-shadow:0 8px 20px rgba(56,189,248,.10);
+    }
+    #naverMapBtn.map-link-btn{
+      border-color:#9cc6ff;
+      color:#175cd3;
+      background:linear-gradient(180deg,#ffffff 0%,#eef6ff 100%);
+      box-shadow:0 8px 20px rgba(33,100,255,.10);
+    }
+    #ddangyaMapBtn.map-link-btn{
+      border-color:#f0b35a;
+      color:#8a4b00;
+      background:linear-gradient(180deg,#fffaf0 0%,#fff0d0 100%);
+      box-shadow:0 8px 20px rgba(183,121,31,.16);
+    }
+    #naverMapBtn.map-link-btn:hover:not(:disabled){
+      background:linear-gradient(180deg,#f8fbff 0%,#e4f0ff 100%);
+    }
+    #ddangyaMapBtn.map-link-btn:hover:not(:disabled){
+      background:linear-gradient(180deg,#fff7e7 0%,#ffe5b1 100%);
     }
     .map-link-btn[disabled]{
       opacity:.45;
@@ -1197,6 +1215,7 @@
     var picked = null;
     var landPicked = null;
     var addressLocked = false;
+    var resultCacheByMode = {};
 
     var els = {
       modeBuildingLandBtn: document.getElementById('modeBuildingLandBtn'),
@@ -1411,8 +1430,15 @@
     }
 
     function getCurrentPnu(){
+      if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
+        return firstNonEmpty(
+          landPicked && landPicked.pnu,
+          window.lastResultData && window.lastResultData.pnu,
+          window.lastResultData && window.lastResultData.land && window.lastResultData.land.pnu
+        ).replace(/\D/g, '');
+      }
+
       return firstNonEmpty(
-        landPicked && landPicked.pnu,
         window.lastResultData && window.lastResultData.pnu,
         window.lastResultData && window.lastResultData.land && window.lastResultData.land.pnu
       ).replace(/\D/g, '');
@@ -1443,7 +1469,7 @@
       els.mapLinkSection.style.display = 'block';
       els.naverMapBtn.disabled = !q;
       if(els.ddangyaMapBtn) els.ddangyaMapBtn.disabled = !ddangyaUrl;
-      els.mapLinkCaption.textContent = q || ('PNU ' + getCurrentPnu());
+      els.mapLinkCaption.textContent = q || '선택한 필지를 지도 서비스로 새창에서 엽니다.';
     }
 
     function openNaverMap(){
@@ -1479,20 +1505,78 @@
       }
     }
 
-    function resetAddressOnly(){
-      picked = null;
-      landPicked = null;
-      addressLocked = false;
-      if(els.landAddressInput) els.landAddressInput.value = '';
-      renderAddressDisplay();
-      els.pickedLine.textContent = '';
-      setStatus('', '');
+    function renderPickedLine(){
+      if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
+        if(!landPicked){
+          els.pickedLine.textContent = '';
+          return;
+        }
+
+        els.pickedLine.textContent = joinValues([
+          landPicked.parcelAddress ? ('지번: ' + landPicked.parcelAddress) : '',
+          landPicked.roadAddress ? ('도로명: ' + landPicked.roadAddress) : '',
+          (!landPicked.parcelAddress && landPicked.address) ? ('주소: ' + landPicked.address) : ''
+        ], '\n');
+        return;
+      }
+
+      if(!picked){
+        els.pickedLine.textContent = '';
+        return;
+      }
+
+      els.pickedLine.textContent = joinValues([
+        picked.roadAddress ? ('도로명: ' + picked.roadAddress) : '',
+        picked.jibunAddress ? ('지번: ' + picked.jibunAddress) : '',
+        picked.lookupAddress ? ('조회기준: ' + picked.lookupAddress) : ''
+      ], '\n');
+    }
+
+    function clearRenderedResult(){
       els.summaryGrid.style.display = 'none';
       els.mapLinkSection.style.display = 'none';
       els.overviewSection.style.display = 'none';
       els.sourcesSection.style.display = 'none';
       els.emptyState.style.display = 'block';
       window.lastResultData = null;
+    }
+
+    function getEmptyTextForCurrentMode(){
+      return currentLookupMode === LOOKUP_MODE_LAND_ONLY
+        ? '지번주소 또는 도로명주소를 입력한 뒤 조회하세요.'
+        : '주소를 눌러 검색한 뒤 조회하세요.';
+    }
+
+    function restoreModeView(){
+      renderAddressDisplay();
+      renderPickedLine();
+      els.emptyState.textContent = getEmptyTextForCurrentMode();
+
+      var cached = resultCacheByMode[currentLookupMode];
+      if(cached && cached.data){
+        renderResult(cached.data, currentLookupMode, true);
+        return;
+      }
+
+      clearRenderedResult();
+      els.emptyState.textContent = getEmptyTextForCurrentMode();
+      renderMapLink();
+    }
+
+    function resetAddressOnly(){
+      if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
+        landPicked = null;
+        if(els.landAddressInput) els.landAddressInput.value = '';
+      }else{
+        picked = null;
+        addressLocked = false;
+      }
+
+      delete resultCacheByMode[currentLookupMode];
+      renderAddressDisplay();
+      renderPickedLine();
+      setStatus('', '');
+      clearRenderedResult();
     }
 
     function jsonpCall(params){
@@ -1556,13 +1640,10 @@
         els.modeLandOnlyBtn.classList.toggle('active', currentLookupMode === LOOKUP_MODE_LAND_ONLY);
       }
 
-      resetAddressOnly();
+      restoreModeView();
 
       if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
-        els.emptyState.textContent = '지번주소 또는 도로명주소를 입력한 뒤 조회하세요.';
         if(els.landAddressInput) els.landAddressInput.focus();
-      }else{
-        els.emptyState.textContent = '주소를 눌러 검색한 뒤 조회하세요.';
       }
     }
 
@@ -1659,7 +1740,7 @@
       }
 
       if(pnu.length !== 19){
-        throw new Error('PNU를 확인하지 못했습니다. 지번주소로 다시 입력해 주세요.');
+        throw new Error('필지 식별정보를 확인하지 못했습니다. 지번주소로 다시 입력해 주세요.');
       }
 
       return {
@@ -2602,9 +2683,12 @@
       return '';
     }
 
-    function renderResult(data, mode){
+    function renderResult(data, mode, restoring){
       mode = mode || currentLookupMode;
       window.lastResultData = data;
+      if(!restoring){
+        resultCacheByMode[mode] = { data: data };
+      }
       els.emptyState.style.display = 'none';
       els.summaryGrid.style.display = 'none';
       renderMapLink();
@@ -2628,15 +2712,14 @@
 
         var found = await searchVworldParcelPnu(query);
         if(!found.pnu || found.pnu.length !== 19){
-          throw new Error('PNU를 확인하지 못했습니다.');
+          throw new Error('필지 식별정보를 확인하지 못했습니다.');
         }
 
         landPicked = found;
         els.pickedLine.textContent = joinValues([
           found.parcelAddress ? ('지번: ' + found.parcelAddress) : '',
           found.roadAddress ? ('도로명: ' + found.roadAddress) : '',
-          (!found.parcelAddress && found.address) ? ('주소: ' + found.address) : '',
-          found.pnu ? ('PNU: ' + found.pnu) : ''
+          (!found.parcelAddress && found.address) ? ('주소: ' + found.address) : ''
         ], '\n');
 
         var res = await jsonpCall({

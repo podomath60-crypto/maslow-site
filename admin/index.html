@@ -1034,6 +1034,17 @@
       font-weight:900;
       color:#6b7280;
     }
+    .land-area-breakdown-row{display:none;}
+    .land-area-breakdown{
+      font-size:18px;
+      line-height:1.65;
+      font-weight:800;
+      color:#23262b;
+      word-break:keep-all;
+    }
+    @media (max-width:720px){
+      .land-area-breakdown{font-size:15px;line-height:1.72;}
+    }
     .land-parcel-summary{
       margin:0 0 14px;
       padding:10px 12px;
@@ -2618,6 +2629,7 @@
           <div class="property-spec-row"><div class="property-spec-label">* 매매가 / 임대가</div><div id="priceField" class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">* 사용승인일</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">* 대지면적</div><div class="property-spec-value"><div class="measure-field" data-measure="landArea"><div class="measure-line"><input class="measure-input" data-unit="m2" type="number" inputmode="decimal" placeholder="입력" /><span class="measure-unit">㎡</span></div><div class="measure-line measure-line-sub"><input class="measure-input" data-unit="pyeong" type="number" inputmode="decimal" placeholder="자동계산" /><span class="measure-unit">평</span></div></div></div></div>
+          <div id="landParcelAreaBreakdownRow" class="property-spec-row land-area-breakdown-row"><div class="property-spec-label">필지별 면적</div><div id="landParcelAreaBreakdownValue" class="property-spec-value land-area-breakdown"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">건축면적</div><div class="property-spec-value"><div class="measure-field" data-measure="buildingArea"><div class="measure-line"><input class="measure-input" data-unit="m2" type="number" inputmode="decimal" placeholder="입력" /><span class="measure-unit">㎡</span></div><div class="measure-line measure-line-sub"><input class="measure-input" data-unit="pyeong" type="number" inputmode="decimal" placeholder="자동계산" /><span class="measure-unit">평</span></div></div></div></div>
           <div class="property-spec-row"><div class="property-spec-label">* 연면적</div><div class="property-spec-value"><div class="measure-field" data-measure="totalFloorArea"><div class="measure-line"><input class="measure-input" data-unit="m2" type="number" inputmode="decimal" placeholder="입력" /><span class="measure-unit">㎡</span></div><div class="measure-line measure-line-sub"><input class="measure-input" data-unit="pyeong" type="number" inputmode="decimal" placeholder="자동계산" /><span class="measure-unit">평</span></div></div></div></div>
           <div class="property-spec-row"><div class="property-spec-label">전용면적</div><div class="property-spec-value"><div class="measure-field" data-measure="exclusiveArea"><div class="measure-line"><input class="measure-input" data-unit="m2" type="number" inputmode="decimal" placeholder="입력" /><span class="measure-unit">㎡</span></div><div class="measure-line measure-line-sub"><input class="measure-input" data-unit="pyeong" type="number" inputmode="decimal" placeholder="자동계산" /><span class="measure-unit">평</span></div></div></div></div>
@@ -2841,6 +2853,8 @@
       var landParcelList = document.getElementById('landParcelList');
       var landParcelAddBtn = document.getElementById('landParcelAddBtn');
       var landParcelSummary = document.getElementById('landParcelSummary');
+      var landParcelAreaBreakdownRow = document.getElementById('landParcelAreaBreakdownRow');
+      var landParcelAreaBreakdownValue = document.getElementById('landParcelAreaBreakdownValue');
 
       var QUERY_LOADING_BASE_TEXT = '자료를 가져오고 있어요!';
       var queryLoadingTypingTimer = null;
@@ -3540,7 +3554,7 @@
 
           setSpecRowLabelByOriginal_('* 대지면적', '* 총 토지면적');
           setSpecRowLabelByOriginal_('용도지역', '대표 용도지역');
-          setSpecRowLabelByOriginal_('* 매물종류', '* 중개대상물 종류');
+          setSpecRowLabelByOriginal_('* 매물종류', '* 매물 종류');
           setSpecRowLabelByOriginal_('주요 설비', '기반시설');
           setSpecRowLabelByOriginal_('추천 업종', '추천 용도');
           setSpecRowLabelByOriginal_('업종 제한', '제한사항');
@@ -3562,6 +3576,7 @@
           landParcelSection.classList.remove('show');
           landParcelSection.setAttribute('aria-hidden', 'true');
         }
+        renderLandParcelAreaBreakdown_();
 
         commercialHiddenLabels.forEach(function(label){
           var valueEl = findSpecValueByLabel_(label);
@@ -3739,7 +3754,7 @@
         var landSummary = isLand ? getLandSummary_() : null;
         var representative = landSummary && landSummary.representative ? landSummary.representative : null;
         var landAddress = landSummary ? (landSummary.representativeAddress || landSummary.representativeDisplayAddress || plainText(addressField)) : plainText(addressField);
-        var landPropertyType = landSummary ? (landSummary.propertyTypeText || plainText(findSpecValueAnyLabel_('* 중개대상물 종류', '* 매물종류'))) : plainText(findSpecValueByLabel_('* 매물종류'));
+        var landPropertyType = landSummary ? (landSummary.propertyTypeText || plainText(findSpecValueAnyLabel_('* 매물 종류', '* 중개대상물 종류', '* 매물종류'))) : plainText(findSpecValueByLabel_('* 매물종류'));
         var landZoning = landSummary ? (landSummary.mainZoning1 || plainText(findSpecValueAnyLabel_('대표 용도지역', '용도지역'))) : plainText(findSpecValueByLabel_('용도지역'));
 
         return {
@@ -4190,7 +4205,7 @@
           setEditableText_(findSpecValueAnyLabel_('대표 용도지역', '용도지역'), summary.mainZoning1);
         }
         if(summary.propertyTypeText){
-          setEditableText_(findSpecValueAnyLabel_('* 중개대상물 종류', '* 매물종류'), summary.propertyTypeText);
+          setEditableText_(findSpecValueAnyLabel_('* 매물 종류', '* 중개대상물 종류', '* 매물종류'), summary.propertyTypeText);
         }
         if(summary.mainRoadSide){
           setEditableText_(findSpecValueAnyLabel_('접도 / 진입로', '도로접면'), summary.mainRoadSide);
@@ -4199,7 +4214,55 @@
         renderNaverMapLink_();
       }
 
+      function getActiveLandParcels_(){
+        return (Array.isArray(landParcels) ? landParcels : []).filter(function(parcel){
+          return parcel && String(parcel.parcelStatus || 'active') !== 'deleted';
+        });
+      }
+
+      function buildLandParcelAreaText_(parcel, idx){
+        parcel = parcel || {};
+        var m2 = String(parcel.areaM2 || '').trim();
+        var py = String(parcel.areaPy || '').trim();
+
+        if(!py && m2){
+          py = pyeongFromM2_(m2);
+        }
+        if(!m2 && py){
+          var pyNumber = parseLandNumber_(py);
+          m2 = pyNumber ? roundLandNumber_(pyNumber * 3.305785, 2) : '';
+        }
+        if(!m2 && !py) return '';
+
+        return '필지' + (idx + 1) + ' ' + (m2 ? m2 + '㎡' : '') + (py ? ' (' + py + '평)' : '');
+      }
+
+      function renderLandParcelAreaBreakdown_(){
+        if(!landParcelAreaBreakdownRow || !landParcelAreaBreakdownValue) return;
+
+        var active = getActiveLandParcels_();
+        if(getListingCategoryPrefix_() !== 'DK' || active.length <= 1){
+          landParcelAreaBreakdownRow.style.display = 'none';
+          landParcelAreaBreakdownValue.textContent = '';
+          return;
+        }
+
+        var lines = active.map(function(parcel, idx){
+          return buildLandParcelAreaText_(parcel, idx);
+        }).filter(Boolean);
+
+        if(!lines.length){
+          landParcelAreaBreakdownRow.style.display = 'none';
+          landParcelAreaBreakdownValue.textContent = '';
+          return;
+        }
+
+        landParcelAreaBreakdownValue.textContent = lines.join(', ');
+        landParcelAreaBreakdownRow.style.display = '';
+      }
+
       function renderLandParcelSummary_(){
+        renderLandParcelAreaBreakdown_();
         if(!landParcelSummary) return;
         var summary = getLandSummary_();
         if(!summary.parcelCount){
@@ -8975,11 +9038,41 @@
     return out;
   }
 
+  function normalizePdfImageUrl_(url){
+    url = String(url || '').trim();
+    if(!url) return '';
+    return url.replace(/[?&](sz|width|height)=w?\d+/gi, '').replace(/[?&]$/, '');
+  }
+
   function getImageUrls(){
     var hero = document.getElementById('heroImage');
     var heroSrc = hero && hero.getAttribute('src') ? hero.getAttribute('src') : '';
-    var thumbs = Array.prototype.slice.call(document.querySelectorAll('.photo-thumb-img')).map(function(el){ return bgUrl(el); }).filter(Boolean);
-    return { hero: heroSrc, thumbs: uniqueImageUrls(thumbs) };
+    var ordered = [];
+    var heroIndex = -1;
+
+    if(Array.isArray(photoList) && photoList.length){
+      photoList.forEach(function(item, idx){
+        var url = item && item.url ? String(item.url).trim() : '';
+        if(url){
+          ordered.push({ index: idx, url: url });
+        }
+      });
+      heroIndex = Math.max(0, Math.min(Number(currentPhotoIndex || 0), photoList.length - 1));
+      if(photoList[heroIndex] && photoList[heroIndex].url){
+        heroSrc = photoList[heroIndex].url;
+      }
+    }
+
+    var thumbs = ordered.length
+      ? ordered.map(function(item){ return item.url; })
+      : Array.prototype.slice.call(document.querySelectorAll('.photo-thumb-img')).map(function(el){ return bgUrl(el); }).filter(Boolean);
+
+    return {
+      hero: heroSrc,
+      thumbs: uniqueImageUrls(thumbs),
+      ordered: ordered,
+      heroIndex: heroIndex
+    };
   }
 
   function collectSummaryTexts(limit){
@@ -9028,8 +9121,21 @@
   }
 
   function buildExternalThumbsHtml(imgs){
-    var list = uniqueImageUrls((imgs.thumbs || []).filter(function(url){ return url && url !== imgs.hero; }));
-    if(!list.length && imgs.hero) list = [imgs.hero];
+    imgs = imgs || {};
+    var list = [];
+
+    if(Array.isArray(imgs.ordered) && imgs.ordered.length){
+      imgs.ordered.forEach(function(item){
+        if(!item || !item.url) return;
+        if(Number(item.index) === Number(imgs.heroIndex)) return;
+        if(list.indexOf(item.url) === -1) list.push(item.url);
+      });
+    }else{
+      list = uniqueImageUrls((imgs.thumbs || []).filter(function(url){
+        return url && normalizePdfImageUrl_(url) !== normalizePdfImageUrl_(imgs.hero);
+      }));
+    }
+
     var cells = [];
     for(var i=0;i<4;i++){
       var url = list[i] || '';

@@ -3255,22 +3255,24 @@
         rentPriceTouchedAfterLoad_ = false;
       }
 
-      function stripRentWonSuffix_(value){
+      function normalizeRentWonTail_(value){
         var text = plainText(value || '').trim();
         if(!text) return '';
-        return text.replace(/\s*원+$/i, '').trim();
+        return text.replace(/원(?:\s*원)+$/i, '원').trim();
       }
 
       function formatRentAmountWithWon_(value){
-        var text = stripRentWonSuffix_(value);
-        return text ? (text + '원') : '';
+        var text = normalizeRentWonTail_(value);
+        if(!text) return '';
+        return /원$/i.test(text) ? text : (text + '원');
       }
 
       function cleanRentAmountPart_(value){
         var text = plainText(value || '').trim();
         if(!text) return '';
         text = text.replace(/^(보증금|월세)\s*/i, '').trim();
-        text = stripRentWonSuffix_(text);
+        text = normalizeRentWonTail_(text);
+        text = text.replace(/([0-9,])\s*원$/i, '$1').trim();
         return text;
       }
 
@@ -3325,26 +3327,22 @@
 
           var depositInput = priceField.querySelector('[data-rent-role="deposit"]');
           var monthlyInput = priceField.querySelector('[data-rent-role="monthly"]');
-          if(depositInput) depositInput.value = stripRentWonSuffix_(rentPriceState.deposit || '');
-          if(monthlyInput) monthlyInput.value = stripRentWonSuffix_(rentPriceState.monthly || '');
+          if(depositInput) depositInput.value = rentPriceState.deposit || '';
+          if(monthlyInput) monthlyInput.value = rentPriceState.monthly || '';
 
           [depositInput, monthlyInput].forEach(function(input){
             if(!input) return;
             input.addEventListener('input', function(){
               rentPriceTouchedAfterLoad_ = true;
               loadedServerRentPriceText_ = '';
-              var cleanValue = cleanRentAmountPart_(input.value || '');
-              if(input.value !== cleanValue) input.value = cleanValue;
-              rentPriceState[input.getAttribute('data-rent-role')] = cleanValue;
+              rentPriceState[input.getAttribute('data-rent-role')] = input.value || '';
               updateTopFields();
               queueSave();
             });
             input.addEventListener('blur', function(){
               rentPriceTouchedAfterLoad_ = true;
               loadedServerRentPriceText_ = '';
-              var cleanValue = cleanRentAmountPart_(input.value || '');
-              if(input.value !== cleanValue) input.value = cleanValue;
-              rentPriceState[input.getAttribute('data-rent-role')] = cleanValue;
+              rentPriceState[input.getAttribute('data-rent-role')] = input.value || '';
               updateTopFields();
               queueSave();
             });

@@ -2084,6 +2084,20 @@
       ) || normalizeUsePlanItems(usePlan).length > 0;
     }
 
+    function formatLandBaseYearMonth(baseYear, baseMonth){
+      var year = String(baseYear == null ? '' : baseYear).replace(/\D/g, '');
+      var month = String(baseMonth == null ? '' : baseMonth).replace(/\D/g, '');
+
+      if(!year) return '';
+      if(year.length > 4) year = year.slice(0, 4);
+
+      if(!month) return year;
+      if(month.length === 1) month = '0' + month;
+      if(month.length > 2) month = month.slice(0, 2);
+
+      return year + '.' + month;
+    }
+
     function buildLandInfoRows(data){
       var land = (data && data.land) || {};
       var characteristic = land.characteristic || {};
@@ -2097,10 +2111,8 @@
         formatLandOfficialTotalText(characteristic.areaM2, characteristic.officialLandPrice)
       );
 
-      rows.push(['기준연도', textOrDash(characteristic.baseYear)]);
-      if(firstNonEmpty(characteristic.baseMonth)){
-        rows.push(['기준월', textOrDash(characteristic.baseMonth)]);
-      }
+      var baseYearMonth = formatLandBaseYearMonth(characteristic.baseYear, characteristic.baseMonth);
+      rows.push(['기준년월', textOrDash(baseYearMonth)]);
       rows.push(['지목', textOrDash(characteristic.landCategory)]);
       rows.push(['면적', formatLandAreaText(characteristic.areaM2, characteristic.areaPy)]);
       rows.push(['용도지역1', textOrDash(characteristic.zoning)]);

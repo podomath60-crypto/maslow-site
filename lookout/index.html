@@ -2120,12 +2120,12 @@
 
       if(extracted.landInfoRows && extracted.landInfoRows.length){
         html += '<div class="result-block">'
-          + '<div class="result-block-head">토지 정보 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">토지특성</span></div>'
+          + '<div class="result-block-head">토지대장 토지정보 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">토지특성</span></div>'
           + buildResultTable(extracted.landInfoRows)
           + '<div class="table-download-wrap">'
           + '<div class="table-action-row">'
-          + '<button class="table-download-btn" data-kind="land" data-title="토지 정보">⬇️ 이미지 내려받기</button>'
-          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지 정보">📋 텍스트 복사</button>'
+          + '<button class="table-download-btn" data-kind="land" data-title="토지대장 토지정보">⬇️ 이미지 내려받기</button>'
+          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지대장 토지정보">📋 텍스트 복사</button>'
           + '</div>'
           + '<div class="table-download-note">공시지가 총액은 공시지가 × 면적으로 계산한 참고 금액입니다.</div>'
           + '</div>'
@@ -2134,12 +2134,12 @@
 
       if(extracted.landUsePlanRows && extracted.landUsePlanRows.length){
         html += '<div class="result-block">'
-          + '<div class="result-block-head">토지이용계획 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">용도지역·지구별 저촉 여부</span></div>'
+          + '<div class="result-block-head">토지대장 토지이용계획 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">용도지역·지구별 저촉 여부</span></div>'
           + buildResultTable(extracted.landUsePlanRows)
           + '<div class="table-download-wrap">'
           + '<div class="table-action-row">'
-          + '<button class="table-download-btn" data-kind="land" data-title="토지 정보">⬇️ 이미지 내려받기</button>'
-          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지 정보">📋 텍스트 복사</button>'
+          + '<button class="table-download-btn" data-kind="land" data-title="토지대장 토지정보">⬇️ 이미지 내려받기</button>'
+          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지대장 토지정보">📋 텍스트 복사</button>'
           + '</div>'
           + '<div class="table-download-note">저촉/포함은 왼쪽 용도지역·지구와 같은 줄 기준입니다.</div>'
           + '</div>'
@@ -2148,18 +2148,18 @@
 
       if((!extracted.landInfoRows || !extracted.landInfoRows.length) && (!extracted.landUsePlanRows || !extracted.landUsePlanRows.length) && extracted.landRows && extracted.landRows.length){
         html += '<div class="result-block">'
-          + '<div class="result-block-head">토지 정보</div>'
+          + '<div class="result-block-head">토지대장 토지정보</div>'
           + buildResultTable(extracted.landRows)
           + '</div>';
       }
 
       html += '<div class="result-block">'
-        + '<div class="result-block-head">통합요약 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">총괄표제부값</span></div>'
+        + '<div class="result-block-head">건축물대장 통합요약 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">총괄표제부값</span></div>'
         + buildResultTable(extracted.summaryRows)
         + '<div class="table-download-wrap">'
         + '<div class="table-action-row">'
-        + '<button class="table-download-btn" data-kind="summary" data-title="부동산 기본정보">⬇️ 이미지 내려받기</button>'
-        + '<button class="table-copy-btn" data-copy-kind="summary" data-title="부동산 기본정보">📋 텍스트 복사</button>'
+        + '<button class="table-download-btn" data-kind="summary" data-title="건축물대장 통합요약">⬇️ 이미지 내려받기</button>'
+        + '<button class="table-copy-btn" data-copy-kind="summary" data-title="건축물대장 통합요약">📋 텍스트 복사</button>'
         + '</div>'
         + '<div class="table-download-note">주소가 있으면 뒤 숫자는 보이지 않게 저장됩니다.</div>'
         + '</div>'

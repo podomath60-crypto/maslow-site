@@ -5749,17 +5749,17 @@
         if(!text) return '';
 
         var map = {
-          '광대로한면': '25m이상',
-          '광대로': '25m이상',
-          '대로한면': '12m이상 25m미만',
-          '대로': '12m이상 25m미만',
-          '중로한면': '8m이상 12m미만',
-          '중로': '8m이상 12m미만',
-          '소로한면': '4m이상 8m미만',
-          '소로': '4m이상 8m미만',
-          '세로한면': '4m미만',
-          '세로': '4m미만',
-          '맹지': '도로접면 없음'
+          '광대로한면': '25m 이상',
+          '광대로': '25m 이상',
+          '대로한면': '12m 이상 25m 미만',
+          '대로': '12m 이상 25m 미만',
+          '중로한면': '8m 이상 12m 미만',
+          '중로': '8m 이상 12m 미만',
+          '소로한면': '4m 이상 8m 미만',
+          '소로': '4m 이상 8m 미만',
+          '세로한면': '4m 미만',
+          '세로': '4m 미만',
+          '맹지': '도로 접면 없음'
         };
 
         var desc = map[text] || '';
@@ -5776,98 +5776,84 @@
         return desc ? text + '(' + desc + ')' : text;
       }
 
-      function isRoadWidthLookupKey_(key){
-        var text = normalizeLookupText_(key);
-        if(!text) return false;
-        if(/road(Address|Addr|Nm|Name|No|Bld|Zip|Post)|도로명|도로명주소|도로주소/i.test(text)) return false;
-        return /(roadSide|roadside|roadCond|roadCondition|roadWidth|rdSide|rd_sd|sideRoad|도로접면|도로조건|도로폭|진입로|접면)/i.test(text);
+      function splitLandUsePlanValues_(value){
+        if(Array.isArray(value)){
+          return value.map(function(v){ return normalizeLookupText_(v); }).filter(Boolean);
+        }
+        return String(value == null ? '' : value)
+          .split(',')
+          .map(function(v){ return normalizeLookupText_(v); })
+          .filter(Boolean);
       }
 
-      function looksLikeRoadWidthValue_(value){
-        var text = normalizeLookupText_(value);
+      function normalizeUsePlanItemsLikeLookout_(usePlan){
+        usePlan = usePlan || {};
+
+        if(Array.isArray(usePlan.usePlanItems) && usePlan.usePlanItems.length){
+          return usePlan.usePlanItems.map(function(item){
+            return {
+              name: firstNonEmpty_(item && item.name, item && item.zoningDistrict, item && item.prposAreaDstrcCodeNm),
+              conflict: firstNonEmpty_(item && item.conflict, item && item.conflictStatus, item && item.cnflcAtNm)
+            };
+          }).filter(function(item){
+            return !!(item.name || item.conflict);
+          });
+        }
+
+        var names = splitLandUsePlanValues_(usePlan.zoningDistricts);
+        var conflicts = splitLandUsePlanValues_(usePlan.conflictStatus);
+        var max = Math.max(names.length, conflicts.length);
+        var items = [];
+
+        for(var i = 0; i < max; i += 1){
+          items.push({
+            name: names[i] || '',
+            conflict: conflicts[i] || ''
+          });
+        }
+
+        return items.filter(function(item){
+          return !!(item.name || item.conflict);
+        });
+      }
+
+      function isRoadUsePlanName_(name){
+        var text = normalizeLookupText_(name);
         if(!text) return false;
-        if(/^[A-Z0-9_-]+$/.test(text)) return false;
-        if(/^(0|1|2|3|4|5|6|7|8|9)$/.test(text)) return false;
-        return /(광대로|대로|중로|소로|세로|맹지|도로|한면|각지|가각|미만|이상|[0-9]+(?:\.[0-9]+)?\s*m)/i.test(text);
+        return /(도로|광로|대로|중로|소로|접도구역|도시계획도로)/.test(text);
+      }
+
+      function formatRoadUsePlanItem_(item){
+        var name = normalizeLookupText_(item && item.name);
+        var conflict = normalizeLookupText_(item && item.conflict);
+        if(!name) return '';
+        if(!conflict || conflict === '-') return name;
+        if(name.indexOf(conflict) !== -1) return name;
+        return name + '(' + conflict + ')';
       }
 
       function extractRoadWidthFromLookup_(json){
         var root = getIntegratedLookupData_(json);
+        var land = (root && root.land) || {};
+        var usePlan = land.usePlan || {};
+        var items = normalizeUsePlanItemsLikeLookout_(usePlan);
         var out = [];
         var seen = Object.create(null);
 
-        function push(value, shouldFormatRoadSide){
-          var text = normalizeLookupText_(value);
-          if(shouldFormatRoadSide) text = formatLandRoadSideText_(text);
-          if(!looksLikeRoadWidthValue_(text)) return;
-          if(seen[text]) return;
+        items.forEach(function(item){
+          if(!isRoadUsePlanName_(item && item.name)) return;
+          var text = formatRoadUsePlanItem_(item);
+          if(!text || seen[text]) return;
           seen[text] = true;
           out.push(text);
-        }
-
-        function pushLandCharacteristic(candidate){
-          var characteristic = candidate && candidate.land && candidate.land.characteristic ? candidate.land.characteristic : null;
-          if(!characteristic) return;
-          push(firstNonEmpty_(
-            characteristic.roadSide,
-            characteristic.roadside,
-            characteristic.roadCond,
-            characteristic.roadCondition,
-            characteristic.roadWidth,
-            characteristic.도로접면,
-            characteristic.도로조건,
-            characteristic.도로폭,
-            characteristic.도로접면
-          ), true);
-        }
-
-        pushLandCharacteristic(root);
-        if(json && json !== root) pushLandCharacteristic(json);
-        ['data', 'result', 'payload', 'body'].forEach(function(key){
-          if(json && json[key]) pushLandCharacteristic(json[key]);
         });
 
-        function pickValueFromDescribedObject(obj){
-          if(!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
-          var descriptor = firstNonEmpty_(obj.label, obj.name, obj.title, obj.key, obj.fieldName, obj.columnName, obj.korName);
-          if(!isRoadWidthLookupKey_(descriptor)) return;
-          [obj.value, obj.text, obj.content, obj.fieldValue, obj.val, obj.data].forEach(function(v){ push(v, /roadSide|roadside|도로접면/i.test(descriptor)); });
-        }
-
-        function walk(node){
-          if(!node || out.length >= 3) return;
-          if(Array.isArray(node)){
-            if(node.length >= 2 && isRoadWidthLookupKey_(node[0])){
-              push(node[1], /roadSide|roadside|도로접면/i.test(normalizeLookupText_(node[0])));
-            }
-            node.forEach(walk);
-            return;
-          }
-          if(typeof node !== 'object') return;
-
-          pickValueFromDescribedObject(node);
-
-          Object.keys(node).forEach(function(key){
-            if(out.length >= 3) return;
-            var value = node[key];
-            if(isRoadWidthLookupKey_(key)){
-              if(value && typeof value === 'object'){
-                walk(value);
-              }else{
-                push(value, /roadSide|roadside|도로접면/i.test(key));
-              }
-            }
-            if(value && typeof value === 'object') walk(value);
-          });
-        }
-
-        walk(root);
-        if(!out.length && json && json !== root) walk(json);
         return out.join(' / ');
       }
 
 
       function buildLookupFillData_(json){
+        var rawLookupJson = json;
         json = getIntegratedLookupData_(json);
         var apis = (json && json.apis) || {};
         var recap = ((apis.recap || {}).firstItem) || {};
@@ -5916,7 +5902,10 @@
           parkingCount: numberText_(parkingTotal),
           floorInfo: buildFloorInfoText_(recap, titleItem),
           ceilingHeight: firstNonEmpty_(titleItem.heit),
-          roadWidth: extractRoadWidthFromLookup_(json)
+          roadWidth: firstNonEmpty_(
+            extractRoadWidthFromLookup_(rawLookupJson),
+            extractRoadWidthFromLookup_(json)
+          )
         };
       }
 
@@ -5969,8 +5958,7 @@
         chainEditable('층고', fill.ceilingHeight);
         changed = changed.then(function(prev){
           var roadWidth = normalizeLookupText_(fill && fill.roadWidth);
-          var lookupCategoryPrefix = getListingCategoryPrefix_();
-          if(!roadWidth || lookupCategoryPrefix === 'DK') return prev;
+          if(!roadWidth) return prev;
           var el = findSpecValueByLabel_('도로접면');
           if(!el) return prev;
           if(plainText(el) === roadWidth){

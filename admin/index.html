@@ -3469,6 +3469,7 @@
         setEditableText_(summaryEls[2], item.summary3 || '');
 
         setEditableText_(addressField, item.address || '');
+        seedSelectedAddressSearchDataFromLoadedAddress_(item.address || '');
 
         if ((item.dealType || '').indexOf('임대') > -1) {
           rentPriceState = parseRentPriceText_(item.price || '');
@@ -3528,6 +3529,12 @@
         window.setTimeout(function(){
           toggleFactorySectionByListingNumber_();
         }, 0);
+
+        if(!normalizeLookupText_(item.roadWidth) && normalizeLookupText_(item.address)){
+          window.setTimeout(function(){
+            refreshRoadSideFromIntegratedLookupForAddress_(item.address, { silent: true });
+          }, 0);
+        }
       }
 
       function loadPropertyByListingNumber_(targetListingNumber){
@@ -5629,6 +5636,111 @@
         }
       }
 
+      function inferLookupAddressType_(address){
+        var text = normalizeLookupText_(address);
+        if(!text) return '';
+        if(/(로|길)\s*\d/.test(text) && !/(읍|면|동|리)\s*(산\s*)?\d/.test(text)) return 'ROAD';
+        if(/(읍|면|동|리)\s*(산\s*)?\d/.test(text)) return 'JIBUN';
+        return 'JIBUN';
+      }
+
+      function buildIntegratedLookupParamsFromAddress_(address){
+        var text = normalizeLookupText_(address);
+        if(!text) return null;
+        var type = inferLookupAddressType_(text) || 'JIBUN';
+        var params = {
+          action: 'fetchPublicPropertyBySearchResult',
+          lookupAddress: text,
+          queryAddress: text,
+          queryAddressType: type
+        };
+        if(type === 'ROAD'){
+          params.roadAddress = text;
+        }else{
+          params.jibunAddress = text;
+        }
+        return params;
+      }
+
+      function buildCurrentIntegratedLookupParams_(){
+        var currentAddress = normalizeLookupText_(plainText(addressField));
+        if(selectedAddressSearchData){
+          var selectedAddressText = normalizeLookupText_(
+            selectedAddressSearchData.lookupAddress || selectedAddressSearchData.jibunAddress || selectedAddressSearchData.autoJibunAddress || selectedAddressSearchData.roadAddress || selectedAddressSearchData.autoRoadAddress || ''
+          );
+          if(currentAddress && selectedAddressText && currentAddress !== selectedAddressText){
+            return buildIntegratedLookupParamsFromAddress_(currentAddress);
+          }
+          var params = { action: 'fetchPublicPropertyBySearchResult' };
+          Object.keys(selectedAddressSearchData).forEach(function(k){
+            params[k] = selectedAddressSearchData[k];
+          });
+          params.lookupAddress = params.lookupAddress || params.jibunAddress || params.autoJibunAddress || params.roadAddress || params.autoRoadAddress || '';
+          params.queryAddress = params.lookupAddress;
+          params.queryAddressType = (params.jibunAddress || params.autoJibunAddress) ? 'JIBUN' : 'ROAD';
+          return params.lookupAddress ? params : null;
+        }
+
+        return buildIntegratedLookupParamsFromAddress_(plainText(addressField));
+      }
+
+      function seedSelectedAddressSearchDataFromLoadedAddress_(address){
+        var text = normalizeLookupText_(address);
+        if(!text){
+          selectedAddressSearchData = null;
+          return;
+        }
+        var type = inferLookupAddressType_(text) || 'JIBUN';
+        selectedAddressSearchData = {
+          jibunAddress: type === 'JIBUN' ? text : '',
+          roadAddress: type === 'ROAD' ? text : '',
+          lookupAddress: text,
+          queryAddress: text,
+          queryAddressType: type,
+          bcode: '',
+          sido: '',
+          sigungu: '',
+          bname: '',
+          buildingName: '',
+          zonecode: '',
+          apartment: '',
+          autoJibunAddress: '',
+          autoRoadAddress: '',
+          addressType: type === 'ROAD' ? 'R' : 'J'
+        };
+      }
+
+      function refreshRoadSideFromIntegratedLookupForAddress_(address, options){
+        options = options || {};
+        var params = buildIntegratedLookupParamsFromAddress_(address);
+        if(!params || !params.lookupAddress) return Promise.resolve(false);
+
+        return lookupPublicPropertyWithFallback_(params).then(function(res){
+          if(!(res && res.ok)){
+            throw new Error((res && (res.error || res.message)) || '조회 실패');
+          }
+          var roadSide = normalizeLookupText_(buildLookupFillData_(res).roadWidth || extractRoadWidthFromLookup_(res));
+          if(!roadSide) return false;
+          var el = findSpecValueByLabel_('도로접면');
+          if(!el) return false;
+          if(plainText(el) === roadSide){
+            markLookupFilled_(el);
+            return false;
+          }
+          setEditableText_(el, roadSide);
+          markLookupFilled_(el);
+          updateTopFields();
+          queueSave();
+          return true;
+        }).catch(function(err){
+          if(options.silent){
+            console.warn('[매물입력기 도로접면 기존매물 자동조회 실패]', err);
+            return false;
+          }
+          throw err;
+        });
+      }
+
       function pickRepresentativeTitleItem_(items){
         items = Array.isArray(items) ? items.slice() : [];
         if(!items.length) return {};
@@ -5980,23 +6092,15 @@
       }
 
       function runAddressLookup_(){
-        if(!selectedAddressSearchData){
-          showToast('먼저 주소검색');
+        var lookupParams = buildCurrentIntegratedLookupParams_();
+        if(!lookupParams){
+          showToast('소재지를 입력하거나 주소검색으로 선택하세요');
           return;
         }
 
         setAddressLookupLoading_(true);
 
-        lookupPublicPropertyWithFallback_((function(){
-          var params = { action: 'fetchPublicPropertyBySearchResult' };
-          Object.keys(selectedAddressSearchData).forEach(function(k){
-            params[k] = selectedAddressSearchData[k];
-          });
-          params.lookupAddress = params.lookupAddress || params.jibunAddress || params.autoJibunAddress || params.roadAddress || params.autoRoadAddress || '';
-          params.queryAddress = params.lookupAddress;
-          params.queryAddressType = (params.jibunAddress || params.autoJibunAddress) ? 'JIBUN' : 'ROAD';
-          return params;
-        })())
+        lookupPublicPropertyWithFallback_(lookupParams)
           .then(function(res){
             if(!(res && res.ok)){
               throw new Error((res && (res.error || res.message)) || '조회 실패');

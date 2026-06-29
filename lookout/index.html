@@ -10,13 +10,13 @@
   <link rel="apple-touch-icon" href="/favicon.ico" />
 
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="매슬로우 - 건축물 정보 조회기" />
-  <meta property="og:description" content="부동산 IT 서비스 · 무료 건축물 정보 조회기" />
+  <meta property="og:title" content="매슬로우 - 토지,건축물 조회기" />
+  <meta property="og:description" content="토지대장과 건축물대장 조회기" />
   <meta property="og:image" content="https://cdn.imweb.me/thumbnail/20260410/e2d5bcd79cb3e.jpg" />
   <meta property="og:locale" content="ko_KR" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="매슬로우 - 건축물 정보 조회기" />
-  <meta name="twitter:description" content="부동산 IT 서비스 · 무료 건축물 정보 조회기" />
+  <meta name="twitter:title" content="매슬로우 - 토지,건축물 조회기" />
+  <meta name="twitter:description" content="토지대장과 건축물대장 조회기" />
   <meta name="twitter:image" content="https://cdn.imweb.me/thumbnail/20260410/e2d5bcd79cb3e.jpg" />
 
   <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
@@ -28,6 +28,13 @@
       --line:#e6ebf2;
       --blue:#2164ff;
       --blue-soft:#eef4ff;
+      --land-bg:#fff8e7;
+      --land-surface:#fffdf5;
+      --land-line:#ead7a5;
+      --land-main:#b7791f;
+      --land-main-dark:#7c4a03;
+      --land-soft:#fff3c4;
+      --land-shadow:0 18px 42px rgba(124,74,3,.10);
       --shadow:0 18px 42px rgba(15,23,42,.08);
     }
     *{box-sizing:border-box}
@@ -139,6 +146,140 @@
       font-weight:900;
       letter-spacing:-0.055em;
       color:#4f6280;
+    }
+    .mode-tabs{
+      margin-top:18px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .mode-tab{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:50px;
+      padding:0 24px;
+      border-radius:999px;
+      border:1px solid #cfe0ff;
+      background:rgba(255,255,255,.72);
+      color:#4f6280;
+      font-size:24px;
+      line-height:1;
+      font-weight:950;
+      letter-spacing:-0.05em;
+      box-shadow:0 10px 22px rgba(33,100,255,.08);
+    }
+    .mode-tab.active{
+      background:linear-gradient(180deg,#2d78ff 0%,#1f67f1 100%);
+      border-color:#1f67f1;
+      color:#fff;
+      box-shadow:0 12px 22px rgba(33,100,255,.18);
+    }
+    .mode-tab.land-mode-btn{
+      border-color:var(--land-line);
+      box-shadow:0 10px 22px rgba(183,121,31,.08);
+    }
+    .mode-tab.land-mode-btn.active{
+      background:linear-gradient(180deg,#d99a2b 0%,#b7791f 100%);
+      border-color:#b7791f;
+      color:#fff;
+      box-shadow:0 12px 22px rgba(183,121,31,.22);
+    }
+    .land-address-input{
+      display:none;
+      width:100%;
+      min-height:56px;
+      border:none;
+      outline:none;
+      background:transparent;
+      color:var(--text);
+      font-size:24px;
+      line-height:1.38;
+      font-weight:800;
+      letter-spacing:-0.03em;
+    }
+    .land-address-input::placeholder{
+      color:#b99b61;
+      font-weight:800;
+    }
+    body.mode-land-only .page{
+      background:var(--land-bg);
+    }
+    body.mode-land-only .hero{
+      border-color:var(--land-line);
+      background:linear-gradient(180deg,#fff6d8 0%,#f1dfb8 100%);
+      box-shadow:var(--land-shadow);
+    }
+    body.mode-land-only .brand-en{
+      color:var(--land-main);
+    }
+    body.mode-land-only .brand-ko{
+      color:#2f230f;
+    }
+    body.mode-land-only .search-panel{
+      box-shadow:0 22px 40px rgba(124,74,3,.13);
+    }
+    body.mode-land-only .search-shell{
+      border-color:var(--land-line);
+      background:var(--land-surface);
+    }
+    body.mode-land-only .search-icon path{
+      stroke:var(--land-main);
+    }
+    body.mode-land-only .lookup-btn{
+      background:linear-gradient(180deg,#d99a2b 0%,#b7791f 100%);
+      box-shadow:0 16px 28px rgba(183,121,31,.24);
+    }
+    body.mode-land-only .refresh-address-btn{
+      border-color:var(--land-line);
+      background:var(--land-surface);
+    }
+    body.mode-land-only .section,
+    body.mode-land-only .map-link-section{
+      border-color:var(--land-line);
+      background:var(--land-surface);
+      box-shadow:var(--land-shadow);
+    }
+    body.mode-land-only .section-chip{
+      background:var(--land-soft);
+      color:var(--land-main-dark);
+      border-color:var(--land-line);
+    }
+    body.mode-land-only .result-block{
+      border-color:var(--land-line);
+      background:var(--land-surface);
+    }
+    body.mode-land-only .result-block-head{
+      border-bottom-color:var(--land-line);
+      background:#fff3c4;
+      color:#3d2a09;
+    }
+    body.mode-land-only .result-table{
+      background:var(--land-surface);
+    }
+    body.mode-land-only .result-table th{
+      background:#fff8df;
+      color:#6b4706;
+    }
+    body.mode-land-only .result-table th,
+    body.mode-land-only .result-table td{
+      border-bottom-color:#f0ddb2;
+    }
+    body.mode-land-only .map-link-btn,
+    body.mode-land-only .table-download-btn,
+    body.mode-land-only .table-copy-btn{
+      border-color:var(--land-line);
+      color:var(--land-main-dark);
+      background:linear-gradient(180deg,#fffdf5 0%,#fff3c4 100%);
+      box-shadow:0 8px 20px rgba(183,121,31,.12);
+    }
+    body.mode-land-only .address-display{
+      display:none;
+    }
+    body.mode-land-only .land-address-input{
+      display:block;
     }
 
     .search-panel{
@@ -597,6 +738,19 @@
       .service-title{
         font-size:22px;
       }
+      .mode-tabs{
+        margin-top:12px;
+        gap:8px;
+      }
+      .mode-tab{
+        min-height:40px;
+        padding:0 14px;
+        font-size:16px;
+      }
+      .land-address-input{
+        font-size:15px;
+        min-height:52px;
+      }
       .search-panel{
         width:calc(100% - 24px);
         bottom:16px;
@@ -743,13 +897,20 @@
       font-weight:800;
       line-height:1.5;
     }
+    .map-link-actions{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
     .map-link-btn{
       display:block;
       min-height:52px;
       width:35%;
       min-width:220px;
       padding:0 18px;
-      margin:0 auto;
+      margin:0;
       border-radius:999px;
       background:linear-gradient(180deg,#fbfeff 0%,#f3faff 100%);
       border:1px solid #8fd3ff;
@@ -776,6 +937,7 @@
       .map-link-title{
         font-size:18px;
       }
+      .map-link-actions{gap:8px}
       .map-link-btn{
         width:100%;
         min-width:0;
@@ -917,17 +1079,16 @@
 
   </style>
 </head>
-<body>
+<body class="mode-building-land">
   <div class="page">
     <div class="wrap">
       <div class="hero">
         <div class="brand">
           <div class="brand-en">MASLOW</div>
           <h1 class="brand-ko">매슬로우</h1>
-          <div class="brand-sub">부동산 IT 서비스</div>
-          <div class="service-line">
-            <div class="free-chip">Free</div>
-            <div class="service-title">건축물 정보 조회기</div>
+          <div class="mode-tabs" role="tablist" aria-label="조회기 선택">
+            <button id="modeBuildingLandBtn" class="mode-tab active" type="button">토지,건축물 조회기</button>
+            <button id="modeLandOnlyBtn" class="mode-tab land-mode-btn" type="button">토지 조회기</button>
           </div>
         </div>
 
@@ -939,6 +1100,7 @@
                   <path d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 <div id="addressDisplay" class="address-display placeholder">주소를 검색하세요</div>
+                <input id="landAddressInput" class="land-address-input" type="text" autocomplete="off" placeholder="지번주소를 입력하세요">
               </div>
               <button id="refreshAddressBtn" class="refresh-address-btn" type="button" aria-label="새로고침">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
@@ -964,11 +1126,14 @@
       <div id="mapLinkSection" class="map-link-section">
         <div class="map-link-head">
           <div>
-            <h2 class="map-link-title">네이버 지도 보기</h2>
-            <div id="mapLinkCaption" class="map-link-sub">선택한 주소를 네이버 지도 검색 결과로 새창에서 엽니다.</div>
+            <h2 class="map-link-title">지도 보기</h2>
+            <div id="mapLinkCaption" class="map-link-sub">선택한 주소를 지도 서비스로 새창에서 엽니다.</div>
           </div>
         </div>
-        <button id="naverMapBtn" class="map-link-btn" type="button">네이버 지도에서 열기</button>
+        <div class="map-link-actions">
+          <button id="naverMapBtn" class="map-link-btn" type="button">네이버 지도에서 열기</button>
+          <button id="ddangyaMapBtn" class="map-link-btn" type="button">땅야로 보기</button>
+        </div>
       </div>
 
       <div id="overviewSection" class="section">
@@ -1025,12 +1190,20 @@
 
   <script>
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
+    var VWORLD_API_KEY = 'CBDA8338-FEF2-34AE-9B04-D31B3597153F';
+    var LOOKUP_MODE_BUILDING_LAND = 'buildingLand';
+    var LOOKUP_MODE_LAND_ONLY = 'landOnly';
+    var currentLookupMode = LOOKUP_MODE_BUILDING_LAND;
     var picked = null;
+    var landPicked = null;
     var addressLocked = false;
 
     var els = {
+      modeBuildingLandBtn: document.getElementById('modeBuildingLandBtn'),
+      modeLandOnlyBtn: document.getElementById('modeLandOnlyBtn'),
       addressSearchTrigger: document.getElementById('addressSearchTrigger'),
       addressDisplay: document.getElementById('addressDisplay'),
+      landAddressInput: document.getElementById('landAddressInput'),
       refreshAddressBtn: document.getElementById('refreshAddressBtn'),
       lookupBtn: document.getElementById('lookupBtn'),
       pickedLine: document.getElementById('pickedLine'),
@@ -1044,6 +1217,7 @@
       mapLinkSection: document.getElementById('mapLinkSection'),
       mapLinkCaption: document.getElementById('mapLinkCaption'),
       naverMapBtn: document.getElementById('naverMapBtn'),
+      ddangyaMapBtn: document.getElementById('ddangyaMapBtn'),
       overviewSection: document.getElementById('overviewSection'),
       overviewGrid: document.getElementById('overviewGrid'),
       captureStage: document.getElementById('captureStage'),
@@ -1218,6 +1392,14 @@
 
 
     function getMapQuery(){
+      if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
+        return firstNonEmpty(
+          landPicked && landPicked.address,
+          landPicked && landPicked.query,
+          els.landAddressInput && els.landAddressInput.value
+        );
+      }
+
       if(!picked) return '';
       return firstNonEmpty(
         picked.jibunAddress,
@@ -1228,23 +1410,40 @@
       );
     }
 
+    function getCurrentPnu(){
+      return firstNonEmpty(
+        landPicked && landPicked.pnu,
+        window.lastResultData && window.lastResultData.pnu,
+        window.lastResultData && window.lastResultData.land && window.lastResultData.land.pnu
+      ).replace(/\D/g, '');
+    }
+
     function getNaverMapUrl(){
       var q = getMapQuery();
       if(!q) return '';
       return 'https://map.naver.com/p/search/' + encodeURIComponent(q);
     }
 
+    function getDdangyaMapUrl(){
+      var pnu = getCurrentPnu();
+      if(!pnu || pnu.length !== 19) return '';
+      return 'https://ddangya.com/land/detail/' + encodeURIComponent(pnu);
+    }
+
     function renderMapLink(){
       var q = getMapQuery();
-      if(!q){
+      var ddangyaUrl = getDdangyaMapUrl();
+      if(!q && !ddangyaUrl){
         els.mapLinkSection.style.display = 'none';
         els.naverMapBtn.disabled = true;
-        els.mapLinkCaption.textContent = '선택한 주소를 네이버 지도 검색 결과로 새창에서 엽니다.';
+        if(els.ddangyaMapBtn) els.ddangyaMapBtn.disabled = true;
+        els.mapLinkCaption.textContent = '선택한 주소를 지도 서비스로 새창에서 엽니다.';
         return;
       }
       els.mapLinkSection.style.display = 'block';
-      els.naverMapBtn.disabled = false;
-      els.mapLinkCaption.textContent = q;
+      els.naverMapBtn.disabled = !q;
+      if(els.ddangyaMapBtn) els.ddangyaMapBtn.disabled = !ddangyaUrl;
+      els.mapLinkCaption.textContent = q || ('PNU ' + getCurrentPnu());
     }
 
     function openNaverMap(){
@@ -1253,7 +1452,23 @@
       window.open(url, '_blank', 'noopener');
     }
 
+    function openDdangyaMap(){
+      var url = getDdangyaMapUrl();
+      if(!url) return;
+      window.open(url, '_blank', 'noopener');
+    }
+
     function renderAddressDisplay(){
+      if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
+        if(els.landAddressInput){
+          els.landAddressInput.placeholder = '지번주소를 입력하세요';
+        }
+        els.addressDisplay.textContent = '';
+        els.addressDisplay.classList.remove('placeholder');
+        els.addressSearchTrigger.classList.remove('locked');
+        return;
+      }
+
       els.addressDisplay.textContent = '주소를 검색하세요';
       els.addressDisplay.classList.add('placeholder');
 
@@ -1266,7 +1481,9 @@
 
     function resetAddressOnly(){
       picked = null;
+      landPicked = null;
       addressLocked = false;
+      if(els.landAddressInput) els.landAddressInput.value = '';
       renderAddressDisplay();
       els.pickedLine.textContent = '';
       setStatus('', '');
@@ -1325,6 +1542,110 @@
       });
     }
 
+
+    function setLookupMode(mode){
+      currentLookupMode = mode === LOOKUP_MODE_LAND_ONLY ? LOOKUP_MODE_LAND_ONLY : LOOKUP_MODE_BUILDING_LAND;
+
+      document.body.classList.toggle('mode-land-only', currentLookupMode === LOOKUP_MODE_LAND_ONLY);
+      document.body.classList.toggle('mode-building-land', currentLookupMode !== LOOKUP_MODE_LAND_ONLY);
+
+      if(els.modeBuildingLandBtn){
+        els.modeBuildingLandBtn.classList.toggle('active', currentLookupMode === LOOKUP_MODE_BUILDING_LAND);
+      }
+      if(els.modeLandOnlyBtn){
+        els.modeLandOnlyBtn.classList.toggle('active', currentLookupMode === LOOKUP_MODE_LAND_ONLY);
+      }
+
+      resetAddressOnly();
+
+      if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
+        els.emptyState.textContent = '지번주소를 입력한 뒤 조회하세요.';
+        if(els.landAddressInput) els.landAddressInput.focus();
+      }else{
+        els.emptyState.textContent = '주소를 눌러 검색한 뒤 조회하세요.';
+      }
+    }
+
+    function vworldJsonpCall(url, params){
+      return new Promise(function(resolve, reject){
+        var cb = 'vw_cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+        var script = document.createElement('script');
+        var done = false;
+        var timer = null;
+
+        function cleanup(){
+          try{ delete window[cb]; }catch(e){}
+          if(timer) clearTimeout(timer);
+          if(script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[cb] = function(payload){
+          if(done) return;
+          done = true;
+          cleanup();
+          resolve(payload || {});
+        };
+
+        script.onerror = function(){
+          if(done) return;
+          done = true;
+          cleanup();
+          reject(new Error('VWorld 검색 요청 실패'));
+        };
+
+        var q = new URLSearchParams();
+        Object.keys(params || {}).forEach(function(k){
+          q.set(k, params[k] == null ? '' : String(params[k]));
+        });
+        q.set('callback', cb);
+        q.set('_ts', Date.now());
+
+        script.src = url + '?' + q.toString();
+        document.body.appendChild(script);
+
+        timer = setTimeout(function(){
+          if(done) return;
+          done = true;
+          cleanup();
+          reject(new Error('VWorld 검색 타임아웃'));
+        }, 15000);
+      });
+    }
+
+    async function searchVworldParcelPnu(query){
+      query = String(query || '').trim();
+      if(!query) throw new Error('지번주소를 입력하세요.');
+
+      var data = await vworldJsonpCall('https://api.vworld.kr/req/search', {
+        service: 'search',
+        request: 'search',
+        version: '2.0',
+        size: '1',
+        page: '1',
+        type: 'address',
+        category: 'parcel',
+        format: 'json',
+        key: VWORLD_API_KEY,
+        query: query
+      });
+
+      var item = data && data.response && data.response.result && data.response.result.items && data.response.result.items[0];
+      if(!item || !item.id){
+        throw new Error('토지 검색 결과가 없습니다.');
+      }
+
+      return {
+        pnu: String(item.id || '').replace(/\D/g, ''),
+        address: firstNonEmpty(
+          item.address && item.address.parcel,
+          item.address && item.address.road,
+          item.title,
+          query
+        ),
+        query: query,
+        point: item.point || {}
+      };
+    }
 
     async function proxyLookupCall(params){
       var q = new URLSearchParams();
@@ -2114,7 +2435,9 @@
       }
     }
 
-    function buildOverviewCards(data){
+    function buildOverviewCards(data, mode){
+      mode = mode || currentLookupMode;
+      var isLandOnly = mode === LOOKUP_MODE_LAND_ONLY;
       var extracted = extractIntegratedData(data);
       var html = '<div class="result-stack">';
 
@@ -2124,8 +2447,8 @@
           + buildResultTable(extracted.landInfoRows)
           + '<div class="table-download-wrap">'
           + '<div class="table-action-row">'
-          + '<button class="table-download-btn" data-kind="land" data-title="토지대장 토지정보">⬇️ 이미지 내려받기</button>'
-          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지대장 토지정보">📋 텍스트 복사</button>'
+          + '<button class="table-download-btn" data-kind="land" data-title="토지대장 토지정보">이미지 내려받기</button>'
+          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지대장 토지정보">텍스트 복사</button>'
           + '</div>'
           + '<div class="table-download-note">공시지가 총액은 공시지가 × 면적으로 계산한 참고 금액입니다.</div>'
           + '</div>'
@@ -2138,8 +2461,8 @@
           + buildResultTable(extracted.landUsePlanRows)
           + '<div class="table-download-wrap">'
           + '<div class="table-action-row">'
-          + '<button class="table-download-btn" data-kind="land" data-title="토지대장 토지정보">⬇️ 이미지 내려받기</button>'
-          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지대장 토지정보">📋 텍스트 복사</button>'
+          + '<button class="table-download-btn" data-kind="land" data-title="토지대장 토지정보">이미지 내려받기</button>'
+          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지대장 토지정보">텍스트 복사</button>'
           + '</div>'
           + '<div class="table-download-note">저촉/포함은 왼쪽 용도지역·지구와 같은 줄 기준입니다.</div>'
           + '</div>'
@@ -2153,40 +2476,42 @@
           + '</div>';
       }
 
-      html += '<div class="result-block">'
-        + '<div class="result-block-head">건축물대장 통합요약 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">총괄표제부값</span></div>'
-        + buildResultTable(extracted.summaryRows)
-        + '<div class="table-download-wrap">'
-        + '<div class="table-action-row">'
-        + '<button class="table-download-btn" data-kind="summary" data-title="건축물대장 통합요약">⬇️ 이미지 내려받기</button>'
-        + '<button class="table-copy-btn" data-copy-kind="summary" data-title="건축물대장 통합요약">📋 텍스트 복사</button>'
-        + '</div>'
-        + '<div class="table-download-note">주소가 있으면 뒤 숫자는 보이지 않게 저장됩니다.</div>'
-        + '</div>'
-        + '</div>';
-
-      extracted.buildings.forEach(function(b){
+      if(!isLandOnly){
         html += '<div class="result-block">'
-          + '<div class="result-block-head">' + escapeHtml(b.title) + '</div>'
-          + buildResultTable(b.rows)
+          + '<div class="result-block-head">건축물대장 통합요약 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">총괄표제부값</span></div>'
+          + buildResultTable(extracted.summaryRows)
           + '<div class="table-download-wrap">'
           + '<div class="table-action-row">'
-          + '<button class="table-download-btn" data-kind="building" data-title="' + escapeHtml(b.title) + '">⬇️ 이미지 내려받기</button>'
-          + '<button class="table-copy-btn" data-copy-kind="building" data-title="' + escapeHtml(b.title) + '">📋 텍스트 복사</button>'
+          + '<button class="table-download-btn" data-kind="summary" data-title="건축물대장 통합요약">이미지 내려받기</button>'
+          + '<button class="table-copy-btn" data-copy-kind="summary" data-title="건축물대장 통합요약">텍스트 복사</button>'
           + '</div>'
           + '<div class="table-download-note">주소가 있으면 뒤 숫자는 보이지 않게 저장됩니다.</div>'
           + '</div>'
           + '</div>';
-      });
 
-      html += '<div class="result-block">'
-        + '<div class="result-block-head">공시지가 주택 가격 조회</div>'
-        + '<div class="table-download-wrap">'
-        + '<div class="table-action-row">'
-        + '<button class="table-download-btn" data-kind="price-link" data-title="공시지가 주택 가격 조회">조회하기</button>'
-        + '</div>'
-        + '</div>'
-        + '</div>';
+        extracted.buildings.forEach(function(b){
+          html += '<div class="result-block">'
+            + '<div class="result-block-head">' + escapeHtml(b.title) + '</div>'
+            + buildResultTable(b.rows)
+            + '<div class="table-download-wrap">'
+            + '<div class="table-action-row">'
+            + '<button class="table-download-btn" data-kind="building" data-title="' + escapeHtml(b.title) + '">이미지 내려받기</button>'
+            + '<button class="table-copy-btn" data-copy-kind="building" data-title="' + escapeHtml(b.title) + '">텍스트 복사</button>'
+            + '</div>'
+            + '<div class="table-download-note">주소가 있으면 뒤 숫자는 보이지 않게 저장됩니다.</div>'
+            + '</div>'
+            + '</div>';
+        });
+
+        html += '<div class="result-block">'
+          + '<div class="result-block-head">공시지가 주택 가격 조회</div>'
+          + '<div class="table-download-wrap">'
+          + '<div class="table-action-row">'
+          + '<button class="table-download-btn" data-kind="price-link" data-title="공시지가 주택 가격 조회">조회하기</button>'
+          + '</div>'
+          + '</div>'
+          + '</div>';
+      }
 
       html += '</div>';
       els.overviewGrid.innerHTML = html;
@@ -2246,18 +2571,74 @@
       return '';
     }
 
-    function renderResult(data){
+    function renderResult(data, mode){
+      mode = mode || currentLookupMode;
       window.lastResultData = data;
       els.emptyState.style.display = 'none';
       els.summaryGrid.style.display = 'none';
       renderMapLink();
       els.overviewSection.style.display = 'block';
       els.sourcesSection.style.display = 'none';
-      buildOverviewCards(data);
+      buildOverviewCards(data, mode);
+    }
+
+    async function lookupLandOnly(){
+      try{
+        var query = els.landAddressInput ? String(els.landAddressInput.value || '').trim() : '';
+        if(!query){
+          setStatus('지번주소를 입력하세요.', 'err');
+          if(els.landAddressInput) els.landAddressInput.focus();
+          return;
+        }
+
+        setLoading(true);
+        hideLookupFailPanel();
+        setStatus('', '');
+
+        var found = await searchVworldParcelPnu(query);
+        if(!found.pnu || found.pnu.length !== 19){
+          throw new Error('PNU를 확인하지 못했습니다.');
+        }
+
+        landPicked = found;
+        els.pickedLine.textContent = joinValues([
+          found.address ? ('지번: ' + found.address) : '',
+          found.pnu ? ('PNU: ' + found.pnu) : ''
+        ], '\n');
+
+        var res = await jsonpCall({
+          action: 'fetchLandInfoBySearchResult',
+          pnu: found.pnu,
+          queryAddress: found.query,
+          lookupAddress: found.address || found.query,
+          address: found.address || found.query
+        });
+
+        if(!(res && res.ok)){
+          throw new Error((res && res.message) || '토지정보 조회 실패');
+        }
+
+        renderResult({
+          ok: true,
+          message: res.message || '토지정보 조회 성공',
+          address: found.address || found.query,
+          pnu: found.pnu,
+          land: res
+        }, LOOKUP_MODE_LAND_ONLY);
+      }catch(e){
+        setStatus('토지 조회 실패 · ' + (e && e.message ? e.message : String(e)), 'err');
+      }finally{
+        setLoading(false);
+      }
     }
 
     async function lookup(){
       try{
+        if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
+          await lookupLandOnly();
+          return;
+        }
+
         if(!picked){
           openAddressSearch('');
           return;
@@ -2272,7 +2653,7 @@
         params.queryAddressType = (picked.jibunAddress || picked.autoJibunAddress) ? 'JIBUN' : 'ROAD';
 
         var res = await lookupPublicProperty(params);
-        renderResult(res);
+        renderResult(res, LOOKUP_MODE_BUILDING_LAND);
       }catch(e){
         setStatus('조회 실패 · 1차 직접 조회와 2차 프록시 조회가 모두 실패했습니다.', 'err');
         showLookupFailPanel(e);
@@ -2281,7 +2662,32 @@
       }
     }
 
+    if(els.modeBuildingLandBtn){
+      els.modeBuildingLandBtn.addEventListener('click', function(){
+        setLookupMode(LOOKUP_MODE_BUILDING_LAND);
+      });
+    }
+
+    if(els.modeLandOnlyBtn){
+      els.modeLandOnlyBtn.addEventListener('click', function(){
+        setLookupMode(LOOKUP_MODE_LAND_ONLY);
+      });
+    }
+
+    if(els.landAddressInput){
+      els.landAddressInput.addEventListener('keydown', function(e){
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          lookup();
+        }
+      });
+    }
+
     els.addressSearchTrigger.addEventListener('click', function(){
+      if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
+        if(els.landAddressInput) els.landAddressInput.focus();
+        return;
+      }
       if(addressLocked) return;
       openAddressSearch('');
     });
@@ -2299,6 +2705,12 @@
       openNaverMap();
     });
 
+    if(els.ddangyaMapBtn){
+      els.ddangyaMapBtn.addEventListener('click', function(){
+        openDdangyaMap();
+      });
+    }
+
 
     if(els.lookupFailRetryBtn){
       els.lookupFailRetryBtn.addEventListener('click', function(){
@@ -2315,7 +2727,11 @@
       els.lookupFailResetBtn.addEventListener('click', function(){
         hideLookupFailPanel();
         resetAddressOnly();
-        openAddressSearch('');
+        if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
+          if(els.landAddressInput) els.landAddressInput.focus();
+        }else{
+          openAddressSearch('');
+        }
       });
     }
     if(els.lookupFailPanel){
@@ -2323,6 +2739,8 @@
         if(e.target === els.lookupFailPanel) hideLookupFailPanel();
       });
     }
+
+    setLookupMode(LOOKUP_MODE_BUILDING_LAND);
 
 
     renderAddressDisplay();

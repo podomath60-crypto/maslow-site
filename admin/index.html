@@ -3346,6 +3346,7 @@
 
         if(isLand){
           [
+            '* 소재지',
             '* 사용승인일',
             '건축면적',
             '* 연면적',
@@ -3914,6 +3915,28 @@
         return String(Math.round(n * p) / p);
       }
 
+      function formatWonText_(value){
+        var n = Math.round(Number(value || 0));
+        if(!isFinite(n) || !n) return '';
+        return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '원';
+      }
+
+      function calculateOfficialLandPriceTotal_(areaM2, officialLandPrice){
+        var area = parseLandNumber_(areaM2);
+        var price = parseLandNumber_(officialLandPrice);
+        if(!area || !price) return '';
+        return formatWonText_(area * price);
+      }
+
+      function updateOfficialLandPriceTotalForParcel_(parcel){
+        if(!parcel) return '';
+        var total = calculateOfficialLandPriceTotal_(parcel.areaM2, parcel.officialLandPrice);
+        if(total){
+          parcel.officialLandPriceTotal = total;
+        }
+        return parcel.officialLandPriceTotal || '';
+      }
+
       function getLandSummary_(){
         var active = (Array.isArray(landParcels) ? landParcels : []).filter(function(parcel){
           return parcel && String(parcel.parcelStatus || 'active') !== 'deleted';
@@ -3966,7 +3989,6 @@
         var summary = getLandSummary_();
         if(summary.representativeAddress && addressField){
           addressField.textContent = summary.representativeAddress;
-          seedSelectedAddressSearchDataFromLoadedAddress_(summary.representativeAddress);
         }
         if(summary.totalAreaM2 || summary.totalAreaPy){
           setMeasureField_('landArea', summary.totalAreaM2 || '', summary.totalAreaPy || '');
@@ -4035,8 +4057,6 @@
           var grid = document.createElement('div');
           grid.className = 'land-parcel-grid';
           grid.innerHTML = buildLandParcelFieldHtml_('소재지', 'address', parcel.address, 'full', '지번주소 입력 후 조회') +
-            buildLandParcelFieldHtml_('공개주소', 'displayAddress', parcel.displayAddress, '', '외부 노출용') +
-            buildLandParcelFieldHtml_('PNU', 'pnu', parcel.pnu, '', '조회 후 자동') +
             buildLandParcelFieldHtml_('지번', 'jibun', parcel.jibun, '', '') +
             buildLandParcelFieldHtml_('면적㎡', 'areaM2', parcel.areaM2, '', '') +
             buildLandParcelFieldHtml_('면적평', 'areaPy', parcel.areaPy, '', '') +
@@ -4090,6 +4110,9 @@
         var key = el.getAttribute('data-land-key');
         if(idx < 0 || !key || !landParcels[idx]) return;
         landParcels[idx][key] = el.value || '';
+        if(key === 'address'){
+          landParcels[idx].displayAddress = formatDisplayAddressForTitle_(landParcels[idx].address);
+        }
         if(key === 'areaM2' && !landParcels[idx].areaPy){
           var py = pyeongFromM2_(landParcels[idx].areaM2);
           landParcels[idx].areaPy = py;
@@ -4101,6 +4124,11 @@
           landParcels[idx].areaM2 = m2;
           var m2Input = card.querySelector('[data-land-key="areaM2"]');
           if(m2Input) m2Input.value = m2;
+        }
+        if(key === 'areaM2' || key === 'officialLandPrice'){
+          var total = updateOfficialLandPriceTotalForParcel_(landParcels[idx]);
+          var totalInput = card.querySelector('[data-land-key="officialLandPriceTotal"]');
+          if(totalInput) totalInput.value = total;
         }
         syncLandSummaryToSharedFields_();
         renderLandParcelSummary_();
@@ -4119,6 +4147,8 @@
           );
         }).map(function(parcel, idx){
           var out = normalizeLandParcel_(parcel, idx);
+          out.displayAddress = out.displayAddress || formatDisplayAddressForTitle_(out.address);
+          updateOfficialLandPriceTotalForParcel_(out);
           out.listingNumber = currentListingNumber;
           out.parcelOrder = idx + 1;
           if(!out.parcelId && currentListingNumber){
@@ -4173,7 +4203,7 @@
         var usePlanTexts = buildLandUsePlanTexts_(usePlan);
         parcel.pnu = found.pnu || parcel.pnu || '';
         parcel.address = found.parcelAddress || found.address || found.query || parcel.address || '';
-        parcel.displayAddress = parcel.displayAddress || parcel.address;
+        parcel.displayAddress = formatDisplayAddressForTitle_(parcel.address);
         parcel.jibun = parcel.jibun || extractJibunFromAddress_(parcel.address);
         parcel.areaM2 = numberText_(firstNonEmpty_(characteristic.areaM2, parcel.areaM2));
         parcel.areaPy = numberText_(firstNonEmpty_(characteristic.areaPy, parcel.areaPy, pyeongFromM2_(characteristic.areaM2)));
@@ -4186,7 +4216,7 @@
         parcel.terrainHeight = firstNonEmpty_(characteristic.terrainHeight, parcel.terrainHeight);
         parcel.terrainShape = firstNonEmpty_(characteristic.terrainShape, parcel.terrainShape);
         parcel.officialLandPrice = firstNonEmpty_(characteristic.officialLandPriceText, characteristic.officialLandPrice, parcel.officialLandPrice);
-        parcel.officialLandPriceTotal = firstNonEmpty_(characteristic.officialLandTotalPriceText, characteristic.officialLandTotalPriceShortText, parcel.officialLandPriceTotal);
+        parcel.officialLandPriceTotal = calculateOfficialLandPriceTotal_(parcel.areaM2, parcel.officialLandPrice) || firstNonEmpty_(characteristic.officialLandTotalPriceText, characteristic.officialLandTotalPriceShortText, parcel.officialLandPriceTotal);
         parcel.officialLandPriceAnnouncementDate = firstNonEmpty_(formatLandDateText_(characteristic.officialLandPriceAnnouncementDate), parcel.officialLandPriceAnnouncementDate);
         parcel.landCharacteristicBaseDate = firstNonEmpty_(formatLandDateText_(characteristic.dataDate), parcel.landCharacteristicBaseDate);
         parcel.usePlanSummary = firstNonEmpty_(usePlanTexts.summary, parcel.usePlanSummary);
@@ -5106,6 +5136,10 @@
 
       function updateTopFields(){
         var address = plainText(addressField);
+        if(getListingCategoryPrefix_() === 'DK'){
+          var landSummary = getLandSummary_();
+          address = (landSummary && landSummary.representativeAddress) || address;
+        }
         var price = getPricePayloadText_();
         updateMirror(topAddress, formatDisplayAddressForTitle_(address));
         formatDealPrice(selectedDealType, price);

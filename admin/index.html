@@ -3231,8 +3231,17 @@
         };
       }
 
+      function syncRentPriceStateFromInputs_(){
+        if(!priceField || selectedDealType !== '임대') return;
+        var depositInput = priceField.querySelector('[data-rent-role="deposit"]');
+        var monthlyInput = priceField.querySelector('[data-rent-role="monthly"]');
+        if(depositInput) rentPriceState.deposit = depositInput.value || '';
+        if(monthlyInput) rentPriceState.monthly = monthlyInput.value || '';
+      }
+
       function getPricePayloadText_(){
         if(selectedDealType === '임대'){
+          syncRentPriceStateFromInputs_();
           var deposit = String((rentPriceState && rentPriceState.deposit) || '').trim();
           var monthly = String((rentPriceState && rentPriceState.monthly) || '').trim();
           var out = [];
@@ -3276,12 +3285,37 @@
         return result;
       }
 
+      function bindRentPriceInput_(input){
+        if(!input || input.__rentPriceBound) return;
+        input.__rentPriceBound = true;
+        input.addEventListener('input', function(){
+          rentPriceState[input.getAttribute('data-rent-role')] = input.value || '';
+          updateTopFields();
+          queueSave();
+        });
+        input.addEventListener('blur', function(){
+          rentPriceState[input.getAttribute('data-rent-role')] = input.value || '';
+          updateTopFields();
+          queueSave();
+        });
+      }
+
       function renderPriceFieldForDealType_(){
         if(!priceField) return;
         if(selectedDealType === '임대'){
           priceField.classList.remove('editable');
           priceField.removeAttribute('contenteditable');
           priceField.removeAttribute('data-placeholder');
+
+          if(priceField.querySelector('.rent-price-editor')){
+            syncRentPriceStateFromInputs_();
+            var existingDepositInput = priceField.querySelector('[data-rent-role="deposit"]');
+            var existingMonthlyInput = priceField.querySelector('[data-rent-role="monthly"]');
+            bindRentPriceInput_(existingDepositInput);
+            bindRentPriceInput_(existingMonthlyInput);
+            return;
+          }
+
           priceField.innerHTML = '' +
             '<div class="rent-price-editor">' +
               '<div class="rent-price-row">' +
@@ -3300,23 +3334,14 @@
           var monthlyInput = priceField.querySelector('[data-rent-role="monthly"]');
           if(depositInput) depositInput.value = rentPriceState.deposit || '';
           if(monthlyInput) monthlyInput.value = rentPriceState.monthly || '';
-
-          [depositInput, monthlyInput].forEach(function(input){
-            if(!input) return;
-            input.addEventListener('input', function(){
-              rentPriceState[input.getAttribute('data-rent-role')] = input.value || '';
-              updateTopFields();
-              queueSave();
-            });
-            input.addEventListener('blur', function(){
-              rentPriceState[input.getAttribute('data-rent-role')] = input.value || '';
-              updateTopFields();
-              queueSave();
-            });
-          });
+          bindRentPriceInput_(depositInput);
+          bindRentPriceInput_(monthlyInput);
           return;
         }
 
+        if(selectedDealType !== '임대'){
+          syncRentPriceStateFromInputs_();
+        }
         priceField.classList.add('editable');
         priceField.setAttribute('contenteditable', 'true');
         priceField.setAttribute('data-placeholder', '입력');
@@ -4163,8 +4188,11 @@
 
       function setDealType(type){
         var prevType = selectedDealType || '';
+        if(prevType === '임대'){
+          syncRentPriceStateFromInputs_();
+        }
         selectedDealType = type || '';
-        if(prevType === '임대' && selectedDealType === '매매'){
+        if(prevType === '임대' && selectedDealType && selectedDealType !== '임대'){
           clearRentPriceState_();
           if(priceField) priceField.innerHTML = '';
         }
@@ -6740,6 +6768,7 @@
       }
 
       function getDraftPayload(){
+        syncRentPriceStateFromInputs_();
         return {
           selectedDealType: selectedDealType,
           listingStatus: listingStatus,

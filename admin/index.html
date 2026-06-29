@@ -2649,6 +2649,9 @@
       var ledgerUploadBusyUntil = 0;
       var ledgerUploadIndicatorTimer = null;
       var rentPriceState = { deposit: '', monthly: '' };
+      var loadedServerRentPriceText_ = '';
+      var isApplyingLoadedProperty_ = false;
+      var rentPriceTouchedAfterLoad_ = false;
       var selectedAddressSearchData = null;
       var adminBjdongCodesPromise = null;
       var CREATOR_CACHE_KEY = 'MK_CREATOR_INITIAL_V1';
@@ -3236,8 +3239,11 @@
           var deposit = String((rentPriceState && rentPriceState.deposit) || '').trim();
           var monthly = String((rentPriceState && rentPriceState.monthly) || '').trim();
           var out = [];
-          if(deposit) out.push('보증금 ' + deposit + '원');
-          if(monthly) out.push('월세 ' + monthly + '원');
+          if(deposit) out.push('보증금 ' + formatRentAmountWithWon_(deposit));
+          if(monthly) out.push('월세 ' + formatRentAmountWithWon_(monthly));
+          if(!out.length && !rentPriceTouchedAfterLoad_ && loadedServerRentPriceText_){
+            return loadedServerRentPriceText_;
+          }
           return out.join(' / ');
         }
         return plainText(priceField);
@@ -3245,29 +3251,33 @@
 
       function clearRentPriceState_(){
         rentPriceState = { deposit: '', monthly: '' };
+        loadedServerRentPriceText_ = '';
+        rentPriceTouchedAfterLoad_ = false;
       }
 
-      function rentTextValue_(value){
-        if(value === null || value === undefined) return '';
-        if(typeof value === 'string' || typeof value === 'number') return String(value);
-        return plainText(value);
+      function stripRentWonSuffix_(value){
+        var text = plainText(value || '').trim();
+        if(!text) return '';
+        return text.replace(/\s*원+$/i, '').trim();
+      }
+
+      function formatRentAmountWithWon_(value){
+        var text = stripRentWonSuffix_(value);
+        return text ? (text + '원') : '';
       }
 
       function cleanRentAmountPart_(value){
-        var text = rentTextValue_(value).trim();
+        var text = plainText(value || '').trim();
         if(!text) return '';
         text = text.replace(/^(보증금|월세)\s*/i, '').trim();
-        text = text.replace(/([0-9,])\s*원$/i, '$1').trim();
+        text = stripRentWonSuffix_(text);
         return text;
       }
 
       function parseRentPriceText_(priceText){
         var result = { deposit: '', monthly: '' };
-        var rawText = rentTextValue_(priceText)
-          .replace(/<br\s*\/?\s*>/gi, ' / ')
-          .replace(/\r?\n+/g, ' / ')
-          .trim();
-        var parts = rawText.split('/').map(function(v){ return rentTextValue_(v).trim(); }).filter(Boolean);
+        var source = plainText(priceText || '').trim();
+        var parts = String(source || '').split('/').map(function(v){ return plainText(v).trim(); }).filter(Boolean);
 
         parts.forEach(function(part, idx){
           var cleaned = cleanRentAmountPart_(part);
@@ -3283,11 +3293,11 @@
           }
         });
 
-        if((!result.deposit || !result.monthly) && rawText){
-          var depositMatch = rawText.match(/보증금\s*([^\/\n]+?)(?=\s*(?:월세|\/|$))/i);
-          var monthlyMatch = rawText.match(/월세\s*([^\/\n]+)/i);
-          if(!result.deposit && depositMatch) result.deposit = cleanRentAmountPart_(depositMatch[1]);
-          if(!result.monthly && monthlyMatch) result.monthly = cleanRentAmountPart_(monthlyMatch[1]);
+        if(source && (!result.deposit || !result.monthly)){
+          var depositMatch = source.match(/보증금\s*([^\/\n\r]+?)(?:\s*원)?\s*(?=\/|월세|$)/i);
+          var monthlyMatch = source.match(/월세\s*([^\/\n\r]+?)(?:\s*원)?\s*(?=\/|보증금|$)/i);
+          if(depositMatch && !result.deposit) result.deposit = cleanRentAmountPart_(depositMatch[1]);
+          if(monthlyMatch && !result.monthly) result.monthly = cleanRentAmountPart_(monthlyMatch[1]);
         }
 
         return result;
@@ -3315,18 +3325,26 @@
 
           var depositInput = priceField.querySelector('[data-rent-role="deposit"]');
           var monthlyInput = priceField.querySelector('[data-rent-role="monthly"]');
-          if(depositInput) depositInput.value = rentPriceState.deposit || '';
-          if(monthlyInput) monthlyInput.value = rentPriceState.monthly || '';
+          if(depositInput) depositInput.value = stripRentWonSuffix_(rentPriceState.deposit || '');
+          if(monthlyInput) monthlyInput.value = stripRentWonSuffix_(rentPriceState.monthly || '');
 
           [depositInput, monthlyInput].forEach(function(input){
             if(!input) return;
             input.addEventListener('input', function(){
-              rentPriceState[input.getAttribute('data-rent-role')] = input.value || '';
+              rentPriceTouchedAfterLoad_ = true;
+              loadedServerRentPriceText_ = '';
+              var cleanValue = cleanRentAmountPart_(input.value || '');
+              if(input.value !== cleanValue) input.value = cleanValue;
+              rentPriceState[input.getAttribute('data-rent-role')] = cleanValue;
               updateTopFields();
               queueSave();
             });
             input.addEventListener('blur', function(){
-              rentPriceState[input.getAttribute('data-rent-role')] = input.value || '';
+              rentPriceTouchedAfterLoad_ = true;
+              loadedServerRentPriceText_ = '';
+              var cleanValue = cleanRentAmountPart_(input.value || '');
+              if(input.value !== cleanValue) input.value = cleanValue;
+              rentPriceState[input.getAttribute('data-rent-role')] = cleanValue;
               updateTopFields();
               queueSave();
             });
@@ -3468,6 +3486,7 @@
 
       function applyLoadedPropertyToEditor_(item){
         if(!item) return;
+        isApplyingLoadedProperty_ = true;
 
         listingNumber = String(item.listingNumber || '').trim();
         selectedListingPrefix = (String(listingNumber || '').trim().toUpperCase().match(/^(SK|MK|DK)-/) || [,''])[1];
@@ -3489,7 +3508,9 @@
         seedSelectedAddressSearchDataFromLoadedAddress_(item.address || '');
 
         if ((item.dealType || '').indexOf('임대') > -1) {
-          rentPriceState = parseRentPriceText_(item.price || '');
+          loadedServerRentPriceText_ = String(item.price || '').trim();
+          rentPriceTouchedAfterLoad_ = false;
+          rentPriceState = parseRentPriceText_(loadedServerRentPriceText_);
           setDealType(item.dealType || '임대');
         } else {
           clearRentPriceState_();
@@ -3542,6 +3563,7 @@
         updateTopFields();
         renderHero();
         renderLedgerStatus();
+        isApplyingLoadedProperty_ = false;
         toggleFactorySectionByListingNumber_();
         window.setTimeout(function(){
           toggleFactorySectionByListingNumber_();
@@ -3989,8 +4011,8 @@
           updateMirror(topPriceLabel, '임대가');
           if(topPriceValue){
             topPriceValue.innerHTML = '<span class="top-rent-lines">'
-              + '<span class="top-rent-line">보증금 ' + escapeHtml_(deposit || '') + '원</span>'
-              + '<span class="top-rent-line">월세 ' + escapeHtml_(monthly || '') + '원</span>'
+              + '<span class="top-rent-line">보증금 ' + escapeHtml_(formatRentAmountWithWon_(deposit)) + '</span>'
+              + '<span class="top-rent-line">월세 ' + escapeHtml_(formatRentAmountWithWon_(monthly)) + '</span>'
               + '</span>';
           }
           if(topPriceSub) topPriceSub.innerHTML = '';
@@ -4192,7 +4214,9 @@
         maintenanceFeeField.setAttribute('data-placeholder', '임대인 경우');
         renderPriceFieldForDealType_();
         updateTopFields();
-        queueSave();
+        if(!isApplyingLoadedProperty_){
+          queueSave();
+        }
       }
 
       dealTypeRow.querySelectorAll('.type-chip').forEach(function(btn){
@@ -6284,8 +6308,8 @@
       function normalizeRentAmountValue_(value){
         value = String(value || '').trim();
         if(!value) return '';
-        value = value.replace(/보증금|월세/gi, '');
-        value = value.replace(/원/gi, '');
+        value = value.replace(/보증금|월세/gi, '').trim();
+        value = stripRentWonSuffix_(value);
         return value.trim();
       }
 

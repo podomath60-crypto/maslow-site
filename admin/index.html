@@ -3453,6 +3453,8 @@
         if(!item) return;
 
         listingNumber = String(item.listingNumber || '').trim();
+        selectedListingPrefix = (String(listingNumber || '').trim().toUpperCase().match(/^(SK|MK|DK)-/) || [,''])[1];
+        if(listingNumberField) listingNumberField.textContent = listingNumber;
         listingStatus = String(item.status || 'hidden').trim();
 
         var titleEl = document.querySelector('.property-detail-title.editable');
@@ -3522,6 +3524,10 @@
         updateTopFields();
         renderHero();
         renderLedgerStatus();
+        toggleFactorySectionByListingNumber_();
+        window.setTimeout(function(){
+          toggleFactorySectionByListingNumber_();
+        }, 0);
       }
 
       function loadPropertyByListingNumber_(targetListingNumber){
@@ -5596,8 +5602,9 @@
           new daum.Postcode({
             oncomplete:function(data){
               selectedAddressSearchData = {
-                jibunAddress: data.jibunAddress || '',
-                roadAddress: data.roadAddress || '',
+                jibunAddress: data.jibunAddress || data.autoJibunAddress || '',
+                roadAddress: data.roadAddress || data.autoRoadAddress || '',
+                lookupAddress: (data.jibunAddress || data.autoJibunAddress || data.roadAddress || data.autoRoadAddress || ''),
                 bcode: data.bcode || '',
                 sido: data.sido || '',
                 sigungu: data.sigungu || '',
@@ -5610,7 +5617,7 @@
                 addressType: data.addressType || ''
               };
 
-              var chosenAddress = selectedAddressSearchData.jibunAddress || selectedAddressSearchData.roadAddress || '';
+              var chosenAddress = selectedAddressSearchData.jibunAddress || selectedAddressSearchData.roadAddress || selectedAddressSearchData.lookupAddress || '';
               if(addressField) addressField.textContent = chosenAddress;
               updateTopFields();
               queueSave();
@@ -5723,6 +5730,38 @@
         return String(value == null ? '' : value).replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
       }
 
+      function formatLandRoadSideText_(value){
+        var text = normalizeLookupText_(value);
+        if(!text) return '';
+
+        var map = {
+          '광대로한면': '25m이상',
+          '광대로': '25m이상',
+          '대로한면': '12m이상 25m미만',
+          '대로': '12m이상 25m미만',
+          '중로한면': '8m이상 12m미만',
+          '중로': '8m이상 12m미만',
+          '소로한면': '4m이상 8m미만',
+          '소로': '4m이상 8m미만',
+          '세로한면': '4m미만',
+          '세로': '4m미만',
+          '맹지': '도로접면 없음'
+        };
+
+        var desc = map[text] || '';
+        if(!desc){
+          Object.keys(map).some(function(key){
+            if(text.indexOf(key) !== -1){
+              desc = map[key];
+              return true;
+            }
+            return false;
+          });
+        }
+
+        return desc ? text + '(' + desc + ')' : text;
+      }
+
       function isRoadWidthLookupKey_(key){
         var text = normalizeLookupText_(key);
         if(!text) return false;
@@ -5742,19 +5781,25 @@
         var out = [];
         var seen = Object.create(null);
 
-        function push(value){
+        function push(value, shouldFormatRoadSide){
           var text = normalizeLookupText_(value);
+          if(shouldFormatRoadSide) text = formatLandRoadSideText_(text);
           if(!looksLikeRoadWidthValue_(text)) return;
           if(seen[text]) return;
           seen[text] = true;
           out.push(text);
         }
 
+        var characteristic = json && json.land && json.land.characteristic ? json.land.characteristic : null;
+        if(characteristic){
+          push(firstNonEmpty_(characteristic.roadSide, characteristic.roadside, characteristic.roadCondition, characteristic.roadWidth), true);
+        }
+
         function pickValueFromDescribedObject(obj){
           if(!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
           var descriptor = firstNonEmpty_(obj.label, obj.name, obj.title, obj.key, obj.fieldName, obj.columnName, obj.korName);
           if(!isRoadWidthLookupKey_(descriptor)) return;
-          [obj.value, obj.text, obj.content, obj.fieldValue, obj.val, obj.data].forEach(push);
+          [obj.value, obj.text, obj.content, obj.fieldValue, obj.val, obj.data].forEach(function(v){ push(v, /roadSide|roadside|도로접면/i.test(descriptor)); });
         }
 
         function walk(node){
@@ -5774,14 +5819,14 @@
               if(value && typeof value === 'object'){
                 walk(value);
               }else{
-                push(value);
+                push(value, /roadSide|roadside|도로접면/i.test(key));
               }
             }
             if(value && typeof value === 'object') walk(value);
           });
         }
 
-        walk((json && json.apis) || json);
+        walk(json);
         return out.join(' / ');
       }
 
@@ -5912,6 +5957,9 @@
           Object.keys(selectedAddressSearchData).forEach(function(k){
             params[k] = selectedAddressSearchData[k];
           });
+          params.lookupAddress = params.lookupAddress || params.jibunAddress || params.autoJibunAddress || params.roadAddress || params.autoRoadAddress || '';
+          params.queryAddress = params.lookupAddress;
+          params.queryAddressType = (params.jibunAddress || params.autoJibunAddress) ? 'JIBUN' : 'ROAD';
           return params;
         })())
           .then(function(res){

@@ -4528,6 +4528,2693 @@
         };
       }
 
+      function mapLandLookupResultToParcel_(parcel, found, res){
+        parcel = parcel || makeEmptyLandParcel_();
+        found = found || {};
+        var landRoot = (res && res.land) ? res.land : (res || {});
+        var characteristic = landRoot.characteristic || {};
+        var usePlan = landRoot.usePlan || {};
+        var usePlanTexts = buildLandUsePlanTexts_(usePlan);
+        parcel.pnu = found.pnu || parcel.pnu || '';
+        parcel.address = found.parcelAddress || found.address || found.query || parcel.address || '';
+        parcel.displayAddress = formatDisplayAddressForTitle_(parcel.address);
+        parcel.jibun = parcel.jibun || extractJibunFromAddress_(parcel.address);
+        parcel.areaM2 = numberText_(firstNonEmpty_(characteristic.areaM2, parcel.areaM2));
+        parcel.areaPy = numberText_(firstNonEmpty_(characteristic.areaPy, parcel.areaPy, pyeongFromM2_(characteristic.areaM2)));
+        parcel.landCategory = firstNonEmpty_(characteristic.landCategory, parcel.landCategory);
+        parcel.zoning1 = firstNonEmpty_(characteristic.zoning, parcel.zoning1);
+        parcel.zoning2 = firstNonEmpty_(characteristic.zoning2, parcel.zoning2);
+        parcel.baseYearMonth = firstNonEmpty_(formatLandBaseYearMonth_(characteristic.baseYear, characteristic.baseMonth), parcel.baseYearMonth);
+        parcel.landUseSituation = firstNonEmpty_(characteristic.landUseSituation, parcel.landUseSituation);
+        parcel.roadSide = firstNonEmpty_(formatLandRoadSideText_(characteristic.roadSide), parcel.roadSide);
+        parcel.terrainHeight = firstNonEmpty_(characteristic.terrainHeight, parcel.terrainHeight);
+        parcel.terrainShape = firstNonEmpty_(characteristic.terrainShape, parcel.terrainShape);
+        parcel.officialLandPrice = firstNonEmpty_(characteristic.officialLandPriceText, characteristic.officialLandPrice, parcel.officialLandPrice);
+        parcel.officialLandPriceTotal = calculateOfficialLandPriceTotal_(parcel.areaM2, parcel.officialLandPrice) || firstNonEmpty_(characteristic.officialLandTotalPriceText, characteristic.officialLandTotalPriceShortText, parcel.officialLandPriceTotal);
+        parcel.officialLandPriceAnnouncementDate = firstNonEmpty_(formatLandDateText_(characteristic.officialLandPriceAnnouncementDate), parcel.officialLandPriceAnnouncementDate);
+        parcel.landCharacteristicBaseDate = firstNonEmpty_(formatLandDateText_(characteristic.dataDate), parcel.landCharacteristicBaseDate);
+        parcel.usePlanSummary = '';
+        parcel.usePlanRawText = firstNonEmpty_(usePlanTexts.raw, parcel.usePlanRawText);
+        return parcel;
+      }
+
+      function extractJibunFromAddress_(address){
+        var text = String(address || '').trim();
+        var m = text.match(/((?:산\s*)?\d+(?:-\d+)?)\s*$/);
+        return m ? m[1].replace(/\s+/g, '') : '';
+      }
+
+      function vworldJsonpCall_(url, params){
+        return new Promise(function(resolve, reject){
+          var cb = 'vw_cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+          var script = document.createElement('script');
+          var done = false;
+          var timer = null;
+          function cleanup(){
+            try{ delete window[cb]; }catch(e){}
+            if(timer) clearTimeout(timer);
+            if(script.parentNode) script.parentNode.removeChild(script);
+          }
+          window[cb] = function(payload){
+            if(done) return;
+            done = true;
+            cleanup();
+            resolve(payload || {});
+          };
+          script.onerror = function(){
+            if(done) return;
+            done = true;
+            cleanup();
+            reject(new Error('VWorld 검색 요청 실패'));
+          };
+          var q = new URLSearchParams();
+          Object.keys(params || {}).forEach(function(k){ q.set(k, params[k] == null ? '' : String(params[k])); });
+          q.set('callback', cb);
+          q.set('_ts', Date.now());
+          script.src = url + '?' + q.toString();
+          document.body.appendChild(script);
+          timer = setTimeout(function(){
+            if(done) return;
+            done = true;
+            cleanup();
+            reject(new Error('VWorld 검색 타임아웃'));
+          }, 15000);
+        });
+      }
+
+      function searchVworldAddressItem_(query, category){
+        return vworldJsonpCall_('https://api.vworld.kr/req/search', {
+          service: 'search',
+          request: 'search',
+          version: '2.0',
+          size: '1',
+          page: '1',
+          type: 'address',
+          category: category,
+          format: 'json',
+          key: VWORLD_API_KEY,
+          query: query
+        }).then(function(data){
+          var items = data && data.response && data.response.result && data.response.result.items;
+          return items && items.length ? items[0] : null;
+        });
+      }
+
+      function searchVworldParcelPnu_(query){
+        query = String(query || '').trim();
+        if(!query) return Promise.reject(new Error('지번주소 또는 도로명주소를 입력하세요.'));
+        var item = null;
+        var searchType = 'parcel';
+        return searchVworldAddressItem_(query, 'parcel').then(function(parcelItem){
+          item = parcelItem;
+          if(item && String(item.id || '').replace(/\D/g, '')) return item;
+          searchType = 'road';
+          return searchVworldAddressItem_(query, 'road');
+        }).then(function(foundItem){
+          item = foundItem;
+          if(!item) throw new Error('토지 검색 결과가 없습니다.');
+          var pnu = String(item.id || '').replace(/\D/g, '');
+          var parcelAddress = firstNonEmpty_(item.address && item.address.parcel, '');
+          if(pnu.length === 19 || !parcelAddress) return item;
+          return searchVworldAddressItem_(parcelAddress, 'parcel').then(function(parcelItem){
+            if(parcelItem && String(parcelItem.id || '').replace(/\D/g, '').length === 19){
+              item = parcelItem;
+              searchType = 'road-to-parcel';
+            }
+            return item;
+          });
+        }).then(function(finalItem){
+          var pnu = String(finalItem.id || '').replace(/\D/g, '');
+          if(pnu.length !== 19){
+            throw new Error('필지 식별정보를 확인하지 못했습니다. 지번주소로 다시 입력해 주세요.');
+          }
+          return {
+            pnu: pnu,
+            address: firstNonEmpty_(finalItem.address && finalItem.address.parcel, finalItem.address && finalItem.address.road, finalItem.title, query),
+            roadAddress: firstNonEmpty_(finalItem.address && finalItem.address.road, ''),
+            parcelAddress: firstNonEmpty_(finalItem.address && finalItem.address.parcel, ''),
+            query: query,
+            searchType: searchType,
+            point: finalItem.point || {}
+          };
+        });
+      }
+
+      function setLandParcelLookupLoading_(card, isLoading){
+        if(!card) return;
+        var btn = card.querySelector('[data-land-action="lookup"]');
+        if(!btn) return;
+        btn.disabled = !!isLoading;
+        btn.classList.toggle('is-loading', !!isLoading);
+        btn.textContent = isLoading ? '조회중...' : '토지대장 조회';
+      }
+
+      function lookupLandParcelByIndex_(idx, card){
+        var parcel = landParcels[idx];
+        if(!parcel) return;
+        var address = String(parcel.address || '').trim();
+        if(!address){
+          showToast('필지 소재지를 입력하세요');
+          return;
+        }
+        setLandParcelLookupLoading_(card, true);
+        searchVworldParcelPnu_(address)
+          .then(function(found){
+            return jsonpCallPublicLookup_({
+              action: 'fetchLandInfoBySearchResult',
+              pnu: found.pnu,
+              queryAddress: found.query,
+              lookupAddress: found.address || found.query,
+              address: found.address || found.query
+            }).then(function(res){
+              if(!(res && res.ok)) throw new Error((res && (res.message || res.error)) || '토지정보 조회 실패');
+              landParcels[idx] = mapLandLookupResultToParcel_(landParcels[idx], found, res);
+              ensureSingleRepresentative_(landParcels);
+              renderLandParcels_();
+              syncLandSummaryToSharedFields_();
+              queueSave();
+              showToast('토지대장 조회값 반영');
+            });
+          })
+          .catch(function(err){
+            console.error(err);
+            showToast((err && err.message) || '토지대장 조회 실패');
+          })
+          .finally(function(){
+            setLandParcelLookupLoading_(card, false);
+          });
+      }
+
+      function fetchJsonFromGas_(payload){
+        return fetch(GAS_URL, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=UTF-8'
+          },
+          body: JSON.stringify(payload || {})
+        }).then(function(res){
+          if(!res.ok) throw new Error('조회 실패: ' + res.status);
+          return res.json();
+        });
+      }
+
+      function setEditableText_(el, value){
+        if(!el) return;
+        el.textContent = value || '';
+      }
+
+      function setMeasureField_(measureKey, m2, py){
+        var group = document.querySelector('.measure-field[data-measure="' + measureKey + '"]');
+        if(!group) return;
+        var m2El = group.querySelector('[data-unit="m2"]');
+        var pyEl = group.querySelector('[data-unit="pyeong"]');
+        if(m2El) m2El.value = m2 || '';
+        if(pyEl) pyEl.value = py || '';
+      }
+
+      function restoreLedgerList_(jsonText){
+        try{
+          var parsed = typeof jsonText === 'string' ? JSON.parse(jsonText || '[]') : jsonText;
+          ledgerList = Array.isArray(parsed) ? parsed : [];
+        }catch(e){
+          ledgerList = [];
+        }
+      }
+
+      function restorePhotoList_(jsonText){
+        try{
+          var parsed = typeof jsonText === 'string' ? JSON.parse(jsonText || '[]') : jsonText;
+          photoList = Array.isArray(parsed) ? parsed : [];
+        }catch(e){
+          photoList = [];
+        }
+        currentPhotoIndex = photoList.length ? 0 : 0;
+      }
+
+      function applyLoadedPropertyToEditor_(item){
+        if(!item) return;
+
+        listingNumber = String(item.listingNumber || '').trim();
+        selectedListingPrefix = (String(listingNumber || '').trim().toUpperCase().match(/^(SK|MK|DK)-/) || [,''])[1];
+        if(listingNumberField) listingNumberField.textContent = listingNumber;
+        listingStatus = String(item.status || 'hidden').trim();
+
+        var titleEl = document.querySelector('.property-detail-title.editable');
+        var noteEl = document.querySelector('.property-detail-note.editable');
+        var summaryEls = getSummaryEditableTargets_();
+
+        setEditableText_(titleEl, item.title || '');
+        setEditableText_(noteEl, '');
+
+        setEditableText_(summaryEls[0], item.summary1 || '');
+        setEditableText_(summaryEls[1], item.summary2 || '');
+        setEditableText_(summaryEls[2], item.summary3 || '');
+
+        setEditableText_(addressField, item.address || '');
+        seedSelectedAddressSearchDataFromLoadedAddress_(item.address || '');
+
+        if ((item.dealType || '').indexOf('임대') > -1) {
+          rentPriceState = parseRentPriceText_(item.price || '');
+          setDealType(item.dealType || '임대');
+        } else {
+          clearRentPriceState_();
+          setDealType(item.dealType || '');
+          priceField.textContent = item.price || '';
+        }
+
+        setEditableText_(findSpecValueByLabel_('* 사용승인일'), item.approvalDate || '');
+        setMeasureField_('landArea', item.landAreaM2 || '', item.landAreaPy || '');
+        setMeasureField_('buildingArea', item.buildingAreaM2 || '', item.buildingAreaPy || '');
+        setMeasureField_('totalFloorArea', item.totalFloorAreaM2 || '', item.totalFloorAreaPy || '');
+        setMeasureField_('exclusiveArea', item.exclusiveAreaM2 || '', item.exclusiveAreaPy || '');
+        setEditableText_(findSpecValueByLabel_('용도지역'), item.zoning || '');
+        setEditableText_(findSpecValueByLabel_('* 매물종류'), item.propertyType || '');
+        setEditableText_(findSpecValueByLabel_('건축물 구성'), item.buildingComposition || '');
+        setEditableText_(findSpecValueByLabel_('* 주차대수'), item.parkingCount || '');
+        setEditableText_(findSpecValueByLabel_('* 출입구 방향'), item.entranceDirection || '');
+        setEditableText_(findSpecValueByLabel_('* 입주가능일'), item.moveInDate || '');
+        setEditableText_(findSpecValueByLabel_('* 건물 층수'), item.floorInfo || '');
+        setEditableText_(findSpecValueByLabel_('* 화장실'), item.restroomInfo || '');
+        setEditableText_(maintenanceFeeField, item.maintenanceFee || '');
+
+        setEditableText_(findSpecValueByLabel_('층고'), item.ceilingHeight || '');
+        setEditableText_(findSpecValueByLabel_('크레인'), item.crane || '');
+        setEditableText_(findSpecValueByLabel_('호이스트'), item.hoist || '');
+        setEditableText_(findSpecValueByLabel_('전력'), item.powerCapacity || '');
+        setEditableText_(findSpecValueByLabel_('주요 설비'), item.mainFacilities || '');
+        setEditableText_(findSpecValueByLabel_('추천 업종'), item.recommendedUse || '');
+        setEditableText_(findSpecValueByLabel_('업종 제한'), item.restrictedUse || '');
+        setEditableText_(findSpecValueByLabel_('도로접면'), item.roadWidth || '');
+        setEditableText_(findSpecValueByLabel_('도어폭'), item.doorWidth || '');
+        setEditableText_(findSpecValueByLabel_('대형차 진입'), item.truckAccess || '');
+        setEditableText_(findSpecValueByLabel_('상하차 가능'), item.loadingAvailable || '');
+        setEditableText_(findSpecValueByLabel_('사무동 포함'), item.officeIncluded || '');
+        setEditableText_(findSpecValueByLabel_('야드 크기'), item.yardSize || '');
+        setEditableText_(findSpecValueByLabel_('즉시 가동'), item.readyToOperate || '');
+
+        setRequesterFieldValue_('의뢰인명', item.requesterName || '');
+        setRequesterFieldValue_('연락처', item.requesterPhone || '');
+        setRequesterFieldValue_('의뢰 구분', item.requesterType || '');
+        setRequesterFieldValue_('비고', item.requesterNote || '');
+
+        var memoEl = document.querySelector('.memo-body');
+        if (memoEl) memoEl.textContent = item.memo || '';
+
+        restorePhotoList_(item.photoUrlsJson || '[]');
+        restoreLedgerList_(item.ledgerFilesJson || '[]');
+
+        if(selectedListingPrefix === 'DK'){
+          landParcels = normalizeLoadedLandParcels_(item.landParcels || []);
+          if(!landParcels.length){
+            landParcels = normalizeLoadedLandParcels_([{
+              isRepresentative: 'Y',
+              address: item.address || '',
+              areaM2: item.landAreaM2 || '',
+              areaPy: item.landAreaPy || '',
+              landCategory: String(item.propertyType || '').replace(/^토지\s*\/\s*/, '').replace(/\s*외$/, ''),
+              zoning1: item.zoning || '',
+              roadSide: item.roadWidth || ''
+            }]);
+          }
+          renderLandParcels_();
+          syncLandSummaryToSharedFields_();
+        }else{
+          landParcels = [];
+          renderLandParcels_();
+        }
+
+        updateStatusButton();
+        updateTopFields();
+        renderHero();
+        renderLedgerStatus();
+        toggleFactorySectionByListingNumber_();
+        window.setTimeout(function(){
+          toggleFactorySectionByListingNumber_();
+        }, 0);
+
+        if(!normalizeLookupText_(item.roadWidth) && normalizeLookupText_(item.address)){
+          window.setTimeout(function(){
+            refreshRoadSideFromIntegratedLookupForAddress_(item.address, { silent: true });
+          }, 0);
+        }
+      }
+
+      function loadPropertyByListingNumber_(targetListingNumber){
+        if(!targetListingNumber) return Promise.resolve();
+
+        return fetchJsonFromGas_({
+          action: 'getPropertyEditorByListingNumber',
+          listingNumber: targetListingNumber
+        })
+        .then(function(data){
+          if(!data || data.ok === false || !data.item){
+            throw new Error((data && data.message) || '매물 조회 실패');
+          }
+          applyLoadedPropertyToEditor_(data.item);
+          return data.item;
+        });
+      }
+
+
+
+
+      function getSummaryEditableTargets_(){
+        return Array.prototype.slice.call(document.querySelectorAll('.summary-editable'));
+      }
+
+      function chooseSummaryHelperTarget_(){
+        if(summaryHelperLastTarget && document.body.contains(summaryHelperLastTarget)){
+          return summaryHelperLastTarget;
+        }
+        var items = getSummaryEditableTargets_();
+        for(var i=0;i<items.length;i++){
+          if(!plainText(items[i])) return items[i];
+        }
+        return items[0] || null;
+      }
+
+      function setSummaryHelperTarget_(el){
+        summaryHelperLastTarget = el || null;
+      }
+
+      function getSummaryHelperItemKey_(item){
+        return String(item.category || '') + '||' + String(item.content || '');
+      }
+
+      function isSummaryHelperItemSelected_(item){
+        var key = getSummaryHelperItemKey_(item);
+        return summaryHelperSelectedItems.some(function(v){
+          return getSummaryHelperItemKey_(v) === key;
+        });
+      }
+
+      function toggleSummaryHelperItem_(item, checked){
+        var key = getSummaryHelperItemKey_(item);
+        var idx = -1;
+        for(var i=0;i<summaryHelperSelectedItems.length;i++){
+          if(getSummaryHelperItemKey_(summaryHelperSelectedItems[i]) === key){
+            idx = i;
+            break;
+          }
+        }
+
+        if(checked){
+          if(idx === -1){
+            if(summaryHelperSelectedItems.length >= 3){
+              showToast('문구는 최대 3개까지 선택할 수 있어요.');
+              return false;
+            }
+            summaryHelperSelectedItems.push(item);
+          }
+        }else{
+          if(idx !== -1){
+            summaryHelperSelectedItems.splice(idx, 1);
+          }
+        }
+        renderSummaryHelperSelected_();
+        renderSummaryHelperList_(summaryHelperSearchInput ? summaryHelperSearchInput.value : '');
+        return true;
+      }
+
+      function renderSummaryHelperSelected_(){
+        if(!summaryHelperSelected) return;
+        summaryHelperSelected.innerHTML = '';
+
+        if(!summaryHelperSelectedItems.length){
+          var empty = document.createElement('div');
+          empty.className = 'summary-helper-selected-empty';
+          empty.textContent = '최대 3개까지 선택 가능';
+          summaryHelperSelected.appendChild(empty);
+          return;
+        }
+
+        summaryHelperSelectedItems.forEach(function(item){
+          var chip = document.createElement('div');
+          chip.className = 'summary-helper-picked-chip';
+
+          var label = document.createElement('span');
+          label.className = 'summary-helper-picked-label';
+          label.textContent = '[' + (item.category || '기타') + '] ' + (item.content || '');
+
+          var removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'summary-helper-picked-remove';
+          removeBtn.textContent = '×';
+          removeBtn.addEventListener('click', function(){
+            toggleSummaryHelperItem_(item, false);
+          });
+
+          chip.appendChild(label);
+          chip.appendChild(removeBtn);
+          summaryHelperSelected.appendChild(chip);
+        });
+      }
+
+      function renderSummaryHelperCats_(){
+        if(!summaryHelperCats) return;
+        var counts = {};
+        summaryHelperItems.forEach(function(item){
+          var cat = item.category || '기타';
+          counts[cat] = (counts[cat] || 0) + 1;
+        });
+
+        var cats = ['전체'].concat(Object.keys(counts));
+        summaryHelperCats.innerHTML = '';
+        cats.forEach(function(cat){
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'summary-helper-cat' + (summaryHelperActiveCategory === cat ? ' active' : '');
+          btn.textContent = cat;
+          btn.addEventListener('click', function(){
+            summaryHelperActiveCategory = cat;
+            renderSummaryHelperCats_();
+            renderSummaryHelperList_(summaryHelperSearchInput ? summaryHelperSearchInput.value : '');
+          });
+          summaryHelperCats.appendChild(btn);
+        });
+      }
+
+      function getSummaryHelperFilteredItems_(query){
+        var q = String(query || '').trim().toLowerCase();
+        var base = summaryHelperItems.slice();
+
+        if(q){
+          return base.filter(function(item){
+            var hay = (String(item.category || '') + ' ' + String(item.content || '')).toLowerCase();
+            return hay.indexOf(q) > -1;
+          });
+        }
+
+        if(summaryHelperActiveCategory && summaryHelperActiveCategory !== '전체'){
+          return base.filter(function(item){
+            return String(item.category || '기타') === summaryHelperActiveCategory;
+          });
+        }
+
+        return base;
+      }
+
+      function renderSummaryHelperList_(query){
+        if(!summaryHelperList) return;
+
+        var list = getSummaryHelperFilteredItems_(query);
+        summaryHelperList.innerHTML = '';
+
+        if(summaryHelperMeta){
+          var q = String(query || '').trim();
+          summaryHelperMeta.textContent = q
+            ? ('전체 검색 결과 ' + list.length + '개')
+            : ((summaryHelperActiveCategory || '전체') + ' 문구 ' + list.length + '개');
+        }
+
+        if(!list.length){
+          var empty = document.createElement('div');
+          empty.className = 'summary-helper-meta';
+          empty.textContent = '검색 결과가 없습니다.';
+          summaryHelperList.appendChild(empty);
+          return;
+        }
+
+        list.forEach(function(item){
+          var row = document.createElement('label');
+          row.className = 'summary-helper-item' + (isSummaryHelperItemSelected_(item) ? ' is-selected' : '');
+
+          var checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.className = 'summary-helper-check';
+          checkbox.checked = isSummaryHelperItemSelected_(item);
+          checkbox.addEventListener('change', function(e){
+            var ok = toggleSummaryHelperItem_(item, !!checkbox.checked);
+            if(!ok){
+              checkbox.checked = false;
+            }
+          });
+
+          var main = document.createElement('div');
+          main.className = 'summary-helper-item-main';
+
+          var cat = document.createElement('div');
+          cat.className = 'summary-helper-item-cat';
+          cat.textContent = item.category || '기타';
+
+          var body = document.createElement('div');
+          body.className = 'summary-helper-item-text';
+          body.textContent = item.content || '';
+
+          main.appendChild(body);
+
+          row.appendChild(checkbox);
+          row.appendChild(main);
+          summaryHelperList.appendChild(row);
+        });
+      }
+
+      function fetchSummaryHelperPhrases_(){
+        var url = GAS_URL + '?action=getSummaryHelperPhrases&_ts=' + Date.now();
+        return fetch(url, {
+          method: 'GET',
+          cache: 'no-store'
+        })
+        .then(function(res){
+          if(!res.ok) throw new Error('조회 실패: ' + res.status);
+          return res.json();
+        })
+        .then(function(data){
+          if(!data || data.ok === false){
+            throw new Error((data && data.error) || '문구 조회 실패');
+          }
+
+          var items = [];
+          if(Array.isArray(data.items)){
+            items = data.items;
+          }else if(Array.isArray(data.rows)){
+            items = data.rows;
+          }else if(Array.isArray(data.phrases)){
+            items = data.phrases.map(function(v){
+              return { category:'기타', content:String(v || '').trim() };
+            });
+          }
+
+          summaryHelperItems = items.map(function(v){
+            return {
+              category: String((v && (v.category || v.카테고리 || v[0])) || '').trim() || '기타',
+              content: String((v && (v.content || v.내용 || v[1])) || '').trim()
+            };
+          }).filter(function(v){
+            return !!v.content;
+          });
+
+          summaryHelperLoaded = true;
+          renderSummaryHelperCats_();
+          renderSummaryHelperSelected_();
+          renderSummaryHelperList_(summaryHelperSearchInput ? summaryHelperSearchInput.value : '');
+        });
+      }
+
+      function openSummaryHelperModal_(){
+        if(!summaryHelperModal) return;
+        summaryHelperModal.classList.add('show');
+        summaryHelperModal.setAttribute('aria-hidden', 'false');
+        summaryHelperActiveCategory = '전체';
+        summaryHelperSelectedItems = [];
+        if(summaryHelperSearchInput){
+          summaryHelperSearchInput.value = '';
+        }
+        renderSummaryHelperSelected_();
+        if(summaryHelperMeta){
+          summaryHelperMeta.textContent = summaryHelperLoaded ? ('문구 ' + summaryHelperItems.length + '개') : '불러오는 중...';
+        }
+        if(summaryHelperList) summaryHelperList.innerHTML = '';
+        if(summaryHelperCats) summaryHelperCats.innerHTML = '';
+
+        fetchSummaryHelperPhrases_().catch(function(err){
+          console.error(err);
+          if(summaryHelperMeta){
+            summaryHelperMeta.textContent = '문구 불러오기 실패';
+          }
+          showToast('헬퍼 문구 조회 실패');
+        });
+
+        setTimeout(function(){
+          if(summaryHelperSearchInput) summaryHelperSearchInput.focus();
+        }, 30);
+      }
+
+      function applySummaryHelperSelection_(){
+        if(!summaryHelperSelectedItems.length){
+          showToast('문구를 선택하세요.');
+          return;
+        }
+        var targets = getSummaryEditableTargets_();
+        if(!targets.length){
+          showToast('요약칸 없음');
+          return;
+        }
+
+        var blanks = targets.filter(function(el){ return !plainText(el); });
+        var fillTargets = (blanks.length ? blanks : targets).slice(0, 3);
+
+        summaryHelperSelectedItems.forEach(function(item, idx){
+          var target = fillTargets[idx] || targets[idx] || null;
+          if(!target) return;
+          target.textContent = item.content || '';
+          normalizeEditable(target);
+        });
+
+        updateTopFields();
+        queueSave();
+        closeSummaryHelperModal_();
+        showToast('문구 입력됨');
+      }
+
+      function closeSummaryHelperModal_(){
+        if(!summaryHelperModal) return;
+        summaryHelperModal.classList.remove('show');
+        summaryHelperModal.setAttribute('aria-hidden', 'true');
+      }
+
+      function showToast(msg){
+        if(!saveToast) return;
+        saveToast.textContent = msg;
+        saveToast.style.opacity = '1';
+        clearTimeout(showToast._timer);
+        showToast._timer = setTimeout(function(){
+          saveToast.style.opacity = '0';
+        }, 1800);
+      }
+
+      var CONFIG = window.CONFIG || {};
+      CONFIG.listingsUrl = CONFIG.listingsUrl || '/listings';
+
+      function text(value){
+        return String(value == null ? '' : value).trim();
+      }
+
+      function getCurrentListingNumberForShare_(){
+        return String(listingNumber || plainText(listingNumberField) || '').trim();
+      }
+
+      function buildPreviewUrl(listingNumber){
+        return CONFIG.listingsUrl + '?listingNumber=' + encodeURIComponent(listingNumber) + '&open=1';
+      }
+
+      function getItemByListingNumber(listingNumber){
+        var key = text(listingNumber);
+        var current = text(getCurrentListingNumberForShare_());
+        if(!key || key !== current) return null;
+        return {
+          title: plainText(document.querySelector('.property-detail-title')),
+          address: plainText(topAddress) || plainText(addressField)
+        };
+      }
+
+      async function sharePreview(listingNumber){
+        var decoded = decodeURIComponent(String(listingNumber || ''));
+        var item = getItemByListingNumber(decoded);
+        var url = buildPreviewUrl(decoded);
+        var title = text(item && item.title) || '매물 공유';
+        var shareText = title + '\n' + (text(item && item.address) || '');
+        try{
+          if(navigator.share){
+            await navigator.share({
+              title: title,
+              text: shareText,
+              url: url
+            });
+            return;
+          }
+          if(navigator.clipboard && navigator.clipboard.writeText){
+            await navigator.clipboard.writeText(url);
+            alert('공유 링크를 복사했습니다. 카카오톡에 붙여넣어 주세요.');
+            return;
+          }
+          window.prompt('공유 링크를 복사하세요.', url);
+        }catch(err){
+          if(err && err.name === 'AbortError') return;
+          console.error(err);
+          try{
+            window.prompt('공유 링크를 복사하세요.', url);
+          }catch(e){}
+        }
+      }
+
+      window.sharePreview = sharePreview;
+
+      if(publicShareBtn){
+        publicShareBtn.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          var currentListingNumber = getCurrentListingNumberForShare_();
+          if(!currentListingNumber){
+            showToast('매물번호 없음');
+            return;
+          }
+          sharePreview(currentListingNumber);
+        });
+      }
+
+      function plainText(el){
+        return ((el && (el.innerText || el.textContent) || '') + '').replace(/\u00A0/g, ' ').replace(/\n+/g, ' ').trim();
+      }
+
+      function normalizedEditableText(el){
+        return ((el && (el.innerText || el.textContent) || '') + '').replace(/\u00A0/g, ' ').trim();
+      }
+
+      function updateMirror(el, value){
+        if(el) el.textContent = value || '';
+      }
+
+      function updateStatusButton(){
+        if(!statusToggleBtn) return;
+        var visible = listingStatus === 'visible';
+        statusToggleBtn.textContent = visible ? '매물노출중' : '매물숨김중';
+        statusToggleBtn.classList.toggle('visible', visible);
+        statusToggleBtn.classList.toggle('hidden', !visible);
+        statusToggleBtn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+      }
+
+      function formatDealPrice(type, priceText){
+        if(!type){
+          updateMirror(topPriceLabel, '');
+          updateMirror(topPriceValue, '');
+          if(topPriceSub) topPriceSub.innerHTML = '';
+          return;
+        }
+
+        if(type === '임대'){
+          var deposit = cleanRentAmountPart_((rentPriceState && rentPriceState.deposit) || '');
+          var monthly = cleanRentAmountPart_((rentPriceState && rentPriceState.monthly) || '');
+          if(!deposit && !monthly){
+            updateMirror(topPriceLabel, '');
+            updateMirror(topPriceValue, '');
+            if(topPriceSub) topPriceSub.innerHTML = '';
+            return;
+          }
+          updateMirror(topPriceLabel, '임대가');
+          if(topPriceValue){
+            topPriceValue.innerHTML = '<span class="top-rent-lines">'
+              + '<span class="top-rent-line">보증금 ' + escapeHtml_(deposit || '') + '원</span>'
+              + '<span class="top-rent-line">월세 ' + escapeHtml_(monthly || '') + '원</span>'
+              + '</span>';
+          }
+          if(topPriceSub) topPriceSub.innerHTML = '';
+          return;
+        }
+
+        var price = (priceText || '').trim();
+        if(!price){
+          updateMirror(topPriceLabel, '');
+          updateMirror(topPriceValue, '');
+          if(topPriceSub) topPriceSub.innerHTML = '';
+          return;
+        }
+        updateMirror(topPriceLabel, '매매가');
+        updateMirror(topPriceValue, price);
+        if(topPriceSub) topPriceSub.innerHTML = '';
+      }
+
+      function escapeHtml_(str){
+        return String(str == null ? '' : str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+
+      function stripAiEditablePrefix_(value){
+        return String(value || '')
+          .replace(/^\s*\(수정가능\)\s*/,'')
+          .replace(/^\s*수정가능\s*/,'')
+          .trim();
+      }
+
+      function getTitleTextForSave_(){
+        return stripAiEditablePrefix_(plainText(document.querySelector('.property-detail-title')));
+      }
+
+      function setAiTitleIfBlank_(el, value){
+        return new Promise(function(resolve){
+          if(!el){
+            resolve(false);
+            return;
+          }
+          value = String(value || '').trim();
+          if(!value){
+            resolve(false);
+            return;
+          }
+          if(!isBlankContentEditable_(el)){
+            resolve(false);
+            return;
+          }
+          el.innerHTML = '<span class="ai-title-prefix" contenteditable="false">(수정가능)</span>';
+          var textNode = document.createTextNode('');
+          el.appendChild(textNode);
+          keepTypingTargetInView_(el);
+          var i = 0;
+          function tick(){
+            textNode.nodeValue = value.slice(0, i + 1);
+            updateTopFields();
+            keepTypingTargetInView_(el);
+            if(i >= value.length - 1){
+              resolve(true);
+              return;
+            }
+            i += 1;
+            setTimeout(tick, AI_TYPE_INTERVAL_MS);
+          }
+          tick();
+        });
+      }
+
+      function formatDisplayAddressForTitle_(value){
+        var s = String(value || '').trim().replace(/\s+/g, ' ');
+        if(!s) return '';
+
+        s = s.replace(/\s*\([^)]*$/g, '').trim();
+        s = s.replace(/\s+\d+(?:-\d+)?\s*$/g, '').trim();
+
+        var tokens = s.split(' ').filter(Boolean);
+        if(!tokens.length) return '';
+
+        var roadIdx = -1;
+        for(var i = 0; i < tokens.length; i++){
+          if(/(로|길|대로)$/.test(tokens[i])){
+            roadIdx = i;
+            break;
+          }
+        }
+        if(roadIdx > 0){
+          tokens = tokens.slice(0, roadIdx);
+        }
+
+        while(tokens.length && /^\d+(?:-\d+)?$/.test(tokens[tokens.length - 1])){
+          tokens.pop();
+        }
+
+        var out = [];
+        for(var j = 0; j < tokens.length; j++){
+          out.push(tokens[j]);
+          if(/(리|동|가)$/.test(tokens[j])){
+            break;
+          }
+        }
+
+        return (out.length ? out : tokens).join(' ').trim();
+      }
+
+
+      function setMeasureWithAutoCalc_(measureKey, m2Value, pyValue){
+        var group = document.querySelector('[data-measure="' + measureKey + '"]');
+        if(!group) return false;
+        var m2Input = group.querySelector('[data-unit="m2"]');
+        var pyInput = group.querySelector('[data-unit="pyeong"]');
+        var changed = false;
+        var m2Raw = String(m2Value || '').trim();
+        var pyRaw = String(pyValue || '').trim();
+        if(m2Input && !String(m2Input.value || '').trim() && m2Raw){
+          m2Input.value = m2Raw;
+          changed = true;
+        }
+        if(pyInput && !String(pyInput.value || '').trim()){
+          if(pyRaw){
+            pyInput.value = pyRaw;
+            changed = true;
+          }else if(m2Input && String(m2Input.value || '').trim()){
+            var n = parseFloat(String(m2Input.value || '').replace(/,/g,''));
+            if(Number.isFinite(n)){
+              pyInput.value = roundNum(n / 3.305785).toString();
+              changed = true;
+            }
+          }
+        }
+        if(m2Input && !String(m2Input.value || '').trim() && pyInput && String(pyInput.value || '').trim()){
+          var p = parseFloat(String(pyInput.value || '').replace(/,/g,''));
+          if(Number.isFinite(p)){
+            m2Input.value = roundNum(p * 3.305785).toString();
+            changed = true;
+          }
+        }
+        return changed;
+      }
+
+      function startLedgerUploadIndicator_(){
+        ledgerUploadBusyUntil = Date.now() + 5000;
+        if(ledgerUploadIndicatorTimer){
+          clearInterval(ledgerUploadIndicatorTimer);
+          ledgerUploadIndicatorTimer = null;
+        }
+        var frame = 0;
+        function render(){
+          if(Date.now() >= ledgerUploadBusyUntil){
+            clearInterval(ledgerUploadIndicatorTimer);
+            ledgerUploadIndicatorTimer = null;
+            renderLedgerStatus();
+            return;
+          }
+          var dots = ['ㆍ', 'ㆍㆍ', 'ㆍㆍㆍ'][frame % 3];
+          ledgerUploadedCount.textContent = '파일을 업로드 중입니다. ' + dots;
+          frame += 1;
+        }
+        render();
+        ledgerUploadIndicatorTimer = setInterval(render, 450);
+      }
+
+      function isLedgerUploadCoolingDown_(){
+        return Date.now() < ledgerUploadBusyUntil;
+      }
+
+      function updateTopFields(){
+        var address = plainText(addressField);
+        if(getListingCategoryPrefix_() === 'DK'){
+          var landSummary = getLandSummary_();
+          address = (landSummary && landSummary.representativeAddress) || address;
+        }
+        var price = getPricePayloadText_();
+        updateMirror(topAddress, formatDisplayAddressForTitle_(address));
+        formatDealPrice(selectedDealType, price);
+        topDealChip.textContent = selectedDealType || '거래형태';
+        topDealChip.classList.toggle('is-placeholder', !selectedDealType);
+
+        var hasAddress = !!address;
+        var hasPrice = !!(selectedDealType && price);
+        topAddress.classList.toggle('is-hidden', !hasAddress);
+        topPrice.classList.toggle('is-hidden', !hasPrice);
+        topDivider.classList.toggle('is-hidden', !(hasAddress || hasPrice));
+        renderNaverMapLink_();
+      }
+
+      function setDealType(type){
+        var prevType = selectedDealType || '';
+        selectedDealType = type || '';
+        if(prevType === '임대' && selectedDealType === '매매'){
+          clearRentPriceState_();
+          if(priceField) priceField.innerHTML = '';
+        }
+        dealTypeRow.querySelectorAll('.type-chip').forEach(function(btn){
+          btn.classList.toggle('active', btn.getAttribute('data-deal') === selectedDealType);
+        });
+        dealTypePlaceholder.style.display = selectedDealType ? 'none' : 'inline';
+        maintenanceFeeField.setAttribute('data-placeholder', '임대인 경우');
+        renderPriceFieldForDealType_();
+        updateTopFields();
+        queueSave();
+      }
+
+      dealTypeRow.querySelectorAll('.type-chip').forEach(function(btn){
+        btn.addEventListener('click', function(){ setDealType(btn.getAttribute('data-deal')); });
+      });
+
+      function fileToCachedDataUrl(file, opts, done){
+        opts = opts || {};
+        var maxW = opts.maxWidth || 1600;
+        var maxH = opts.maxHeight || 1600;
+        var quality = typeof opts.quality === 'number' ? opts.quality : 0.82;
+        var reader = new FileReader();
+        reader.onload = function(e){
+          var src = e.target.result || '';
+          if(!src){ done(''); return; }
+          var img = new Image();
+          img.onload = function(){
+            var w = img.naturalWidth || img.width || 0;
+            var h = img.naturalHeight || img.height || 0;
+            if(!w || !h){ done(src); return; }
+            var ratio = Math.min(maxW / w, maxH / h, 1);
+            var tw = Math.max(1, Math.round(w * ratio));
+            var th = Math.max(1, Math.round(h * ratio));
+            var canvas = document.createElement('canvas');
+            canvas.width = tw;
+            canvas.height = th;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, tw, th);
+            var out = canvas.toDataURL('image/jpeg', quality);
+            done(out || src);
+          };
+          img.onerror = function(){ done(src); };
+          img.src = src;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function updateMosaicButtons_(){
+        if(mosaicToggleBtn){
+          mosaicToggleBtn.classList.toggle('active', mosaicMode);
+          mosaicToggleBtn.classList.toggle('is-saving', mosaicSaving);
+          mosaicToggleBtn.setAttribute('aria-pressed', mosaicMode ? 'true' : 'false');
+          mosaicToggleBtn.disabled = !!mosaicSaving;
+          mosaicToggleBtn.textContent = mosaicSaving ? '저장중' : (mosaicMode ? '모자이크 저장' : '모자이크');
+        }
+        if(mosaicUndoBtn){
+          mosaicUndoBtn.classList.toggle('show', mosaicMode);
+          mosaicUndoBtn.disabled = !mosaicMode || mosaicSaving || !mosaicHistory.length;
+        }
+      }
+
+      function clearStoredDraftPhotosOnly_(){
+        try{
+          var raw = localStorage.getItem(STORAGE_KEY);
+          if(!raw) return;
+          var data = JSON.parse(raw);
+          if(!data || typeof data !== 'object') return;
+          data.photoList = [];
+          data.currentPhotoIndex = 0;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }catch(e){
+          try{ localStorage.removeItem(STORAGE_KEY); }catch(_err){}
+        }
+      }
+
+      function clearMosaicLocalCache_(){
+        try{ clearTimeout(saveTimer); }catch(e){}
+        clearStoredDraftPhotosOnly_();
+      }
+
+      function blockMosaicLocalCacheUntilReload_(){
+        mosaicCacheClearUntilReload = true;
+        clearMosaicLocalCache_();
+      }
+
+      function resetMosaicCanvas_(){
+        mosaicDrawing = false;
+        mosaicReady = false;
+        mosaicDirty = false;
+        mosaicSaving = false;
+        mosaicHistory = [];
+        if(mosaicCanvas){
+          mosaicCanvas.classList.remove('active');
+          if(mosaicCtx){
+            mosaicCtx.clearRect(0, 0, mosaicCanvas.width || 0, mosaicCanvas.height || 0);
+          }
+        }
+        if(mosaicCursor){
+          mosaicCursor.style.display = 'none';
+          mosaicCursor.style.transform = 'translate3d(-9999px,-9999px,0)';
+        }
+        updateMosaicButtons_();
+      }
+
+      function setMosaicMode_(on){
+        var next = !!on;
+        if(mosaicSaving) return;
+        if(next && !photoList.length){
+          showToast('사진을 먼저 올려주세요');
+          return;
+        }
+        mosaicMode = next;
+        document.body.classList.toggle('mosaic-mode-on', mosaicMode);
+        updateMosaicButtons_();
+        if(!mosaicMode){
+          resetMosaicCanvas_();
+          return;
+        }
+        mosaicDirty = false;
+        mosaicHistory = [];
+        updateMosaicButtons_();
+        prepareMosaicCanvas_();
+        showToast('사진 위를 문지른 뒤 모자이크 저장을 누르세요');
+      }
+
+      function getMosaicSourceUrl_(){
+        var item = photoList[currentPhotoIndex];
+        return item && item.url ? item.url : '';
+      }
+
+      function getCurrentListingNumberForMosaic_(){
+        var currentListingNumber = listingNumber || plainText(listingNumberField) || '';
+        if(!currentListingNumber){
+          assignListingNumber();
+          currentListingNumber = listingNumber || plainText(listingNumberField) || '';
+        }
+        return currentListingNumber;
+      }
+
+      function fetchMosaicSourceDataUrl_(item){
+        if(!item) return Promise.reject(new Error('사진 정보가 없습니다.'));
+        if(item.url && String(item.url).indexOf('data:') === 0){
+          return Promise.resolve(item.url);
+        }
+        if(item.dataUrl && String(item.dataUrl).indexOf('data:') === 0){
+          return Promise.resolve(item.dataUrl);
+        }
+        if(item.localDataUrl && String(item.localDataUrl).indexOf('data:') === 0){
+          return Promise.resolve(item.localDataUrl);
+        }
+        if(item.uploadDataUrl && String(item.uploadDataUrl).indexOf('data:') === 0){
+          return Promise.resolve(item.uploadDataUrl);
+        }
+
+        var currentListingNumber = getCurrentListingNumberForMosaic_();
+        var tempKey = item.tempKey || '';
+        if(!currentListingNumber) return Promise.reject(new Error('listingNumber가 없습니다.'));
+        if(!tempKey) return Promise.reject(new Error('tempKey가 없습니다.'));
+
+        return fetchJsonFromGas_({
+          action: 'getPropertyPhotoDataUrl',
+          listingNumber: currentListingNumber,
+          tempKey: tempKey
+        }).then(function(result){
+          if(!result || !result.ok || !result.dataUrl){
+            throw new Error((result && (result.message || result.error)) || '사진 원본 조회 실패');
+          }
+          item.dataUrl = result.dataUrl;
+          item.localDataUrl = result.dataUrl;
+          item.uploadDataUrl = result.dataUrl;
+          return result.dataUrl;
+        });
+      }
+
+      function sanitizePhotoSaveName_(value){
+        return String(value || '')
+          .replace(/[\\/:*?"<>|]/g, '')
+          .replace(/\s+/g, '')
+          .trim()
+          .slice(0, 80);
+      }
+
+      function getPhotoDownloadBaseName_(){
+        var address = sanitizePhotoSaveName_(plainText(addressField));
+        var requester = collectRequester_ ? collectRequester_() : null;
+        var requesterName = sanitizePhotoSaveName_(requester && requester.name);
+        var fallbackListing = sanitizePhotoSaveName_(listingNumber || plainText(listingNumberField));
+        var left = address || fallbackListing || '매물사진';
+        var right = requesterName || '의뢰인미상';
+        return left + '_' + right;
+      }
+
+      function isMobileDownloadEnv_(){
+        return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+      }
+
+      function dataUrlToBlob_(dataUrl){
+        var parts = String(dataUrl || '').split(',');
+        if(parts.length < 2) return new Blob([]);
+        var meta = parts[0] || '';
+        var mimeMatch = meta.match(/data:([^;]+)/i);
+        var mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+        var binary = atob(parts.slice(1).join(','));
+        var len = binary.length;
+        var bytes = new Uint8Array(len);
+        for(var i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+        return new Blob([bytes], { type: mime });
+      }
+
+      function extFromDataUrl_(dataUrl){
+        var mimeMatch = String(dataUrl || '').match(/^data:([^;]+)/i);
+        var mime = mimeMatch ? mimeMatch[1].toLowerCase() : '';
+        if(mime.indexOf('png') >= 0) return 'png';
+        if(mime.indexOf('webp') >= 0) return 'webp';
+        if(mime.indexOf('gif') >= 0) return 'gif';
+        return 'jpg';
+      }
+
+      function triggerSinglePhotoDownload_(blob, filename, delay){
+        setTimeout(function(){
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function(){
+            URL.revokeObjectURL(url);
+            if(a.parentNode) a.parentNode.removeChild(a);
+          }, 1500);
+        }, delay || 0);
+      }
+
+      function collectPhotoDownloadFiles_(){
+        return Promise.all(photoList.map(function(item, idx){
+          return fetchMosaicSourceDataUrl_(item).then(function(dataUrl){
+            var ext = extFromDataUrl_(dataUrl);
+            return {
+              index: idx + 1,
+              ext: ext,
+              blob: dataUrlToBlob_(dataUrl)
+            };
+          });
+        }));
+      }
+
+      async function savePhotosToPickedFolder_(baseName, files){
+        var rootDir = await window.showDirectoryPicker({ mode: 'readwrite' });
+        var targetDir = await rootDir.getDirectoryHandle(baseName, { create: true });
+        for(var i = 0; i < files.length; i++){
+          var item = files[i];
+          var filename = String(item.index).padStart(2, '0') + '.' + item.ext;
+          var fileHandle = await targetDir.getFileHandle(filename, { create: true });
+          var writable = await fileHandle.createWritable();
+          await writable.write(item.blob);
+          await writable.close();
+        }
+      }
+
+      async function downloadPhotos_(){
+        if(!photoList.length){
+          showToast('다운로드할 사진이 없습니다');
+          return;
+        }
+        if(mosaicMode || mosaicSaving || mosaicDirty){
+          showToast('모자이크 저장 후 다운로드해주세요');
+          return;
+        }
+        if(photoDownloadBtn) photoDownloadBtn.disabled = true;
+        var baseName = getPhotoDownloadBaseName_();
+        try{
+          showToast('사진 준비 중');
+          var files = await collectPhotoDownloadFiles_();
+          if(window.showDirectoryPicker && window.isSecureContext && !isMobileDownloadEnv_()){
+            try{
+              await savePhotosToPickedFolder_(baseName, files);
+              showToast('사진 저장 완료');
+              return;
+            }catch(folderErr){
+              if(folderErr && (folderErr.name === 'AbortError' || folderErr.name === 'NotAllowedError')){
+                showToast('사진 저장 취소됨');
+                return;
+              }
+            }
+          }
+          files.forEach(function(item, idx){
+            var filename = String(item.index).padStart(2, '0') + '_' + baseName + '.' + item.ext;
+            triggerSinglePhotoDownload_(item.blob, filename, idx * 350);
+          });
+          showToast('사진 다운로드 시작');
+        }catch(err){
+          showToast((err && err.message) || '사진 다운로드 실패');
+        }finally{
+          if(photoDownloadBtn) photoDownloadBtn.disabled = !photoList.length;
+        }
+      }
+
+      function drawCoverImageToMosaicCanvas_(img){
+        if(!mosaicCanvas || !mosaicCtx || !heroImage) return;
+        var rect = heroImage.getBoundingClientRect();
+        var dpr = window.devicePixelRatio || 1;
+        var w = Math.max(1, Math.round(rect.width * dpr));
+        var h = Math.max(1, Math.round(rect.height * dpr));
+        mosaicCanvas.width = w;
+        mosaicCanvas.height = h;
+        mosaicCtx.clearRect(0, 0, w, h);
+
+        var iw = img.naturalWidth || img.width || 1;
+        var ih = img.naturalHeight || img.height || 1;
+        var scale = Math.max(w / iw, h / ih);
+        var dw = iw * scale;
+        var dh = ih * scale;
+        var dx = (w - dw) / 2;
+        var dy = (h - dh) / 2;
+        mosaicCtx.drawImage(img, dx, dy, dw, dh);
+      }
+
+      function prepareMosaicCanvas_(){
+        if(!mosaicMode || !mosaicCanvas || !mosaicCtx || !photoList.length) return;
+
+        var item = photoList[currentPhotoIndex];
+        if(!item){
+          setMosaicMode_(false);
+          return;
+        }
+
+        var startTempKey = item.tempKey || '';
+        mosaicReady = false;
+        mosaicCanvas.classList.remove('active');
+        showToast('사진 원본 불러오는 중');
+
+        fetchMosaicSourceDataUrl_(item)
+          .then(function(src){
+            if(!mosaicMode) return;
+            if(!photoList[currentPhotoIndex] || (startTempKey && photoList[currentPhotoIndex].tempKey !== startTempKey)) return;
+            if(!src){
+              throw new Error('사진 원본이 없습니다.');
+            }
+
+            var img = new Image();
+            img.onload = function(){
+              try{
+                if(!mosaicMode) return;
+                if(!photoList[currentPhotoIndex] || (startTempKey && photoList[currentPhotoIndex].tempKey !== startTempKey)) return;
+                drawCoverImageToMosaicCanvas_(img);
+                mosaicCanvas.toDataURL('image/jpeg', 0.72);
+                mosaicReady = true;
+                mosaicCanvas.classList.add('active');
+                updateMosaicButtons_();
+              }catch(err){
+                console.error(err);
+                setMosaicMode_(false);
+                showToast('모자이크 준비 실패');
+              }
+            };
+            img.onerror = function(){
+              setMosaicMode_(false);
+              showToast('사진을 불러오지 못했습니다');
+            };
+            img.src = src;
+          })
+          .catch(function(err){
+            console.error(err);
+            setMosaicMode_(false);
+            showToast('사진 원본 조회 실패');
+          });
+      }
+
+      function updateMosaicCursor_(clientX, clientY, pointerType){
+        if(!mosaicCursor || pointerType === 'touch') return;
+        if(!mosaicMode || !mosaicReady){
+          mosaicCursor.style.display = 'none';
+          return;
+        }
+        var size = mosaicBrushSize;
+        mosaicCursor.style.width = size + 'px';
+        mosaicCursor.style.height = size + 'px';
+        mosaicCursor.style.display = 'block';
+        mosaicCursor.style.transform = 'translate3d(' + (clientX - size / 2) + 'px,' + (clientY - size / 2) + 'px,0)';
+      }
+
+      function applyMosaicAt_(clientX, clientY){
+        if(!mosaicCanvas || !mosaicCtx || !mosaicReady) return;
+        var rect = mosaicCanvas.getBoundingClientRect();
+        if(!rect.width || !rect.height) return;
+        var dprX = mosaicCanvas.width / rect.width;
+        var dprY = mosaicCanvas.height / rect.height;
+        var x = (clientX - rect.left) * dprX;
+        var y = (clientY - rect.top) * dprY;
+        var radius = (mosaicBrushSize / 2) * Math.max(dprX, dprY);
+        var sx = Math.max(0, Math.floor(x - radius));
+        var sy = Math.max(0, Math.floor(y - radius));
+        var ex = Math.min(mosaicCanvas.width, Math.ceil(x + radius));
+        var ey = Math.min(mosaicCanvas.height, Math.ceil(y + radius));
+        var sw = Math.max(1, ex - sx);
+        var sh = Math.max(1, ey - sy);
+        var block = Math.max(4, Math.round(mosaicPixelSize * Math.max(dprX, dprY)));
+        var tmp = document.createElement('canvas');
+        tmp.width = Math.max(1, Math.ceil(sw / block));
+        tmp.height = Math.max(1, Math.ceil(sh / block));
+        var tctx = tmp.getContext('2d');
+        tctx.imageSmoothingEnabled = false;
+        tctx.drawImage(mosaicCanvas, sx, sy, sw, sh, 0, 0, tmp.width, tmp.height);
+
+        mosaicCtx.save();
+        mosaicCtx.beginPath();
+        mosaicCtx.arc(x, y, radius, 0, Math.PI * 2);
+        mosaicCtx.clip();
+        mosaicCtx.imageSmoothingEnabled = false;
+        mosaicCtx.drawImage(tmp, 0, 0, tmp.width, tmp.height, sx, sy, sw, sh);
+        mosaicCtx.restore();
+        mosaicCtx.imageSmoothingEnabled = true;
+      }
+
+      function pushMosaicHistory_(){
+        if(!mosaicCanvas || !mosaicReady) return;
+        try{
+          mosaicHistory.push(mosaicCanvas.toDataURL('image/jpeg', 0.9));
+          if(mosaicHistory.length > mosaicMaxHistory){
+            mosaicHistory.shift();
+          }
+          updateMosaicButtons_();
+        }catch(err){
+          console.error(err);
+        }
+      }
+
+      function restoreMosaicCanvasFromDataUrl_(dataUrl, done){
+        if(!dataUrl || !mosaicCanvas || !mosaicCtx) return;
+        var img = new Image();
+        img.onload = function(){
+          mosaicCtx.clearRect(0, 0, mosaicCanvas.width || 0, mosaicCanvas.height || 0);
+          mosaicCtx.drawImage(img, 0, 0, mosaicCanvas.width || 1, mosaicCanvas.height || 1);
+          if(typeof done === 'function') done();
+        };
+        img.onerror = function(){
+          showToast('되돌리기 실패');
+        };
+        img.src = dataUrl;
+      }
+
+      function undoMosaicStroke_(){
+        if(!mosaicMode || mosaicSaving || !mosaicHistory.length){
+          showToast('되돌릴 모자이크가 없습니다');
+          return;
+        }
+        var prevDataUrl = mosaicHistory.pop();
+        restoreMosaicCanvasFromDataUrl_(prevDataUrl, function(){
+          mosaicDirty = mosaicHistory.length > 0;
+          updateMosaicButtons_();
+          showToast('되돌림');
+        });
+      }
+
+      function saveMosaicToCurrentPhoto_(){
+        if(!mosaicMode || mosaicSaving) return;
+        if(!mosaicCanvas || !mosaicReady || !photoList[currentPhotoIndex]) return;
+        if(!mosaicDirty){
+          showToast('저장할 모자이크가 없습니다');
+          setMosaicMode_(false);
+          return;
+        }
+        var item = photoList[currentPhotoIndex];
+        var dataUrl = '';
+        try{
+          dataUrl = mosaicCanvas.toDataURL('image/jpeg', 0.9);
+        }catch(err){
+          console.error(err);
+          showToast('모자이크 이미지 생성 실패');
+          return;
+        }
+
+        mosaicSaving = true;
+        updateMosaicButtons_();
+
+        var prevUrl = item.url || '';
+        var prevDataUrl = item.dataUrl || '';
+        var prevLocalDataUrl = item.localDataUrl || '';
+        var prevUploadDataUrl = item.uploadDataUrl || '';
+        var prevEditedAt = item.editedAt || '';
+        var prevEditType = item.editType || '';
+
+        item.url = dataUrl;
+        item.dataUrl = dataUrl;
+        item.localDataUrl = dataUrl;
+        item.uploadDataUrl = dataUrl;
+        item.editedAt = new Date().toISOString();
+        item.editType = 'mosaic';
+
+        uploadTempFileToServer_('photo', item)
+          .then(function(){
+            showToast('모자이크 저장됨');
+            blockMosaicLocalCacheUntilReload_();
+            mosaicMode = false;
+            document.body.classList.remove('mosaic-mode-on');
+            renderHero();
+            resetMosaicCanvas_();
+          })
+          .catch(function(err){
+            console.error(err);
+            item.url = prevUrl;
+            item.dataUrl = prevDataUrl;
+            item.localDataUrl = prevLocalDataUrl;
+            item.uploadDataUrl = prevUploadDataUrl;
+            item.editedAt = prevEditedAt;
+            item.editType = prevEditType;
+            showToast('모자이크 저장 실패');
+            mosaicSaving = false;
+            updateMosaicButtons_();
+          });
+      }
+
+      function bindMosaicEvents_(){
+        if(!mosaicCanvas) return;
+        mosaicCanvas.addEventListener('pointerdown', function(e){
+          if(!mosaicMode || !mosaicReady) return;
+          e.preventDefault();
+          mosaicDrawing = true;
+          pushMosaicHistory_();
+          mosaicDirty = true;
+          updateMosaicButtons_();
+          try{ mosaicCanvas.setPointerCapture(e.pointerId); }catch(err){}
+          updateMosaicCursor_(e.clientX, e.clientY, e.pointerType);
+          applyMosaicAt_(e.clientX, e.clientY);
+        });
+        mosaicCanvas.addEventListener('pointermove', function(e){
+          if(!mosaicMode || !mosaicReady) return;
+          e.preventDefault();
+          updateMosaicCursor_(e.clientX, e.clientY, e.pointerType);
+          if(mosaicDrawing){
+            applyMosaicAt_(e.clientX, e.clientY);
+          }
+        });
+        function finish(e){
+          if(!mosaicDrawing) return;
+          e.preventDefault();
+          mosaicDrawing = false;
+          try{ mosaicCanvas.releasePointerCapture(e.pointerId); }catch(err){}
+          updateMosaicButtons_();
+        }
+        mosaicCanvas.addEventListener('pointerup', finish);
+        mosaicCanvas.addEventListener('pointercancel', finish);
+        mosaicCanvas.addEventListener('pointerleave', function(e){
+          if(mosaicCursor){ mosaicCursor.style.display = 'none'; }
+          if(mosaicDrawing){ finish(e); }
+        });
+      }
+
+      window.addEventListener('pagehide', function(){
+        if(mosaicMode || mosaicDirty || mosaicSaving || mosaicCacheClearUntilReload){
+          blockMosaicLocalCacheUntilReload_();
+        }
+      });
+
+      function readFiles(files, cb){
+        Array.prototype.forEach.call(files || [], function(file){
+          fileToCachedDataUrl(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 }, function(url){
+            cb(url, file);
+          });
+        });
+      }
+
+      function syncPhotoUiVisibility(){
+        var hasPhotos = photoList.length > 0;
+        photoThumbStrip.style.display = hasPhotos ? 'flex' : 'none';
+        prevPhotoBtn.style.display = hasPhotos ? 'inline-flex' : 'none';
+        nextPhotoBtn.style.display = hasPhotos ? 'inline-flex' : 'none';
+        deleteCurrentPhotoBtn.style.display = hasPhotos ? 'flex' : 'none';
+        if(photoDownloadBtn) photoDownloadBtn.disabled = !hasPhotos;
+      }
+
+      function renderHero(){
+        if(currentPhotoIndex < 0) currentPhotoIndex = 0;
+        if(currentPhotoIndex >= photoList.length) currentPhotoIndex = Math.max(0, photoList.length - 1);
+
+        if(photoList[currentPhotoIndex] && photoList[currentPhotoIndex].url){
+          heroImage.src = photoList[currentPhotoIndex].url;
+          heroImage.style.display = 'block';
+          if(heroEmptyState) heroEmptyState.style.display = 'none';
+        }else{
+          heroImage.removeAttribute('src');
+          heroImage.style.display = 'none';
+          if(heroEmptyState) heroEmptyState.style.display = 'flex';
+        }
+
+        syncPhotoUiVisibility();
+        renderPhotoThumbs();
+        resetMosaicCanvas_();
+        if(mosaicMode && photoList.length){
+          prepareMosaicCanvas_();
+        }
+      }
+
+      function reorderPhoto(fromIdx, toIdx){
+        if(fromIdx == null || toIdx == null || fromIdx === toIdx) return;
+        setMosaicMode_(false);
+        var moved = photoList.splice(fromIdx, 1)[0];
+        photoList.splice(toIdx, 0, moved);
+        currentPhotoIndex = toIdx;
+        renderHero();
+      }
+
+      function getThumbIndexFromPoint(x, y){
+        var thumbs = Array.prototype.slice.call(photoThumbStrip.querySelectorAll('.photo-thumb'));
+        for(var i=0;i<thumbs.length;i++){
+          var rect = thumbs[i].getBoundingClientRect();
+          if(x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom){
+            return i;
+          }
+        }
+        return null;
+      }
+
+      function ensureTouchGhost(){
+        if(touchGhostEl) return touchGhostEl;
+        touchGhostEl = document.createElement('div');
+        touchGhostEl.className = 'photo-drag-ghost';
+        document.body.appendChild(touchGhostEl);
+        return touchGhostEl;
+      }
+
+      function moveTouchGhost(x, y, url){
+        var ghost = ensureTouchGhost();
+        ghost.style.backgroundImage = 'url("' + url + '")';
+        ghost.style.transform = 'translate3d(' + (x - ghost.offsetWidth / 2) + 'px,' + (y - ghost.offsetHeight / 2) + 'px,0) scale(1.04)';
+        ghost.style.opacity = '.72';
+      }
+
+      function hideTouchGhost(){
+        if(!touchGhostEl) return;
+        touchGhostEl.style.opacity = '0';
+        touchGhostEl.style.transform = 'translate3d(-9999px,-9999px,0) scale(1.04)';
+      }
+
+      function stopThumbAutoScroll(){
+        if(touchAutoScrollTimer){
+          cancelAnimationFrame(touchAutoScrollTimer);
+          touchAutoScrollTimer = null;
+        }
+      }
+
+      function runThumbAutoScroll(clientX){
+        stopThumbAutoScroll();
+        var rect = photoThumbStrip.getBoundingClientRect();
+        var edge = 46;
+        var speed = 0;
+        if(clientX < rect.left + edge){
+          speed = -12;
+        }else if(clientX > rect.right - edge){
+          speed = 12;
+        }
+        if(!speed) return;
+        (function tick(){
+          photoThumbStrip.scrollLeft += speed;
+          touchAutoScrollTimer = requestAnimationFrame(tick);
+        })();
+      }
+
+      function clearThumbDropMarks(){
+        photoThumbStrip.querySelectorAll('.photo-thumb').forEach(function(node){ node.classList.remove('photo-thumb-drop'); });
+      }
+
+      function finishTouchDrag(commit){
+        if(touchHoldTimer){
+          clearTimeout(touchHoldTimer);
+          touchHoldTimer = null;
+        }
+        var active = photoThumbStrip.querySelector('.photo-thumb.touch-dragging');
+        if(active) active.classList.remove('touch-dragging');
+        clearThumbDropMarks();
+        stopThumbAutoScroll();
+        hideTouchGhost();
+        if(commit && touchDragState && touchDragState.dragging){
+          reorderPhoto(touchDragState.fromIdx, touchDragState.lastIdx);
+        }
+        touchDragState = null;
+      }
+
+      function bindPhotoDrag(wrap, idx){
+        wrap.draggable = true;
+        wrap.addEventListener('dragstart', function(e){
+          dragPhotoIndex = idx;
+          wrap.classList.add('dragging');
+          if(e.dataTransfer){ e.dataTransfer.effectAllowed = 'move'; }
+        });
+        wrap.addEventListener('dragend', function(){
+          dragPhotoIndex = null;
+          wrap.classList.remove('dragging');
+          wrap.classList.remove('photo-thumb-drop');
+        });
+        wrap.addEventListener('dragover', function(e){
+          e.preventDefault();
+          wrap.classList.add('photo-thumb-drop');
+        });
+        wrap.addEventListener('dragleave', function(){ wrap.classList.remove('photo-thumb-drop'); });
+        wrap.addEventListener('drop', function(e){
+          e.preventDefault();
+          wrap.classList.remove('photo-thumb-drop');
+          reorderPhoto(dragPhotoIndex, idx);
+        });
+
+        wrap.addEventListener('touchstart', function(e){
+          if(!e.touches || !e.touches[0]) return;
+          var t = e.touches[0];
+          if(touchHoldTimer){ clearTimeout(touchHoldTimer); touchHoldTimer = null; }
+          touchDragState = {
+            fromIdx: idx,
+            lastIdx: idx,
+            startX: t.clientX,
+            startY: t.clientY,
+            dragging: false,
+            dragReady: false,
+            moved: false,
+            url: photoList[idx] ? photoList[idx].url : ''
+          };
+          touchHoldTimer = setTimeout(function(){
+            if(!touchDragState || touchDragState.fromIdx !== idx || touchDragState.moved) return;
+            touchDragState.dragReady = true;
+            touchDragState.dragging = true;
+            wrap.classList.add('touch-dragging');
+            moveTouchGhost(touchDragState.startX, touchDragState.startY, touchDragState.url);
+          }, 320);
+        }, {passive:true});
+
+        wrap.addEventListener('touchmove', function(e){
+          if(!touchDragState || !e.touches || !e.touches[0]) return;
+          var t = e.touches[0];
+          var dx = t.clientX - touchDragState.startX;
+          var dy = t.clientY - touchDragState.startY;
+          var absX = Math.abs(dx);
+          var absY = Math.abs(dy);
+          var distance = Math.sqrt(dx*dx + dy*dy);
+
+          if(!touchDragState.dragReady){
+            if(absY > absX && absY > 8){
+              touchDragState.moved = true;
+              if(touchHoldTimer){
+                clearTimeout(touchHoldTimer);
+                touchHoldTimer = null;
+              }
+              return;
+            }
+            if(distance > 10){
+              touchDragState.moved = true;
+              if(touchHoldTimer){
+                clearTimeout(touchHoldTimer);
+                touchHoldTimer = null;
+              }
+            }
+            return;
+          }
+
+          if(absY > absX + 6){
+            finishTouchDrag(false);
+            return;
+          }
+
+          moveTouchGhost(t.clientX, t.clientY, touchDragState.url);
+          runThumbAutoScroll(t.clientX);
+          var overIdx = getThumbIndexFromPoint(t.clientX, t.clientY);
+          clearThumbDropMarks();
+          if(overIdx != null){
+            var overNode = photoThumbStrip.querySelectorAll('.photo-thumb')[overIdx];
+            if(overNode) overNode.classList.add('photo-thumb-drop');
+            touchDragState.lastIdx = overIdx;
+          }
+          e.preventDefault();
+        }, {passive:false});
+
+        wrap.addEventListener('touchend', function(){
+          finishTouchDrag(!!(touchDragState && touchDragState.dragReady));
+        });
+
+        wrap.addEventListener('touchcancel', function(){
+          finishTouchDrag(false);
+        });
+
+        wrap.addEventListener('touchcancel', function(){
+          finishTouchDrag(false);
+        });
+      }
+
+      function renderPhotoThumbs(){
+        photoThumbStrip.innerHTML = '';
+        if(!photoList.length) return;
+        photoList.forEach(function(item, idx){
+          var wrap = document.createElement('div');
+          wrap.className = 'photo-thumb' + (idx === currentPhotoIndex ? ' active' : '');
+          var del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'thumb-x';
+          del.textContent = '✕';
+          var num = document.createElement('div');
+          num.className = 'thumb-order';
+          num.textContent = String(idx + 1);
+          var imgBtn = document.createElement('button');
+          imgBtn.type = 'button';
+          imgBtn.className = 'photo-thumb-img';
+          imgBtn.style.backgroundImage = 'url("' + item.url + '")';
+          imgBtn.addEventListener('click', function(){
+            currentPhotoIndex = idx;
+            renderHero();
+          });
+          del.addEventListener('click', function(e){
+            e.stopPropagation();
+            setMosaicMode_(false);
+            if(photoList.length === 1){
+              photoList = [];
+              currentPhotoIndex = 0;
+            } else {
+              photoList.splice(idx, 1);
+              if(currentPhotoIndex >= photoList.length) currentPhotoIndex = photoList.length - 1;
+            }
+            renderHero();
+            queueSave();
+          });
+          wrap.appendChild(del);
+          wrap.appendChild(imgBtn);
+          wrap.appendChild(num);
+          bindPhotoDrag(wrap, idx);
+          photoThumbStrip.appendChild(wrap);
+        });
+      }
+      function getLedgerPreviewUrl_(item, preferOriginal){
+        item = item || {};
+        if(preferOriginal && item.originalUrl) return item.originalUrl;
+        if(item.url) return item.url;
+        if(item.originalUrl) return item.originalUrl;
+        if(item.fileId){
+          return preferOriginal
+            ? ('https://drive.google.com/uc?export=view&id=' + encodeURIComponent(item.fileId))
+            : ('https://drive.google.com/thumbnail?id=' + encodeURIComponent(item.fileId) + '&sz=w1200');
+        }
+        return '';
+      }
+
+      function ensureLedgerPreviewModal_(){
+        var existing = document.getElementById('ledgerPreviewModal');
+        if(existing) return existing;
+
+        var modal = document.createElement('div');
+        modal.id = 'ledgerPreviewModal';
+        modal.className = 'ledger-preview-modal';
+        modal.innerHTML = ''
+          + '<div id="ledgerPreviewTitle" class="ledger-preview-title"></div>'
+          + '<button type="button" id="ledgerPreviewClose" class="ledger-preview-close" aria-label="닫기">×</button>'
+          + '<img id="ledgerPreviewImage" class="ledger-preview-image" alt="매물자료 크게보기">';
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', function(e){
+          if(e.target === modal) closeLedgerPreview_();
+        });
+        document.getElementById('ledgerPreviewClose').addEventListener('click', closeLedgerPreview_);
+        return modal;
+      }
+
+      function openLedgerPreview_(item, idx){
+        var url = getLedgerPreviewUrl_(item, true);
+        if(!url){
+          showToast('미리보기 URL이 없습니다.');
+          return;
+        }
+
+        var modal = ensureLedgerPreviewModal_();
+        var img = document.getElementById('ledgerPreviewImage');
+        var title = document.getElementById('ledgerPreviewTitle');
+        img.onerror = function(){
+          var fallbackUrl = getLedgerPreviewUrl_(item, false);
+          if(fallbackUrl && img.src !== fallbackUrl) img.src = fallbackUrl;
+        };
+        img.src = url;
+        title.textContent = (item && item.name) || ('매물자료 ' + (idx + 1));
+        modal.classList.add('show');
+      }
+
+      function closeLedgerPreview_(){
+        var modal = document.getElementById('ledgerPreviewModal');
+        var img = document.getElementById('ledgerPreviewImage');
+        if(modal) modal.classList.remove('show');
+        if(img) img.removeAttribute('src');
+      }
+
+      function renderLedgerStatus(){
+        var count = ledgerList.length;
+        ledgerUploadedCount.textContent = count ? (count + '개의 파일이 업로드됨.') : '업로드된 매물자료가 없습니다.';
+        ledgerFileList.innerHTML = '';
+        ledgerList.forEach(function(item, idx){
+          var row = document.createElement('div');
+          row.className = 'ledger-file-item';
+
+          var thumb = document.createElement('button');
+          thumb.type = 'button';
+          thumb.className = 'ledger-file-thumb';
+          thumb.title = '크게 보기';
+
+          var thumbUrl = getLedgerPreviewUrl_(item, false);
+          if(thumbUrl){
+            var img = document.createElement('img');
+            img.src = thumbUrl;
+            img.alt = item.name || ('매물자료 ' + (idx + 1));
+            thumb.appendChild(img);
+          }else{
+            var empty = document.createElement('span');
+            empty.className = 'ledger-file-thumb-empty';
+            empty.textContent = '미리보기';
+            thumb.appendChild(empty);
+          }
+
+          thumb.addEventListener('click', function(){
+            openLedgerPreview_(item, idx);
+          });
+
+          var name = document.createElement('div');
+          name.className = 'ledger-file-name';
+          name.textContent = item.name || ('매물자료 ' + (idx + 1));
+          name.addEventListener('click', function(){
+            openLedgerPreview_(item, idx);
+          });
+
+          var del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'ledger-file-delete';
+          del.textContent = '삭제';
+          del.addEventListener('click', function(){
+            ledgerList.splice(idx, 1);
+            renderLedgerStatus();
+            queueSave();
+          });
+          row.appendChild(thumb);
+          row.appendChild(name);
+          row.appendChild(del);
+          ledgerFileList.appendChild(row);
+        });
+      }
+
+      heroAddBtn.addEventListener('click', function(){ setMosaicMode_(false); photoInput.click(); });
+      if(mosaicToggleBtn){
+        mosaicToggleBtn.addEventListener('click', function(){
+          if(mosaicMode){
+            saveMosaicToCurrentPhoto_();
+            return;
+          }
+          setMosaicMode_(true);
+        });
+      }
+      if(mosaicUndoBtn){
+        mosaicUndoBtn.addEventListener('click', function(){
+          undoMosaicStroke_();
+        });
+      }
+      if(photoDownloadBtn){
+        photoDownloadBtn.addEventListener('click', function(){
+          downloadPhotos_();
+        });
+      }
+      bindMosaicEvents_();
+      if(heroEmptyState){
+        heroEmptyState.addEventListener('click', function(){
+          heroAddBtn.click();
+        });
+      }
+      ledgerUploadBtn.addEventListener('click', function(){ ledgerInput.click(); });
+
+      deleteCurrentPhotoBtn.addEventListener('click', function(){
+        setMosaicMode_(false);
+        if(!photoList.length) return;
+        if(photoList.length === 1){
+          photoList = [];
+          currentPhotoIndex = 0;
+        } else {
+          photoList.splice(currentPhotoIndex, 1);
+          if(currentPhotoIndex >= photoList.length) currentPhotoIndex = photoList.length - 1;
+        }
+        renderHero();
+        queueSave();
+      });
+
+      photoInput.addEventListener('change', function(e){
+        setMosaicMode_(false);
+        var files = e.target.files;
+        if(!files || !files.length) return;
+        if(!photoList.length){
+          currentPhotoIndex = 0;
+        }
+        ensureTempSessionKey_();
+        Array.prototype.forEach.call(files, function(file){
+          fileToCachedDataUrl(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 }, function(url){
+            var item = {
+              tempKey: makeTempFileKey_('photo'),
+              tempSessionKey: tempSessionKey,
+              kind: 'photo',
+              name: file && file.name ? file.name : 'photo.jpg',
+              url: url || '',
+              uploadedAt: new Date().toISOString()
+            };
+            photoList.push(item);
+            currentPhotoIndex = photoList.length - 1;
+            renderHero();
+            queueSave();
+            uploadTempFileToServer_('photo', item)
+              .then(function(){
+                showToast('사진 임시저장됨');
+              })
+              .catch(function(err){
+                console.error(err);
+                showToast('사진 전송 실패');
+              });
+          });
+        });
+        e.target.value = '';
+      });
+
+      ledgerInput.addEventListener('change', function(e){
+        var files = e.target.files;
+        if(!files || !files.length) return;
+        startLedgerUploadIndicator_();
+        ensureTempSessionKey_();
+        Array.prototype.forEach.call(files, function(file){
+          fileToCachedDataUrl(file, { maxWidth: 1400, maxHeight: 1400, quality: 0.8 }, function(url){
+            var item = {
+              tempKey: makeTempFileKey_('ledger'),
+              tempSessionKey: tempSessionKey,
+              kind: 'ledger',
+              name: file.name || '매물자료 파일',
+              url: (url || ''),
+              uploadedAt: new Date().toISOString()
+            };
+            ledgerList.push(item);
+            renderLedgerStatus();
+            queueSave();
+            uploadTempFileToServer_('ledger', item)
+              .then(function(){
+                showToast('장부 임시저장됨');
+              })
+              .catch(function(err){
+                console.error(err);
+                showToast('장부 전송 실패');
+              });
+          });
+        });
+        e.target.value = '';
+      });
+
+      prevPhotoBtn.addEventListener('click', function(){
+        if(!photoList.length) return;
+        setMosaicMode_(false);
+        currentPhotoIndex = (currentPhotoIndex - 1 + photoList.length) % photoList.length;
+        renderHero();
+      });
+      nextPhotoBtn.addEventListener('click', function(){
+        if(!photoList.length) return;
+        setMosaicMode_(false);
+        currentPhotoIndex = (currentPhotoIndex + 1) % photoList.length;
+        renderHero();
+      });
+
+      var startX = null;
+      heroImage.addEventListener('touchstart', function(e){
+        if(mosaicMode){ startX = null; return; }
+        startX = e.touches && e.touches[0] ? e.touches[0].clientX : null;
+      }, {passive:true});
+      heroImage.addEventListener('touchend', function(e){
+        if(mosaicMode){ startX = null; return; }
+        if(startX == null) return;
+        var endX = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : startX;
+        var dx = endX - startX;
+        if(Math.abs(dx) > 40){
+          if(dx < 0) nextPhotoBtn.click();
+          else prevPhotoBtn.click();
+        }
+        startX = null;
+      }, {passive:true});
+
+      function roundNum(v){ return Math.round(v * 100) / 100; }
+
+      function bindMeasureGroup(group){
+        var m2Input = group.querySelector('[data-unit="m2"]');
+        var pyInput = group.querySelector('[data-unit="pyeong"]');
+        var lock = false;
+        function syncFromM2(){
+          if(lock) return;
+          lock = true;
+          var txt = (m2Input.value || '').trim();
+          var v = parseFloat(txt);
+          pyInput.value = Number.isFinite(v) ? roundNum(v / 3.305785).toString() : '';
+          lock = false;
+          queueSave();
+        }
+        function syncFromPy(){
+          if(lock) return;
+          lock = true;
+          var txt = (pyInput.value || '').trim();
+          var v = parseFloat(txt);
+          m2Input.value = Number.isFinite(v) ? roundNum(v * 3.305785).toString() : '';
+          lock = false;
+          queueSave();
+        }
+        m2Input.addEventListener('input', syncFromM2);
+        pyInput.addEventListener('input', syncFromPy);
+        m2Input.addEventListener('blur', function(){
+          if(!(m2Input.value || '').trim()) pyInput.value = '';
+        });
+        pyInput.addEventListener('blur', function(){
+          if(!(pyInput.value || '').trim()) m2Input.value = '';
+        });
+      }
+      document.querySelectorAll('.measure-field').forEach(bindMeasureGroup);
+
+
+
+      function startAiLoadingDots_(){
+        if(!aiLoadingText) return;
+        stopAiLoadingDots_();
+        aiLoadingDotsStep = 0;
+        aiLoadingText.textContent = '작업중이에요';
+        aiLoadingDotsTimer = setInterval(function(){
+          aiLoadingDotsStep = (aiLoadingDotsStep + 1) % 4;
+          aiLoadingText.textContent = '작업중이에요' + '.'.repeat(aiLoadingDotsStep);
+        }, 420);
+      }
+
+      function stopAiLoadingDots_(){
+        if(aiLoadingDotsTimer){
+          clearInterval(aiLoadingDotsTimer);
+          aiLoadingDotsTimer = null;
+        }
+        aiLoadingDotsStep = 0;
+        if(aiLoadingText){
+          aiLoadingText.textContent = '작업중이에요';
+        }
+      }
+
+      function showAiLoadingPanel_(){
+        if(aiLoadingPanel){
+          aiLoadingPanel.classList.remove('is-hidden');
+        }
+      }
+
+      function hideAiLoadingPanel_(){
+        if(aiLoadingPanel){
+          aiLoadingPanel.classList.add('is-hidden');
+        }
+      }
+
+      function enableAiOverlayTypingClear_(){
+        if(aiLoadingOverlay){
+          aiLoadingOverlay.classList.add('typing-clear');
+        }
+      }
+
+      function disableAiOverlayTypingClear_(){
+        if(aiLoadingOverlay){
+          aiLoadingOverlay.classList.remove('typing-clear');
+        }
+      }
+
+      function showAiLoadingOverlay_(){
+        if(!aiLoadingOverlay) return;
+        disableAiOverlayTypingClear_();
+        aiLoadingOverlay.classList.add('show');
+        aiLoadingOverlay.setAttribute('aria-hidden', 'false');
+        showAiLoadingPanel_();
+        startAiLoadingDots_();
+      }
+
+      function hideAiLoadingOverlay_(){
+        if(aiOverlayDelayTimer){
+          clearTimeout(aiOverlayDelayTimer);
+          aiOverlayDelayTimer = null;
+        }
+        if(aiLoadingOverlay){
+          aiLoadingOverlay.classList.remove('show');
+          aiLoadingOverlay.setAttribute('aria-hidden', 'true');
+        }
+        disableAiOverlayTypingClear_();
+        showAiLoadingPanel_();
+        stopAiLoadingDots_();
+      }
+
+      function scheduleAiLoadingOverlay_(){
+        hideAiLoadingOverlay_();
+        aiOverlayDelayTimer = setTimeout(function(){
+          aiOverlayDelayTimer = null;
+          showAiLoadingOverlay_();
+        }, AI_OVERLAY_DELAY_MS);
+      }
+
+
+      function setAddressLookupLoading_(isLoading){
+        if(!addressLookupBtn) return;
+        addressLookupBtn.disabled = !!isLoading;
+        addressLookupBtn.classList.toggle('is-loading', !!isLoading);
+        if(isLoading){
+          startDotsTextAnimation_(addressLookupBtn, '조회중', 'addressLookup');
+        }else{
+          stopDotsTextAnimation_('addressLookup');
+          addressLookupBtn.textContent = '조회';
+        }
+      }
+
+      function markLookupFilled_(el){
+        if(el && el.classList) el.classList.add('lookup-filled');
+      }
+
+      function firstNonEmpty_(){
+        for(var i = 0; i < arguments.length; i++){
+          var v = arguments[i];
+          if(v == null) continue;
+          v = String(v).trim();
+          if(v) return v;
+        }
+        return '';
+      }
+
+      function formatYmd_(raw){
+        var v = String(raw || '').replace(/\D/g, '');
+        if(v.length !== 8) return String(raw || '').trim();
+        return v.slice(0,4) + '.' + v.slice(4,6) + '.' + v.slice(6,8);
+      }
+
+      function numberText_(v){
+        if(v == null || v === '') return '';
+        var n = Number(v);
+        if(!isFinite(n)) return String(v).trim();
+        if(Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
+        return (Math.round(n * 100) / 100).toString();
+      }
+
+      function pyeongFromM2_(v){
+        var n = Number(v);
+        if(!isFinite(n)) return '';
+        return (Math.round((n / 3.305785) * 100) / 100).toString();
+      }
+
+      function jsonpCallPublicLookup_(params){
+        return new Promise(function(resolve, reject){
+          var cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+          var script = document.createElement('script');
+          var done = false;
+          var timer = null;
+          var requestParams = Object.assign({}, params || {});
+
+          function cleanup(){
+            try { delete window[cb]; } catch(e) {}
+            if(timer) clearTimeout(timer);
+            if(script.parentNode) script.parentNode.removeChild(script);
+          }
+
+          window[cb] = function(payload){
+            if(done) return;
+            done = true;
+            cleanup();
+            resolve(payload);
+          };
+
+          script.onerror = function(){
+            if(done) return;
+            done = true;
+            cleanup();
+            reject(new Error('GAS 직접 호출 실패'));
+          };
+
+          requestParams.callback = cb;
+          requestParams._ts = Date.now();
+
+          var q = new URLSearchParams();
+          Object.keys(requestParams).forEach(function(k){
+            q.set(k, requestParams[k] == null ? '' : String(requestParams[k]));
+          });
+
+          script.src = GAS_URL + '?' + q.toString();
+          document.body.appendChild(script);
+
+          timer = setTimeout(function(){
+            if(done) return;
+            done = true;
+            cleanup();
+            reject(new Error('GAS 직접 호출 시간 초과'));
+          }, 15000);
+        });
+      }
+
+      function lookupErrorText_(err){
+        if(!err) return '알 수 없는 오류';
+        if(err.message) return String(err.message);
+        return String(err);
+      }
+
+      function fetchPublicPropertyViaApi_(params){
+        if(!window.fetch){
+          return Promise.reject(new Error('브라우저 fetch 미지원'));
+        }
+
+        return fetch('/api/public-property-lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params || {}),
+          cache: 'no-store'
+        }).then(function(res){
+          return res.text().then(function(text){
+            var data = null;
+            try { data = text ? JSON.parse(text) : null; } catch(e) {}
+            if(!res.ok){
+              throw new Error((data && (data.error || data.message)) || ('서버 우회 조회 실패: ' + res.status));
+            }
+            if(!data){
+              throw new Error('서버 우회 조회 응답 파싱 실패');
+            }
+            return data;
+          });
+        });
+      }
+
+
+      function closeLookupFailurePanel_(){
+        var existing = document.getElementById('lookupFailureOverlay');
+        if(existing && existing.parentNode){
+          existing.parentNode.removeChild(existing);
+        }
+      }
+
+      function showLookupFailurePanel_(err){
+        closeLookupFailurePanel_();
+
+        var errors = (err && Array.isArray(err.lookupErrors)) ? err.lookupErrors : [];
+        var details = errors.length ? errors.join('\n') : lookupErrorText_(err);
+
+        var overlay = document.createElement('div');
+        overlay.id = 'lookupFailureOverlay';
+        overlay.className = 'lookup-fail-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', '건축물정보 조회 실패 안내');
+
+        var panel = document.createElement('div');
+        panel.className = 'lookup-fail-panel';
+
+        var title = document.createElement('h3');
+        title.className = 'lookup-fail-title';
+        title.textContent = '건축물정보 조회 실패';
+
+        var desc = document.createElement('p');
+        desc.className = 'lookup-fail-desc';
+        desc.textContent = '이 컴퓨터에서 GAS 직접 호출과 서버 우회 조회가 모두 실패했습니다. 새로고침하면 이 안내 패널은 사라집니다.';
+
+        var box = document.createElement('div');
+        box.className = 'lookup-fail-box';
+        box.textContent = details || '상세 오류 없음';
+
+        var list = document.createElement('ol');
+        list.className = 'lookup-fail-list';
+        [
+          '시크릿 모드에서 매물입력기를 다시 열어 조회해보세요.',
+          '광고차단·백신 웹보호·브라우저 보안 확장프로그램을 잠시 끄고 확인하세요.',
+          '크롬이 안 되면 Edge에서 같은 주소로 접속해 확인하세요.',
+          '계속 안 되면 이 오류 내용을 복사해서 개발자에게 전달하세요.'
+        ].forEach(function(text){
+          var li = document.createElement('li');
+          li.textContent = text;
+          list.appendChild(li);
+        });
+
+        var actions = document.createElement('div');
+        actions.className = 'lookup-fail-actions';
+
+        var copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'lookup-fail-btn secondary';
+        copyBtn.textContent = '오류 복사';
+        copyBtn.addEventListener('click', function(){
+          var text = '건축물정보 조회 실패\n' + (details || '상세 오류 없음');
+          if(navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(text).then(function(){
+              showToast('오류 내용 복사됨');
+            }).catch(function(){
+              showToast('복사 실패');
+            });
+          }else{
+            showToast('복사 미지원');
+          }
+        });
+
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'lookup-fail-btn';
+        closeBtn.textContent = '닫기';
+        closeBtn.addEventListener('click', closeLookupFailurePanel_);
+
+        actions.appendChild(copyBtn);
+        actions.appendChild(closeBtn);
+        panel.appendChild(title);
+        panel.appendChild(desc);
+        panel.appendChild(box);
+        panel.appendChild(list);
+        panel.appendChild(actions);
+        overlay.appendChild(panel);
+
+        overlay.addEventListener('click', function(e){
+          if(e.target === overlay){
+            closeLookupFailurePanel_();
+          }
+        });
+
+        document.body.appendChild(overlay);
+        closeBtn.focus();
+      }
+
+      function lookupPublicPropertyWithFallback_(params){
+        var firstError = null;
+
+        return jsonpCallPublicLookup_(params).then(function(payload){
+          if(payload && payload.ok){
+            return payload;
+          }
+          throw new Error((payload && (payload.error || payload.message)) || 'GAS 조회 응답 실패');
+        }).catch(function(gasErr){
+          firstError = gasErr;
+          console.warn('[매물입력기 건축물조회] GAS 직접 호출 실패, /api 우회 재시도', gasErr);
+          return fetchPublicPropertyViaApi_(params).then(function(payload){
+            if(payload && payload.ok){
+              return payload;
+            }
+            throw new Error((payload && (payload.error || payload.message)) || '서버 우회 조회 응답 실패');
+          }).catch(function(apiErr){
+            var finalError = new Error(
+              '건축물정보 조회 실패 · GAS 직접 호출과 서버 우회 조회가 모두 실패했습니다.'
+            );
+            finalError.lookupErrors = [
+              'GAS 직접 호출: ' + lookupErrorText_(firstError),
+              '서버 우회 조회: ' + lookupErrorText_(apiErr)
+            ];
+            console.warn('[매물입력기 건축물조회] 전체 실패', finalError.lookupErrors);
+            throw finalError;
+          });
+        });
+      }
+
+      function openAddressSearch_(){
+        try{
+          new daum.Postcode({
+            oncomplete:function(data){
+              selectedAddressSearchData = {
+                jibunAddress: data.jibunAddress || data.autoJibunAddress || '',
+                roadAddress: data.roadAddress || data.autoRoadAddress || '',
+                lookupAddress: (data.jibunAddress || data.autoJibunAddress || data.roadAddress || data.autoRoadAddress || ''),
+                bcode: data.bcode || '',
+                sido: data.sido || '',
+                sigungu: data.sigungu || '',
+                bname: data.bname || '',
+                buildingName: data.buildingName || '',
+                zonecode: data.zonecode || '',
+                apartment: data.apartment || '',
+                autoJibunAddress: data.autoJibunAddress || '',
+                autoRoadAddress: data.autoRoadAddress || '',
+                addressType: data.addressType || ''
+              };
+
+              var chosenAddress = selectedAddressSearchData.jibunAddress || selectedAddressSearchData.roadAddress || selectedAddressSearchData.lookupAddress || '';
+              if(addressField) addressField.textContent = chosenAddress;
+              updateTopFields();
+              queueSave();
+              showToast('주소 선택 완료');
+            }
+          }).open();
+        }catch(e){
+          showToast('주소검색 오류');
+        }
+      }
+
+      function inferLookupAddressType_(address){
+        var text = normalizeLookupText_(address);
+        if(!text) return '';
+        if(/(로|길)\s*\d/.test(text) && !/(읍|면|동|리)\s*(산\s*)?\d/.test(text)) return 'ROAD';
+        if(/(읍|면|동|리)\s*(산\s*)?\d/.test(text)) return 'JIBUN';
+        return 'JIBUN';
+      }
+
+      function buildIntegratedLookupParamsFromAddress_(address){
+        var text = normalizeLookupText_(address);
+        if(!text) return null;
+        var type = inferLookupAddressType_(text) || 'JIBUN';
+        var params = {
+          action: 'fetchPublicPropertyBySearchResult',
+          lookupAddress: text,
+          queryAddress: text,
+          queryAddressType: type
+        };
+        if(type === 'ROAD'){
+          params.roadAddress = text;
+        }else{
+          params.jibunAddress = text;
+        }
+        return params;
+      }
+
+      function buildCurrentIntegratedLookupParams_(){
+        var currentAddress = normalizeLookupText_(plainText(addressField));
+        if(selectedAddressSearchData){
+          var selectedAddressText = normalizeLookupText_(
+            selectedAddressSearchData.lookupAddress || selectedAddressSearchData.jibunAddress || selectedAddressSearchData.autoJibunAddress || selectedAddressSearchData.roadAddress || selectedAddressSearchData.autoRoadAddress || ''
+          );
+          if(currentAddress && selectedAddressText && currentAddress !== selectedAddressText){
+            return buildIntegratedLookupParamsFromAddress_(currentAddress);
+          }
+          var params = { action: 'fetchPublicPropertyBySearchResult' };
+          Object.keys(selectedAddressSearchData).forEach(function(k){
+            params[k] = selectedAddressSearchData[k];
+          });
+          params.lookupAddress = params.lookupAddress || params.jibunAddress || params.autoJibunAddress || params.roadAddress || params.autoRoadAddress || '';
+          params.queryAddress = params.lookupAddress;
+          params.queryAddressType = (params.jibunAddress || params.autoJibunAddress) ? 'JIBUN' : 'ROAD';
+          return params.lookupAddress ? params : null;
+        }
+
+        return buildIntegratedLookupParamsFromAddress_(plainText(addressField));
+      }
+
+      function seedSelectedAddressSearchDataFromLoadedAddress_(address){
+        var text = normalizeLookupText_(address);
+        if(!text){
+          selectedAddressSearchData = null;
+          return;
+        }
+        var type = inferLookupAddressType_(text) || 'JIBUN';
+        selectedAddressSearchData = {
+          jibunAddress: type === 'JIBUN' ? text : '',
+          roadAddress: type === 'ROAD' ? text : '',
+          lookupAddress: text,
+          queryAddress: text,
+          queryAddressType: type,
+          bcode: '',
+          sido: '',
+          sigungu: '',
+          bname: '',
+          buildingName: '',
+          zonecode: '',
+          apartment: '',
+          autoJibunAddress: '',
+          autoRoadAddress: '',
+          addressType: type === 'ROAD' ? 'R' : 'J'
+        };
+      }
+
+      function refreshRoadSideFromIntegratedLookupForAddress_(address, options){
+        options = options || {};
+        var params = buildIntegratedLookupParamsFromAddress_(address);
+        if(!params || !params.lookupAddress) return Promise.resolve(false);
+
+        return lookupPublicPropertyWithFallback_(params).then(function(res){
+          if(!(res && res.ok)){
+            throw new Error((res && (res.error || res.message)) || '조회 실패');
+          }
+          var roadSide = normalizeLookupText_(buildLookupFillData_(res).roadWidth || extractRoadWidthFromLookup_(res));
+          if(!roadSide) return false;
+          var el = findSpecValueByLabel_('도로접면');
+          if(!el) return false;
+          if(plainText(el) === roadSide){
+            markLookupFilled_(el);
+            return false;
+          }
+          setEditableText_(el, roadSide);
+          markLookupFilled_(el);
+          updateTopFields();
+          queueSave();
+          return true;
+        }).catch(function(err){
+          if(options.silent){
+            console.warn('[매물입력기 도로접면 기존매물 자동조회 실패]', err);
+            return false;
+          }
+          throw err;
+        });
+      }
+
+      function pickRepresentativeTitleItem_(items){
+        items = Array.isArray(items) ? items.slice() : [];
+        if(!items.length) return {};
+        items.sort(function(a, b){
+          return Number(b && b.totArea || 0) - Number(a && a.totArea || 0);
+        });
+        return items[0] || {};
+      }
+
+      function getJijiguText_(items){
+        if(!Array.isArray(items) || !items.length) return '';
+        var item = items[0] || {};
+        var arr = [
+          item.jiyukCdNm, item.jiguCdNm, item.guyukCdNm,
+          item.jijiguCdNm, item.jijiguGbCdNm, item.jijigu
+        ].map(function(v){ return String(v || '').trim(); }).filter(Boolean);
+        var out = [];
+        arr.forEach(function(v){
+          if(out.indexOf(v) === -1) out.push(v);
+        });
+        return out.join(' / ');
+      }
+
+      function buildCompositionText_(recap, titleItem){
+        var parts = [];
+        var purpose = firstNonEmpty_(recap.mainPurpsCdNm, titleItem.mainPurpsCdNm);
+        var count = firstNonEmpty_(recap.mainBldCnt);
+        var strct = firstNonEmpty_(titleItem.strctCdNm, titleItem.etcStrct);
+        if(purpose) parts.push(purpose);
+        if(count) parts.push('총 ' + count + '동');
+        if(strct) parts.push(strct);
+        return parts.join(' / ');
+      }
+
+      function buildFloorInfoText_(recap, titleItem){
+        var gf = firstNonEmpty_(titleItem.grndFlrCnt);
+        var uf = firstNonEmpty_(titleItem.ugrndFlrCnt);
+        if(gf || uf){
+          return '지상 ' + (gf || '0') + '층 / 지하 ' + (uf || '0') + '층';
+        }
+        return '';
+      }
+
+
+      function addNumbers_(){
+        var total = 0;
+        var has = false;
+        for(var i = 0; i < arguments.length; i += 1){
+          var raw = arguments[i];
+          if(raw === null || raw === undefined || raw === '') continue;
+          var num = Number(raw);
+          if(!isFinite(num)) continue;
+          total += num;
+          has = true;
+        }
+        return has ? total : '';
+      }
+
+      function buildCombinedZoningText_(jijiguItems, basis){
+        var parts = [];
+        var map = Object.create(null);
+
+        function norm(value){
+          return String(value == null ? '' : value).replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
+        }
+
+        function push(value){
+          var text = norm(value);
+          if(!text) return;
+          if(text === '0') return;
+          if(/코드/.test(text)) return;
+          if(/^[A-Z0-9_-]+$/.test(text)) return;
+          if(map[text]) return;
+          map[text] = true;
+          parts.push(text);
+        }
+
+        push(basis && basis.jiyukCdNm);
+        push(basis && basis.jiguCdNm);
+        push(basis && basis.guyukCdNm);
+
+        (Array.isArray(jijiguItems) ? jijiguItems : []).forEach(function(item){
+          push(item && item.jiyukCdNm);
+          push(item && item.jiguCdNm);
+          push(item && item.guyukCdNm);
+          push(item && item.jijiguCdNm);
+          push(item && item.etcJijigu);
+
+          var rawJijigu = norm(item && item.jijigu);
+          if(rawJijigu && !/코드/.test(rawJijigu) && !/^[A-Z0-9_-]+$/.test(rawJijigu)){
+            push(rawJijigu);
+          }
+        });
+
+        return parts.join(' / ');
+      }
+
+      function normalizeLookupText_(value){
+        return String(value == null ? '' : value).replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
+      }
+
+      function getIntegratedLookupData_(json){
+        var candidates = [json];
+        ['data', 'result', 'payload', 'body'].forEach(function(key){
+          if(json && json[key]) candidates.push(json[key]);
+        });
+        for(var i = 0; i < candidates.length; i += 1){
+          var item = candidates[i];
+          if(item && typeof item === 'object' && (item.apis || item.land || item.normalized)){
+            return item;
+          }
+        }
+        return json || {};
+      }
+
+      function formatLandRoadSideText_(value){
+        var text = normalizeLookupText_(value);
+        if(!text) return '';
+
+        var map = {
+          '광대로한면': '25m 이상',
+          '광대로': '25m 이상',
+          '대로한면': '12m 이상 25m 미만',
+          '대로': '12m 이상 25m 미만',
+          '중로한면': '8m 이상 12m 미만',
+          '중로': '8m 이상 12m 미만',
+          '소로한면': '4m 이상 8m 미만',
+          '소로': '4m 이상 8m 미만',
+          '세로한면': '4m 미만',
+          '세로': '4m 미만',
+          '맹지': '도로 접면 없음'
+        };
+
+        var desc = map[text] || '';
+        if(!desc){
+          Object.keys(map).some(function(key){
+            if(text.indexOf(key) !== -1){
+              desc = map[key];
+              return true;
+            }
+            return false;
+          });
+        }
+
+        return desc ? text + '(' + desc + ')' : text;
+      }
+
       function splitLandUsePlanValues_(value){
         if(Array.isArray(value)){
           var arr = [];

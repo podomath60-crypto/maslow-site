@@ -1973,6 +1973,38 @@
       return formatWonText(total) + ' / 약 ' + String(manwon).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '만원';
     }
 
+    function formatLandRoadSideText(value){
+      var text = String(value == null ? '' : value).trim();
+      if(!text) return '';
+
+      var map = {
+        '광대로한면': '25m 이상',
+        '광대로': '25m 이상',
+        '대로한면': '12m 이상 25m 미만',
+        '대로': '12m 이상 25m 미만',
+        '중로한면': '8m 이상 12m 미만',
+        '중로': '8m 이상 12m 미만',
+        '소로한면': '4m 이상 8m 미만',
+        '소로': '4m 이상 8m 미만',
+        '세로한면': '4m 미만',
+        '세로': '4m 미만',
+        '맹지': '도로 접면 없음'
+      };
+
+      var desc = map[text] || '';
+      if(!desc) {
+        Object.keys(map).some(function(key){
+          if(text.indexOf(key) !== -1){
+            desc = map[key];
+            return true;
+          }
+          return false;
+        });
+      }
+
+      return desc ? text + '(' + desc + ')' : text;
+    }
+
     function splitLandValues(value){
       if(Array.isArray(value)){
         return value.map(function(v){ return String(v == null ? '' : v).trim(); }).filter(Boolean);
@@ -2026,13 +2058,18 @@
       characteristic = characteristic || {};
       return !!firstNonEmpty(
         characteristic.baseYear,
+        characteristic.baseMonth,
         characteristic.landCategory,
         characteristic.areaM2,
         characteristic.zoning,
+        characteristic.zoning2,
+        characteristic.landUseSituation,
+        characteristic.terrainHeight,
         characteristic.terrainShape,
         characteristic.roadSide,
         characteristic.officialLandPrice,
         characteristic.officialLandPriceText,
+        characteristic.officialLandPriceAnnouncementDate,
         characteristic.dataDate
       );
     }
@@ -2061,13 +2098,28 @@
       );
 
       rows.push(['기준연도', textOrDash(characteristic.baseYear)]);
+      if(firstNonEmpty(characteristic.baseMonth)){
+        rows.push(['기준월', textOrDash(characteristic.baseMonth)]);
+      }
       rows.push(['지목', textOrDash(characteristic.landCategory)]);
       rows.push(['면적', formatLandAreaText(characteristic.areaM2, characteristic.areaPy)]);
-      rows.push(['용도지역', textOrDash(characteristic.zoning)]);
+      rows.push(['용도지역1', textOrDash(characteristic.zoning)]);
+      if(firstNonEmpty(characteristic.zoning2)){
+        rows.push(['용도지역2', textOrDash(characteristic.zoning2)]);
+      }
+      if(firstNonEmpty(characteristic.landUseSituation)){
+        rows.push(['토지이용상황', textOrDash(characteristic.landUseSituation)]);
+      }
+      if(firstNonEmpty(characteristic.terrainHeight)){
+        rows.push(['지형고저', textOrDash(characteristic.terrainHeight)]);
+      }
       rows.push(['지형형상', textOrDash(characteristic.terrainShape)]);
-      rows.push(['도로접면', textOrDash(characteristic.roadSide)]);
+      rows.push(['도로접면', textOrDash(formatLandRoadSideText(characteristic.roadSide))]);
       rows.push(['공시지가', textOrDash(priceText)]);
       if(totalPriceText) rows.push(['공시지가 총액', totalPriceText]);
+      if(firstNonEmpty(characteristic.officialLandPriceAnnouncementDate)){
+        rows.push(['개별공시지가 공시일자', textOrDash(formatDate(characteristic.officialLandPriceAnnouncementDate) || characteristic.officialLandPriceAnnouncementDate)]);
+      }
       rows.push(['토지특성 기준일', textOrDash(formatDate(characteristic.dataDate) || characteristic.dataDate)]);
 
       return rows;

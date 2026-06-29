@@ -883,6 +883,28 @@
       border-bottom:1px solid #eef2f6;
       background:#f9fafb;
     }
+    .land-parcel-map-row{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:8px;
+      flex-wrap:wrap;
+      padding:0 14px 12px;
+      border-bottom:1px solid #eef2f6;
+      background:#f9fafb;
+    }
+    .land-parcel-mini-btn.ddangya{
+      border-color:#fed7aa;
+      background:#fff7ed;
+      color:#f97316;
+      box-shadow:0 4px 12px rgba(249,115,22,.08);
+    }
+    .land-parcel-mini-btn.naver{
+      border-color:#c8e0ff;
+      background:#f4f9ff;
+      color:#0f7cff;
+      box-shadow:0 4px 12px rgba(15,124,255,.06);
+    }
     .land-parcel-card-title{
       font-size:15px;
       font-weight:900;
@@ -951,9 +973,52 @@
       letter-spacing:-0.03em;
       resize:vertical;
     }
-    .land-parcel-textarea{min-height:52px;}
+    .land-parcel-textarea{
+      min-height:52px;
+      overflow:hidden;
+      resize:none;
+    }
     .land-parcel-input::placeholder,
     .land-parcel-textarea::placeholder{color:rgba(17,24,39,.28);}
+    .land-parcel-field.address-main{
+      background:#f1f7ff;
+      box-shadow:inset 4px 0 0 #0f7cff;
+    }
+    .land-parcel-field.address-main .land-parcel-label{
+      color:#0f63ce;
+      font-size:14px;
+    }
+    .land-parcel-field.address-main .land-parcel-input{
+      font-size:17px;
+      line-height:1.55;
+      font-weight:900;
+      color:#0f172a;
+    }
+    .land-parcel-area-inline{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      flex-wrap:wrap;
+      min-width:0;
+    }
+    .land-parcel-area-inline .land-parcel-input{
+      width:110px;
+      flex:0 0 110px;
+      text-align:right;
+    }
+    .land-parcel-area-unit{
+      font-size:14px;
+      line-height:1.5;
+      font-weight:900;
+      color:#111827;
+      white-space:nowrap;
+    }
+    .land-parcel-area-paren{
+      font-size:14px;
+      line-height:1.5;
+      font-weight:900;
+      color:#6b7280;
+    }
     .land-parcel-summary{
       margin:0 0 14px;
       padding:10px 12px;
@@ -985,6 +1050,7 @@
       .land-parcel-card-actions{width:100%;justify-content:flex-start;}
       .land-parcel-grid{grid-template-columns:1fr;}
       .land-parcel-field{grid-template-columns:94px 1fr;border-right:none;}
+      .land-parcel-area-inline .land-parcel-input{width:86px;flex-basis:86px;}
     }
 
     .measure-field{
@@ -3011,6 +3077,65 @@
         window.open(url, '_blank', 'noopener');
       }
 
+      function getLandParcelAddressForMap_(idx){
+        var parcel = Array.isArray(landParcels) ? landParcels[idx] : null;
+        if(!parcel) return '';
+        return firstNonEmpty_(parcel.address, parcel.displayAddress);
+      }
+
+      function openLandParcelNaverMapLink_(idx){
+        var address = getLandParcelAddressForMap_(idx);
+        if(!address){
+          showToast('필지 소재지를 먼저 입력해주세요.');
+          return;
+        }
+        window.open('https://map.naver.com/p/search/' + encodeURIComponent(address), '_blank', 'noopener');
+      }
+
+      function openLandParcelDdangyaLink_(idx){
+        var parcel = Array.isArray(landParcels) ? landParcels[idx] : null;
+        var address = getLandParcelAddressForMap_(idx);
+        if(!parcel || !address){
+          alert('필지 소재지를 먼저 입력해주세요.');
+          return;
+        }
+
+        var popup = null;
+        try{
+          popup = window.open('about:blank', '_blank');
+          if(popup) popup.opener = null;
+        }catch(err){
+          popup = null;
+        }
+
+        var openByPnu = function(pnu){
+          if(!pnu){
+            if(popup) popup.close();
+            alert('지번 주소를 확인할 수 없어 땅야 상세페이지를 열 수 없습니다.');
+            return;
+          }
+          var url = 'https://ddangya.com/land/detail/' + pnu;
+          if(popup){
+            popup.location.href = url;
+          }else{
+            window.open(url, '_blank', 'noopener,noreferrer');
+          }
+        };
+
+        var storedPnu = safeText_(parcel.pnu);
+        if(/^\d{19}$/.test(storedPnu)){
+          openByPnu(storedPnu);
+          return;
+        }
+
+        ensureAdminBjdongCodes_().then(function(){
+          openByPnu(buildAdminPnuFromAddress_(address));
+        }).catch(function(){
+          if(popup) popup.close();
+          alert('법정동 코드 데이터를 불러오지 못했습니다.');
+        });
+      }
+
       function getCreatorMap_(){
         return [
           { code:'6857', name:'한정인', displayName:'한정인 이사', initial:'hji', aliases:['한정인이사','한이사','이사'] },
@@ -4054,12 +4179,17 @@
           head.appendChild(actions);
           card.appendChild(head);
 
+          var mapRow = document.createElement('div');
+          mapRow.className = 'land-parcel-map-row';
+          mapRow.innerHTML = '' +
+            '<button type="button" class="land-parcel-mini-btn ddangya" data-land-action="ddangya">땅야에서 보기</button>' +
+            '<button type="button" class="land-parcel-mini-btn naver" data-land-action="naver-map">네이버지도에서 보기</button>';
+          card.appendChild(mapRow);
+
           var grid = document.createElement('div');
           grid.className = 'land-parcel-grid';
-          grid.innerHTML = buildLandParcelFieldHtml_('소재지', 'address', parcel.address, 'full', '지번주소 입력 후 조회') +
-            buildLandParcelFieldHtml_('지번', 'jibun', parcel.jibun, '', '') +
-            buildLandParcelFieldHtml_('면적㎡', 'areaM2', parcel.areaM2, '', '') +
-            buildLandParcelFieldHtml_('면적평', 'areaPy', parcel.areaPy, '', '') +
+          grid.innerHTML = buildLandParcelFieldHtml_('소재지', 'address', parcel.address, 'full address-main', '지번주소 입력 후 조회') +
+            buildLandParcelAreaFieldHtml_(parcel) +
             buildLandParcelFieldHtml_('지목', 'landCategory', parcel.landCategory, '', '') +
             buildLandParcelFieldHtml_('용도지역1', 'zoning1', parcel.zoning1, '', '') +
             buildLandParcelFieldHtml_('용도지역2', 'zoning2', parcel.zoning2, '', '') +
@@ -4072,12 +4202,12 @@
             buildLandParcelFieldHtml_('공시지가 총액', 'officialLandPriceTotal', parcel.officialLandPriceTotal, '', '') +
             buildLandParcelFieldHtml_('공시일자', 'officialLandPriceAnnouncementDate', parcel.officialLandPriceAnnouncementDate, '', '') +
             buildLandParcelFieldHtml_('토지특성 기준일', 'landCharacteristicBaseDate', parcel.landCharacteristicBaseDate, '', '') +
-            buildLandParcelTextareaHtml_('토지이용계획 요약', 'usePlanSummary', parcel.usePlanSummary, 'full') +
-            buildLandParcelTextareaHtml_('토지이용계획 원문', 'usePlanRawText', parcel.usePlanRawText, 'full') +
+            buildLandParcelTextareaHtml_('토지이용계획', 'usePlanRawText', parcel.usePlanRawText, 'full use-plan-raw') +
             buildLandParcelTextareaHtml_('제한사항 메모', 'restrictionMemo', parcel.restrictionMemo, 'full');
           card.appendChild(grid);
           landParcelList.appendChild(card);
         });
+        autosizeLandParcelTextareas_(landParcelList);
       }
 
       function htmlEscapeAttr_(value){
@@ -4095,11 +4225,39 @@
         '</div>';
       }
 
+      function buildLandParcelAreaFieldHtml_(parcel){
+        parcel = parcel || {};
+        return '<div class="land-parcel-field land-parcel-area-field full">' +
+          '<div class="land-parcel-label">면적</div>' +
+          '<div class="land-parcel-area-inline">' +
+            '<input class="land-parcel-input" data-land-key="areaM2" value="' + htmlEscapeAttr_(parcel.areaM2 || '') + '" placeholder="입력">' +
+            '<span class="land-parcel-area-unit">㎡</span>' +
+            '<span class="land-parcel-area-paren">(</span>' +
+            '<input class="land-parcel-input" data-land-key="areaPy" value="' + htmlEscapeAttr_(parcel.areaPy || '') + '" placeholder="자동">' +
+            '<span class="land-parcel-area-unit">평</span>' +
+            '<span class="land-parcel-area-paren">)</span>' +
+          '</div>' +
+        '</div>';
+      }
+
       function buildLandParcelTextareaHtml_(label, key, value, extraClass){
         return '<div class="land-parcel-field ' + (extraClass || '') + '">' +
           '<div class="land-parcel-label">' + htmlEscapeAttr_(label) + '</div>' +
           '<textarea class="land-parcel-textarea" data-land-key="' + htmlEscapeAttr_(key) + '" placeholder="입력">' + htmlEscapeAttr_(value || '') + '</textarea>' +
         '</div>';
+      }
+
+      function autosizeLandParcelTextarea_(textarea){
+        if(!textarea) return;
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.max(52, textarea.scrollHeight) + 'px';
+      }
+
+      function autosizeLandParcelTextareas_(root){
+        var scope = root || document;
+        scope.querySelectorAll('.land-parcel-textarea').forEach(function(textarea){
+          autosizeLandParcelTextarea_(textarea);
+        });
       }
 
       function updateLandParcelFromInput_(el){
@@ -4110,6 +4268,9 @@
         var key = el.getAttribute('data-land-key');
         if(idx < 0 || !key || !landParcels[idx]) return;
         landParcels[idx][key] = el.value || '';
+        if(el.tagName && String(el.tagName).toLowerCase() === 'textarea'){
+          autosizeLandParcelTextarea_(el);
+        }
         if(key === 'address'){
           landParcels[idx].displayAddress = formatDisplayAddressForTitle_(landParcels[idx].address);
         }
@@ -4175,22 +4336,47 @@
         return String(raw || '').trim();
       }
 
+      function dedupeLandTextParts_(value){
+        var raw = Array.isArray(value) ? value.join(',') : String(value == null ? '' : value);
+        var seen = Object.create(null);
+        var out = [];
+        raw.split(/[\n,/]+/).forEach(function(part){
+          var text = normalizeLookupText_(part);
+          if(!text || seen[text]) return;
+          seen[text] = true;
+          out.push(text);
+        });
+        return out;
+      }
+
       function buildLandUsePlanTexts_(usePlan){
         usePlan = usePlan || {};
         var rows = [];
-        var ledgerTypes = normalizeLookupText_(usePlan.ledgerType);
-        if(ledgerTypes) rows.push('대장구분: ' + ledgerTypes);
+        var seen = Object.create(null);
+
+        function pushRow(text){
+          text = normalizeLookupText_(text);
+          if(!text || seen[text]) return;
+          seen[text] = true;
+          rows.push(text);
+        }
+
+        var ledgerTypes = dedupeLandTextParts_(usePlan.ledgerType).join(', ');
+        if(ledgerTypes) pushRow('대장구분: ' + ledgerTypes);
+
         normalizeUsePlanItemsLikeLookout_(usePlan).forEach(function(item){
           var name = normalizeLookupText_(item && item.name);
           var conflict = normalizeLookupText_(item && item.conflict);
           if(!name && !conflict) return;
-          rows.push(name + (conflict ? ': ' + conflict : ''));
+          pushRow(name + (conflict ? ': ' + conflict : ''));
         });
+
         var dataDate = formatLandDateText_(usePlan.dataDate);
-        if(dataDate) rows.push('토지이용 기준일: ' + dataDate);
+        if(dataDate) pushRow('토지이용 기준일: ' + dataDate);
+
         return {
-          summary: rows.slice(0, 6).join(' / '),
-          raw: rows.join('\n') || JSON.stringify(usePlan || {})
+          summary: '',
+          raw: rows.join(' / ') || JSON.stringify(usePlan || {})
         };
       }
 
@@ -4219,7 +4405,7 @@
         parcel.officialLandPriceTotal = calculateOfficialLandPriceTotal_(parcel.areaM2, parcel.officialLandPrice) || firstNonEmpty_(characteristic.officialLandTotalPriceText, characteristic.officialLandTotalPriceShortText, parcel.officialLandPriceTotal);
         parcel.officialLandPriceAnnouncementDate = firstNonEmpty_(formatLandDateText_(characteristic.officialLandPriceAnnouncementDate), parcel.officialLandPriceAnnouncementDate);
         parcel.landCharacteristicBaseDate = firstNonEmpty_(formatLandDateText_(characteristic.dataDate), parcel.landCharacteristicBaseDate);
-        parcel.usePlanSummary = firstNonEmpty_(usePlanTexts.summary, parcel.usePlanSummary);
+        parcel.usePlanSummary = '';
         parcel.usePlanRawText = firstNonEmpty_(usePlanTexts.raw, parcel.usePlanRawText);
         return parcel;
       }
@@ -7607,6 +7793,10 @@
             queueSave();
           }else if(action === 'lookup'){
             lookupLandParcelByIndex_(idx, card);
+          }else if(action === 'ddangya'){
+            openLandParcelDdangyaLink_(idx);
+          }else if(action === 'naver-map'){
+            openLandParcelNaverMapLink_(idx);
           }
         });
       }

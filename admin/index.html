@@ -1965,7 +1965,7 @@
       display:flex;
     }
     .team-select-card{
-      width:min(460px, 100%);
+      width:min(560px, 100%);
       border:1px solid #e6ebf1;
       border-radius:28px;
       background:#fff;
@@ -1986,7 +1986,7 @@
     }
     .team-select-list{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns:repeat(3, 1fr);
       gap:12px;
     }
     .team-select-btn{
@@ -2011,6 +2011,10 @@
       border-color:#f3c3d6;
       background:#fff5f9;
     }
+    .team-select-btn.land{
+      border-color:#d9ead3;
+      background:#f7fff5;
+    }
     .team-select-name{
       display:block;
       font-size:24px;
@@ -2034,6 +2038,9 @@
     .team-select-btn.shopping .team-select-sub{
       color:#d94f86;
     }
+    .team-select-btn.land .team-select-sub{
+      color:#2e8b57;
+    }
     @media (max-width:860px){
       .team-select-card{
         border-radius:24px;
@@ -2047,6 +2054,7 @@
         margin-bottom:16px;
       }
       .team-select-list{
+        grid-template-columns:1fr;
         gap:10px;
       }
       .team-select-btn{
@@ -2347,7 +2355,7 @@
           </div>
         </div>
 
-          <div class="property-spec-sector-title">공장특화정보</div>
+          <div id="specialSectionTitle" class="property-spec-sector-title" data-spec-section="special">공장특화정보</div>
           <div class="property-spec-row"><div class="property-spec-label">층고</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">크레인</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">호이스트</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
@@ -2436,12 +2444,16 @@
       <p class="team-select-desc">처음 들어오거나 초기화한 경우에만 선택합니다.</p>
       <div class="team-select-list">
         <button type="button" class="team-select-btn shopping" id="teamSelectShoppingBtn">
-          <span class="team-select-name">상가</span>
+          <span class="team-select-name">상업용</span>
           <span class="team-select-sub">매물번호 SK로 시작</span>
         </button>
         <button type="button" class="team-select-btn factory" id="teamSelectFactoryBtn">
-          <span class="team-select-name">공장</span>
+          <span class="team-select-name">산업용</span>
           <span class="team-select-sub">매물번호 MK로 시작</span>
+        </button>
+        <button type="button" class="team-select-btn land" id="teamSelectLandBtn">
+          <span class="team-select-name">토지</span>
+          <span class="team-select-sub">매물번호 DK로 시작</span>
         </button>
       </div>
     </div>
@@ -2495,6 +2507,7 @@
       var teamSelectOverlay = document.getElementById('teamSelectOverlay');
       var teamSelectShoppingBtn = document.getElementById('teamSelectShoppingBtn');
       var teamSelectFactoryBtn = document.getElementById('teamSelectFactoryBtn');
+      var teamSelectLandBtn = document.getElementById('teamSelectLandBtn');
       var inlineResetBtn = document.getElementById('inlineResetBtn');
       var draftSaveBtn = document.getElementById('draftSaveBtn');
       var draftCleanBtn = document.getElementById('draftCleanBtn');
@@ -2985,41 +2998,46 @@
         return null;
       }
 
-      function toggleFactorySectionByListingNumber_(){
-        var upperListingNumber = String(listingNumber || '').trim().toUpperCase();
+      function getListingCategoryPrefix_(){
+        var upperListingNumber = String(listingNumber || plainText(listingNumberField) || '').trim().toUpperCase();
         var prefix = String(selectedListingPrefix || '').trim().toUpperCase();
-        var isShopping = prefix === 'SK' || upperListingNumber.indexOf('SK-') === 0;
+        if(prefix === 'SK' || prefix === 'MK' || prefix === 'DK') return prefix;
+        var match = upperListingNumber.match(/^(SK|MK|DK)-/);
+        return match ? match[1] : '';
+      }
 
-        var factoryTitle = Array.prototype.slice.call(document.querySelectorAll('.property-spec-sector-title')).find(function(el){
-          return plainText(el) === '공장특화정보';
+      function findSpecialSectionTitle_(){
+        return document.getElementById('specialSectionTitle') || Array.prototype.slice.call(document.querySelectorAll('.property-spec-sector-title')).find(function(el){
+          return plainText(el) === '공장특화정보' || plainText(el) === '특화정보';
         });
+      }
 
-        var factoryLabels = [
-          '층고',
+      function toggleFactorySectionByListingNumber_(){
+        var prefix = getListingCategoryPrefix_();
+        var isCommercial = prefix === 'SK';
+        var isIndustrial = prefix === 'MK';
+        var specialTitle = findSpecialSectionTitle_();
+
+        var commercialHiddenLabels = [
           '크레인',
           '호이스트',
-          '전력',
           '주요 설비',
-          '추천 업종',
-          '업종 제한',
-          '진입로 폭',
-          '도어폭',
-          '대형차 진입',
-          '상하차 가능',
           '사무동 포함',
           '야드 크기',
-          '즉시 가동'
+          '즉시 가동',
+          '도어폭'
         ];
 
-        if(factoryTitle){
-          factoryTitle.style.display = isShopping ? 'none' : '';
+        if(specialTitle){
+          specialTitle.style.display = '';
+          specialTitle.textContent = (isIndustrial || !prefix) ? '공장특화정보' : '특화정보';
         }
 
-        factoryLabels.forEach(function(label){
+        commercialHiddenLabels.forEach(function(label){
           var valueEl = findSpecValueByLabel_(label);
           var row = valueEl ? valueEl.closest('.property-spec-row') : null;
           if(row){
-            row.style.display = isShopping ? 'none' : '';
+            row.style.display = isCommercial ? 'none' : '';
           }
         });
       }
@@ -5702,6 +5720,73 @@
         return parts.join(' / ');
       }
 
+      function normalizeLookupText_(value){
+        return String(value == null ? '' : value).replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
+      }
+
+      function isRoadWidthLookupKey_(key){
+        var text = normalizeLookupText_(key);
+        if(!text) return false;
+        if(/road(Address|Addr|Nm|Name|No|Bld|Zip|Post)|도로명|도로명주소|도로주소/i.test(text)) return false;
+        return /(roadSide|roadside|roadCond|roadCondition|roadWidth|rdSide|rd_sd|sideRoad|도로접면|도로조건|도로폭|진입로|접면)/i.test(text);
+      }
+
+      function looksLikeRoadWidthValue_(value){
+        var text = normalizeLookupText_(value);
+        if(!text) return false;
+        if(/^[A-Z0-9_-]+$/.test(text)) return false;
+        if(/^(0|1|2|3|4|5|6|7|8|9)$/.test(text)) return false;
+        return /(광대로|대로|중로|소로|세로|맹지|도로|한면|각지|가각|미만|이상|[0-9]+(?:\.[0-9]+)?\s*m)/i.test(text);
+      }
+
+      function extractRoadWidthFromLookup_(json){
+        var out = [];
+        var seen = Object.create(null);
+
+        function push(value){
+          var text = normalizeLookupText_(value);
+          if(!looksLikeRoadWidthValue_(text)) return;
+          if(seen[text]) return;
+          seen[text] = true;
+          out.push(text);
+        }
+
+        function pickValueFromDescribedObject(obj){
+          if(!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
+          var descriptor = firstNonEmpty_(obj.label, obj.name, obj.title, obj.key, obj.fieldName, obj.columnName, obj.korName);
+          if(!isRoadWidthLookupKey_(descriptor)) return;
+          [obj.value, obj.text, obj.content, obj.fieldValue, obj.val, obj.data].forEach(push);
+        }
+
+        function walk(node){
+          if(!node || out.length >= 3) return;
+          if(Array.isArray(node)){
+            node.forEach(walk);
+            return;
+          }
+          if(typeof node !== 'object') return;
+
+          pickValueFromDescribedObject(node);
+
+          Object.keys(node).forEach(function(key){
+            if(out.length >= 3) return;
+            var value = node[key];
+            if(isRoadWidthLookupKey_(key)){
+              if(value && typeof value === 'object'){
+                walk(value);
+              }else{
+                push(value);
+              }
+            }
+            if(value && typeof value === 'object') walk(value);
+          });
+        }
+
+        walk((json && json.apis) || json);
+        return out.join(' / ');
+      }
+
+
       function buildLookupFillData_(json){
         var apis = (json && json.apis) || {};
         var recap = ((apis.recap || {}).firstItem) || {};
@@ -5749,7 +5834,8 @@
           buildingComposition: buildCompositionText_(recap, titleItem),
           parkingCount: numberText_(parkingTotal),
           floorInfo: buildFloorInfoText_(recap, titleItem),
-          ceilingHeight: firstNonEmpty_(titleItem.heit)
+          ceilingHeight: firstNonEmpty_(titleItem.heit),
+          roadWidth: extractRoadWidthFromLookup_(json)
         };
       }
 
@@ -5800,6 +5886,10 @@
         chainEditable('* 주차대수', fill.parkingCount);
         chainEditable('* 건물 층수', fill.floorInfo);
         chainEditable('층고', fill.ceilingHeight);
+        var lookupCategoryPrefix = getListingCategoryPrefix_();
+        if(lookupCategoryPrefix === 'SK' || lookupCategoryPrefix === 'MK'){
+          chainEditable('진입로 폭', fill.roadWidth);
+        }
 
         return changed.then(function(anyChanged){
           if(anyChanged){
@@ -6576,8 +6666,7 @@
             selectedDealType = data.selectedDealType || '';
             listingStatus = data.listingStatus || 'hidden';
             listingNumber = data.listingNumber || '';
-            selectedListingPrefix = String(listingNumber || '').trim().toUpperCase().indexOf('SK-') === 0 ? 'SK'
-              : (String(listingNumber || '').trim().toUpperCase().indexOf('MK-') === 0 ? 'MK' : '');
+            selectedListingPrefix = (String(listingNumber || '').trim().toUpperCase().match(/^(SK|MK|DK)-/) || [,''])[1];
             tempSessionKey = data.tempSessionKey || tempSessionKey || '';
             photoList = [];
             ledgerList = Array.isArray(data.ledgerList) ? data.ledgerList : [];
@@ -6705,6 +6794,12 @@
         });
       }
 
+      if(teamSelectLandBtn){
+        teamSelectLandBtn.addEventListener('click', function(){
+          chooseListingTeam('DK');
+        });
+      }
+
 
       function hideDraftSaveBtnByKeyboard_(){
         if(!draftSaveBtn) return;
@@ -6798,8 +6893,7 @@
 
       if(queryListingNumber){
         listingNumber = queryListingNumber;
-        selectedListingPrefix = String(listingNumber || '').trim().toUpperCase().indexOf('SK-') === 0 ? 'SK'
-          : (String(listingNumber || '').trim().toUpperCase().indexOf('MK-') === 0 ? 'MK' : '');
+        selectedListingPrefix = (String(listingNumber || '').trim().toUpperCase().match(/^(SK|MK|DK)-/) || [,''])[1];
         showQueryLoadingOverlay_();
         loadPropertyByListingNumber_(queryListingNumber)
           .then(function(){
@@ -7037,20 +7131,40 @@
     return parts.join(' ');
   }
 
+  function isSpecialSectionTitle(el){
+    if(!el) return false;
+    var text = textOf(el);
+    return el.getAttribute('data-spec-section') === 'special' || text === '공장특화정보' || text === '특화정보';
+  }
+
+  function titleMatches(el, title){
+    if(title === '공장특화정보' || title === '특화정보') return isSpecialSectionTitle(el);
+    return textOf(el) === title;
+  }
+
+  function getSpecialSectionTitleText(){
+    var title = Array.prototype.slice.call(document.querySelectorAll('.property-spec-sector-title')).find(isSpecialSectionTitle);
+    return textOf(title) || '공장특화정보';
+  }
+
   function collectRowsBetween(startTitle, endTitle, includeEmpty, options){
     options = options || {};
     var titles = Array.prototype.slice.call(document.querySelectorAll('.property-spec-sector-title'));
-    var startIdx = titles.findIndex(function(t){ return textOf(t) === startTitle; });
+    var startIdx = titles.findIndex(function(t){ return titleMatches(t, startTitle); });
     if(startIdx < 0) return [];
     var start = titles[startIdx];
     var stop = null;
     if(endTitle){
-      stop = titles.slice(startIdx+1).find(function(t){ return textOf(t) === endTitle; }) || null;
+      stop = titles.slice(startIdx+1).find(function(t){ return titleMatches(t, endTitle); }) || null;
     }
     var rows = [];
     var node = start.nextElementSibling;
     while(node && node !== stop){
       if(node.classList && node.classList.contains('property-spec-row')){
+        if(node.style && node.style.display === 'none'){
+          node = node.nextElementSibling;
+          continue;
+        }
         var labelEl = node.querySelector('.property-spec-label');
         var valueEl = node.querySelector('.property-spec-value');
         var label = textOf(labelEl).replace(/^\*/,'').trim();
@@ -7101,8 +7215,8 @@
     }).join('') + '</div>';
   }
 
-  function buildFactoryTable(rows){
-    if(!rows.length) return '<div style="padding:10px 12px;font-size:12px;color:#6b7280;">공장특화정보가 없습니다.</div>';
+  function buildFactoryTable(rows, emptyText){
+    if(!rows.length) return '<div style="padding:10px 12px;font-size:12px;color:#6b7280;">'+ htmlEscape(emptyText || '공장특화정보가 없습니다.') +'</div>';
     var html = '<table class="pdf-factory-table"><tbody>';
     for(var i=0;i<rows.length;i+=2){
       var left = rows[i] || ['',''];
@@ -7139,8 +7253,8 @@
     }).join('') + '</div>';
   }
 
-  function buildExternalFactoryList(rows){
-    if(!rows.length) return '<div style="padding:12px 14px;font-size:13px;color:#6b7280;">공장특화정보가 없습니다.</div>';
+  function buildExternalFactoryList(rows, emptyText){
+    if(!rows.length) return '<div style="padding:12px 14px;font-size:13px;color:#6b7280;">'+ htmlEscape(emptyText || '공장특화정보가 없습니다.') +'</div>';
     return '<div class="pdf-external-factory-list">' + rows.map(function(pair){
       return '<div class="pdf-external-factory-row"><div class="pdf-external-factory-label">'+ htmlEscape(pair[0]) +'</div><div class="pdf-external-factory-value">'+ nl2br(pair[1] || '') +'</div></div>';
     }).join('') + '</div>';
@@ -7173,6 +7287,7 @@
     var address = cleanAddress(textOf(document.getElementById('topAddress')));
     var price = textOf(document.getElementById('topPrice'));
     var summaries = collectSummaryTexts(3);
+    var specialTitle = getSpecialSectionTitleText();
     var basicRows = normalizePriceRowsForDeal(collectRowsBetween('기본정보', '공장특화정보', false), deal);
     var factoryRows = collectRowsBetween('공장특화정보', null, true);
     var requesterRows = collectRequesterRows();
@@ -7199,7 +7314,7 @@
       + '<div class="pdf-two-col">'
       + '  <div class="pdf-section"><div class="pdf-section-title">기본정보</div>'+ buildKv(basicRows) +'</div>'
       + '  <div>'
-      + '    <div class="pdf-section"><div class="pdf-section-title">공장특화정보</div>'+ buildFactoryTable(factoryRows) +'</div>'
+      + '    <div class="pdf-section"><div class="pdf-section-title">'+ htmlEscape(specialTitle) +'</div>'+ buildFactoryTable(factoryRows, specialTitle + '가 없습니다.') +'</div>'
       + '    <div class="pdf-section"><div class="pdf-section-title">의뢰인 정보</div>'+ buildKv(requesterRows, '의뢰인 정보가 없습니다.') +'</div>'
       + '  </div>'
       + '</div>'
@@ -7224,6 +7339,7 @@
     var address = maskAddressForPdf(cleanAddress(textOf(document.getElementById('topAddress'))));
     var price = textOf(document.getElementById('topPrice'));
     var summaries = collectSummaryTexts(4);
+    var specialTitle = getSpecialSectionTitleText();
     var basicRows = normalizePriceRowsForDeal(collectRowsBetween('기본정보', '공장특화정보', false, { maskAddress: true }), deal);
     var factoryRows = collectRowsBetween('공장특화정보', null, true);
     var summaryHtml = summaries.length
@@ -7249,7 +7365,7 @@
       + '</div>'
       + '<div class="pdf-external-stack">'
       + '  <div class="pdf-section external-section"><div class="pdf-section-title">기본정보</div>'+ buildExternalKv(basicRows, '기본정보가 없습니다.') +'</div>'
-      + '  <div class="pdf-section external-section"><div class="pdf-section-title">공장특화정보</div>'+ buildExternalFactoryList(factoryRows) +'</div>'
+      + '  <div class="pdf-section external-section"><div class="pdf-section-title">'+ htmlEscape(specialTitle) +'</div>'+ buildExternalFactoryList(factoryRows, specialTitle + '가 없습니다.') +'</div>'
       + '</div>';
   }
 

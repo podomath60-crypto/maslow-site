@@ -8994,7 +8994,10 @@
     var price = textOf(document.getElementById('topPrice'));
     var summaries = collectSummaryTexts(4);
     var specialTitle = getSpecialSectionTitleText();
-    var basicRows = normalizePriceRowsForDeal(collectRowsBetween('기본정보', '공장특화정보', false, { maskAddress: true }), deal);
+    var basicRows = normalizePriceRowsForDeal(collectRowsBetween('기본정보', '공장특화정보', false, { maskAddress: true }), deal)
+      .filter(function(pair){
+        return String(pair && pair[0] || '').replace(/\s+/g, '').trim() !== '매물번호';
+      });
     var factoryRows = collectRowsBetween('공장특화정보', null, true);
     var summaryHtml = summaries.length
       ? summaries.map(function(t){ return '<div class="pdf-external-summary-item">'+ htmlEscape(t) +'</div>'; }).join('')

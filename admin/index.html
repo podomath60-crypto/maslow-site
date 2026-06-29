@@ -3300,7 +3300,18 @@
         });
       }
 
-      function renderPriceFieldForDealType_(){
+      function applyRentPriceStateToInputs_(){
+        if(!priceField) return;
+        var depositInput = priceField.querySelector('[data-rent-role="deposit"]');
+        var monthlyInput = priceField.querySelector('[data-rent-role="monthly"]');
+        if(depositInput) depositInput.value = (rentPriceState && rentPriceState.deposit) || '';
+        if(monthlyInput) monthlyInput.value = (rentPriceState && rentPriceState.monthly) || '';
+        bindRentPriceInput_(depositInput);
+        bindRentPriceInput_(monthlyInput);
+      }
+
+      function renderPriceFieldForDealType_(options){
+        options = options || {};
         if(!priceField) return;
         if(selectedDealType === '임대'){
           priceField.classList.remove('editable');
@@ -3308,11 +3319,17 @@
           priceField.removeAttribute('data-placeholder');
 
           if(priceField.querySelector('.rent-price-editor')){
-            syncRentPriceStateFromInputs_();
-            var existingDepositInput = priceField.querySelector('[data-rent-role="deposit"]');
-            var existingMonthlyInput = priceField.querySelector('[data-rent-role="monthly"]');
-            bindRentPriceInput_(existingDepositInput);
-            bindRentPriceInput_(existingMonthlyInput);
+            if(!options.skipRentInputSync){
+              syncRentPriceStateFromInputs_();
+            }
+            if(options.forceRentInputValues){
+              applyRentPriceStateToInputs_();
+            }else{
+              var existingDepositInput = priceField.querySelector('[data-rent-role="deposit"]');
+              var existingMonthlyInput = priceField.querySelector('[data-rent-role="monthly"]');
+              bindRentPriceInput_(existingDepositInput);
+              bindRentPriceInput_(existingMonthlyInput);
+            }
             return;
           }
 
@@ -3330,18 +3347,10 @@
               '</div>' +
             '</div>';
 
-          var depositInput = priceField.querySelector('[data-rent-role="deposit"]');
-          var monthlyInput = priceField.querySelector('[data-rent-role="monthly"]');
-          if(depositInput) depositInput.value = rentPriceState.deposit || '';
-          if(monthlyInput) monthlyInput.value = rentPriceState.monthly || '';
-          bindRentPriceInput_(depositInput);
-          bindRentPriceInput_(monthlyInput);
+          applyRentPriceStateToInputs_();
           return;
         }
 
-        if(selectedDealType !== '임대'){
-          syncRentPriceStateFromInputs_();
-        }
         priceField.classList.add('editable');
         priceField.setAttribute('contenteditable', 'true');
         priceField.setAttribute('data-placeholder', '입력');
@@ -3498,10 +3507,15 @@
 
         if ((item.dealType || '').indexOf('임대') > -1) {
           rentPriceState = parseRentPriceText_(item.price || '');
-          setDealType(item.dealType || '임대');
+          setDealType(item.dealType || '임대', {
+            skipRentInputSync: true,
+            forceRentInputValues: true,
+            skipQueueSave: true
+          });
+          applyRentPriceStateToInputs_();
         } else {
           clearRentPriceState_();
-          setDealType(item.dealType || '');
+          setDealType(item.dealType || '', { skipQueueSave: true });
           priceField.textContent = item.price || '';
         }
 
@@ -4186,9 +4200,10 @@
         renderNaverMapLink_();
       }
 
-      function setDealType(type){
+      function setDealType(type, options){
+        options = options || {};
         var prevType = selectedDealType || '';
-        if(prevType === '임대'){
+        if(prevType === '임대' && !options.skipRentInputSync){
           syncRentPriceStateFromInputs_();
         }
         selectedDealType = type || '';
@@ -4201,9 +4216,11 @@
         });
         dealTypePlaceholder.style.display = selectedDealType ? 'none' : 'inline';
         maintenanceFeeField.setAttribute('data-placeholder', '임대인 경우');
-        renderPriceFieldForDealType_();
+        renderPriceFieldForDealType_(options);
         updateTopFields();
-        queueSave();
+        if(!options.skipQueueSave){
+          queueSave();
+        }
       }
 
       dealTypeRow.querySelectorAll('.type-chip').forEach(function(btn){
@@ -5972,6 +5989,12 @@
         return name + '(' + conflict + ')';
       }
 
+      function extractRoadSideFromLandCharacteristic_(root){
+        var land = (root && root.land) || {};
+        var characteristic = land.characteristic || {};
+        return formatLandRoadSideText_(characteristic.roadSide);
+      }
+
       function extractRoadWidthFromLookup_(json){
         var root = getIntegratedLookupData_(json);
         var land = (root && root.land) || {};
@@ -5988,7 +6011,10 @@
           out.push(text);
         });
 
-        return out.join(' / ');
+        var usePlanRoadText = out.join(' / ');
+        if(usePlanRoadText) return usePlanRoadText;
+
+        return extractRoadSideFromLandCharacteristic_(root);
       }
 
 

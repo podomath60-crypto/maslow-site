@@ -2649,6 +2649,7 @@
       var ledgerUploadBusyUntil = 0;
       var ledgerUploadIndicatorTimer = null;
       var rentPriceState = { deposit: '', monthly: '' };
+      var isApplyingLoadedProperty = false;
       var selectedAddressSearchData = null;
       var adminBjdongCodesPromise = null;
       var CREATOR_CACHE_KEY = 'MK_CREATOR_INITIAL_V1';
@@ -3232,24 +3233,13 @@
       }
 
       function syncRentPriceStateFromInputs_(){
-        if(!priceField || selectedDealType !== '임대') return;
-        var depositInput = priceField.querySelector('[data-rent-role="deposit"]');
-        var monthlyInput = priceField.querySelector('[data-rent-role="monthly"]');
-        if(depositInput) rentPriceState.deposit = depositInput.value || '';
-        if(monthlyInput) rentPriceState.monthly = monthlyInput.value || '';
+        // 임대가를 보증금/월세로 나눠 관리하지 않는다.
+        // 가격은 항상 priceField 원문 텍스트 하나만 저장/표시한다.
+        return;
       }
 
       function getPricePayloadText_(){
-        if(selectedDealType === '임대'){
-          syncRentPriceStateFromInputs_();
-          var deposit = String((rentPriceState && rentPriceState.deposit) || '').trim();
-          var monthly = String((rentPriceState && rentPriceState.monthly) || '').trim();
-          var out = [];
-          if(deposit) out.push('보증금 ' + deposit + '원');
-          if(monthly) out.push('월세 ' + monthly + '원');
-          return out.join(' / ');
-        }
-        return plainText(priceField);
+        return normalizedEditableText(priceField);
       }
 
       function clearRentPriceState_(){
@@ -3259,30 +3249,133 @@
       function cleanRentAmountPart_(value){
         var text = plainText(value || '').trim();
         if(!text) return '';
-        text = text.replace(/^(보증금|월세)\s*/i, '').trim();
-        text = text.replace(/([0-9,])\s*원$/i, '$1').trim();
+        text = text.replace(/\u00A0/g, ' ');
+        text = text.replace(/^(보증금|보증|월세|월)\s*[:：-]?\s*/i, '').trim();
+        text = text.replace(/\b입력\b/g, ' ');
+        text = text.replace(/([0-9,억만천백십.]+)\s*원$/i, '$1');
+        text = text.replace(/(^|[\s\/])원(?=$|[\s\/])/g, ' ');
+        text = text.replace(/[\/]+/g, ' ');
+        text = text.replace(/\s{2,}/g, ' ').trim();
+        if(!text || text === '원') return '';
+        if(!/[0-9억만천백십]/.test(text)) return '';
         return text;
+      }
+
+      function normalizeRentPriceSourceText_(value){
+        return String(value || '')
+          .replace(/<br\s*\/?\s*>/gi, '/')
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/\u00A0/g, ' ')
+          .replace(/\r/g, '\n')
+          .replace(/[\t ]+/g, ' ')
+          .replace(/\n+/g, ' / ')
+          .replace(/\s*\/\s*/g, ' / ')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      }
+
+      function extractRentLabeledValue_(text, labelPattern, nextLabelPattern){
+        var source = normalizeRentPriceSourceText_(text);
+        if(!source) return '';
+        var re = new RegExp(labelPattern + '\\s*[:：-]?\\s*([\\s\\S]*?)(?=' + nextLabelPattern + '\\s*[:：-]?|$)', 'i');
+        var m = source.match(re);
+        if(!m) return '';
+        var value = cleanRentAmountPart_(m[1] || '');
+        value = value.replace(/\s*\/\s*$/g, '').trim();
+        if(!value || value === '원') return '';
+        return value;
       }
 
       function parseRentPriceText_(priceText){
         var result = { deposit: '', monthly: '' };
-        var parts = String(priceText || '').split('/').map(function(v){ return plainText(v).trim(); }).filter(Boolean);
+        var source = normalizeRentPriceSourceText_(priceText);
+        if(!source) return result;
 
-        parts.forEach(function(part, idx){
-          var cleaned = cleanRentAmountPart_(part);
-          if(!cleaned) return;
-          if(/보증금/i.test(part)){
-            result.deposit = cleaned;
-          }else if(/월세/i.test(part)){
-            result.monthly = cleaned;
-          }else if(idx === 0 && !result.deposit){
-            result.deposit = cleaned;
-          }else if(idx === 1 && !result.monthly){
-            result.monthly = cleaned;
-          }
-        });
+        result.deposit = extractRentLabeledValue_(source, '(?:보증금|보증)', '(?:월세|월)');
+        result.monthly = extractRentLabeledValue_(source, '(?:월세|월)', '(?:보증금|보증)');
 
-        return result;
+        if(!result.deposit || !result.monthly){
+          var parts = source.split('/').map(function(v){ return plainText(v).trim(); }).filter(Boolean);
+          parts.forEach(function(part, idx){
+            var cleaned = cleanRentAmountPart_(part);
+            if(!cleaned) return;
+            if(/보증금|보증/i.test(part)){
+              if(!result.deposit) result.deposit = cleaned;
+            }else if(/월세|^월\b/i.test(part)){
+              if(!result.monthly) result.monthly = cleaned;
+            }else if(idx === 0 && !result.deposit){
+              result.deposit = cleaned;
+            }else if(idx === 1 && !result.monthly){
+              result.monthly = cleaned;
+            }
+          });
+        }
+
+        return {
+          deposit: cleanRentAmountPart_(result.deposit),
+          monthly: cleanRentAmountPart_(result.monthly)
+        };
+      }
+
+      function firstNonEmptyText_(){
+        for(var i = 0; i < arguments.length; i++){
+          var value = plainText(arguments[i] || '').trim();
+          if(value) return value;
+        }
+        return '';
+      }
+
+      function buildRentPriceStateFromItem_(item){
+        item = item || {};
+        var rawPrice = firstNonEmptyText_(
+          item.price,
+          item.priceDisplay,
+          item.priceText,
+          item.priceHtml,
+          item.basicPrice,
+          item.rentPrice,
+          item.leasePrice,
+          item.depositMonthly
+        );
+        var parsed = parseRentPriceText_(rawPrice);
+        if(!parsed.deposit){
+          parsed.deposit = cleanRentAmountPart_(firstNonEmptyText_(
+            item.deposit,
+            item.rentDeposit,
+            item.depositPrice,
+            item.leaseDeposit,
+            item.securityDeposit,
+            item.보증금
+          ));
+        }
+        if(!parsed.monthly){
+          parsed.monthly = cleanRentAmountPart_(firstNonEmptyText_(
+            item.monthly,
+            item.monthlyRent,
+            item.rentMonthly,
+            item.monthlyPrice,
+            item.leaseMonthly,
+            item.월세
+          ));
+        }
+        return parsed;
+      }
+
+      function getStoredDraftRentStateForListing_(targetListingNumber){
+        try{
+          var raw = localStorage.getItem(STORAGE_KEY);
+          if(!raw) return null;
+          var data = JSON.parse(raw);
+          if(!data || !data.rentPriceState) return null;
+          if(targetListingNumber && data.listingNumber && String(data.listingNumber) !== String(targetListingNumber)) return null;
+          var state = {
+            deposit: cleanRentAmountPart_(data.rentPriceState.deposit || ''),
+            monthly: cleanRentAmountPart_(data.rentPriceState.monthly || '')
+          };
+          return (state.deposit || state.monthly) ? state : null;
+        }catch(_err){
+          return null;
+        }
       }
 
       function bindRentPriceInput_(input){
@@ -3313,50 +3406,12 @@
       function renderPriceFieldForDealType_(options){
         options = options || {};
         if(!priceField) return;
-        if(selectedDealType === '임대'){
-          priceField.classList.remove('editable');
-          priceField.removeAttribute('contenteditable');
-          priceField.removeAttribute('data-placeholder');
 
-          if(priceField.querySelector('.rent-price-editor')){
-            if(!options.skipRentInputSync){
-              syncRentPriceStateFromInputs_();
-            }
-            if(options.forceRentInputValues){
-              applyRentPriceStateToInputs_();
-            }else{
-              var existingDepositInput = priceField.querySelector('[data-rent-role="deposit"]');
-              var existingMonthlyInput = priceField.querySelector('[data-rent-role="monthly"]');
-              bindRentPriceInput_(existingDepositInput);
-              bindRentPriceInput_(existingMonthlyInput);
-            }
-            return;
-          }
-
-          priceField.innerHTML = '' +
-            '<div class="rent-price-editor">' +
-              '<div class="rent-price-row">' +
-                '<span class="rent-price-text">보증금</span>' +
-                '<input type="text" class="rent-price-input" data-rent-role="deposit" placeholder="입력">' +
-                '<span class="rent-price-text">원</span>' +
-              '</div>' +
-              '<div class="rent-price-row">' +
-                '<span class="rent-price-text">월세</span>' +
-                '<input type="text" class="rent-price-input" data-rent-role="monthly" placeholder="입력">' +
-                '<span class="rent-price-text">원</span>' +
-              '</div>' +
-            '</div>';
-
-          applyRentPriceStateToInputs_();
-          return;
-        }
-
+        // 매매/임대 모두 같은 원문 입력칸을 사용한다.
+        // 임대라고 해서 보증금/월세 input으로 재구성하거나 서버값을 파싱하지 않는다.
         priceField.classList.add('editable');
         priceField.setAttribute('contenteditable', 'true');
         priceField.setAttribute('data-placeholder', '입력');
-        if(priceField.querySelector('.rent-price-editor')){
-          priceField.innerHTML = '';
-        }
       }
 
       function collectFactory_(){
@@ -3505,19 +3560,19 @@
         setEditableText_(addressField, item.address || '');
         seedSelectedAddressSearchDataFromLoadedAddress_(item.address || '');
 
-        if ((item.dealType || '').indexOf('임대') > -1) {
-          rentPriceState = parseRentPriceText_(item.price || '');
-          setDealType(item.dealType || '임대', {
-            skipRentInputSync: true,
-            forceRentInputValues: true,
-            skipQueueSave: true
-          });
-          applyRentPriceStateToInputs_();
-        } else {
-          clearRentPriceState_();
-          setDealType(item.dealType || '', { skipQueueSave: true });
-          priceField.textContent = item.price || '';
+        var loadedDealType = String(item.dealType || '').trim();
+        if (loadedDealType.indexOf('임대') > -1) {
+          loadedDealType = '임대';
+        } else if (loadedDealType.indexOf('매매') > -1) {
+          loadedDealType = '매매';
         }
+
+        isApplyingLoadedProperty = true;
+        clearRentPriceState_();
+        setDealType(loadedDealType || '', { skipQueueSave: true });
+        // 서버에 저장된 price 원문만 그대로 표시한다. 임대가 파싱/재조립 금지.
+        setEditableText_(priceField, item.price == null ? '' : String(item.price));
+        isApplyingLoadedProperty = false;
 
         setEditableText_(findSpecValueByLabel_('* 사용승인일'), item.approvalDate || '');
         setMeasureField_('landArea', item.landAreaM2 || '', item.landAreaPy || '');
@@ -4000,21 +4055,15 @@
         }
 
         if(type === '임대'){
-          var deposit = String((rentPriceState && rentPriceState.deposit) || '').trim();
-          var monthly = String((rentPriceState && rentPriceState.monthly) || '').trim();
-          if(!deposit && !monthly){
+          var rentPrice = String(priceText || '').trim();
+          if(!rentPrice){
             updateMirror(topPriceLabel, '');
             updateMirror(topPriceValue, '');
             if(topPriceSub) topPriceSub.innerHTML = '';
             return;
           }
           updateMirror(topPriceLabel, '임대가');
-          if(topPriceValue){
-            topPriceValue.innerHTML = '<span class="top-rent-lines">'
-              + '<span class="top-rent-line">보증금 ' + escapeHtml_(deposit || '') + '원</span>'
-              + '<span class="top-rent-line">월세 ' + escapeHtml_(monthly || '') + '원</span>'
-              + '</span>';
-          }
+          updateMirror(topPriceValue, rentPrice);
           if(topPriceSub) topPriceSub.innerHTML = '';
           return;
         }
@@ -4202,14 +4251,13 @@
 
       function setDealType(type, options){
         options = options || {};
+        var normalizedType = String(type || '').trim();
+        if(normalizedType.indexOf('임대') > -1) normalizedType = '임대';
+        else if(normalizedType.indexOf('매매') > -1) normalizedType = '매매';
         var prevType = selectedDealType || '';
-        if(prevType === '임대' && !options.skipRentInputSync){
-          syncRentPriceStateFromInputs_();
-        }
-        selectedDealType = type || '';
+        selectedDealType = normalizedType || '';
         if(prevType === '임대' && selectedDealType && selectedDealType !== '임대'){
           clearRentPriceState_();
-          if(priceField) priceField.innerHTML = '';
         }
         dealTypeRow.querySelectorAll('.type-chip').forEach(function(btn){
           btn.classList.toggle('active', btn.getAttribute('data-deal') === selectedDealType);
@@ -6422,10 +6470,14 @@
         if(selectedDealType === '매매'){
           changed = (await setEditableIfBlank_(priceField, aiJson.salePrice)) || changed;
         }else if(selectedDealType === '임대'){
-          var depositInput = priceField ? priceField.querySelector('[data-rent-role="deposit"]') : null;
-          var monthlyInput = priceField ? priceField.querySelector('[data-rent-role="monthly"]') : null;
-          changed = (await setInputIfBlank_(depositInput, normalizeRentAmountValue_(aiJson.deposit))) || changed;
-          changed = (await setInputIfBlank_(monthlyInput, normalizeRentAmountValue_(aiJson.monthlyRent))) || changed;
+          var rentText = String(aiJson.price || aiJson.rentPrice || '').trim();
+          if(!rentText){
+            var rentParts = [];
+            if(aiJson.deposit) rentParts.push('보증금 ' + String(aiJson.deposit).trim() + '원');
+            if(aiJson.monthlyRent) rentParts.push('월세 ' + String(aiJson.monthlyRent).trim() + '원');
+            rentText = rentParts.join(' / ');
+          }
+          changed = (await setEditableIfBlank_(priceField, rentText)) || changed;
         }
 
         changed = (await setEditableIfBlank_(maintenanceFeeField, aiJson.maintenanceFee)) || changed;
@@ -6794,7 +6846,6 @@
       }
 
       function getDraftPayload(){
-        syncRentPriceStateFromInputs_();
         return {
           selectedDealType: selectedDealType,
           listingStatus: listingStatus,

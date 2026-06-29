@@ -3922,7 +3922,7 @@
             mainFacilities: plainText(findSpecValueAnyLabel_('기반시설', '주요 설비')),
             recommendedUse: plainText(findSpecValueAnyLabel_('추천 용도', '추천 업종')),
             restrictedUse: plainText(findSpecValueAnyLabel_('제한사항', '업종 제한')),
-            roadWidth: (landSummary && landSummary.mainRoadSide) || plainText(findSpecValueAnyLabel_('접도 / 진입로', '도로접면')),
+            roadWidth: (landSummary && (landSummary.roadSideSummary || landSummary.mainRoadSide)) || plainText(findSpecValueAnyLabel_('접도 / 진입로', '도로접면')),
             doorWidth: '',
             truckAccess: plainText(findSpecValueByLabel_('대형차 진입')),
             loadingAvailable: '',
@@ -4154,6 +4154,16 @@
         return parcel.officialLandPriceTotal || '';
       }
 
+      function buildLandParcelRoadSideSummary_(parcels){
+        var items = (Array.isArray(parcels) ? parcels : []).map(function(parcel, idx){
+          var text = String(parcel && parcel.roadSide || '').trim();
+          if(!text) return '';
+          if(parcels.length <= 1) return text;
+          return '필지' + String(parcel.parcelOrder || (idx + 1)) + ': ' + text;
+        }).filter(Boolean);
+        return items.join(' / ');
+      }
+
       function getLandSummary_(){
         var active = (Array.isArray(landParcels) ? landParcels : []).filter(function(parcel){
           return parcel && String(parcel.parcelStatus || 'active') !== 'deleted';
@@ -4170,6 +4180,7 @@
             mainZoning1: '',
             mainZoning2: '',
             mainRoadSide: '',
+            roadSideSummary: '',
             propertyTypeText: '토지'
           };
         }
@@ -4197,6 +4208,7 @@
           mainZoning1: String(rep.zoning1 || '').trim(),
           mainZoning2: String(rep.zoning2 || '').trim(),
           mainRoadSide: String(rep.roadSide || '').trim(),
+          roadSideSummary: buildLandParcelRoadSideSummary_(active),
           propertyTypeText: propertyTypeText
         };
       }
@@ -4216,8 +4228,9 @@
         if(summary.propertyTypeText){
           setEditableText_(findSpecValueAnyLabel_('* 매물 종류', '* 중개대상물 종류', '* 매물종류'), summary.propertyTypeText);
         }
-        if(summary.mainRoadSide){
-          setEditableText_(findSpecValueAnyLabel_('접도 / 진입로', '도로접면'), summary.mainRoadSide);
+        var roadSideText = summary.roadSideSummary || summary.mainRoadSide;
+        if(roadSideText){
+          setEditableText_(findSpecValueAnyLabel_('접도 / 진입로', '도로접면'), roadSideText);
         }
         updateTopFields();
         renderNaverMapLink_();
@@ -4289,7 +4302,8 @@
         if(summary.totalAreaM2) lines.push('총면적 ' + summary.totalAreaM2 + '㎡' + (summary.totalAreaPy ? ' / ' + summary.totalAreaPy + '평' : ''));
         if(summary.mainLandCategory) lines.push('대표지목 ' + summary.mainLandCategory);
         if(summary.mainZoning1) lines.push('대표용도지역 ' + summary.mainZoning1);
-        if(summary.mainRoadSide) lines.push('대표도로접면 ' + summary.mainRoadSide);
+        var roadSideSummary = summary.roadSideSummary || summary.mainRoadSide;
+        if(roadSideSummary) lines.push('접도/진입로 ' + roadSideSummary);
         landParcelSummary.textContent = lines.join(' · ');
       }
 
@@ -4723,7 +4737,11 @@
         parcel.zoning2 = firstNonEmpty_(characteristic.zoning2, parcel.zoning2);
         parcel.baseYearMonth = firstNonEmpty_(formatLandBaseYearMonth_(characteristic.baseYear, characteristic.baseMonth), parcel.baseYearMonth);
         parcel.landUseSituation = firstNonEmpty_(characteristic.landUseSituation, parcel.landUseSituation);
-        parcel.roadSide = firstNonEmpty_(formatLandRoadSideText_(characteristic.roadSide), parcel.roadSide);
+        var lookupRoadSide = firstNonEmpty_(
+          extractRoadWidthFromLookup_(res),
+          extractRoadWidthFromLookup_({ land: landRoot })
+        );
+        parcel.roadSide = firstNonEmpty_(lookupRoadSide, formatLandRoadSideText_(characteristic.roadSide), parcel.roadSide);
         parcel.terrainHeight = firstNonEmpty_(characteristic.terrainHeight, parcel.terrainHeight);
         parcel.terrainShape = firstNonEmpty_(characteristic.terrainShape, parcel.terrainShape);
         parcel.officialLandPrice = firstNonEmpty_(characteristic.officialLandPriceText, characteristic.officialLandPrice, parcel.officialLandPrice);
@@ -7225,7 +7243,7 @@
           }
           var roadSide = normalizeLookupText_(buildLookupFillData_(res).roadWidth || extractRoadWidthFromLookup_(res));
           if(!roadSide) return false;
-          var el = findSpecValueByLabel_('도로접면');
+          var el = findSpecValueAnyLabel_('접도 / 진입로', '도로접면');
           if(!el) return false;
           if(plainText(el) === roadSide){
             markLookupFilled_(el);
@@ -7607,7 +7625,7 @@
         changed = changed.then(function(prev){
           var roadWidth = normalizeLookupText_(fill && fill.roadWidth);
           if(!roadWidth) return prev;
-          var el = findSpecValueByLabel_('도로접면');
+          var el = findSpecValueAnyLabel_('접도 / 진입로', '도로접면');
           if(!el) return prev;
           if(plainText(el) === roadWidth){
             markLookupFilled_(el);

@@ -1056,13 +1056,19 @@
       font-weight:800;
       text-align:center;
     }
+    .land-parcel-card.is-before-lookup .land-parcel-map-row{display:none;}
+    .land-parcel-card.is-before-lookup .land-parcel-field:not(.address-main){display:none;}
     body.is-land-listing .property-spec-row.dk-hide,
     body.is-land-listing .property-spec-sector-title.dk-hide{display:none !important;}
     @media (max-width:720px){
       .land-parcel-head{align-items:stretch;flex-direction:column;}
       .land-parcel-add-btn{width:100%;}
-      .land-parcel-card-head{align-items:flex-start;flex-direction:column;}
-      .land-parcel-card-actions{width:100%;justify-content:flex-start;}
+      .land-parcel-card-head{align-items:center;flex-direction:row;justify-content:space-between;gap:8px;padding:10px 12px;}
+      .land-parcel-card-title{font-size:14px;white-space:nowrap;}
+      .land-parcel-card-actions{width:auto;justify-content:flex-end;flex-wrap:nowrap;gap:6px;}
+      .land-representative-toggle{font-size:12px;gap:5px;white-space:nowrap;}
+      .land-representative-toggle input{width:15px;height:15px;}
+      .land-parcel-card-actions .land-parcel-mini-btn.delete{min-height:30px;padding:0 10px;font-size:12px;}
       .land-parcel-grid{grid-template-columns:1fr;}
       .land-parcel-field{grid-template-columns:94px 1fr;border-right:none;}
       .land-parcel-area-inline .land-parcel-input{width:86px;flex-basis:86px;}
@@ -4223,7 +4229,7 @@
         }
         landParcels.forEach(function(parcel, idx){
           var card = document.createElement('div');
-          card.className = 'land-parcel-card';
+          card.className = 'land-parcel-card' + (hasLandParcelLookupResult_(parcel) ? '' : ' is-before-lookup');
           card.dataset.landIndex = String(idx);
 
           var head = document.createElement('div');
@@ -4252,9 +4258,9 @@
           grid.innerHTML = buildLandParcelAddressFieldHtml_(parcel) +
             buildLandParcelAreaFieldHtml_(parcel) +
             buildLandParcelFieldHtml_('지목', 'landCategory', parcel.landCategory, '', '') +
+            buildLandParcelFieldHtml_('기준년월', 'baseYearMonth', parcel.baseYearMonth, '', '') +
             buildLandParcelFieldHtml_('용도지역1', 'zoning1', parcel.zoning1, '', '') +
             buildLandParcelFieldHtml_('용도지역2', 'zoning2', parcel.zoning2, '', '') +
-            buildLandParcelFieldHtml_('기준년월', 'baseYearMonth', parcel.baseYearMonth, '', '') +
             buildLandParcelFieldHtml_('토지이용상황', 'landUseSituation', parcel.landUseSituation, '', '') +
             buildLandParcelFieldHtml_('도로접면', 'roadSide', parcel.roadSide, '', '') +
             buildLandParcelFieldHtml_('지형고저', 'terrainHeight', parcel.terrainHeight, '', '') +
@@ -4269,6 +4275,31 @@
           landParcelList.appendChild(card);
         });
         autosizeLandParcelTextareas_(landParcelList);
+      }
+
+      function hasLandParcelLookupResult_(parcel){
+        parcel = parcel || {};
+        var keys = [
+          'areaM2',
+          'areaPy',
+          'landCategory',
+          'zoning1',
+          'zoning2',
+          'baseYearMonth',
+          'landUseSituation',
+          'roadSide',
+          'terrainHeight',
+          'terrainShape',
+          'officialLandPrice',
+          'officialLandPriceTotal',
+          'officialLandPriceAnnouncementDate',
+          'landCharacteristicBaseDate',
+          'usePlanRawText',
+          'restrictionMemo'
+        ];
+        return keys.some(function(key){
+          return String(parcel[key] == null ? '' : parcel[key]).trim() !== '';
+        });
       }
 
       function htmlEscapeAttr_(value){

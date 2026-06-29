@@ -3898,6 +3898,15 @@
         };
       }
 
+      function isLandListingForPayload_(listingNumberValue){
+        var prefix = String(getListingCategoryPrefix_() || selectedListingPrefix || '').trim().toUpperCase();
+        var numberText = String(listingNumberValue || listingNumber || plainText(listingNumberField) || '').trim().toUpperCase();
+        if(prefix === 'DK') return true;
+        if(/^DK-/.test(numberText)) return true;
+        if(landParcelSection && landParcelSection.classList && landParcelSection.classList.contains('show')) return true;
+        return false;
+      }
+
       function buildPropertyPayload_(){
         var currentListingNumber = listingNumber || plainText(listingNumberField) || '';
         if (!currentListingNumber) {
@@ -3905,16 +3914,31 @@
           currentListingNumber = listingNumber || plainText(listingNumberField) || '';
         }
 
+        var isLandListing = isLandListingForPayload_(currentListingNumber);
+        var landParcelPayload = isLandListing ? collectLandParcels_() : [];
+        var basicPayload = collectBasic_();
+        var factoryPayload = collectFactory_();
+
+        if(isLandListing){
+          // 서버 30_property.gs 기준 고정 스키마:
+          // 최상위 data.landParcels = 필지 배열
+          // 각 필지 1개 = 토지필지 시트 1행
+          syncLandSummaryToSharedFields_();
+          basicPayload = collectBasic_();
+          factoryPayload = collectFactory_();
+        }
+
         return {
           action: 'savePropertyDraft',
           createdAt: new Date().toISOString(),
           listingNumber: currentListingNumber,
+          listingType: isLandListing ? 'DK' : getListingCategoryPrefix_(),
           status: listingStatus || 'hidden',
           requester: collectRequester_(),
           summary: collectSummary_(),
-          basic: collectBasic_(),
-          factory: collectFactory_(),
-          landParcels: getListingCategoryPrefix_() === 'DK' ? collectLandParcels_() : [],
+          basic: basicPayload,
+          factory: factoryPayload,
+          landParcels: landParcelPayload,
           memo: memoTextForPayload_(document.querySelector('.memo-body')),
           photoTemps: serializeTempItems_(photoList),
           ledgerTemps: serializeTempItems_(ledgerList),
@@ -4326,6 +4350,7 @@
       function collectLandParcels_(){
         ensureSingleRepresentative_(landParcels);
         var currentListingNumber = listingNumber || plainText(listingNumberField) || '';
+
         return (Array.isArray(landParcels) ? landParcels : []).filter(function(parcel){
           return parcel && String(parcel.parcelStatus || 'active') !== 'deleted' && (
             String(parcel.address || '').trim() ||
@@ -4335,10 +4360,32 @@
           );
         }).map(function(parcel, idx){
           var out = normalizeLandParcel_(parcel, idx);
-          out.displayAddress = out.displayAddress || formatDisplayAddressForTitle_(out.address);
-          updateOfficialLandPriceTotalForParcel_(out);
           out.listingNumber = currentListingNumber;
           out.parcelOrder = idx + 1;
+          out.isRepresentative = normalizeLandRepresentative_(out.isRepresentative);
+          out.parcelStatus = String(out.parcelStatus || 'active');
+          out.pnu = String(out.pnu || '').trim();
+          out.address = String(out.address || '').trim();
+          out.displayAddress = String(out.displayAddress || '').trim() || formatDisplayAddressForTitle_(out.address);
+          out.jibun = String(out.jibun || '').trim();
+          out.areaM2 = numberText_(out.areaM2);
+          out.areaPy = numberText_(out.areaPy) || pyeongFromM2_(out.areaM2);
+          out.landCategory = String(out.landCategory || '').trim();
+          out.zoning1 = String(out.zoning1 || '').trim();
+          out.zoning2 = String(out.zoning2 || '').trim();
+          out.baseYearMonth = String(out.baseYearMonth || '').trim();
+          out.landUseSituation = String(out.landUseSituation || '').trim();
+          out.roadSide = String(out.roadSide || '').trim();
+          out.terrainHeight = String(out.terrainHeight || '').trim();
+          out.terrainShape = String(out.terrainShape || '').trim();
+          out.officialLandPrice = numberText_(out.officialLandPrice);
+          out.officialLandPriceTotal = updateOfficialLandPriceTotalForParcel_(out) || numberText_(out.officialLandPriceTotal);
+          out.officialLandPriceAnnouncementDate = String(out.officialLandPriceAnnouncementDate || '').trim();
+          out.landCharacteristicBaseDate = String(out.landCharacteristicBaseDate || '').trim();
+          out.usePlanSummary = String(out.usePlanSummary || '').trim();
+          out.usePlanRawText = String(out.usePlanRawText || '').trim();
+          out.restrictionMemo = String(out.restrictionMemo || '').trim();
+
           if(!out.parcelId && currentListingNumber){
             out.parcelId = currentListingNumber + '-P' + String(idx + 1).padStart(3, '0');
           }

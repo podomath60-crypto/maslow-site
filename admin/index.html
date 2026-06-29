@@ -1036,14 +1036,23 @@
     }
     .land-area-breakdown-row{display:none;}
     .land-area-breakdown{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      column-gap:18px;
+      row-gap:4px;
       font-size:18px;
       line-height:1.65;
       font-weight:800;
       color:#23262b;
       word-break:keep-all;
     }
+    .land-area-breakdown-item{
+      display:block;
+      min-width:0;
+      white-space:nowrap;
+    }
     @media (max-width:720px){
-      .land-area-breakdown{font-size:15px;line-height:1.72;}
+      .land-area-breakdown{grid-template-columns:1fr;font-size:15px;line-height:1.72;row-gap:2px;}
     }
     .land-parcel-summary{
       margin:0 0 14px;
@@ -4243,7 +4252,7 @@
         var active = getActiveLandParcels_();
         if(getListingCategoryPrefix_() !== 'DK' || active.length <= 1){
           landParcelAreaBreakdownRow.style.display = 'none';
-          landParcelAreaBreakdownValue.textContent = '';
+          landParcelAreaBreakdownValue.innerHTML = '';
           return;
         }
 
@@ -4253,11 +4262,17 @@
 
         if(!lines.length){
           landParcelAreaBreakdownRow.style.display = 'none';
-          landParcelAreaBreakdownValue.textContent = '';
+          landParcelAreaBreakdownValue.innerHTML = '';
           return;
         }
 
-        landParcelAreaBreakdownValue.textContent = lines.join(', ');
+        landParcelAreaBreakdownValue.innerHTML = '';
+        lines.forEach(function(line){
+          var item = document.createElement('span');
+          item.className = 'land-area-breakdown-item';
+          item.textContent = line;
+          landParcelAreaBreakdownValue.appendChild(item);
+        });
         landParcelAreaBreakdownRow.style.display = 'grid';
       }
 
@@ -8785,6 +8800,8 @@
       '.pdf-kv-label,.pdf-kv-value{padding:4px 7px;border-top:1px solid #eef2f7;font-size:10.5px;line-height:1.32;word-break:break-word;}',
       '.pdf-kv-label{background:#fcfcfd;color:#6b7280;font-weight:700;}',
       '.pdf-kv-value{color:#111827;font-weight:500;}',
+      '.pdf-land-area-breakdown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:10px;row-gap:3px;}',
+      '.pdf-land-area-breakdown-item{display:block;min-width:0;white-space:nowrap;}',
       '.pdf-factory-table{width:100%;border-collapse:collapse;table-layout:fixed;}',
       '.pdf-factory-table th,.pdf-factory-table td{border-top:1px solid #eef2f7;padding:4px 6px;font-size:10px;line-height:1.3;vertical-align:top;word-break:break-word;}',
       '.pdf-factory-table th{width:19%;background:#fcfcfd;color:#6b7280;font-weight:700;text-align:left;}',
@@ -8829,7 +8846,7 @@
       '.pdf-external-factory-label,.pdf-external-factory-value{padding:7px 8px;font-size:11.2px;line-height:1.34;word-break:break-word;}',
       '.pdf-external-factory-label{background:#fbfaf8;color:#5b6472;font-weight:900;}',
       '.pdf-external-factory-value{color:#111827;font-weight:700;}',
-      '@media (max-width:860px){#pdfPreviewModal,#pdfModePickerModal{padding:0}.pdf-preview-shell{width:100%;height:100%;max-height:none;border-radius:0}.pdf-preview-scroll{padding:10px}#pdfPrintPage{transform:scale(.72);transform-origin:top center;margin-bottom:-300px}.pdf-top-grid,.pdf-two-col,.pdf-external-gallery,.pdf-external-info{grid-template-columns:1fr}.pdf-external-stack{grid-template-columns:1fr}.pdf-hero{height:140px}.pdf-external-hero{height:220px}.pdf-external-thumb{height:112px}}',
+      '@media (max-width:860px){#pdfPreviewModal,#pdfModePickerModal{padding:0}.pdf-preview-shell{width:100%;height:100%;max-height:none;border-radius:0}.pdf-preview-scroll{padding:10px}#pdfPrintPage{transform:scale(.72);transform-origin:top center;margin-bottom:-300px}.pdf-top-grid,.pdf-two-col,.pdf-external-gallery,.pdf-external-info{grid-template-columns:1fr}.pdf-external-stack{grid-template-columns:1fr}.pdf-land-area-breakdown{grid-template-columns:1fr}.pdf-hero{height:140px}.pdf-external-hero{height:220px}.pdf-external-thumb{height:112px}}',
       '@media print{body *{visibility:hidden !important;} .pdf-print-root, .pdf-print-root *{visibility:visible !important;} .pdf-print-root{position:absolute;left:0;top:0;width:794px;background:#fff;} @page{size:A4 portrait;margin:6mm 8mm 8mm;} }'
     ].join('\n');
   }
@@ -8977,10 +8994,34 @@
     }).filter(Boolean);
   }
 
+  function isLandParcelAreaBreakdownPair_(pair){
+    var label = String(pair && pair[0] || '').replace(/[\s*]/g, '').trim();
+    return label === '필지별면적';
+  }
+
+  function buildPdfLandParcelAreaBreakdownHtml_(value){
+    var lines = String(value || '').split(/\n+/).map(function(line){
+      return String(line || '').trim();
+    }).filter(Boolean);
+
+    if(!lines.length) return '';
+
+    return '<div class="pdf-land-area-breakdown">' + lines.map(function(line){
+      return '<span class="pdf-land-area-breakdown-item">' + htmlEscape(line) + '</span>';
+    }).join('') + '</div>';
+  }
+
+  function buildPdfKvValueHtml_(pair){
+    if(isLandParcelAreaBreakdownPair_(pair)){
+      return buildPdfLandParcelAreaBreakdownHtml_(pair && pair[1]);
+    }
+    return nl2br(pair && pair[1]);
+  }
+
   function buildKv(rows, emptyText){
     if(!rows.length) return '<div style="padding:10px 12px;font-size:12px;color:#6b7280;">'+ htmlEscape(emptyText || '표시할 내용이 없습니다.') +'</div>';
     return '<div class="pdf-kv">' + rows.map(function(pair){
-      return '<div class="pdf-kv-row"><div class="pdf-kv-label">'+ htmlEscape(pair[0]) +'</div><div class="pdf-kv-value">'+ nl2br(pair[1]) +'</div></div>';
+      return '<div class="pdf-kv-row"><div class="pdf-kv-label">'+ htmlEscape(pair[0]) +'</div><div class="pdf-kv-value">'+ buildPdfKvValueHtml_(pair) +'</div></div>';
     }).join('') + '</div>';
   }
 
@@ -9001,6 +9042,77 @@
 
 
 
+  function getPdfLandInputValue_(card, key){
+    var el = card ? card.querySelector('[data-land-key="' + key + '"]') : null;
+    if(!el) return '';
+    return String(typeof el.value !== 'undefined' ? el.value : textOf(el)).trim();
+  }
+
+  function parsePdfLandNumber_(value){
+    var m = String(value || '').replace(/,/g, '').match(/-?\d+(\.\d+)?/);
+    return m ? (Number(m[0]) || 0) : 0;
+  }
+
+  function roundPdfLandNumber_(value, digits){
+    var n = Number(value || 0);
+    var d = Number(digits || 0);
+    var p = Math.pow(10, d);
+    return String(Math.round(n * p) / p);
+  }
+
+  function buildPdfLandParcelAreaText_(card, idx){
+    var m2 = getPdfLandInputValue_(card, 'areaM2');
+    var py = getPdfLandInputValue_(card, 'areaPy');
+
+    if(!py && m2){
+      var m2Number = parsePdfLandNumber_(m2);
+      py = m2Number ? roundPdfLandNumber_(m2Number / 3.305785, 2) : '';
+    }
+    if(!m2 && py){
+      var pyNumber = parsePdfLandNumber_(py);
+      m2 = pyNumber ? roundPdfLandNumber_(pyNumber * 3.305785, 2) : '';
+    }
+    if(!m2 && !py) return '';
+
+    return '필지' + (idx + 1) + ' ' + (m2 ? m2 + '㎡' : '') + (py ? ' (' + py + '평)' : '');
+  }
+
+  function collectPdfLandParcelAreaLines_(){
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.land-parcel-card'));
+    var activeCards = cards.filter(function(card){
+      return card && !card.classList.contains('is-deleted');
+    });
+
+    if(activeCards.length <= 1) return [];
+
+    return activeCards.map(function(card, idx){
+      return buildPdfLandParcelAreaText_(card, idx);
+    }).filter(Boolean);
+  }
+
+  function addLandParcelAreaBreakdownRowsForPdf_(rows){
+    rows = Array.isArray(rows) ? rows.slice() : [];
+
+    var lines = collectPdfLandParcelAreaLines_();
+    if(!lines.length) return rows;
+
+    rows = rows.filter(function(pair){
+      var label = String(pair && pair[0] || '').replace(/[\s*]/g, '').trim();
+      return label !== '필지별면적';
+    });
+
+    var insertIndex = rows.findIndex(function(pair){
+      var label = String(pair && pair[0] || '').replace(/[\s*]/g, '').trim();
+      return label === '총토지면적' || label === '대지면적';
+    });
+
+    if(insertIndex < 0) return rows;
+
+    rows.splice(insertIndex + 1, 0, ['필지별 면적', lines.join('\n')]);
+    return rows;
+  }
+
+
   function normalizePriceRowsForDeal(rows, deal){
     var d = String(deal || '').trim();
     return (rows || []).map(function(pair){
@@ -9018,7 +9130,7 @@
   function buildExternalKv(rows, emptyText){
     if(!rows.length) return '<div style="padding:12px 14px;font-size:13px;color:#6b7280;">'+ htmlEscape(emptyText || '표시할 내용이 없습니다.') +'</div>';
     return '<div class="pdf-kv external-kv">' + rows.map(function(pair){
-      return '<div class="pdf-kv-row"><div class="pdf-kv-label">'+ htmlEscape(pair[0]) +'</div><div class="pdf-kv-value">'+ nl2br(pair[1]) +'</div></div>';
+      return '<div class="pdf-kv-row"><div class="pdf-kv-label">'+ htmlEscape(pair[0]) +'</div><div class="pdf-kv-value">'+ buildPdfKvValueHtml_(pair) +'</div></div>';
     }).join('') + '</div>';
   }
 
@@ -9087,7 +9199,7 @@
     var price = textOf(document.getElementById('topPrice'));
     var summaries = collectSummaryTexts(3);
     var specialTitle = getSpecialSectionTitleText();
-    var basicRows = normalizePriceRowsForDeal(collectRowsBetween('기본정보', '공장특화정보', false), deal);
+    var basicRows = addLandParcelAreaBreakdownRowsForPdf_(normalizePriceRowsForDeal(collectRowsBetween('기본정보', '공장특화정보', false), deal));
     var factoryRows = collectRowsBetween('공장특화정보', null, true);
     var requesterRows = collectRequesterRows();
     var memo = textOf(document.querySelector('.memo-body'));
@@ -9152,7 +9264,7 @@
     var price = textOf(document.getElementById('topPrice'));
     var summaries = collectSummaryTexts(4);
     var specialTitle = getSpecialSectionTitleText();
-    var basicRows = normalizePriceRowsForDeal(collectRowsBetween('기본정보', '공장특화정보', false, { maskAddress: true }), deal)
+    var basicRows = addLandParcelAreaBreakdownRowsForPdf_(normalizePriceRowsForDeal(collectRowsBetween('기본정보', '공장특화정보', false, { maskAddress: true }), deal))
       .filter(function(pair){
         return String(pair && pair[0] || '').replace(/\s+/g, '').trim() !== '매물번호';
       });
@@ -9265,6 +9377,8 @@
       + '.pdf-kv-label,.pdf-kv-value{padding:4px 7px;border-top:1px solid #eef2f7;font-size:10.5px;line-height:1.32;word-break:break-word;} '
       + '.pdf-kv-label{background:#fcfcfd;color:#6b7280;font-weight:700;} '
       + '.pdf-kv-value{color:#111827;font-weight:500;} '
+      + '.pdf-land-area-breakdown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:10px;row-gap:3px;} '
+      + '.pdf-land-area-breakdown-item{display:block;min-width:0;white-space:nowrap;} '
       + '.pdf-factory-table{width:100%;border-collapse:collapse;table-layout:fixed;} '
       + '.pdf-factory-table th,.pdf-factory-table td{border-top:1px solid #eef2f7;padding:4px 6px;font-size:10px;line-height:1.3;vertical-align:top;word-break:break-word;} '
       + '.pdf-factory-table th{width:19%;background:#fcfcfd;color:#6b7280;font-weight:700;text-align:left;} '
@@ -9300,6 +9414,7 @@
       + '.pdf-external-factory-label,.pdf-external-factory-value{padding:7px 8px;font-size:11.2px;line-height:1.34;word-break:break-word;} '
       + '.pdf-external-factory-label{background:#fbfaf8;color:#5b6472;font-weight:900;} '
       + '.pdf-external-factory-value{color:#111827;font-weight:700;} '
+      + '@media (max-width:720px){.pdf-land-area-breakdown{grid-template-columns:1fr;}} '
       + '</style></head><body><div id="pdfPrintPage">'+ html +'</div></body></html>');
     doc.close();
     waitForImages(doc, function(){

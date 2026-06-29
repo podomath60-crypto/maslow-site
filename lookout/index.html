@@ -1503,6 +1503,69 @@
         }).join('')
         + '</tbody></table></div>';
     }
+    function formatLandAreaText(m2, py){
+      var m2Text = String(m2 == null ? '' : m2).replace(/,/g, '').trim();
+      var pyText = String(py == null ? '' : py).replace(/,/g, '').trim();
+      var n = Number(m2Text);
+      var p = Number(pyText);
+
+      if(isFinite(n) && n > 0){
+        if(isFinite(p) && p > 0){
+          return numberText(n) + '㎡ / ' + numberText(p) + '평';
+        }
+        return areaText(n);
+      }
+
+      return firstNonEmpty(m2, py, '-');
+    }
+
+    function buildLandRows(data){
+      var land = (data && data.land) || {};
+      var characteristic = land.characteristic || {};
+      var usePlan = land.usePlan || {};
+      var rows = [];
+
+      var hasCharacteristic = !!firstNonEmpty(
+        characteristic.baseYear,
+        characteristic.landCategory,
+        characteristic.areaM2,
+        characteristic.zoning,
+        characteristic.terrainShape,
+        characteristic.roadSide,
+        characteristic.officialLandPrice,
+        characteristic.officialLandPriceText,
+        characteristic.dataDate
+      );
+
+      var hasUsePlan = !!firstNonEmpty(
+        usePlan.ledgerType,
+        usePlan.conflictStatus,
+        usePlan.zoningDistricts,
+        usePlan.dataDate
+      );
+
+      if(!hasCharacteristic && !hasUsePlan){
+        var msg = firstNonEmpty(land.message);
+        if(!msg) return [];
+        return [['조회상태', msg]];
+      }
+
+      rows.push(['기준연도', textOrDash(characteristic.baseYear)]);
+      rows.push(['지목', textOrDash(characteristic.landCategory)]);
+      rows.push(['면적', formatLandAreaText(characteristic.areaM2, characteristic.areaPy)]);
+      rows.push(['용도지역', textOrDash(characteristic.zoning)]);
+      rows.push(['지형형상', textOrDash(characteristic.terrainShape)]);
+      rows.push(['도로접면', textOrDash(characteristic.roadSide)]);
+      rows.push(['공시지가', textOrDash(firstNonEmpty(characteristic.officialLandPriceText, characteristic.officialLandPrice))]);
+      rows.push(['토지특성 기준일', textOrDash(formatDate(characteristic.dataDate) || characteristic.dataDate)]);
+      rows.push(['대장구분', textOrDash(usePlan.ledgerType)]);
+      rows.push(['저촉여부', textOrDash(usePlan.conflictStatus)]);
+      rows.push(['용도지역지구', textOrDash(usePlan.zoningDistricts)]);
+      rows.push(['토지이용 기준일', textOrDash(formatDate(usePlan.dataDate) || usePlan.dataDate)]);
+
+      return rows;
+    }
+
     function extractIntegratedData(data){
       var apis = data.apis || {};
       var titleItems = ((apis.title || {}).items || []).slice();
@@ -1638,7 +1701,12 @@
         ['공시가격', firstNonEmpty(priceItem.housePc, priceItem.pblntfPc, priceItem.officialLandPrice, '-')]
       ];
 
-      return { summaryRows: summaryRows, buildings: buildings, priceRows: priceRows };
+      return {
+        summaryRows: summaryRows,
+        buildings: buildings,
+        priceRows: priceRows,
+        landRows: buildLandRows(data)
+      };
     }
 
 
@@ -1932,6 +2000,21 @@
     function buildOverviewCards(data){
       var extracted = extractIntegratedData(data);
       var html = '<div class="result-stack">';
+
+      if(extracted.landRows && extracted.landRows.length){
+        html += '<div class="result-block">'
+          + '<div class="result-block-head">토지 정보 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">토지특성 / 토지이용계획</span></div>'
+          + buildResultTable(extracted.landRows)
+          + '<div class="table-download-wrap">'
+          + '<div class="table-action-row">'
+          + '<button class="table-download-btn" data-kind="land" data-title="토지 정보">⬇️ 이미지 내려받기</button>'
+          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지 정보">📋 텍스트 복사</button>'
+          + '</div>'
+          + '<div class="table-download-note">서버에서 내려온 토지정보만 표시합니다.</div>'
+          + '</div>'
+          + '</div>';
+      }
+
       html += '<div class="result-block">'
         + '<div class="result-block-head">통합요약 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">총괄표제부값</span></div>'
         + buildResultTable(extracted.summaryRows)
@@ -1979,6 +2062,10 @@
             saveRowsAsImage(title, extracted.summaryRows, 'maslow-summary.png');
             return;
           }
+          if(kind === 'land'){
+            saveRowsAsImage(title, extracted.landRows || [], 'maslow-land-info.png');
+            return;
+          }
           if(kind === 'price-link'){
             window.open('https://www.realtyprice.kr/notice/m/main/main.do', '_blank', 'noopener');
             return;
@@ -2000,6 +2087,10 @@
 
           if(kind === 'summary'){
             copyRowsText(title, extracted.summaryRows);
+            return;
+          }
+          if(kind === 'land'){
+            copyRowsText(title, extracted.landRows || []);
             return;
           }
 

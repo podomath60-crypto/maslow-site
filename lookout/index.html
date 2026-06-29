@@ -28,13 +28,13 @@
       --line:#e6ebf2;
       --blue:#2164ff;
       --blue-soft:#eef4ff;
-      --land-bg:#fff8e7;
-      --land-surface:#fffdf5;
-      --land-line:#ead7a5;
+      --land-bg:#fffaf3;
+      --land-surface:#ffffff;
+      --land-line:#eadfc9;
       --land-main:#b7791f;
-      --land-main-dark:#7c4a03;
-      --land-soft:#fff3c4;
-      --land-shadow:0 18px 42px rgba(124,74,3,.10);
+      --land-main-dark:#7a4a12;
+      --land-soft:#fff7e8;
+      --land-shadow:0 18px 42px rgba(124,74,3,.06);
       --shadow:0 18px 42px rgba(15,23,42,.08);
     }
     *{box-sizing:border-box}
@@ -148,24 +148,24 @@
       color:#4f6280;
     }
     .mode-tabs{
-      margin-top:18px;
+      margin-top:34px;
       display:flex;
       justify-content:center;
       align-items:center;
-      gap:12px;
+      gap:14px;
       flex-wrap:wrap;
     }
     .mode-tab{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      min-height:50px;
-      padding:0 24px;
+      min-height:58px;
+      padding:12px 30px;
       border-radius:999px;
       border:1px solid #cfe0ff;
       background:rgba(255,255,255,.72);
       color:#4f6280;
-      font-size:24px;
+      font-size:29px;
       line-height:1;
       font-weight:950;
       letter-spacing:-0.05em;
@@ -205,11 +205,11 @@
       font-weight:800;
     }
     body.mode-land-only .page{
-      background:var(--land-bg);
+      background:#fff;
     }
     body.mode-land-only .hero{
       border-color:var(--land-line);
-      background:linear-gradient(180deg,#fff6d8 0%,#f1dfb8 100%);
+      background:linear-gradient(180deg,#fff8ef 0%,#f3eadc 100%);
       box-shadow:var(--land-shadow);
     }
     body.mode-land-only .brand-en{
@@ -219,7 +219,7 @@
       color:#2f230f;
     }
     body.mode-land-only .search-panel{
-      box-shadow:0 22px 40px rgba(124,74,3,.13);
+      box-shadow:0 22px 40px rgba(124,74,3,.08);
     }
     body.mode-land-only .search-shell{
       border-color:var(--land-line);
@@ -253,27 +253,27 @@
     }
     body.mode-land-only .result-block-head{
       border-bottom-color:var(--land-line);
-      background:#fff3c4;
+      background:#fffaf3;
       color:#3d2a09;
     }
     body.mode-land-only .result-table{
       background:var(--land-surface);
     }
     body.mode-land-only .result-table th{
-      background:#fff8df;
+      background:#fffaf5;
       color:#6b4706;
     }
     body.mode-land-only .result-table th,
     body.mode-land-only .result-table td{
-      border-bottom-color:#f0ddb2;
+      border-bottom-color:#efe3ce;
     }
     body.mode-land-only .map-link-btn,
     body.mode-land-only .table-download-btn,
     body.mode-land-only .table-copy-btn{
-      border-color:var(--land-line);
-      color:var(--land-main-dark);
-      background:linear-gradient(180deg,#fffdf5 0%,#fff3c4 100%);
-      box-shadow:0 8px 20px rgba(183,121,31,.12);
+      border-color:#d7dee8;
+      color:#344054;
+      background:#ffffff;
+      box-shadow:0 8px 20px rgba(15,23,42,.06);
     }
     body.mode-land-only .address-display{
       display:none;
@@ -739,13 +739,13 @@
         font-size:22px;
       }
       .mode-tabs{
-        margin-top:12px;
-        gap:8px;
+        margin-top:22px;
+        gap:9px;
       }
       .mode-tab{
-        min-height:40px;
-        padding:0 14px;
-        font-size:16px;
+        min-height:46px;
+        padding:9px 17px;
+        font-size:19px;
       }
       .land-address-input{
         font-size:15px;
@@ -1100,7 +1100,7 @@
                   <path d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 <div id="addressDisplay" class="address-display placeholder">주소를 검색하세요</div>
-                <input id="landAddressInput" class="land-address-input" type="text" autocomplete="off" placeholder="지번주소를 입력하세요">
+                <input id="landAddressInput" class="land-address-input" type="text" autocomplete="off" placeholder="지번주소 또는 도로명주소를 입력하세요">
               </div>
               <button id="refreshAddressBtn" class="refresh-address-btn" type="button" aria-label="새로고침">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
@@ -1461,7 +1461,7 @@
     function renderAddressDisplay(){
       if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
         if(els.landAddressInput){
-          els.landAddressInput.placeholder = '지번주소를 입력하세요';
+          els.landAddressInput.placeholder = '지번주소 또는 도로명주소를 입력하세요';
         }
         els.addressDisplay.textContent = '';
         els.addressDisplay.classList.remove('placeholder');
@@ -1559,7 +1559,7 @@
       resetAddressOnly();
 
       if(currentLookupMode === LOOKUP_MODE_LAND_ONLY){
-        els.emptyState.textContent = '지번주소를 입력한 뒤 조회하세요.';
+        els.emptyState.textContent = '지번주소 또는 도로명주소를 입력한 뒤 조회하세요.';
         if(els.landAddressInput) els.landAddressInput.focus();
       }else{
         els.emptyState.textContent = '주소를 눌러 검색한 뒤 조회하세요.';
@@ -1612,10 +1612,7 @@
       });
     }
 
-    async function searchVworldParcelPnu(query){
-      query = String(query || '').trim();
-      if(!query) throw new Error('지번주소를 입력하세요.');
-
+    async function searchVworldAddressItem(query, category){
       var data = await vworldJsonpCall('https://api.vworld.kr/req/search', {
         service: 'search',
         request: 'search',
@@ -1623,26 +1620,60 @@
         size: '1',
         page: '1',
         type: 'address',
-        category: 'parcel',
+        category: category,
         format: 'json',
         key: VWORLD_API_KEY,
         query: query
       });
 
-      var item = data && data.response && data.response.result && data.response.result.items && data.response.result.items[0];
-      if(!item || !item.id){
+      var items = data && data.response && data.response.result && data.response.result.items;
+      return items && items.length ? items[0] : null;
+    }
+
+    async function searchVworldParcelPnu(query){
+      query = String(query || '').trim();
+      if(!query) throw new Error('지번주소 또는 도로명주소를 입력하세요.');
+
+      var item = await searchVworldAddressItem(query, 'parcel');
+      var searchType = 'parcel';
+
+      if(!item || !String(item.id || '').replace(/\D/g, '')){
+        item = await searchVworldAddressItem(query, 'road');
+        searchType = 'road';
+      }
+
+      if(!item){
         throw new Error('토지 검색 결과가 없습니다.');
       }
 
+      var pnu = String(item.id || '').replace(/\D/g, '');
+      var parcelAddress = firstNonEmpty(item.address && item.address.parcel, '');
+
+      if(pnu.length !== 19 && parcelAddress){
+        var parcelItem = await searchVworldAddressItem(parcelAddress, 'parcel');
+        if(parcelItem && String(parcelItem.id || '').replace(/\D/g, '').length === 19){
+          item = parcelItem;
+          pnu = String(parcelItem.id || '').replace(/\D/g, '');
+          searchType = 'road-to-parcel';
+        }
+      }
+
+      if(pnu.length !== 19){
+        throw new Error('PNU를 확인하지 못했습니다. 지번주소로 다시 입력해 주세요.');
+      }
+
       return {
-        pnu: String(item.id || '').replace(/\D/g, ''),
+        pnu: pnu,
         address: firstNonEmpty(
           item.address && item.address.parcel,
           item.address && item.address.road,
           item.title,
           query
         ),
+        roadAddress: firstNonEmpty(item.address && item.address.road, ''),
+        parcelAddress: firstNonEmpty(item.address && item.address.parcel, ''),
         query: query,
+        searchType: searchType,
         point: item.point || {}
       };
     }
@@ -2586,7 +2617,7 @@
       try{
         var query = els.landAddressInput ? String(els.landAddressInput.value || '').trim() : '';
         if(!query){
-          setStatus('지번주소를 입력하세요.', 'err');
+          setStatus('지번주소 또는 도로명주소를 입력하세요.', 'err');
           if(els.landAddressInput) els.landAddressInput.focus();
           return;
         }
@@ -2602,7 +2633,9 @@
 
         landPicked = found;
         els.pickedLine.textContent = joinValues([
-          found.address ? ('지번: ' + found.address) : '',
+          found.parcelAddress ? ('지번: ' + found.parcelAddress) : '',
+          found.roadAddress ? ('도로명: ' + found.roadAddress) : '',
+          (!found.parcelAddress && found.address) ? ('주소: ' + found.address) : '',
           found.pnu ? ('PNU: ' + found.pnu) : ''
         ], '\n');
 

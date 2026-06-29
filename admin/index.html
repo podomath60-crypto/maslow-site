@@ -3247,8 +3247,14 @@
         rentPriceState = { deposit: '', monthly: '' };
       }
 
+      function rentTextValue_(value){
+        if(value === null || value === undefined) return '';
+        if(typeof value === 'string' || typeof value === 'number') return String(value);
+        return plainText(value);
+      }
+
       function cleanRentAmountPart_(value){
-        var text = plainText(value || '').trim();
+        var text = rentTextValue_(value).trim();
         if(!text) return '';
         text = text.replace(/^(보증금|월세)\s*/i, '').trim();
         text = text.replace(/([0-9,])\s*원$/i, '$1').trim();
@@ -3257,7 +3263,11 @@
 
       function parseRentPriceText_(priceText){
         var result = { deposit: '', monthly: '' };
-        var parts = String(priceText || '').split('/').map(function(v){ return plainText(v).trim(); }).filter(Boolean);
+        var rawText = rentTextValue_(priceText)
+          .replace(/<br\s*\/?\s*>/gi, ' / ')
+          .replace(/\r?\n+/g, ' / ')
+          .trim();
+        var parts = rawText.split('/').map(function(v){ return rentTextValue_(v).trim(); }).filter(Boolean);
 
         parts.forEach(function(part, idx){
           var cleaned = cleanRentAmountPart_(part);
@@ -3272,6 +3282,13 @@
             result.monthly = cleaned;
           }
         });
+
+        if((!result.deposit || !result.monthly) && rawText){
+          var depositMatch = rawText.match(/보증금\s*([^\/\n]+?)(?=\s*(?:월세|\/|$))/i);
+          var monthlyMatch = rawText.match(/월세\s*([^\/\n]+)/i);
+          if(!result.deposit && depositMatch) result.deposit = cleanRentAmountPart_(depositMatch[1]);
+          if(!result.monthly && monthlyMatch) result.monthly = cleanRentAmountPart_(monthlyMatch[1]);
+        }
 
         return result;
       }

@@ -1519,13 +1519,79 @@
       return firstNonEmpty(m2, py, '-');
     }
 
-    function buildLandRows(data){
-      var land = (data && data.land) || {};
-      var characteristic = land.characteristic || {};
-      var usePlan = land.usePlan || {};
-      var rows = [];
+    function parseLandNumber(value){
+      var text = String(value == null ? '' : value).replace(/,/g, '').replace(/[^0-9.\-]/g, '').trim();
+      var n = Number(text);
+      return isFinite(n) ? n : null;
+    }
 
-      var hasCharacteristic = !!firstNonEmpty(
+    function formatWonText(n){
+      if(!isFinite(n)) return '';
+      return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '원';
+    }
+
+    function formatLandOfficialTotalText(areaM2, pricePerM2){
+      var area = parseLandNumber(areaM2);
+      var price = parseLandNumber(pricePerM2);
+      if(!isFinite(area) || area <= 0 || !isFinite(price) || price <= 0) return '';
+
+      var total = area * price;
+      var manwon = Math.round(total / 10000);
+      return formatWonText(total) + ' / 약 ' + String(manwon).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '만원';
+    }
+
+    function splitLandValues(value){
+      if(Array.isArray(value)){
+        return value.map(function(v){ return String(v == null ? '' : v).trim(); }).filter(Boolean);
+      }
+      return String(value == null ? '' : value)
+        .split(',')
+        .map(function(v){ return v.trim(); })
+        .filter(Boolean);
+    }
+
+    function uniqueLandValues(value){
+      var out = [];
+      splitLandValues(value).forEach(function(v){
+        if(v && out.indexOf(v) === -1) out.push(v);
+      });
+      return out;
+    }
+
+    function normalizeUsePlanItems(usePlan){
+      usePlan = usePlan || {};
+
+      if(Array.isArray(usePlan.usePlanItems) && usePlan.usePlanItems.length){
+        return usePlan.usePlanItems.map(function(item){
+          return {
+            name: firstNonEmpty(item && item.name, item && item.zoningDistrict, item && item.prposAreaDstrcCodeNm),
+            conflict: firstNonEmpty(item && item.conflict, item && item.conflictStatus, item && item.cnflcAtNm)
+          };
+        }).filter(function(item){
+          return !!(item.name || item.conflict);
+        });
+      }
+
+      var names = splitLandValues(usePlan.zoningDistricts);
+      var conflicts = splitLandValues(usePlan.conflictStatus);
+      var max = Math.max(names.length, conflicts.length);
+      var items = [];
+
+      for(var i = 0; i < max; i++){
+        items.push({
+          name: names[i] || '',
+          conflict: conflicts[i] || ''
+        });
+      }
+
+      return items.filter(function(item){
+        return !!(item.name || item.conflict);
+      });
+    }
+
+    function hasLandCharacteristic(characteristic){
+      characteristic = characteristic || {};
+      return !!firstNonEmpty(
         characteristic.baseYear,
         characteristic.landCategory,
         characteristic.areaM2,
@@ -1536,19 +1602,30 @@
         characteristic.officialLandPriceText,
         characteristic.dataDate
       );
+    }
 
-      var hasUsePlan = !!firstNonEmpty(
+    function hasLandUsePlan(usePlan){
+      usePlan = usePlan || {};
+      return !!firstNonEmpty(
         usePlan.ledgerType,
         usePlan.conflictStatus,
         usePlan.zoningDistricts,
         usePlan.dataDate
-      );
+      ) || normalizeUsePlanItems(usePlan).length > 0;
+    }
 
-      if(!hasCharacteristic && !hasUsePlan){
-        var msg = firstNonEmpty(land.message);
-        if(!msg) return [];
-        return [['조회상태', msg]];
-      }
+    function buildLandInfoRows(data){
+      var land = (data && data.land) || {};
+      var characteristic = land.characteristic || {};
+      if(!hasLandCharacteristic(characteristic)) return [];
+
+      var rows = [];
+      var priceText = firstNonEmpty(characteristic.officialLandPriceText, characteristic.officialLandPrice);
+      var totalPriceText = firstNonEmpty(
+        characteristic.officialLandTotalPriceText,
+        characteristic.officialLandTotalPriceShortText,
+        formatLandOfficialTotalText(characteristic.areaM2, characteristic.officialLandPrice)
+      );
 
       rows.push(['기준연도', textOrDash(characteristic.baseYear)]);
       rows.push(['지목', textOrDash(characteristic.landCategory)]);
@@ -1556,13 +1633,51 @@
       rows.push(['용도지역', textOrDash(characteristic.zoning)]);
       rows.push(['지형형상', textOrDash(characteristic.terrainShape)]);
       rows.push(['도로접면', textOrDash(characteristic.roadSide)]);
-      rows.push(['공시지가', textOrDash(firstNonEmpty(characteristic.officialLandPriceText, characteristic.officialLandPrice))]);
+      rows.push(['공시지가', textOrDash(priceText)]);
+      if(totalPriceText) rows.push(['공시지가 총액', totalPriceText]);
       rows.push(['토지특성 기준일', textOrDash(formatDate(characteristic.dataDate) || characteristic.dataDate)]);
-      rows.push(['대장구분', textOrDash(usePlan.ledgerType)]);
-      rows.push(['저촉여부', textOrDash(usePlan.conflictStatus)]);
-      rows.push(['용도지역지구', textOrDash(usePlan.zoningDistricts)]);
-      rows.push(['토지이용 기준일', textOrDash(formatDate(usePlan.dataDate) || usePlan.dataDate)]);
 
+      return rows;
+    }
+
+    function buildLandUsePlanRows(data){
+      var land = (data && data.land) || {};
+      var usePlan = land.usePlan || {};
+      if(!hasLandUsePlan(usePlan)) return [];
+
+      var rows = [];
+      var ledgerTypes = uniqueLandValues(usePlan.ledgerType);
+      if(ledgerTypes.length){
+        rows.push(['대장구분', ledgerTypes.join(', ')]);
+      }
+
+      normalizeUsePlanItems(usePlan).forEach(function(item){
+        rows.push([textOrDash(item.name), textOrDash(item.conflict)]);
+      });
+
+      rows.push(['토지이용 기준일', textOrDash(formatDate(usePlan.dataDate) || usePlan.dataDate)]);
+      return rows;
+    }
+
+    function buildLandRows(data){
+      var landInfoRows = buildLandInfoRows(data);
+      var landUsePlanRows = buildLandUsePlanRows(data);
+
+      if(!landInfoRows.length && !landUsePlanRows.length){
+        var msg = firstNonEmpty(data && data.land && data.land.message);
+        if(!msg) return [];
+        return [['조회상태', msg]];
+      }
+
+      var rows = [];
+      if(landInfoRows.length){
+        rows.push(['[토지 정보]', '']);
+        rows = rows.concat(landInfoRows);
+      }
+      if(landUsePlanRows.length){
+        rows.push(['[토지이용계획]', '']);
+        rows = rows.concat(landUsePlanRows);
+      }
       return rows;
     }
 
@@ -1705,7 +1820,9 @@
         summaryRows: summaryRows,
         buildings: buildings,
         priceRows: priceRows,
-        landRows: buildLandRows(data)
+        landRows: buildLandRows(data),
+        landInfoRows: buildLandInfoRows(data),
+        landUsePlanRows: buildLandUsePlanRows(data)
       };
     }
 
@@ -2001,17 +2118,38 @@
       var extracted = extractIntegratedData(data);
       var html = '<div class="result-stack">';
 
-      if(extracted.landRows && extracted.landRows.length){
+      if(extracted.landInfoRows && extracted.landInfoRows.length){
         html += '<div class="result-block">'
-          + '<div class="result-block-head">토지 정보 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">토지특성 / 토지이용계획</span></div>'
-          + buildResultTable(extracted.landRows)
+          + '<div class="result-block-head">토지 정보 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">토지특성</span></div>'
+          + buildResultTable(extracted.landInfoRows)
           + '<div class="table-download-wrap">'
           + '<div class="table-action-row">'
           + '<button class="table-download-btn" data-kind="land" data-title="토지 정보">⬇️ 이미지 내려받기</button>'
           + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지 정보">📋 텍스트 복사</button>'
           + '</div>'
-          + '<div class="table-download-note">서버에서 내려온 토지정보만 표시합니다.</div>'
+          + '<div class="table-download-note">공시지가 총액은 공시지가 × 면적으로 계산한 참고 금액입니다.</div>'
           + '</div>'
+          + '</div>';
+      }
+
+      if(extracted.landUsePlanRows && extracted.landUsePlanRows.length){
+        html += '<div class="result-block">'
+          + '<div class="result-block-head">토지이용계획 <span style="font-size:12px;font-weight:800;color:#667085;vertical-align:middle;margin-left:6px;">용도지역·지구별 저촉 여부</span></div>'
+          + buildResultTable(extracted.landUsePlanRows)
+          + '<div class="table-download-wrap">'
+          + '<div class="table-action-row">'
+          + '<button class="table-download-btn" data-kind="land" data-title="토지 정보">⬇️ 이미지 내려받기</button>'
+          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지 정보">📋 텍스트 복사</button>'
+          + '</div>'
+          + '<div class="table-download-note">저촉/포함은 왼쪽 용도지역·지구와 같은 줄 기준입니다.</div>'
+          + '</div>'
+          + '</div>';
+      }
+
+      if((!extracted.landInfoRows || !extracted.landInfoRows.length) && (!extracted.landUsePlanRows || !extracted.landUsePlanRows.length) && extracted.landRows && extracted.landRows.length){
+        html += '<div class="result-block">'
+          + '<div class="result-block-head">토지 정보</div>'
+          + buildResultTable(extracted.landRows)
           + '</div>';
       }
 

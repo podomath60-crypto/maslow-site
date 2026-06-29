@@ -2807,50 +2807,102 @@
 
       function getCreatorMap_(){
         return [
-          { name:'한정인', initial:'hji' },
-          { name:'이유나', initial:'lyn' },
-          { name:'박성연', initial:'psy' },
-          { name:'나득균', initial:'Nak' }
+          { code:'6857', name:'한정인', displayName:'한정인 이사', initial:'hji', aliases:['한정인이사','한이사','이사'] },
+          { code:'8198', name:'이유나', displayName:'이유나 팀장', initial:'lyn', aliases:['이유나팀장','이팀장'] },
+          { code:'0444', name:'박성연', displayName:'박성연 대표', initial:'psy', aliases:['박성연대표','대표님','대표'] },
+          { code:'1053', name:'나득균', displayName:'나득균 팀장', initial:'Nak', aliases:['나득균팀장','나팀장','팀장'] }
         ];
+      }
+
+      function normalizeCreatorToken_(value){
+        return String(value == null ? '' : value)
+          .trim()
+          .replace(/\s+/g,'')
+          .replace(/대표님|대표/g,'대표')
+          .replace(/이사님|이사/g,'이사')
+          .replace(/팀장님|팀장/g,'팀장');
+      }
+
+      function getCreatorByToken_(value){
+        var token = normalizeCreatorToken_(value);
+        if(!token) return null;
+        var map = getCreatorMap_();
+        for(var i = 0; i < map.length; i += 1){
+          var item = map[i];
+          if(token === String(item.code || '').trim()) return item;
+          if(token === normalizeCreatorToken_(item.name)) return item;
+          if(token === normalizeCreatorToken_(item.displayName)) return item;
+          if(token === normalizeCreatorToken_(item.initial)) return item;
+          var aliases = item.aliases || [];
+          for(var j = 0; j < aliases.length; j += 1){
+            if(token === normalizeCreatorToken_(aliases[j])) return item;
+          }
+        }
+        return null;
+      }
+
+      function parseCreatorAuthValue_(raw){
+        var candidates = [];
+        function pushCandidate(v){
+          if(v == null) return;
+          if(typeof v === 'string' || typeof v === 'number') candidates.push(String(v));
+        }
+        pushCandidate(raw);
+        try{
+          var parsed = JSON.parse(String(raw || ''));
+          if(parsed && typeof parsed === 'object'){
+            ['password','code','pin','userCode','writerCode','creatorCode','name','userName','displayName','writerName','creatorName','initial'].forEach(function(key){
+              pushCandidate(parsed[key]);
+            });
+          }
+        }catch(e){}
+        for(var i = 0; i < candidates.length; i += 1){
+          var found = getCreatorByToken_(candidates[i]);
+          if(found) return found;
+        }
+        return null;
       }
 
       function persistCreatorInfo_(item){
         if(!item) return;
         try{ localStorage.setItem(CREATOR_CACHE_KEY, item.initial || ''); }catch(e){}
-        try{ localStorage.setItem(CREATOR_NAME_CACHE_KEY, item.name || ''); }catch(e){}
+        try{ localStorage.setItem(CREATOR_NAME_CACHE_KEY, item.displayName || item.name || ''); }catch(e){}
       }
 
-      function readPersistedCreatorInfo_(){
+      function readCreatorAuthValue_(storage, key){
         try{
-          var initial = (localStorage.getItem(CREATOR_CACHE_KEY) || '').trim();
-          var name = (localStorage.getItem(CREATOR_NAME_CACHE_KEY) || '').trim();
-          if(initial) return { name:name, initial:initial };
-        }catch(e){}
-        return null;
+          if(!storage || !key) return '';
+          return storage.getItem(key) || '';
+        }catch(e){
+          return '';
+        }
       }
 
-      function findCreatorInfoInStorage_(storage){
-        if(!storage) return null;
-        var map = getCreatorMap_();
-        try{
-          for(var i = 0; i < storage.length; i += 1){
-            var key = storage.key(i);
-            var value = '';
-            try{ value = String(storage.getItem(key) || ''); }catch(e){ value = ''; }
-            if(!value) continue;
-            for(var j = 0; j < map.length; j += 1){
-              if(value.indexOf(map[j].name) !== -1 || String(key || '').indexOf(map[j].name) !== -1){
-                persistCreatorInfo_(map[j]);
-                return map[j];
-              }
-            }
+      function getCreatorInfoFromCurrentLogin_(){
+        var authKeys = [
+          'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
+        ];
+        var storages = [];
+        try{ storages.push(sessionStorage); }catch(e){}
+        try{ storages.push(localStorage); }catch(e){}
+
+        for(var i = 0; i < storages.length; i += 1){
+          for(var j = 0; j < authKeys.length; j += 1){
+            var raw = readCreatorAuthValue_(storages[i], authKeys[j]);
+            var found = parseCreatorAuthValue_(raw);
+            if(found) return found;
           }
-        }catch(e){}
+        }
         return null;
       }
 
       function getCreatorInfoFromCache_(){
-        return findCreatorInfoInStorage_(sessionStorage) || findCreatorInfoInStorage_(localStorage) || readPersistedCreatorInfo_();
+        var currentLoginCreator = getCreatorInfoFromCurrentLogin_();
+        if(currentLoginCreator){
+          persistCreatorInfo_(currentLoginCreator);
+          return currentLoginCreator;
+        }
+        return null;
       }
 
       function getCreatorInitialSuffix_(){

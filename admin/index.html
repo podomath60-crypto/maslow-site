@@ -2649,7 +2649,6 @@
       var ledgerUploadBusyUntil = 0;
       var ledgerUploadIndicatorTimer = null;
       var rentPriceState = { deposit: '', monthly: '' };
-      var isApplyingLoadedProperty = false;
       var selectedAddressSearchData = null;
       var adminBjdongCodesPromise = null;
       var CREATOR_CACHE_KEY = 'MK_CREATOR_INITIAL_V1';
@@ -3474,10 +3473,10 @@
 
         if ((item.dealType || '').indexOf('임대') > -1) {
           rentPriceState = parseRentPriceText_(item.price || '');
-          setDealType(item.dealType || '임대', { skipQueueSave: true });
+          setDealType(item.dealType || '임대');
         } else {
           clearRentPriceState_();
-          setDealType(item.dealType || '', { skipQueueSave: true });
+          setDealType(item.dealType || '');
           priceField.textContent = item.price || '';
         }
 
@@ -4162,13 +4161,9 @@
         renderNaverMapLink_();
       }
 
-      function setDealType(type, options){
-        options = options || {};
+      function setDealType(type){
         var prevType = selectedDealType || '';
-        var normalizedType = String(type || '').trim();
-        if(normalizedType.indexOf('임대') > -1) normalizedType = '임대';
-        else if(normalizedType.indexOf('매매') > -1) normalizedType = '매매';
-        selectedDealType = normalizedType || '';
+        selectedDealType = type || '';
         if(prevType === '임대' && selectedDealType === '매매'){
           clearRentPriceState_();
           if(priceField) priceField.innerHTML = '';
@@ -4180,9 +4175,7 @@
         maintenanceFeeField.setAttribute('data-placeholder', '임대인 경우');
         renderPriceFieldForDealType_();
         updateTopFields();
-        if(!options.skipQueueSave){
-          queueSave();
-        }
+        queueSave();
       }
 
       dealTypeRow.querySelectorAll('.type-chip').forEach(function(btn){

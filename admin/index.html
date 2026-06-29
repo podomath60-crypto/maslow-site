@@ -994,6 +994,21 @@
       font-weight:900;
       color:#0f172a;
     }
+    .land-parcel-address-inline{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      width:100%;
+      min-width:0;
+    }
+    .land-parcel-address-inline .land-parcel-input{
+      flex:1 1 auto;
+      min-width:0;
+    }
+    .land-address-lookup-btn{
+      flex:0 0 auto;
+      margin-left:auto;
+    }
     .land-parcel-area-inline{
       display:flex;
       align-items:center;
@@ -1051,6 +1066,8 @@
       .land-parcel-grid{grid-template-columns:1fr;}
       .land-parcel-field{grid-template-columns:94px 1fr;border-right:none;}
       .land-parcel-area-inline .land-parcel-input{width:86px;flex-basis:86px;}
+      .land-parcel-address-inline{align-items:stretch;}
+      .land-address-lookup-btn{min-height:38px;}
     }
 
     .measure-field{
@@ -4173,7 +4190,6 @@
           actions.className = 'land-parcel-card-actions';
           actions.innerHTML = '' +
             '<label class="land-representative-toggle"><input type="checkbox" data-land-role="representative" ' + (normalizeLandRepresentative_(parcel.isRepresentative) === 'Y' ? 'checked' : '') + '> 대표필지</label>' +
-            '<button type="button" class="land-parcel-mini-btn lookup" data-land-action="lookup">토지대장 조회</button>' +
             '<button type="button" class="land-parcel-mini-btn delete" data-land-action="delete">삭제</button>';
           head.appendChild(title);
           head.appendChild(actions);
@@ -4188,7 +4204,7 @@
 
           var grid = document.createElement('div');
           grid.className = 'land-parcel-grid';
-          grid.innerHTML = buildLandParcelFieldHtml_('소재지', 'address', parcel.address, 'full address-main', '지번주소 입력 후 조회') +
+          grid.innerHTML = buildLandParcelAddressFieldHtml_(parcel) +
             buildLandParcelAreaFieldHtml_(parcel) +
             buildLandParcelFieldHtml_('지목', 'landCategory', parcel.landCategory, '', '') +
             buildLandParcelFieldHtml_('용도지역1', 'zoning1', parcel.zoning1, '', '') +
@@ -4222,6 +4238,17 @@
         return '<div class="land-parcel-field ' + (extraClass || '') + '">' +
           '<div class="land-parcel-label">' + htmlEscapeAttr_(label) + '</div>' +
           '<input class="land-parcel-input" data-land-key="' + htmlEscapeAttr_(key) + '" value="' + htmlEscapeAttr_(value || '') + '" placeholder="' + htmlEscapeAttr_(placeholder || '입력') + '">' +
+        '</div>';
+      }
+
+      function buildLandParcelAddressFieldHtml_(parcel){
+        parcel = parcel || {};
+        return '<div class="land-parcel-field full address-main">' +
+          '<div class="land-parcel-label">소재지</div>' +
+          '<div class="land-parcel-address-inline">' +
+            '<input class="land-parcel-input" data-land-key="address" value="' + htmlEscapeAttr_(parcel.address || '') + '" placeholder="지번주소 입력">' +
+            '<button type="button" class="land-parcel-mini-btn lookup land-address-lookup-btn" data-land-action="lookup">토지대장 조회</button>' +
+          '</div>' +
         '</div>';
       }
 
@@ -4362,21 +4389,17 @@
         }
 
         var ledgerTypes = dedupeLandTextParts_(usePlan.ledgerType).join(', ');
-        if(ledgerTypes) pushRow('대장구분: ' + ledgerTypes);
+        if(ledgerTypes) pushRow('대장구분 : ' + ledgerTypes);
 
         normalizeUsePlanItemsLikeLookout_(usePlan).forEach(function(item){
           var name = normalizeLookupText_(item && item.name);
-          var conflict = normalizeLookupText_(item && item.conflict);
-          if(!name && !conflict) return;
-          pushRow(name + (conflict ? ': ' + conflict : ''));
+          if(!name) return;
+          pushRow(name);
         });
-
-        var dataDate = formatLandDateText_(usePlan.dataDate);
-        if(dataDate) pushRow('토지이용 기준일: ' + dataDate);
 
         return {
           summary: '',
-          raw: rows.join(' / ') || JSON.stringify(usePlan || {})
+          raw: rows.join('\n') || JSON.stringify(usePlan || {})
         };
       }
 

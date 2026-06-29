@@ -1066,8 +1066,29 @@
       .land-parcel-grid{grid-template-columns:1fr;}
       .land-parcel-field{grid-template-columns:94px 1fr;border-right:none;}
       .land-parcel-area-inline .land-parcel-input{width:86px;flex-basis:86px;}
-      .land-parcel-address-inline{align-items:stretch;}
-      .land-address-lookup-btn{min-height:38px;}
+      .land-parcel-field.address-main{
+        grid-template-columns:1fr;
+        gap:7px;
+      }
+      .land-parcel-field.address-main .land-parcel-label{
+        width:100%;
+        text-align:left;
+      }
+      .land-parcel-address-inline{
+        flex-direction:column;
+        align-items:stretch;
+        gap:7px;
+      }
+      .land-parcel-address-inline .land-parcel-input{
+        width:100%;
+        text-align:left;
+      }
+      .land-address-lookup-btn{
+        align-self:flex-end;
+        min-height:30px;
+        padding:0 10px;
+        font-size:12px;
+      }
     }
 
     .measure-field{
@@ -4271,7 +4292,7 @@
           '<div class="land-parcel-label">소재지</div>' +
           '<div class="land-parcel-address-inline">' +
             '<input class="land-parcel-input" data-land-key="address" value="' + htmlEscapeAttr_(parcel.address || '') + '" placeholder="지번주소 입력">' +
-            '<button type="button" class="land-parcel-mini-btn lookup land-address-lookup-btn" data-land-action="lookup">토지대장 조회</button>' +
+            '<button type="button" class="land-parcel-mini-btn lookup land-address-lookup-btn" data-land-action="lookup">조회</button>' +
           '</div>' +
         '</div>';
       }

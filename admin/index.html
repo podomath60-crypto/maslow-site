@@ -9159,31 +9159,13 @@
   function getImageUrls(){
     var hero = document.getElementById('heroImage');
     var heroSrc = hero && hero.getAttribute('src') ? hero.getAttribute('src') : '';
-    var ordered = [];
-    var heroIndex = -1;
-
-    if(Array.isArray(photoList) && photoList.length){
-      photoList.forEach(function(item, idx){
-        var url = item && item.url ? String(item.url).trim() : '';
-        if(url){
-          ordered.push({ index: idx, url: url });
-        }
-      });
-      heroIndex = Math.max(0, Math.min(Number(currentPhotoIndex || 0), photoList.length - 1));
-      if(photoList[heroIndex] && photoList[heroIndex].url){
-        heroSrc = photoList[heroIndex].url;
-      }
-    }
-
-    var thumbs = ordered.length
-      ? ordered.map(function(item){ return item.url; })
-      : Array.prototype.slice.call(document.querySelectorAll('.photo-thumb-img')).map(function(el){ return bgUrl(el); }).filter(Boolean);
+    var thumbs = Array.prototype.slice.call(document.querySelectorAll('.photo-thumb-img')).map(function(el){ return bgUrl(el); }).filter(Boolean);
 
     return {
       hero: heroSrc,
       thumbs: uniqueImageUrls(thumbs),
-      ordered: ordered,
-      heroIndex: heroIndex
+      ordered: [],
+      heroIndex: -1
     };
   }
 

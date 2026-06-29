@@ -2363,7 +2363,7 @@
           <div class="property-spec-row"><div class="property-spec-label">주요 설비</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">추천 업종</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">업종 제한</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
-          <div class="property-spec-row"><div class="property-spec-label">진입로 폭</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
+          <div class="property-spec-row"><div class="property-spec-label">도로접면</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">도어폭</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">대형차 진입</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
           <div class="property-spec-row"><div class="property-spec-label">상하차 가능</div><div class="property-spec-value editable" contenteditable="true" data-placeholder="입력"></div></div>
@@ -3334,7 +3334,7 @@
           mainFacilities: plainText(findSpecValueByLabel_('주요 설비')),
           recommendedUse: plainText(findSpecValueByLabel_('추천 업종')),
           restrictedUse: plainText(findSpecValueByLabel_('업종 제한')),
-          roadWidth: plainText(findSpecValueByLabel_('진입로 폭')),
+          roadWidth: plainText(findSpecValueByLabel_('도로접면')),
           doorWidth: plainText(findSpecValueByLabel_('도어폭')),
           truckAccess: plainText(findSpecValueByLabel_('대형차 진입')),
           loadingAvailable: plainText(findSpecValueByLabel_('상하차 가능')),
@@ -3501,7 +3501,7 @@
         setEditableText_(findSpecValueByLabel_('주요 설비'), item.mainFacilities || '');
         setEditableText_(findSpecValueByLabel_('추천 업종'), item.recommendedUse || '');
         setEditableText_(findSpecValueByLabel_('업종 제한'), item.restrictedUse || '');
-        setEditableText_(findSpecValueByLabel_('진입로 폭'), item.roadWidth || '');
+        setEditableText_(findSpecValueByLabel_('도로접면'), item.roadWidth || '');
         setEditableText_(findSpecValueByLabel_('도어폭'), item.doorWidth || '');
         setEditableText_(findSpecValueByLabel_('대형차 진입'), item.truckAccess || '');
         setEditableText_(findSpecValueByLabel_('상하차 가능'), item.loadingAvailable || '');
@@ -5730,6 +5730,20 @@
         return String(value == null ? '' : value).replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
       }
 
+      function getIntegratedLookupData_(json){
+        var candidates = [json];
+        ['data', 'result', 'payload', 'body'].forEach(function(key){
+          if(json && json[key]) candidates.push(json[key]);
+        });
+        for(var i = 0; i < candidates.length; i += 1){
+          var item = candidates[i];
+          if(item && typeof item === 'object' && (item.apis || item.land || item.normalized)){
+            return item;
+          }
+        }
+        return json || {};
+      }
+
       function formatLandRoadSideText_(value){
         var text = normalizeLookupText_(value);
         if(!text) return '';
@@ -5778,6 +5792,7 @@
       }
 
       function extractRoadWidthFromLookup_(json){
+        var root = getIntegratedLookupData_(json);
         var out = [];
         var seen = Object.create(null);
 
@@ -5790,10 +5805,27 @@
           out.push(text);
         }
 
-        var characteristic = json && json.land && json.land.characteristic ? json.land.characteristic : null;
-        if(characteristic){
-          push(firstNonEmpty_(characteristic.roadSide, characteristic.roadside, characteristic.roadCondition, characteristic.roadWidth), true);
+        function pushLandCharacteristic(candidate){
+          var characteristic = candidate && candidate.land && candidate.land.characteristic ? candidate.land.characteristic : null;
+          if(!characteristic) return;
+          push(firstNonEmpty_(
+            characteristic.roadSide,
+            characteristic.roadside,
+            characteristic.roadCond,
+            characteristic.roadCondition,
+            characteristic.roadWidth,
+            characteristic.도로접면,
+            characteristic.도로조건,
+            characteristic.도로폭,
+            characteristic.도로접면
+          ), true);
         }
+
+        pushLandCharacteristic(root);
+        if(json && json !== root) pushLandCharacteristic(json);
+        ['data', 'result', 'payload', 'body'].forEach(function(key){
+          if(json && json[key]) pushLandCharacteristic(json[key]);
+        });
 
         function pickValueFromDescribedObject(obj){
           if(!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
@@ -5805,6 +5837,9 @@
         function walk(node){
           if(!node || out.length >= 3) return;
           if(Array.isArray(node)){
+            if(node.length >= 2 && isRoadWidthLookupKey_(node[0])){
+              push(node[1], /roadSide|roadside|도로접면/i.test(normalizeLookupText_(node[0])));
+            }
             node.forEach(walk);
             return;
           }
@@ -5826,12 +5861,14 @@
           });
         }
 
-        walk(json);
+        walk(root);
+        if(!out.length && json && json !== root) walk(json);
         return out.join(' / ');
       }
 
 
       function buildLookupFillData_(json){
+        json = getIntegratedLookupData_(json);
         var apis = (json && json.apis) || {};
         var recap = ((apis.recap || {}).firstItem) || {};
         var titleItems = ((apis.title || {}).items) || [];
@@ -5930,10 +5967,20 @@
         chainEditable('* 주차대수', fill.parkingCount);
         chainEditable('* 건물 층수', fill.floorInfo);
         chainEditable('층고', fill.ceilingHeight);
-        var lookupCategoryPrefix = getListingCategoryPrefix_();
-        if(lookupCategoryPrefix === 'SK' || lookupCategoryPrefix === 'MK'){
-          chainEditable('진입로 폭', fill.roadWidth);
-        }
+        changed = changed.then(function(prev){
+          var roadWidth = normalizeLookupText_(fill && fill.roadWidth);
+          var lookupCategoryPrefix = getListingCategoryPrefix_();
+          if(!roadWidth || lookupCategoryPrefix === 'DK') return prev;
+          var el = findSpecValueByLabel_('도로접면');
+          if(!el) return prev;
+          if(plainText(el) === roadWidth){
+            markLookupFilled_(el);
+            return prev;
+          }
+          setEditableText_(el, roadWidth);
+          markLookupFilled_(el);
+          return true;
+        });
 
         return changed.then(function(anyChanged){
           if(anyChanged){
@@ -6257,7 +6304,7 @@
         changed = (await setEditableIfBlank_(findSpecValueByLabel_('주요 설비'), aiJson.mainEquipment || aiJson.mainFacilities)) || changed;
         changed = (await setEditableIfBlank_(findSpecValueByLabel_('추천 업종'), aiJson.recommendedIndustry || aiJson.recommendedUse)) || changed;
         changed = (await setEditableIfBlank_(findSpecValueByLabel_('업종 제한'), aiJson.industryRestriction || aiJson.restrictedUse)) || changed;
-        changed = (await setEditableIfBlank_(findSpecValueByLabel_('진입로 폭'), aiJson.roadWidth)) || changed;
+        changed = (await setEditableIfBlank_(findSpecValueByLabel_('도로접면'), aiJson.roadWidth)) || changed;
         changed = (await setEditableIfBlank_(findSpecValueByLabel_('도어폭'), aiJson.doorWidth)) || changed;
         changed = (await setEditableIfBlank_(findSpecValueByLabel_('대형차 진입'), aiJson.largeTruckAccess || aiJson.truckAccess)) || changed;
         changed = (await setEditableIfBlank_(findSpecValueByLabel_('상하차 가능'), aiJson.loadingAvailable)) || changed;

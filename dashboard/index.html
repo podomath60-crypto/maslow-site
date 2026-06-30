@@ -2307,8 +2307,9 @@
           <button class="filter-chip" data-filter-group="status" data-filter-value="hidden" type="button">비공개</button>
           <button class="filter-chip" data-filter-group="deal" data-filter-value="rent" type="button">임대</button>
           <button class="filter-chip" data-filter-group="deal" data-filter-value="sale" type="button">매매</button>
-          <button class="filter-chip" data-filter-group="team" data-filter-value="shopping" type="button">상가팀</button>
-          <button class="filter-chip" data-filter-group="team" data-filter-value="factory" type="button">공장팀</button>
+          <button class="filter-chip" data-filter-group="team" data-filter-value="factory" type="button">산업용 MK</button>
+          <button class="filter-chip" data-filter-group="team" data-filter-value="shopping" type="button">상업용 SK</button>
+          <button class="filter-chip" data-filter-group="team" data-filter-value="land" type="button">토지 DK</button>
         </div>
         <div id="toolbarMeta" class="toolbar-meta">전체 0건</div>
       </section>
@@ -2631,7 +2632,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     let loadingHapticTimer = null;
 
     let currentTeamFilter = '';
-    let nextTeamToggleTarget = 'shopping';
+    let nextTeamToggleTarget = 'factory';
 
     const dashboardRoot = document.getElementById('dashboardRoot');
     const toolbarMeta = document.getElementById('toolbarMeta');
@@ -3657,14 +3658,18 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
     if(teamToggleBtn){
       teamToggleBtn.addEventListener('click', function(){
-        if(nextTeamToggleTarget === 'shopping'){
-          activeFilters.team = 'shopping';
-          currentTeamFilter = 'shopping';
-          nextTeamToggleTarget = 'factory';
-        }else{
+        if(nextTeamToggleTarget === 'factory'){
           activeFilters.team = 'factory';
           currentTeamFilter = 'factory';
           nextTeamToggleTarget = 'shopping';
+        }else if(nextTeamToggleTarget === 'shopping'){
+          activeFilters.team = 'shopping';
+          currentTeamFilter = 'shopping';
+          nextTeamToggleTarget = 'land';
+        }else{
+          activeFilters.team = 'land';
+          currentTeamFilter = 'land';
+          nextTeamToggleTarget = 'factory';
         }
         syncLegacyCurrentFilter();
         updateFilterChips();
@@ -3676,8 +3681,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
     function detectTeamByListingNumber(listingNumber){
       const code = text(listingNumber).toUpperCase();
-      if(code.indexOf('SK') === 0) return 'shopping';
       if(code.indexOf('MK') === 0) return 'factory';
+      if(code.indexOf('SK') === 0) return 'shopping';
+      if(code.indexOf('DK') === 0) return 'land';
       return '';
     }
 
@@ -3693,26 +3699,34 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     }
 
     function getTeamMeta(teamKey){
-      if(teamKey === 'shopping'){
-        return {
-          key: 'shopping',
-          title: '상가팀',
-          desc: 'SK 매물을 봅니다.',
-          empty: '상가팀 매물이 없습니다.'
-        };
-      }
       if(teamKey === 'factory'){
         return {
           key: 'factory',
-          title: '공장팀',
+          title: '산업용 MK',
           desc: 'MK 매물을 봅니다.',
-          empty: '공장팀 매물이 없습니다.'
+          empty: '산업용 MK 매물이 없습니다.'
+        };
+      }
+      if(teamKey === 'shopping'){
+        return {
+          key: 'shopping',
+          title: '상업용 SK',
+          desc: 'SK 매물을 봅니다.',
+          empty: '상업용 SK 매물이 없습니다.'
+        };
+      }
+      if(teamKey === 'land'){
+        return {
+          key: 'land',
+          title: '토지 DK',
+          desc: 'DK 매물을 봅니다.',
+          empty: '토지 DK 매물이 없습니다.'
         };
       }
       return {
         key: '',
-        title: '상가팀',
-        desc: 'SK 매물을 봅니다.',
+        title: '산업용 MK',
+        desc: 'MK 매물을 봅니다.',
         empty: '표시할 매물이 없습니다.'
       };
     }
@@ -4694,7 +4708,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         searchText: getSearchText() || currentKeyword || '',
         activeFilters: Object.assign({}, activeFilters),
         currentTeamFilter: currentTeamFilter || '',
-        nextTeamToggleTarget: nextTeamToggleTarget || 'shopping',
+        nextTeamToggleTarget: nextTeamToggleTarget || 'factory',
         visibleCount: Math.max(PAGE_SIZE, Number(visibleCount) || PAGE_SIZE),
         scrollY: getDashboardScrollY(),
         savedAt: Date.now()
@@ -4743,7 +4757,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       rawItems = cachedItems;
       activeFilters = Object.assign({ sort: 'default', status: '', deal: '', team: '' }, state.activeFilters || {});
       currentTeamFilter = activeFilters.team || state.currentTeamFilter || '';
-      nextTeamToggleTarget = state.nextTeamToggleTarget || nextTeamToggleTarget || 'shopping';
+      nextTeamToggleTarget = state.nextTeamToggleTarget || nextTeamToggleTarget || 'factory';
       visibleCount = Math.max(PAGE_SIZE, Number(state.visibleCount) || PAGE_SIZE);
       restoreSearchTextForReturn(state);
       syncLegacyCurrentFilter();

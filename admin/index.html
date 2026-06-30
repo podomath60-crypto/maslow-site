@@ -3999,6 +3999,25 @@
           summary: collectSummary_(),
           basic: basicPayload,
           factory: factoryPayload,
+
+          // 서버 저장 컬럼은 화면에 적힌 특화정보 값을 그대로 받게 한다.
+          // 특히 접도 / 진입로는 토지요약·필지요약·도로접면 fallback을 다시 섞지 않고,
+          // collectFactory_()가 읽은 현재 DOM 텍스트를 root roadWidth에도 그대로 보낸다.
+          ceilingHeight: factoryPayload.ceilingHeight || '',
+          crane: factoryPayload.crane || '',
+          hoist: factoryPayload.hoist || '',
+          powerCapacity: factoryPayload.powerCapacity || '',
+          mainFacilities: factoryPayload.mainFacilities || '',
+          recommendedUse: factoryPayload.recommendedUse || '',
+          restrictedUse: factoryPayload.restrictedUse || '',
+          roadWidth: factoryPayload.roadWidth || '',
+          doorWidth: factoryPayload.doorWidth || '',
+          truckAccess: factoryPayload.truckAccess || '',
+          loadingAvailable: factoryPayload.loadingAvailable || '',
+          officeIncluded: factoryPayload.officeIncluded || '',
+          yardSize: factoryPayload.yardSize || '',
+          readyToOperate: factoryPayload.readyToOperate || '',
+
           landParcels: landParcelPayload,
           memo: memoTextForPayload_(document.querySelector('.memo-body')),
           photoTemps: serializeTempItems_(photoList),

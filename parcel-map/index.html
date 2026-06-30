@@ -51,6 +51,8 @@
     .main{position:relative;display:grid;grid-template-columns:minmax(0,1fr) var(--right);min-height:0;height:calc(100vh - var(--top));}
     .map-wrap{position:relative;min-width:0;min-height:0;background:#eaf0f6}
     #map{position:absolute;inset:0;width:100%;height:100%;min-height:360px}
+    .vworld-wms-overlay{position:absolute;inset:0;z-index:8;pointer-events:none;overflow:hidden}
+    .vworld-wms-overlay img{position:absolute;width:256px;height:256px;user-select:none;-webkit-user-drag:none;pointer-events:none}
     .map-overlay{position:absolute;left:14px;top:14px;z-index:20;display:flex;flex-direction:column;gap:10px;pointer-events:none}
     .stat-card{width:300px;max-width:calc(100vw - var(--right) - 44px);padding:12px 14px;border-radius:20px;background:rgba(255,255,255,.93);border:1px solid rgba(230,235,241,.95);box-shadow:0 14px 34px rgba(15,23,42,.12);backdrop-filter:blur(10px);pointer-events:auto}
     .stat-title{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:1000;color:#111827}
@@ -122,7 +124,7 @@
         <button class="chip yellow" data-group="category" data-value="land" type="button">토지</button>
       </div>
       <div class="toolbar-actions">
-        <button class="top-btn ghost" id="baseParcelToggle" type="button">현재화면 필지 OFF</button>
+        <button class="top-btn ghost" id="baseParcelToggle" type="button">필지선 OFF</button>
         <button class="top-btn" id="reloadBtn" type="button">새로고침</button>
       </div>
     </header>
@@ -158,7 +160,7 @@
           <div class="patch-line"><b>좌표 샘플</b><div class="patch-sample" id="dbgSample">-</div></div>
           <div class="patch-actions"><button id="dbgRefresh" type="button">진단 새로고침</button><button id="dbgClearCache" class="dark" type="button">지오캐시 삭제</button></div>
         </div>
-        <div class="map-note" id="mapNote">진단모드: 네이버 기본 마커로 표시합니다. 보이면 원인은 커스텀 핀 렌더링입니다.</div>
+        <div class="map-note" id="mapNote">매물 핀을 먼저 표시합니다. 필지선은 버튼으로 켜고, 핀 클릭 시 선택 매물 필지만 조회합니다.</div>
         <div class="loading" id="loading"><div class="loading-card"><div class="spinner"></div><b id="loadingTitle">불러오는 중</b><p id="loadingText">잠시만 기다려 주세요.</p></div></div>
       </section>
       <aside class="panel" id="sidePanel">
@@ -248,6 +250,9 @@
     filters:{ q:'', public:'all', work:'all', data:'all', deal:'all', category:'all' },
     showBaseParcels:false,
     baseFetchTimer:null,
+    vworldKey:'',
+    wmsOverlay:null,
+    wmsTiles:new Map(),
     statusEditingItem:null,
     memoEditingItem:null,
     debug:{
@@ -441,6 +446,217 @@
     }).finally(() => window.clearTimeout(timer));
   }
 
+  async function loadParcelMapConfig(){
+    try{
+      const data = await fetchJson('/api/parcel-map/config', {method:'GET'});
+      state.vworldKey = String(data.vworldKey || data.key || '').trim();
+      if(!state.vworldKey) state.debug.lastError = 'VWORLD_API_KEY 없음';
+      return data;
+    }catch(err){
+      state.debug.lastError = 'vworld config: ' + (err.message || err);
+      updatePatchPanel();
+      return {};
+    }
+  }
+
+  function getVworldDomainParam(){
+    return (location.hostname || 'www.maslowkorea.site').replace(/^https?:\/\//, '');
+  }
+  function sanitizeVworldUrl(url){
+    return String(url || '').replace(/([?&](?:key|Key|KEY)=)[^&]+/g, '$1***');
+  }
+  function appendParams(base, params){
+    const q = new URLSearchParams();
+    Object.keys(params || {}).forEach(key => {
+      const value = params[key];
+      if(value !== undefined && value !== null && String(value) !== '') q.set(key, String(value));
+    });
+    return base + '?' + q.toString();
+  }
+  function vworldJsonp(url, timeoutMs){
+    return new Promise((resolve, reject) => {
+      const cb = '__parcelVworldJsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      const sep = url.indexOf('?') >= 0 ? '&' : '?';
+      const finalUrl = url + sep + 'callback=' + encodeURIComponent(cb);
+      const script = document.createElement('script');
+      let done = false;
+      const timer = window.setTimeout(() => cleanup(new Error('VWorld JSONP 시간 초과')), timeoutMs || 12000);
+      function cleanup(err, data){
+        if(done) return;
+        done = true;
+        window.clearTimeout(timer);
+        try{ delete window[cb]; }catch(e){ window[cb] = undefined; }
+        try{ script.remove(); }catch(e){}
+        if(err) reject(err); else resolve(data);
+      }
+      window[cb] = function(data){ cleanup(null, data || {}); };
+      script.onerror = function(){ cleanup(new Error('VWorld JSONP 스크립트 로드 실패')); };
+      script.src = finalUrl;
+      document.head.appendChild(script);
+    });
+  }
+  function getVworldFeatureCollection(payload){
+    if(payload && payload.type === 'FeatureCollection') return payload;
+    const response = payload && payload.response;
+    return response && response.result && response.result.featureCollection || null;
+  }
+  function extractPnuFromPropsClient(props){
+    props = props || {};
+    return String(props.pnu || props.PNU || props.PNU_ID || props.pnu_id || props.gid || '').trim();
+  }
+  function normalizeVworldParcelFeature(feature, fallbackPnu){
+    if(!feature || !feature.geometry || !feature.geometry.coordinates) return null;
+    const props = feature.properties || {};
+    const pnu = extractPnuFromPropsClient(props) || fallbackPnu || '';
+    return {
+      pnu:pnu,
+      geometry:feature.geometry,
+      properties:props,
+      address:String(props.addr || props.ADDR || props.jibun || props.JIBUN || props.pnu_nm || props.PNU_NM || ''),
+      areaM2:String(props.area || props.AREA || props.jiga_parea || props.JIGA_PAREA || ''),
+      landCategory:String(props.jimok || props.JIMOK || props.jimok_nm || props.JIMOK_NM || ''),
+      source:'vworld:data/jsonp'
+    };
+  }
+  function summarizeVworldPayload(payload){
+    const fc = getVworldFeatureCollection(payload);
+    const features = Array.isArray(fc && fc.features) ? fc.features : [];
+    const response = payload && payload.response || {};
+    return {
+      status: response.status || response.Status || '',
+      error: response.error ? JSON.stringify(response.error).slice(0,500) : '',
+      featureCount: features.length
+    };
+  }
+  async function requestVworldParcelByPnuJsonp(pnu){
+    if(!state.vworldKey) throw new Error('VWORLD_API_KEY가 없습니다.');
+    const params = {
+      key: state.vworldKey,
+      service:'data',
+      version:'2.0',
+      request:'getfeature',
+      format:'json',
+      size:'1',
+      page:'1',
+      geometry:'true',
+      crs:'EPSG:4326',
+      data:'LP_PA_CBND_BUBUN',
+      attrfilter:'pnu:=:' + pnu,
+      domain:getVworldDomainParam()
+    };
+    const url = appendParams('https://api.vworld.kr/req/data', params);
+    addPolygonLog('selected-pnu:' + pnu + ':request', {api:'vworld-data-jsonp', url:sanitizeVworldUrl(url), pnu:pnu});
+    const payload = await vworldJsonp(url, 12000);
+    addPolygonLog('selected-pnu:' + pnu + ':response', {api:'vworld-data-jsonp', pnu:pnu, summary:summarizeVworldPayload(payload)});
+    const fc = getVworldFeatureCollection(payload);
+    const features = Array.isArray(fc && fc.features) ? fc.features : [];
+    const parcel = normalizeVworldParcelFeature(features[0], pnu);
+    if(!parcel) throw new Error('PNU ' + pnu + ' 필지 geometry 없음');
+    return parcel;
+  }
+
+  function lngLatToWorldPixel(lng, lat, zoom){
+    const sin = Math.sin(lat * Math.PI / 180);
+    const scale = 256 * Math.pow(2, zoom);
+    return {
+      x: (lng + 180) / 360 * scale,
+      y: (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * scale
+    };
+  }
+  function worldPixelToLngLat(x, y, zoom){
+    const scale = 256 * Math.pow(2, zoom);
+    const lng = x / scale * 360 - 180;
+    const n = Math.PI - 2 * Math.PI * y / scale;
+    const lat = 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    return {lng, lat};
+  }
+  function tileBbox4326(x, y, z){
+    const nw = worldPixelToLngLat(x * 256, y * 256, z);
+    const se = worldPixelToLngLat((x + 1) * 256, (y + 1) * 256, z);
+    return [nw.lng, se.lat, se.lng, nw.lat];
+  }
+  function vworldWmsTileUrl(x, y, z){
+    const bbox = tileBbox4326(x, y, z).map(v => Number(v).toFixed(7)).join(',');
+    return appendParams('https://api.vworld.kr/req/wms', {
+      SERVICE:'WMS',
+      REQUEST:'GetMap',
+      VERSION:'1.1.1',
+      LAYERS:'lp_pa_cbnd_bubun,lp_pa_cbnd_bonbun',
+      STYLES:'lp_pa_cbnd_bubun_line,lp_pa_cbnd_bonbun_line',
+      FORMAT:'image/png',
+      TRANSPARENT:'true',
+      SRS:'EPSG:4326',
+      BBOX:bbox,
+      WIDTH:'256',
+      HEIGHT:'256',
+      KEY:state.vworldKey,
+      domain:getVworldDomainParam()
+    });
+  }
+  function ensureWmsOverlay(){
+    if(state.wmsOverlay) return state.wmsOverlay;
+    const el = document.createElement('div');
+    el.className = 'vworld-wms-overlay';
+    el.setAttribute('aria-hidden', 'true');
+    els.map.parentElement.appendChild(el);
+    state.wmsOverlay = el;
+    return el;
+  }
+  function clearWmsTiles(){
+    if(state.wmsOverlay) state.wmsOverlay.innerHTML = '';
+    if(state.wmsTiles) state.wmsTiles.clear();
+  }
+  function renderWmsTiles(){
+    if(!state.showBaseParcels || !state.mapReady || !state.map) return;
+    if(!state.vworldKey){
+      els.mapNote.textContent = '필지선 표시 실패: VWORLD_API_KEY가 없습니다.';
+      state.debug.lastError = 'wms: VWORLD_API_KEY 없음';
+      updatePatchPanel();
+      return;
+    }
+    const zoom = Math.round(state.map.getZoom ? state.map.getZoom() : 0);
+    if(zoom < 15){
+      clearWmsTiles();
+      els.mapNote.textContent = '필지선은 줌 15 이상에서 표시합니다. 조금 더 확대하세요.';
+      return;
+    }
+    const overlay = ensureWmsOverlay();
+    const bounds = state.map.getBounds();
+    const sw = bounds.getSW();
+    const ne = bounds.getNE();
+    const topLeft = lngLatToWorldPixel(sw.lng(), ne.lat(), zoom);
+    const bottomRight = lngLatToWorldPixel(ne.lng(), sw.lat(), zoom);
+    const minX = Math.floor(topLeft.x / 256) - 1;
+    const maxX = Math.floor(bottomRight.x / 256) + 1;
+    const minY = Math.floor(topLeft.y / 256) - 1;
+    const maxY = Math.floor(bottomRight.y / 256) + 1;
+    const tileCount = Math.max(0, maxX - minX + 1) * Math.max(0, maxY - minY + 1);
+    if(tileCount > 90){
+      clearWmsTiles();
+      els.mapNote.textContent = '필지선 타일이 너무 많습니다. 조금 더 확대하세요. 현재 ' + tileCount + '장';
+      return;
+    }
+    overlay.innerHTML = '';
+    state.wmsTiles.clear();
+    for(let x=minX; x<=maxX; x+=1){
+      for(let y=minY; y<=maxY; y+=1){
+        const key = zoom + ':' + x + ':' + y;
+        const img = document.createElement('img');
+        img.alt = '';
+        img.decoding = 'async';
+        img.loading = 'lazy';
+        img.style.left = Math.round(x * 256 - topLeft.x) + 'px';
+        img.style.top = Math.round(y * 256 - topLeft.y) + 'px';
+        img.src = vworldWmsTileUrl(x, y, zoom);
+        overlay.appendChild(img);
+        state.wmsTiles.set(key, img);
+      }
+    }
+    addPolygonLog('wms:tiles', {zoom:zoom, tileCount:tileCount, mode:'VWorld WMS line layer'});
+    els.mapNote.textContent = '필지선 WMS ' + tileCount + '장 표시 중입니다. 핀 클릭 시 선택 매물의 지정 PNU만 폴리곤으로 조회합니다.';
+    updatePatchPanel();
+  }
+
   function waitForNaverMaps(timeoutMs){
     const started = Date.now();
     return new Promise((resolve, reject) => {
@@ -507,6 +723,7 @@
 
   async function initMap(){
     const cfg = await fetchJson('/api/route-setting/config');
+    await loadParcelMapConfig();
     await loadNaverMapScript(cfg.clientId);
     state.initialCenter = new naver.maps.LatLng(35.9676,126.7368);
     state.map = new naver.maps.Map(els.map, {
@@ -903,59 +1120,53 @@
       els.mapNote.textContent = '이 매물은 PNU가 없어 필지 경계를 조회하지 못했습니다. 핀 위치와 패널 정보만 표시합니다.';
       return;
     }
+
     const missing = pnus.filter(pnu => !state.polygonDataByPnu.has(pnu));
     if(!missing.length){
       renderListingPolygons();
       fitToSelectedPolygons();
+      els.mapNote.textContent = '저장된 필지 경계를 표시했습니다. 이 매물의 PNU ' + pnus.length + '개만 표시합니다.';
       return;
     }
-    try{
-      els.mapNote.textContent = '선택한 매물의 필지 경계를 조회하는 중입니다.';
-      const data = await postPolygonApi({pnuList:missing}, 'selected-pnu', 18000);
-      (data.parcels || []).forEach(parcel => { if(parcel && parcel.pnu) state.polygonDataByPnu.set(parcel.pnu, parcel); });
-      renderListingPolygons();
-      fitToSelectedPolygons();
-      els.mapNote.textContent = '선택한 매물의 필지를 표시했습니다.';
-    }catch(err){
-      console.warn('선택 필지 조회 실패', item && item.listingNumber, err);
-      state.debug.lastError = 'polygon selected: ' + (err.message || err);
-      els.mapNote.textContent = '선택 매물 필지 조회 실패: ' + (err.message || err);
-      updatePatchPanel();
+
+    addPolygonLog('selected-pnu:start', {listingNumber:item.listingNumber || '', totalPnu:pnus.length, missingPnu:missing.length, pnus:pnus});
+    let okCount = 0;
+    const failed = [];
+    els.mapNote.textContent = '선택한 매물의 지정 필지 ' + pnus.length + '개 중 미조회 ' + missing.length + '개를 조회합니다.';
+
+    for(const pnu of missing){
+      try{
+        const parcel = await requestVworldParcelByPnuJsonp(pnu);
+        if(parcel && parcel.pnu){
+          state.polygonDataByPnu.set(parcel.pnu, parcel);
+          okCount += 1;
+        }else{
+          failed.push({pnu:pnu, error:'geometry 없음'});
+        }
+      }catch(err){
+        failed.push({pnu:pnu, error:err && err.message ? err.message : String(err)});
+        console.warn('선택 PNU 필지 조회 실패', pnu, err);
+      }
     }
+
+    addPolygonLog('selected-pnu:done', {listingNumber:item.listingNumber || '', requested:missing.length, totalPnu:pnus.length, success:okCount, failed:failed});
+    renderListingPolygons();
+    fitToSelectedPolygons();
+
+    const drawn = pnus.filter(pnu => state.polygonDataByPnu.has(pnu)).length;
+    if(drawn){
+      els.mapNote.textContent = '선택 매물 필지 ' + drawn + '/' + pnus.length + '개 표시 완료' + (failed.length ? ' · 실패 ' + failed.length + '개' : '') + '. 여러필지 매물은 지정된 PNU만 조회합니다.';
+    }else{
+      state.debug.lastError = 'polygon selected: ' + (failed[0] && failed[0].error || '조회 실패');
+      els.mapNote.textContent = '선택 매물 필지 조회 실패: ' + (failed[0] && failed[0].error || '응답 없음');
+    }
+    updatePatchPanel();
   }
 
   async function fetchListingPolygons(){
-    const pnus = [];
-    const sourceItems = state.filteredItems.length ? state.filteredItems : state.items;
-    sourceItems.forEach(item => (item.pnuList || []).forEach(pnu => pnus.push(pnu)));
-    const unique = Array.from(new Set(pnus));
-    if(!unique.length){
-      setLoadState('PNU 없음');
-      els.mapNote.textContent = 'PNU가 확정된 매물이 없어 필지 경계를 조회하지 않았습니다.';
-      return;
-    }
-    setLoadState('필지 조회중');
-    els.mapNote.textContent = '매물 목록은 표시되었습니다. 필지 경계는 뒤에서 나누어 불러오는 중입니다.';
-    const chunks = [];
-    for(let i=0;i<unique.length;i+=10) chunks.push(unique.slice(i,i+10));
-    let okCount = 0;
-    let failCount = 0;
-    for(let i=0;i<chunks.length;i+=1){
-      try{
-        els.mapNote.textContent = '필지 경계 조회 중 ' + (i + 1) + '/' + chunks.length + ' · 화면은 그대로 사용할 수 있습니다.';
-        const data = await postPolygonApi({pnuList:chunks[i]}, 'batch-pnu-' + (i + 1), 18000);
-        (data.parcels || []).forEach(parcel => {
-          if(parcel && parcel.pnu){ state.polygonDataByPnu.set(parcel.pnu, parcel); okCount += 1; }
-        });
-        renderListingPolygons();
-      }catch(err){
-        failCount += chunks[i].length;
-        console.warn('필지 경계 조회 실패', chunks[i], err);
-      }
-    }
-    if(okCount){ fitToFilteredIfPossible(); }
-    setLoadState('완료');
-    els.mapNote.textContent = okCount ? ('필지 경계 ' + okCount + '건 표시 완료' + (failCount ? ' · 실패 ' + failCount + '건' : '')) : '필지 경계 조회 결과가 없습니다. PNU 또는 VWorld 응답을 확인하세요.';
+    // 전체 매물 PNU 대량조회는 사용하지 않는다.
+    // 필지선은 WMS 타일로 표시하고, 실제 클릭 가능한 폴리곤은 선택 매물의 지정 PNU만 조회한다.
+    els.mapNote.textContent = '전체 필지 폴리곤 대량조회는 사용하지 않습니다. 필지선은 WMS로, 선택 매물 필지만 PNU로 조회합니다.';
   }
 
   function renderListingPolygons(){
@@ -1007,39 +1218,16 @@
   }
   function scheduleBaseParcelFetch(){
     clearTimeout(state.baseFetchTimer);
-    state.baseFetchTimer = setTimeout(fetchBaseParcels, 450);
+    state.baseFetchTimer = setTimeout(fetchBaseParcels, 250);
   }
-  async function fetchBaseParcels(){
+  function fetchBaseParcels(){
     if(!state.showBaseParcels || !state.mapReady) return;
-    const zoom = state.map.getZoom();
-    if(zoom < 16){ els.mapNote.textContent = '현재화면 필지는 줌 16 이상에서만 불러옵니다. 조금 더 확대하세요.'; clearPolygonMap(state.basePolygons); return; }
-    try{
-      els.mapNote.textContent = '현재 화면의 필지 타일을 불러오는 중입니다.';
-      const bbox = currentBbox();
-      const data = await postPolygonApi({bbox:bbox, limit:300}, 'current-bbox', 30000);
-      if(!data || data.ok === false){ throw new Error((data && (data.error || data.message)) || '필지 폴리곤 조회 실패'); }
-      renderBasePolygons(data.parcels || []);
-      els.mapNote.textContent = (data.parcels || []).length ? '회색 필지는 매물 없는 필지, 색칠된 필지는 저장된 매물 필지입니다. · 필지 ' + (data.parcels || []).length + '건' : '현재 화면에서 조회된 필지가 없습니다. 더 확대하거나 위치를 조금 이동하세요.';
-    }catch(err){
-      console.error(err);
-      state.debug.lastError = 'polygon current-bbox: ' + (err && err.message ? err.message : err);
-      els.mapNote.textContent = '현재화면 필지 조회 실패: ' + (err && err.message ? err.message : err);
-      updatePatchPanel();
-    }
+    renderWmsTiles();
   }
   function renderBasePolygons(parcels){
+    // 현재화면 전체 필지 polygon 조회는 VWorld 제한/응답 불안정 때문에 사용하지 않는다.
+    // 배경 필지선은 WMS 타일로 표시하고, 선택 매물 필지만 JSONP GetFeature로 그린다.
     clearPolygonMap(state.basePolygons);
-    parcels.forEach(parcel => {
-      if(!parcel || !parcel.geometry || !parcel.pnu) return;
-      if(state.pnuToItems.has(parcel.pnu)) return;
-      const paths = coordinatesToPaths(parcel.geometry);
-      const polys = paths.map(path => {
-        const poly = new naver.maps.Polygon({ map:state.map, paths:path, zIndex:5, ...baseStyle() });
-        naver.maps.Event.addListener(poly, 'click', function(){ showParcelOnly(parcel); });
-        return poly;
-      });
-      state.basePolygons.set(parcel.pnu, polys);
-    });
   }
 
   function selectPnu(pnu, parcel){
@@ -1276,7 +1464,7 @@
   }
   els.chipbar.addEventListener('click', onChipClick);
   els.reloadBtn.addEventListener('click', function(){ location.reload(); });
-  els.baseParcelToggle.addEventListener('click', function(){ state.showBaseParcels = !state.showBaseParcels; this.textContent = state.showBaseParcels ? '현재화면 필지 ON' : '현재화면 필지 OFF'; this.classList.toggle('ghost', !state.showBaseParcels); if(state.showBaseParcels) scheduleBaseParcelFetch(); else clearPolygonMap(state.basePolygons); });
+  els.baseParcelToggle.addEventListener('click', function(){ state.showBaseParcels = !state.showBaseParcels; this.textContent = state.showBaseParcels ? '필지선 ON' : '필지선 OFF'; this.classList.toggle('ghost', !state.showBaseParcels); if(state.showBaseParcels) scheduleBaseParcelFetch(); else { clearWmsTiles(); els.mapNote.textContent = '필지선을 껐습니다. 핀 클릭 시 선택 매물 필지만 조회합니다.'; } });
   els.panelClose.addEventListener('click', closePanel);
   els.panelBody.addEventListener('click', handlePanelClick);
   els.statusCancel.addEventListener('click', closeStatusModal); els.statusSave.addEventListener('click', saveStatus); els.statusModal.addEventListener('click', e => { if(e.target === els.statusModal) closeStatusModal(); });

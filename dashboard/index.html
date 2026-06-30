@@ -2307,9 +2307,9 @@
           <button class="filter-chip" data-filter-group="status" data-filter-value="hidden" type="button">비공개</button>
           <button class="filter-chip" data-filter-group="deal" data-filter-value="rent" type="button">임대</button>
           <button class="filter-chip" data-filter-group="deal" data-filter-value="sale" type="button">매매</button>
-          <button class="filter-chip" data-filter-group="team" data-filter-value="factory" type="button">산업용 MK</button>
-          <button class="filter-chip" data-filter-group="team" data-filter-value="shopping" type="button">상업용 SK</button>
-          <button class="filter-chip" data-filter-group="team" data-filter-value="land" type="button">토지 DK</button>
+          <button class="filter-chip" data-filter-group="team" data-filter-value="factory" type="button">산업용</button>
+          <button class="filter-chip" data-filter-group="team" data-filter-value="shopping" type="button">상업용</button>
+          <button class="filter-chip" data-filter-group="team" data-filter-value="land" type="button">토지</button>
         </div>
         <div id="toolbarMeta" class="toolbar-meta">전체 0건</div>
       </section>
@@ -3120,6 +3120,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         calendarOverviewMap[dateKey] = {
           shoppingCount: Number(day.shoppingCount || 0),
           factoryCount: Number(day.factoryCount || 0),
+          landCount: Number(day.landCount || 0),
           threadCount: localThreads.length || Number(day.threadCount || 0)
         };
         if(!calendarThreadMap[dateKey]){
@@ -3172,7 +3173,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
       for(let day = 1; day <= totalDays; day += 1){
         const dateKey = [year, String(monthIndex + 1).padStart(2,'0'), String(day).padStart(2,'0')].join('-');
-        map[dateKey] = { shoppingCount:0, factoryCount:0, threadCount:0 };
+        map[dateKey] = { shoppingCount:0, factoryCount:0, landCount:0, threadCount:0 };
       }
 
       rawItems.forEach(function(item){
@@ -3184,6 +3185,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         const teamType = detectTeamByListingNumber(item.listingNumber);
         if(teamType === 'shopping') map[dateKey].shoppingCount += 1;
         else if(teamType === 'factory') map[dateKey].factoryCount += 1;
+        else if(teamType === 'land') map[dateKey].landCount += 1;
       });
 
       Object.keys(calendarThreadMap).forEach(function(dateKey){
@@ -3216,7 +3218,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
           String(day).padStart(2,'0')
         ].join('-');
 
-        const stat = calendarOverviewMap[dateKey] || { shoppingCount:0, factoryCount:0, threadCount:0 };
+        const stat = calendarOverviewMap[dateKey] || { shoppingCount:0, factoryCount:0, landCount:0, threadCount:0 };
         const classes = [
           'calendar-cell',
           dateKey === todayKey ? 'is-today' : '',
@@ -3227,8 +3229,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
           + '<button type="button" class="' + classes + '" onclick="selectCalendarDate(\'' + dateKey + '\')">'
           +   '<div class="calendar-day-number">' + day + (hasRecentThreadWithin24Hours(dateKey) ? '<span class="calendar-day-star">★</span>' : '') + '</div>'
           +   '<div class="calendar-lines">'
-          +     '<div class="calendar-line' + (stat.shoppingCount ? '' : ' zero') + '">상가 ' + stat.shoppingCount + '</div>'
-          +     '<div class="calendar-line' + (stat.factoryCount ? '' : ' zero') + '">공장 ' + stat.factoryCount + '</div>'
+          +     '<div class="calendar-line' + (stat.shoppingCount ? '' : ' zero') + '">상업 ' + stat.shoppingCount + '</div>'
+          +     '<div class="calendar-line' + (stat.factoryCount ? '' : ' zero') + '">산업 ' + stat.factoryCount + '</div>'
+          +     '<div class="calendar-line' + (stat.landCount ? '' : ' zero') + '">토지 ' + stat.landCount + '</div>'
           +     '<div class="calendar-line' + (stat.threadCount ? '' : ' zero') + '">기록 ' + stat.threadCount + '</div>'
           +   '</div>'
           + '</button>';
@@ -3319,8 +3322,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
       calendarDetailDate.textContent = formatDetailDate(calendarSelectedDateKey) + (hasRecentThreadWithin24Hours(calendarSelectedDateKey) ? ' ★' : '');
       calendarDetailMeta.textContent =
-        '상가 ' + properties.filter(function(x){ return x.teamType === 'shopping'; }).length
-        + ' · 공장 ' + properties.filter(function(x){ return x.teamType === 'factory'; }).length
+        '상업 ' + properties.filter(function(x){ return x.teamType === 'shopping'; }).length
+        + ' · 산업 ' + properties.filter(function(x){ return x.teamType === 'factory'; }).length
+        + ' · 토지 ' + properties.filter(function(x){ return x.teamType === 'land'; }).length
         + ' · 기록 ' + threads.length;
 
       if(!properties.length){
@@ -3328,7 +3332,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       }else{
         calendarPropertyList.innerHTML = properties.map(function(item){
           const thumb = item.heroUrl ? "background-image:url('" + escapeAttr(item.heroUrl) + "')" : '';
-          const teamLabel = item.teamType === 'shopping' ? '상가' : item.teamType === 'factory' ? '공장' : '-';
+          const teamLabel = item.teamType === 'shopping' ? '상업' : item.teamType === 'factory' ? '산업' : item.teamType === 'land' ? '토지' : '-';
           return ''
             + '<div class="calendar-property-item">'
             +   '<div class="calendar-property-thumb" style="' + thumb + '"></div>'
@@ -3702,31 +3706,31 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(teamKey === 'factory'){
         return {
           key: 'factory',
-          title: '산업용 MK',
-          desc: 'MK 매물을 봅니다.',
-          empty: '산업용 MK 매물이 없습니다.'
+          title: '산업용',
+          desc: '산업용 매물을 봅니다.',
+          empty: '산업용 매물이 없습니다.'
         };
       }
       if(teamKey === 'shopping'){
         return {
           key: 'shopping',
-          title: '상업용 SK',
-          desc: 'SK 매물을 봅니다.',
-          empty: '상업용 SK 매물이 없습니다.'
+          title: '상업용',
+          desc: '상업용 매물을 봅니다.',
+          empty: '상업용 매물이 없습니다.'
         };
       }
       if(teamKey === 'land'){
         return {
           key: 'land',
-          title: '토지 DK',
-          desc: 'DK 매물을 봅니다.',
-          empty: '토지 DK 매물이 없습니다.'
+          title: '토지',
+          desc: '토지 매물을 봅니다.',
+          empty: '토지 매물이 없습니다.'
         };
       }
       return {
         key: '',
-        title: '산업용 MK',
-        desc: 'MK 매물을 봅니다.',
+        title: '산업용',
+        desc: '산업용 매물을 봅니다.',
         empty: '표시할 매물이 없습니다.'
       };
     }

@@ -4978,29 +4978,25 @@
 
       function getLoadedFactoryObject_(item){
         item = item || {};
-        return parsePlainObjectMaybeJson_(firstNonEmpty_(item.factory, item.factoryJson, item.factoryData));
+        var candidates = [item.factory, item.factoryJson, item.factoryData];
+        for(var i = 0; i < candidates.length; i += 1){
+          var parsed = parsePlainObjectMaybeJson_(candidates[i]);
+          if(parsed && Object.keys(parsed).length) return parsed;
+        }
+        return {};
       }
 
-      function getLoadedLandSummaryObject_(item){
+      function getLoadedFactoryValue_(item, key){
         item = item || {};
-        return parsePlainObjectMaybeJson_(firstNonEmpty_(item.landSummary, item.landSummaryJson, item.landSummaryData));
+        var factory = getLoadedFactoryObject_(item);
+        return firstNonEmpty_(factory && factory[key], item[key]);
       }
 
       function getLoadedRoadAccessText_(item){
         item = item || {};
-        var factory = getLoadedFactoryObject_(item);
-        var landSummary = getLoadedLandSummaryObject_(item);
-        return normalizeLookupText_(firstNonEmpty_(
-          item.roadWidth,
-          item.roadAccess,
-          item.roadAccessSummary,
-          factory.roadWidth,
-          factory.roadAccess,
-          factory.roadAccessSummary,
-          landSummary.roadAccessSummary,
-          landSummary.roadAccess,
-          landSummary.roadWidth
-        ));
+        // 저장/복원은 다른 특화정보 필드와 동일하게 서버에 저장된 값만 쓴다.
+        // 조회요약(roadAccessSummary/landSummary)은 다시 들어올 때 끼우지 않는다.
+        return normalizeLookupText_(getLoadedFactoryValue_(item, 'roadWidth'));
       }
 
       function applyLoadedPropertyToEditor_(item){
@@ -5050,20 +5046,20 @@
         setEditableText_(findSpecValueByLabel_('* 화장실'), item.restroomInfo || '');
         setEditableText_(maintenanceFeeField, item.maintenanceFee || '');
 
-        setEditableText_(findSpecValueByLabel_('층고'), item.ceilingHeight || '');
-        setEditableText_(findSpecValueByLabel_('크레인'), item.crane || '');
-        setEditableText_(findSpecValueByLabel_('호이스트'), item.hoist || '');
-        setEditableText_(findSpecValueByLabel_('전력'), item.powerCapacity || '');
-        setEditableText_(findSpecValueByLabel_('주요 설비'), item.mainFacilities || '');
-        setEditableText_(findSpecValueByLabel_('추천 업종'), item.recommendedUse || '');
-        setEditableText_(findSpecValueByLabel_('업종 제한'), item.restrictedUse || '');
+        setEditableText_(findSpecValueByLabel_('층고'), getLoadedFactoryValue_(item, 'ceilingHeight') || '');
+        setEditableText_(findSpecValueByLabel_('크레인'), getLoadedFactoryValue_(item, 'crane') || '');
+        setEditableText_(findSpecValueByLabel_('호이스트'), getLoadedFactoryValue_(item, 'hoist') || '');
+        setEditableText_(findSpecValueByLabel_('전력'), getLoadedFactoryValue_(item, 'powerCapacity') || '');
+        setEditableText_(findSpecValueByLabel_('주요 설비'), getLoadedFactoryValue_(item, 'mainFacilities') || '');
+        setEditableText_(findSpecValueByLabel_('추천 업종'), getLoadedFactoryValue_(item, 'recommendedUse') || '');
+        setEditableText_(findSpecValueByLabel_('업종 제한'), getLoadedFactoryValue_(item, 'restrictedUse') || '');
         setEditableText_(findSpecValueAnyLabel_('접도 / 진입로', '도로접면'), loadedRoadAccessText || '');
-        setEditableText_(findSpecValueByLabel_('도어폭'), item.doorWidth || '');
-        setEditableText_(findSpecValueByLabel_('대형차 진입'), item.truckAccess || '');
-        setEditableText_(findSpecValueByLabel_('상하차 가능'), item.loadingAvailable || '');
-        setEditableText_(findSpecValueByLabel_('사무동 포함'), item.officeIncluded || '');
-        setEditableText_(findSpecValueByLabel_('야드 크기'), item.yardSize || '');
-        setEditableText_(findSpecValueByLabel_('즉시 가동'), item.readyToOperate || '');
+        setEditableText_(findSpecValueByLabel_('도어폭'), getLoadedFactoryValue_(item, 'doorWidth') || '');
+        setEditableText_(findSpecValueByLabel_('대형차 진입'), getLoadedFactoryValue_(item, 'truckAccess') || '');
+        setEditableText_(findSpecValueByLabel_('상하차 가능'), getLoadedFactoryValue_(item, 'loadingAvailable') || '');
+        setEditableText_(findSpecValueByLabel_('사무동 포함'), getLoadedFactoryValue_(item, 'officeIncluded') || '');
+        setEditableText_(findSpecValueByLabel_('야드 크기'), getLoadedFactoryValue_(item, 'yardSize') || '');
+        setEditableText_(findSpecValueByLabel_('즉시 가동'), getLoadedFactoryValue_(item, 'readyToOperate') || '');
 
         setRequesterFieldValue_('의뢰인명', item.requesterName || '');
         setRequesterFieldValue_('연락처', item.requesterPhone || '');
@@ -5091,7 +5087,6 @@
           }
           renderLandParcels_();
           syncLandSummaryToSharedFields_();
-          loadedRoadAccessText = normalizeLookupText_(plainText(findSpecValueAnyLabel_('접도 / 진입로', '도로접면'))) || loadedRoadAccessText;
         }else{
           landParcels = [];
           renderLandParcels_();

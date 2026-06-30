@@ -431,7 +431,9 @@
     .property-main{
       display:grid;grid-template-columns:112px 1fr;gap:14px;padding:14px;align-items:start;cursor:default
     }
-    .thumb{width:112px;height:112px;border-radius:18px;background:#edf2f7 center/cover no-repeat;overflow:hidden;flex:0 0 112px}
+    .thumb{position:relative;width:112px;height:112px;border-radius:18px;background:#edf2f7 center/cover no-repeat;overflow:hidden;flex:0 0 112px}
+    .dashboard-status-overlay{position:absolute;top:0;left:0;right:0;z-index:3;display:flex;flex-direction:column;gap:2px;pointer-events:none}
+    .dashboard-status-line{display:block;width:100%;padding:6px 8px;background:rgba(0,0,0,.78);color:#fff;font-size:12px;font-weight:1000;line-height:1.1;letter-spacing:-0.03em;text-shadow:0 1px 2px rgba(0,0,0,.28)}
     .property-copy-thumb{
       cursor:pointer;
       -webkit-user-select:none;
@@ -494,6 +496,7 @@
     .mini-btn.gray{border-color:#dde3ea;background:#f4f6f8;color:#6e7782}
     .mini-btn.square{border-radius:10px;padding:0 8px;min-height:34px;font-size:16px;font-weight:800;letter-spacing:-0.03em;display:inline-flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap}
     .mini-btn.edit-square{border-color:#b9dcff;background:#ecf6ff;color:#3a8fe6}
+    .mini-btn.dashboard-status-square{border-color:#d8c8ff;background:#f3edff;color:#6d3ce8}
     .mini-btn.memo-square{border-color:#e8dc7e;background:#fff4a8;color:#7a6500}
     .memo-btn-wrap{position:relative;display:inline-flex;align-items:center;overflow:visible;flex:0 0 auto}
     .memo-new-star{position:absolute;top:-2px;right:-7px;z-index:20;color:#1677ff;font-size:12px;line-height:1;font-weight:900;background:transparent;border-radius:0;box-shadow:none;text-shadow:0 0 2px #fff,0 0 2px #fff;pointer-events:none}
@@ -922,6 +925,44 @@
       background:#0f7cff;
       color:#fff;
     }
+    .dashboard-status-modal{
+      position:fixed;
+      inset:0;
+      z-index:12130;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(17,24,39,.38);
+      backdrop-filter:blur(4px);
+      -webkit-backdrop-filter:blur(4px);
+    }
+    .dashboard-status-modal.show{display:flex}
+    .dashboard-status-modal-card{
+      width:min(460px, calc(100vw - 32px));
+      max-height:min(82vh, 680px);
+      overflow:auto;
+      background:#fff;
+      border:1px solid #e6ebf1;
+      border-radius:26px;
+      box-shadow:0 24px 48px rgba(15,23,42,.16);
+      padding:22px 24px 20px;
+    }
+    .dashboard-status-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}
+    .dashboard-status-modal-title{font-size:24px;line-height:1.15;font-weight:1000;color:#17191d;letter-spacing:-0.04em}
+    .dashboard-status-modal-close{width:36px;height:36px;border-radius:999px;border:1px solid #dce6f1;background:#fff;color:#111318;font-size:18px;font-weight:900;flex:0 0 36px}
+    .dashboard-status-modal-listing{margin:-6px 0 16px;padding:10px 12px;border-radius:14px;background:#f6f8fb;color:#55606b;font-size:13px;line-height:1.45;font-weight:900;word-break:break-all}
+    .dashboard-status-section{display:grid;gap:9px;margin:0 0 16px}
+    .dashboard-status-section-title{font-size:13px;line-height:1.3;font-weight:1000;color:#66707a;letter-spacing:-0.03em}
+    .dashboard-status-choice-row{display:flex;flex-wrap:wrap;gap:8px}
+    .dashboard-status-choice{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 14px;border:1px solid #dce6f1;border-radius:999px;background:#fff;color:#30343a;font-size:14px;font-weight:1000;letter-spacing:-0.03em;cursor:pointer;user-select:none}
+    .dashboard-status-choice input{position:absolute;opacity:0;pointer-events:none}
+    .dashboard-status-choice:has(input:checked){border-color:#0f7cff;background:#eef5ff;color:#0f7cff;box-shadow:0 8px 16px rgba(15,124,255,.12)}
+    .dashboard-status-choice.readonly{cursor:default;background:#f5f7fa;color:#8b949f;border-color:#e1e7ee}
+    .dashboard-status-choice.readonly.is-active{background:#111827;border-color:#111827;color:#fff;box-shadow:0 8px 18px rgba(15,23,42,.18)}
+    .dashboard-status-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
+    .dashboard-status-action-btn{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid #dce6f1;background:#fff;color:#4f5863;font-size:14px;font-weight:1000;letter-spacing:-0.02em}
+    .dashboard-status-action-btn.primary{border-color:#0f7cff;background:#0f7cff;color:#fff}
 
 
     @media (min-width:861px){
@@ -1330,6 +1371,27 @@
       }
       .channel-radio{
         font-size:14px;
+      }
+      .dashboard-status-modal{
+        padding:16px;
+      }
+      .dashboard-status-modal-card{
+        width:min(460px, calc(100vw - 20px));
+        max-height:min(78vh, 640px);
+        border-radius:22px;
+        padding:20px 18px 18px;
+      }
+      .dashboard-status-modal-title{
+        font-size:20px;
+      }
+      .dashboard-status-choice{
+        min-height:36px;
+        padding:0 12px;
+        font-size:13px;
+      }
+      .dashboard-status-line{
+        padding:5px 7px;
+        font-size:11px;
       }
       .channel-link-input{
         min-height:42px;
@@ -2292,6 +2354,47 @@
     </div>
   </div>
 
+  <div id="dashboardStatusModal" class="dashboard-status-modal" aria-hidden="true">
+    <div class="dashboard-status-modal-card" onclick="event.stopPropagation()">
+      <div class="dashboard-status-modal-head">
+        <div class="dashboard-status-modal-title">상태</div>
+        <button type="button" class="dashboard-status-modal-close" onclick="closeDashboardStatusModal()">✕</button>
+      </div>
+      <div id="dashboardStatusListingText" class="dashboard-status-modal-listing">-</div>
+
+      <section class="dashboard-status-section" aria-label="공개상태">
+        <div class="dashboard-status-section-title">공개상태</div>
+        <div class="dashboard-status-choice-row">
+          <label class="dashboard-status-choice"><input type="radio" name="dashboardPublicStatus" value="visible"> <span>공개</span></label>
+          <label class="dashboard-status-choice"><input type="radio" name="dashboardPublicStatus" value="hidden"> <span>비공개</span></label>
+        </div>
+      </section>
+
+      <section class="dashboard-status-section" aria-label="매물분류">
+        <div class="dashboard-status-section-title">매물분류</div>
+        <div id="dashboardPropertyKindRow" class="dashboard-status-choice-row">
+          <span class="dashboard-status-choice readonly" data-kind="industrial">산업용</span>
+          <span class="dashboard-status-choice readonly" data-kind="commercial">상업용</span>
+          <span class="dashboard-status-choice readonly" data-kind="land">토지</span>
+        </div>
+      </section>
+
+      <section class="dashboard-status-section" aria-label="관리상태">
+        <div class="dashboard-status-section-title">관리상태</div>
+        <div class="dashboard-status-choice-row">
+          <label class="dashboard-status-choice"><input id="dashboardStatusInternal" type="checkbox"> <span>내부매물</span></label>
+          <label class="dashboard-status-choice"><input id="dashboardStatusNeedsWork" type="checkbox"> <span>작업필요</span></label>
+          <label class="dashboard-status-choice"><input id="dashboardStatusNeedsPhoto" type="checkbox"> <span>사진필요</span></label>
+        </div>
+      </section>
+
+      <div class="dashboard-status-modal-actions">
+        <button type="button" class="dashboard-status-action-btn" onclick="closeDashboardStatusModal()">닫기</button>
+        <button type="button" class="dashboard-status-action-btn primary" onclick="saveDashboardStatusModal()">저장</button>
+      </div>
+    </div>
+  </div>
+
 
   <div id="calendarModal" class="calendar-modal" aria-hidden="true">
     <div class="calendar-modal-sheet">
@@ -2517,6 +2620,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     let channelModalListingNumber = '';
     let channelModalChannelKey = '';
     let channelModalHistoryArmed = false;
+    let dashboardStatusModalListingNumber = '';
+    let dashboardStatusModalHistoryArmed = false;
 
     let currentLoadingText = '자료를 가져오고 있어요!';
     let loadingTypingTimer = null;
@@ -2629,6 +2734,11 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
     function isChannelModalOpen(){
       const modal = document.getElementById('channelModal');
+      return !!(modal && modal.classList.contains('show'));
+    }
+
+    function isDashboardStatusModalOpen(){
+      const modal = document.getElementById('dashboardStatusModal');
       return !!(modal && modal.classList.contains('show'));
     }
 
@@ -3998,6 +4108,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
         memo: text(raw.memo),
         memoUpdatedAt: text(raw.memoUpdatedAt),
+        dashboardStatusJson: text(raw.dashboardStatusJson),
 
         channelYoutube: text(raw.channelYoutube),
         channelInstagram: text(raw.channelInstagram),
@@ -4259,6 +4370,192 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       .catch(function(err){
         console.error(err);
         alert((err && err.message) ? err.message : '상태 변경 중 문제가 발생했습니다.');
+      })
+      .finally(function(){
+        stopLoadingOverlay();
+      });
+    }
+
+    function parseDashboardStatusJson(value){
+      try{
+        const parsed = typeof value === 'string' ? JSON.parse(value || '{}') : value;
+        const src = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+        return {
+          internal: src.internal === true,
+          needsWork: src.needsWork === true,
+          needsPhoto: src.needsPhoto === true
+        };
+      }catch(e){
+        return { internal:false, needsWork:false, needsPhoto:false };
+      }
+    }
+
+    function stringifyDashboardStatus(status){
+      const src = status || {};
+      return JSON.stringify({
+        internal: src.internal === true,
+        needsWork: src.needsWork === true,
+        needsPhoto: src.needsPhoto === true
+      });
+    }
+
+    function getDashboardStatusLabels(item){
+      const status = parseDashboardStatusJson(item && item.dashboardStatusJson);
+      const labels = [];
+      if(status.internal) labels.push('내부매물');
+      if(status.needsWork) labels.push('작업필요');
+      if(status.needsPhoto) labels.push('사진필요');
+      return labels;
+    }
+
+    function buildDashboardStatusOverlay(item){
+      const labels = getDashboardStatusLabels(item);
+      if(!labels.length) return '';
+      return '<div class="dashboard-status-overlay" aria-hidden="true">' + labels.map(function(label){
+        return '<span class="dashboard-status-line">' + escapeHtml(label) + '</span>';
+      }).join('') + '</div>';
+    }
+
+    function getDashboardPropertyKind(item){
+      const listingNumber = text(item && item.listingNumber).toUpperCase();
+      const propertyType = text(item && item.propertyType);
+      const title = text(item && item.title);
+      const zoning = text(item && item.zoning);
+      const buildingComposition = text(item && item.buildingComposition);
+      const haystack = [propertyType, title, zoning, buildingComposition].join(' ');
+
+      if(/^DK-/.test(listingNumber)) return 'land';
+      if(/토지|대지|임야|잡종지|창고용지/.test(haystack) || /(^|\s)(전|답)(\s|$)/.test(haystack)){
+        if(!/공장|제조/.test(haystack)) return 'land';
+      }
+      if(/상가|상업|근린|근생|사무실|오피스|판매시설|업무시설/.test(haystack)) return 'commercial';
+      return 'industrial';
+    }
+
+    function openDashboardStatusModal(listingNumber){
+      const decodedListingNumber = normalizeListingKey(listingNumber);
+      const item = getItemByListingNumber(decodedListingNumber);
+      if(!item){
+        alert('매물을 찾지 못했습니다.');
+        return;
+      }
+
+      const modal = document.getElementById('dashboardStatusModal');
+      const listingText = document.getElementById('dashboardStatusListingText');
+      const statusRadios = document.querySelectorAll('input[name="dashboardPublicStatus"]');
+      const internalInput = document.getElementById('dashboardStatusInternal');
+      const needsWorkInput = document.getElementById('dashboardStatusNeedsWork');
+      const needsPhotoInput = document.getElementById('dashboardStatusNeedsPhoto');
+      const kind = getDashboardPropertyKind(item);
+      const currentStatus = text(item.status).toLowerCase() === 'visible' ? 'visible' : 'hidden';
+      const dashboardStatus = parseDashboardStatusJson(item.dashboardStatusJson);
+
+      dashboardStatusModalListingNumber = decodedListingNumber;
+
+      if(listingText){
+        listingText.textContent = (item.title ? item.title + ' · ' : '') + decodedListingNumber;
+      }
+      statusRadios.forEach(function(radio){
+        radio.checked = radio.value === currentStatus;
+      });
+      if(internalInput) internalInput.checked = dashboardStatus.internal === true;
+      if(needsWorkInput) needsWorkInput.checked = dashboardStatus.needsWork === true;
+      if(needsPhotoInput) needsPhotoInput.checked = dashboardStatus.needsPhoto === true;
+
+      document.querySelectorAll('#dashboardPropertyKindRow [data-kind]').forEach(function(el){
+        el.classList.toggle('is-active', el.getAttribute('data-kind') === kind);
+        el.setAttribute('aria-disabled', 'true');
+      });
+
+      if(modal){
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+      if(!dashboardStatusModalHistoryArmed){
+        history.pushState({ dashboardStatusModal: true }, '');
+        dashboardStatusModalHistoryArmed = true;
+      }
+    }
+
+    function closeDashboardStatusModal(fromPopstate){
+      const modal = document.getElementById('dashboardStatusModal');
+      if(modal){
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+      }
+      dashboardStatusModalListingNumber = '';
+      if(dashboardStatusModalHistoryArmed){
+        dashboardStatusModalHistoryArmed = false;
+        if(!fromPopstate){
+          history.back();
+        }
+      }
+    }
+
+    function saveDashboardStatusModal(){
+      if(!dashboardStatusModalListingNumber) return;
+
+      const listingNumber = dashboardStatusModalListingNumber;
+      const item = getItemByListingNumber(listingNumber);
+      const statusRadio = document.querySelector('input[name="dashboardPublicStatus"]:checked');
+      const nextStatus = statusRadio && statusRadio.value === 'visible' ? 'visible' : 'hidden';
+      const nextDashboardStatus = {
+        internal: !!(document.getElementById('dashboardStatusInternal') && document.getElementById('dashboardStatusInternal').checked),
+        needsWork: !!(document.getElementById('dashboardStatusNeedsWork') && document.getElementById('dashboardStatusNeedsWork').checked),
+        needsPhoto: !!(document.getElementById('dashboardStatusNeedsPhoto') && document.getElementById('dashboardStatusNeedsPhoto').checked)
+      };
+
+      const prevDashboardStatus = parseDashboardStatusJson(item && item.dashboardStatusJson);
+      const isSame = item &&
+        text(item.status).toLowerCase() === nextStatus &&
+        prevDashboardStatus.internal === nextDashboardStatus.internal &&
+        prevDashboardStatus.needsWork === nextDashboardStatus.needsWork &&
+        prevDashboardStatus.needsPhoto === nextDashboardStatus.needsPhoto;
+
+      closeDashboardStatusModal();
+
+      if(isSame){
+        return;
+      }
+
+      updateDashboardStatus(listingNumber, nextStatus, nextDashboardStatus);
+    }
+
+    function updateDashboardStatus(listingNumber, status, dashboardStatus){
+      const decodedListingNumber = normalizeListingKey(listingNumber);
+      const dashboardStatusJson = stringifyDashboardStatus(dashboardStatus);
+      currentLoadingText = '상태 변경중이에요.';
+      startLoadingOverlay();
+      return fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=UTF-8'
+        },
+        body: JSON.stringify({
+          action: 'updateDashboardStatus',
+          listingNumber: decodedListingNumber,
+          status: status,
+          dashboardStatus: dashboardStatus
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('상태 저장 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok !== true){
+          throw new Error((data && (data.message || data.error)) || '상태 저장 실패');
+        }
+        patchCardFromMutationResponse(decodedListingNumber, data, {
+          status: text(data.status || status).toLowerCase(),
+          dashboardStatusJson: text(data.dashboardStatusJson) || dashboardStatusJson,
+          updatedAt: text(data.updatedAt) || new Date().toISOString()
+        });
+      })
+      .catch(function(err){
+        console.error(err);
+        alert((err && err.message) ? err.message : '상태 저장 중 문제가 발생했습니다.');
       })
       .finally(function(){
         stopLoadingOverlay();
@@ -4959,6 +5256,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const ownSiteState = getChannelStateByItem(item, 'ownSite');
       const ownSiteClass = ownSiteState.done ? '' : ' is-not-yet';
       const memoStarHtml = shouldShowMemoNewStar(item) ? '<span class="memo-new-star" aria-hidden="true">★</span>' : '';
+      const dashboardStatusOverlayHtml = buildDashboardStatusOverlay(item);
 
       return ''
         + '<article class="property-card" data-listing-number="' + escapeHtml(item.listingNumber || '') + '">'
@@ -4969,7 +5267,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         +       ' onpointerleave="clearPropertyCopyLongPress()"'
         +       ' onpointercancel="clearPropertyCopyLongPress()"'
         +       ' onclick="return handlePropertyThumbClick(event)"'
-        +     '></div>'
+        +     '>' + dashboardStatusOverlayHtml + '</div>'
         +     '<div class="card-content">'
         +       '<div class="title-row">'
         +         '<h3 class="card-title property-edit-link" onpointerdown="safeEditItemPointerDown(\'' + encodeURIComponent(item.listingNumber || '') + '\', event)" onclick="return safeEditItemClick(\'' + encodeURIComponent(item.listingNumber || '') + '\', event)">' + escapeHtml(item.title || '제목 없음') + '</h3>'
@@ -4988,6 +5286,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         +         '<span class="memo-btn-wrap"><button class="mini-btn square memo-square" type="button" onclick="event.stopPropagation(); openPropertyMemoModal(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">📌</span><span class="btn-text">메모</span></button>' + memoStarHtml + '</span>'
         +         '<button class="mini-btn square share-square" type="button" onclick="event.stopPropagation(); sharePreview(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">💫</span><span class="btn-text">공유</span></button>'
         +         '<button class="mini-btn square edit-square" type="button" onclick="event.stopPropagation(); openPreview(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">👀</span><span class="btn-text">보기</span></button>'
+        +         '<button class="mini-btn square dashboard-status-square" type="button" onclick="event.stopPropagation(); openDashboardStatusModal(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="btn-emoji">🏷️</span><span class="btn-text">상태</span></button>'
         +       '</div>'
         +       ''
         +     '</div>'
@@ -5475,6 +5774,16 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     window.openDashboardDdangyaMap = openDashboardDdangyaMap;
     window.openDashboardNaverMap = openDashboardNaverMap;
     window.sharePreview = sharePreview;
+    window.openDashboardStatusModal = openDashboardStatusModal;
+    window.closeDashboardStatusModal = closeDashboardStatusModal;
+    window.saveDashboardStatusModal = saveDashboardStatusModal;
+
+    const dashboardStatusModalEl = document.getElementById('dashboardStatusModal');
+    if(dashboardStatusModalEl){
+      dashboardStatusModalEl.addEventListener('click', function(e){
+        if(e.target === this) closeDashboardStatusModal();
+      });
+    }
 
     document.getElementById('channelModal').addEventListener('click', function(e){
       if(e.target === this) closeChannelModal();
@@ -5486,6 +5795,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
           closeCalendarModal();
           return;
         }
+        closeDashboardStatusModal();
         closeChannelModal();
         closePropertyCopyConfirmModal();
         closePropertyMemoModal();
@@ -5495,6 +5805,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     window.addEventListener('popstate', function(){
       if(isPropertyMemoModalOpen()){
         closePropertyMemoModal(true);
+        return;
+      }
+      if(isDashboardStatusModalOpen()){
+        closeDashboardStatusModal(true);
         return;
       }
       if(isChannelModalOpen()){

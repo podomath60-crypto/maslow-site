@@ -30,7 +30,8 @@
     .page-title strong{font-size:18px;font-weight:1000;line-height:1}
     .page-title span{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
     .search{height:42px;border:1px solid var(--line);background:#fff;border-radius:999px;display:flex;align-items:center;gap:8px;padding:0 13px;min-width:220px;flex:0 1 340px;box-shadow:0 8px 20px rgba(15,23,42,.04)}
-    .search input{border:0;outline:0;background:transparent;width:100%;font-size:14px;font-weight:750;color:var(--text)}
+    .search .search-input{border:0;outline:0;background:transparent;width:100%;min-height:22px;font-size:14px;font-weight:750;color:var(--text);line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .search .search-input:empty::before{content:attr(data-placeholder);color:#98a2b3;font-weight:750}
     .chipbar{display:flex;align-items:center;gap:7px;overflow-x:auto;white-space:nowrap;min-width:0;flex:1 1 auto;padding:2px 0;scrollbar-width:none}
     .chipbar::-webkit-scrollbar{display:none}
     .chip{height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:#384252;font-size:13px;font-weight:900;box-shadow:0 6px 18px rgba(15,23,42,.04)}
@@ -41,9 +42,9 @@
     .toolbar-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
     .top-btn{height:38px;padding:0 12px;border-radius:12px;background:#111827;color:#fff;font-weight:950;font-size:13px;box-shadow:0 8px 20px rgba(17,24,39,.15)}
     .top-btn.ghost{background:#fff;color:#263445;border:1px solid var(--line);box-shadow:none}
-    .main{position:relative;display:grid;grid-template-columns:minmax(0,1fr) var(--right);min-height:0;height:100%}
+    .main{position:relative;display:grid;grid-template-columns:minmax(0,1fr) var(--right);min-height:0;height:calc(100vh - var(--top));}
     .map-wrap{position:relative;min-width:0;min-height:0;background:#eaf0f6}
-    #map{position:absolute;inset:0}
+    #map{position:absolute;inset:0;width:100%;height:100%;min-height:360px}
     .map-overlay{position:absolute;left:14px;top:14px;z-index:20;display:flex;flex-direction:column;gap:10px;pointer-events:none}
     .stat-card{width:300px;max-width:calc(100vw - var(--right) - 44px);padding:12px 14px;border-radius:20px;background:rgba(255,255,255,.93);border:1px solid rgba(230,235,241,.95);box-shadow:0 14px 34px rgba(15,23,42,.12);backdrop-filter:blur(10px);pointer-events:auto}
     .stat-title{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:1000;color:#111827}
@@ -84,7 +85,7 @@
     <header class="topbar">
       <a href="/dashboard" class="home-btn" aria-label="대시보드로 이동">⌂</a>
       <div class="page-title"><strong>매물지도</strong><span>Parcel Map</span></div>
-      <label class="search"><span>🔎</span><input id="searchInput" type="search" placeholder="제목, 주소, 매물번호 검색"></label>
+      <label class="search"><span>🔎</span><div id="searchInput" class="search-input" role="textbox" aria-label="검색" data-placeholder="제목, 주소, 매물번호 검색" contenteditable="false" inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other"></div></label>
       <div class="chipbar" id="chipbar" aria-label="필터">
         <button class="chip is-active" data-group="work" data-value="all" type="button">전체</button>
         <button class="chip" data-group="public" data-value="visible" type="button">공개중</button>
@@ -190,6 +191,7 @@
   const state = {
     map:null,
     mapReady:false,
+    initialCenter:null,
     items:[],
     filteredItems:[],
     pnuToItems:new Map(),
@@ -226,11 +228,27 @@
 
   function fetchJson(url, options){ return fetch(url, options).then(res => res.json().then(data => { if(!res.ok || !data || data.ok === false){ throw new Error((data && (data.message || data.error)) || ('HTTP ' + res.status)); } return data; })); }
 
-  function loadNaverMapScript(clientId){
-    if(window.naver && window.naver.maps) return Promise.resolve();
+  function waitForNaverMaps(timeoutMs){
+    const started = Date.now();
+    return new Promise((resolve, reject) => {
+      (function tick(){
+        if(window.naver && window.naver.maps && window.naver.maps.Map && window.naver.maps.LatLng){
+          resolve();
+          return;
+        }
+        if(Date.now() - started > (timeoutMs || 5000)){
+          reject(new Error('네이버 지도 객체가 준비되지 않았습니다.'));
+          return;
+        }
+        window.setTimeout(tick, 50);
+      })();
+    });
+  }
+
+  function appendNaverScript(src){
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = 'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=' + encodeURIComponent(clientId) + '&submodules=geocoder';
+      script.src = src;
       script.async = true;
       script.onload = resolve;
       script.onerror = () => reject(new Error('네이버 지도 스크립트를 불러오지 못했습니다.'));
@@ -238,11 +256,48 @@
     });
   }
 
+  async function loadNaverMapScript(clientId){
+    if(window.naver && window.naver.maps && window.naver.maps.Map) return;
+    const id = encodeURIComponent(clientId || '');
+    if(!id) throw new Error('네이버 지도 Client ID가 없습니다.');
+
+    const urls = [
+      'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=' + id + '&submodules=geocoder',
+      'https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=' + id + '&submodules=geocoder'
+    ];
+
+    let lastError = null;
+    for(const src of urls){
+      try{
+        await appendNaverScript(src);
+        await waitForNaverMaps(4500);
+        return;
+      }catch(err){
+        lastError = err;
+      }
+    }
+    throw lastError || new Error('네이버 지도 스크립트를 불러오지 못했습니다.');
+  }
+
+  function forceMapResize(){
+    if(!state.mapReady || !state.map || !window.naver || !naver.maps) return;
+    try{
+      const w = els.map.clientWidth || els.map.offsetWidth;
+      const h = els.map.clientHeight || els.map.offsetHeight;
+      if(w && h && state.map.setSize && naver.maps.Size){
+        state.map.setSize(new naver.maps.Size(w, h));
+      }
+    }catch(e){}
+    try{ naver.maps.Event.trigger(state.map, 'resize'); }catch(e){}
+    try{ if(state.initialCenter) state.map.setCenter(state.initialCenter); }catch(e){}
+  }
+
   async function initMap(){
     const cfg = await fetchJson('/api/route-setting/config');
     await loadNaverMapScript(cfg.clientId);
+    state.initialCenter = new naver.maps.LatLng(35.9676,126.7368);
     state.map = new naver.maps.Map(els.map, {
-      center:new naver.maps.LatLng(35.9676,126.7368),
+      center:state.initialCenter,
       zoom:12,
       minZoom:7,
       mapTypeControl:true,
@@ -251,6 +306,8 @@
       mapDataControl:false
     });
     state.mapReady = true;
+    [0, 80, 250, 700, 1400].forEach(delay => window.setTimeout(forceMapResize, delay));
+    window.addEventListener('resize', forceMapResize);
     naver.maps.Event.addListener(state.map, 'idle', function(){
       if(state.showBaseParcels) scheduleBaseParcelFetch();
     });
@@ -299,7 +356,7 @@
   function noGeometryMessage(){ return '<div class="empty-panel"><div class="empty-icon">🗺️</div><b>선택된 필지가 없습니다.</b><div>지도에서 색칠된 필지를 클릭하면 오른쪽에 매물정보가 나옵니다.</div></div>'; }
 
   function applyFilters(){
-    const q = state.filters.q.toLowerCase();
+    const q = String(state.filters.q || '').toLowerCase();
     state.filteredItems = state.items.filter(item => {
       if(q){
         const hay = [item.listingNumber,item.title,item.address,item.price,item.dealType,item.propertyType].join(' ').toLowerCase();
@@ -601,7 +658,9 @@
     try{
       await initMap();
       await loadListings();
+      forceMapResize();
       await fetchListingPolygons();
+      forceMapResize();
       renderDefaultPanel();
     }catch(err){
       console.error(err);
@@ -615,7 +674,65 @@
   function unlockWithPassword(){ const pw = String(els.lockInput.value || '').trim(); const matched = PASSWORD_MAP[pw]; if(!matched){ els.lockError.textContent = '비밀번호가 올바르지 않습니다.'; return; } localStorage.setItem(AUTH_STORAGE_KEY, matched); els.lockOverlay.style.display = 'none'; boot(); }
   function initLock(){ if(localStorage.getItem(AUTH_STORAGE_KEY)){ els.lockOverlay.style.display='none'; boot(); return; } els.lockBtn.addEventListener('click', unlockWithPassword); els.lockInput.addEventListener('keydown', e => { if(e.key === 'Enter') unlockWithPassword(); }); setTimeout(()=>els.lockInput.focus(),80); }
 
-  els.searchInput.addEventListener('input', function(){ state.filters.q = this.value || ''; applyFilters(); });
+  function getSearchText(){
+    if(!els.searchInput) return '';
+    return String(els.searchInput.textContent || '').trim();
+  }
+  function clearSearchAutofillValue(){
+    if(!els.searchInput) return;
+    els.searchInput.textContent = '';
+    state.filters.q = '';
+  }
+  function hardLockSearchAutofill(){
+    if(!els.searchInput) return;
+    els.searchInput.setAttribute('contenteditable', 'false');
+    els.searchInput.setAttribute('autocomplete', 'off');
+    els.searchInput.setAttribute('autocorrect', 'off');
+    els.searchInput.setAttribute('autocapitalize', 'off');
+    els.searchInput.setAttribute('spellcheck', 'false');
+    els.searchInput.setAttribute('data-lpignore', 'true');
+    els.searchInput.setAttribute('data-form-type', 'other');
+    if(!els.searchInput.dataset.userTouched){ clearSearchAutofillValue(); }
+  }
+  function unlockSearchByUserAction(){
+    if(!els.searchInput) return;
+    els.searchInput.dataset.userTouched = '1';
+    els.searchInput.setAttribute('contenteditable', 'true');
+    window.setTimeout(function(){ try{ els.searchInput.focus(); }catch(e){} }, 0);
+  }
+  if(els.searchInput){
+    hardLockSearchAutofill();
+    els.searchInput.addEventListener('pointerdown', unlockSearchByUserAction);
+    els.searchInput.addEventListener('mousedown', unlockSearchByUserAction);
+    els.searchInput.addEventListener('touchstart', unlockSearchByUserAction, { passive:true });
+    els.searchInput.addEventListener('focus', function(){
+      if(!els.searchInput.dataset.userTouched){ hardLockSearchAutofill(); try{ els.searchInput.blur(); }catch(e){} }
+    });
+    els.searchInput.addEventListener('blur', function(){
+      if(!getSearchText()){ els.searchInput.dataset.userTouched = ''; hardLockSearchAutofill(); }
+    });
+    els.searchInput.addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); try{ els.searchInput.blur(); }catch(err){} }
+    });
+    els.searchInput.addEventListener('paste', function(e){
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData).getData('text') || '';
+      document.execCommand('insertText', false, pasted.replace(/[\r\n\t]+/g, ' '));
+    });
+    els.searchInput.addEventListener('input', function(){
+      els.searchInput.dataset.userTouched = '1';
+      state.filters.q = getSearchText();
+      applyFilters();
+    });
+    [80,300,1000,1800].forEach(function(delay){
+      window.setTimeout(function(){
+        if(document.activeElement !== els.searchInput && !els.searchInput.dataset.userTouched){ hardLockSearchAutofill(); }
+      }, delay);
+    });
+    window.addEventListener('pageshow', function(){
+      if(document.activeElement !== els.searchInput){ els.searchInput.dataset.userTouched = ''; hardLockSearchAutofill(); }
+    });
+  }
   els.chipbar.addEventListener('click', onChipClick);
   els.reloadBtn.addEventListener('click', function(){ location.reload(); });
   els.baseParcelToggle.addEventListener('click', function(){ state.showBaseParcels = !state.showBaseParcels; this.textContent = state.showBaseParcels ? '현재화면 필지 ON' : '현재화면 필지 OFF'; this.classList.toggle('ghost', !state.showBaseParcels); if(state.showBaseParcels) scheduleBaseParcelFetch(); else clearPolygonMap(state.basePolygons); });

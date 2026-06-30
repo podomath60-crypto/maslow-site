@@ -460,11 +460,30 @@
     return '#0f7cff';
   }
   function markerIconForItem(item, selected){
+    // 네이버 지도 Marker의 HTML content는 size가 없으면 환경에 따라 0px로 클리핑될 수 있다.
+    // 그래서 실제 지도 표시용은 작은 SVG data URL로 고정한다.
     const color = markerColorForItem(item);
-    const cls = selected ? 'pm-marker is-selected' : 'pm-marker';
+    const w = selected ? 20 : 16;
+    const h = selected ? 28 : 22;
+    const stroke = selected ? '#facc15' : '#ffffff';
+    const strokeWidth = selected ? 2.8 : 2;
+    const cx = w / 2;
+    const r = selected ? 6.7 : 5.2;
+    const top = selected ? 3.5 : 2.6;
+    const lineTop = selected ? 16 : 13;
+    const lineBottom = h - 2;
+    const svg = [
+      '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">',
+      '<path d="M' + cx + ' ' + lineBottom + ' L' + cx + ' ' + lineTop + '" stroke="' + color + '" stroke-width="2.2" stroke-linecap="round"/>',
+      '<circle cx="' + cx + '" cy="' + (top + r) + '" r="' + r + '" fill="' + color + '" stroke="' + stroke + '" stroke-width="' + strokeWidth + '"/>',
+      '<circle cx="' + cx + '" cy="' + (top + r) + '" r="1.8" fill="#ffffff" opacity="0.96"/>',
+      '</svg>'
+    ].join('');
     return {
-      content:'<div class="' + cls + '" style="--pin:' + color + '"><i class="pm-dot"></i></div>',
-      anchor:new naver.maps.Point(selected ? 10 : 8, selected ? 28 : 22)
+      url:'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+      size:new naver.maps.Size(w, h),
+      scaledSize:new naver.maps.Size(w, h),
+      anchor:new naver.maps.Point(Math.round(w / 2), h)
     };
   }
   function getItemPoint(item){

@@ -1,6 +1,8 @@
 const {
   VWORLD_DATA_URL,
+  VWORLD_DATA_HTTP_URL,
   VWORLD_WFS_URL,
+  VWORLD_WFS_HTTP_URL,
   CADASTRAL_DATA_ID,
   sendJson,
   getInput,
@@ -30,6 +32,27 @@ function sanitizeUrl(url) {
 
 function bodySnippet(body) {
   return String(body || '').slice(0, 700);
+}
+
+function sanitizeParams(params) {
+  const out = {};
+  for (const [key, value] of params.entries()) {
+    if (/^(key|apikey|servicekey)$/i.test(key)) out[key] = '***';
+    else out[key] = value;
+  }
+  return out;
+}
+
+function summarizeFetchError(e) {
+  return {
+    message: text(e && e.message) || 'FETCH_FAILED',
+    name: e && e.name || '',
+    status: e && e.status || '',
+    statusText: e && e.statusText || '',
+    causeCode: e && e.causeCode || '',
+    causeMessage: e && e.causeMessage || '',
+    body: bodySnippet(e && e.body)
+  };
 }
 
 function summarizePayload(payload) {
@@ -106,40 +129,49 @@ async function requestVworldData(paramsObj, req, timeoutMs = 25000, logs, phase 
     size: '1000',
     ...paramsObj
   });
-  const url = `${VWORLD_DATA_URL}?${params.toString()}`;
-  pushDebug(logs, {
-    phase: `${phase}:request`,
-    api: 'vworld-data',
-    url: sanitizeUrl(url),
-    domain,
-    data: CADASTRAL_DATA_ID,
-    params: Object.fromEntries(params.entries())
-  });
-  try {
-    const payload = await fetchJsonWithTimeout(url, timeoutMs);
+  const endpoints = [
+    { label: 'https', base: VWORLD_DATA_URL },
+    { label: 'http', base: VWORLD_DATA_HTTP_URL }
+  ].filter((entry) => entry.base);
+  const errors = [];
+  for (const endpoint of endpoints) {
+    const url = `${endpoint.base}?${params.toString()}`;
     pushDebug(logs, {
-      phase: `${phase}:response`,
+      phase: `${phase}:request:${endpoint.label}`,
       api: 'vworld-data',
-      summary: summarizePayload(payload)
+      url: sanitizeUrl(url),
+      domain,
+      data: CADASTRAL_DATA_ID,
+      params: sanitizeParams(params)
     });
-    assertVworldOk(payload, 'VWORLD_DATA');
-    return payload;
-  } catch (e) {
-    pushDebug(logs, {
-      phase: `${phase}:error`,
-      api: 'vworld-data',
-      message: text(e && e.message) || 'FETCH_FAILED',
-      status: e && e.status || '',
-      body: bodySnippet(e && e.body)
-    });
-    throw enrichError(e, logs);
+    try {
+      const payload = await fetchJsonWithTimeout(url, timeoutMs);
+      pushDebug(logs, {
+        phase: `${phase}:response:${endpoint.label}`,
+        api: 'vworld-data',
+        summary: summarizePayload(payload)
+      });
+      assertVworldOk(payload, 'VWORLD_DATA');
+      return payload;
+    } catch (e) {
+      const summary = summarizeFetchError(e);
+      errors.push(`${endpoint.label}:${summary.message}${summary.status ? ':' + summary.status : ''}${summary.causeMessage ? ':' + summary.causeMessage : ''}`);
+      pushDebug(logs, {
+        phase: `${phase}:error:${endpoint.label}`,
+        api: 'vworld-data',
+        ...summary
+      });
+    }
   }
+  const err = new Error(errors.join(' / ') || 'VWORLD_DATA_FETCH_FAILED');
+  throw enrichError(err, logs);
 }
+
 
 async function requestVworldWfs(paramsObj, req, timeoutMs = 25000, logs, phase = 'wfs') {
   const key = getVworldKey();
   if (!key) throw enrichError(new Error('VWORLD_API_KEY 환경변수가 없습니다.'), logs);
-  if (!VWORLD_WFS_URL) throw enrichError(new Error('VWORLD_WFS_URL 상수가 export되지 않았습니다.'), logs);
+  if (!VWORLD_WFS_URL && !VWORLD_WFS_HTTP_URL) throw enrichError(new Error('VWORLD_WFS_URL 상수가 export되지 않았습니다.'), logs);
   const domain = getVworldDomain(req);
   const params = appendDefinedParams(new URLSearchParams(), {
     service: 'WFS',
@@ -153,34 +185,43 @@ async function requestVworldWfs(paramsObj, req, timeoutMs = 25000, logs, phase =
     maxFeatures: '1000',
     ...paramsObj
   });
-  const url = `${VWORLD_WFS_URL}?${params.toString()}`;
-  pushDebug(logs, {
-    phase: `${phase}:request`,
-    api: 'vworld-wfs',
-    url: sanitizeUrl(url),
-    domain,
-    typename: CADASTRAL_DATA_ID,
-    params: Object.fromEntries(params.entries())
-  });
-  try {
-    const payload = await fetchJsonWithTimeout(url, timeoutMs);
+  const endpoints = [
+    { label: 'https', base: VWORLD_WFS_URL },
+    { label: 'http', base: VWORLD_WFS_HTTP_URL }
+  ].filter((entry) => entry.base);
+  const errors = [];
+  for (const endpoint of endpoints) {
+    const url = `${endpoint.base}?${params.toString()}`;
     pushDebug(logs, {
-      phase: `${phase}:response`,
+      phase: `${phase}:request:${endpoint.label}`,
       api: 'vworld-wfs',
-      summary: summarizePayload(payload)
+      url: sanitizeUrl(url),
+      domain,
+      typename: CADASTRAL_DATA_ID,
+      params: sanitizeParams(params)
     });
-    return payload;
-  } catch (e) {
-    pushDebug(logs, {
-      phase: `${phase}:error`,
-      api: 'vworld-wfs',
-      message: text(e && e.message) || 'FETCH_FAILED',
-      status: e && e.status || '',
-      body: bodySnippet(e && e.body)
-    });
-    throw enrichError(e, logs);
+    try {
+      const payload = await fetchJsonWithTimeout(url, timeoutMs);
+      pushDebug(logs, {
+        phase: `${phase}:response:${endpoint.label}`,
+        api: 'vworld-wfs',
+        summary: summarizePayload(payload)
+      });
+      return payload;
+    } catch (e) {
+      const summary = summarizeFetchError(e);
+      errors.push(`${endpoint.label}:${summary.message}${summary.status ? ':' + summary.status : ''}${summary.causeMessage ? ':' + summary.causeMessage : ''}`);
+      pushDebug(logs, {
+        phase: `${phase}:error:${endpoint.label}`,
+        api: 'vworld-wfs',
+        ...summary
+      });
+    }
   }
+  const err = new Error(errors.join(' / ') || 'VWORLD_WFS_FETCH_FAILED');
+  throw enrichError(err, logs);
 }
+
 
 async function fetchByPnu(pnu, req, logs) {
   const payload = await requestVworldData({

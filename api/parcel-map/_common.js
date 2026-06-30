@@ -1,7 +1,9 @@
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
 const VWORLD_DATA_URL = 'https://api.vworld.kr/req/data';
+const VWORLD_DATA_HTTP_URL = 'http://api.vworld.kr/req/data';
 const VWORLD_SEARCH_URL = 'https://api.vworld.kr/req/search';
 const VWORLD_WFS_URL = 'https://api.vworld.kr/req/wfs';
+const VWORLD_WFS_HTTP_URL = 'http://api.vworld.kr/req/wfs';
 const CADASTRAL_DATA_ID = 'LP_PA_CBND_BUBUN';
 
 function sendJson(res, status, payload) {
@@ -111,13 +113,17 @@ async function fetchJsonWithTimeout(url, timeoutMs = 25000) {
   try {
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Accept': 'application/json, text/plain, */*' },
+      headers: {
+        'Accept': 'application/json, text/plain, */*',
+        'User-Agent': 'Mozilla/5.0 (compatible; MaslowParcelMap/1.0)'
+      },
       signal: controller.signal
     });
     const body = await res.text();
     if (!res.ok) {
       const err = new Error(`HTTP_${res.status}`);
       err.status = res.status;
+      err.statusText = res.statusText || '';
       err.body = body;
       throw err;
     }
@@ -126,10 +132,17 @@ async function fetchJsonWithTimeout(url, timeoutMs = 25000) {
       err.body = body;
       throw err;
     }
+  } catch (e) {
+    if (!e.status && e && e.cause) {
+      e.causeMessage = e.cause.message || String(e.cause || '');
+      e.causeCode = e.cause.code || '';
+    }
+    throw e;
   } finally {
     clearTimeout(timer);
   }
 }
+
 
 function uniquePnuList(values) {
   const out = [];
@@ -190,8 +203,10 @@ function normalizeFeatureCollection(payload) {
 module.exports = {
   GAS_URL,
   VWORLD_DATA_URL,
+  VWORLD_DATA_HTTP_URL,
   VWORLD_SEARCH_URL,
   VWORLD_WFS_URL,
+  VWORLD_WFS_HTTP_URL,
   CADASTRAL_DATA_ID,
   sendJson,
   getInput,

@@ -2386,6 +2386,8 @@
           <label class="dashboard-status-choice"><input id="dashboardStatusNeedsWork" type="checkbox"> <span>작업필요</span></label>
           <label class="dashboard-status-choice"><input id="dashboardStatusNeedsPhoto" type="checkbox"> <span>사진필요</span></label>
           <label class="dashboard-status-choice"><input id="dashboardStatusNeedsContact" type="checkbox"> <span>컨택필요</span></label>
+          <label class="dashboard-status-choice"><input id="dashboardStatusDealDone" type="checkbox"> <span>거래완료</span></label>
+          <label class="dashboard-status-choice"><input id="dashboardStatusReviewHold" type="checkbox"> <span>검토보류</span></label>
         </div>
       </section>
 
@@ -4385,10 +4387,12 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
           internal: src.internal === true,
           needsWork: src.needsWork === true,
           needsPhoto: src.needsPhoto === true,
-          needsContact: src.needsContact === true
+          needsContact: src.needsContact === true,
+          dealDone: src.dealDone === true,
+          reviewHold: src.reviewHold === true
         };
       }catch(e){
-        return { internal:false, needsWork:false, needsPhoto:false, needsContact:false };
+        return { internal:false, needsWork:false, needsPhoto:false, needsContact:false, dealDone:false, reviewHold:false };
       }
     }
 
@@ -4398,7 +4402,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         internal: src.internal === true,
         needsWork: src.needsWork === true,
         needsPhoto: src.needsPhoto === true,
-        needsContact: src.needsContact === true
+        needsContact: src.needsContact === true,
+        dealDone: src.dealDone === true,
+        reviewHold: src.reviewHold === true
       });
     }
 
@@ -4409,6 +4415,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(status.needsWork) labels.push('작업필요');
       if(status.needsPhoto) labels.push('사진필요');
       if(status.needsContact) labels.push('컨택필요');
+      if(status.dealDone) labels.push('거래완료');
+      if(status.reviewHold) labels.push('검토보류');
       return labels;
     }
 
@@ -4451,6 +4459,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const needsWorkInput = document.getElementById('dashboardStatusNeedsWork');
       const needsPhotoInput = document.getElementById('dashboardStatusNeedsPhoto');
       const needsContactInput = document.getElementById('dashboardStatusNeedsContact');
+      const dealDoneInput = document.getElementById('dashboardStatusDealDone');
+      const reviewHoldInput = document.getElementById('dashboardStatusReviewHold');
       const kind = getDashboardPropertyKind(item);
       const currentStatus = text(item.status).toLowerCase() === 'visible' ? 'visible' : 'hidden';
       const dashboardStatus = parseDashboardStatusJson(item.dashboardStatusJson);
@@ -4467,6 +4477,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(needsWorkInput) needsWorkInput.checked = dashboardStatus.needsWork === true;
       if(needsPhotoInput) needsPhotoInput.checked = dashboardStatus.needsPhoto === true;
       if(needsContactInput) needsContactInput.checked = dashboardStatus.needsContact === true;
+      if(dealDoneInput) dealDoneInput.checked = dashboardStatus.dealDone === true;
+      if(reviewHoldInput) reviewHoldInput.checked = dashboardStatus.reviewHold === true;
 
       document.querySelectorAll('#dashboardPropertyKindRow [data-kind]').forEach(function(el){
         el.classList.toggle('is-active', el.getAttribute('data-kind') === kind);
@@ -4509,7 +4521,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         internal: !!(document.getElementById('dashboardStatusInternal') && document.getElementById('dashboardStatusInternal').checked),
         needsWork: !!(document.getElementById('dashboardStatusNeedsWork') && document.getElementById('dashboardStatusNeedsWork').checked),
         needsPhoto: !!(document.getElementById('dashboardStatusNeedsPhoto') && document.getElementById('dashboardStatusNeedsPhoto').checked),
-        needsContact: !!(document.getElementById('dashboardStatusNeedsContact') && document.getElementById('dashboardStatusNeedsContact').checked)
+        needsContact: !!(document.getElementById('dashboardStatusNeedsContact') && document.getElementById('dashboardStatusNeedsContact').checked),
+        dealDone: !!(document.getElementById('dashboardStatusDealDone') && document.getElementById('dashboardStatusDealDone').checked),
+        reviewHold: !!(document.getElementById('dashboardStatusReviewHold') && document.getElementById('dashboardStatusReviewHold').checked)
       };
 
       const prevDashboardStatus = parseDashboardStatusJson(item && item.dashboardStatusJson);
@@ -4518,7 +4532,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         prevDashboardStatus.internal === nextDashboardStatus.internal &&
         prevDashboardStatus.needsWork === nextDashboardStatus.needsWork &&
         prevDashboardStatus.needsPhoto === nextDashboardStatus.needsPhoto &&
-        prevDashboardStatus.needsContact === nextDashboardStatus.needsContact;
+        prevDashboardStatus.needsContact === nextDashboardStatus.needsContact &&
+        prevDashboardStatus.dealDone === nextDashboardStatus.dealDone &&
+        prevDashboardStatus.reviewHold === nextDashboardStatus.reviewHold;
 
       closeDashboardStatusModal();
 

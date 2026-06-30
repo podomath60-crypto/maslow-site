@@ -54,6 +54,9 @@
     .stat-num b{display:block;font-size:15px;font-weight:1000;line-height:1}
     .stat-num span{display:block;margin-top:4px;font-size:10px;font-weight:850;color:var(--muted)}
     .map-note{position:absolute;right:14px;bottom:14px;z-index:20;max-width:360px;padding:10px 12px;border-radius:16px;background:rgba(17,24,39,.86);color:#fff;font-size:12px;font-weight:850;line-height:1.35;box-shadow:0 14px 34px rgba(15,23,42,.22)}
+    .patch-panel{position:absolute;left:14px;bottom:14px;z-index:35;width:360px;max-width:calc(100vw - var(--right) - 44px);max-height:46vh;overflow:auto;padding:12px 13px;border-radius:18px;background:rgba(17,24,39,.92);color:#fff;border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 44px rgba(15,23,42,.28);font-size:12px;font-weight:800;line-height:1.35;pointer-events:auto;backdrop-filter:blur(10px)}
+    .patch-panel-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:13px;font-weight:1000;color:#fff}.patch-panel-title span{font-size:10px;font-weight:900;color:#cbd5e1}.patch-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}.patch-kv{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);border-radius:12px;padding:7px 8px}.patch-kv b{display:block;font-size:14px;font-weight:1000;color:#fff;line-height:1}.patch-kv span{display:block;margin-top:4px;font-size:10px;color:#cbd5e1;font-weight:900}.patch-line{border-top:1px solid rgba(255,255,255,.12);padding-top:7px;margin-top:7px;color:#e5e7eb;word-break:break-all}.patch-line b{color:#fff}.patch-actions{display:flex;gap:6px;margin-top:8px}.patch-actions button{height:28px;border-radius:9px;background:#fff;color:#111827;padding:0 9px;font-size:11px;font-weight:1000}.patch-actions button.dark{background:#334155;color:#fff}.patch-sample{margin-top:7px;padding:7px 8px;border-radius:11px;background:rgba(0,0,0,.20);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:10px;line-height:1.35;white-space:pre-wrap;color:#dbeafe}
+
     .panel{min-width:0;min-height:0;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;box-shadow:-18px 0 44px rgba(15,23,42,.08);z-index:30}
     .panel-head{padding:16px 16px 12px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex:0 0 auto}
     .panel-head-title{font-size:17px;font-weight:1000;line-height:1.2}
@@ -86,7 +89,7 @@
     .modal{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.46);padding:18px}.modal.show{display:flex}.modal-card{width:min(460px,100%);border-radius:24px;background:#fff;box-shadow:var(--shadow);border:1px solid var(--line);padding:18px}.modal-title{font-size:18px;font-weight:1000;margin-bottom:4px}.modal-sub{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:14px}.modal-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:14px;font-weight:850}.modal-row input{width:18px;height:18px}.modal-radio{display:flex;gap:8px;margin-bottom:14px}.modal-radio label{flex:1;height:38px;border-radius:13px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:1000}.modal-radio input{display:none}.modal-radio label:has(input:checked){background:#0f7cff;color:#fff;border-color:#0f7cff}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.modal-btn{height:40px;padding:0 14px;border-radius:13px;background:#f2f4f7;color:#111827;font-weight:1000}.modal-btn.primary{background:#0f7cff;color:#fff}.memo-area{width:100%;min-height:180px;resize:vertical;border:1px solid var(--line);border-radius:16px;padding:12px;font-size:14px;font-weight:750;outline:0;line-height:1.45}.memo-area:focus{border-color:#0f7cff;box-shadow:0 0 0 3px rgba(15,124,255,.12)}
     .lock{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#ffffff 0%,#eef4ff 100%);padding:24px}.lock-card{width:min(360px,100%);border-radius:28px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);padding:24px;text-align:center}.lock-card h1{font-size:22px;margin:0 0 6px;font-weight:1000}.lock-card p{font-size:13px;font-weight:800;color:var(--muted);margin:0 0 16px}.lock-input{width:100%;height:48px;border:1px solid var(--line);border-radius:16px;text-align:center;font-size:22px;font-weight:1000;outline:0}.lock-btn{width:100%;height:46px;border-radius:16px;background:#111827;color:#fff;font-weight:1000;margin-top:10px}.lock-error{min-height:18px;margin-top:8px;font-size:12px;font-weight:900;color:#e11d48}
     @media (max-width:900px){
-      :root{--top:112px}.topbar{height:112px;align-items:flex-start;flex-wrap:wrap;padding:10px}.page-title{min-width:120px}.search{order:3;flex:1 0 100%;min-width:0}.chipbar{order:4;flex:1 0 100%;max-width:100%}.toolbar-actions{margin-left:auto}.main{display:block}.map-wrap{position:absolute;inset:var(--top) 0 0 0}.panel{position:fixed;left:0;right:0;bottom:0;height:42vh;border-left:0;border-top:1px solid var(--line);border-radius:24px 24px 0 0;transform:translateY(calc(100% - 64px));transition:transform .22s ease;box-shadow:0 -18px 44px rgba(15,23,42,.16)}.panel.is-open{transform:translateY(0)}.panel-head{padding:13px 14px}.panel-close{display:inline-flex;align-items:center;justify-content:center}.panel-body{padding:12px 14px 22px}.stat-card{width:calc(100vw - 28px);max-width:360px}.map-note{left:14px;right:14px;bottom:72px;max-width:none}.spec-grid{grid-template-columns:1fr 1fr}.actions{grid-template-columns:repeat(2,1fr)}}
+      :root{--top:112px}.topbar{height:112px;align-items:flex-start;flex-wrap:wrap;padding:10px}.page-title{min-width:120px}.search{order:3;flex:1 0 100%;min-width:0}.chipbar{order:4;flex:1 0 100%;max-width:100%}.toolbar-actions{margin-left:auto}.main{display:block}.map-wrap{position:absolute;inset:var(--top) 0 0 0}.panel{position:fixed;left:0;right:0;bottom:0;height:42vh;border-left:0;border-top:1px solid var(--line);border-radius:24px 24px 0 0;transform:translateY(calc(100% - 64px));transition:transform .22s ease;box-shadow:0 -18px 44px rgba(15,23,42,.16)}.panel.is-open{transform:translateY(0)}.panel-head{padding:13px 14px}.panel-close{display:inline-flex;align-items:center;justify-content:center}.panel-body{padding:12px 14px 22px}.stat-card{width:calc(100vw - 28px);max-width:360px}.map-note{left:14px;right:14px;bottom:72px;max-width:none}.patch-panel{left:14px;right:14px;bottom:132px;width:auto;max-width:none;max-height:28vh}.spec-grid{grid-template-columns:1fr 1fr}.actions{grid-template-columns:repeat(2,1fr)}}
   </style>
 </head>
 <body>
@@ -128,6 +131,21 @@
               <div class="stat-num"><b id="statNoPnu">0</b><span>미확정</span></div>
             </div>
           </div>
+        </div>
+        <div class="patch-panel" id="patchPanel">
+          <div class="patch-panel-title">패치 진단 패널 <span id="patchUpdated">-</span></div>
+          <div class="patch-grid">
+            <div class="patch-kv"><b id="dbgItems">0</b><span>매물 rows</span></div>
+            <div class="patch-kv"><b id="dbgActualMarkers">0</b><span>실제 marker</span></div>
+            <div class="patch-kv"><b id="dbgPointInputs">0</b><span>좌표 후보</span></div>
+            <div class="patch-kv"><b id="dbgInBounds">0</b><span>화면 안 marker</span></div>
+            <div class="patch-kv"><b id="dbgGeocode">0/0</b><span>geocode 성공/실패</span></div>
+            <div class="patch-kv"><b id="dbgRender">0</b><span>render calls</span></div>
+          </div>
+          <div class="patch-line"><b>지도</b> <span id="dbgMap">-</span></div>
+          <div class="patch-line"><b>마지막 오류</b> <span id="dbgError">없음</span></div>
+          <div class="patch-line"><b>좌표 샘플</b><div class="patch-sample" id="dbgSample">-</div></div>
+          <div class="patch-actions"><button id="dbgRefresh" type="button">진단 새로고침</button><button id="dbgClearCache" class="dark" type="button">지오캐시 삭제</button></div>
         </div>
         <div class="map-note" id="mapNote">처음에는 네이버 지오코딩 매물 핀만 표시합니다. 핀을 클릭하면 해당 매물 필지만 조회합니다.</div>
         <div class="loading" id="loading"><div class="loading-card"><div class="spinner"></div><b id="loadingTitle">불러오는 중</b><p id="loadingText">잠시만 기다려 주세요.</p></div></div>
@@ -220,7 +238,20 @@
     showBaseParcels:false,
     baseFetchTimer:null,
     statusEditingItem:null,
-    memoEditingItem:null
+    memoEditingItem:null,
+    debug:{
+      renderCalls:0,
+      markerAttempts:0,
+      markerCreated:0,
+      markerSkippedNoPoint:0,
+      markerCreateErrors:0,
+      geocodeSuccess:0,
+      geocodeFail:0,
+      lastError:'',
+      lastGeocodeQuery:'',
+      firstPointSamples:[],
+      badPointSamples:[]
+    }
   };
 
   const els = {
@@ -230,14 +261,70 @@
     baseParcelToggle:document.getElementById('baseParcelToggle'), reloadBtn:document.getElementById('reloadBtn'),
     statusModal:document.getElementById('statusModal'), statusModalSub:document.getElementById('statusModalSub'), statusCancel:document.getElementById('statusCancel'), statusSave:document.getElementById('statusSave'),
     memoModal:document.getElementById('memoModal'), memoModalSub:document.getElementById('memoModalSub'), memoTextarea:document.getElementById('memoTextarea'), memoCancel:document.getElementById('memoCancel'), memoSave:document.getElementById('memoSave'),
-    lockOverlay:document.getElementById('lockOverlay'), lockInput:document.getElementById('lockInput'), lockBtn:document.getElementById('lockBtn'), lockError:document.getElementById('lockError')
+    lockOverlay:document.getElementById('lockOverlay'), lockInput:document.getElementById('lockInput'), lockBtn:document.getElementById('lockBtn'), lockError:document.getElementById('lockError'),
+    patchPanel:document.getElementById('patchPanel'), patchUpdated:document.getElementById('patchUpdated'), dbgItems:document.getElementById('dbgItems'), dbgActualMarkers:document.getElementById('dbgActualMarkers'), dbgPointInputs:document.getElementById('dbgPointInputs'), dbgInBounds:document.getElementById('dbgInBounds'), dbgGeocode:document.getElementById('dbgGeocode'), dbgRender:document.getElementById('dbgRender'), dbgMap:document.getElementById('dbgMap'), dbgError:document.getElementById('dbgError'), dbgSample:document.getElementById('dbgSample'), dbgRefresh:document.getElementById('dbgRefresh'), dbgClearCache:document.getElementById('dbgClearCache')
   };
 
   function text(v){ return v == null ? '' : String(v).trim(); }
   function escapeHtml(v){ return text(v).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
   function showLoading(title, message){ els.loadingTitle.textContent = title || '불러오는 중'; els.loadingText.textContent = message || ''; els.loading.classList.add('show'); }
   function hideLoading(){ els.loading.classList.remove('show'); }
-  function setLoadState(v){ els.loadState.textContent = v || ''; }
+  function setLoadState(v){ els.loadState.textContent = v || ''; updatePatchPanel(); }
+  function isKoreaLatLng(lat, lng){ return Number.isFinite(lat) && Number.isFinite(lng) && lat >= 33 && lat <= 39.5 && lng >= 124 && lng <= 132.5; }
+  function isSwappedKoreaLatLng(lat, lng){ return Number.isFinite(lat) && Number.isFinite(lng) && lng >= 33 && lng <= 39.5 && lat >= 124 && lat <= 132.5; }
+  function safeMapCenterText(){
+    try{ if(!state.mapReady || !state.map) return 'mapReady=false'; const c = state.map.getCenter(); const z = state.map.getZoom && state.map.getZoom(); return 'ready=true / zoom=' + z + ' / center=' + Number(c.lat()).toFixed(6) + ',' + Number(c.lng()).toFixed(6); }catch(e){ return 'map info error: ' + (e.message || e); }
+  }
+  function countMarkersInBounds(){
+    if(!state.mapReady || !state.map || !state.markers) return 0;
+    let count = 0;
+    try{
+      const b = state.map.getBounds && state.map.getBounds();
+      state.markers.forEach(marker => {
+        try{
+          const pos = marker && marker.getPosition && marker.getPosition();
+          if(!pos) return;
+          if(b && typeof b.hasLatLng === 'function'){ if(b.hasLatLng(pos)) count += 1; }
+          else count += 1;
+        }catch(e){}
+      });
+    }catch(e){}
+    return count;
+  }
+  function collectPointDiagnostics(limit){
+    const out = [];
+    const bad = [];
+    (state.filteredItems || state.items || []).forEach(item => {
+      const rawLat = Number(item && item.lat);
+      const rawLng = Number(item && item.lng);
+      const has = Number.isFinite(rawLat) && Number.isFinite(rawLng);
+      if(has && out.length < limit){ out.push({no:item.listingNumber || '', lat:rawLat, lng:rawLng, ok:isKoreaLatLng(rawLat, rawLng), swapped:isSwappedKoreaLatLng(rawLat, rawLng), addr:item.address || item.geocodeAddress || ''}); }
+      if(has && !isKoreaLatLng(rawLat, rawLng) && bad.length < limit){ bad.push({no:item.listingNumber || '', lat:rawLat, lng:rawLng, swapped:isSwappedKoreaLatLng(rawLat, rawLng), addr:item.address || item.geocodeAddress || ''}); }
+    });
+    return {out, bad};
+  }
+  function updatePatchPanel(){
+    if(!els.dbgItems) return;
+    const pointInputs = (state.filteredItems || []).filter(item => {
+      const lat = Number(item && item.lat), lng = Number(item && item.lng);
+      return Number.isFinite(lat) && Number.isFinite(lng);
+    }).length;
+    const diag = collectPointDiagnostics(6);
+    const badCount = (state.filteredItems || []).filter(item => {
+      const lat = Number(item && item.lat), lng = Number(item && item.lng);
+      return Number.isFinite(lat) && Number.isFinite(lng) && !isKoreaLatLng(lat,lng);
+    }).length;
+    els.dbgItems.textContent = String((state.items || []).length);
+    els.dbgActualMarkers.textContent = String(state.markers ? state.markers.size : 0);
+    els.dbgPointInputs.textContent = String(pointInputs) + (badCount ? ' / 이상 ' + badCount : '');
+    els.dbgInBounds.textContent = String(countMarkersInBounds());
+    els.dbgGeocode.textContent = String(state.debug.geocodeSuccess || 0) + '/' + String(state.debug.geocodeFail || 0);
+    els.dbgRender.textContent = String(state.debug.renderCalls || 0);
+    els.dbgMap.textContent = safeMapCenterText();
+    els.dbgError.textContent = state.debug.lastError || '없음';
+    els.dbgSample.textContent = JSON.stringify({samples:diag.out, bad:diag.bad, lastGeocodeQuery:state.debug.lastGeocodeQuery || ''}, null, 2);
+    if(els.patchUpdated) els.patchUpdated.textContent = new Date().toLocaleTimeString('ko-KR', {hour12:false});
+  }
   function getWriterCode(){ const saved = localStorage.getItem(AUTH_STORAGE_KEY) || ''; const pair = Object.entries(PASSWORD_MAP).find(p => p[1] === saved); return pair ? pair[0] : ''; }
 
   function fetchJson(url, options){ return fetch(url, options).then(res => res.json().then(data => { if(!res.ok || !data || data.ok === false){ throw new Error((data && (data.message || data.error)) || ('HTTP ' + res.status)); } return data; })); }
@@ -333,6 +420,7 @@
     window.addEventListener('resize', forceMapResize);
     naver.maps.Event.addListener(state.map, 'idle', function(){
       if(state.showBaseParcels) scheduleBaseParcelFetch();
+      updatePatchPanel();
     });
   }
 
@@ -340,6 +428,7 @@
     setLoadState('매물');
     const data = await fetchJson('/api/parcel-map/listings', { method:'GET' });
     state.items = Array.isArray(data.items) ? data.items : [];
+    updatePatchPanel();
     rebuildPnuIndex();
     applyFilters();
     return data;
@@ -416,6 +505,7 @@
     els.statPnu.textContent = pnu;
     els.statNoPnu.textContent = noPnu;
     els.statSub.textContent = '필터 ' + shown + '건 / 지도핀 ' + markerShown + '건 / PNU 확정 ' + pnu + '건 / 미확정 ' + noPnu + '건';
+    updatePatchPanel();
   }
 
   function coordinatesToPaths(geometry){
@@ -484,7 +574,12 @@
   function getItemPoint(item){
     const lat = Number(item && item.lat);
     const lng = Number(item && item.lng);
-    if(Number.isFinite(lat) && Number.isFinite(lng)) return {lat,lng};
+    if(isKoreaLatLng(lat, lng)) return {lat,lng};
+    if(isSwappedKoreaLatLng(lat, lng)){
+      item.lat = lng;
+      item.lng = lat;
+      return {lat:Number(item.lat),lng:Number(item.lng)};
+    }
     return null;
   }
   function geocodeKeyForItem(item){
@@ -533,6 +628,7 @@
     if(applyCachedPoint(item)) return true;
     const query = geocodeKeyForItem(item);
     if(!query) return false;
+    state.debug.lastGeocodeQuery = query;
     try{
       const data = await fetchJsonWithTimeout('/api/route-setting/geocode', {
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query})
@@ -544,6 +640,7 @@
       item.resolvedAddress = result.resolvedAddress || '';
       item.roadAddress = result.roadAddress || '';
       item.jibunAddress = result.jibunAddress || '';
+      state.debug.geocodeSuccess += 1;
       state.geocodeCache.set(query, {
         lat:item.lat,
         lng:item.lng,
@@ -555,7 +652,10 @@
       saveGeocodeCache();
       return true;
     }catch(err){
+      state.debug.geocodeFail += 1;
+      state.debug.lastError = 'geocode: ' + query + ' / ' + (err.message || err);
       console.warn('지오코딩 실패', query, err);
+      updatePatchPanel();
       return false;
     }
   }
@@ -600,23 +700,37 @@
     }
   }
   function renderMarkers(){
-    if(!state.mapReady) return;
+    if(!state.mapReady){ updatePatchPanel(); return; }
+    state.debug.renderCalls += 1;
+    state.debug.markerAttempts = 0;
+    state.debug.markerCreated = 0;
+    state.debug.markerSkippedNoPoint = 0;
+    state.debug.markerCreateErrors = 0;
     clearMarkerMap(state.markers);
-    state.filteredItems.forEach(item => {
+    state.filteredItems.forEach((item, idx) => {
       const point = getItemPoint(item);
-      if(!point) return;
-      const selected = state.selectedItem && state.selectedItem.listingNumber === item.listingNumber;
-      const marker = new naver.maps.Marker({
-        position:new naver.maps.LatLng(point.lat, point.lng),
-        map:state.map,
-        title:item.title || item.address || item.listingNumber,
-        icon:markerIconForItem(item, selected),
-        clickable:true,
-        zIndex:selected ? 900 : 500
-      });
-      naver.maps.Event.addListener(marker, 'click', function(){ selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item]); });
-      state.markers.set(item.listingNumber, marker);
+      if(!point){ state.debug.markerSkippedNoPoint += 1; return; }
+      state.debug.markerAttempts += 1;
+      try{
+        const selected = state.selectedItem && state.selectedItem.listingNumber === item.listingNumber;
+        const marker = new naver.maps.Marker({
+          position:new naver.maps.LatLng(point.lat, point.lng),
+          map:state.map,
+          title:item.title || item.address || item.listingNumber,
+          icon:markerIconForItem(item, selected),
+          clickable:true,
+          zIndex:selected ? 900 : 500
+        });
+        naver.maps.Event.addListener(marker, 'click', function(){ selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item]); });
+        state.markers.set(item.listingNumber || ('idx-' + idx), marker);
+        state.debug.markerCreated += 1;
+      }catch(err){
+        state.debug.markerCreateErrors += 1;
+        state.debug.lastError = 'marker: ' + (item && (item.listingNumber || item.title) || idx) + ' / ' + (err.message || err);
+        console.error('마커 생성 실패', item, err);
+      }
     });
+    updatePatchPanel();
   }
   function fitToMarkersIfPossible(){
     if(state.hasAutoFitMarkers || !state.mapReady) return;
@@ -1019,6 +1133,8 @@
   els.panelBody.addEventListener('click', handlePanelClick);
   els.statusCancel.addEventListener('click', closeStatusModal); els.statusSave.addEventListener('click', saveStatus); els.statusModal.addEventListener('click', e => { if(e.target === els.statusModal) closeStatusModal(); });
   els.memoCancel.addEventListener('click', closeMemoModal); els.memoSave.addEventListener('click', saveMemo); els.memoModal.addEventListener('click', e => { if(e.target === els.memoModal) closeMemoModal(); });
+  if(els.dbgRefresh) els.dbgRefresh.addEventListener('click', updatePatchPanel);
+  if(els.dbgClearCache) els.dbgClearCache.addEventListener('click', function(){ try{ localStorage.removeItem('PARCEL_MAP_GEOCODE_CACHE_V1'); state.geocodeCache.clear(); state.debug.geocodeSuccess = 0; state.debug.geocodeFail = 0; state.debug.lastError = '지오캐시 삭제됨'; updatePatchPanel(); }catch(e){} });
   setFilterChipActive(); initLock();
 })();
 </script>

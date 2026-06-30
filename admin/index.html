@@ -3934,7 +3934,7 @@
             mainFacilities: plainText(findSpecValueAnyLabel_('기반시설', '주요 설비')),
             recommendedUse: plainText(findSpecValueAnyLabel_('추천 용도', '추천 업종')),
             restrictedUse: plainText(findSpecValueAnyLabel_('제한사항', '업종 제한')),
-            roadWidth: plainText(findSpecValueAnyLabel_('접도 / 진입로', '도로접면')) || (landSummary && landSummary.roadAccessSummary) || '',
+            roadWidth: plainText(findSpecValueAnyLabel_('접도 / 진입로', '도로접면')),
             doorWidth: '',
             truckAccess: plainText(findSpecValueByLabel_('대형차 진입')),
             loadingAvailable: '',
@@ -4243,7 +4243,10 @@
         }
         var roadAccessText = summary.roadAccessSummary;
         if(roadAccessText){
-          setEditableText_(findSpecValueAnyLabel_('접도 / 진입로', '도로접면'), roadAccessText);
+          var roadAccessEl = findSpecValueAnyLabel_('접도 / 진입로', '도로접면');
+          if(roadAccessEl && !normalizeLookupText_(plainText(roadAccessEl))){
+            setEditableText_(roadAccessEl, roadAccessText);
+          }
         }
         updateTopFields();
         renderNaverMapLink_();
@@ -4962,11 +4965,52 @@
         currentPhotoIndex = photoList.length ? 0 : 0;
       }
 
+      function parsePlainObjectMaybeJson_(value){
+        if(value && typeof value === 'object' && !Array.isArray(value)) return value;
+        if(typeof value !== 'string') return {};
+        var raw = value.trim();
+        if(!raw) return {};
+        try{
+          var parsed = JSON.parse(raw);
+          return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+        }catch(e){
+          return {};
+        }
+      }
+
+      function getLoadedFactoryObject_(item){
+        item = item || {};
+        return parsePlainObjectMaybeJson_(firstNonEmpty_(item.factory, item.factoryJson, item.factoryData));
+      }
+
+      function getLoadedLandSummaryObject_(item){
+        item = item || {};
+        return parsePlainObjectMaybeJson_(firstNonEmpty_(item.landSummary, item.landSummaryJson, item.landSummaryData));
+      }
+
+      function getLoadedRoadAccessText_(item){
+        item = item || {};
+        var factory = getLoadedFactoryObject_(item);
+        var landSummary = getLoadedLandSummaryObject_(item);
+        return normalizeLookupText_(firstNonEmpty_(
+          item.roadWidth,
+          item.roadAccess,
+          item.roadAccessSummary,
+          factory.roadWidth,
+          factory.roadAccess,
+          factory.roadAccessSummary,
+          landSummary.roadAccessSummary,
+          landSummary.roadAccess,
+          landSummary.roadWidth
+        ));
+      }
+
       function applyLoadedPropertyToEditor_(item){
         if(!item) return;
 
         listingNumber = String(item.listingNumber || '').trim();
         selectedListingPrefix = (String(listingNumber || '').trim().toUpperCase().match(/^(SK|MK|DK)-/) || [,''])[1];
+        var loadedRoadAccessText = getLoadedRoadAccessText_(item);
         if(listingNumberField) listingNumberField.textContent = listingNumber;
         listingStatus = String(item.status || 'hidden').trim();
 
@@ -5015,7 +5059,7 @@
         setEditableText_(findSpecValueByLabel_('주요 설비'), item.mainFacilities || '');
         setEditableText_(findSpecValueByLabel_('추천 업종'), item.recommendedUse || '');
         setEditableText_(findSpecValueByLabel_('업종 제한'), item.restrictedUse || '');
-        setEditableText_(findSpecValueAnyLabel_('접도 / 진입로', '도로접면'), item.roadWidth || '');
+        setEditableText_(findSpecValueAnyLabel_('접도 / 진입로', '도로접면'), loadedRoadAccessText || '');
         setEditableText_(findSpecValueByLabel_('도어폭'), item.doorWidth || '');
         setEditableText_(findSpecValueByLabel_('대형차 진입'), item.truckAccess || '');
         setEditableText_(findSpecValueByLabel_('상하차 가능'), item.loadingAvailable || '');
@@ -5044,11 +5088,12 @@
               areaPy: item.landAreaPy || '',
               landCategory: String(item.propertyType || '').replace(/^토지\s*\/\s*/, '').replace(/\s*외$/, ''),
               zoning1: item.zoning || '',
-              roadAccess: item.roadWidth || ''
+              roadAccess: loadedRoadAccessText || ''
             }]);
           }
           renderLandParcels_();
           syncLandSummaryToSharedFields_();
+          loadedRoadAccessText = normalizeLookupText_(plainText(findSpecValueAnyLabel_('접도 / 진입로', '도로접면'))) || loadedRoadAccessText;
         }else{
           landParcels = [];
           renderLandParcels_();
@@ -5063,7 +5108,7 @@
           toggleFactorySectionByListingNumber_();
         }, 0);
 
-        if(!normalizeLookupText_(item.roadWidth) && normalizeLookupText_(item.address)){
+        if(!normalizeLookupText_(loadedRoadAccessText) && normalizeLookupText_(item.address)){
           window.setTimeout(function(){
             refreshRoadSideFromIntegratedLookupForAddress_(item.address, { silent: true });
           }, 0);
@@ -7661,8 +7706,9 @@
           if(!roadWidth) return prev;
           var el = findSpecValueAnyLabel_('접도 / 진입로', '도로접면');
           if(!el) return prev;
-          if(plainText(el) === roadWidth){
-            markLookupFilled_(el);
+          var current = normalizeLookupText_(plainText(el));
+          if(current){
+            if(current === roadWidth) markLookupFilled_(el);
             return prev;
           }
           setEditableText_(el, roadWidth);

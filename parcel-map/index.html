@@ -38,7 +38,10 @@
     .chip.is-active{background:#0f7cff;color:#fff;border-color:#0f7cff}
     .chip.warn.is-active{background:#f97316;border-color:#f97316}
     .chip.red.is-active{background:#ef4444;border-color:#ef4444}
+    .chip.purple.is-active{background:#7c3aed;border-color:#7c3aed}
     .chip.dark.is-active{background:#111827;border-color:#111827}
+    .chip.brown.is-active{background:#a16207;border-color:#a16207}
+    .chip.gray.is-active{background:#64748b;border-color:#64748b}
     .toolbar-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
     .top-btn{height:38px;padding:0 12px;border-radius:12px;background:#111827;color:#fff;font-weight:950;font-size:13px;box-shadow:0 8px 20px rgba(17,24,39,.15)}
     .top-btn.ghost{background:#fff;color:#263445;border:1px solid var(--line);box-shadow:none}
@@ -101,12 +104,12 @@
       <div class="chipbar" id="chipbar" aria-label="필터">
         <button class="chip is-active" data-group="work" data-value="all" type="button">전체</button>
         <button class="chip" data-group="public" data-value="visible" type="button">공개중</button>
-        <button class="chip" data-group="public" data-value="hidden" type="button">비공개</button>
+        <button class="chip gray" data-group="public" data-value="hidden" type="button">비공개</button>
         <button class="chip warn" data-group="work" data-value="needsWork" type="button">작업필요</button>
-        <button class="chip" data-group="work" data-value="needsPhoto" type="button">사진필요</button>
+        <button class="chip purple" data-group="work" data-value="needsPhoto" type="button">사진필요</button>
         <button class="chip red" data-group="work" data-value="needsContact" type="button">컨택필요</button>
         <button class="chip dark" data-group="work" data-value="dealDone" type="button">거래완료</button>
-        <button class="chip" data-group="work" data-value="reviewHold" type="button">검토보류</button>
+        <button class="chip brown" data-group="work" data-value="reviewHold" type="button">검토보류</button>
         <button class="chip" data-group="data" data-value="noPnu" type="button">PNU미확정</button>
         <button class="chip" data-group="data" data-value="multiParcel" type="button">여러필지</button>
         <button class="chip" data-group="deal" data-value="sale" type="button">매매</button>
@@ -137,6 +140,7 @@
           <div class="patch-grid">
             <div class="patch-kv"><b id="dbgItems">0</b><span>매물 rows</span></div>
             <div class="patch-kv"><b id="dbgActualMarkers">0</b><span>실제 marker</span></div>
+            <div class="patch-kv"><b id="dbgMarkerDom">0</b><span>marker DOM</span></div>
             <div class="patch-kv"><b id="dbgPointInputs">0</b><span>좌표 후보</span></div>
             <div class="patch-kv"><b id="dbgInBounds">0</b><span>화면 안 marker</span></div>
             <div class="patch-kv"><b id="dbgGeocode">0/0</b><span>geocode 성공/실패</span></div>
@@ -147,7 +151,7 @@
           <div class="patch-line"><b>좌표 샘플</b><div class="patch-sample" id="dbgSample">-</div></div>
           <div class="patch-actions"><button id="dbgRefresh" type="button">진단 새로고침</button><button id="dbgClearCache" class="dark" type="button">지오캐시 삭제</button></div>
         </div>
-        <div class="map-note" id="mapNote">처음에는 네이버 지오코딩 매물 핀만 표시합니다. 핀을 클릭하면 해당 매물 필지만 조회합니다.</div>
+        <div class="map-note" id="mapNote">진단모드: 네이버 기본 마커로 표시합니다. 보이면 원인은 커스텀 핀 렌더링입니다.</div>
         <div class="loading" id="loading"><div class="loading-card"><div class="spinner"></div><b id="loadingTitle">불러오는 중</b><p id="loadingText">잠시만 기다려 주세요.</p></div></div>
       </section>
       <aside class="panel" id="sidePanel">
@@ -262,7 +266,7 @@
     statusModal:document.getElementById('statusModal'), statusModalSub:document.getElementById('statusModalSub'), statusCancel:document.getElementById('statusCancel'), statusSave:document.getElementById('statusSave'),
     memoModal:document.getElementById('memoModal'), memoModalSub:document.getElementById('memoModalSub'), memoTextarea:document.getElementById('memoTextarea'), memoCancel:document.getElementById('memoCancel'), memoSave:document.getElementById('memoSave'),
     lockOverlay:document.getElementById('lockOverlay'), lockInput:document.getElementById('lockInput'), lockBtn:document.getElementById('lockBtn'), lockError:document.getElementById('lockError'),
-    patchPanel:document.getElementById('patchPanel'), patchUpdated:document.getElementById('patchUpdated'), dbgItems:document.getElementById('dbgItems'), dbgActualMarkers:document.getElementById('dbgActualMarkers'), dbgPointInputs:document.getElementById('dbgPointInputs'), dbgInBounds:document.getElementById('dbgInBounds'), dbgGeocode:document.getElementById('dbgGeocode'), dbgRender:document.getElementById('dbgRender'), dbgMap:document.getElementById('dbgMap'), dbgError:document.getElementById('dbgError'), dbgSample:document.getElementById('dbgSample'), dbgRefresh:document.getElementById('dbgRefresh'), dbgClearCache:document.getElementById('dbgClearCache')
+    patchPanel:document.getElementById('patchPanel'), patchUpdated:document.getElementById('patchUpdated'), dbgItems:document.getElementById('dbgItems'), dbgActualMarkers:document.getElementById('dbgActualMarkers'), dbgMarkerDom:document.getElementById('dbgMarkerDom'), dbgPointInputs:document.getElementById('dbgPointInputs'), dbgInBounds:document.getElementById('dbgInBounds'), dbgGeocode:document.getElementById('dbgGeocode'), dbgRender:document.getElementById('dbgRender'), dbgMap:document.getElementById('dbgMap'), dbgError:document.getElementById('dbgError'), dbgSample:document.getElementById('dbgSample'), dbgRefresh:document.getElementById('dbgRefresh'), dbgClearCache:document.getElementById('dbgClearCache')
   };
 
   function text(v){ return v == null ? '' : String(v).trim(); }
@@ -303,6 +307,13 @@
     });
     return {out, bad};
   }
+  function countMarkerDomNodes(){
+    try{
+      if(!els.map) return 0;
+      // 네이버 기본 마커/이미지/HTML 마커가 실제 DOM에 올라왔는지 확인한다.
+      return els.map.querySelectorAll('img, div').length;
+    }catch(e){ return 0; }
+  }
   function updatePatchPanel(){
     if(!els.dbgItems) return;
     const pointInputs = (state.filteredItems || []).filter(item => {
@@ -316,6 +327,7 @@
     }).length;
     els.dbgItems.textContent = String((state.items || []).length);
     els.dbgActualMarkers.textContent = String(state.markers ? state.markers.size : 0);
+    if(els.dbgMarkerDom) els.dbgMarkerDom.textContent = String(countMarkerDomNodes());
     els.dbgPointInputs.textContent = String(pointInputs) + (badCount ? ' / 이상 ' + badCount : '');
     els.dbgInBounds.textContent = String(countMarkersInBounds());
     els.dbgGeocode.textContent = String(state.debug.geocodeSuccess || 0) + '/' + String(state.debug.geocodeFail || 0);
@@ -538,36 +550,44 @@
   function clearPolygonMap(map){ map.forEach(arr => arr.forEach(poly => poly.setMap(null))); map.clear(); }
   function clearMarkerMap(map){ map.forEach(marker => { try{ marker.setMap(null); }catch(e){} }); map.clear(); }
 
-  function markerColorForItem(item){
+  const PIN_ASSETS = {
+    visible:'/parcel-map/assets/pin-blue.svg',
+    hidden:'/parcel-map/assets/pin-gray.svg',
+    internal:'/parcel-map/assets/pin-sky.svg',
+    reviewHold:'/parcel-map/assets/pin-brown.svg',
+    needsPhoto:'/parcel-map/assets/pin-purple.svg',
+    needsWork:'/parcel-map/assets/pin-orange.svg',
+    needsContact:'/parcel-map/assets/pin-red.svg',
+    dealDone:'/parcel-map/assets/pin-dark.svg'
+  };
+  function markerColorKeyForItem(item){
     const s = dashboardStatus(item);
-    if(item.status === 'hidden') return '#64748b';
-    if(s.internal) return '#0284c7';
-    if(s.reviewHold) return '#a16207';
-    if(s.needsPhoto) return '#7c3aed';
-    if(s.needsWork) return '#f97316';
-    if(s.needsContact) return '#ef4444';
-    if(s.dealDone) return '#111827';
-    return '#0f7cff';
+    // 업무상태 칩이 켜져 있으면 그 칩 색을 우선한다.
+    // 예: 작업필요+컨택필요 중복 매물이라도 '작업필요' 필터 중에는 주황으로 보이게 한다.
+    if(state.filters && state.filters.work && state.filters.work !== 'all' && s[state.filters.work]) return state.filters.work;
+    if(state.filters && state.filters.public && state.filters.public !== 'all' && item.status === state.filters.public) return state.filters.public;
+    // 평상시에는 강한 상태부터 우선순위를 둔다.
+    if(s.dealDone) return 'dealDone';
+    if(s.needsContact) return 'needsContact';
+    if(s.needsWork) return 'needsWork';
+    if(s.needsPhoto) return 'needsPhoto';
+    if(s.reviewHold) return 'reviewHold';
+    if(s.internal) return 'internal';
+    if(item.status === 'hidden') return 'hidden';
+    return 'visible';
+  }
+  function markerColorForItem(item){
+    const key = markerColorKeyForItem(item);
+    return {visible:'#0f7cff',hidden:'#64748b',internal:'#0284c7',reviewHold:'#a16207',needsPhoto:'#7c3aed',needsWork:'#f97316',needsContact:'#ef4444',dealDone:'#111827'}[key] || '#0f7cff';
   }
   function markerIconForItem(item, selected){
-    // Naver Marker에서 data URL SVG가 환경에 따라 표시되지 않는 경우가 있어
-    // HTML content 아이콘으로 고정한다. 루트 크기를 직접 줘서 0px 클리핑을 막는다.
-    const color = String(markerColorForItem(item) || '#0f7cff').replace(/[^#a-zA-Z0-9(),.%\s-]/g, '');
-    const w = selected ? 20 : 16;
-    const h = selected ? 28 : 22;
-    const head = selected ? 14 : 11;
-    const lineH = selected ? 10 : 8;
-    const stroke = selected ? '#facc15' : '#ffffff';
-    const ring = selected ? '0 0 0 3px rgba(250,204,21,.75),' : '';
-    const html = '' +
-      '<div style="position:relative;width:' + w + 'px;height:' + h + 'px;overflow:visible;pointer-events:auto;">' +
-        '<div style="position:absolute;left:' + Math.round((w-head)/2) + 'px;top:1px;width:' + head + 'px;height:' + head + 'px;border-radius:50% 50% 50% 0;background:' + color + ';border:' + (selected ? 3 : 2) + 'px solid ' + stroke + ';box-sizing:border-box;transform:rotate(-45deg);box-shadow:' + ring + '0 3px 8px rgba(15,23,42,.30);"></div>' +
-        '<div style="position:absolute;left:' + Math.round(w/2-1) + 'px;top:' + Math.round(head+3) + 'px;width:2px;height:' + lineH + 'px;border-radius:999px;background:' + color + ';box-shadow:0 2px 5px rgba(15,23,42,.22);"></div>' +
-        '<div style="position:absolute;left:' + Math.round(w/2-1) + 'px;top:' + Math.round(head/2+1) + 'px;width:2px;height:2px;border-radius:50%;background:#fff;"></div>' +
-      '</div>';
+    const key = markerColorKeyForItem(item);
+    const w = selected ? 28 : 24;
+    const h = selected ? 38 : 32;
     return {
-      content: html,
+      url: PIN_ASSETS[key] || PIN_ASSETS.visible,
       size: new naver.maps.Size(w, h),
+      scaledSize: new naver.maps.Size(w, h),
       anchor: new naver.maps.Point(Math.round(w / 2), h)
     };
   }
@@ -713,14 +733,15 @@
       state.debug.markerAttempts += 1;
       try{
         const selected = state.selectedItem && state.selectedItem.listingNumber === item.listingNumber;
-        const marker = new naver.maps.Marker({
+        const markerOptions = {
           position:new naver.maps.LatLng(point.lat, point.lng),
           map:state.map,
           title:item.title || item.address || item.listingNumber,
-          icon:markerIconForItem(item, selected),
           clickable:true,
+          icon:markerIconForItem(item, selected),
           zIndex:selected ? 900 : 500
-        });
+        };
+        const marker = new naver.maps.Marker(markerOptions);
         naver.maps.Event.addListener(marker, 'click', function(){ selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item]); });
         state.markers.set(item.listingNumber || ('idx-' + idx), marker);
         state.debug.markerCreated += 1;

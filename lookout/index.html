@@ -2623,8 +2623,8 @@
           + buildResultTable(extracted.landInfoRows)
           + '<div class="table-download-wrap">'
           + '<div class="table-action-row">'
-          + '<button class="table-download-btn" data-kind="land" data-title="토지대장 토지정보">이미지 내려받기</button>'
-          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지대장 토지정보">텍스트 복사</button>'
+          + '<button class="table-download-btn" data-kind="land-info" data-title="토지대장 토지정보">이미지 내려받기</button>'
+          + '<button class="table-copy-btn" data-copy-kind="land-info" data-title="토지대장 토지정보">텍스트 복사</button>'
           + '</div>'
           + '<div class="table-download-note">공시지가 총액은 공시지가 × 면적으로 계산한 참고 금액입니다.</div>'
           + '</div>'
@@ -2637,8 +2637,8 @@
           + buildResultTable(extracted.landUsePlanRows)
           + '<div class="table-download-wrap">'
           + '<div class="table-action-row">'
-          + '<button class="table-download-btn" data-kind="land" data-title="토지대장 토지정보">이미지 내려받기</button>'
-          + '<button class="table-copy-btn" data-copy-kind="land" data-title="토지대장 토지정보">텍스트 복사</button>'
+          + '<button class="table-download-btn" data-kind="land-use-plan" data-title="토지대장 토지이용계획">이미지 내려받기</button>'
+          + '<button class="table-copy-btn" data-copy-kind="land-use-plan" data-title="토지대장 토지이용계획">텍스트 복사</button>'
           + '</div>'
           + '<div class="table-download-note">저촉/포함은 왼쪽 용도지역·지구와 같은 줄 기준입니다.</div>'
           + '</div>'
@@ -2701,6 +2701,14 @@
             saveRowsAsImage(title, extracted.summaryRows, 'maslow-summary.png');
             return;
           }
+          if(kind === 'land-info'){
+            saveRowsAsImage(title, extracted.landInfoRows || [], 'maslow-land-info.png');
+            return;
+          }
+          if(kind === 'land-use-plan'){
+            saveRowsAsImage(title, extracted.landUsePlanRows || [], 'maslow-land-use-plan.png');
+            return;
+          }
           if(kind === 'land'){
             saveRowsAsImage(title, extracted.landRows || [], 'maslow-land-info.png');
             return;
@@ -2726,6 +2734,14 @@
 
           if(kind === 'summary'){
             copyRowsText(title, extracted.summaryRows);
+            return;
+          }
+          if(kind === 'land-info'){
+            copyRowsText(title, extracted.landInfoRows || []);
+            return;
+          }
+          if(kind === 'land-use-plan'){
+            copyRowsText(title, extracted.landUsePlanRows || []);
             return;
           }
           if(kind === 'land'){

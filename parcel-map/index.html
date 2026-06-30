@@ -460,30 +460,25 @@
     return '#0f7cff';
   }
   function markerIconForItem(item, selected){
-    // 네이버 지도 Marker의 HTML content는 size가 없으면 환경에 따라 0px로 클리핑될 수 있다.
-    // 그래서 실제 지도 표시용은 작은 SVG data URL로 고정한다.
-    const color = markerColorForItem(item);
+    // Naver Marker에서 data URL SVG가 환경에 따라 표시되지 않는 경우가 있어
+    // HTML content 아이콘으로 고정한다. 루트 크기를 직접 줘서 0px 클리핑을 막는다.
+    const color = String(markerColorForItem(item) || '#0f7cff').replace(/[^#a-zA-Z0-9(),.%\s-]/g, '');
     const w = selected ? 20 : 16;
     const h = selected ? 28 : 22;
+    const head = selected ? 14 : 11;
+    const lineH = selected ? 10 : 8;
     const stroke = selected ? '#facc15' : '#ffffff';
-    const strokeWidth = selected ? 2.8 : 2;
-    const cx = w / 2;
-    const r = selected ? 6.7 : 5.2;
-    const top = selected ? 3.5 : 2.6;
-    const lineTop = selected ? 16 : 13;
-    const lineBottom = h - 2;
-    const svg = [
-      '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">',
-      '<path d="M' + cx + ' ' + lineBottom + ' L' + cx + ' ' + lineTop + '" stroke="' + color + '" stroke-width="2.2" stroke-linecap="round"/>',
-      '<circle cx="' + cx + '" cy="' + (top + r) + '" r="' + r + '" fill="' + color + '" stroke="' + stroke + '" stroke-width="' + strokeWidth + '"/>',
-      '<circle cx="' + cx + '" cy="' + (top + r) + '" r="1.8" fill="#ffffff" opacity="0.96"/>',
-      '</svg>'
-    ].join('');
+    const ring = selected ? '0 0 0 3px rgba(250,204,21,.75),' : '';
+    const html = '' +
+      '<div style="position:relative;width:' + w + 'px;height:' + h + 'px;overflow:visible;pointer-events:auto;">' +
+        '<div style="position:absolute;left:' + Math.round((w-head)/2) + 'px;top:1px;width:' + head + 'px;height:' + head + 'px;border-radius:50% 50% 50% 0;background:' + color + ';border:' + (selected ? 3 : 2) + 'px solid ' + stroke + ';box-sizing:border-box;transform:rotate(-45deg);box-shadow:' + ring + '0 3px 8px rgba(15,23,42,.30);"></div>' +
+        '<div style="position:absolute;left:' + Math.round(w/2-1) + 'px;top:' + Math.round(head+3) + 'px;width:2px;height:' + lineH + 'px;border-radius:999px;background:' + color + ';box-shadow:0 2px 5px rgba(15,23,42,.22);"></div>' +
+        '<div style="position:absolute;left:' + Math.round(w/2-1) + 'px;top:' + Math.round(head/2+1) + 'px;width:2px;height:2px;border-radius:50%;background:#fff;"></div>' +
+      '</div>';
     return {
-      url:'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-      size:new naver.maps.Size(w, h),
-      scaledSize:new naver.maps.Size(w, h),
-      anchor:new naver.maps.Point(Math.round(w / 2), h)
+      content: html,
+      size: new naver.maps.Size(w, h),
+      anchor: new naver.maps.Point(Math.round(w / 2), h)
     };
   }
   function getItemPoint(item){
@@ -616,7 +611,8 @@
         map:state.map,
         title:item.title || item.address || item.listingNumber,
         icon:markerIconForItem(item, selected),
-        zIndex:selected ? 90 : 50
+        clickable:true,
+        zIndex:selected ? 900 : 500
       });
       naver.maps.Event.addListener(marker, 'click', function(){ selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item]); });
       state.markers.set(item.listingNumber, marker);

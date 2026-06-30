@@ -18,5 +18,8 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  return sendJson(res, 200, { ok: true, clientId });
+  
+  const vworldKey = process.env.VWORLD_API_KEY || '';
+
+  return sendJson(res, 200, { ok: true, clientId, vworldKey });
 };

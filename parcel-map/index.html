@@ -448,12 +448,12 @@
 
   async function loadParcelMapConfig(){
     try{
-      const data = await fetchJson('/api/parcel-map/config', {method:'GET'});
+      const data = await fetchJson('/api/route-setting/config', {method:'GET'});
       state.vworldKey = String(data.vworldKey || data.key || '').trim();
       if(!state.vworldKey) state.debug.lastError = 'VWORLD_API_KEY 없음';
       return data;
     }catch(err){
-      state.debug.lastError = 'vworld config: ' + (err.message || err);
+      state.debug.lastError = 'route-setting config/vworld: ' + (err.message || err);
       updatePatchPanel();
       return {};
     }

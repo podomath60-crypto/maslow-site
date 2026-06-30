@@ -1,6 +1,7 @@
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
 const VWORLD_DATA_URL = 'https://api.vworld.kr/req/data';
 const VWORLD_SEARCH_URL = 'https://api.vworld.kr/req/search';
+const VWORLD_WFS_URL = 'https://api.vworld.kr/req/wfs';
 const CADASTRAL_DATA_ID = 'LP_PA_CBND_BUBUN';
 
 function sendJson(res, status, payload) {
@@ -75,6 +76,26 @@ function getVworldKey() {
   return process.env.VWORLD_API_KEY || '';
 }
 
+
+function getVworldDomain(req) {
+  const explicit = process.env.VWORLD_DOMAIN || process.env.VERCEL_PROJECT_PRODUCTION_URL || '';
+  let host = explicit || (req && req.headers && (req.headers['x-forwarded-host'] || req.headers.host)) || '';
+  host = String(host || '').trim();
+  if (!host) return '';
+  host = host.replace(/^https?:\/\//i, '').replace(/\/+$/g, '');
+  return host;
+}
+
+function compactVworldError(payload) {
+  const response = payload && payload.response;
+  if (!response) return '';
+  const status = response.status || response.Status || '';
+  const error = response.error || response.Error || {};
+  const code = error.code || error.Code || '';
+  const textMsg = error.text || error.message || error.Text || error.Message || '';
+  return [status, code, textMsg].filter(Boolean).join(' / ');
+}
+
 function appendDefinedParams(params, values) {
   Object.keys(values || {}).forEach((key) => {
     const value = values[key];
@@ -136,7 +157,10 @@ function extractPnuFromProps(props) {
 }
 
 function getFeatureCollection(payload) {
-  return payload && payload.response && payload.response.result && payload.response.result.featureCollection;
+  if (payload && payload.type === 'FeatureCollection') return payload;
+  if (payload && payload.featureCollection) return payload.featureCollection;
+  if (payload && payload.response && payload.response.result && payload.response.result.featureCollection) return payload.response.result.featureCollection;
+  return null;
 }
 
 function normalizeFeature(feature) {
@@ -176,6 +200,8 @@ module.exports = {
   getVworldKey,
   appendDefinedParams,
   fetchJsonWithTimeout,
+  getVworldDomain,
+  compactVworldError,
   uniquePnuList,
   extractPnuFromProps,
   normalizeFeatureCollection

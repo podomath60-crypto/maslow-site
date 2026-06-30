@@ -932,12 +932,13 @@
     if(zoom < 16){ els.mapNote.textContent = '현재화면 필지는 줌 16 이상에서만 불러옵니다. 조금 더 확대하세요.'; clearPolygonMap(state.basePolygons); return; }
     try{
       els.mapNote.textContent = '현재 화면의 필지 타일을 불러오는 중입니다.';
-      const data = await fetchJson('/api/parcel-map/polygons', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({bbox:currentBbox(), limit:450}) });
+      const data = await fetchJson('/api/parcel-map/polygons', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({bbox:currentBbox(), limit:300}) });
+      if(!data || data.ok === false){ throw new Error((data && (data.error || data.message)) || '필지 폴리곤 조회 실패'); }
       renderBasePolygons(data.parcels || []);
-      els.mapNote.textContent = '회색 필지는 매물 없는 필지, 색칠된 필지는 저장된 매물 필지입니다.';
+      els.mapNote.textContent = (data.parcels || []).length ? '회색 필지는 매물 없는 필지, 색칠된 필지는 저장된 매물 필지입니다. · 필지 ' + (data.parcels || []).length + '건' : '현재 화면에서 조회된 필지가 없습니다. 더 확대하거나 위치를 조금 이동하세요.';
     }catch(err){
       console.error(err);
-      els.mapNote.textContent = '현재화면 필지 조회 실패: ' + err.message;
+      els.mapNote.textContent = '현재화면 필지 조회 실패: ' + (err && err.message ? err.message : err);
     }
   }
   function renderBasePolygons(parcels){

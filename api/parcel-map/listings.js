@@ -10,6 +10,15 @@ const {
   uniquePnuList
 } = require('./_common');
 
+function firstNumber(values) {
+  const list = Array.isArray(values) ? values : [values];
+  for (const value of list) {
+    const n = Number(String(value == null ? '' : value).trim());
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
 function firstHero(raw) {
   const photos = parseMaybeJson(raw && raw.photoUrlsJson, []);
   if (!Array.isArray(photos)) return '';
@@ -234,6 +243,9 @@ function normalizeItem(raw) {
     listingNumber,
     title: text(raw.title),
     address: text(raw.address),
+    lat: firstNumber([raw.lat, raw.latitude, raw.y, raw.mapLat, raw.naverLat]),
+    lng: firstNumber([raw.lng, raw.lon, raw.longitude, raw.x, raw.mapLng, raw.naverLng]),
+    geocodeAddress: text(raw.geocodeAddress || raw.address),
     dealType: text(raw.dealType),
     price: text(raw.price),
     status: text(raw.status || 'hidden').toLowerCase(),

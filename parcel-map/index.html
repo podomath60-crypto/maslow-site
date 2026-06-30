@@ -73,6 +73,15 @@
     .hero{width:100%;aspect-ratio:16/9;border-radius:22px;overflow:hidden;background:#eef2f7;border:1px solid var(--line);margin-bottom:14px}
     .hero img{width:100%;height:100%;object-fit:cover;display:block}.hero-placeholder{height:100%;display:flex;align-items:center;justify-content:center;color:#98a2b3;font-weight:900;font-size:36px}
     .listing-title{font-size:20px;font-weight:1000;line-height:1.22;margin:8px 0 4px}.price{font-size:18px;font-weight:1000;color:#e11d48;margin:0 0 8px}.addr{font-size:13px;font-weight:800;color:#475467;line-height:1.45;margin-bottom:12px}.chip-line{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}.spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.spec{border:1px solid var(--line);border-radius:15px;background:#f8fafc;padding:9px 10px;min-height:58px}.spec label{display:block;font-size:11px;font-weight:900;color:#667085;margin-bottom:5px}.spec div{font-size:13px;font-weight:950;color:#111827;line-height:1.25;word-break:break-word}.section-title{font-size:14px;font-weight:1000;margin:18px 0 8px}.summary{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}.summary li{font-size:13px;font-weight:850;line-height:1.4;color:#263445;background:#fbfcff;border:1px solid var(--line);border-radius:14px;padding:8px 10px}.parcel-list{display:flex;flex-direction:column;gap:8px}.parcel-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:10px 11px}.parcel-card strong{font-size:13px;font-weight:1000}.parcel-card p{margin:6px 0 0;font-size:12px;font-weight:800;color:#667085;line-height:1.4}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}.action-btn{height:42px;border-radius:14px;background:#111827;color:#fff;font-size:13px;font-weight:1000;display:flex;align-items:center;justify-content:center}.action-btn.light{background:#f2f4f7;color:#111827}.action-btn.blue{background:#0f7cff}.action-btn.green{background:#16a34a}.action-btn.orange{background:#f97316}.mini-list{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}.unresolved-item{border:1px dashed #f59e0b;border-radius:15px;padding:9px 10px;background:#fffbeb;margin-bottom:8px;font-size:12px;font-weight:800;color:#7c2d12}.unresolved-item b{display:block;color:#111827;margin-bottom:4px}
+
+    .pm-marker{position:relative;width:16px;height:22px;transform:translate(-8px,-22px);pointer-events:none}
+    .pm-marker:before{content:"";position:absolute;left:3px;top:0;width:10px;height:10px;border-radius:50% 50% 50% 0;background:var(--pin,#0f7cff);border:2px solid #fff;transform:rotate(-45deg);box-shadow:0 3px 7px rgba(15,23,42,.28)}
+    .pm-marker:after{content:"";position:absolute;left:7px;top:13px;width:2px;height:8px;border-radius:999px;background:var(--pin,#0f7cff);box-shadow:0 3px 6px rgba(15,23,42,.2)}
+    .pm-marker.is-selected{width:20px;height:28px;transform:translate(-10px,-28px)}
+    .pm-marker.is-selected:before{left:3px;width:14px;height:14px;border-width:3px;box-shadow:0 0 0 3px rgba(250,204,21,.75),0 5px 12px rgba(15,23,42,.34)}
+    .pm-marker.is-selected:after{left:9px;top:18px;height:9px;width:2px}
+    .pm-marker .pm-dot{position:absolute;left:7px;top:4px;width:2px;height:2px;border-radius:50%;background:#fff;z-index:2}
+    .pm-marker.is-selected .pm-dot{left:9px;top:6px}
     .loading{position:absolute;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.54);backdrop-filter:blur(4px)}.loading.show{display:flex}.loading-card{width:280px;border-radius:24px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);padding:22px;text-align:center}.spinner{width:32px;height:32px;border:4px solid #e5e7eb;border-top-color:#0f7cff;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px}@keyframes spin{to{transform:rotate(360deg)}}.loading-card b{font-size:15px;font-weight:1000}.loading-card p{font-size:12px;font-weight:800;color:var(--muted);margin:6px 0 0;line-height:1.35}
     .modal{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.46);padding:18px}.modal.show{display:flex}.modal-card{width:min(460px,100%);border-radius:24px;background:#fff;box-shadow:var(--shadow);border:1px solid var(--line);padding:18px}.modal-title{font-size:18px;font-weight:1000;margin-bottom:4px}.modal-sub{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:14px}.modal-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:14px;font-weight:850}.modal-row input{width:18px;height:18px}.modal-radio{display:flex;gap:8px;margin-bottom:14px}.modal-radio label{flex:1;height:38px;border-radius:13px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:1000}.modal-radio input{display:none}.modal-radio label:has(input:checked){background:#0f7cff;color:#fff;border-color:#0f7cff}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.modal-btn{height:40px;padding:0 14px;border-radius:13px;background:#f2f4f7;color:#111827;font-weight:1000}.modal-btn.primary{background:#0f7cff;color:#fff}.memo-area{width:100%;min-height:180px;resize:vertical;border:1px solid var(--line);border-radius:16px;padding:12px;font-size:14px;font-weight:750;outline:0;line-height:1.45}.memo-area:focus{border-color:#0f7cff;box-shadow:0 0 0 3px rgba(15,124,255,.12)}
     .lock{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#ffffff 0%,#eef4ff 100%);padding:24px}.lock-card{width:min(360px,100%);border-radius:28px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);padding:24px;text-align:center}.lock-card h1{font-size:22px;margin:0 0 6px;font-weight:1000}.lock-card p{font-size:13px;font-weight:800;color:var(--muted);margin:0 0 16px}.lock-input{width:100%;height:48px;border:1px solid var(--line);border-radius:16px;text-align:center;font-size:22px;font-weight:1000;outline:0}.lock-btn{width:100%;height:46px;border-radius:16px;background:#111827;color:#fff;font-weight:1000;margin-top:10px}.lock-error{min-height:18px;margin-top:8px;font-size:12px;font-weight:900;color:#e11d48}
@@ -114,18 +123,18 @@
             <div class="stat-sub" id="statSub">지도와 매물 데이터를 불러옵니다.</div>
             <div class="stat-grid">
               <div class="stat-num"><b id="statTotal">0</b><span>전체</span></div>
-              <div class="stat-num"><b id="statShown">0</b><span>표시</span></div>
+              <div class="stat-num"><b id="statShown">0</b><span>지도핀</span></div>
               <div class="stat-num"><b id="statPnu">0</b><span>PNU</span></div>
               <div class="stat-num"><b id="statNoPnu">0</b><span>미확정</span></div>
             </div>
           </div>
         </div>
-        <div class="map-note" id="mapNote">필지가 많은 구역은 줌을 충분히 확대한 뒤 현재화면 필지를 켜면 클릭 가능한 필지 타일을 불러옵니다.</div>
+        <div class="map-note" id="mapNote">처음에는 네이버 지오코딩 매물 핀만 표시합니다. 핀을 클릭하면 해당 매물 필지만 조회합니다.</div>
         <div class="loading" id="loading"><div class="loading-card"><div class="spinner"></div><b id="loadingTitle">불러오는 중</b><p id="loadingText">잠시만 기다려 주세요.</p></div></div>
       </section>
       <aside class="panel" id="sidePanel">
         <div class="panel-head">
-          <div><div class="panel-head-title" id="panelTitle">매물 선택</div><div class="panel-head-sub" id="panelSub">지도에서 필지나 매물을 클릭하세요.</div></div>
+          <div><div class="panel-head-title" id="panelTitle">매물 선택</div><div class="panel-head-sub" id="panelSub">지도에서 작은 매물 핀을 클릭하세요.</div></div>
           <button class="panel-close" id="panelClose" type="button">×</button>
         </div>
         <div class="panel-body" id="panelBody"></div>
@@ -195,6 +204,11 @@
     items:[],
     filteredItems:[],
     pnuToItems:new Map(),
+    markers:new Map(),
+    geocodeCache:new Map(),
+    geocodeRunning:false,
+    geocodeRenderTimer:null,
+    hasAutoFitMarkers:false,
     listingPolygons:new Map(),
     basePolygons:new Map(),
     polygonDataByPnu:new Map(),
@@ -227,6 +241,15 @@
   function getWriterCode(){ const saved = localStorage.getItem(AUTH_STORAGE_KEY) || ''; const pair = Object.entries(PASSWORD_MAP).find(p => p[1] === saved); return pair ? pair[0] : ''; }
 
   function fetchJson(url, options){ return fetch(url, options).then(res => res.json().then(data => { if(!res.ok || !data || data.ok === false){ throw new Error((data && (data.message || data.error)) || ('HTTP ' + res.status)); } return data; })); }
+  function fetchJsonWithTimeout(url, options, timeoutMs){
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs || 12000);
+    const merged = Object.assign({}, options || {}, { signal: controller.signal });
+    return fetchJson(url, merged).catch(err => {
+      if(err && err.name === 'AbortError') throw new Error('요청 시간 초과');
+      throw err;
+    }).finally(() => window.clearTimeout(timer));
+  }
 
   function waitForNaverMaps(timeoutMs){
     const started = Date.now();
@@ -353,7 +376,7 @@
     return { strokeColor: selected ? '#facc15' : color, strokeWeight: selected ? 5 : 3, strokeOpacity: selected ? 1 : .95, fillColor: color, fillOpacity: selected ? .28 : .18 };
   }
   function baseStyle(){ return { strokeColor:'#64748b', strokeWeight:1, strokeOpacity:.35, fillColor:'#94a3b8', fillOpacity:.06, clickable:true }; }
-  function noGeometryMessage(){ return '<div class="empty-panel"><div class="empty-icon">🗺️</div><b>선택된 필지가 없습니다.</b><div>지도에서 색칠된 필지를 클릭하면 오른쪽에 매물정보가 나옵니다.</div></div>'; }
+  function noGeometryMessage(){ return '<div class="empty-panel"><div class="empty-icon">🗺️</div><b>선택된 필지가 없습니다.</b><div>지도에서 작은 매물 핀을 클릭하면 오른쪽에 매물정보가 먼저 나오고, 해당 필지가 조회됩니다.</div></div>'; }
 
   function applyFilters(){
     const q = String(state.filters.q || '').toLowerCase();
@@ -372,20 +395,27 @@
       return true;
     });
     updateStats();
-    renderListingPolygons();
+    renderMarkers();
+    if(state.selectedItem && !state.filteredItems.some(i => i.listingNumber === state.selectedItem.listingNumber)){
+      clearPolygonMap(state.listingPolygons);
+      state.selectedItem = null;
+    }else if(state.selectedItem){
+      renderListingPolygons();
+    }
     renderDefaultPanel();
   }
 
   function updateStats(){
     const total = state.items.length;
     const shown = state.filteredItems.length;
+    const markerShown = state.filteredItems.filter(getItemPoint).length;
     const pnu = state.items.filter(i => (i.pnuList || []).length).length;
     const noPnu = total - pnu;
     els.statTotal.textContent = total;
-    els.statShown.textContent = shown;
+    els.statShown.textContent = markerShown;
     els.statPnu.textContent = pnu;
     els.statNoPnu.textContent = noPnu;
-    els.statSub.textContent = '필터 표시 ' + shown + '건 / PNU 확정 ' + pnu + '건 / 미확정 ' + noPnu + '건';
+    els.statSub.textContent = '필터 ' + shown + '건 / 지도핀 ' + markerShown + '건 / PNU 확정 ' + pnu + '건 / 미확정 ' + noPnu + '건';
   }
 
   function coordinatesToPaths(geometry){
@@ -416,49 +446,276 @@
   }
 
   function clearPolygonMap(map){ map.forEach(arr => arr.forEach(poly => poly.setMap(null))); map.clear(); }
+  function clearMarkerMap(map){ map.forEach(marker => { try{ marker.setMap(null); }catch(e){} }); map.clear(); }
+
+  function markerColorForItem(item){
+    const s = dashboardStatus(item);
+    if(item.status === 'hidden') return '#64748b';
+    if(s.internal) return '#0284c7';
+    if(s.reviewHold) return '#a16207';
+    if(s.needsPhoto) return '#7c3aed';
+    if(s.needsWork) return '#f97316';
+    if(s.needsContact) return '#ef4444';
+    if(s.dealDone) return '#111827';
+    return '#0f7cff';
+  }
+  function markerIconForItem(item, selected){
+    const color = markerColorForItem(item);
+    const cls = selected ? 'pm-marker is-selected' : 'pm-marker';
+    return {
+      content:'<div class="' + cls + '" style="--pin:' + color + '"><i class="pm-dot"></i></div>',
+      anchor:new naver.maps.Point(selected ? 10 : 8, selected ? 28 : 22)
+    };
+  }
+  function getItemPoint(item){
+    const lat = Number(item && item.lat);
+    const lng = Number(item && item.lng);
+    if(Number.isFinite(lat) && Number.isFinite(lng)) return {lat,lng};
+    return null;
+  }
+  function geocodeKeyForItem(item){
+    return String((item && (item.geocodeAddress || item.address || item.title || item.listingNumber)) || '').trim().replace(/\s+/g,' ');
+  }
+  function loadGeocodeCache(){
+    if(state.geocodeCache.size) return;
+    try{
+      const raw = localStorage.getItem('PARCEL_MAP_GEOCODE_CACHE_V1') || '{}';
+      const obj = JSON.parse(raw);
+      Object.keys(obj || {}).forEach(key => {
+        const v = obj[key];
+        if(v && Number.isFinite(Number(v.lat)) && Number.isFinite(Number(v.lng))) state.geocodeCache.set(key, v);
+      });
+    }catch(e){}
+  }
+  function saveGeocodeCache(){
+    try{
+      const obj = {};
+      let count = 0;
+      Array.from(state.geocodeCache.entries()).slice(-600).forEach(([key, value]) => { obj[key] = value; count += 1; });
+      localStorage.setItem('PARCEL_MAP_GEOCODE_CACHE_V1', JSON.stringify(obj));
+    }catch(e){}
+  }
+  function applyCachedPoint(item){
+    const key = geocodeKeyForItem(item);
+    if(!key) return false;
+    const cached = state.geocodeCache.get(key);
+    if(cached && Number.isFinite(Number(cached.lat)) && Number.isFinite(Number(cached.lng))){
+      item.lat = Number(cached.lat);
+      item.lng = Number(cached.lng);
+      item.resolvedAddress = cached.resolvedAddress || item.resolvedAddress || '';
+      item.roadAddress = cached.roadAddress || item.roadAddress || '';
+      item.jibunAddress = cached.jibunAddress || item.jibunAddress || '';
+      return true;
+    }
+    return false;
+  }
+  function scheduleMarkerRender(){
+    clearTimeout(state.geocodeRenderTimer);
+    state.geocodeRenderTimer = setTimeout(function(){ renderMarkers(); updateStats(); }, 120);
+  }
+  async function geocodeItem(item, index, total){
+    if(!item || getItemPoint(item)) return true;
+    loadGeocodeCache();
+    if(applyCachedPoint(item)) return true;
+    const query = geocodeKeyForItem(item);
+    if(!query) return false;
+    try{
+      const data = await fetchJsonWithTimeout('/api/route-setting/geocode', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query})
+      }, 12000);
+      const result = data && data.item;
+      if(!result || !Number.isFinite(Number(result.lat)) || !Number.isFinite(Number(result.lng))) return false;
+      item.lat = Number(result.lat);
+      item.lng = Number(result.lng);
+      item.resolvedAddress = result.resolvedAddress || '';
+      item.roadAddress = result.roadAddress || '';
+      item.jibunAddress = result.jibunAddress || '';
+      state.geocodeCache.set(query, {
+        lat:item.lat,
+        lng:item.lng,
+        resolvedAddress:item.resolvedAddress,
+        roadAddress:item.roadAddress,
+        jibunAddress:item.jibunAddress,
+        savedAt:Date.now()
+      });
+      saveGeocodeCache();
+      return true;
+    }catch(err){
+      console.warn('지오코딩 실패', query, err);
+      return false;
+    }
+  }
+  async function startGeocodingInBackground(){
+    if(state.geocodeRunning) return;
+    state.geocodeRunning = true;
+    loadGeocodeCache();
+    state.items.forEach(applyCachedPoint);
+    renderMarkers();
+    updateStats();
+    const targets = state.items.filter(item => !getItemPoint(item) && geocodeKeyForItem(item));
+    if(!targets.length){
+      state.geocodeRunning = false;
+      els.mapNote.textContent = '매물 핀을 표시했습니다. 핀을 클릭하면 해당 매물 필지만 조회합니다.';
+      fitToMarkersIfPossible();
+      return;
+    }
+    setLoadState('좌표 변환');
+    els.mapNote.textContent = '네이버 지오코딩으로 매물 위치를 표시하는 중입니다. 핀을 클릭하면 필지가 조회됩니다.';
+    let done = 0;
+    const workerCount = Math.min(4, targets.length);
+    let cursor = 0;
+    async function worker(){
+      while(cursor < targets.length){
+        const idx = cursor++;
+        await geocodeItem(targets[idx], idx + 1, targets.length);
+        done += 1;
+        if(done === 1 || done % 8 === 0 || done === targets.length){
+          els.mapNote.textContent = '네이버 지오코딩 ' + done + '/' + targets.length + ' · 성공한 매물부터 작은 핀으로 표시합니다.';
+          scheduleMarkerRender();
+        }
+      }
+    }
+    try{ await Promise.all(Array.from({length:workerCount}, worker)); }
+    finally{
+      state.geocodeRunning = false;
+      renderMarkers();
+      updateStats();
+      fitToMarkersIfPossible();
+      setLoadState('완료');
+      els.mapNote.textContent = '매물 핀 표시 완료. 핀을 클릭하면 오른쪽 패널이 먼저 열리고 해당 필지만 조회합니다.';
+    }
+  }
+  function renderMarkers(){
+    if(!state.mapReady) return;
+    clearMarkerMap(state.markers);
+    state.filteredItems.forEach(item => {
+      const point = getItemPoint(item);
+      if(!point) return;
+      const selected = state.selectedItem && state.selectedItem.listingNumber === item.listingNumber;
+      const marker = new naver.maps.Marker({
+        position:new naver.maps.LatLng(point.lat, point.lng),
+        map:state.map,
+        title:item.title || item.address || item.listingNumber,
+        icon:markerIconForItem(item, selected),
+        zIndex:selected ? 90 : 50
+      });
+      naver.maps.Event.addListener(marker, 'click', function(){ selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item]); });
+      state.markers.set(item.listingNumber, marker);
+    });
+  }
+  function fitToMarkersIfPossible(){
+    if(state.hasAutoFitMarkers || !state.mapReady) return;
+    const bounds = new naver.maps.LatLngBounds();
+    let count = 0;
+    state.filteredItems.forEach(item => {
+      const point = getItemPoint(item);
+      if(point){ bounds.extend(new naver.maps.LatLng(point.lat, point.lng)); count += 1; }
+    });
+    if(count >= 2){
+      state.hasAutoFitMarkers = true;
+      try{ state.map.fitBounds(bounds, { top:80, right:80, bottom:80, left:80 }); }catch(e){}
+    }else if(count === 1){
+      const point = getItemPoint(state.filteredItems.find(getItemPoint));
+      if(point){ state.hasAutoFitMarkers = true; state.map.setCenter(new naver.maps.LatLng(point.lat, point.lng)); state.map.setZoom(14); }
+    }
+  }
+
+  async function fetchSelectedItemPolygons(item){
+    if(!item) return;
+    clearPolygonMap(state.listingPolygons);
+    const pnus = Array.from(new Set((item.pnuList || []).filter(Boolean)));
+    if(!pnus.length){
+      els.mapNote.textContent = '이 매물은 PNU가 없어 필지 경계를 조회하지 못했습니다. 핀 위치와 패널 정보만 표시합니다.';
+      return;
+    }
+    const missing = pnus.filter(pnu => !state.polygonDataByPnu.has(pnu));
+    if(!missing.length){
+      renderListingPolygons();
+      fitToSelectedPolygons();
+      return;
+    }
+    try{
+      els.mapNote.textContent = '선택한 매물의 필지 경계를 조회하는 중입니다.';
+      const data = await fetchJsonWithTimeout('/api/parcel-map/polygons', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pnuList:missing})
+      }, 12000);
+      (data.parcels || []).forEach(parcel => { if(parcel && parcel.pnu) state.polygonDataByPnu.set(parcel.pnu, parcel); });
+      renderListingPolygons();
+      fitToSelectedPolygons();
+      els.mapNote.textContent = '선택한 매물의 필지를 표시했습니다.';
+    }catch(err){
+      console.warn('선택 필지 조회 실패', item && item.listingNumber, err);
+      els.mapNote.textContent = '선택 매물 필지 조회 실패: ' + (err.message || err);
+    }
+  }
 
   async function fetchListingPolygons(){
     const pnus = [];
-    state.items.forEach(item => (item.pnuList || []).forEach(pnu => pnus.push(pnu)));
+    const sourceItems = state.filteredItems.length ? state.filteredItems : state.items;
+    sourceItems.forEach(item => (item.pnuList || []).forEach(pnu => pnus.push(pnu)));
     const unique = Array.from(new Set(pnus));
-    if(!unique.length) return;
-    setLoadState('필지');
-    const chunks = [];
-    for(let i=0;i<unique.length;i+=30) chunks.push(unique.slice(i,i+30));
-    for(let i=0;i<chunks.length;i+=1){
-      const data = await fetchJson('/api/parcel-map/polygons', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pnuList:chunks[i]})
-      });
-      (data.parcels || []).forEach(parcel => {
-        if(parcel && parcel.pnu) state.polygonDataByPnu.set(parcel.pnu, parcel);
-      });
-      renderListingPolygons();
+    if(!unique.length){
+      setLoadState('PNU 없음');
+      els.mapNote.textContent = 'PNU가 확정된 매물이 없어 필지 경계를 조회하지 않았습니다.';
+      return;
     }
-    fitToFilteredIfPossible();
+    setLoadState('필지 조회중');
+    els.mapNote.textContent = '매물 목록은 표시되었습니다. 필지 경계는 뒤에서 나누어 불러오는 중입니다.';
+    const chunks = [];
+    for(let i=0;i<unique.length;i+=10) chunks.push(unique.slice(i,i+10));
+    let okCount = 0;
+    let failCount = 0;
+    for(let i=0;i<chunks.length;i+=1){
+      try{
+        els.mapNote.textContent = '필지 경계 조회 중 ' + (i + 1) + '/' + chunks.length + ' · 화면은 그대로 사용할 수 있습니다.';
+        const data = await fetchJsonWithTimeout('/api/parcel-map/polygons', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pnuList:chunks[i]})
+        }, 12000);
+        (data.parcels || []).forEach(parcel => {
+          if(parcel && parcel.pnu){ state.polygonDataByPnu.set(parcel.pnu, parcel); okCount += 1; }
+        });
+        renderListingPolygons();
+      }catch(err){
+        failCount += chunks[i].length;
+        console.warn('필지 경계 조회 실패', chunks[i], err);
+      }
+    }
+    if(okCount){ fitToFilteredIfPossible(); }
     setLoadState('완료');
+    els.mapNote.textContent = okCount ? ('필지 경계 ' + okCount + '건 표시 완료' + (failCount ? ' · 실패 ' + failCount + '건' : '')) : '필지 경계 조회 결과가 없습니다. PNU 또는 VWorld 응답을 확인하세요.';
   }
 
   function renderListingPolygons(){
     if(!state.mapReady) return;
     clearPolygonMap(state.listingPolygons);
-    const filteredSet = new Set(state.filteredItems.map(i => i.listingNumber));
-    state.filteredItems.forEach(item => {
-      (item.pnuList || []).forEach(pnu => {
-        const parcel = state.polygonDataByPnu.get(pnu);
-        if(!parcel || !parcel.geometry) return;
-        const paths = coordinatesToPaths(parcel.geometry);
-        if(!paths.length) return;
-        const selected = state.selectedItem && state.selectedItem.listingNumber === item.listingNumber;
-        const style = styleForItem(item, selected);
-        const polys = paths.map(path => {
-          const poly = new naver.maps.Polygon({ map:state.map, paths:path, clickable:true, zIndex:selected ? 40 : 25, ...style });
-          naver.maps.Event.addListener(poly, 'click', function(){ selectPnu(pnu, parcel); });
-          return poly;
-        });
-        const prev = state.listingPolygons.get(pnu) || [];
-        state.listingPolygons.set(pnu, prev.concat(polys));
+    const item = state.selectedItem;
+    if(!item) return;
+    (item.pnuList || []).forEach(pnu => {
+      const parcel = state.polygonDataByPnu.get(pnu);
+      if(!parcel || !parcel.geometry) return;
+      const paths = coordinatesToPaths(parcel.geometry);
+      if(!paths.length) return;
+      const style = styleForItem(item, true);
+      const polys = paths.map(path => {
+        const poly = new naver.maps.Polygon({ map:state.map, paths:path, clickable:true, zIndex:70, ...style });
+        naver.maps.Event.addListener(poly, 'click', function(){ selectPnu(pnu, parcel); });
+        return poly;
       });
+      const prev = state.listingPolygons.get(pnu) || [];
+      state.listingPolygons.set(pnu, prev.concat(polys));
     });
+  }
+
+  function fitToSelectedPolygons(){
+    if(!state.selectedItem) return;
+    const bounds = new naver.maps.LatLngBounds();
+    let count = 0;
+    (state.selectedItem.pnuList || []).forEach(pnu => {
+      const parcel = state.polygonDataByPnu.get(pnu);
+      const paths = parcel ? coordinatesToPaths(parcel.geometry) : [];
+      if(paths.length){ extendBoundsByPaths(bounds, paths); count += 1; }
+    });
+    if(count){ try{ state.map.fitBounds(bounds, { top:80, right:80, bottom:80, left:80 }); }catch(e){} }
   }
 
   function fitToFilteredIfPossible(){
@@ -517,9 +774,11 @@
   }
   function selectItem(item, pnu, parcel, candidates){
     state.selectedItem = item; state.selectedPnu = pnu || item.representativePnu || ''; state.selectedParcel = parcel || null; state.selectedCandidates = candidates || [item];
-    renderListingPolygons();
+    renderMarkers();
+    clearPolygonMap(state.listingPolygons);
     openPanel();
     renderItemPanel();
+    fetchSelectedItemPolygons(item);
   }
   function showParcelOnly(parcel){
     state.selectedItem = null; state.selectedParcel = parcel || null; state.selectedCandidates = [];
@@ -659,9 +918,14 @@
       await initMap();
       await loadListings();
       forceMapResize();
-      await fetchListingPolygons();
-      forceMapResize();
       renderDefaultPanel();
+      hideLoading();
+      els.mapNote.textContent = '네이버 지오코딩으로 매물 위치를 먼저 작은 핀으로 표시합니다. 핀을 클릭하면 해당 매물 필지만 조회합니다.';
+      startGeocodingInBackground().catch(err => {
+        console.error(err);
+        setLoadState('좌표 실패');
+        els.mapNote.textContent = '네이버 지오코딩 실패: ' + (err.message || err);
+      });
     }catch(err){
       console.error(err);
       els.panelTitle.textContent = '불러오기 실패';

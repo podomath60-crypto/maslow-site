@@ -4184,14 +4184,73 @@
         return parcel.officialLandPriceTotal || '';
       }
 
-      function buildLandParcelRoadAccessSummary_(parcels){
-        var items = (Array.isArray(parcels) ? parcels : []).map(function(parcel, idx){
-          var text = String(parcel && parcel.roadAccess || '').trim();
-          if(!text) return '';
-          if(parcels.length <= 1) return text;
-          return '필지' + String(parcel.parcelOrder || (idx + 1)) + ': ' + text;
+      function buildLandParcelRoadAccessItems_(parcels){
+        var arr = Array.isArray(parcels) ? parcels : [];
+        var multi = arr.length > 1;
+        return arr.map(function(parcel, idx){
+          var raw = normalizeLookupText_(parcel && parcel.roadAccess);
+          if(!raw) return null;
+          var order = String(parcel && parcel.parcelOrder || (idx + 1));
+          return {
+            raw: raw,
+            label: multi ? ('필지' + order + ': ' + raw) : raw
+          };
         }).filter(Boolean);
-        return items.join(' / ');
+      }
+
+      function buildLandParcelRoadAccessSummary_(parcels){
+        return buildLandParcelRoadAccessItems_(parcels).map(function(item){
+          return item.label;
+        }).join(' / ');
+      }
+
+      function stripLandParcelRoadAccessLabel_(text){
+        return normalizeLookupText_(text).replace(/^필지\s*\d+\s*[:：]\s*/, '');
+      }
+
+      function splitRoadAccessDisplayText_(text){
+        return normalizeLookupText_(text).split(/\s+\/\s+/).map(function(part){
+          return normalizeLookupText_(part);
+        }).filter(Boolean);
+      }
+
+      function hasRoadAccessDisplayPart_(currentText, candidateText){
+        var current = normalizeLookupText_(currentText);
+        var candidate = normalizeLookupText_(candidateText);
+        var candidateRaw = stripLandParcelRoadAccessLabel_(candidate);
+        if(!candidateRaw) return true;
+        if(current === candidate || current === candidateRaw) return true;
+        if(current.indexOf(candidate) !== -1 || current.indexOf(candidateRaw) !== -1) return true;
+        var parts = splitRoadAccessDisplayText_(current);
+        for(var i = 0; i < parts.length; i += 1){
+          var part = parts[i];
+          if(part === candidate) return true;
+          if(stripLandParcelRoadAccessLabel_(part) === candidateRaw) return true;
+        }
+        return false;
+      }
+
+      function appendLandParcelRoadAccessToSharedField_(el, parcels){
+        if(!el) return false;
+        var current = normalizeLookupText_(plainText(el));
+        var items = buildLandParcelRoadAccessItems_(parcels);
+        var additions = [];
+
+        items.forEach(function(item){
+          if(!item || !item.raw) return;
+          if(hasRoadAccessDisplayPart_(current, item.label)) return;
+          if(hasRoadAccessDisplayPart_(current, item.raw)) return;
+          additions.push(item.label);
+          current = current ? (current + ' / ' + item.label) : item.label;
+        });
+
+        if(!additions.length) return false;
+
+        var before = normalizeLookupText_(plainText(el));
+        var next = before ? (before + ' / ' + additions.join(' / ')) : additions.join(' / ');
+        setEditableText_(el, next);
+        markLookupFilled_(el);
+        return true;
       }
 
       function getLandSummary_(){
@@ -4922,6 +4981,12 @@
               ensureSingleRepresentative_(landParcels);
               renderLandParcels_();
               syncLandSummaryToSharedFields_();
+              // 필지가 여러 개일 때 기존 접도/진입로 값이 있어도
+              // 이번 조회로 생긴 필지별 조회값은 뒤에 계속 추가한다.
+              appendLandParcelRoadAccessToSharedField_(
+                findSpecValueAnyLabel_('접도 / 진입로', '도로접면'),
+                getActiveLandParcels_()
+              );
               queueSave();
               showToast('토지대장 조회값 반영');
             });
@@ -8232,6 +8297,12 @@
               });
               renderLandParcels_();
               syncLandSummaryToSharedFields_();
+              // 필지가 여러 개일 때 기존 접도/진입로 값이 있어도
+              // 이번 조회로 생긴 필지별 조회값은 뒤에 계속 추가한다.
+              appendLandParcelRoadAccessToSharedField_(
+                findSpecValueAnyLabel_('접도 / 진입로', '도로접면'),
+                getActiveLandParcels_()
+              );
               queueSave();
             }
           }

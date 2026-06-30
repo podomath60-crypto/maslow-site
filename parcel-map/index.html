@@ -42,6 +42,9 @@
     .chip.dark.is-active{background:#111827;border-color:#111827}
     .chip.brown.is-active{background:#a16207;border-color:#a16207}
     .chip.gray.is-active{background:#64748b;border-color:#64748b}
+    .chip.green.is-active{background:#16a34a;border-color:#16a34a}
+    .chip.teal.is-active{background:#0891b2;border-color:#0891b2}
+    .chip.yellow.is-active{background:#ca8a04;border-color:#ca8a04}
     .toolbar-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
     .top-btn{height:38px;padding:0 12px;border-radius:12px;background:#111827;color:#fff;font-weight:950;font-size:13px;box-shadow:0 8px 20px rgba(17,24,39,.15)}
     .top-btn.ghost{background:#fff;color:#263445;border:1px solid var(--line);box-shadow:none}
@@ -114,6 +117,9 @@
         <button class="chip" data-group="data" data-value="multiParcel" type="button">여러필지</button>
         <button class="chip" data-group="deal" data-value="sale" type="button">매매</button>
         <button class="chip" data-group="deal" data-value="rent" type="button">임대</button>
+        <button class="chip green" data-group="category" data-value="industrial" type="button">산업용</button>
+        <button class="chip teal" data-group="category" data-value="commercial" type="button">상업용</button>
+        <button class="chip yellow" data-group="category" data-value="land" type="button">토지</button>
       </div>
       <div class="toolbar-actions">
         <button class="top-btn ghost" id="baseParcelToggle" type="button">현재화면 필지 OFF</button>
@@ -238,7 +244,7 @@
     selectedPnu:'',
     selectedParcel:null,
     selectedCandidates:[],
-    filters:{ q:'', public:'all', work:'all', data:'all', deal:'all' },
+    filters:{ q:'', public:'all', work:'all', data:'all', deal:'all', category:'all' },
     showBaseParcels:false,
     baseFetchTimer:null,
     statusEditingItem:null,
@@ -479,6 +485,35 @@
   function baseStyle(){ return { strokeColor:'#64748b', strokeWeight:1, strokeOpacity:.35, fillColor:'#94a3b8', fillOpacity:.06, clickable:true }; }
   function noGeometryMessage(){ return '<div class="empty-panel"><div class="empty-icon">🗺️</div><b>선택된 필지가 없습니다.</b><div>지도에서 작은 매물 핀을 클릭하면 오른쪽에 매물정보가 먼저 나오고, 해당 필지가 조회됩니다.</div></div>'; }
 
+  function categoryTextForItem(item){
+    const parcels = Array.isArray(item && item.landParcels) ? item.landParcels : [];
+    const parcelText = parcels.map(p => [p.landCategory, p.zoning1, p.zoning2, p.landUseSituation, p.roadAccess, p.address, p.displayAddress].join(' ')).join(' ');
+    return [
+      item && item.propertyType,
+      item && item.type,
+      item && item.title,
+      item && item.summary,
+      item && item.summary1,
+      item && item.summary2,
+      item && item.summary3,
+      item && item.buildingComposition,
+      item && item.zoning,
+      item && item.address,
+      parcelText
+    ].filter(Boolean).join(' ');
+  }
+  function categoryKeyForItem(item){
+    const hay = categoryTextForItem(item);
+    if(/토지|부지|나대지|대지|잡종지|전\b|답\b|임야|창고용지|공장용지/.test(hay)) return 'land';
+    if(/상업|상가|근생|근린생활|사무실|오피스|판매|점포|숙박|주유소|카페|식당|빌딩|업무시설/.test(hay)) return 'commercial';
+    if(/산업|공장|창고|제조|물류|야드|호이스트|크레인|산단|산업단지|공업|지식산업|냉장|냉동|저온|차고지/.test(hay)) return 'industrial';
+    return '';
+  }
+  function matchesCategory(item, category){
+    if(!category || category === 'all') return true;
+    return categoryKeyForItem(item) === category;
+  }
+
   function applyFilters(){
     const q = String(state.filters.q || '').toLowerCase();
     state.filteredItems = state.items.filter(item => {
@@ -493,6 +528,7 @@
       if(state.filters.data === 'multiParcel' && (item.pnuList || []).length < 2) return false;
       if(state.filters.deal === 'sale' && !/매매/.test(item.dealType || '')) return false;
       if(state.filters.deal === 'rent' && !/임대/.test(item.dealType || '')) return false;
+      if(!matchesCategory(item, state.filters.category)) return false;
       return true;
     });
     updateStats();
@@ -558,12 +594,16 @@
     needsPhoto:'/parcel-map/assets/pin-purple.svg',
     needsWork:'/parcel-map/assets/pin-orange.svg',
     needsContact:'/parcel-map/assets/pin-red.svg',
-    dealDone:'/parcel-map/assets/pin-dark.svg'
+    dealDone:'/parcel-map/assets/pin-dark.svg',
+    industrial:'/parcel-map/assets/pin-green.svg',
+    commercial:'/parcel-map/assets/pin-teal.svg',
+    land:'/parcel-map/assets/pin-yellow.svg'
   };
   function markerColorKeyForItem(item){
     const s = dashboardStatus(item);
     // 업무상태 칩이 켜져 있으면 그 칩 색을 우선한다.
     // 예: 작업필요+컨택필요 중복 매물이라도 '작업필요' 필터 중에는 주황으로 보이게 한다.
+    if(state.filters && state.filters.category && state.filters.category !== 'all' && matchesCategory(item, state.filters.category)) return state.filters.category;
     if(state.filters && state.filters.work && state.filters.work !== 'all' && s[state.filters.work]) return state.filters.work;
     if(state.filters && state.filters.public && state.filters.public !== 'all' && item.status === state.filters.public) return state.filters.public;
     // 평상시에는 강한 상태부터 우선순위를 둔다.
@@ -578,7 +618,7 @@
   }
   function markerColorForItem(item){
     const key = markerColorKeyForItem(item);
-    return {visible:'#0f7cff',hidden:'#64748b',internal:'#0284c7',reviewHold:'#a16207',needsPhoto:'#7c3aed',needsWork:'#f97316',needsContact:'#ef4444',dealDone:'#111827'}[key] || '#0f7cff';
+    return {visible:'#0f7cff',hidden:'#64748b',internal:'#0284c7',reviewHold:'#a16207',needsPhoto:'#7c3aed',needsWork:'#f97316',needsContact:'#ef4444',dealDone:'#111827',industrial:'#16a34a',commercial:'#0891b2',land:'#ca8a04'}[key] || '#0f7cff';
   }
   function markerIconForItem(item, selected){
     const key = markerColorKeyForItem(item);
@@ -1049,7 +1089,7 @@
     els.chipbar.querySelectorAll('.chip').forEach(chip => {
       const group = chip.dataset.group; const value = chip.dataset.value;
       let active = false;
-      if(value === 'all') active = state.filters.public === 'all' && state.filters.work === 'all' && state.filters.data === 'all' && state.filters.deal === 'all';
+      if(value === 'all') active = state.filters.public === 'all' && state.filters.work === 'all' && state.filters.data === 'all' && state.filters.deal === 'all' && state.filters.category === 'all';
       else active = state.filters[group] === value;
       chip.classList.toggle('is-active', active);
     });
@@ -1057,7 +1097,7 @@
   function onChipClick(e){
     const chip = e.target.closest('.chip'); if(!chip) return;
     const group = chip.dataset.group; const value = chip.dataset.value;
-    if(value === 'all'){ state.filters.public='all'; state.filters.work='all'; state.filters.data='all'; state.filters.deal='all'; }
+    if(value === 'all'){ state.filters.public='all'; state.filters.work='all'; state.filters.data='all'; state.filters.deal='all'; state.filters.category='all'; }
     else { state.filters[group] = state.filters[group] === value ? 'all' : value; }
     setFilterChipActive(); applyFilters();
   }

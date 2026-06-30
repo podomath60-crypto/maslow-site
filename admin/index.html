@@ -3983,12 +3983,10 @@
         var factoryPayload = collectFactory_();
 
         if(isLandListing){
-          // 서버 30_property.gs 기준 고정 스키마:
-          // 최상위 data.landParcels = 필지 배열
-          // 각 필지 1개 = 토지필지 시트 1행
-          syncLandSummaryToSharedFields_();
-          basicPayload = collectBasic_();
-          factoryPayload = collectFactory_();
+          // 저장 시점에는 화면에 보이는 텍스트를 그대로 서버로 보낸다.
+          // 접도 / 진입로를 포함한 토지 검토정보는 다른 특화정보 항목과 동일하게
+          // collectFactory_()에서 DOM 텍스트를 읽은 값이 최종값이다.
+          // 여기서 토지요약 동기화를 다시 돌리면 사용자가 수정한 값이 조회값으로 되돌아갈 수 있다.
         }
 
         return {

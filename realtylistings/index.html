@@ -742,6 +742,51 @@
   }
 
 
+  function detectListingCategory_(raw, basic, listingNumber){
+    raw = raw || {};
+    basic = basic || {};
+    var numberText = text(listingNumber || raw.listingNumber || raw.listingNo || basic.listingNumber).toUpperCase();
+    var match = numberText.match(/^(MK|SK|DK)-/);
+    if(match) return match[1];
+    var explicit = firstNonEmpty(raw.listingType, basic.listingType, raw.categoryPrefix, basic.categoryPrefix, raw.category, basic.category, raw.type, basic.type).toUpperCase();
+    if(explicit.indexOf('DK') > -1 || explicit.indexOf('토지') > -1 || explicit.indexOf('LAND') > -1) return 'DK';
+    if(explicit.indexOf('SK') > -1 || explicit.indexOf('상업') > -1 || explicit.indexOf('COMMERCIAL') > -1) return 'SK';
+    if(explicit.indexOf('MK') > -1 || explicit.indexOf('공장') > -1 || explicit.indexOf('산업') > -1 || explicit.indexOf('FACTORY') > -1 || explicit.indexOf('INDUSTRIAL') > -1) return 'MK';
+    return 'MK';
+  }
+
+  function withUnitIfMissing_(value, unit){
+    var s = text(value);
+    if(!s) return '';
+    if(s.indexOf(unit) > -1) return s;
+    return s + unit;
+  }
+
+  function formatAreaPair_(m2, py){
+    var m2Text = withUnitIfMissing_(m2, '㎡');
+    var pyText = withUnitIfMissing_(py, '평');
+    if(m2Text && pyText) return m2Text + ' / ' + pyText;
+    return m2Text || pyText || '';
+  }
+
+  function buildAreaText_(raw, basic, kind){
+    raw = raw || {};
+    basic = basic || {};
+    if(kind === 'land'){
+      return firstNonEmpty(raw.landArea, raw.land, raw.landAreaText, basic.landArea, basic.land, basic.landAreaText)
+        || formatAreaPair_(firstNonEmpty(raw.landAreaM2, basic.landAreaM2), firstNonEmpty(raw.landAreaPy, basic.landAreaPy));
+    }
+    if(kind === 'totalFloor'){
+      return firstNonEmpty(raw.totalFloorArea, raw.totalFloor, raw.totalFloorAreaText, basic.totalFloorArea, basic.totalFloor, basic.totalFloorAreaText)
+        || formatAreaPair_(firstNonEmpty(raw.totalFloorAreaM2, basic.totalFloorAreaM2), firstNonEmpty(raw.totalFloorAreaPy, basic.totalFloorAreaPy));
+    }
+    if(kind === 'exclusive'){
+      return firstNonEmpty(raw.exclusiveArea, raw.exclusive, raw.exclusiveAreaText, basic.exclusiveArea, basic.exclusive, basic.exclusiveAreaText)
+        || formatAreaPair_(firstNonEmpty(raw.exclusiveAreaM2, basic.exclusiveAreaM2), firstNonEmpty(raw.exclusiveAreaPy, basic.exclusiveAreaPy));
+    }
+    return '';
+  }
+
   function maskAddress_(value){
     var s = text(value);
     if (!s) return '';
@@ -899,12 +944,18 @@
     raw = raw || {};
     var basic = raw.basic || {};
     var factory = raw.factory || {};
+    var listingNumber = firstNonEmpty(raw.listingNumber, raw.listingNo, basic.listingNumber);
+    var listingType = detectListingCategory_(raw, basic, listingNumber);
     var summary = Array.isArray(raw.summary)
       ? raw.summary.filter(Boolean)
       : [raw.summary1, raw.summary2, raw.summary3].filter(Boolean);
     var pricePlain = buildPricePlain_(raw, basic);
     return {
-      listingNumber: firstNonEmpty(raw.listingNumber, raw.basic && raw.basic.listingNumber),
+      listingNumber: listingNumber,
+      listingType: listingType,
+      isIndustrial: listingType === 'MK',
+      isCommercial: listingType === 'SK',
+      isLand: listingType === 'DK',
       image: buildHeroImage_(raw),
       chip: firstNonEmpty(raw.chip, raw.dealType, basic.dealType),
       title: buildCardTitle_(raw),
@@ -916,11 +967,11 @@
       summary: summary,
       point: buildCardMeta_(raw),
       approval: firstNonEmpty(raw.approvalDate, raw.approval, basic.approvalDate),
-      land: firstNonEmpty(raw.landArea, raw.land, basic.landArea),
-      totalFloor: firstNonEmpty(raw.totalFloorArea, raw.totalFloor, basic.totalFloorArea),
-      exclusive: firstNonEmpty(raw.exclusiveArea, raw.exclusive, basic.exclusiveArea),
+      land: buildAreaText_(raw, basic, 'land'),
+      totalFloor: buildAreaText_(raw, basic, 'totalFloor'),
+      exclusive: buildAreaText_(raw, basic, 'exclusive'),
       zoning: firstNonEmpty(raw.zoning, basic.zoning),
-      listingNo: firstNonEmpty(raw.listingNumber, raw.listingNo, basic.listingNumber),
+      listingNo: listingNumber,
       propertyType: firstNonEmpty(raw.propertyType, basic.propertyType),
       buildingComposition: firstNonEmpty(raw.buildingComposition, basic.buildingComposition),
       parking: firstNonEmpty(raw.parkingCount, raw.parking, basic.parkingCount),
@@ -1049,6 +1100,7 @@
     return [
       item.title,
       item.address,
+      item.listingType,
       item.chip,
       item.pricePlain,
       item.point,
@@ -1081,7 +1133,7 @@
   function filterFactoryListingItems_(items){
     return (items || []).filter(function(item){
       var listingNumber = text(item && item.listingNumber).toUpperCase();
-      return listingNumber.indexOf('SK-') === 0;
+      return listingNumber.indexOf('SK-') === 0 || listingNumber.indexOf('DK-') === 0;
     });
   }
 
@@ -1120,13 +1172,147 @@
     if (el) el.innerHTML = value || '';
   }
 
-  function toggleFactoryRow(rowId, valueId, value){
+  function getDetailRowByValueId_(valueId){
+    var valueEl = document.getElementById(valueId);
+    return valueEl ? valueEl.closest('.property-spec-row') : null;
+  }
+
+  function setDetailRowLabel_(valueId, label){
+    var row = getDetailRowByValueId_(valueId);
+    var labelEl = row ? row.querySelector('.property-spec-label') : null;
+    if(labelEl && label) labelEl.textContent = label;
+  }
+
+  function setDetailRowVisible_(valueId, visible){
+    var row = getDetailRowByValueId_(valueId);
+    if(row) row.style.display = visible ? 'grid' : 'none';
+  }
+
+  function setDetailRowText_(valueId, label, value, forceVisible){
+    setDetailRowLabel_(valueId, label);
+    setText(valueId, value);
+    var hasValue = !!text(value);
+    setDetailRowVisible_(valueId, !!forceVisible || hasValue);
+    return !!forceVisible || hasValue;
+  }
+
+  function setDetailRowHtml_(valueId, label, value, forceVisible){
+    setDetailRowLabel_(valueId, label);
+    setHtml(valueId, value);
+    var hasValue = !!text(value);
+    setDetailRowVisible_(valueId, !!forceVisible || hasValue);
+    return !!forceVisible || hasValue;
+  }
+
+  function setSpecSectorTitleVisible_(index, visible){
+    var titles = document.querySelectorAll('.property-specs .property-spec-sector-title');
+    var title = titles && titles[index] ? titles[index] : null;
+    if(title) title.style.display = visible ? 'block' : 'none';
+  }
+
+  function renderBasicSpecRows_(item){
+    var isLand = item && item.listingType === 'DK';
+    var priceHtml = buildSpecPriceHtml_(item, item.basic || {});
+
+    setDetailRowText_('detailSpecAddress', '소재지', item.address, false);
+    if(isLand) setDetailRowVisible_('detailSpecAddress', false);
+
+    setDetailRowText_('detailSpecDeal', '거래형태', item.chip, true);
+    setDetailRowHtml_('detailSpecPrice', '가격', priceHtml, true);
+    setDetailRowText_('detailSpecApproval', '사용승인일', item.approval, !isLand && !!text(item.approval));
+    if(isLand) setDetailRowVisible_('detailSpecApproval', false);
+
+    setDetailRowText_('detailSpecLand', isLand ? '총 토지면적' : '대지면적', item.land, !!text(item.land));
+    setDetailRowText_('detailSpecTotalFloor', '연면적', item.totalFloor, !isLand && !!text(item.totalFloor));
+    setDetailRowText_('detailSpecExclusive', '전용면적', item.exclusive, !isLand && !!text(item.exclusive));
+    if(isLand){
+      setDetailRowVisible_('detailSpecTotalFloor', false);
+      setDetailRowVisible_('detailSpecExclusive', false);
+    }
+
+    setDetailRowText_('detailSpecZoning', isLand ? '대표 용도지역' : '용도지역', item.zoning, !!text(item.zoning));
+    setDetailRowText_('detailSpecBuildingComposition', '건축물 구성', item.buildingComposition, !isLand && !!text(item.buildingComposition));
+    if(isLand) setDetailRowVisible_('detailSpecBuildingComposition', false);
+
+    var extraVisible = false;
+    extraVisible = setDetailRowText_('detailSpecListingNo', '매물번호', item.listingNo, !!text(item.listingNo)) || extraVisible;
+    extraVisible = setDetailRowText_('detailSpecPropertyType', isLand ? '매물 종류' : '중개대상물 종류', item.propertyType, !!text(item.propertyType)) || extraVisible;
+    extraVisible = setDetailRowText_('detailSpecParking', '총 주차대수', item.parking, !isLand && !!text(item.parking)) || extraVisible;
+    extraVisible = setDetailRowText_('detailSpecDirection', '주출입구방향', item.direction, !isLand && !!text(item.direction)) || extraVisible;
+    extraVisible = setDetailRowText_('detailSpecMoveIn', '입주가능일', item.moveIn, !isLand && !!text(item.moveIn)) || extraVisible;
+    extraVisible = setDetailRowText_('detailSpecFloorInfo', '총 층수', item.floorInfo, !isLand && !!text(item.floorInfo)) || extraVisible;
+    extraVisible = setDetailRowText_('detailSpecRestroom', '화장실 수', item.restroom, !isLand && !!text(item.restroom)) || extraVisible;
+    extraVisible = setDetailRowText_('detailSpecMaintenanceFee', '관리비', item.maintenanceFee, !isLand && !!text(item.maintenanceFee)) || extraVisible;
+    if(isLand){
+      ['detailSpecParking','detailSpecDirection','detailSpecMoveIn','detailSpecFloorInfo','detailSpecRestroom','detailSpecMaintenanceFee'].forEach(function(id){ setDetailRowVisible_(id, false); });
+    }
+    setSpecSectorTitleVisible_(1, extraVisible);
+  }
+
+  function toggleFactoryRow(rowId, valueId, value, label){
     var row = document.getElementById(rowId);
     var valueEl = document.getElementById(valueId);
     var hasValue = !!text(value);
+    if (label && row) {
+      var labelEl = row.querySelector('.property-spec-label');
+      if(labelEl) labelEl.textContent = label;
+    }
     if (valueEl) valueEl.innerHTML = hasValue ? nl2br(value) : '';
     if (row) row.style.display = hasValue ? 'grid' : 'none';
     return hasValue;
+  }
+
+  function hideAllFactoryRows_(){
+    [
+      'factoryRowCeiling','factoryRowCrane','factoryRowHoist','factoryRowPower','factoryRowMainEquipment',
+      'factoryRowRecommendedIndustry','factoryRowIndustryRestriction','factoryRowRoadWidth','factoryRowDoorWidth',
+      'factoryRowLargeTruckAccess','factoryRowLoadingAvailable','factoryRowOfficeIncluded','factoryRowYardSize','factoryRowReadyToOperate'
+    ].forEach(function(rowId){
+      var row = document.getElementById(rowId);
+      if(row) row.style.display = 'none';
+    });
+  }
+
+  function renderSpecialRows_(item){
+    hideAllFactoryRows_();
+    var specialTitle = document.getElementById('factorySpecialSectionTitle');
+    var specialVisible = false;
+    var type = item && item.listingType ? item.listingType : 'MK';
+
+    if(type === 'DK'){
+      if(specialTitle) specialTitle.textContent = '토지 검토정보';
+      specialVisible = toggleFactoryRow('factoryRowMainEquipment', 'detailFactoryMainEquipment', item.mainEquipment, '기반시설') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowRecommendedIndustry', 'detailFactoryRecommendedIndustry', item.recommendedIndustry, '추천 용도') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowIndustryRestriction', 'detailFactoryIndustryRestriction', item.industryRestriction, '제한사항') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowRoadWidth', 'detailFactoryRoadWidth', item.roadWidth, '접도 / 진입로') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowLargeTruckAccess', 'detailFactoryLargeTruckAccess', item.largeTruckAccess, '대형차 진입') || specialVisible;
+    }else if(type === 'SK'){
+      if(specialTitle) specialTitle.textContent = '특화정보';
+      specialVisible = toggleFactoryRow('factoryRowCeiling', 'detailFactoryCeiling', item.ceilingHeight, '층고') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowPower', 'detailFactoryPower', item.powerCapacity, '전력') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowRecommendedIndustry', 'detailFactoryRecommendedIndustry', item.recommendedIndustry, '추천 업종') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowIndustryRestriction', 'detailFactoryIndustryRestriction', item.industryRestriction, '업종 제한') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowRoadWidth', 'detailFactoryRoadWidth', item.roadWidth, '도로접면') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowLargeTruckAccess', 'detailFactoryLargeTruckAccess', item.largeTruckAccess, '대형차 진입') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowLoadingAvailable', 'detailFactoryLoadingAvailable', item.loadingAvailable, '상하차 가능') || specialVisible;
+    }else{
+      if(specialTitle) specialTitle.textContent = '공장특화정보';
+      specialVisible = toggleFactoryRow('factoryRowCeiling', 'detailFactoryCeiling', item.ceilingHeight, '층고') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowCrane', 'detailFactoryCrane', item.crane, '크레인') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowHoist', 'detailFactoryHoist', item.hoist, '호이스트') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowPower', 'detailFactoryPower', item.powerCapacity, '전력') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowMainEquipment', 'detailFactoryMainEquipment', item.mainEquipment, '주요 설비') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowRecommendedIndustry', 'detailFactoryRecommendedIndustry', item.recommendedIndustry, '추천 업종') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowIndustryRestriction', 'detailFactoryIndustryRestriction', item.industryRestriction, '업종 제한') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowRoadWidth', 'detailFactoryRoadWidth', item.roadWidth, '도로접면') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowDoorWidth', 'detailFactoryDoorWidth', item.doorWidth, '도어폭') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowLargeTruckAccess', 'detailFactoryLargeTruckAccess', item.largeTruckAccess, '대형차 진입') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowLoadingAvailable', 'detailFactoryLoadingAvailable', item.loadingAvailable, '상하차 가능') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowOfficeIncluded', 'detailFactoryOfficeIncluded', item.officeIncluded, '사무동 포함') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowYardSize', 'detailFactoryYardSize', item.yardSize, '야드 크기') || specialVisible;
+      specialVisible = toggleFactoryRow('factoryRowReadyToOperate', 'detailFactoryReadyToOperate', item.readyToOperate, '즉시 가동') || specialVisible;
+    }
+    if(specialTitle) specialTitle.style.display = specialVisible ? 'block' : 'none';
   }
 
 
@@ -1230,6 +1416,7 @@
   function openPropertyItem_(item){
     clearSummaryTyping_();
     if(!item) return false;
+    if (typeof currentDetailItem !== 'undefined') currentDetailItem = item;
     currentDetailPhotos = Array.isArray(item.photos) && item.photos.length ? item.photos.slice() : [item.image || 'https://cdn.imweb.me/thumbnail/20260406/d3669fc6b75fc.png'];
     currentDetailPhotoIndex = 0;
     renderDetailPhotoCarousel();
@@ -1242,41 +1429,14 @@
     pendingSummaryLines = lines.slice ? lines.slice() : [];
     var detailSummaryEl = document.getElementById('detailSummary');
     if (detailSummaryEl) detailSummaryEl.innerHTML = '';
-    setText('detailSpecAddress', item.address);
-    setText('detailSpecDeal', item.chip);
-    setHtml('detailSpecPrice', buildSpecPriceHtml_(item, item.basic || {}));
-    setText('detailSpecApproval', item.approval);
-    setText('detailSpecLand', item.land);
-    setText('detailSpecTotalFloor', item.totalFloor);
-    setText('detailSpecExclusive', item.exclusive);
-    setText('detailSpecZoning', item.zoning);
-    setText('detailSpecListingNo', item.listingNo);
-    setText('detailSpecPropertyType', item.propertyType);
-    setText('detailSpecBuildingComposition', item.buildingComposition);
-    setText('detailSpecParking', item.parking);
-    setText('detailSpecDirection', item.direction);
-    setText('detailSpecMoveIn', item.moveIn);
-    setText('detailSpecFloorInfo', item.floorInfo);
-    setText('detailSpecRestroom', item.restroom);
-    setText('detailSpecMaintenanceFee', item.maintenanceFee);
-    var specialVisible = false;
-    specialVisible = toggleFactoryRow('factoryRowCeiling', 'detailFactoryCeiling', item.ceilingHeight) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowCrane', 'detailFactoryCrane', item.crane) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowHoist', 'detailFactoryHoist', item.hoist) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowPower', 'detailFactoryPower', item.powerCapacity) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowMainEquipment', 'detailFactoryMainEquipment', item.mainEquipment) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowRecommendedIndustry', 'detailFactoryRecommendedIndustry', item.recommendedIndustry) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowIndustryRestriction', 'detailFactoryIndustryRestriction', item.industryRestriction) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowRoadWidth', 'detailFactoryRoadWidth', item.roadWidth) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowDoorWidth', 'detailFactoryDoorWidth', item.doorWidth) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowLargeTruckAccess', 'detailFactoryLargeTruckAccess', item.largeTruckAccess) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowLoadingAvailable', 'detailFactoryLoadingAvailable', item.loadingAvailable) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowOfficeIncluded', 'detailFactoryOfficeIncluded', item.officeIncluded) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowYardSize', 'detailFactoryYardSize', item.yardSize) || specialVisible;
-    specialVisible = toggleFactoryRow('factoryRowReadyToOperate', 'detailFactoryReadyToOperate', item.readyToOperate) || specialVisible;
-    var specialTitle = document.getElementById('factorySpecialSectionTitle');
-    if(specialTitle) specialTitle.style.display = specialVisible ? 'block' : 'none';
-    openModal('propertyDetailModal');
+    renderBasicSpecRows_(item);
+    if (typeof syncDetailShareButton_ === 'function') syncDetailShareButton_();
+    renderSpecialRows_(item);
+    var modalOptions = {};
+    if (typeof buildPropertyModalUrl_ === 'function' && item.listingNumber) {
+      modalOptions.url = buildPropertyModalUrl_(item.listingNumber);
+    }
+    openModal('propertyDetailModal', modalOptions);
     requestAnimationFrame(function(){
       requestAnimationFrame(function(){
         bindSummaryTypingOnView_(lines);
@@ -1284,6 +1444,7 @@
     });
     return true;
   }
+
 
   function openProperty(idx){
     var item = filteredPropertyItems[idx] || propertyItems[idx];
@@ -1325,7 +1486,7 @@
     });
 
     if(idx > -1){
-      openProperty(idx);
+      openPropertyItem_(propertyItems[idx]);
       return Promise.resolve(true);
     }
 

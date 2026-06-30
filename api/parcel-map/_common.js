@@ -191,6 +191,7 @@ module.exports = {
   GAS_URL,
   VWORLD_DATA_URL,
   VWORLD_SEARCH_URL,
+  VWORLD_WFS_URL,
   CADASTRAL_DATA_ID,
   sendJson,
   getInput,

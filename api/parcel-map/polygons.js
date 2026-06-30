@@ -24,6 +24,47 @@ function parseBbox(value) {
   return null;
 }
 
+function sanitizeUrl(url) {
+  return String(url || '').replace(/([?&]key=)[^&]+/i, '$1***');
+}
+
+function bodySnippet(body) {
+  return String(body || '').slice(0, 700);
+}
+
+function summarizePayload(payload) {
+  const response = payload && payload.response;
+  const fc = payload && (payload.type === 'FeatureCollection' ? payload : null);
+  const features = Array.isArray(fc && fc.features)
+    ? fc.features
+    : Array.isArray(response && response.result && response.result.featureCollection && response.result.featureCollection.features)
+      ? response.result.featureCollection.features
+      : Array.isArray(payload && payload.features)
+        ? payload.features
+        : [];
+  return {
+    topType: payload && payload.type || '',
+    status: response && (response.status || response.Status) || '',
+    error: compactVworldError(payload),
+    featureCount: features.length,
+    resultKeys: response && response.result ? Object.keys(response.result).slice(0, 12) : []
+  };
+}
+
+function pushDebug(logs, entry) {
+  if (!Array.isArray(logs)) return;
+  logs.push({
+    at: new Date().toISOString(),
+    ...entry
+  });
+  if (logs.length > 30) logs.splice(0, logs.length - 30);
+}
+
+function enrichError(err, logs) {
+  if (err && Array.isArray(logs)) err.debugLogs = logs.slice();
+  return err;
+}
+
 function assertVworldOk(payload, context) {
   const response = payload && payload.response;
   if (!response) return;
@@ -37,15 +78,17 @@ function assertVworldOk(payload, context) {
 
 function normalizeAndTag(payload, fallbackPnu) {
   assertVworldOk(payload, 'VWORLD_DATA');
-  return normalizeFeatureCollection(payload).map((feature) => ({ ...feature, pnu: feature.pnu || fallbackPnu || '' })).filter((feature) => feature.geometry && feature.coordinates !== null);
+  return normalizeFeatureCollection(payload)
+    .map((feature) => ({ ...feature, pnu: feature.pnu || fallbackPnu || '' }))
+    .filter((feature) => feature.geometry && feature.geometry.coordinates);
 }
 
-async function requestVworldData(paramsObj, req, timeoutMs = 25000) {
+async function requestVworldData(paramsObj, req, timeoutMs = 25000, logs, phase = 'data') {
   const key = getVworldKey();
   if (!key) {
     const err = new Error('VWORLD_API_KEY 환경변수가 없습니다.');
     err.code = 'NO_VWORLD_KEY';
-    throw err;
+    throw enrichError(err, logs);
   }
   const domain = getVworldDomain(req);
   const params = appendDefinedParams(new URLSearchParams(), {
@@ -64,14 +107,39 @@ async function requestVworldData(paramsObj, req, timeoutMs = 25000) {
     ...paramsObj
   });
   const url = `${VWORLD_DATA_URL}?${params.toString()}`;
-  const payload = await fetchJsonWithTimeout(url, timeoutMs);
-  assertVworldOk(payload, 'VWORLD_DATA');
-  return payload;
+  pushDebug(logs, {
+    phase: `${phase}:request`,
+    api: 'vworld-data',
+    url: sanitizeUrl(url),
+    domain,
+    data: CADASTRAL_DATA_ID,
+    params: Object.fromEntries(params.entries())
+  });
+  try {
+    const payload = await fetchJsonWithTimeout(url, timeoutMs);
+    pushDebug(logs, {
+      phase: `${phase}:response`,
+      api: 'vworld-data',
+      summary: summarizePayload(payload)
+    });
+    assertVworldOk(payload, 'VWORLD_DATA');
+    return payload;
+  } catch (e) {
+    pushDebug(logs, {
+      phase: `${phase}:error`,
+      api: 'vworld-data',
+      message: text(e && e.message) || 'FETCH_FAILED',
+      status: e && e.status || '',
+      body: bodySnippet(e && e.body)
+    });
+    throw enrichError(e, logs);
+  }
 }
 
-async function requestVworldWfs(paramsObj, req, timeoutMs = 25000) {
+async function requestVworldWfs(paramsObj, req, timeoutMs = 25000, logs, phase = 'wfs') {
   const key = getVworldKey();
-  if (!key) throw new Error('VWORLD_API_KEY 환경변수가 없습니다.');
+  if (!key) throw enrichError(new Error('VWORLD_API_KEY 환경변수가 없습니다.'), logs);
+  if (!VWORLD_WFS_URL) throw enrichError(new Error('VWORLD_WFS_URL 상수가 export되지 않았습니다.'), logs);
   const domain = getVworldDomain(req);
   const params = appendDefinedParams(new URLSearchParams(), {
     service: 'WFS',
@@ -86,46 +154,76 @@ async function requestVworldWfs(paramsObj, req, timeoutMs = 25000) {
     ...paramsObj
   });
   const url = `${VWORLD_WFS_URL}?${params.toString()}`;
-  return fetchJsonWithTimeout(url, timeoutMs);
+  pushDebug(logs, {
+    phase: `${phase}:request`,
+    api: 'vworld-wfs',
+    url: sanitizeUrl(url),
+    domain,
+    typename: CADASTRAL_DATA_ID,
+    params: Object.fromEntries(params.entries())
+  });
+  try {
+    const payload = await fetchJsonWithTimeout(url, timeoutMs);
+    pushDebug(logs, {
+      phase: `${phase}:response`,
+      api: 'vworld-wfs',
+      summary: summarizePayload(payload)
+    });
+    return payload;
+  } catch (e) {
+    pushDebug(logs, {
+      phase: `${phase}:error`,
+      api: 'vworld-wfs',
+      message: text(e && e.message) || 'FETCH_FAILED',
+      status: e && e.status || '',
+      body: bodySnippet(e && e.body)
+    });
+    throw enrichError(e, logs);
+  }
 }
 
-async function fetchByPnu(pnu, req) {
+async function fetchByPnu(pnu, req, logs) {
   const payload = await requestVworldData({
     attrFilter: `pnu:=:${pnu}`,
     size: '10'
-  }, req, 18000);
+  }, req, 18000, logs, `pnu:${pnu}`);
   const rows = normalizeAndTag(payload, pnu);
+  pushDebug(logs, { phase: `pnu:${pnu}:normalized`, count: rows.length });
   return rows.map((feature) => ({ ...feature, pnu: feature.pnu || pnu }));
 }
 
-async function fetchByBbox(bbox, limit, req) {
+async function fetchByBbox(bbox, limit, req, logs) {
   const [minLng, minLat, maxLng, maxLat] = bbox;
   const size = Math.max(1, Math.min(Number(limit || 450), 1000));
   const boxText = `${minLng},${minLat},${maxLng},${maxLat}`;
+  pushDebug(logs, { phase: 'bbox:start', bbox, boxText, limit: size });
   try {
     const payload = await requestVworldData({
       geomFilter: `BOX(${boxText})`,
       size: String(size)
-    }, req, 25000);
-    return normalizeAndTag(payload);
+    }, req, 25000, logs, 'bbox:data');
+    const rows = normalizeAndTag(payload);
+    pushDebug(logs, { phase: 'bbox:data:normalized', count: rows.length });
+    return rows;
   } catch (dataErr) {
-    // 데이터 API bbox가 키/domain/레이어 정책에 걸리는 경우가 있어서 WFS로 한 번 더 확인한다.
+    pushDebug(logs, { phase: 'bbox:data:fallback-to-wfs', reason: text(dataErr && dataErr.message) });
     try {
       const payload = await requestVworldWfs({
         bbox: boxText,
         maxFeatures: String(size)
-      }, req, 25000);
+      }, req, 25000, logs, 'bbox:wfs');
       const rows = normalizeFeatureCollection(payload);
+      pushDebug(logs, { phase: 'bbox:wfs:normalized', count: rows.length });
       if (rows.length) return rows;
       const err = new Error('WFS 응답에 필지 geometry가 없습니다.');
       err.cause = dataErr;
-      throw err;
+      throw enrichError(err, logs);
     } catch (wfsErr) {
       const msg = [dataErr && dataErr.message, wfsErr && wfsErr.message].filter(Boolean).join(' / WFS: ');
       const err = new Error(msg || 'bbox 필지 조회 실패');
       err.dataError = dataErr;
       err.wfsError = wfsErr;
-      throw err;
+      throw enrichError(err, logs);
     }
   }
 }
@@ -134,6 +232,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') {
     return sendJson(res, 405, { ok: false, message: 'Method not allowed' });
   }
+  const debug = [];
   try {
     const input = getInput(req);
     const rawList = Array.isArray(input.pnuList)
@@ -142,6 +241,16 @@ module.exports = async function handler(req, res) {
     const pnuList = uniquePnuList(rawList);
     const bbox = parseBbox(input.bbox);
     const limit = Number(input.limit || 450);
+    pushDebug(debug, {
+      phase: 'handler:input',
+      method: req.method,
+      mode: pnuList.length ? 'pnuList' : (bbox ? 'bbox' : 'none'),
+      pnuCount: pnuList.length,
+      bbox,
+      limit,
+      domain: getVworldDomain(req),
+      hasKey: !!getVworldKey()
+    });
 
     let parcels = [];
     const failed = [];
@@ -151,7 +260,7 @@ module.exports = async function handler(req, res) {
       for (let i = 0; i < maxPnu; i += 1) {
         const pnu = pnuList[i];
         try {
-          const rows = await fetchByPnu(pnu, req);
+          const rows = await fetchByPnu(pnu, req, debug);
           if (rows.length) parcels.push(...rows);
           else failed.push({ pnu, message: 'NO_FEATURE' });
         } catch (e) {
@@ -159,9 +268,10 @@ module.exports = async function handler(req, res) {
         }
       }
     } else if (bbox) {
-      parcels = await fetchByBbox(bbox, limit, req);
+      parcels = await fetchByBbox(bbox, limit, req, debug);
     } else {
-      return sendJson(res, 400, { ok: false, message: 'pnuList 또는 bbox가 필요합니다.' });
+      pushDebug(debug, { phase: 'handler:error', message: 'pnuList 또는 bbox가 필요합니다.' });
+      return sendJson(res, 400, { ok: false, message: 'pnuList 또는 bbox가 필요합니다.', debug });
     }
 
     const deduped = [];
@@ -172,22 +282,32 @@ module.exports = async function handler(req, res) {
       seen.add(key);
       deduped.push(parcel);
     });
+    pushDebug(debug, { phase: 'handler:done', rawCount: parcels.length, dedupedCount: deduped.length, failedCount: failed.length });
 
     return sendJson(res, 200, {
       ok: true,
       parcels: deduped,
       failed,
       requested: { pnuCount: pnuList.length, bbox, limit, domain: getVworldDomain(req) },
-      source: bbox ? 'vworld:data:GetFeature:bbox' : 'vworld:data:GetFeature:pnu',
-      count: deduped.length
+      source: bbox ? 'vworld:data/GetFeature:bbox+fallback-wfs' : 'vworld:data/GetFeature:pnu',
+      count: deduped.length,
+      debug
     });
   } catch (e) {
     const isAbort = e && e.name === 'AbortError';
+    pushDebug(debug, {
+      phase: 'handler:catch',
+      message: text(e && e.message) || String(e || ''),
+      name: e && e.name || '',
+      status: e && e.status || '',
+      body: bodySnippet(e && e.body)
+    });
     return sendJson(res, isAbort ? 504 : 500, {
       ok: false,
       message: isAbort ? '필지 폴리곤 조회 시간이 초과되었습니다.' : '필지 폴리곤 조회 실패',
       error: String((e && e.message) || e || ''),
-      hint: 'VWorld Data API에는 geometry=true, attribute=true, domain 파라미터가 필요할 수 있습니다. 현재 서버가 자동으로 host를 domain에 넣어 호출합니다.'
+      hint: 'debug 배열에서 handler:input → bbox:data:request → bbox:data:response/error → bbox:wfs:* 순서로 어디서 실패했는지 확인하세요.',
+      debug: (e && e.debugLogs) || debug
     });
   }
 };

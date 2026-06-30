@@ -61,7 +61,7 @@
     .stat-num span{display:block;margin-top:4px;font-size:10px;font-weight:850;color:var(--muted)}
     .map-note{position:absolute;right:14px;bottom:14px;z-index:20;max-width:360px;padding:10px 12px;border-radius:16px;background:rgba(17,24,39,.86);color:#fff;font-size:12px;font-weight:850;line-height:1.35;box-shadow:0 14px 34px rgba(15,23,42,.22)}
     .patch-panel{position:absolute;left:14px;bottom:14px;z-index:35;width:360px;max-width:calc(100vw - var(--right) - 44px);max-height:46vh;overflow:auto;padding:12px 13px;border-radius:18px;background:rgba(17,24,39,.92);color:#fff;border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 44px rgba(15,23,42,.28);font-size:12px;font-weight:800;line-height:1.35;pointer-events:auto;backdrop-filter:blur(10px)}
-    .patch-panel-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:13px;font-weight:1000;color:#fff}.patch-panel-title span{font-size:10px;font-weight:900;color:#cbd5e1}.patch-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}.patch-kv{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);border-radius:12px;padding:7px 8px}.patch-kv b{display:block;font-size:14px;font-weight:1000;color:#fff;line-height:1}.patch-kv span{display:block;margin-top:4px;font-size:10px;color:#cbd5e1;font-weight:900}.patch-line{border-top:1px solid rgba(255,255,255,.12);padding-top:7px;margin-top:7px;color:#e5e7eb;word-break:break-all}.patch-line b{color:#fff}.patch-actions{display:flex;gap:6px;margin-top:8px}.patch-actions button{height:28px;border-radius:9px;background:#fff;color:#111827;padding:0 9px;font-size:11px;font-weight:1000}.patch-actions button.dark{background:#334155;color:#fff}.patch-sample{margin-top:7px;padding:7px 8px;border-radius:11px;background:rgba(0,0,0,.20);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:10px;line-height:1.35;white-space:pre-wrap;color:#dbeafe}
+    .patch-panel-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:13px;font-weight:1000;color:#fff}.patch-panel-title span{font-size:10px;font-weight:900;color:#cbd5e1}.patch-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}.patch-kv{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);border-radius:12px;padding:7px 8px}.patch-kv b{display:block;font-size:14px;font-weight:1000;color:#fff;line-height:1}.patch-kv span{display:block;margin-top:4px;font-size:10px;color:#cbd5e1;font-weight:900}.patch-line{border-top:1px solid rgba(255,255,255,.12);padding-top:7px;margin-top:7px;color:#e5e7eb;word-break:break-all}.patch-line b{color:#fff}.patch-actions{display:flex;gap:6px;margin-top:8px}.patch-actions button{height:28px;border-radius:9px;background:#fff;color:#111827;padding:0 9px;font-size:11px;font-weight:1000}.patch-actions button.dark{background:#334155;color:#fff}.patch-sample{margin-top:7px;padding:7px 8px;border-radius:11px;background:rgba(0,0,0,.20);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:10px;line-height:1.35;white-space:pre-wrap;color:#dbeafe}.patch-sample.tall{max-height:210px;overflow:auto;color:#bbf7d0}
 
     .panel{min-width:0;min-height:0;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;box-shadow:-18px 0 44px rgba(15,23,42,.08);z-index:30}
     .panel-head{padding:16px 16px 12px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex:0 0 auto}
@@ -154,6 +154,7 @@
           </div>
           <div class="patch-line"><b>지도</b> <span id="dbgMap">-</span></div>
           <div class="patch-line"><b>마지막 오류</b> <span id="dbgError">없음</span></div>
+          <div class="patch-line"><b>폴리곤 로그</b><div class="patch-sample tall" id="dbgPolygonLog">-</div></div>
           <div class="patch-line"><b>좌표 샘플</b><div class="patch-sample" id="dbgSample">-</div></div>
           <div class="patch-actions"><button id="dbgRefresh" type="button">진단 새로고침</button><button id="dbgClearCache" class="dark" type="button">지오캐시 삭제</button></div>
         </div>
@@ -260,7 +261,9 @@
       lastError:'',
       lastGeocodeQuery:'',
       firstPointSamples:[],
-      badPointSamples:[]
+      badPointSamples:[],
+      polygonLogs:[],
+      polygonLastPayload:null
     }
   };
 
@@ -272,7 +275,7 @@
     statusModal:document.getElementById('statusModal'), statusModalSub:document.getElementById('statusModalSub'), statusCancel:document.getElementById('statusCancel'), statusSave:document.getElementById('statusSave'),
     memoModal:document.getElementById('memoModal'), memoModalSub:document.getElementById('memoModalSub'), memoTextarea:document.getElementById('memoTextarea'), memoCancel:document.getElementById('memoCancel'), memoSave:document.getElementById('memoSave'),
     lockOverlay:document.getElementById('lockOverlay'), lockInput:document.getElementById('lockInput'), lockBtn:document.getElementById('lockBtn'), lockError:document.getElementById('lockError'),
-    patchPanel:document.getElementById('patchPanel'), patchUpdated:document.getElementById('patchUpdated'), dbgItems:document.getElementById('dbgItems'), dbgActualMarkers:document.getElementById('dbgActualMarkers'), dbgMarkerDom:document.getElementById('dbgMarkerDom'), dbgPointInputs:document.getElementById('dbgPointInputs'), dbgInBounds:document.getElementById('dbgInBounds'), dbgGeocode:document.getElementById('dbgGeocode'), dbgRender:document.getElementById('dbgRender'), dbgMap:document.getElementById('dbgMap'), dbgError:document.getElementById('dbgError'), dbgSample:document.getElementById('dbgSample'), dbgRefresh:document.getElementById('dbgRefresh'), dbgClearCache:document.getElementById('dbgClearCache')
+    patchPanel:document.getElementById('patchPanel'), patchUpdated:document.getElementById('patchUpdated'), dbgItems:document.getElementById('dbgItems'), dbgActualMarkers:document.getElementById('dbgActualMarkers'), dbgMarkerDom:document.getElementById('dbgMarkerDom'), dbgPointInputs:document.getElementById('dbgPointInputs'), dbgInBounds:document.getElementById('dbgInBounds'), dbgGeocode:document.getElementById('dbgGeocode'), dbgRender:document.getElementById('dbgRender'), dbgMap:document.getElementById('dbgMap'), dbgError:document.getElementById('dbgError'), dbgPolygonLog:document.getElementById('dbgPolygonLog'), dbgSample:document.getElementById('dbgSample'), dbgRefresh:document.getElementById('dbgRefresh'), dbgClearCache:document.getElementById('dbgClearCache')
   };
 
   function text(v){ return v == null ? '' : String(v).trim(); }
@@ -320,6 +323,87 @@
       return els.map.querySelectorAll('img, div').length;
     }catch(e){ return 0; }
   }
+  function addPolygonLog(label, detail){
+    try{
+      const item = {
+        time:new Date().toLocaleTimeString('ko-KR', {hour12:false}),
+        label:String(label || ''),
+        detail:detail || {}
+      };
+      state.debug.polygonLogs = state.debug.polygonLogs || [];
+      state.debug.polygonLogs.unshift(item);
+      if(state.debug.polygonLogs.length > 12) state.debug.polygonLogs.length = 12;
+      updatePatchPanel();
+    }catch(e){}
+  }
+  function summarizePolygonApiPayload(data){
+    if(!data) return null;
+    return {
+      ok:data.ok,
+      message:data.message || '',
+      error:data.error || '',
+      count:data.count,
+      parcelCount:Array.isArray(data.parcels) ? data.parcels.length : undefined,
+      failedCount:Array.isArray(data.failed) ? data.failed.length : undefined,
+      source:data.source || '',
+      requested:data.requested || null,
+      debug:Array.isArray(data.debug) ? data.debug.slice(-8) : []
+    };
+  }
+  async function postPolygonApi(payload, label, timeoutMs){
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs || 30000);
+    const requestInfo = {
+      mode: payload && payload.bbox ? 'bbox' : 'pnuList',
+      bbox: payload && payload.bbox || null,
+      pnuCount: Array.isArray(payload && payload.pnuList) ? payload.pnuList.length : 0,
+      limit: payload && payload.limit,
+      zoom: state.map && state.map.getZoom ? state.map.getZoom() : null,
+      center: safeMapCenterText()
+    };
+    addPolygonLog((label || 'polygon') + ':request', requestInfo);
+    let res = null;
+    let raw = '';
+    let data = null;
+    try{
+      res = await fetch('/api/parcel-map/polygons', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload || {}),
+        signal:controller.signal
+      });
+      raw = await res.text();
+      try{ data = JSON.parse(raw); }
+      catch(parseErr){
+        addPolygonLog((label || 'polygon') + ':non-json', {status:res.status, body:raw.slice(0,900)});
+        throw new Error('폴리곤 API가 JSON이 아닌 응답을 반환했습니다. HTTP ' + res.status);
+      }
+      const summary = summarizePolygonApiPayload(data);
+      addPolygonLog((label || 'polygon') + ':response', Object.assign({httpStatus:res.status}, summary || {}));
+      state.debug.polygonLastPayload = summary;
+      if(!res.ok || !data || data.ok === false){
+        const lastPhase = Array.isArray(data && data.debug) && data.debug.length ? data.debug[data.debug.length - 1] : null;
+        const msg = (data && (data.error || data.message)) || ('HTTP ' + res.status);
+        const err = new Error(msg);
+        err.payload = data;
+        err.lastPhase = lastPhase;
+        throw err;
+      }
+      return data;
+    }catch(err){
+      const detail = {
+        message: err && err.message || String(err),
+        name: err && err.name || '',
+        lastPhase: err && err.lastPhase || null,
+        request: requestInfo
+      };
+      if(err && err.payload) detail.payload = summarizePolygonApiPayload(err.payload);
+      addPolygonLog((label || 'polygon') + ':error', detail);
+      throw err;
+    }finally{
+      window.clearTimeout(timer);
+    }
+  }
   function updatePatchPanel(){
     if(!els.dbgItems) return;
     const pointInputs = (state.filteredItems || []).filter(item => {
@@ -340,6 +424,7 @@
     els.dbgRender.textContent = String(state.debug.renderCalls || 0);
     els.dbgMap.textContent = safeMapCenterText();
     els.dbgError.textContent = state.debug.lastError || '없음';
+    if(els.dbgPolygonLog) els.dbgPolygonLog.textContent = JSON.stringify(state.debug.polygonLogs || [], null, 2);
     els.dbgSample.textContent = JSON.stringify({samples:diag.out, bad:diag.bad, lastGeocodeQuery:state.debug.lastGeocodeQuery || ''}, null, 2);
     if(els.patchUpdated) els.patchUpdated.textContent = new Date().toLocaleTimeString('ko-KR', {hour12:false});
   }
@@ -826,16 +911,16 @@
     }
     try{
       els.mapNote.textContent = '선택한 매물의 필지 경계를 조회하는 중입니다.';
-      const data = await fetchJsonWithTimeout('/api/parcel-map/polygons', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pnuList:missing})
-      }, 12000);
+      const data = await postPolygonApi({pnuList:missing}, 'selected-pnu', 18000);
       (data.parcels || []).forEach(parcel => { if(parcel && parcel.pnu) state.polygonDataByPnu.set(parcel.pnu, parcel); });
       renderListingPolygons();
       fitToSelectedPolygons();
       els.mapNote.textContent = '선택한 매물의 필지를 표시했습니다.';
     }catch(err){
       console.warn('선택 필지 조회 실패', item && item.listingNumber, err);
+      state.debug.lastError = 'polygon selected: ' + (err.message || err);
       els.mapNote.textContent = '선택 매물 필지 조회 실패: ' + (err.message || err);
+      updatePatchPanel();
     }
   }
 
@@ -858,9 +943,7 @@
     for(let i=0;i<chunks.length;i+=1){
       try{
         els.mapNote.textContent = '필지 경계 조회 중 ' + (i + 1) + '/' + chunks.length + ' · 화면은 그대로 사용할 수 있습니다.';
-        const data = await fetchJsonWithTimeout('/api/parcel-map/polygons', {
-          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pnuList:chunks[i]})
-        }, 12000);
+        const data = await postPolygonApi({pnuList:chunks[i]}, 'batch-pnu-' + (i + 1), 18000);
         (data.parcels || []).forEach(parcel => {
           if(parcel && parcel.pnu){ state.polygonDataByPnu.set(parcel.pnu, parcel); okCount += 1; }
         });
@@ -932,13 +1015,16 @@
     if(zoom < 16){ els.mapNote.textContent = '현재화면 필지는 줌 16 이상에서만 불러옵니다. 조금 더 확대하세요.'; clearPolygonMap(state.basePolygons); return; }
     try{
       els.mapNote.textContent = '현재 화면의 필지 타일을 불러오는 중입니다.';
-      const data = await fetchJson('/api/parcel-map/polygons', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({bbox:currentBbox(), limit:300}) });
+      const bbox = currentBbox();
+      const data = await postPolygonApi({bbox:bbox, limit:300}, 'current-bbox', 30000);
       if(!data || data.ok === false){ throw new Error((data && (data.error || data.message)) || '필지 폴리곤 조회 실패'); }
       renderBasePolygons(data.parcels || []);
       els.mapNote.textContent = (data.parcels || []).length ? '회색 필지는 매물 없는 필지, 색칠된 필지는 저장된 매물 필지입니다. · 필지 ' + (data.parcels || []).length + '건' : '현재 화면에서 조회된 필지가 없습니다. 더 확대하거나 위치를 조금 이동하세요.';
     }catch(err){
       console.error(err);
+      state.debug.lastError = 'polygon current-bbox: ' + (err && err.message ? err.message : err);
       els.mapNote.textContent = '현재화면 필지 조회 실패: ' + (err && err.message ? err.message : err);
+      updatePatchPanel();
     }
   }
   function renderBasePolygons(parcels){

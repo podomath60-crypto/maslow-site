@@ -2385,6 +2385,7 @@
           <label class="dashboard-status-choice"><input id="dashboardStatusInternal" type="checkbox"> <span>내부매물</span></label>
           <label class="dashboard-status-choice"><input id="dashboardStatusNeedsWork" type="checkbox"> <span>작업필요</span></label>
           <label class="dashboard-status-choice"><input id="dashboardStatusNeedsPhoto" type="checkbox"> <span>사진필요</span></label>
+          <label class="dashboard-status-choice"><input id="dashboardStatusNeedsContact" type="checkbox"> <span>컨택필요</span></label>
         </div>
       </section>
 
@@ -4383,10 +4384,11 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         return {
           internal: src.internal === true,
           needsWork: src.needsWork === true,
-          needsPhoto: src.needsPhoto === true
+          needsPhoto: src.needsPhoto === true,
+          needsContact: src.needsContact === true
         };
       }catch(e){
-        return { internal:false, needsWork:false, needsPhoto:false };
+        return { internal:false, needsWork:false, needsPhoto:false, needsContact:false };
       }
     }
 
@@ -4395,7 +4397,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       return JSON.stringify({
         internal: src.internal === true,
         needsWork: src.needsWork === true,
-        needsPhoto: src.needsPhoto === true
+        needsPhoto: src.needsPhoto === true,
+        needsContact: src.needsContact === true
       });
     }
 
@@ -4405,6 +4408,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(status.internal) labels.push('내부매물');
       if(status.needsWork) labels.push('작업필요');
       if(status.needsPhoto) labels.push('사진필요');
+      if(status.needsContact) labels.push('컨택필요');
       return labels;
     }
 
@@ -4446,6 +4450,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const internalInput = document.getElementById('dashboardStatusInternal');
       const needsWorkInput = document.getElementById('dashboardStatusNeedsWork');
       const needsPhotoInput = document.getElementById('dashboardStatusNeedsPhoto');
+      const needsContactInput = document.getElementById('dashboardStatusNeedsContact');
       const kind = getDashboardPropertyKind(item);
       const currentStatus = text(item.status).toLowerCase() === 'visible' ? 'visible' : 'hidden';
       const dashboardStatus = parseDashboardStatusJson(item.dashboardStatusJson);
@@ -4461,6 +4466,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(internalInput) internalInput.checked = dashboardStatus.internal === true;
       if(needsWorkInput) needsWorkInput.checked = dashboardStatus.needsWork === true;
       if(needsPhotoInput) needsPhotoInput.checked = dashboardStatus.needsPhoto === true;
+      if(needsContactInput) needsContactInput.checked = dashboardStatus.needsContact === true;
 
       document.querySelectorAll('#dashboardPropertyKindRow [data-kind]').forEach(function(el){
         el.classList.toggle('is-active', el.getAttribute('data-kind') === kind);
@@ -4502,7 +4508,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const nextDashboardStatus = {
         internal: !!(document.getElementById('dashboardStatusInternal') && document.getElementById('dashboardStatusInternal').checked),
         needsWork: !!(document.getElementById('dashboardStatusNeedsWork') && document.getElementById('dashboardStatusNeedsWork').checked),
-        needsPhoto: !!(document.getElementById('dashboardStatusNeedsPhoto') && document.getElementById('dashboardStatusNeedsPhoto').checked)
+        needsPhoto: !!(document.getElementById('dashboardStatusNeedsPhoto') && document.getElementById('dashboardStatusNeedsPhoto').checked),
+        needsContact: !!(document.getElementById('dashboardStatusNeedsContact') && document.getElementById('dashboardStatusNeedsContact').checked)
       };
 
       const prevDashboardStatus = parseDashboardStatusJson(item && item.dashboardStatusJson);
@@ -4510,7 +4517,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         text(item.status).toLowerCase() === nextStatus &&
         prevDashboardStatus.internal === nextDashboardStatus.internal &&
         prevDashboardStatus.needsWork === nextDashboardStatus.needsWork &&
-        prevDashboardStatus.needsPhoto === nextDashboardStatus.needsPhoto;
+        prevDashboardStatus.needsPhoto === nextDashboardStatus.needsPhoto &&
+        prevDashboardStatus.needsContact === nextDashboardStatus.needsContact;
 
       closeDashboardStatusModal();
 

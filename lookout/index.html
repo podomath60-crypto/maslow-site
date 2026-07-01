@@ -686,6 +686,49 @@
       color:#fff;
     }
 
+    .diagnostics-section{
+      display:none;
+      border-color:#cbd7ee;
+      background:#f8fbff;
+      box-shadow:0 12px 30px rgba(15,23,42,.06);
+    }
+    .diagnostics-section.show{display:block}
+    .diagnostics-section .section-head{align-items:center}
+    .diagnostics-toggle-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:34px;
+      padding:0 12px;
+      border-radius:999px;
+      border:1px solid #c7d7fe;
+      background:#fff;
+      color:#1d4ed8;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:-0.03em;
+    }
+    .diagnostics-body{display:none}
+    .diagnostics-section.expanded .diagnostics-body{display:block}
+    .diag-grid{display:grid;gap:12px}
+    .diag-card{border:1px solid #d9e4f5;border-radius:20px;background:#fff;overflow:hidden}
+    .diag-card-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #e6edf7;background:#f5f8ff;font-size:15px;line-height:1.25;font-weight:950;letter-spacing:-0.035em;color:#111827}
+    .diag-card-body{padding:12px 14px;display:grid;gap:10px}
+    .diag-row{display:grid;grid-template-columns:160px minmax(0,1fr);gap:10px;font-size:13px;line-height:1.6;border-bottom:1px solid #edf2f7;padding-bottom:8px}
+    .diag-row:last-child{border-bottom:none;padding-bottom:0}
+    .diag-label{color:#475467;font-weight:900;word-break:keep-all}
+    .diag-value{color:#111827;font-weight:800;white-space:pre-wrap;word-break:break-word}
+    .diag-step{border:1px solid #edf2f7;border-radius:16px;background:#fbfdff;padding:10px 12px}
+    .diag-step-title{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:6px;font-size:13px;font-weight:950;color:#1f2937}
+    .diag-step-meta{color:#475467;font-size:12px;line-height:1.6;font-weight:750;white-space:pre-wrap;word-break:break-word}
+    .diag-badge{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:0 8px;border-radius:999px;font-size:11px;line-height:1;font-weight:950;border:1px solid #d0d5dd;color:#475467;background:#fff}
+    .diag-badge.ok{border-color:#b7ebc6;background:#f0fff4;color:#166534}
+    .diag-badge.fail{border-color:#ffd1d1;background:#fff5f5;color:#b42318}
+    .diag-badge.run{border-color:#c7d7fe;background:#eef4ff;color:#1d4ed8}
+    .diag-badge.skip{border-color:#e4e7ec;background:#f8fafc;color:#667085}
+    .diag-code{display:block;max-height:220px;overflow:auto;padding:10px 12px;border-radius:14px;background:#0f172a;color:#e5e7eb;font-size:12px;line-height:1.55;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;white-space:pre-wrap;word-break:break-word}
+    @media (max-width:720px){.diag-row{grid-template-columns:1fr}.diag-label{margin-bottom:-4px}}
+
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
     @media (max-width:980px){
@@ -1171,6 +1214,17 @@
         <div id="sourcesStack" class="source-stack"></div>
       </div>
 
+      <div id="diagnosticsSection" class="section diagnostics-section" aria-live="polite">
+        <div class="section-head">
+          <h2 class="section-title">조회 진단패널</h2>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div id="diagnosticsChip" class="section-chip">대기</div>
+            <button id="diagnosticsToggleBtn" class="diagnostics-toggle-btn" type="button">진단 정보 펼치기</button>
+          </div>
+        </div>
+        <div id="diagnosticsBody" class="diagnostics-body"></div>
+      </div>
+
       <div id="emptyState" class="empty">주소를 눌러 검색한 뒤 조회하세요.</div>
     </div>
   </div>
@@ -1249,7 +1303,11 @@
       lookupFailSteps: document.getElementById('lookupFailSteps'),
       lookupFailRetryBtn: document.getElementById('lookupFailRetryBtn'),
       lookupFailCloseBtn: document.getElementById('lookupFailCloseBtn'),
-      lookupFailResetBtn: document.getElementById('lookupFailResetBtn')
+      lookupFailResetBtn: document.getElementById('lookupFailResetBtn'),
+      diagnosticsSection: document.getElementById('diagnosticsSection'),
+      diagnosticsChip: document.getElementById('diagnosticsChip'),
+      diagnosticsToggleBtn: document.getElementById('diagnosticsToggleBtn'),
+      diagnosticsBody: document.getElementById('diagnosticsBody')
     };
 
     var SOURCE_CONFIG = {
@@ -1407,6 +1465,270 @@
         .replaceAll('>','&gt;')
         .replaceAll('"','&quot;')
         .replaceAll("'",'&#39;');
+    }
+
+
+    var DIAG_VERSION = 'lookout-diag-20260702-01';
+    var currentDiagnostic = null;
+    var diagnosticsExpanded = false;
+
+    function perfNow(){
+      return (window.performance && typeof window.performance.now === 'function') ? window.performance.now() : Date.now();
+    }
+
+    function diagCleanParams(params){
+      var out = {};
+      Object.keys(params || {}).forEach(function(k){
+        if(k === 'callback' || k === '_ts') return;
+        out[k] = params[k] == null ? '' : String(params[k]);
+      });
+      return out;
+    }
+
+    function diagSafeJson(obj){
+      try{ return JSON.stringify(obj || {}, null, 2); }
+      catch(e){ return String(obj || ''); }
+    }
+
+    function createDiagnostic(mode, label, input){
+      return {
+        version: DIAG_VERSION,
+        mode: mode,
+        label: label || '',
+        input: input || {},
+        payload: {},
+        startedAt: new Date().toISOString(),
+        startedMs: perfNow(),
+        totalMs: '',
+        status: 'running',
+        finalSource: '',
+        finalMessage: '',
+        vworldSteps: [],
+        lookupSteps: [],
+        responseSummary: {},
+        landDiagnosis: {},
+        buildingDiagnosis: {}
+      };
+    }
+
+    function beginDiagnostic(mode, label, input){
+      currentDiagnostic = createDiagnostic(mode, label, input);
+      diagnosticsExpanded = false;
+      renderDiagnosticPanel(false);
+      return currentDiagnostic;
+    }
+
+    function finishDiagnostic(status, message, response){
+      if(!currentDiagnostic) return;
+      currentDiagnostic.status = status || 'done';
+      currentDiagnostic.finalMessage = message || '';
+      currentDiagnostic.totalMs = Math.round(perfNow() - currentDiagnostic.startedMs);
+      if(response){
+        currentDiagnostic.responseSummary = summarizeLookupResponse(response);
+        currentDiagnostic.landDiagnosis = diagnoseLandResponse(response);
+        currentDiagnostic.buildingDiagnosis = diagnoseBuildingResponse(response);
+      }
+      renderDiagnosticPanel(status === 'fail');
+    }
+
+    function addDiagStep(bucket, name, meta){
+      if(!currentDiagnostic) return null;
+      var step = {
+        name: name || '',
+        status: 'running',
+        message: '',
+        startedAt: new Date().toISOString(),
+        startedMs: perfNow(),
+        durationMs: '',
+        meta: meta || {},
+        result: {}
+      };
+      var list = bucket === 'vworld' ? currentDiagnostic.vworldSteps : currentDiagnostic.lookupSteps;
+      list.push(step);
+      renderDiagnosticPanel(false);
+      return step;
+    }
+
+    function finishDiagStep(step, status, message, result){
+      if(!step) return;
+      step.status = status || 'done';
+      step.message = message || '';
+      step.durationMs = Math.round(perfNow() - step.startedMs);
+      step.result = result || {};
+      renderDiagnosticPanel(false);
+    }
+
+    function statusLabel(status){
+      if(status === 'success') return '성공';
+      if(status === 'fail') return '실패';
+      if(status === 'running') return '진행중';
+      if(status === 'skip') return '미실행';
+      return status || '-';
+    }
+
+    function statusClass(status){
+      if(status === 'success') return 'ok';
+      if(status === 'fail') return 'fail';
+      if(status === 'running') return 'run';
+      if(status === 'skip') return 'skip';
+      return '';
+    }
+
+    function buildDiagRow(label, value){
+      return '<div class="diag-row"><div class="diag-label">' + escapeHtml(label) + '</div><div class="diag-value">' + escapeHtml(value || '-') + '</div></div>';
+    }
+
+    function buildDiagCode(label, obj){
+      return '<div class="diag-row"><div class="diag-label">' + escapeHtml(label) + '</div><div class="diag-value"><code class="diag-code">' + escapeHtml(diagSafeJson(obj)) + '</code></div></div>';
+    }
+
+    function buildStepHtml(step){
+      var meta = [];
+      Object.keys(step.meta || {}).forEach(function(k){ meta.push(k + ': ' + step.meta[k]); });
+      Object.keys(step.result || {}).forEach(function(k){ meta.push(k + ': ' + step.result[k]); });
+      if(step.message) meta.push('message: ' + step.message);
+      if(step.durationMs !== '') meta.push('durationMs: ' + step.durationMs);
+      return '<div class="diag-step">'
+        + '<div class="diag-step-title"><span>' + escapeHtml(step.name) + '</span><span class="diag-badge ' + statusClass(step.status) + '">' + escapeHtml(statusLabel(step.status)) + '</span></div>'
+        + '<div class="diag-step-meta">' + escapeHtml(meta.join('\n') || '-') + '</div>'
+        + '</div>';
+    }
+
+    function getLandObjectFromResponse(data){
+      if(!data) return null;
+      if(data.land) return data.land;
+      if(data.characteristic || data.usePlan || data.pnu) return data;
+      return null;
+    }
+
+    function diagnoseLandResponse(data){
+      var land = getLandObjectFromResponse(data);
+      if(!land) return { status:'skip', message:'토지대장 응답 객체 없음' };
+      var err = String(land.error || land.message || '');
+      var stage = '';
+      if(err.indexOf('getLandCharacteristics') !== -1) stage = '토지특성 getLandCharacteristics';
+      else if(err.indexOf('getIndvdLandPriceAttr') !== -1) stage = '개별공시지가 getIndvdLandPriceAttr';
+      else if(err.indexOf('getLandUseAttr') !== -1) stage = '토지이용계획 getLandUseAttr';
+      return {
+        status: land.ok === false ? 'fail' : 'success',
+        message: land.message || '',
+        pnu: land.pnu || data.pnu || '',
+        failedStage: stage || '',
+        error: land.error || '',
+        characteristic: land.characteristic ? '있음' : '없음',
+        usePlan: land.usePlan ? '있음' : '없음',
+        fallbackUsed: land.characteristic && land.characteristic.fallbackUsed ? '토지특성 전년도 fallback 사용' : '',
+        priceFallbackUsed: land.characteristic && land.characteristic.officialLandPriceFallbackUsed ? '공시지가 전년도 fallback 사용' : ''
+      };
+    }
+
+    function diagnoseBuildingResponse(data){
+      if(!data) return { status:'skip', message:'응답 없음' };
+      var apis = data.apis || {};
+      var keys = Object.keys(apis);
+      if(!keys.length){
+        return {
+          status: data.ok === false ? 'fail' : 'skip',
+          message: data.message || '건축물대장 apis 객체 없음',
+          hitApis: data.hitApis && data.hitApis.length ? String(data.hitApis.length) : '0'
+        };
+      }
+      var hit = [];
+      var fail = [];
+      keys.forEach(function(k){
+        var api = apis[k] || {};
+        var count = Number(api.itemCount || api.totalCount || 0);
+        if(count > 0){ hit.push((api.name || k) + '(' + count + ')'); }
+        if(api.status === 'ERROR' || api.error){ fail.push((api.name || k) + ': ' + (api.error || api.status)); }
+      });
+      return {
+        status: hit.length ? 'success' : (data.ok === false ? 'fail' : 'skip'),
+        message: data.message || '',
+        hitApis: hit.join(', ') || '없음',
+        endpointErrors: fail.join('\n') || '없음',
+        codeInfo: data.codeInfo ? diagSafeJson(data.codeInfo) : ''
+      };
+    }
+
+    function summarizeLookupResponse(data){
+      if(!data) return {};
+      var land = getLandObjectFromResponse(data);
+      var apis = data.apis || {};
+      var hitCount = Array.isArray(data.hitApis) ? data.hitApis.length : 0;
+      var apiKeys = Object.keys(apis);
+      return {
+        ok: data.ok,
+        message: data.message || '',
+        address: data.address || '',
+        pnu: data.pnu || (land && land.pnu) || '',
+        landOk: land ? land.ok : '',
+        landMessage: land ? land.message : '',
+        buildingApiCount: apiKeys.length,
+        hitApiCount: hitCount
+      };
+    }
+
+    function renderDiagnosticPanel(forceExpanded){
+      if(!els.diagnosticsSection || !els.diagnosticsBody) return;
+      var d = currentDiagnostic;
+      if(!d){
+        els.diagnosticsSection.classList.remove('show','expanded');
+        return;
+      }
+      if(forceExpanded) diagnosticsExpanded = true;
+      els.diagnosticsSection.classList.add('show');
+      els.diagnosticsSection.classList.toggle('expanded', diagnosticsExpanded);
+      if(els.diagnosticsToggleBtn){
+        els.diagnosticsToggleBtn.textContent = diagnosticsExpanded ? '진단 정보 접기' : '진단 정보 펼치기';
+      }
+      if(els.diagnosticsChip){
+        var chip = d.status === 'running' ? '진행중' : (d.status === 'success' ? '성공' : (d.status === 'fail' ? '실패' : '완료'));
+        if(d.finalSource) chip += ' · ' + d.finalSource;
+        els.diagnosticsChip.textContent = chip;
+      }
+      var buildingDiag = d.buildingDiagnosis || {};
+      var landDiag = d.landDiagnosis || {};
+      var html = '<div class="diag-grid">';
+      html += '<div class="diag-card"><div class="diag-card-head"><span>공통 진단</span><span class="diag-badge ' + statusClass(d.status) + '">' + escapeHtml(statusLabel(d.status)) + '</span></div><div class="diag-card-body">'
+        + buildDiagRow('진단 버전', d.version)
+        + buildDiagRow('조회 모드', d.mode === LOOKUP_MODE_LAND_ONLY ? '토지 조회기' : '토지,건축물 통합조회')
+        + buildDiagRow('시작시각', d.startedAt)
+        + buildDiagRow('전체 소요시간', d.totalMs !== '' ? d.totalMs + 'ms' : '진행중')
+        + buildDiagRow('최종 사용 경로', d.finalSource || '-')
+        + buildDiagRow('최종 메시지', d.finalMessage || '-')
+        + buildDiagCode('입력값', d.input || {})
+        + buildDiagCode('조회 payload', d.payload || {})
+        + '</div></div>';
+      html += '<div class="diag-card"><div class="diag-card-head"><span>건축물대장 API 진단</span><span class="diag-badge ' + statusClass(buildingDiag.status) + '">' + escapeHtml(statusLabel(buildingDiag.status)) + '</span></div><div class="diag-card-body">'
+        + buildDiagRow('메시지', buildingDiag.message || '-')
+        + buildDiagRow('조회된 endpoint', buildingDiag.hitApis || '-')
+        + buildDiagRow('endpoint 오류', buildingDiag.endpointErrors || '-')
+        + buildDiagRow('codeInfo', buildingDiag.codeInfo || '-')
+        + '</div></div>';
+      html += '<div class="diag-card"><div class="diag-card-head"><span>토지대장 / VWorld NED 진단</span><span class="diag-badge ' + statusClass(landDiag.status) + '">' + escapeHtml(statusLabel(landDiag.status)) + '</span></div><div class="diag-card-body">'
+        + buildDiagRow('PNU', landDiag.pnu || '-')
+        + buildDiagRow('메시지', landDiag.message || '-')
+        + buildDiagRow('실패 추정 지점', landDiag.failedStage || '-')
+        + buildDiagRow('에러', landDiag.error || '-')
+        + buildDiagRow('토지특성 응답', landDiag.characteristic || '-')
+        + buildDiagRow('토지이용계획 응답', landDiag.usePlan || '-')
+        + buildDiagRow('토지특성 fallback', landDiag.fallbackUsed || '-')
+        + buildDiagRow('공시지가 fallback', landDiag.priceFallbackUsed || '-')
+        + '</div></div>';
+      if(d.vworldSteps && d.vworldSteps.length){
+        html += '<div class="diag-card"><div class="diag-card-head"><span>프론트 VWorld 주소검색 / PNU 확보</span><span class="diag-badge">' + d.vworldSteps.length + '단계</span></div><div class="diag-card-body">';
+        d.vworldSteps.forEach(function(step){ html += buildStepHtml(step); });
+        html += '</div></div>';
+      }
+      html += '<div class="diag-card"><div class="diag-card-head"><span>직접조회 / 프록시 폴백</span><span class="diag-badge">' + ((d.lookupSteps && d.lookupSteps.length) || 0) + '단계</span></div><div class="diag-card-body">';
+      if(d.lookupSteps && d.lookupSteps.length){ d.lookupSteps.forEach(function(step){ html += buildStepHtml(step); }); }
+      else{ html += '<div class="diag-step-meta">아직 공부조회 요청이 실행되지 않았습니다.</div>'; }
+      html += '</div></div>';
+      if(d.responseSummary && Object.keys(d.responseSummary).length){
+        html += '<div class="diag-card"><div class="diag-card-head"><span>최종 응답 요약</span><span class="diag-badge">response</span></div><div class="diag-card-body">' + buildDiagCode('요약', d.responseSummary) + '</div></div>';
+      }
+      html += '</div>';
+      els.diagnosticsBody.innerHTML = html;
     }
 
 
@@ -1576,6 +1898,8 @@
       renderAddressDisplay();
       renderPickedLine();
       setStatus('', '');
+      currentDiagnostic = null;
+      renderDiagnosticPanel(false);
       clearRenderedResult();
     }
 
@@ -1694,21 +2018,39 @@
     }
 
     async function searchVworldAddressItem(query, category){
-      var data = await vworldJsonpCall('https://api.vworld.kr/req/search', {
-        service: 'search',
-        request: 'search',
-        version: '2.0',
-        size: '1',
-        page: '1',
-        type: 'address',
+      var step = addDiagStep('vworld', 'VWorld 주소검색 ' + category, {
+        api: '/req/search',
         category: category,
-        format: 'json',
-        key: VWORLD_API_KEY,
-        query: query
+        query: query,
+        timeoutMs: 15000
       });
+      try{
+        var data = await vworldJsonpCall('https://api.vworld.kr/req/search', {
+          service: 'search',
+          request: 'search',
+          version: '2.0',
+          size: '1',
+          page: '1',
+          type: 'address',
+          category: category,
+          format: 'json',
+          key: VWORLD_API_KEY,
+          query: query
+        });
 
-      var items = data && data.response && data.response.result && data.response.result.items;
-      return items && items.length ? items[0] : null;
+        var items = data && data.response && data.response.result && data.response.result.items;
+        var item = items && items.length ? items[0] : null;
+        finishDiagStep(step, 'success', item ? '검색 결과 있음' : '검색 결과 없음', {
+          resultCount: items && items.length ? items.length : 0,
+          firstId: item && item.id ? item.id : '',
+          firstParcel: item && item.address && item.address.parcel ? item.address.parcel : '',
+          firstRoad: item && item.address && item.address.road ? item.address.road : ''
+        });
+        return item;
+      }catch(e){
+        finishDiagStep(step, 'fail', e && e.message ? e.message : String(e), {});
+        throw e;
+      }
     }
 
     async function searchVworldParcelPnu(query){
@@ -1778,24 +2120,62 @@
 
       var data = await response.json().catch(function(){ return null; });
       if(!response.ok || !(data && data.ok)){
-        throw new Error((data && data.message) || '프록시 조회 실패');
+        var proxyErr = new Error((data && data.message) || '프록시 조회 실패');
+        proxyErr.responsePayload = data;
+        proxyErr.httpStatus = response.status;
+        throw proxyErr;
       }
       return data;
     }
 
     async function lookupPublicProperty(params){
-      var firstError = null;
-      try{
-        var direct = await jsonpCall(Object.assign({}, params));
-        if(direct && direct.ok) return direct;
-        firstError = new Error((direct && direct.message) || 'GAS 직접 조회 응답 실패');
-      }catch(e){
-        firstError = e;
+      params = params || {};
+      if(currentDiagnostic){
+        currentDiagnostic.payload = diagCleanParams(params);
+        renderDiagnosticPanel(false);
       }
 
+      var firstError = null;
+      var directStep = addDiagStep('lookup', '1차 GAS 직접 JSONP', {
+        action: params.action || 'fetchPublicPropertyBySearchResult',
+        timeoutMs: 15000
+      });
       try{
-        return await proxyLookupCall(Object.assign({}, params));
+        var direct = await jsonpCall(Object.assign({}, params));
+        if(direct && direct.ok){
+          if(currentDiagnostic) currentDiagnostic.finalSource = 'GAS 직접조회';
+          finishDiagStep(directStep, 'success', direct.message || '직접조회 성공', summarizeLookupResponse(direct));
+          return direct;
+        }
+        firstError = new Error((direct && direct.message) || 'GAS 직접 조회 응답 실패');
+        if(currentDiagnostic && direct){
+          currentDiagnostic.responseSummary = summarizeLookupResponse(direct);
+          currentDiagnostic.landDiagnosis = diagnoseLandResponse(direct);
+          currentDiagnostic.buildingDiagnosis = diagnoseBuildingResponse(direct);
+        }
+        finishDiagStep(directStep, 'fail', firstError.message, summarizeLookupResponse(direct));
+      }catch(e){
+        firstError = e;
+        finishDiagStep(directStep, 'fail', e && e.message ? e.message : String(e), {});
+      }
+
+      var proxyStep = addDiagStep('lookup', '2차 매슬로우 프록시', {
+        action: params.action || 'fetchPublicPropertyBySearchResult',
+        method: 'GET',
+        path: '/api/public-property-lookup'
+      });
+      try{
+        var proxy = await proxyLookupCall(Object.assign({}, params));
+        if(currentDiagnostic) currentDiagnostic.finalSource = '매슬로우 프록시';
+        finishDiagStep(proxyStep, 'success', proxy.message || '프록시 조회 성공', summarizeLookupResponse(proxy));
+        return proxy;
       }catch(secondError){
+        if(currentDiagnostic && secondError && secondError.responsePayload){
+          currentDiagnostic.responseSummary = summarizeLookupResponse(secondError.responsePayload);
+          currentDiagnostic.landDiagnosis = diagnoseLandResponse(secondError.responsePayload);
+          currentDiagnostic.buildingDiagnosis = diagnoseBuildingResponse(secondError.responsePayload);
+        }
+        finishDiagStep(proxyStep, 'fail', secondError && secondError.message ? secondError.message : String(secondError), secondError && secondError.httpStatus ? { httpStatus: secondError.httpStatus } : {});
         var err = new Error('BOTH_LOOKUP_FAILED');
         err.firstError = firstError;
         err.secondError = secondError;
@@ -2788,6 +3168,9 @@
           return;
         }
 
+        beginDiagnostic(LOOKUP_MODE_LAND_ONLY, '토지 조회기', {
+          inputAddress: query
+        });
         setLoading(true);
         hideLookupFailPanel();
         setStatus('', '');
@@ -2804,6 +3187,13 @@
           (!found.parcelAddress && found.address) ? ('주소: ' + found.address) : ''
         ], '\n');
 
+        if(currentDiagnostic){
+          currentDiagnostic.input.foundPnu = found.pnu;
+          currentDiagnostic.input.foundAddress = found.address || found.query;
+          currentDiagnostic.input.searchType = found.searchType || '';
+          renderDiagnosticPanel(false);
+        }
+
         var res = await lookupPublicProperty({
           action: 'fetchLandInfoBySearchResult',
           pnu: found.pnu,
@@ -2816,6 +3206,7 @@
           throw new Error((res && res.message) || '토지정보 조회 실패');
         }
 
+        finishDiagnostic('success', res.message || '토지정보 조회 성공', res);
         renderResult({
           ok: true,
           message: res.message || '토지정보 조회 성공',
@@ -2825,9 +3216,11 @@
         }, LOOKUP_MODE_LAND_ONLY);
       }catch(e){
         if(e && e.message === 'BOTH_LOOKUP_FAILED'){
+          finishDiagnostic('fail', '토지 조회 실패 · 1차 GAS와 2차 매슬로우 프록시가 모두 실패했습니다.', null);
           showLookupFailPanel(e);
           setStatus('토지 조회 실패 · 1차 GAS와 2차 매슬로우 프록시가 모두 실패했습니다.', 'err');
         }else{
+          finishDiagnostic('fail', '토지 조회 실패 · ' + (e && e.message ? e.message : String(e)), null);
           setStatus('토지 조회 실패 · ' + (e && e.message ? e.message : String(e)), 'err');
         }
       }finally{
@@ -2855,9 +3248,22 @@
         params.queryAddress = picked.lookupAddress || picked.jibunAddress || picked.autoJibunAddress || picked.roadAddress || '';
         params.queryAddressType = (picked.jibunAddress || picked.autoJibunAddress) ? 'JIBUN' : 'ROAD';
 
+        beginDiagnostic(LOOKUP_MODE_BUILDING_LAND, '토지,건축물 통합조회', {
+          pickedAddress: picked.lookupAddress || picked.jibunAddress || picked.roadAddress || '',
+          bcode: picked.bcode || '',
+          queryAddress: params.queryAddress,
+          queryAddressType: params.queryAddressType
+        });
+        if(currentDiagnostic){
+          currentDiagnostic.payload = diagCleanParams(params);
+          renderDiagnosticPanel(false);
+        }
+
         var res = await lookupPublicProperty(params);
+        finishDiagnostic('success', res && res.message ? res.message : '조회 성공', res);
         renderResult(res, LOOKUP_MODE_BUILDING_LAND);
       }catch(e){
+        finishDiagnostic('fail', '조회 실패 · 1차 직접 조회와 2차 프록시 조회가 모두 실패했습니다.', null);
         setStatus('조회 실패 · 1차 직접 조회와 2차 프록시 조회가 모두 실패했습니다.', 'err');
         showLookupFailPanel(e);
       }finally{
@@ -2914,6 +3320,13 @@
       });
     }
 
+
+    if(els.diagnosticsToggleBtn){
+      els.diagnosticsToggleBtn.addEventListener('click', function(){
+        diagnosticsExpanded = !diagnosticsExpanded;
+        renderDiagnosticPanel(false);
+      });
+    }
 
     if(els.lookupFailRetryBtn){
       els.lookupFailRetryBtn.addEventListener('click', function(){

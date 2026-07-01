@@ -1087,29 +1087,20 @@
   function baseStyle(){ return { strokeColor:'#64748b', strokeWeight:1, strokeOpacity:.35, fillColor:'#94a3b8', fillOpacity:.06, clickable:true }; }
   function noGeometryMessage(){ return '<div class="empty-panel"><div class="empty-icon">🗺️</div><b>선택된 필지가 없습니다.</b><div>지도에서 작은 매물 핀을 클릭하면 오른쪽에 매물정보가 먼저 나오고, 해당 필지가 조회됩니다.</div></div>'; }
 
-  function categoryTextForItem(item){
-    const parcels = Array.isArray(item && item.landParcels) ? item.landParcels : [];
-    const parcelText = parcels.map(p => [p.landCategory, p.zoning1, p.zoning2, p.landUseSituation, p.roadAccess, p.address, p.displayAddress].join(' ')).join(' ');
-    return [
-      item && item.propertyType,
-      item && item.type,
-      item && item.title,
-      item && item.summary,
-      item && item.summary1,
-      item && item.summary2,
-      item && item.summary3,
-      item && item.buildingComposition,
-      item && item.zoning,
-      item && item.address,
-      parcelText
-    ].filter(Boolean).join(' ');
+  function listingPrefixForItem(item){
+    // 분류 기준은 오직 매물번호 앞 영문 2자리만 사용한다.
+    // title/address/propertyType/summary/landParcels 등 다른 필드는 절대 fallback으로 쓰지 않는다.
+    const listingNumber = String(item && item.listingNumber || '').trim().toUpperCase();
+    const match = listingNumber.match(/^[A-Z]{2}/);
+    return match ? match[0] : '';
   }
   function categoryKeyForItem(item){
-    const hay = categoryTextForItem(item);
-    if(/토지|부지|나대지|대지|잡종지|전\b|답\b|임야|창고용지|공장용지/.test(hay)) return 'land';
-    if(/상업|상가|근생|근린생활|사무실|오피스|판매|점포|숙박|주유소|카페|식당|빌딩|업무시설/.test(hay)) return 'commercial';
-    if(/산업|공장|창고|제조|물류|야드|호이스트|크레인|산단|산업단지|공업|지식산업|냉장|냉동|저온|차고지/.test(hay)) return 'industrial';
-    return '';
+    switch(listingPrefixForItem(item)){
+      case 'MK': return 'industrial';
+      case 'SK': return 'commercial';
+      case 'DK': return 'land';
+      default: return '';
+    }
   }
   function matchesCategory(item, category){
     if(!category || category === 'all') return true;

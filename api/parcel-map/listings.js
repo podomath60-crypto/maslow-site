@@ -20,10 +20,10 @@ function firstNumber(values) {
 }
 
 function firstHero(raw) {
+  // 대시보드 normalizeItem과 같은 대표사진 로직만 사용한다.
   const photos = parseMaybeJson(raw && raw.photoUrlsJson, []);
-  if (!Array.isArray(photos)) return '';
-  const found = photos.find((item) => item && (item.url || item.src));
-  return text(found && (found.url || found.src));
+  const hero = photos && photos[0] && photos[0].url ? String(photos[0].url).trim() : '';
+  return hero;
 }
 
 
@@ -86,7 +86,7 @@ function normalizeBjdongText(value) {
 function parseJibunAddressCandidates(address) {
   const clean = normalizeBjdongText(address);
   const matches = [];
-  const re = /(산\s*)?(\d+)(?:\s*-\s*(\d+))?/g;
+  const re = /(산\s*)?(\d{1,4})(?:\s*-\s*(\d{1,4}))?/g;
   let match;
   while ((match = re.exec(clean))) {
     const legalName = clean.slice(0, match.index).replace(/(?:번지|일원|필지|외)\s*$/g, '').trim();
@@ -95,7 +95,9 @@ function parseJibunAddressCandidates(address) {
       legalName,
       mountain: !!match[1],
       main: match[2],
-      sub: match[3] || '0'
+      sub: match[3] || '0',
+      matchIndex: match.index,
+      matchText: match[0]
     });
   }
   return matches;
@@ -116,29 +118,84 @@ function findBjdongCode(legalName) {
   return found && found.code ? String(found.code) : '';
 }
 
-function buildPnuFromJibunAddress(address) {
-  const candidates = parseJibunAddressCandidates(address);
-  // 대시보드/매물입력기 로직은 마지막 지번을 사용한다. 다만 "외 2필지" 같은 꼬리 숫자가 있으면
-  // 마지막 후보가 실패할 수 있어 뒤에서부터 성공하는 후보를 사용한다.
-  for (let i = candidates.length - 1; i >= 0; i -= 1) {
-    const parsed = candidates[i];
+function isLikelyNonJibunNumber(clean, match, legalName) {
+  const before = clean.slice(Math.max(0, match.index - 14), match.index);
+  const after = clean.slice(match.index + match[0].length, match.index + match[0].length + 12);
+
+  // "외 2필지", "총 3필지", "271py" 같은 숫자는 PNU 본번으로 조립하면 안 된다.
+  if (/(?:외|총|합계|대지|부지|연면적|건물|공장|창고|필지|평|py|㎡|m2|m²|억|만원|월세|보증금)\s*$/i.test(before)) return true;
+  if (!match[3] && /^\s*(?:필지|개|평|py|㎡|m2|m²|억|만원|월|층|종|류|차선|m\b)/i.test(after)) return true;
+
+  // 법정동명 뒤에 붙은 숫자만 허용한다. 앞부분이 너무 길게 오염된 경우에도 findBjdongCode가
+  // prefix match로 통과할 수 있으므로, legalName 끝의 보조 숫자 꼬리를 경계한다.
+  if (/(?:\d+\s*-\s*\d+|\d+)\s*(?:,|\/|및|와|과|\+)?\s*$/.test(legalName)) {
+    // 단, "52-1, 52-2" 같은 후속 지번은 허용해야 하므로 legalName 내부의 마지막 단어가
+    // 법정동코드명으로 다시 매칭되는 경우만 통과시킨다.
+    const code = findBjdongCode(legalName);
+    if (!/^\d{10}$/.test(code)) return true;
+  }
+  return false;
+}
+
+function buildPnuListFromJibunAddress(address) {
+  const clean = normalizeBjdongText(address);
+  const candidates = parseJibunAddressCandidates(clean);
+  const out = [];
+
+  candidates.forEach((parsed) => {
+    if (!parsed || !parsed.main) return;
+    const fakeMatch = {
+      index: Number.isFinite(parsed.matchIndex) ? parsed.matchIndex : clean.indexOf(String(parsed.main)),
+      0: parsed.matchText || (String(parsed.main) + (parsed.sub && parsed.sub !== '0' ? '-' + parsed.sub : '')),
+      3: parsed.sub && parsed.sub !== '0' ? parsed.sub : ''
+    };
+    if (fakeMatch.index >= 0 && isLikelyNonJibunNumber(clean, fakeMatch, parsed.legalName)) return;
+
     const code = findBjdongCode(parsed.legalName);
-    if (!/^\d{10}$/.test(code)) continue;
+    if (!/^\d{10}$/.test(code)) return;
     const main = String(parsed.main || '').padStart(4, '0');
     const sub = String(parsed.sub || '0').padStart(4, '0');
-    if (!/^\d{4}$/.test(main) || !/^\d{4}$/.test(sub)) continue;
-    return code + (parsed.mountain ? '2' : '1') + main + sub;
-  }
-  return '';
+    if (!/^\d{4}$/.test(main) || !/^\d{4}$/.test(sub)) return;
+    out.push(code + (parsed.mountain ? '2' : '1') + main + sub);
+  });
+
+  return uniquePnuList(out);
+}
+
+function buildPnuFromJibunAddress(address) {
+  return buildPnuListFromJibunAddress(address)[0] || '';
+}
+
+function buildPnusFromAddressSources(values) {
+  const sources = Array.isArray(values) ? values : [values];
+  const out = [];
+  sources.forEach((source) => {
+    buildPnuListFromJibunAddress(source).forEach((pnu) => out.push(pnu));
+  });
+  return uniquePnuList(out);
 }
 
 function buildPnuFromAddressSources(values) {
-  const sources = Array.isArray(values) ? values : [values];
-  for (const source of sources) {
-    const pnu = buildPnuFromJibunAddress(source);
-    if (/^\d{19}$/.test(pnu)) return pnu;
+  return buildPnusFromAddressSources(values)[0] || '';
+}
+
+function collectPnuValues(value) {
+  const out = [];
+  const parsed = parseMaybeJson(value, null);
+  if (Array.isArray(parsed)) {
+    parsed.forEach((item) => collectPnuValues(item).forEach((pnu) => out.push(pnu)));
+    return out;
   }
-  return '';
+  if (parsed && typeof parsed === 'object') {
+    ['pnu', 'PNU', 'representativePnu', 'primaryPnu', 'parcelPnu'].forEach((key) => {
+      collectPnuValues(parsed[key]).forEach((pnu) => out.push(pnu));
+    });
+    return out;
+  }
+  const raw = String(value == null ? '' : value);
+  const matches = raw.match(/\d{19}/g);
+  if (matches) matches.forEach((pnu) => out.push(pnu));
+  return out;
 }
 
 function normalizeDashboardStatus(value) {
@@ -193,24 +250,31 @@ function normalizeLandParcels(value, listingNumber) {
 
 function pnuCandidates(raw, landParcels) {
   const candidates = [];
+  const pushMany = (values) => {
+    (Array.isArray(values) ? values : [values]).forEach((value) => {
+      if (Array.isArray(value)) value.forEach((v) => candidates.push(v));
+      else candidates.push(value);
+    });
+  };
+
+  // 1) 이미 저장된 PNU/PNU목록은 최우선. JSON 배열뿐 아니라 콤마/문자열 안의 19자리 PNU도 전부 뽑는다.
   const directFields = ['pnu', 'PNU', 'landPnu', 'parcelPnu', 'representativePnu', 'primaryPnu'];
-  directFields.forEach((key) => candidates.push(raw && raw[key]));
+  directFields.forEach((key) => pushMany(collectPnuValues(raw && raw[key])));
   const listFields = ['pnuList', 'pnus', 'pnuListJson', 'parcelPnuList'];
-  listFields.forEach((key) => {
-    const parsed = parseMaybeJson(raw && raw[key], []);
-    if (Array.isArray(parsed)) parsed.forEach((v) => candidates.push(v));
-    else candidates.push(raw && raw[key]);
-  });
+  listFields.forEach((key) => pushMany(collectPnuValues(raw && raw[key])));
+
+  // 2) landParcels가 있으면 필지 개수만큼 그대로 사용한다. 3개면 3개, 2개면 2개만 조회된다.
   (Array.isArray(landParcels) ? landParcels : []).forEach((parcel) => {
-    candidates.push(parcel && parcel.pnu);
-    candidates.push(buildPnuFromAddressSources([
+    pushMany(collectPnuValues(parcel && parcel.pnu));
+    pushMany(buildPnusFromAddressSources([
       parcel && parcel.address,
       parcel && parcel.displayAddress,
       parcel && parcel.jibun
     ]));
   });
 
-  candidates.push(buildPnuFromAddressSources([
+  // 3) 필지 구조가 없고 주소 문자열에 "52-1, 52-2, 52-3"처럼 여러 지번이 적힌 경우만 보조 조립한다.
+  pushMany(buildPnusFromAddressSources([
     raw && raw.address,
     raw && raw.jibunAddress,
     raw && raw.parcelAddress,

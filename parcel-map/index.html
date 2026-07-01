@@ -18,7 +18,7 @@
       --right:clamp(360px,25vw,480px);
       --detail:clamp(360px,25vw,480px);
       --fixed:clamp(360px,25vw,480px);
-      --handle:24px;
+      --handle:1px;
       --top:64px;
     }
     *{box-sizing:border-box}
@@ -74,15 +74,15 @@
 
     .right-panels{position:relative;display:none;align-items:stretch;flex:0 0 auto;width:max-content;height:100%;min-width:0;max-width:calc(100vw - 220px);z-index:60;background:#fff}
     .right-panels.is-open{display:flex}
-    .panel{width:var(--fixed);flex:0 0 var(--fixed);min-width:0;min-height:0;background:var(--panel);border-left:1px solid var(--line);display:none;flex-direction:column;box-shadow:-18px 0 44px rgba(15,23,42,.08);z-index:30;overflow:hidden}
+    .panel{width:var(--fixed);flex:0 0 var(--fixed);min-width:0;min-height:0;background:var(--panel);border-left:1px solid #eef2f7;display:none;flex-direction:column;box-shadow:none;z-index:30;overflow:hidden}
     .panel.is-open{display:flex}
     .panel.detail-panel{width:var(--detail);flex-basis:var(--detail)}
     .panel.is-collapsed{display:flex!important;width:0!important;min-width:0!important;max-width:0!important;flex:0 0 0!important;border-left:0!important;box-shadow:none!important;padding:0!important;margin:0!important;overflow:hidden!important}
     .panel.is-collapsed .panel-head,.panel.is-collapsed .panel-body{display:none}
-    .panel-handle{display:none;position:relative;width:var(--handle);flex:0 0 var(--handle);height:100%;background:transparent;border-left:1px solid var(--line);border-right:0;z-index:70}
+    .panel-handle{display:none;position:relative;width:var(--handle);flex:0 0 var(--handle);height:100%;background:transparent;border-left:1px solid #d8dee8;border-right:0;z-index:70;overflow:visible}
     .panel-handle.is-open{display:block}
-    .panel-handle span{position:absolute;left:50%;top:50%;width:17px;height:84px;transform:translate(-50%,-50%);border:1px solid #0f7cff;border-radius:999px;background:#dbeafe;box-shadow:0 8px 20px rgba(15,124,255,.20)}
-    .panel-handle span:before{content:'';position:absolute;left:50%;top:13px;bottom:13px;width:2px;transform:translateX(-50%);background:#0f7cff;border-radius:999px}.panel-handle:hover{background:rgba(15,124,255,.04)}.panel-handle:hover span{background:#bfdbfe;box-shadow:0 12px 26px rgba(15,124,255,.28)}
+    .panel-handle::before{content:'';position:absolute;left:50%;top:0;width:28px;height:100%;transform:translateX(-50%);background:transparent}.panel-handle span{position:absolute;left:50%;top:50%;width:17px;height:84px;transform:translate(-50%,-50%);border:1px solid #0f7cff;border-radius:999px;background:#dbeafe;box-shadow:0 8px 18px rgba(15,124,255,.18)}
+    .panel-handle span:before{content:'';position:absolute;left:50%;top:13px;bottom:13px;width:2px;transform:translateX(-50%);background:#0f7cff;border-radius:999px}.panel-handle:hover{background:transparent}.panel-handle:hover span{background:#bfdbfe;box-shadow:0 12px 24px rgba(15,124,255,.26)}
     .panel-head{padding:16px 16px 12px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex:0 0 auto}
     .panel-head-title{font-size:17px;font-weight:1000;line-height:1.2}
     .panel-head-sub{margin-top:4px;font-size:12px;font-weight:800;color:var(--muted);line-height:1.35}
@@ -960,13 +960,15 @@
     throw lastError || new Error('네이버 지도 스크립트를 불러오지 못했습니다.');
   }
 
+  let mapResizeRaf = 0;
+  let mapResizeTimer = 0;
   function forceMapResize(){
     if(!state.mapReady || !state.map || !window.naver || !naver.maps) return;
     let center = null;
     try{ center = state.map.getCenter ? state.map.getCenter() : null; }catch(e){}
     try{
-      // 패널 접기/펴기 후 이전 px 폭이 남아 지도 캔버스가 오른쪽 패널을 덮지 않게 한다.
-      // #map 자체는 항상 부모(.map-wrap) 안에서 100%로만 따라가게 두고, 네이버 지도만 refresh/resize 시킨다.
+      // 지도 DOM은 부모 크기를 100%로만 따라가게 둔다.
+      // refresh()를 반복 호출하면 타일이 다시 그려져 접기/펴기 때 깜박임이 심해지므로 resize 이벤트만 보낸다.
       if(els.map){
         els.map.style.width = '100%';
         els.map.style.height = '100%';
@@ -974,15 +976,26 @@
         els.map.style.right = '0';
       }
     }catch(e){}
-    try{ if(state.map.refresh) state.map.refresh(); }catch(e){}
     try{ naver.maps.Event.trigger(state.map, 'resize'); }catch(e){}
     try{ if(center && state.map.setCenter) state.map.setCenter(center); }catch(e){}
   }
   function scheduleMapResize(){
-    [0, 20, 60, 120, 220, 380, 620, 900].forEach(function(delay){
-      window.setTimeout(forceMapResize, delay);
+    if(mapResizeRaf){
+      try{ window.cancelAnimationFrame(mapResizeRaf); }catch(e){}
+      mapResizeRaf = 0;
+    }
+    if(mapResizeTimer){
+      clearTimeout(mapResizeTimer);
+      mapResizeTimer = 0;
+    }
+    mapResizeRaf = window.requestAnimationFrame(function(){
+      mapResizeRaf = 0;
+      forceMapResize();
+      mapResizeTimer = window.setTimeout(function(){
+        mapResizeTimer = 0;
+        forceMapResize();
+      }, 90);
     });
-    try{ window.requestAnimationFrame(function(){ forceMapResize(); window.requestAnimationFrame(forceMapResize); }); }catch(e){}
   }
 
   async function initMap(){

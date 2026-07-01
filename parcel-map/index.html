@@ -120,7 +120,6 @@
         <button class="chip red" data-group="work" data-value="needsContact" type="button">컨택필요</button>
         <button class="chip dark" data-group="work" data-value="dealDone" type="button">거래완료</button>
         <button class="chip brown" data-group="work" data-value="reviewHold" type="button">검토보류</button>
-        <button class="chip" data-group="data" data-value="noPnu" type="button">PNU미확정</button>
         <button class="chip" data-group="data" data-value="multiParcel" type="button">여러필지</button>
         <button class="chip" data-group="deal" data-value="sale" type="button">매매</button>
         <button class="chip" data-group="deal" data-value="rent" type="button">임대</button>
@@ -759,7 +758,7 @@
     const key = String(item.listingNumber || '') || (String(point.lng) + ',' + String(point.lat));
     if(state.pnuReverseRunning.has(key)) return state.pnuReverseRunning.get(key);
     const promise = (async function(){
-      els.mapNote.textContent = 'PNU 미확정 매물입니다. 핀 좌표 기준으로 해당 필지를 보정합니다.';
+      els.mapNote.textContent = '핀 좌표 기준으로 필지 정보를 확인합니다.';
       const parcel = await requestVworldParcelByPointJsonp(point.lng, point.lat);
       if(parcel && parcel.pnu){
         state.polygonDataByPnu.set(parcel.pnu, parcel);
@@ -1109,6 +1108,7 @@
   }
 
   function applyFilters(){
+    if(state.filters.data === 'noPnu') state.filters.data = 'all';
     const q = String(state.filters.q || '').toLowerCase();
     state.filteredItems = state.items.filter(item => {
       if(q){
@@ -1120,8 +1120,9 @@
       if(state.filters.work !== 'all' && s[state.filters.work] !== true) return false;
       if(state.filters.data === 'noPnu' && (item.pnuList || []).length) return false;
       if(state.filters.data === 'multiParcel' && (item.pnuList || []).length < 2) return false;
-      if(state.filters.deal === 'sale' && !/매매/.test(item.dealType || '')) return false;
-      if(state.filters.deal === 'rent' && !/임대/.test(item.dealType || '')) return false;
+      const dealType = String(item.dealType || '').trim();
+      if(state.filters.deal === 'sale' && dealType !== '매매') return false;
+      if(state.filters.deal === 'rent' && dealType !== '임대') return false;
       if(!matchesCategory(item, state.filters.category)) return false;
       return true;
     });
@@ -1417,7 +1418,7 @@
     const pnus = Array.from(new Set((item.pnuList || []).filter(Boolean)));
     if(pnus.length && !state.selectedPnu) state.selectedPnu = pnus[0];
     if(!pnus.length){
-      els.mapNote.textContent = '이 매물은 PNU가 없어 필지 경계를 조회하지 못했습니다. 핀 위치와 패널 정보만 표시합니다.';
+      els.mapNote.textContent = '필지 경계를 확인하지 못했습니다. 핀 위치와 매물 정보만 표시합니다.';
       updatePatchPanel();
       return;
     }
@@ -1564,12 +1565,7 @@
     state.panelMode = 'default';
     els.panelTitle.textContent = '매물 선택';
     els.panelSub.textContent = state.filteredItems.length + '건 표시 중';
-    const unresolved = state.filteredItems.filter(i => !(i.pnuList || []).length).slice(0, 12);
-    let html = noGeometryMessage();
-    if(unresolved.length){
-      html += '<div class="mini-list"><div class="section-title">PNU 미확정 매물</div>' + unresolved.map(item => '<div class="unresolved-item"><b>' + escapeHtml(item.title || item.listingNumber) + '</b>' + escapeHtml(item.address || '-') + '</div>').join('') + '</div>';
-    }
-    els.panelBody.innerHTML = html;
+    els.panelBody.innerHTML = noGeometryMessage();
   }
 
   function renderMapViewCardPanel(options){
@@ -1686,7 +1682,7 @@
       return parcels.map((p,idx) => '<div class="parcel-card"><strong>' + (p.isRepresentative ? '대표필지 ' : '필지 ') + (idx+1) + '</strong><p>' + escapeHtml(p.displayAddress || p.address || '-') + '</p><p>PNU ' + escapeHtml(p.pnu || '-') + '</p><p>' + escapeHtml([formatArea(p.areaM2,p.areaPy), p.landCategory, p.zoning1, p.roadAccess || p.roadSide].filter(Boolean).join(' / ') || '-') + '</p></div>').join('');
     }
     if((item.pnuList || []).length){ return item.pnuList.map((pnu,idx) => '<div class="parcel-card"><strong>필지 ' + (idx+1) + '</strong><p>PNU ' + escapeHtml(pnu) + '</p></div>').join(''); }
-    return '<div class="parcel-card"><strong>PNU 미확정</strong><p>카드나 핀을 클릭하면 좌표 기준으로 1회 보정하고 캐시에 저장합니다.</p></div>';
+    return '<div class="parcel-card"><strong>필지 정보 확인 전</strong><p>카드나 핀을 클릭하면 좌표 기준으로 필지 정보를 확인합니다.</p></div>';
   }
 
   function openExternal(url){ window.open(url, '_blank', 'noopener,noreferrer'); }
@@ -1715,7 +1711,7 @@
       if(action === 'naver'){ openExternal(CONFIG.naverMapSearchUrl + encodeURIComponent(item.address || item.title || item.listingNumber)); return; }
       if(action === 'ddangya'){
         const pnu = item.representativePnu || (item.pnuList || [])[0] || '';
-        if(!pnu) alert('PNU가 없어 땅야 상세를 열 수 없습니다.'); else openExternal(CONFIG.ddangyaUrl + encodeURIComponent(pnu));
+        if(!pnu) alert('필지 정보가 없어 땅야 상세를 열 수 없습니다.'); else openExternal(CONFIG.ddangyaUrl + encodeURIComponent(pnu));
         return;
       }
     }
@@ -1727,7 +1723,7 @@
     if(action === 'naver') openExternal(CONFIG.naverMapSearchUrl + encodeURIComponent(item.address || item.title || item.listingNumber));
     if(action === 'ddangya'){
       const pnu = item.representativePnu || (item.pnuList || [])[0] || '';
-      if(!pnu) alert('PNU가 없어 땅야 상세를 열 수 없습니다.'); else openExternal(CONFIG.ddangyaUrl + encodeURIComponent(pnu));
+      if(!pnu) alert('필지 정보가 없어 땅야 상세를 열 수 없습니다.'); else openExternal(CONFIG.ddangyaUrl + encodeURIComponent(pnu));
     }
     if(action === 'status') openStatusModal(item);
     if(action === 'memo') openMemoModal(item);

@@ -7118,28 +7118,78 @@
         return String(err);
       }
 
+      function getPublicPropertyProxyEndpoints_(){
+        var endpoints = ['/api/public-property-lookup'];
+        var productionEndpoint = 'https://www.maslowkorea.site/api/public-property-lookup';
+        try{
+          if(window.location && window.location.origin !== 'https://www.maslowkorea.site'){
+            endpoints.push(productionEndpoint);
+          }
+        }catch(e){
+          endpoints.push(productionEndpoint);
+        }
+        return endpoints.filter(function(url, idx, arr){ return url && arr.indexOf(url) === idx; });
+      }
+
+      function formatProxyApiError_(res, data, fallback){
+        var msg = (data && (data.error || data.message)) || fallback || '서버 우회 조회 실패';
+        if(data && data.detail){
+          msg += ' · ' + data.detail;
+        }
+        if(res && !res.ok){
+          msg += ' (HTTP ' + res.status + ')';
+        }
+        return msg;
+      }
+
       function fetchPublicPropertyViaApi_(params){
         if(!window.fetch){
           return Promise.reject(new Error('브라우저 fetch 미지원'));
         }
 
-        return fetch('/api/public-property-lookup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(params || {}),
-          cache: 'no-store'
-        }).then(function(res){
-          return res.text().then(function(text){
-            var data = null;
-            try { data = text ? JSON.parse(text) : null; } catch(e) {}
-            if(!res.ok){
-              throw new Error((data && (data.error || data.message)) || ('서버 우회 조회 실패: ' + res.status));
-            }
-            if(!data){
-              throw new Error('서버 우회 조회 응답 파싱 실패');
-            }
-            return data;
+        var endpoints = getPublicPropertyProxyEndpoints_();
+        var chain = Promise.reject(new Error('서버 우회 조회 시작'));
+        var errors = [];
+
+        endpoints.forEach(function(endpoint){
+          chain = chain.catch(function(){
+            return fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify(params || {}),
+              cache: 'no-store'
+            }).then(function(res){
+              return res.text().then(function(text){
+                var data = null;
+                try { data = text ? JSON.parse(text) : null; } catch(e) {}
+                if(!res.ok){
+                  var httpErr = new Error(formatProxyApiError_(res, data, '서버 우회 조회 실패'));
+                  errors.push(endpoint + ' → ' + httpErr.message);
+                  throw httpErr;
+                }
+                if(!data){
+                  var parseErr = new Error('서버 우회 조회 응답 파싱 실패');
+                  errors.push(endpoint + ' → ' + parseErr.message);
+                  throw parseErr;
+                }
+                if(!(data && data.ok)){
+                  var apiErr = new Error(formatProxyApiError_(res, data, '서버 우회 조회 응답 실패'));
+                  errors.push(endpoint + ' → ' + apiErr.message);
+                  throw apiErr;
+                }
+                return data;
+              });
+            }).catch(function(err){
+              if(!errors.length || errors[errors.length - 1].indexOf(endpoint + ' → ') !== 0){
+                errors.push(endpoint + ' → ' + ((err && err.message) || String(err)));
+              }
+              throw err;
+            });
           });
+        });
+
+        return chain.catch(function(){
+          throw new Error(errors.length ? errors.join(' / ') : '서버 우회 조회 실패');
         });
       }
 

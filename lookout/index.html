@@ -1759,6 +1759,30 @@
       };
     }
 
+    function getPublicPropertyProxyEndpoints(){
+      var endpoints = ['/api/public-property-lookup'];
+      var productionEndpoint = 'https://www.maslowkorea.site/api/public-property-lookup';
+      try{
+        if(window.location && window.location.origin !== 'https://www.maslowkorea.site'){
+          endpoints.push(productionEndpoint);
+        }
+      }catch(e){
+        endpoints.push(productionEndpoint);
+      }
+      return endpoints.filter(function(url, idx, arr){ return url && arr.indexOf(url) === idx; });
+    }
+
+    function formatProxyErrorMessage(response, data, fallback){
+      var msg = (data && (data.message || data.error)) || fallback || '프록시 조회 실패';
+      if(data && data.detail){
+        msg += ' · ' + data.detail;
+      }
+      if(response && !response.ok){
+        msg += ' (HTTP ' + response.status + ')';
+      }
+      return msg;
+    }
+
     async function proxyLookupCall(params){
       params = Object.assign({}, params || {});
       var action = String(params.action || 'fetchPublicPropertyBySearchResult').trim();
@@ -1770,17 +1794,29 @@
       q.set('action', action);
       q.set('_ts', Date.now());
 
-      var response = await fetch('/api/public-property-lookup?' + q.toString(), {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        cache: 'no-store'
-      });
+      var endpointErrors = [];
+      var endpoints = getPublicPropertyProxyEndpoints();
+      for(var i=0; i<endpoints.length; i++){
+        var endpoint = endpoints[i];
+        try{
+          var joiner = endpoint.indexOf('?') >= 0 ? '&' : '?';
+          var response = await fetch(endpoint + joiner + q.toString(), {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+          });
 
-      var data = await response.json().catch(function(){ return null; });
-      if(!response.ok || !(data && data.ok)){
-        throw new Error((data && data.message) || '프록시 조회 실패');
+          var data = await response.json().catch(function(){ return null; });
+          if(response.ok && data && data.ok){
+            return data;
+          }
+          endpointErrors.push(endpoint + ' → ' + formatProxyErrorMessage(response, data, '프록시 조회 실패'));
+        }catch(e){
+          endpointErrors.push(endpoint + ' → ' + (e && e.message ? e.message : String(e)));
+        }
       }
-      return data;
+
+      throw new Error(endpointErrors.length ? endpointErrors.join(' / ') : '프록시 조회 실패');
     }
 
     async function lookupPublicProperty(params){

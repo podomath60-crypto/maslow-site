@@ -241,6 +241,7 @@
     items:[],
     filteredItems:[],
     visibleMapItems:[],
+    panelCardItems:[],
     mapViewportTimer:null,
     panelMode:'default',
     pnuToItems:new Map(),
@@ -1635,6 +1636,7 @@
   function closePanel(){ els.sidePanel.classList.remove('is-open'); }
 
   function renderDefaultPanel(){
+    if(state.panelMode === 'mapCards') return;
     if(state.selectedItem && state.filteredItems.some(i => i.listingNumber === state.selectedItem.listingNumber)) return;
     state.selectedItem = null;
     state.panelMode = 'default';
@@ -1648,22 +1650,31 @@
     els.panelBody.innerHTML = html;
   }
 
-  function renderMapViewCardPanel(){
-    const items = getItemsInCurrentMapView();
-    state.visibleMapItems = items;
+  function renderMapViewCardPanel(options){
+    options = options || {};
+    let items;
+    if(options.refresh === true){
+      items = getItemsInCurrentMapView();
+      state.visibleMapItems = items;
+      state.panelCardItems = items.slice();
+    }else{
+      // 중요: 오른쪽 카드 리스트는 하단 "매물 N개" 버튼을 누른 시점의 스냅샷을 유지한다.
+      // 지도 이동/줌/선택/필지조회로 현재 화면 핀 수가 달라져도 여기서 다시 getItemsInCurrentMapView()를 호출하지 않는다.
+      items = Array.isArray(state.panelCardItems) ? state.panelCardItems : [];
+    }
     state.panelMode = 'mapCards';
     openPanel();
     els.panelTitle.textContent = '현재 화면 매물 ' + items.length + '개';
-    els.panelSub.textContent = items.length ? '지도 뷰 안에 들어온 매물카드입니다. 카드를 누르면 해당 매물 필지만 조회합니다.' : '현재 지도 화면 안에 표시되는 매물이 없습니다.';
+    els.panelSub.textContent = items.length ? '하단 매물 개수 버튼을 누른 시점의 매물카드입니다. 지도를 움직여도 다시 누르기 전까지 이 목록은 유지됩니다.' : '현재 지도 화면 안에 표시되는 매물이 없습니다.';
     if(!items.length){
       els.panelBody.innerHTML = '<div class="empty-map-card-list"><div class="empty-icon">📍</div><b>매물 0개</b><div>지도를 이동하거나 확대/축소한 뒤 하단의 매물 개수 버튼을 다시 누르세요.</div></div>';
       return;
     }
     const max = 60;
     const list = items.slice(0, max);
-    let html = '<div class="map-card-head"><b>현재 화면 매물 ' + items.length + '개</b><span>' + (items.length > max ? '상위 ' + max + '개 표시' : '전체 표시') + '</span></div>';
+    let html = '<div class="map-card-head"><b>현재 화면 매물 ' + items.length + '개</b><span>' + (items.length > max ? '상위 ' + max + '개 표시' : '스냅샷 유지') + '</span></div>';
     if(items.length > max){
-      html += '<div class="too-many-note">현재 화면에 매물이 ' + items.length + '개 있습니다. 카드 렌더링이 무거워질 수 있어 ' + max + '개만 표시합니다. 지도를 조금 더 확대하면 더 정확히 볼 수 있습니다.</div>';
+      html += '<div class="too-many-note">하단 매물 개수 버튼을 누른 시점에 매물이 ' + items.length + '개 있었습니다. 카드 렌더링이 무거워질 수 있어 ' + max + '개만 표시합니다. 지도를 움직여도 다시 누르기 전까지 이 목록은 바뀌지 않습니다.</div>';
     }
     html += '<div class="map-card-list">' + list.map(buildMapDashboardCard).join('') + '</div>';
     els.panelBody.innerHTML = html;
@@ -1952,7 +1963,7 @@
   if(els.mapCountBtn){
     els.mapCountBtn.addEventListener('click', function(){
       updateMapCountButton();
-      renderMapViewCardPanel();
+      renderMapViewCardPanel({refresh:true});
     });
   }
   els.panelClose.addEventListener('click', closePanel);

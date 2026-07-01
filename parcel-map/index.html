@@ -1377,7 +1377,7 @@
           zIndex:selected ? 900 : 500
         };
         const marker = new naver.maps.Marker(markerOptions);
-        naver.maps.Event.addListener(marker, 'click', function(){ selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item]); });
+        naver.maps.Event.addListener(marker, 'click', function(){ selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item], {fitPolygon:false}); });
         state.markers.set(item.listingNumber || ('idx-' + idx), marker);
         state.debug.markerCreated += 1;
       }catch(err){
@@ -1406,7 +1406,9 @@
     }
   }
 
-  async function fetchSelectedItemPolygons(item){
+  async function fetchSelectedItemPolygons(item, options){
+    options = options || {};
+    const shouldFitPolygon = options.fitPolygon !== false;
     if(!item) return;
     clearPolygonMap(state.listingPolygons);
     try{
@@ -1429,7 +1431,7 @@
     const missing = pnus.filter(pnu => !state.polygonDataByPnu.has(pnu));
     if(!missing.length){
       renderListingPolygons();
-      fitToSelectedPolygons();
+      if(shouldFitPolygon) fitToSelectedPolygons();
       els.mapNote.textContent = '저장된 필지 경계를 표시했습니다. 이 매물의 PNU ' + pnus.length + '개만 표시합니다.';
       return;
     }
@@ -1456,7 +1458,7 @@
 
     addPolygonLog('selected-pnu:done', {listingNumber:item.listingNumber || '', requested:missing.length, totalPnu:pnus.length, success:okCount, failed:failed});
     renderListingPolygons();
-    fitToSelectedPolygons();
+    if(shouldFitPolygon) fitToSelectedPolygons();
 
     const drawn = pnus.filter(pnu => state.polygonDataByPnu.has(pnu)).length;
     if(drawn){
@@ -1519,14 +1521,15 @@
     if(candidates.length){ selectItem(candidates[0], pnu, parcel, candidates); }
     else showParcelOnly(parcel || state.polygonDataByPnu.get(pnu));
   }
-  function selectItem(item, pnu, parcel, candidates){
+  function selectItem(item, pnu, parcel, candidates, options){
+    options = options || {};
     state.selectedItem = item; state.selectedPnu = pnu || item.representativePnu || ''; state.selectedParcel = parcel || null; state.selectedCandidates = candidates || [item];
     renderMarkers();
     clearPolygonMap(state.listingPolygons);
     openPanel();
     if(state.panelMode === 'mapCards') renderMapViewCardPanel();
     else renderItemPanel();
-    fetchSelectedItemPolygons(item);
+    fetchSelectedItemPolygons(item, options);
   }
   function showParcelOnly(parcel){
     state.selectedItem = null; state.selectedParcel = parcel || null; state.selectedCandidates = [];

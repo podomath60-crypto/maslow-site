@@ -1760,12 +1760,14 @@
     }
 
     async function proxyLookupCall(params){
+      params = Object.assign({}, params || {});
+      var action = String(params.action || 'fetchPublicPropertyBySearchResult').trim();
       var q = new URLSearchParams();
       Object.keys(params || {}).forEach(function(k){
-        if(k === 'callback' || k === '_ts') return;
+        if(k === 'callback' || k === '_ts' || k === 'action') return;
         q.set(k, params[k] == null ? '' : String(params[k]));
       });
-      q.set('action', 'fetchPublicPropertyBySearchResult');
+      q.set('action', action);
       q.set('_ts', Date.now());
 
       var response = await fetch('/api/public-property-lookup?' + q.toString(), {
@@ -2802,7 +2804,7 @@
           (!found.parcelAddress && found.address) ? ('주소: ' + found.address) : ''
         ], '\n');
 
-        var res = await jsonpCall({
+        var res = await lookupPublicProperty({
           action: 'fetchLandInfoBySearchResult',
           pnu: found.pnu,
           queryAddress: found.query,
@@ -2822,7 +2824,12 @@
           land: res
         }, LOOKUP_MODE_LAND_ONLY);
       }catch(e){
-        setStatus('토지 조회 실패 · ' + (e && e.message ? e.message : String(e)), 'err');
+        if(e && e.message === 'BOTH_LOOKUP_FAILED'){
+          setStatus('토지 조회 실패 · 1차 직접 조회와 2차 프록시 조회가 모두 실패했습니다.', 'err');
+          showLookupFailPanel(e);
+        }else{
+          setStatus('토지 조회 실패 · ' + (e && e.message ? e.message : String(e)), 'err');
+        }
       }finally{
         setLoading(false);
       }

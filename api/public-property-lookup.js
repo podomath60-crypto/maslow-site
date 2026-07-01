@@ -45,7 +45,12 @@ module.exports = async function handler(req, res) {
     const input = getInput(req);
     const action = String(input.action || '').trim();
 
-    if (action !== 'fetchPublicPropertyBySearchResult') {
+    const allowedActions = new Set([
+      'fetchPublicPropertyBySearchResult',
+      'fetchLandInfoBySearchResult'
+    ]);
+
+    if (!allowedActions.has(action)) {
       return sendJson(res, 400, { ok: false, message: '지원하지 않는 요청입니다.' });
     }
 

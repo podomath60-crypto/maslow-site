@@ -4969,7 +4969,7 @@
         setLandParcelLookupLoading_(card, true);
         searchVworldParcelPnu_(address)
           .then(function(found){
-            return jsonpCallPublicLookup_({
+            return lookupLandInfoWithFallback_({
               action: 'fetchLandInfoBySearchResult',
               pnu: found.pnu,
               queryAddress: found.query,
@@ -4993,7 +4993,11 @@
           })
           .catch(function(err){
             console.error(err);
-            showToast((err && err.message) || '토지대장 조회 실패');
+            if(err && err.lookupErrors){
+              showLookupFailurePanel_(err, { lookupLabel: '토지대장' });
+            }else{
+              showToast((err && err.message) || '토지대장 조회 실패');
+            }
           })
           .finally(function(){
             setLandParcelLookupLoading_(card, false);
@@ -7147,8 +7151,10 @@
         }
       }
 
-      function showLookupFailurePanel_(err){
+      function showLookupFailurePanel_(err, options){
         closeLookupFailurePanel_();
+        options = options || {};
+        var lookupLabel = options.lookupLabel || (err && err.lookupLabel) || '건축물정보';
 
         var errors = (err && Array.isArray(err.lookupErrors)) ? err.lookupErrors : [];
         var details = errors.length ? errors.join('\n') : lookupErrorText_(err);
@@ -7158,14 +7164,14 @@
         overlay.className = 'lookup-fail-overlay';
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-label', '건축물정보 조회 실패 안내');
+        overlay.setAttribute('aria-label', lookupLabel + ' 조회 실패 안내');
 
         var panel = document.createElement('div');
         panel.className = 'lookup-fail-panel';
 
         var title = document.createElement('h3');
         title.className = 'lookup-fail-title';
-        title.textContent = '건축물정보 조회 실패';
+        title.textContent = lookupLabel + ' 조회 실패';
 
         var desc = document.createElement('p');
         desc.className = 'lookup-fail-desc';
@@ -7196,7 +7202,7 @@
         copyBtn.className = 'lookup-fail-btn secondary';
         copyBtn.textContent = '오류 복사';
         copyBtn.addEventListener('click', function(){
-          var text = '건축물정보 조회 실패\n' + (details || '상세 오류 없음');
+          var text = lookupLabel + ' 조회 실패\n' + (details || '상세 오류 없음');
           if(navigator.clipboard && navigator.clipboard.writeText){
             navigator.clipboard.writeText(text).then(function(){
               showToast('오류 내용 복사됨');
@@ -7233,7 +7239,10 @@
         closeBtn.focus();
       }
 
-      function lookupPublicPropertyWithFallback_(params){
+      function lookupPublicLookupWithFallback_(params, options){
+        options = options || {};
+        var lookupLabel = options.lookupLabel || '건축물정보';
+        var logLabel = options.logLabel || lookupLabel;
         var firstError = null;
 
         return jsonpCallPublicLookup_(params).then(function(payload){
@@ -7243,7 +7252,7 @@
           throw new Error((payload && (payload.error || payload.message)) || 'GAS 조회 응답 실패');
         }).catch(function(gasErr){
           firstError = gasErr;
-          console.warn('[매물입력기 건축물조회] GAS 직접 호출 실패, /api 우회 재시도', gasErr);
+          console.warn('[매물입력기 ' + logLabel + '] GAS 직접 호출 실패, /api 우회 재시도', gasErr);
           return fetchPublicPropertyViaApi_(params).then(function(payload){
             if(payload && payload.ok){
               return payload;
@@ -7251,16 +7260,25 @@
             throw new Error((payload && (payload.error || payload.message)) || '서버 우회 조회 응답 실패');
           }).catch(function(apiErr){
             var finalError = new Error(
-              '건축물정보 조회 실패 · GAS 직접 호출과 서버 우회 조회가 모두 실패했습니다.'
+              lookupLabel + ' 조회 실패 · GAS 직접 호출과 서버 우회 조회가 모두 실패했습니다.'
             );
+            finalError.lookupLabel = lookupLabel;
             finalError.lookupErrors = [
               'GAS 직접 호출: ' + lookupErrorText_(firstError),
               '서버 우회 조회: ' + lookupErrorText_(apiErr)
             ];
-            console.warn('[매물입력기 건축물조회] 전체 실패', finalError.lookupErrors);
+            console.warn('[매물입력기 ' + logLabel + '] 전체 실패', finalError.lookupErrors);
             throw finalError;
           });
         });
+      }
+
+      function lookupPublicPropertyWithFallback_(params){
+        return lookupPublicLookupWithFallback_(params, { lookupLabel: '건축물정보', logLabel: '건축물조회' });
+      }
+
+      function lookupLandInfoWithFallback_(params){
+        return lookupPublicLookupWithFallback_(params, { lookupLabel: '토지대장', logLabel: '토지대장조회' });
       }
 
       function openAddressSearch_(){

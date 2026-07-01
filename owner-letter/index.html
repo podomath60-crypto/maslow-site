@@ -33,6 +33,8 @@
     .brand-sub{margin-top:5px;font-size:13px;font-weight:800;color:#6f675b;letter-spacing:-.03em}
     .top-actions{display:flex;align-items:center;gap:8px}
     .ghost-link,.mini-btn{height:38px;border-radius:12px;border:1px solid var(--line);background:#fffdf8;color:#2b2f36;font-size:13px;font-weight:900;padding:0 13px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(38,32,22,.06)}
+    .epost-link{gap:7px;background:#fff;border-color:#e7b7b0;color:#b42318;padding:0 14px}
+    .epost-mark{width:22px;height:22px;border-radius:7px;background:#d92d20;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1;box-shadow:0 6px 14px rgba(217,45,32,.18)}
     .mini-btn.primary{background:var(--olive);border-color:var(--olive);color:#fff}
     .layout{max-width:1500px;margin:0 auto;display:grid;grid-template-columns:260px minmax(620px,1fr) 300px;gap:16px;align-items:start}
     .panel{background:rgba(255,253,248,.82);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);overflow:hidden}
@@ -126,7 +128,7 @@
     .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#111;color:#fff;font-size:13px;font-weight:900;padding:12px 16px;border-radius:14px;opacity:0;pointer-events:none;transition:.2s ease;z-index:50;box-shadow:0 18px 40px rgba(0,0,0,.22)}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     @media(max-width:1180px){.layout{grid-template-columns:240px minmax(520px,1fr)}.right-panel{grid-column:1/-1}.saved-list{max-height:none;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}.letter-paper{width:200mm}}
-    @media(max-width:860px){.app{padding:12px}.topbar{height:auto;align-items:flex-start}.top-actions{display:none}.layout{display:block}.panel{margin-bottom:12px;border-radius:20px}.center-panel{padding:10px;min-height:auto}.paper-wrap{justify-content:flex-start}.letter-paper{width:210mm;transform:scale(.64);transform-origin:top left;margin-bottom:-104mm}.brand-title{font-size:22px}.brand-sub{font-size:12px}.type-list{grid-template-columns:1fr}.meta-grid{grid-template-columns:1fr}}
+    @media(max-width:860px){.app{padding:12px}.topbar{height:auto;align-items:flex-start}.top-actions{display:flex}.top-actions .ghost-link:not(.epost-link),.top-actions .mini-btn{display:none}.layout{display:block}.panel{margin-bottom:12px;border-radius:20px}.center-panel{padding:10px;min-height:auto}.paper-wrap{justify-content:flex-start}.letter-paper{width:210mm;transform:scale(.64);transform-origin:top left;margin-bottom:-104mm}.brand-title{font-size:22px}.brand-sub{font-size:12px}.type-list{grid-template-columns:1fr}.meta-grid{grid-template-columns:1fr}}
     @media print{
       @page{size:A4;margin:0}
       html,body{background:#fff!important;width:210mm;min-height:297mm;overflow:visible!important}
@@ -149,6 +151,7 @@
         </div>
       </div>
       <div class="top-actions">
+        <a class="ghost-link epost-link" href="https://www.epost.go.kr/main.retrieveMainPage.comm" target="_blank" rel="noopener noreferrer" title="우체국 바로가기"><span class="epost-mark" aria-hidden="true">📮</span><span>우체국</span></a>
         <a class="ghost-link" href="/dashboard/">대시보드</a>
         <button class="mini-btn" type="button" id="newTopBtn">새 문서</button>
         <button class="mini-btn primary" type="button" id="pdfTopBtn">PDF 만들기</button>

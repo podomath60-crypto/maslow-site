@@ -225,6 +225,7 @@
     '8198': '이유나 팀장'
   };
   const AUTH_STORAGE_KEY = 'MK_ADMIN_DASHBOARD_UNLOCKED_V1';
+  const PNU_CORRECTION_CACHE_KEY = 'PARCEL_MAP_PNU_CORRECTION_CACHE_V1';
   const CONFIG = {
     dashboardUrl:'/dashboard',
     adminUrl:'/admin',
@@ -259,6 +260,8 @@
     showBaseParcels:false,
     baseFetchTimer:null,
     vworldKey:'',
+    pnuCorrectionCache:{},
+    pnuReverseRunning:new Map(),
     wmsOverlay:null,
     wmsTiles:new Map(),
     statusEditingItem:null,
@@ -470,6 +473,175 @@
   }
   function getWriterCode(){ const saved = localStorage.getItem(AUTH_STORAGE_KEY) || ''; const pair = Object.entries(PASSWORD_MAP).find(p => p[1] === saved); return pair ? pair[0] : ''; }
 
+  function normalizeCacheAddress(value){
+    return String(value || '').replace(/\s+/g, ' ').trim();
+  }
+  function pnuCachePointSignature(item){
+    const point = getItemPoint(item);
+    const lng = point && Number.isFinite(point.lng) ? Number(point.lng).toFixed(7) : '';
+    const lat = point && Number.isFinite(point.lat) ? Number(point.lat).toFixed(7) : '';
+    return [
+      String(item && item.listingNumber || '').trim(),
+      normalizeCacheAddress(item && item.address),
+      lng,
+      lat
+    ].join('|');
+  }
+  function loadPnuCorrectionCache(){
+    try{
+      const raw = localStorage.getItem(PNU_CORRECTION_CACHE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      state.pnuCorrectionCache = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    }catch(err){
+      state.pnuCorrectionCache = {};
+      state.debug.lastError = 'PNU 캐시 읽기 실패: ' + (err.message || err);
+    }
+  }
+  function savePnuCorrectionCache(){
+    try{
+      const entries = Object.entries(state.pnuCorrectionCache || {});
+      entries.sort((a,b) => String(b[1] && b[1].savedAt || '').localeCompare(String(a[1] && a[1].savedAt || '')));
+      const limited = Object.fromEntries(entries.slice(0, 800));
+      state.pnuCorrectionCache = limited;
+      localStorage.setItem(PNU_CORRECTION_CACHE_KEY, JSON.stringify(limited));
+    }catch(err){
+      state.debug.lastError = 'PNU 캐시 저장 실패: ' + (err.message || err);
+    }
+  }
+  function getCachedPnuCorrection(item){
+    const listingNumber = String(item && item.listingNumber || '').trim();
+    if(!listingNumber) return null;
+    const cached = state.pnuCorrectionCache && state.pnuCorrectionCache[listingNumber];
+    if(!cached || cached.signature !== pnuCachePointSignature(item)) return null;
+    const pnus = Array.isArray(cached.pnuList) ? cached.pnuList.filter(Boolean) : [];
+    if(!pnus.length) return null;
+    return Object.assign({}, cached, { pnuList:Array.from(new Set(pnus)) });
+  }
+  function applyPnuCorrectionToItem(item, correction){
+    if(!item || !correction) return false;
+    const pnus = Array.from(new Set((correction.pnuList || []).filter(Boolean)));
+    if(!pnus.length) return false;
+    item.pnuList = pnus;
+    item.representativePnu = correction.representativePnu || pnus[0];
+    item.pnuCorrectionSource = correction.source || 'vworld-point-cache';
+    item.pnuCorrectionCachedAt = correction.savedAt || '';
+    if(correction.parcel){
+      if(!Array.isArray(item.landParcels)) item.landParcels = [];
+      const exists = item.landParcels.some(p => String(p && p.pnu || '') === String(correction.parcel.pnu || item.representativePnu));
+      if(!exists){
+        item.landParcels.push({
+          pnu: correction.parcel.pnu || item.representativePnu,
+          displayAddress: correction.parcel.address || '',
+          address: correction.parcel.address || '',
+          areaM2: correction.parcel.areaM2 || '',
+          landCategory: correction.parcel.landCategory || '',
+          isRepresentative: true,
+          source: correction.source || 'vworld-point-cache'
+        });
+      }
+    }
+    return true;
+  }
+  function applyPnuCorrectionCacheToItems(){
+    let applied = 0;
+    (state.items || []).forEach(item => {
+      if((item.pnuList || []).length) return;
+      const cached = getCachedPnuCorrection(item);
+      if(cached && applyPnuCorrectionToItem(item, cached)) applied += 1;
+    });
+    if(applied) addPolygonLog('pnu-cache:applied', {count:applied});
+    return applied;
+  }
+  function savePnuCorrectionForItem(item, parcel, source){
+    if(!item || !item.listingNumber || !parcel || !parcel.pnu) return;
+    const correction = {
+      listingNumber:item.listingNumber,
+      signature:pnuCachePointSignature(item),
+      representativePnu:parcel.pnu,
+      pnuList:[parcel.pnu],
+      source:source || 'vworld-point',
+      savedAt:new Date().toISOString(),
+      parcel:{
+        pnu:parcel.pnu,
+        address:parcel.address || '',
+        areaM2:parcel.areaM2 || '',
+        landCategory:parcel.landCategory || ''
+      }
+    };
+    state.pnuCorrectionCache[item.listingNumber] = correction;
+    savePnuCorrectionCache();
+    applyPnuCorrectionToItem(item, correction);
+    rebuildPnuIndex();
+    addPolygonLog('pnu-cache:saved', {listingNumber:item.listingNumber, pnu:parcel.pnu, source:correction.source});
+  }
+  function isPnu(value){
+    return /^\d{19}$/.test(String(value || '').trim());
+  }
+  function normalizeLngLat(lng, lat){
+    return {
+      lng:Number(lng),
+      lat:Number(lat)
+    };
+  }
+  function pointInRing(lng, lat, ring){
+    let inside = false;
+    if(!Array.isArray(ring) || ring.length < 3) return false;
+    for(let i = 0, j = ring.length - 1; i < ring.length; j = i++){
+      const xi = Number(ring[i][0]); const yi = Number(ring[i][1]);
+      const xj = Number(ring[j][0]); const yj = Number(ring[j][1]);
+      const intersects = ((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / ((yj - yi) || 1e-12) + xi);
+      if(intersects) inside = !inside;
+    }
+    return inside;
+  }
+  function pointInGeometry(lng, lat, geometry){
+    if(!geometry || !Array.isArray(geometry.coordinates)) return false;
+    if(geometry.type === 'Polygon'){
+      const rings = geometry.coordinates;
+      if(!rings.length || !pointInRing(lng, lat, rings[0])) return false;
+      for(let i=1;i<rings.length;i++){ if(pointInRing(lng, lat, rings[i])) return false; }
+      return true;
+    }
+    if(geometry.type === 'MultiPolygon'){
+      return geometry.coordinates.some(poly => pointInGeometry(lng, lat, {type:'Polygon', coordinates:poly}));
+    }
+    return false;
+  }
+  function geometryCentroid(geometry){
+    const pts = [];
+    function collect(coords){
+      if(!Array.isArray(coords)) return;
+      if(typeof coords[0] === 'number' && typeof coords[1] === 'number'){ pts.push([Number(coords[0]), Number(coords[1])]); return; }
+      coords.forEach(collect);
+    }
+    collect(geometry && geometry.coordinates);
+    if(!pts.length) return null;
+    const sum = pts.reduce((acc,p) => { acc.lng += p[0]; acc.lat += p[1]; return acc; }, {lng:0, lat:0});
+    return {lng:sum.lng / pts.length, lat:sum.lat / pts.length};
+  }
+  function chooseBestParcelForPoint(features, lng, lat){
+    const parcels = (features || []).map(f => normalizeVworldParcelFeature(f, '')).filter(p => p && isPnu(p.pnu));
+    if(!parcels.length) return null;
+    const containing = parcels.find(p => pointInGeometry(lng, lat, p.geometry));
+    if(containing) return Object.assign(containing, {match:'contains'});
+    let best = null;
+    let bestDist = Infinity;
+    parcels.forEach(parcel => {
+      const c = geometryCentroid(parcel.geometry);
+      if(!c) return;
+      const dx = c.lng - lng;
+      const dy = c.lat - lat;
+      const d = dx * dx + dy * dy;
+      if(d < bestDist){ bestDist = d; best = parcel; }
+    });
+    return best ? Object.assign(best, {match:'nearest'}) : parcels[0];
+  }
+  function buildSmallBoxGeomFilter(lng, lat, radius){
+    const r = Number(radius || 0.00008);
+    return 'BOX(' + [lng-r, lat-r, lng+r, lat+r].map(v => Number(v).toFixed(8)).join(',') + ')';
+  }
+
+
   function fetchJson(url, options){ return fetch(url, options).then(res => res.json().then(data => { if(!res.ok || !data || data.ok === false){ throw new Error((data && (data.message || data.error)) || ('HTTP ' + res.status)); } return data; })); }
   function fetchJsonWithTimeout(url, options, timeoutMs){
     const controller = new AbortController();
@@ -588,6 +760,80 @@
     const parcel = normalizeVworldParcelFeature(features[0], pnu);
     if(!parcel) throw new Error('PNU ' + pnu + ' 필지 geometry 없음');
     return parcel;
+  }
+
+
+  async function requestVworldParcelByPointJsonp(lng, lat){
+    if(!state.vworldKey) throw new Error('VWORLD_API_KEY가 없습니다.');
+    const point = normalizeLngLat(lng, lat);
+    if(!Number.isFinite(point.lng) || !Number.isFinite(point.lat)) throw new Error('좌표가 없어 PNU 보정 불가');
+    const attempts = [
+      {name:'point', geomFilter:'POINT(' + point.lng.toFixed(8) + ' ' + point.lat.toFixed(8) + ')', size:'5'},
+      {name:'box-small', geomFilter:buildSmallBoxGeomFilter(point.lng, point.lat, 0.00008), size:'10'},
+      {name:'box-wide', geomFilter:buildSmallBoxGeomFilter(point.lng, point.lat, 0.00020), size:'20'}
+    ];
+    let lastError = null;
+    for(const attempt of attempts){
+      const params = {
+        key: state.vworldKey,
+        service:'data',
+        version:'2.0',
+        request:'getfeature',
+        format:'json',
+        size:attempt.size,
+        page:'1',
+        geometry:'true',
+        attribute:'true',
+        crs:'EPSG:4326',
+        data:'LP_PA_CBND_BUBUN',
+        geomFilter:attempt.geomFilter,
+        domain:getVworldDomainParam()
+      };
+      const url = appendParams('https://api.vworld.kr/req/data', params);
+      addPolygonLog('pnu-reverse:' + attempt.name + ':request', {api:'vworld-data-jsonp', url:sanitizeVworldUrl(url), point:point});
+      try{
+        const payload = await vworldJsonp(url, 12000);
+        const fc = getVworldFeatureCollection(payload);
+        const features = Array.isArray(fc && fc.features) ? fc.features : [];
+        addPolygonLog('pnu-reverse:' + attempt.name + ':response', {summary:summarizeVworldPayload(payload), featureCount:features.length});
+        const parcel = chooseBestParcelForPoint(features, point.lng, point.lat);
+        if(parcel && parcel.pnu){
+          parcel.source = 'vworld:data/jsonp/' + attempt.name;
+          return parcel;
+        }
+        lastError = new Error(attempt.name + ' 결과 없음');
+      }catch(err){
+        lastError = err;
+        addPolygonLog('pnu-reverse:' + attempt.name + ':error', {error:err && err.message ? err.message : String(err)});
+      }
+    }
+    throw lastError || new Error('좌표 기준 PNU 보정 실패');
+  }
+  async function ensureItemPnuFromPoint(item){
+    if(!item) return [];
+    if((item.pnuList || []).length) return item.pnuList;
+    const cached = getCachedPnuCorrection(item);
+    if(cached && applyPnuCorrectionToItem(item, cached)){
+      rebuildPnuIndex();
+      addPolygonLog('pnu-reverse:cache-hit', {listingNumber:item.listingNumber, pnuList:item.pnuList});
+      return item.pnuList || [];
+    }
+    const point = getItemPoint(item);
+    if(!point) return [];
+    const key = String(item.listingNumber || '') || (String(point.lng) + ',' + String(point.lat));
+    if(state.pnuReverseRunning.has(key)) return state.pnuReverseRunning.get(key);
+    const promise = (async function(){
+      els.mapNote.textContent = 'PNU 미확정 매물입니다. 핀 좌표 기준으로 해당 필지를 보정합니다.';
+      const parcel = await requestVworldParcelByPointJsonp(point.lng, point.lat);
+      if(parcel && parcel.pnu){
+        state.polygonDataByPnu.set(parcel.pnu, parcel);
+        savePnuCorrectionForItem(item, parcel, parcel.source || 'vworld-point');
+        return item.pnuList || [parcel.pnu];
+      }
+      return [];
+    })().finally(() => state.pnuReverseRunning.delete(key));
+    state.pnuReverseRunning.set(key, promise);
+    return promise;
   }
 
   function lngLatToWorldPixel(lng, lat, zoom){
@@ -784,6 +1030,8 @@
     setLoadState('매물');
     const data = await fetchJson('/api/parcel-map/listings', { method:'GET' });
     state.items = Array.isArray(data.items) ? data.items : [];
+    loadPnuCorrectionCache();
+    applyPnuCorrectionCacheToItems();
     updatePatchPanel();
     rebuildPnuIndex();
     applyFilters();
@@ -1233,11 +1481,22 @@
   async function fetchSelectedItemPolygons(item){
     if(!item) return;
     clearPolygonMap(state.listingPolygons);
+    try{
+      await ensureItemPnuFromPoint(item);
+    }catch(err){
+      state.debug.lastError = 'PNU 보정 실패: ' + (err.message || err);
+      addPolygonLog('pnu-reverse:failed', {listingNumber:item.listingNumber || '', error:err.message || String(err)});
+    }
     const pnus = Array.from(new Set((item.pnuList || []).filter(Boolean)));
+    if(pnus.length && !state.selectedPnu) state.selectedPnu = pnus[0];
     if(!pnus.length){
       els.mapNote.textContent = '이 매물은 PNU가 없어 필지 경계를 조회하지 못했습니다. 핀 위치와 패널 정보만 표시합니다.';
+      updatePatchPanel();
       return;
     }
+
+    if(state.panelMode === 'mapCards') renderMapViewCardPanel();
+    else renderItemPanel();
 
     const missing = pnus.filter(pnu => !state.polygonDataByPnu.has(pnu));
     if(!missing.length){
@@ -1498,7 +1757,7 @@
       return parcels.map((p,idx) => '<div class="parcel-card"><strong>' + (p.isRepresentative ? '대표필지 ' : '필지 ') + (idx+1) + '</strong><p>' + escapeHtml(p.displayAddress || p.address || '-') + '</p><p>PNU ' + escapeHtml(p.pnu || '-') + '</p><p>' + escapeHtml([formatArea(p.areaM2,p.areaPy), p.landCategory, p.zoning1, p.roadAccess || p.roadSide].filter(Boolean).join(' / ') || '-') + '</p></div>').join('');
     }
     if((item.pnuList || []).length){ return item.pnuList.map((pnu,idx) => '<div class="parcel-card"><strong>필지 ' + (idx+1) + '</strong><p>PNU ' + escapeHtml(pnu) + '</p></div>').join(''); }
-    return '<div class="parcel-card"><strong>PNU 미확정</strong><p>주소 기준 PNU 보정이 필요합니다.</p></div>';
+    return '<div class="parcel-card"><strong>PNU 미확정</strong><p>카드나 핀을 클릭하면 좌표 기준으로 1회 보정하고 캐시에 저장합니다.</p></div>';
   }
 
   function openExternal(url){ window.open(url, '_blank', 'noopener,noreferrer'); }

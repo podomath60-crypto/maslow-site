@@ -251,6 +251,8 @@
   };
   const AUTH_STORAGE_KEY = 'MK_ADMIN_DASHBOARD_UNLOCKED_V1';
   const PNU_CORRECTION_CACHE_KEY = 'PARCEL_MAP_PNU_CORRECTION_CACHE_V1';
+  const LEDGER_CLICK_MIN_ZOOM = 19; // 네이버 지도 축척 20m 이하에서만 바닥 클릭 공부조회 허용
+  const LEDGER_CLICK_ZOOM_MESSAGE = '공부조회는 지도 축척 20m 이하에서만 가능합니다. 지도를 더 확대해주세요.';
   const CONFIG = {
     dashboardUrl:'/dashboard',
     adminUrl:'/admin',
@@ -1735,10 +1737,118 @@
     return fetchJsonWithTimeout('/api/route-setting/reverse-geocode', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({lat:lat,lng:lng})}, 14000).then(function(data){ return data.item || data; });
   }
   function publicLookup(params){
-    const q = new URLSearchParams();
-    Object.keys(params || {}).forEach(function(k){ if(k === 'callback' || k === '_ts') return; q.set(k, params[k] == null ? '' : String(params[k])); });
-    q.set('_ts', Date.now());
-    return fetchJsonWithTimeout('/api/public-property-lookup?' + q.toString(), {method:'GET', headers:{'Accept':'application/json'}, cache:'no-store'}, 60000);
+    const payload = {};
+    Object.keys(params || {}).forEach(function(k){
+      if(k === 'callback' || k === '_ts') return;
+      const value = params[k];
+      if(value === undefined || value === null) return;
+      payload[k] = String(value);
+    });
+    payload._ts = String(Date.now());
+    return fetchJsonWithTimeout('/api/public-property-lookup', {method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'}, body:JSON.stringify(payload), cache:'no-store'}, 60000);
+  }
+  function cleanLedgerLookupError(err){
+    let msg = err && err.message ? String(err.message) : String(err || '조회 실패');
+    msg = msg.replace(/https?:\/\/[^\s<]+/g, '').replace(/\s+/g, ' ').trim();
+    if(!msg) msg = '조회 실패';
+    return msg;
+  }
+  function pnuLookupParts(pnu){
+    pnu = String(pnu || '').replace(/\D/g, '');
+    if(pnu.length !== 19) return {};
+    const landType = pnu.slice(10, 11);
+    return {
+      bcode: pnu.slice(0, 10),
+      sigunguCd: pnu.slice(0, 5),
+      bjdongCd: pnu.slice(5, 10),
+      landType: landType,
+      landGbn: landType,
+      isMountainFromPnu: landType === '2' ? '1' : '0',
+      platGbCd: landType === '2' ? '1' : '0',
+      bun: pnu.slice(11, 15),
+      ji: pnu.slice(15, 19),
+      pnu: pnu
+    };
+  }
+  function pnuDigits(value){
+    return String(value || '').replace(/\D/g, '');
+  }
+  function trimLookupText(value){
+    return String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+  }
+  function pnuBunJiText(pnu){
+    pnu = pnuDigits(pnu);
+    if(pnu.length !== 19) return '';
+    const bun = String(Number(pnu.slice(11, 15)));
+    const ji = String(Number(pnu.slice(15, 19)));
+    if(!bun || bun === '0') return '';
+    return ji && ji !== '0' ? bun + '-' + ji : bun;
+  }
+  function escapeRegExpText(value){
+    return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  function ensureMountainJibunByPnu(address, pnu){
+    const text = trimLookupText(address);
+    const cleanPnu = pnuDigits(pnu);
+    if(!text || cleanPnu.length !== 19 || cleanPnu.slice(10, 11) !== '2') return text;
+    if(/(^|\s)산\s*\d+(?:-\d+)?$/.test(text)) return text;
+    const bunji = pnuBunJiText(cleanPnu);
+    if(!bunji) return text;
+    const suffix = escapeRegExpText(bunji);
+    const re = new RegExp('(\\s)(?:산\\s*)?' + suffix + '$');
+    if(re.test(text)) return text.replace(re, '$1산 ' + bunji);
+    return text;
+  }
+  function buildPublicLookupMeta(input, parcel, reverse){
+    input = input || {}; parcel = parcel || {}; reverse = reverse || {};
+    const pnu = pnuDigits(parcel.pnu || input.pnu || reverse.pnu || '');
+    const pnuParts = pnuLookupParts(pnu);
+    const bcode = ledgerFirstNonEmpty(pnuParts.bcode, reverse.bcode, input.bcode, parcel.bcode, '');
+    const rawJibun = ledgerFirstNonEmpty(reverse.jibunAddress, parcel.address, reverse.address, input.jibunAddress, input.address, '');
+    const jibunAddress = ensureMountainJibunByPnu(rawJibun, pnu);
+    const roadAddress = ledgerFirstNonEmpty(reverse.roadAddress, input.roadAddress, input.autoRoadAddress, '');
+    const queryAddress = jibunAddress || roadAddress;
+    const domain = getVworldDomainParam();
+    const origin = window.location.origin || '';
+    const base = Object.assign({}, pnuParts, {
+      pnu: pnu,
+      bcode: bcode,
+      jibunAddress: jibunAddress,
+      roadAddress: roadAddress,
+      autoJibunAddress: jibunAddress,
+      autoRoadAddress: roadAddress,
+      lookupAddress: queryAddress,
+      queryAddress: queryAddress,
+      queryAddressType: jibunAddress ? 'JIBUN' : (roadAddress ? 'ROAD' : ''),
+      address: queryAddress,
+      domain: domain,
+      origin: origin,
+      pageOrigin: origin,
+      pageUrl: window.location.href || ''
+    });
+    return {pnu:pnu, pnuParts:pnuParts, bcode:bcode, jibunAddress:jibunAddress, roadAddress:roadAddress, queryAddress:queryAddress, base:base};
+  }
+  async function publicLookupLandWithYearFallback(params){
+    params = params || {};
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for(let y = currentYear; y >= currentYear - 5; y--){ years.push(String(y)); }
+    let lastError = null;
+    for(const year of years){
+      try{
+        const data = await publicLookup(Object.assign({}, params, {stdrYear:year}));
+        if(data && typeof data === 'object') data._stdrYear = year;
+        return data;
+      }catch(err){
+        lastError = err;
+      }
+    }
+    throw lastError || new Error('토지대장 조회 실패');
+  }
+  function mapZoomAllowsLedgerClick(){
+    if(!state.map || !state.map.getZoom) return true;
+    const zoom = Number(state.map.getZoom());
+    return Number.isFinite(zoom) ? zoom >= LEDGER_CLICK_MIN_ZOOM : true;
   }
   function ledgerFirstNonEmpty(){
     for(let i=0;i<arguments.length;i++){ const v = arguments[i]; if(v == null) continue; const t = String(v).trim(); if(t) return t; }
@@ -1888,7 +1998,12 @@
     state.selectedParcel = parcel || null;
     state.selectedPnu = parcel && parcel.pnu || '';
     renderLookupParcelPolygon(parcel);
-    const ctx = {lat:lat, lng:lng, reverse:reverse || {}, parcel:parcel || {}, pnu:parcel && parcel.pnu || '', parcelError:parcelError};
+    const lookupMeta = buildPublicLookupMeta(input, parcel, reverse || {});
+    const ctxReverse = Object.assign({}, reverse || {});
+    if(lookupMeta.jibunAddress) ctxReverse.jibunAddress = lookupMeta.jibunAddress;
+    if(lookupMeta.roadAddress) ctxReverse.roadAddress = lookupMeta.roadAddress;
+    if(lookupMeta.bcode) ctxReverse.bcode = lookupMeta.bcode;
+    const ctx = {lat:lat, lng:lng, reverse:ctxReverse, parcel:parcel || {}, pnu:lookupMeta.pnu || (parcel && parcel.pnu) || '', parcelError:parcelError};
     renderLedgerPanel(ctx);
     const earlyCandidates = candidatesForParcel(parcel);
     if(earlyCandidates.length && !state.selectedItem){
@@ -1897,12 +2012,13 @@
       renderMarkers();
       renderItemPanel();
     }
-    const addr = ledgerFirstNonEmpty(reverse && reverse.jibunAddress, parcel && parcel.address, reverse && reverse.address, input.address);
-    const road = ledgerFirstNonEmpty(reverse && reverse.roadAddress, '');
-    const landParams = {action:'fetchLandInfoBySearchResult', pnu:parcel && parcel.pnu || '', queryAddress:addr, lookupAddress:addr, address:addr};
-    const buildingParams = {action:'fetchPublicPropertyBySearchResult', jibunAddress:addr, roadAddress:road, lookupAddress:addr || road, queryAddress:addr || road, queryAddressType:addr ? 'JIBUN' : 'ROAD', address:addr || road};
-    const landPromise = parcel && parcel.pnu ? publicLookup(landParams).then(function(d){ ctx.landData=d; }).catch(function(e){ ctx.landError=e && e.message ? e.message : String(e); }) : Promise.resolve().then(function(){ ctx.landError='PNU 없음'; });
-    const buildingPromise = (addr || road) ? publicLookup(buildingParams).then(function(d){ ctx.buildingData=d; }).catch(function(e){ ctx.buildingError=e && e.message ? e.message : String(e); }) : Promise.resolve().then(function(){ ctx.buildingError='주소 없음'; });
+    const addr = lookupMeta.jibunAddress;
+    const road = lookupMeta.roadAddress;
+    const bcode = lookupMeta.bcode;
+    const landParams = Object.assign({}, lookupMeta.base, {action:'fetchLandInfoBySearchResult'});
+    const buildingParams = Object.assign({}, lookupMeta.base, {action:'fetchPublicPropertyBySearchResult'});
+    const landPromise = lookupMeta.pnu ? publicLookupLandWithYearFallback(landParams).then(function(d){ ctx.landData=d && d.land ? d.land : d; }).catch(function(e){ ctx.landError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.landError='PNU 없음'; });
+    const buildingPromise = (addr || road) ? publicLookup(buildingParams).then(function(d){ ctx.buildingData=d; if(d && d.land && !ctx.landData) ctx.landData=d.land; }).catch(function(e){ ctx.buildingError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.buildingError='주소 없음'; });
     await Promise.all([landPromise, buildingPromise]);
     if(seq !== state.ledgerRequestSeq) return;
     renderLedgerPanel(ctx);
@@ -1925,6 +2041,10 @@
   function handleMapGroundClick(e){
     if(Date.now() < (state.suppressGroundClickUntil || 0)) return;
     if(!e || !e.coord) return;
+    if(!mapZoomAllowsLedgerClick()){
+      els.mapNote.textContent = LEDGER_CLICK_ZOOM_MESSAGE;
+      return;
+    }
     const lat = typeof e.coord.lat === 'function' ? e.coord.lat() : Number(e.coord.y || e.coord.lat);
     const lng = typeof e.coord.lng === 'function' ? e.coord.lng() : Number(e.coord.x || e.coord.lng);
     if(!Number.isFinite(lat) || !Number.isFinite(lng)) return;

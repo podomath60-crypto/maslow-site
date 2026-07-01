@@ -380,74 +380,6 @@
       updatePatchPanel();
     }catch(e){}
   }
-  function summarizePolygonApiPayload(data){
-    if(!data) return null;
-    return {
-      ok:data.ok,
-      message:data.message || '',
-      error:data.error || '',
-      count:data.count,
-      parcelCount:Array.isArray(data.parcels) ? data.parcels.length : undefined,
-      failedCount:Array.isArray(data.failed) ? data.failed.length : undefined,
-      source:data.source || '',
-      requested:data.requested || null,
-      debug:Array.isArray(data.debug) ? data.debug.slice(-8) : []
-    };
-  }
-  async function postPolygonApi(payload, label, timeoutMs){
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), timeoutMs || 30000);
-    const requestInfo = {
-      mode: payload && payload.bbox ? 'bbox' : 'pnuList',
-      bbox: payload && payload.bbox || null,
-      pnuCount: Array.isArray(payload && payload.pnuList) ? payload.pnuList.length : 0,
-      limit: payload && payload.limit,
-      zoom: state.map && state.map.getZoom ? state.map.getZoom() : null,
-      center: safeMapCenterText()
-    };
-    addPolygonLog((label || 'polygon') + ':request', requestInfo);
-    let res = null;
-    let raw = '';
-    let data = null;
-    try{
-      res = await fetch('/api/parcel-map/polygons', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(payload || {}),
-        signal:controller.signal
-      });
-      raw = await res.text();
-      try{ data = JSON.parse(raw); }
-      catch(parseErr){
-        addPolygonLog((label || 'polygon') + ':non-json', {status:res.status, body:raw.slice(0,900)});
-        throw new Error('폴리곤 API가 JSON이 아닌 응답을 반환했습니다. HTTP ' + res.status);
-      }
-      const summary = summarizePolygonApiPayload(data);
-      addPolygonLog((label || 'polygon') + ':response', Object.assign({httpStatus:res.status}, summary || {}));
-      state.debug.polygonLastPayload = summary;
-      if(!res.ok || !data || data.ok === false){
-        const lastPhase = Array.isArray(data && data.debug) && data.debug.length ? data.debug[data.debug.length - 1] : null;
-        const msg = (data && (data.error || data.message)) || ('HTTP ' + res.status);
-        const err = new Error(msg);
-        err.payload = data;
-        err.lastPhase = lastPhase;
-        throw err;
-      }
-      return data;
-    }catch(err){
-      const detail = {
-        message: err && err.message || String(err),
-        name: err && err.name || '',
-        lastPhase: err && err.lastPhase || null,
-        request: requestInfo
-      };
-      if(err && err.payload) detail.payload = summarizePolygonApiPayload(err.payload);
-      addPolygonLog((label || 'polygon') + ':error', detail);
-      throw err;
-    }finally{
-      window.clearTimeout(timer);
-    }
-  }
   function updatePatchPanel(){
     if(!els.dbgItems) return;
     const pointInputs = (state.filteredItems || []).filter(item => {
@@ -1541,11 +1473,6 @@
     updatePatchPanel();
   }
 
-  async function fetchListingPolygons(){
-    // 전체 매물 PNU 대량조회는 사용하지 않는다.
-    // 필지선은 WMS 타일로 표시하고, 실제 클릭 가능한 폴리곤은 선택 매물의 지정 PNU만 조회한다.
-    els.mapNote.textContent = '전체 필지 폴리곤 대량조회는 사용하지 않습니다. 필지선은 WMS로, 선택 매물 필지만 PNU로 조회합니다.';
-  }
 
   function renderListingPolygons(){
     if(!state.mapReady) return;
@@ -1580,20 +1507,7 @@
     if(count){ try{ state.map.fitBounds(bounds, { top:80, right:80, bottom:80, left:80 }); }catch(e){} }
   }
 
-  function fitToFilteredIfPossible(){
-    const bounds = new naver.maps.LatLngBounds(); let count = 0;
-    state.filteredItems.forEach(item => (item.pnuList || []).forEach(pnu => {
-      const parcel = state.polygonDataByPnu.get(pnu); const paths = parcel ? coordinatesToPaths(parcel.geometry) : [];
-      if(paths.length){ extendBoundsByPaths(bounds, paths); count += 1; }
-    }));
-    if(count){ try{ state.map.fitBounds(bounds, { top:80, right:80, bottom:80, left:80 }); }catch(e){} }
-  }
 
-  function currentBbox(){
-    const b = state.map.getBounds();
-    const sw = b.getSW(); const ne = b.getNE();
-    return [sw.lng(), sw.lat(), ne.lng(), ne.lat()];
-  }
   function scheduleBaseParcelFetch(){
     clearTimeout(state.baseFetchTimer);
     state.baseFetchTimer = setTimeout(fetchBaseParcels, 250);
@@ -1601,11 +1515,6 @@
   function fetchBaseParcels(){
     if(!state.showBaseParcels || !state.mapReady) return;
     renderWmsTiles();
-  }
-  function renderBasePolygons(parcels){
-    // 현재화면 전체 필지 polygon 조회는 VWorld 제한/응답 불안정 때문에 사용하지 않는다.
-    // 배경 필지선은 WMS 타일로 표시하고, 선택 매물 필지만 JSONP GetFeature로 그린다.
-    clearPolygonMap(state.basePolygons);
   }
 
   function selectPnu(pnu, parcel){

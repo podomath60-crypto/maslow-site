@@ -261,6 +261,8 @@
     ddangyaUrl:'https://ddangya.com/land/detail/',
     naverMapSearchUrl:'https://map.naver.com/p/search/'
   };
+  // 룩아웃 통합조회와 같은 GAS 직접(JSONP) → 매슬로우 프록시(GET) 순서로 공부조회한다.
+  const PUBLIC_PROPERTY_GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
   const state = {
     map:null,
     mapReady:false,
@@ -1736,19 +1738,95 @@
   function reverseGeocodePoint(lat, lng){
     return fetchJsonWithTimeout('/api/route-setting/reverse-geocode', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({lat:lat,lng:lng})}, 14000).then(function(data){ return data.item || data; });
   }
-  function publicLookup(params){
-    const payload = {};
+  function normalizeLookupParamsForLookout(params){
+    const out = {};
     Object.keys(params || {}).forEach(function(k){
       if(k === 'callback' || k === '_ts') return;
       const value = params[k];
       if(value === undefined || value === null) return;
-      payload[k] = String(value);
+      out[k] = String(value);
     });
-    payload._ts = String(Date.now());
-    return fetchJsonWithTimeout('/api/public-property-lookup', {method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'}, body:JSON.stringify(payload), cache:'no-store'}, 60000);
+    return out;
+  }
+  function publicPropertyJsonpCall(params){
+    return new Promise(function(resolve, reject){
+      params = normalizeLookupParamsForLookout(params);
+      const cb = 'parcelLedgerCb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+      const script = document.createElement('script');
+      let done = false;
+      let timer = null;
+      function cleanup(){
+        try{ delete window[cb]; }catch(e){}
+        if(timer) window.clearTimeout(timer);
+        if(script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function(payload){
+        if(done) return;
+        done = true;
+        cleanup();
+        resolve(payload);
+      };
+      script.onerror = function(){
+        if(done) return;
+        done = true;
+        cleanup();
+        reject(new Error('JSONP 요청 실패'));
+      };
+      const q = new URLSearchParams();
+      Object.keys(params || {}).forEach(function(k){
+        q.set(k, params[k] == null ? '' : String(params[k]));
+      });
+      q.set('callback', cb);
+      q.set('_ts', String(Date.now()));
+      script.src = PUBLIC_PROPERTY_GAS_URL + '?' + q.toString();
+      document.body.appendChild(script);
+      timer = window.setTimeout(function(){
+        if(done) return;
+        done = true;
+        cleanup();
+        reject(new Error('JSONP 타임아웃'));
+      }, 15000);
+    });
+  }
+  async function publicPropertyProxyLookupCall(params){
+    params = normalizeLookupParamsForLookout(params);
+    const action = String(params.action || 'fetchPublicPropertyBySearchResult').trim();
+    const q = new URLSearchParams();
+    Object.keys(params || {}).forEach(function(k){
+      if(k === 'callback' || k === '_ts') return;
+      q.set(k, params[k] == null ? '' : String(params[k]));
+    });
+    q.set('action', action);
+    q.set('_ts', String(Date.now()));
+    return fetchJsonWithTimeout('/api/public-property-lookup?' + q.toString(), {method:'GET', headers:{'Accept':'application/json'}, cache:'no-store'}, 60000);
+  }
+  async function publicLookup(params){
+    // 룩아웃 lookupPublicProperty()와 동일한 흐름: 1차 GAS 직접 JSONP, 2차 프록시 GET.
+    let firstError = null;
+    try{
+      const direct = await publicPropertyJsonpCall(Object.assign({}, params));
+      if(direct && direct.ok) return direct;
+      firstError = new Error((direct && direct.message) || 'GAS 직접 조회 응답 실패');
+    }catch(e){
+      firstError = e;
+    }
+    try{
+      return await publicPropertyProxyLookupCall(Object.assign({}, params));
+    }catch(secondError){
+      const err = new Error('BOTH_LOOKUP_FAILED');
+      err.firstError = firstError;
+      err.secondError = secondError;
+      throw err;
+    }
   }
   function cleanLedgerLookupError(err){
-    let msg = err && err.message ? String(err.message) : String(err || '조회 실패');
+    function one(e){ return e && e.message ? String(e.message) : String(e || '조회 실패'); }
+    let msg = '';
+    if(err && err.message === 'BOTH_LOOKUP_FAILED'){
+      msg = '1차 GAS 직접 조회 실패: ' + one(err.firstError) + ' / 2차 매슬로우 프록시 조회 실패: ' + one(err.secondError);
+    }else{
+      msg = one(err);
+    }
     msg = msg.replace(/https?:\/\/[^\s<]+/g, '').replace(/\s+/g, ' ').trim();
     if(!msg) msg = '조회 실패';
     return msg;
@@ -1827,6 +1905,63 @@
       pageUrl: window.location.href || ''
     });
     return {pnu:pnu, pnuParts:pnuParts, bcode:bcode, jibunAddress:jibunAddress, roadAddress:roadAddress, queryAddress:queryAddress, base:base};
+  }
+  function extractReverseRegionMeta(reverse){
+    reverse = reverse || {};
+    const raw = reverse.raw || {};
+    const results = Array.isArray(raw.results) ? raw.results : [];
+    const picked = results.find(function(r){ return r && r.name === 'addr'; }) || results.find(function(r){ return r && r.name === 'roadaddr'; }) || results[0] || {};
+    const region = picked.region || {};
+    const area1 = region.area1 || {};
+    const area2 = region.area2 || {};
+    const area3 = region.area3 || {};
+    const area4 = region.area4 || {};
+    const codeId = ledgerFirstNonEmpty(picked.code && picked.code.id, reverse.bcode, '');
+    return {
+      bcode: String(codeId || '').replace(/\D/g, '').slice(0, 10),
+      sido: ledgerFirstNonEmpty(area1.name, reverse.sido, ''),
+      sigungu: ledgerFirstNonEmpty(area2.name, reverse.sigungu, ''),
+      bname: ledgerFirstNonEmpty(area4.name, area3.name, reverse.bname, '')
+    };
+  }
+  function buildLookoutLandLookupParams(meta){
+    meta = meta || {};
+    const queryAddress = ledgerFirstNonEmpty(meta.queryAddress, meta.jibunAddress, meta.roadAddress, '');
+    // 룩아웃 토지대장 단독조회와 같은 스키마만 보낸다.
+    return {
+      action:'fetchLandInfoBySearchResult',
+      pnu: meta.pnu || '',
+      queryAddress: queryAddress,
+      lookupAddress: queryAddress,
+      address: queryAddress
+    };
+  }
+  function buildLookoutBuildingLookupParams(meta, reverse){
+    meta = meta || {};
+    const regionMeta = extractReverseRegionMeta(reverse || {});
+    const bcode = ledgerFirstNonEmpty(meta.bcode, regionMeta.bcode, '');
+    const queryAddress = ledgerFirstNonEmpty(meta.queryAddress, meta.jibunAddress, meta.roadAddress, '');
+    // 룩아웃 통합조회 picked 객체 구조에 맞춰 보낸다.
+    return {
+      action:'fetchPublicPropertyBySearchResult',
+      address: queryAddress,
+      jibunAddress: meta.jibunAddress || '',
+      roadAddress: meta.roadAddress || '',
+      autoJibunAddress: meta.jibunAddress || '',
+      autoRoadAddress: meta.roadAddress || '',
+      lookupAddress: queryAddress,
+      bcode: bcode,
+      sido: regionMeta.sido || '',
+      sigungu: regionMeta.sigungu || '',
+      bname: regionMeta.bname || '',
+      buildingName: '',
+      zonecode: '',
+      apartment: '',
+      addressType: meta.jibunAddress ? 'JIBUN' : (meta.roadAddress ? 'ROAD' : ''),
+      pnu: meta.pnu || '',
+      queryAddress: queryAddress,
+      queryAddressType: meta.jibunAddress ? 'JIBUN' : (meta.roadAddress ? 'ROAD' : '')
+    };
   }
   async function publicLookupLandWithYearFallback(params){
     params = params || {};
@@ -2014,10 +2149,9 @@
     }
     const addr = lookupMeta.jibunAddress;
     const road = lookupMeta.roadAddress;
-    const bcode = lookupMeta.bcode;
-    const landParams = Object.assign({}, lookupMeta.base, {action:'fetchLandInfoBySearchResult'});
-    const buildingParams = Object.assign({}, lookupMeta.base, {action:'fetchPublicPropertyBySearchResult'});
-    const landPromise = lookupMeta.pnu ? publicLookupLandWithYearFallback(landParams).then(function(d){ ctx.landData=d && d.land ? d.land : d; }).catch(function(e){ ctx.landError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.landError='PNU 없음'; });
+    const landParams = buildLookoutLandLookupParams(lookupMeta);
+    const buildingParams = buildLookoutBuildingLookupParams(lookupMeta, ctxReverse);
+    const landPromise = lookupMeta.pnu ? publicLookup(landParams).then(function(d){ ctx.landData=d && d.land ? d.land : d; }).catch(function(e){ ctx.landError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.landError='PNU 없음'; });
     const buildingPromise = (addr || road) ? publicLookup(buildingParams).then(function(d){ ctx.buildingData=d; if(d && d.land && !ctx.landData) ctx.landData=d.land; }).catch(function(e){ ctx.buildingError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.buildingError='주소 없음'; });
     await Promise.all([landPromise, buildingPromise]);
     if(seq !== state.ledgerRequestSeq) return;

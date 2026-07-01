@@ -1670,12 +1670,8 @@
       els.panelBody.innerHTML = '<div class="empty-map-card-list"><div class="empty-icon">📍</div><b>매물 0개</b><div>지도를 이동하거나 확대/축소한 뒤 하단의 매물 개수 버튼을 다시 누르세요.</div></div>';
       return;
     }
-    const max = 60;
-    const list = items.slice(0, max);
-    let html = '<div class="map-card-head"><b>현재 화면 매물 ' + items.length + '개</b><span>' + (items.length > max ? '상위 ' + max + '개 표시' : '스냅샷 유지') + '</span></div>';
-    if(items.length > max){
-      html += '<div class="too-many-note">하단 매물 개수 버튼을 누른 시점에 매물이 ' + items.length + '개 있었습니다. 카드 렌더링이 무거워질 수 있어 ' + max + '개만 표시합니다. 지도를 움직여도 다시 누르기 전까지 이 목록은 바뀌지 않습니다.</div>';
-    }
+    const list = items;
+    let html = '<div class="map-card-head"><b>현재 화면 매물 ' + items.length + '개</b><span>전체 표시 · 스냅샷 유지</span></div>';
     html += '<div class="map-card-list">' + list.map(buildMapDashboardCard).join('') + '</div>';
     els.panelBody.innerHTML = html;
     if(state.selectedItem){

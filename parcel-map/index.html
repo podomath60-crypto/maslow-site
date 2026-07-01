@@ -77,12 +77,12 @@
     .panel{width:var(--fixed);flex:0 0 var(--fixed);min-width:0;min-height:0;background:var(--panel);border-left:1px solid var(--line);display:none;flex-direction:column;box-shadow:-18px 0 44px rgba(15,23,42,.08);z-index:30;overflow:hidden}
     .panel.is-open{display:flex}
     .panel.detail-panel{width:var(--detail);flex-basis:var(--detail)}
-    .panel.is-collapsed{width:0!important;max-width:0!important;flex:0 0 0!important;border-left:0;box-shadow:none;padding:0;margin:0;overflow:hidden}
+    .panel.is-collapsed{display:none!important;width:0!important;max-width:0!important;flex:0 0 0!important;border-left:0;box-shadow:none;padding:0;margin:0;overflow:hidden}
     .panel.is-collapsed .panel-head,.panel.is-collapsed .panel-body{display:none}
-    .panel-handle{display:none;position:relative;width:var(--handle);flex:0 0 var(--handle);height:100%;background:linear-gradient(180deg,rgba(15,124,255,.10),rgba(15,124,255,.04));border-left:1px solid #9ec8ff;border-right:1px solid #9ec8ff;z-index:36}
+    .panel-handle{display:none;position:relative;width:var(--handle);flex:0 0 var(--handle);height:100%;background:transparent;border-left:1px solid var(--line);border-right:0;z-index:36}
     .panel-handle.is-open{display:block}
-    .panel-handle span{position:absolute;left:50%;top:50%;width:17px;height:84px;transform:translate(-50%,-50%);border:1px solid #0f7cff;border-radius:999px;background:#eaf3ff;box-shadow:0 10px 24px rgba(15,124,255,.22)}
-    .panel-handle span:before{content:'';position:absolute;left:50%;top:13px;bottom:13px;width:2px;transform:translateX(-50%);background:#0f7cff;border-radius:999px}.panel-handle:hover{background:linear-gradient(180deg,rgba(15,124,255,.18),rgba(15,124,255,.08))}.panel-handle:hover span{background:#dbeafe;box-shadow:0 12px 28px rgba(15,124,255,.30)}
+    .panel-handle span{position:absolute;left:50%;top:50%;width:17px;height:84px;transform:translate(-50%,-50%);border:1px solid #0f7cff;border-radius:999px;background:#dbeafe;box-shadow:0 8px 20px rgba(15,124,255,.20)}
+    .panel-handle span:before{content:'';position:absolute;left:50%;top:13px;bottom:13px;width:2px;transform:translateX(-50%);background:#0f7cff;border-radius:999px}.panel-handle:hover{background:rgba(15,124,255,.04)}.panel-handle:hover span{background:#bfdbfe;box-shadow:0 12px 26px rgba(15,124,255,.28)}
     .panel-head{padding:16px 16px 12px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex:0 0 auto}
     .panel-head-title{font-size:17px;font-weight:1000;line-height:1.2}
     .panel-head-sub{margin-top:4px;font-size:12px;font-weight:800;color:var(--muted);line-height:1.35}
@@ -321,7 +321,7 @@
   };
 
   const els = {
-    searchInput:document.getElementById('searchInput'), chipbar:document.getElementById('chipbar'), map:document.getElementById('map'),
+    searchInput:document.getElementById('searchInput'), chipbar:document.getElementById('chipbar'), map:document.getElementById('map'), mapWrap:document.querySelector('.map-wrap'),
     sidePanel:document.getElementById('sidePanel'),
     detailPanel:document.getElementById('detailPanel'), detailPanelTitle:document.getElementById('detailPanelTitle'), detailPanelSub:document.getElementById('detailPanelSub'), detailPanelBody:document.getElementById('detailPanelBody'), detailHandle:document.getElementById('detailHandle'),
     fixedPanel:document.getElementById('fixedPanel'), panelTitle:document.getElementById('panelTitle'), panelSub:document.getElementById('panelSub'), panelBody:document.getElementById('panelBody'), panelClose:document.getElementById('panelClose'), fixedHandle:document.getElementById('fixedHandle'),
@@ -965,19 +965,28 @@
     let center = null;
     try{ center = state.map.getCenter ? state.map.getCenter() : null; }catch(e){}
     try{
-      const w = els.map.clientWidth || els.map.offsetWidth;
-      const h = els.map.clientHeight || els.map.offsetHeight;
-      if(w && h && state.map.setSize && naver.maps.Size){
-        state.map.setSize(new naver.maps.Size(w, h));
+      const host = els.mapWrap || (els.map && els.map.parentElement);
+      const rect = host && host.getBoundingClientRect ? host.getBoundingClientRect() : null;
+      const w = Math.max(1, Math.round((rect && rect.width) || els.map.clientWidth || els.map.offsetWidth || 0));
+      const h = Math.max(1, Math.round((rect && rect.height) || els.map.clientHeight || els.map.offsetHeight || 0));
+      if(w && h){
+        // flex 패널이 접힌 뒤 네이버 지도 내부 캔버스가 예전 폭을 잡고 남는 현상 방지
+        els.map.style.width = w + 'px';
+        els.map.style.height = h + 'px';
+        if(state.map.setSize && naver.maps.Size){
+          state.map.setSize(new naver.maps.Size(w, h));
+        }
       }
     }catch(e){}
     try{ naver.maps.Event.trigger(state.map, 'resize'); }catch(e){}
+    try{ window.dispatchEvent(new Event('resize')); }catch(e){}
     try{ if(center && state.map.setCenter) state.map.setCenter(center); }catch(e){}
   }
   function scheduleMapResize(){
-    [0, 40, 120, 260, 520].forEach(function(delay){
+    [0, 20, 60, 120, 220, 380, 620, 900].forEach(function(delay){
       window.setTimeout(forceMapResize, delay);
     });
+    try{ window.requestAnimationFrame(function(){ forceMapResize(); window.requestAnimationFrame(forceMapResize); }); }catch(e){}
   }
 
   async function initMap(){
@@ -998,6 +1007,13 @@
     scheduleMapResize();
     [700, 1400].forEach(delay => window.setTimeout(forceMapResize, delay));
     window.addEventListener('resize', forceMapResize);
+    try{
+      if(window.ResizeObserver && els.mapWrap){
+        const ro = new ResizeObserver(function(){ scheduleMapResize(); });
+        ro.observe(els.mapWrap);
+        state.mapResizeObserver = ro;
+      }
+    }catch(e){}
     naver.maps.Event.addListener(state.map, 'idle', function(){
       if(state.showBaseParcels) scheduleBaseParcelFetch();
       scheduleMapViewportCountUpdate();

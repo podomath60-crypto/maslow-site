@@ -1759,64 +1759,28 @@
       };
     }
 
-    function getPublicPropertyProxyEndpoints(){
-      var endpoints = ['/api/public-property-lookup'];
-      var productionEndpoint = 'https://www.maslowkorea.site/api/public-property-lookup';
-      try{
-        if(window.location && window.location.origin !== 'https://www.maslowkorea.site'){
-          endpoints.push(productionEndpoint);
-        }
-      }catch(e){
-        endpoints.push(productionEndpoint);
-      }
-      return endpoints.filter(function(url, idx, arr){ return url && arr.indexOf(url) === idx; });
-    }
-
-    function formatProxyErrorMessage(response, data, fallback){
-      var msg = (data && (data.message || data.error)) || fallback || '프록시 조회 실패';
-      if(data && data.detail){
-        msg += ' · ' + data.detail;
-      }
-      if(response && !response.ok){
-        msg += ' (HTTP ' + response.status + ')';
-      }
-      return msg;
-    }
-
     async function proxyLookupCall(params){
-      params = Object.assign({}, params || {});
+      params = params || {};
       var action = String(params.action || 'fetchPublicPropertyBySearchResult').trim();
       var q = new URLSearchParams();
       Object.keys(params || {}).forEach(function(k){
-        if(k === 'callback' || k === '_ts' || k === 'action') return;
+        if(k === 'callback' || k === '_ts') return;
         q.set(k, params[k] == null ? '' : String(params[k]));
       });
       q.set('action', action);
       q.set('_ts', Date.now());
 
-      var endpointErrors = [];
-      var endpoints = getPublicPropertyProxyEndpoints();
-      for(var i=0; i<endpoints.length; i++){
-        var endpoint = endpoints[i];
-        try{
-          var joiner = endpoint.indexOf('?') >= 0 ? '&' : '?';
-          var response = await fetch(endpoint + joiner + q.toString(), {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' },
-            cache: 'no-store'
-          });
+      var response = await fetch('/api/public-property-lookup?' + q.toString(), {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store'
+      });
 
-          var data = await response.json().catch(function(){ return null; });
-          if(response.ok && data && data.ok){
-            return data;
-          }
-          endpointErrors.push(endpoint + ' → ' + formatProxyErrorMessage(response, data, '프록시 조회 실패'));
-        }catch(e){
-          endpointErrors.push(endpoint + ' → ' + (e && e.message ? e.message : String(e)));
-        }
+      var data = await response.json().catch(function(){ return null; });
+      if(!response.ok || !(data && data.ok)){
+        throw new Error((data && data.message) || '프록시 조회 실패');
       }
-
-      throw new Error(endpointErrors.length ? endpointErrors.join(' / ') : '프록시 조회 실패');
+      return data;
     }
 
     async function lookupPublicProperty(params){
@@ -1837,77 +1801,6 @@
         err.secondError = secondError;
         throw err;
       }
-    }
-
-    function buildLandIntegratedLookupParams(found){
-      found = found || {};
-      var parcelAddress = firstNonEmpty(found.parcelAddress, found.address, found.query);
-      var lookupAddress = parcelAddress || firstNonEmpty(found.roadAddress, found.query);
-      return {
-        action: 'fetchPublicPropertyBySearchResult',
-        lookupAddress: lookupAddress,
-        queryAddress: lookupAddress,
-        queryAddressType: 'JIBUN',
-        jibunAddress: parcelAddress,
-        autoJibunAddress: parcelAddress,
-        roadAddress: firstNonEmpty(found.roadAddress, ''),
-        autoRoadAddress: firstNonEmpty(found.roadAddress, ''),
-        bcode: found.pnu ? String(found.pnu).slice(0, 10) : '',
-        pnu: found.pnu || ''
-      };
-    }
-
-    function normalizeLandOnlyPayload(res){
-      if(res && res.land) return res.land;
-      return res || {};
-    }
-
-    async function lookupLandOnlyWithFallback(found){
-      var dedicatedParams = {
-        action: 'fetchLandInfoBySearchResult',
-        pnu: found.pnu,
-        queryAddress: found.query,
-        lookupAddress: found.address || found.query,
-        address: found.address || found.query
-      };
-
-      var firstError = null;
-      var secondError = null;
-      var thirdError = null;
-
-      try{
-        var direct = await jsonpCall(Object.assign({}, dedicatedParams));
-        if(direct && direct.ok) return { payload: direct, source: 'direct-land' };
-        firstError = new Error((direct && direct.message) || 'GAS 직접 토지조회 응답 실패');
-      }catch(e){
-        firstError = e;
-      }
-
-      try{
-        var proxiedDedicated = await proxyLookupCall(Object.assign({}, dedicatedParams));
-        if(proxiedDedicated && proxiedDedicated.ok) return { payload: proxiedDedicated, source: 'proxy-land' };
-        secondError = new Error((proxiedDedicated && proxiedDedicated.message) || '토지 전용 프록시 응답 실패');
-      }catch(e){
-        secondError = e;
-      }
-
-      try{
-        var integrated = await proxyLookupCall(buildLandIntegratedLookupParams(found));
-        if(integrated && integrated.ok){
-          return { payload: normalizeLandOnlyPayload(integrated), source: 'proxy-integrated' };
-        }
-        thirdError = new Error((integrated && integrated.message) || '통합조회 프록시 응답 실패');
-      }catch(e){
-        thirdError = e;
-      }
-
-      var err = new Error('BOTH_LOOKUP_FAILED');
-      err.firstError = firstError;
-      err.secondError = new Error(
-        '토지 전용 프록시: ' + (secondError && secondError.message ? secondError.message : String(secondError || '실패'))
-        + ' / 통합조회 프록시: ' + (thirdError && thirdError.message ? thirdError.message : String(thirdError || '실패'))
-      );
-      throw err;
     }
 
     function hideLookupFailPanel(){
@@ -2911,24 +2804,29 @@
           (!found.parcelAddress && found.address) ? ('주소: ' + found.address) : ''
         ], '\n');
 
-        var landLookup = await lookupLandOnlyWithFallback(found);
-        var landPayload = normalizeLandOnlyPayload(landLookup && landLookup.payload);
+        var res = await lookupPublicProperty({
+          action: 'fetchLandInfoBySearchResult',
+          pnu: found.pnu,
+          queryAddress: found.query,
+          lookupAddress: found.address || found.query,
+          address: found.address || found.query
+        });
 
-        if(!(landPayload && (landPayload.ok || landPayload.characteristic || landPayload.usePlan))){
-          throw new Error((landPayload && landPayload.message) || '토지정보 조회 실패');
+        if(!(res && res.ok)){
+          throw new Error((res && res.message) || '토지정보 조회 실패');
         }
 
         renderResult({
           ok: true,
-          message: landPayload.message || '토지정보 조회 성공',
+          message: res.message || '토지정보 조회 성공',
           address: found.address || found.query,
           pnu: found.pnu,
-          land: landPayload
+          land: res
         }, LOOKUP_MODE_LAND_ONLY);
       }catch(e){
         if(e && e.message === 'BOTH_LOOKUP_FAILED'){
-          setStatus('토지 조회 실패 · 직접 조회, 토지 전용 프록시, 통합조회 프록시가 모두 실패했습니다.', 'err');
           showLookupFailPanel(e);
+          setStatus('토지 조회 실패 · 1차 GAS와 2차 매슬로우 프록시가 모두 실패했습니다.', 'err');
         }else{
           setStatus('토지 조회 실패 · ' + (e && e.message ? e.message : String(e)), 'err');
         }

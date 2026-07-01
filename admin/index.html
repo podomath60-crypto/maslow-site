@@ -4969,14 +4969,14 @@
         setLandParcelLookupLoading_(card, true);
         searchVworldParcelPnu_(address)
           .then(function(found){
-            return lookupLandInfoWithIntegratedFallback_({
+            return lookupPublicPropertyWithFallback_({
               action: 'fetchLandInfoBySearchResult',
               pnu: found.pnu,
               queryAddress: found.query,
               lookupAddress: found.address || found.query,
               address: found.address || found.query
-            }, found).then(function(res){
-              if(!(res && (res.ok || res.characteristic || res.usePlan))) throw new Error((res && (res.message || res.error)) || '토지정보 조회 실패');
+            }, { label: '토지대장' }).then(function(res){
+              if(!(res && res.ok)) throw new Error((res && (res.message || res.error)) || '토지정보 조회 실패');
               landParcels[idx] = mapLandLookupResultToParcel_(landParcels[idx], found, res);
               ensureSingleRepresentative_(landParcels);
               renderLandParcels_();
@@ -4994,7 +4994,7 @@
           .catch(function(err){
             console.error(err);
             if(err && err.lookupErrors){
-              showLookupFailurePanel_(err, { lookupLabel: '토지대장' });
+              showLookupFailurePanel_(err);
             }else{
               showToast((err && err.message) || '토지대장 조회 실패');
             }
@@ -7118,78 +7118,28 @@
         return String(err);
       }
 
-      function getPublicPropertyProxyEndpoints_(){
-        var endpoints = ['/api/public-property-lookup'];
-        var productionEndpoint = 'https://www.maslowkorea.site/api/public-property-lookup';
-        try{
-          if(window.location && window.location.origin !== 'https://www.maslowkorea.site'){
-            endpoints.push(productionEndpoint);
-          }
-        }catch(e){
-          endpoints.push(productionEndpoint);
-        }
-        return endpoints.filter(function(url, idx, arr){ return url && arr.indexOf(url) === idx; });
-      }
-
-      function formatProxyApiError_(res, data, fallback){
-        var msg = (data && (data.error || data.message)) || fallback || '서버 우회 조회 실패';
-        if(data && data.detail){
-          msg += ' · ' + data.detail;
-        }
-        if(res && !res.ok){
-          msg += ' (HTTP ' + res.status + ')';
-        }
-        return msg;
-      }
-
       function fetchPublicPropertyViaApi_(params){
         if(!window.fetch){
           return Promise.reject(new Error('브라우저 fetch 미지원'));
         }
 
-        var endpoints = getPublicPropertyProxyEndpoints_();
-        var chain = Promise.reject(new Error('서버 우회 조회 시작'));
-        var errors = [];
-
-        endpoints.forEach(function(endpoint){
-          chain = chain.catch(function(){
-            return fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-              body: JSON.stringify(params || {}),
-              cache: 'no-store'
-            }).then(function(res){
-              return res.text().then(function(text){
-                var data = null;
-                try { data = text ? JSON.parse(text) : null; } catch(e) {}
-                if(!res.ok){
-                  var httpErr = new Error(formatProxyApiError_(res, data, '서버 우회 조회 실패'));
-                  errors.push(endpoint + ' → ' + httpErr.message);
-                  throw httpErr;
-                }
-                if(!data){
-                  var parseErr = new Error('서버 우회 조회 응답 파싱 실패');
-                  errors.push(endpoint + ' → ' + parseErr.message);
-                  throw parseErr;
-                }
-                if(!(data && data.ok)){
-                  var apiErr = new Error(formatProxyApiError_(res, data, '서버 우회 조회 응답 실패'));
-                  errors.push(endpoint + ' → ' + apiErr.message);
-                  throw apiErr;
-                }
-                return data;
-              });
-            }).catch(function(err){
-              if(!errors.length || errors[errors.length - 1].indexOf(endpoint + ' → ') !== 0){
-                errors.push(endpoint + ' → ' + ((err && err.message) || String(err)));
-              }
-              throw err;
-            });
+        return fetch('/api/public-property-lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params || {}),
+          cache: 'no-store'
+        }).then(function(res){
+          return res.text().then(function(text){
+            var data = null;
+            try { data = text ? JSON.parse(text) : null; } catch(e) {}
+            if(!res.ok){
+              throw new Error((data && (data.error || data.message)) || ('서버 우회 조회 실패: ' + res.status));
+            }
+            if(!data){
+              throw new Error('서버 우회 조회 응답 파싱 실패');
+            }
+            return data;
           });
-        });
-
-        return chain.catch(function(){
-          throw new Error(errors.length ? errors.join(' / ') : '서버 우회 조회 실패');
         });
       }
 
@@ -7201,27 +7151,26 @@
         }
       }
 
-      function showLookupFailurePanel_(err, options){
+      function showLookupFailurePanel_(err){
         closeLookupFailurePanel_();
-        options = options || {};
-        var lookupLabel = options.lookupLabel || (err && err.lookupLabel) || '건축물정보';
 
         var errors = (err && Array.isArray(err.lookupErrors)) ? err.lookupErrors : [];
         var details = errors.length ? errors.join('\n') : lookupErrorText_(err);
+        var failTitleText = (err && err.lookupTitle) ? String(err.lookupTitle) : '건축물정보 조회 실패';
 
         var overlay = document.createElement('div');
         overlay.id = 'lookupFailureOverlay';
         overlay.className = 'lookup-fail-overlay';
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-label', lookupLabel + ' 조회 실패 안내');
+        overlay.setAttribute('aria-label', failTitleText + ' 안내');
 
         var panel = document.createElement('div');
         panel.className = 'lookup-fail-panel';
 
         var title = document.createElement('h3');
         title.className = 'lookup-fail-title';
-        title.textContent = lookupLabel + ' 조회 실패';
+        title.textContent = failTitleText;
 
         var desc = document.createElement('p');
         desc.className = 'lookup-fail-desc';
@@ -7252,7 +7201,7 @@
         copyBtn.className = 'lookup-fail-btn secondary';
         copyBtn.textContent = '오류 복사';
         copyBtn.addEventListener('click', function(){
-          var text = lookupLabel + ' 조회 실패\n' + (details || '상세 오류 없음');
+          var text = failTitleText + '\n' + (details || '상세 오류 없음');
           if(navigator.clipboard && navigator.clipboard.writeText){
             navigator.clipboard.writeText(text).then(function(){
               showToast('오류 내용 복사됨');
@@ -7289,10 +7238,9 @@
         closeBtn.focus();
       }
 
-      function lookupPublicLookupWithFallback_(params, options){
+      function lookupPublicPropertyWithFallback_(params, options){
         options = options || {};
-        var lookupLabel = options.lookupLabel || '건축물정보';
-        var logLabel = options.logLabel || lookupLabel;
+        var lookupLabel = String(options.label || '건축물정보');
         var firstError = null;
 
         return jsonpCallPublicLookup_(params).then(function(payload){
@@ -7302,7 +7250,7 @@
           throw new Error((payload && (payload.error || payload.message)) || 'GAS 조회 응답 실패');
         }).catch(function(gasErr){
           firstError = gasErr;
-          console.warn('[매물입력기 ' + logLabel + '] GAS 직접 호출 실패, /api 우회 재시도', gasErr);
+          console.warn('[매물입력기 ' + lookupLabel + '조회] GAS 직접 호출 실패, /api 우회 재시도', gasErr);
           return fetchPublicPropertyViaApi_(params).then(function(payload){
             if(payload && payload.ok){
               return payload;
@@ -7312,74 +7260,16 @@
             var finalError = new Error(
               lookupLabel + ' 조회 실패 · GAS 직접 호출과 서버 우회 조회가 모두 실패했습니다.'
             );
-            finalError.lookupLabel = lookupLabel;
+            finalError.lookupTitle = lookupLabel + ' 조회 실패';
             finalError.lookupErrors = [
               'GAS 직접 호출: ' + lookupErrorText_(firstError),
               '서버 우회 조회: ' + lookupErrorText_(apiErr)
             ];
-            console.warn('[매물입력기 ' + logLabel + '] 전체 실패', finalError.lookupErrors);
+            console.warn('[매물입력기 ' + lookupLabel + '조회] 전체 실패', finalError.lookupErrors);
             throw finalError;
           });
         });
       }
-
-      function lookupPublicPropertyWithFallback_(params){
-        return lookupPublicLookupWithFallback_(params, { lookupLabel: '건축물정보', logLabel: '건축물조회' });
-      }
-
-      function lookupLandInfoWithFallback_(params){
-        return lookupPublicLookupWithFallback_(params, { lookupLabel: '토지대장', logLabel: '토지대장조회' });
-      }
-
-      function buildIntegratedLookupParamsFromLandFound_(found){
-        found = found || {};
-        var parcelAddress = firstNonEmpty_(found.parcelAddress, found.address, found.query);
-        var lookupAddress = parcelAddress || firstNonEmpty_(found.roadAddress, found.query);
-        return {
-          action: 'fetchPublicPropertyBySearchResult',
-          lookupAddress: lookupAddress,
-          queryAddress: lookupAddress,
-          queryAddressType: 'JIBUN',
-          jibunAddress: parcelAddress,
-          autoJibunAddress: parcelAddress,
-          roadAddress: firstNonEmpty_(found.roadAddress, ''),
-          autoRoadAddress: firstNonEmpty_(found.roadAddress, ''),
-          bcode: found.pnu ? String(found.pnu).slice(0, 10) : '',
-          pnu: found.pnu || ''
-        };
-      }
-
-      function normalizeLandLookupPayload_(res){
-        if(res && res.land) return res.land;
-        return res || {};
-      }
-
-      function lookupLandInfoWithIntegratedFallback_(params, found){
-        var firstFailure = null;
-        return lookupLandInfoWithFallback_(params).then(function(payload){
-          return normalizeLandLookupPayload_(payload);
-        }).catch(function(err){
-          firstFailure = err;
-          console.warn('[매물입력기 토지대장조회] 토지 전용 조회 실패, 기존 통합조회 프록시로 재시도', err);
-          return fetchPublicPropertyViaApi_(buildIntegratedLookupParamsFromLandFound_(found)).then(function(payload){
-            var landPayload = normalizeLandLookupPayload_(payload);
-            if(landPayload && (landPayload.ok || landPayload.characteristic || landPayload.usePlan)){
-              return landPayload;
-            }
-            throw new Error((payload && (payload.error || payload.message)) || '통합조회 프록시 응답에 토지정보가 없습니다.');
-          }).catch(function(integratedErr){
-            var finalError = new Error('토지대장 조회 실패 · 토지 전용 조회와 기존 통합조회 프록시가 모두 실패했습니다.');
-            finalError.lookupLabel = '토지대장';
-            finalError.lookupErrors = [
-              '토지 전용 조회: ' + lookupErrorText_(firstFailure),
-              '기존 통합조회 프록시: ' + lookupErrorText_(integratedErr)
-            ];
-            throw finalError;
-          });
-        });
-      }
-
-
 
       function openAddressSearch_(){
         try{

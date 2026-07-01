@@ -216,16 +216,16 @@ function normalizeLandParcels(value, listingNumber) {
   const arr = Array.isArray(parsed) ? parsed : [];
   return arr.map((parcel, idx) => {
     parcel = parcel || {};
-    const addressSources = [parcel.address, parcel.displayAddress, parcel.jibun].map(text).filter(Boolean);
     const directPnu = String(parcel.pnu || parcel.PNU || '').replace(/\D/g, '');
-    const generatedPnu = /^\d{19}$/.test(directPnu) ? directPnu : buildPnuFromAddressSources(addressSources);
     return {
       parcelId: text(parcel.parcelId) || `${listingNumber || 'LISTING'}-P${String(idx + 1).padStart(3, '0')}`,
       listingNumber: text(parcel.listingNumber) || listingNumber,
       parcelOrder: Number(parcel.parcelOrder || idx + 1),
       isRepresentative: /^(Y|YES|TRUE|1)$/i.test(String(parcel.isRepresentative || (idx === 0 ? 'Y' : ''))),
       parcelStatus: text(parcel.parcelStatus || 'active'),
-      pnu: /^\d{19}$/.test(generatedPnu) ? generatedPnu : '',
+      // 초기 로딩 속도 우선: 주소 문자열로 PNU를 억지 조립하지 않는다.
+      // 저장된 19자리 PNU가 있을 때만 pnuList에 올리고, 없는 매물은 클릭 시 좌표 기준으로 보정한다.
+      pnu: /^\d{19}$/.test(directPnu) ? directPnu : '',
       address: text(parcel.address),
       displayAddress: text(parcel.displayAddress),
       jibun: text(parcel.jibun),
@@ -257,31 +257,19 @@ function pnuCandidates(raw, landParcels) {
     });
   };
 
-  // 1) 이미 저장된 PNU/PNU목록은 최우선. JSON 배열뿐 아니라 콤마/문자열 안의 19자리 PNU도 전부 뽑는다.
+  // 초기 로딩 속도 우선:
+  // 주소/지번 문자열로 PNU를 조립하지 않는다.
+  // 이미 저장된 19자리 PNU만 사용하고, 없는 매물은 핀 클릭 시 좌표 기준으로 PNU를 역조회한다.
   const directFields = ['pnu', 'PNU', 'landPnu', 'parcelPnu', 'representativePnu', 'primaryPnu'];
   directFields.forEach((key) => pushMany(collectPnuValues(raw && raw[key])));
   const listFields = ['pnuList', 'pnus', 'pnuListJson', 'parcelPnuList'];
   listFields.forEach((key) => pushMany(collectPnuValues(raw && raw[key])));
 
-  // 2) landParcels가 있으면 필지 개수만큼 그대로 사용한다. 3개면 3개, 2개면 2개만 조회된다.
+  // landParcels도 저장된 pnu 값만 사용한다.
+  // 주소만 들어 있는 landParcels는 초기에는 미확정으로 두고, 매물 선택 시 좌표 기준 보정으로 넘긴다.
   (Array.isArray(landParcels) ? landParcels : []).forEach((parcel) => {
     pushMany(collectPnuValues(parcel && parcel.pnu));
-    pushMany(buildPnusFromAddressSources([
-      parcel && parcel.address,
-      parcel && parcel.displayAddress,
-      parcel && parcel.jibun
-    ]));
   });
-
-  // 3) 필지 구조가 없고 주소 문자열에 "52-1, 52-2, 52-3"처럼 여러 지번이 적힌 경우만 보조 조립한다.
-  pushMany(buildPnusFromAddressSources([
-    raw && raw.address,
-    raw && raw.jibunAddress,
-    raw && raw.parcelAddress,
-    raw && raw.displayAddress,
-    raw && raw.landAddress,
-    raw && raw.location
-  ]));
 
   return uniquePnuList(candidates);
 }

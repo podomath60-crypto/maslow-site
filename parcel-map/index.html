@@ -16,6 +16,9 @@
       --blue:#0f7cff;
       --shadow:0 18px 44px rgba(15,23,42,.12);
       --right:clamp(360px,25vw,480px);
+      --detail:clamp(360px,25vw,480px);
+      --fixed:clamp(360px,25vw,480px);
+      --handle:16px;
       --top:64px;
     }
     *{box-sizing:border-box}
@@ -48,8 +51,8 @@
     .toolbar-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
     .top-btn{height:38px;padding:0 12px;border-radius:12px;background:#111827;color:#fff;font-weight:950;font-size:13px;box-shadow:0 8px 20px rgba(17,24,39,.15)}
     .top-btn.ghost{background:#fff;color:#263445;border:1px solid var(--line);box-shadow:none}
-    .main{position:relative;display:grid;grid-template-columns:minmax(0,1fr) var(--right);min-height:0;height:calc(100vh - var(--top));}
-    .map-wrap{position:relative;min-width:0;min-height:0;background:#eaf0f6}
+    .main{position:relative;display:flex;min-height:0;height:calc(100vh - var(--top));}
+    .map-wrap{position:relative;min-width:0;min-height:0;background:#eaf0f6;flex:1 1 auto}
     #map{position:absolute;inset:0;width:100%;height:100%;min-height:360px}
     .vworld-wms-overlay{position:absolute;inset:0;z-index:8;pointer-events:none;overflow:hidden}
     .vworld-wms-overlay img{position:absolute;width:256px;height:256px;user-select:none;-webkit-user-drag:none;pointer-events:none}
@@ -69,7 +72,17 @@
     .patch-panel{position:absolute;left:14px;bottom:14px;z-index:35;width:360px;max-width:calc(100vw - var(--right) - 44px);max-height:46vh;overflow:auto;padding:12px 13px;border-radius:18px;background:rgba(17,24,39,.92);color:#fff;border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 44px rgba(15,23,42,.28);font-size:12px;font-weight:800;line-height:1.35;pointer-events:auto;backdrop-filter:blur(10px)}
     .patch-panel-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:13px;font-weight:1000;color:#fff}.patch-panel-title span{font-size:10px;font-weight:900;color:#cbd5e1}.patch-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}.patch-kv{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);border-radius:12px;padding:7px 8px}.patch-kv b{display:block;font-size:14px;font-weight:1000;color:#fff;line-height:1}.patch-kv span{display:block;margin-top:4px;font-size:10px;color:#cbd5e1;font-weight:900}.patch-line{border-top:1px solid rgba(255,255,255,.12);padding-top:7px;margin-top:7px;color:#e5e7eb;word-break:break-all}.patch-line b{color:#fff}.patch-actions{display:flex;gap:6px;margin-top:8px}.patch-actions button{height:28px;border-radius:9px;background:#fff;color:#111827;padding:0 9px;font-size:11px;font-weight:1000}.patch-actions button.dark{background:#334155;color:#fff}.patch-sample{margin-top:7px;padding:7px 8px;border-radius:11px;background:rgba(0,0,0,.20);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:10px;line-height:1.35;white-space:pre-wrap;color:#dbeafe}.patch-sample.tall{max-height:210px;overflow:auto;color:#bbf7d0}
 
-    .panel{min-width:0;min-height:0;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;box-shadow:-18px 0 44px rgba(15,23,42,.08);z-index:30}
+    .right-panels{display:none;align-items:stretch;flex:0 0 auto;height:100%;min-width:0;z-index:30;background:#fff}
+    .right-panels.is-open{display:flex}
+    .panel{width:var(--fixed);flex:0 0 var(--fixed);min-width:0;min-height:0;background:var(--panel);border-left:1px solid var(--line);display:none;flex-direction:column;box-shadow:-18px 0 44px rgba(15,23,42,.08);z-index:30;overflow:hidden}
+    .panel.is-open{display:flex}
+    .panel.detail-panel{width:var(--detail);flex-basis:var(--detail)}
+    .panel.is-collapsed{width:0;flex-basis:0;border-left:0;box-shadow:none}
+    .panel.is-collapsed .panel-head,.panel.is-collapsed .panel-body{display:none}
+    .panel-handle{display:none;position:relative;width:var(--handle);flex:0 0 var(--handle);height:100%;background:#fff;border-left:1px solid var(--line);border-right:1px solid var(--line);z-index:36}
+    .panel-handle.is-open{display:block}
+    .panel-handle span{position:absolute;left:50%;top:50%;width:11px;height:72px;transform:translate(-50%,-50%);border:1px solid #cfd8e3;border-radius:999px;background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.14)}
+    .panel-handle span:before{content:'';position:absolute;left:50%;top:13px;bottom:13px;width:1px;transform:translateX(-50%);background:#98a2b3}
     .panel-head{padding:16px 16px 12px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex:0 0 auto}
     .panel-head-title{font-size:17px;font-weight:1000;line-height:1.2}
     .panel-head-sub{margin-top:4px;font-size:12px;font-weight:800;color:var(--muted);line-height:1.35}
@@ -102,7 +115,7 @@
     .modal{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.46);padding:18px}.modal.show{display:flex}.modal-card{width:min(460px,100%);border-radius:24px;background:#fff;box-shadow:var(--shadow);border:1px solid var(--line);padding:18px}.modal-title{font-size:18px;font-weight:1000;margin-bottom:4px}.modal-sub{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:14px}.modal-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:14px;font-weight:850}.modal-row input{width:18px;height:18px}.modal-radio{display:flex;gap:8px;margin-bottom:14px}.modal-radio label{flex:1;height:38px;border-radius:13px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:1000}.modal-radio input{display:none}.modal-radio label:has(input:checked){background:#0f7cff;color:#fff;border-color:#0f7cff}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.modal-btn{height:40px;padding:0 14px;border-radius:13px;background:#f2f4f7;color:#111827;font-weight:1000}.modal-btn.primary{background:#0f7cff;color:#fff}.memo-area{width:100%;min-height:180px;resize:vertical;border:1px solid var(--line);border-radius:16px;padding:12px;font-size:14px;font-weight:750;outline:0;line-height:1.45}.memo-area:focus{border-color:#0f7cff;box-shadow:0 0 0 3px rgba(15,124,255,.12)}
     .lock{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#ffffff 0%,#eef4ff 100%);padding:24px}.lock-card{width:min(360px,100%);border-radius:28px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);padding:24px;text-align:center}.lock-card h1{font-size:22px;margin:0 0 6px;font-weight:1000}.lock-card p{font-size:13px;font-weight:800;color:var(--muted);margin:0 0 16px}.lock-input{width:100%;height:48px;border:1px solid var(--line);border-radius:16px;text-align:center;font-size:22px;font-weight:1000;outline:0}.lock-btn{width:100%;height:46px;border-radius:16px;background:#111827;color:#fff;font-weight:1000;margin-top:10px}.lock-error{min-height:18px;margin-top:8px;font-size:12px;font-weight:900;color:#e11d48}
     @media (max-width:900px){
-      :root{--top:112px}.topbar{height:112px;align-items:flex-start;flex-wrap:wrap;padding:10px}.page-title{min-width:120px}.search{order:3;flex:1 0 100%;min-width:0}.chipbar{order:4;flex:1 0 100%;max-width:100%}.toolbar-actions{margin-left:auto}.main{display:block}.map-wrap{position:absolute;inset:var(--top) 0 0 0}.panel{position:fixed;left:0;right:0;bottom:0;height:42vh;border-left:0;border-top:1px solid var(--line);border-radius:24px 24px 0 0;transform:translateY(calc(100% - 64px));transition:transform .22s ease;box-shadow:0 -18px 44px rgba(15,23,42,.16)}.panel.is-open{transform:translateY(0)}.panel-head{padding:13px 14px}.panel-close{display:inline-flex;align-items:center;justify-content:center}.panel-body{padding:12px 14px 22px}.stat-card{width:calc(100vw - 28px);max-width:360px}.map-note{left:14px;right:14px;bottom:72px;max-width:none}.map-count-btn{bottom:84px}.patch-panel{left:14px;right:14px;bottom:132px;width:auto;max-width:none;max-height:28vh}.spec-grid{grid-template-columns:1fr 1fr}.actions{grid-template-columns:repeat(2,1fr)}}
+      :root{--top:112px}.topbar{height:112px;align-items:flex-start;flex-wrap:wrap;padding:10px}.page-title{min-width:120px}.search{order:3;flex:1 0 100%;min-width:0}.chipbar{order:4;flex:1 0 100%;max-width:100%}.toolbar-actions{margin-left:auto}.main{display:block}.map-wrap{position:absolute;inset:var(--top) 0 0 0}.right-panels{position:fixed;left:0;right:0;bottom:0;height:46vh;display:none;flex-direction:column;border-top:1px solid var(--line);border-radius:24px 24px 0 0;box-shadow:0 -18px 44px rgba(15,23,42,.16);overflow:hidden}.right-panels.is-open{display:flex}.panel{width:100%;flex:1 1 0;min-height:0;border-left:0;border-top:1px solid var(--line);box-shadow:none;border-radius:0}.panel.detail-panel{width:100%;flex-basis:0}.panel.is-collapsed{display:none}.panel-handle{display:none!important}.panel-head{padding:13px 14px}.panel-body{padding:12px 14px 22px}.stat-card{width:calc(100vw - 28px);max-width:360px}.map-note{left:14px;right:14px;bottom:72px;max-width:none}.map-count-btn{bottom:84px}.patch-panel{left:14px;right:14px;bottom:132px;width:auto;max-width:none;max-height:28vh}.spec-grid{grid-template-columns:1fr 1fr}.actions{grid-template-columns:repeat(2,1fr)}}
   </style>
 </head>
 <body>
@@ -169,13 +182,23 @@
         <button class="map-count-btn is-zero" id="mapCountBtn" type="button">매물 0개</button>
         <div class="loading" id="loading"><div class="loading-card"><div class="spinner"></div><b id="loadingTitle">불러오는 중</b><p id="loadingText">잠시만 기다려 주세요.</p></div></div>
       </section>
-      <aside class="panel" id="sidePanel">
-        <div class="panel-head">
-          <div><div class="panel-head-title" id="panelTitle">매물 선택</div><div class="panel-head-sub" id="panelSub">지도에서 작은 매물 핀을 클릭하세요.</div></div>
-          <button class="panel-close" id="panelClose" type="button">×</button>
-        </div>
-        <div class="panel-body" id="panelBody"></div>
-      </aside>
+      <div class="right-panels" id="sidePanel" aria-label="오른쪽 패널">
+        <button class="panel-handle" id="detailHandle" type="button" aria-label="상세정보 패널 접기/펴기"><span aria-hidden="true"></span></button>
+        <aside class="panel detail-panel" id="detailPanel">
+          <div class="panel-head">
+            <div><div class="panel-head-title" id="detailPanelTitle">매물 상세정보</div><div class="panel-head-sub" id="detailPanelSub">선택한 매물 정보</div></div>
+          </div>
+          <div class="panel-body" id="detailPanelBody"></div>
+        </aside>
+        <button class="panel-handle" id="fixedHandle" type="button" aria-label="오른쪽 고정 패널 접기/펴기"><span aria-hidden="true"></span></button>
+        <aside class="panel fixed-panel" id="fixedPanel">
+          <div class="panel-head">
+            <div><div class="panel-head-title" id="panelTitle">매물 선택</div><div class="panel-head-sub" id="panelSub">지도에서 작은 매물 핀을 클릭하세요.</div></div>
+            <button class="panel-close" id="panelClose" type="button" aria-hidden="true" tabindex="-1">×</button>
+          </div>
+          <div class="panel-body" id="panelBody"></div>
+        </aside>
+      </div>
     </main>
   </div>
 
@@ -246,6 +269,12 @@
     panelCardItems:[],
     mapViewportTimer:null,
     panelMode:'default',
+    detailMode:'none',
+    fixedMode:'none',
+    collapsedPanels:{detail:false,fixed:false},
+    ledgerRequestSeq:0,
+    selectedLookup:null,
+    suppressGroundClickUntil:0,
     pnuToItems:new Map(),
     markers:new Map(),
     geocodeCache:new Map(),
@@ -253,6 +282,7 @@
     geocodeRenderTimer:null,
     hasAutoFitMarkers:false,
     listingPolygons:new Map(),
+    lookupPolygons:new Map(),
     basePolygons:new Map(),
     polygonDataByPnu:new Map(),
     selectedItem:null,
@@ -288,7 +318,9 @@
 
   const els = {
     searchInput:document.getElementById('searchInput'), chipbar:document.getElementById('chipbar'), map:document.getElementById('map'),
-    sidePanel:document.getElementById('sidePanel'), panelTitle:document.getElementById('panelTitle'), panelSub:document.getElementById('panelSub'), panelBody:document.getElementById('panelBody'), panelClose:document.getElementById('panelClose'),
+    sidePanel:document.getElementById('sidePanel'),
+    detailPanel:document.getElementById('detailPanel'), detailPanelTitle:document.getElementById('detailPanelTitle'), detailPanelSub:document.getElementById('detailPanelSub'), detailPanelBody:document.getElementById('detailPanelBody'), detailHandle:document.getElementById('detailHandle'),
+    fixedPanel:document.getElementById('fixedPanel'), panelTitle:document.getElementById('panelTitle'), panelSub:document.getElementById('panelSub'), panelBody:document.getElementById('panelBody'), panelClose:document.getElementById('panelClose'), fixedHandle:document.getElementById('fixedHandle'),
     loading:document.getElementById('loading'), loadingTitle:document.getElementById('loadingTitle'), loadingText:document.getElementById('loadingText'), loadState:document.getElementById('loadState'), statSub:document.getElementById('statSub'), statTotal:document.getElementById('statTotal'), statShown:document.getElementById('statShown'), statPnu:document.getElementById('statPnu'), statNoPnu:document.getElementById('statNoPnu'), mapNote:document.getElementById('mapNote'), mapCountBtn:document.getElementById('mapCountBtn'), mapResetBtn:document.getElementById('mapResetBtn'),
     baseParcelToggle:document.getElementById('baseParcelToggle'), reloadBtn:document.getElementById('reloadBtn'),
     statusModal:document.getElementById('statusModal'), statusModalSub:document.getElementById('statusModalSub'), statusCancel:document.getElementById('statusCancel'), statusSave:document.getElementById('statusSave'),
@@ -959,6 +991,7 @@
       scheduleMapViewportCountUpdate();
       updatePatchPanel();
     });
+    naver.maps.Event.addListener(state.map, 'click', handleMapGroundClick);
   }
 
   async function loadListings(){
@@ -1131,6 +1164,7 @@
     if(state.selectedItem && !state.filteredItems.some(i => i.listingNumber === state.selectedItem.listingNumber)){
       clearPolygonMap(state.listingPolygons);
       state.selectedItem = null;
+      closeDetailPanel();
     }else if(state.selectedItem){
       renderListingPolygons();
     }
@@ -1377,7 +1411,7 @@
           zIndex:selected ? 900 : 500
         };
         const marker = new naver.maps.Marker(markerOptions);
-        naver.maps.Event.addListener(marker, 'click', function(){ selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item], {fitPolygon:false}); });
+        naver.maps.Event.addListener(marker, 'click', function(){ state.suppressGroundClickUntil = Date.now() + 350; selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item], {fitPolygon:false, source:'map'}); });
         state.markers.set(item.listingNumber || ('idx-' + idx), marker);
         state.debug.markerCreated += 1;
       }catch(err){
@@ -1426,7 +1460,7 @@
     }
 
     if(state.panelMode === 'mapCards') renderMapViewCardPanel();
-    else renderItemPanel();
+    renderItemPanel();
 
     const missing = pnus.filter(pnu => !state.polygonDataByPnu.has(pnu));
     if(!missing.length){
@@ -1484,7 +1518,7 @@
       const style = styleForItem(item, true);
       const polys = paths.map(path => {
         const poly = new naver.maps.Polygon({ map:state.map, paths:path, clickable:true, zIndex:70, ...style });
-        naver.maps.Event.addListener(poly, 'click', function(){ selectPnu(pnu, parcel); });
+        naver.maps.Event.addListener(poly, 'click', function(){ state.suppressGroundClickUntil = Date.now() + 350; selectPnu(pnu, parcel); });
         return poly;
       });
       const prev = state.listingPolygons.get(pnu) || [];
@@ -1514,61 +1548,128 @@
     renderWmsTiles();
   }
 
+  function setPanelSlot(slot, open){
+    const panel = slot === 'detail' ? els.detailPanel : els.fixedPanel;
+    const handle = slot === 'detail' ? els.detailHandle : els.fixedHandle;
+    if(!panel) return;
+    panel.classList.toggle('is-open', !!open);
+    panel.classList.toggle('is-collapsed', !!open && !!state.collapsedPanels[slot]);
+    if(handle) handle.classList.toggle('is-open', !!open);
+    updatePanelRail();
+    window.setTimeout(forceMapResize, 40);
+  }
+  function updatePanelRail(){
+    const any = (els.detailPanel && els.detailPanel.classList.contains('is-open')) || (els.fixedPanel && els.fixedPanel.classList.contains('is-open'));
+    if(els.sidePanel) els.sidePanel.classList.toggle('is-open', !!any);
+  }
+  function openDetailPanel(title, sub, html){
+    state.detailMode = 'item';
+    state.collapsedPanels.detail = false;
+    if(els.detailPanelTitle) els.detailPanelTitle.textContent = title || '매물 상세정보';
+    if(els.detailPanelSub) els.detailPanelSub.textContent = sub || '';
+    if(els.detailPanelBody) els.detailPanelBody.innerHTML = html || '';
+    setPanelSlot('detail', true);
+  }
+  function openFixedPanel(title, sub, html, mode){
+    state.fixedMode = mode || state.fixedMode || 'default';
+    state.collapsedPanels.fixed = false;
+    if(els.panelTitle) els.panelTitle.textContent = title || '';
+    if(els.panelSub) els.panelSub.textContent = sub || '';
+    if(els.panelBody) els.panelBody.innerHTML = html || '';
+    setPanelSlot('fixed', true);
+  }
+  function closeDetailPanel(){ state.detailMode = 'none'; state.collapsedPanels.detail = false; if(els.detailPanelBody) els.detailPanelBody.innerHTML = ''; setPanelSlot('detail', false); }
+  function closeFixedPanel(){ state.fixedMode = 'none'; state.panelMode = 'default'; state.collapsedPanels.fixed = false; if(els.panelBody) els.panelBody.innerHTML = ''; setPanelSlot('fixed', false); }
+  function openPanel(){ setPanelSlot('fixed', true); }
+  function closePanel(){ closeDetailPanel(); closeFixedPanel(); }
+  function togglePanelCollapsed(slot){
+    const panel = slot === 'detail' ? els.detailPanel : els.fixedPanel;
+    if(!panel || !panel.classList.contains('is-open')) return;
+    state.collapsedPanels[slot] = !state.collapsedPanels[slot];
+    panel.classList.toggle('is-collapsed', state.collapsedPanels[slot]);
+    window.setTimeout(forceMapResize, 60);
+  }
+
   function selectPnu(pnu, parcel){
     const all = state.pnuToItems.get(pnu) || [];
     const allowed = new Set(state.filteredItems.map(i => i.listingNumber));
     const candidates = all.filter(item => allowed.has(item.listingNumber));
-    if(candidates.length){ selectItem(candidates[0], pnu, parcel, candidates); }
-    else showParcelOnly(parcel || state.polygonDataByPnu.get(pnu));
+    if(candidates.length){
+      selectItem(candidates[0], pnu, parcel, candidates, {source:'map'});
+    }else{
+      showParcelOnly(parcel || state.polygonDataByPnu.get(pnu));
+    }
   }
   function selectItem(item, pnu, parcel, candidates, options){
     options = options || {};
-    state.selectedItem = item; state.selectedPnu = pnu || item.representativePnu || ''; state.selectedParcel = parcel || null; state.selectedCandidates = candidates || [item];
+    const source = options.source || (state.panelMode === 'mapCards' ? 'list' : 'map');
+    state.selectedItem = item;
+    state.selectedPnu = pnu || item.representativePnu || (item.pnuList || [])[0] || '';
+    state.selectedParcel = parcel || (state.selectedPnu ? state.polygonDataByPnu.get(state.selectedPnu) : null) || null;
+    state.selectedCandidates = candidates || [item];
+    state.detailMode = 'item';
     renderMarkers();
+    clearPolygonMap(state.lookupPolygons);
     clearPolygonMap(state.listingPolygons);
-    openPanel();
-    if(state.panelMode === 'mapCards') renderMapViewCardPanel();
-    else renderItemPanel();
-    fetchSelectedItemPolygons(item, options);
+    renderItemPanel();
+
+    if(source === 'list'){
+      state.panelMode = 'mapCards';
+      renderMapViewCardPanel();
+      fetchSelectedItemPolygons(item, options);
+      return;
+    }
+
+    state.panelMode = 'ledger';
+    state.fixedMode = 'ledger';
+    renderLedgerLoading('공부조회', '선택한 매물의 필지와 공부 정보를 확인합니다.');
+    fetchSelectedItemPolygons(item, options).then(function(){
+      if(!state.selectedItem || state.selectedItem.listingNumber !== item.listingNumber) return;
+      const nextPnu = state.selectedPnu || item.representativePnu || (item.pnuList || [])[0] || '';
+      const nextParcel = state.selectedParcel || (nextPnu ? state.polygonDataByPnu.get(nextPnu) : null) || parcel || null;
+      return lookupLedgerForItem(item, nextParcel);
+    }).catch(function(err){
+      state.debug.lastError = '공부조회 준비 실패: ' + (err && err.message ? err.message : err);
+      return lookupLedgerForItem(item, parcel).catch(function(e){ renderLedgerError(e); });
+    });
   }
   function showParcelOnly(parcel){
-    state.selectedItem = null; state.selectedParcel = parcel || null; state.selectedCandidates = [];
-    openPanel();
-    els.panelTitle.textContent = '필지 정보';
-    els.panelSub.textContent = parcel && parcel.pnu ? parcel.pnu : '매물 연결 없음';
-    const props = parcel && parcel.properties || {};
-    els.panelBody.innerHTML = '<div class="parcel-card"><strong>' + escapeHtml((parcel && parcel.address) || '매물 없는 필지') + '</strong><p>PNU ' + escapeHtml(parcel && parcel.pnu) + '</p><p>지목 ' + escapeHtml(parcel && (parcel.landCategory || props.jimok || props.JIMOK || '-')) + ' / 면적 ' + escapeHtml(parcel && (parcel.areaM2 || props.area || props.AREA || '-')) + '</p></div><div class="empty-panel" style="min-height:220px"><div class="empty-icon">◻️</div><b>저장매물 연결 없음</b><div>이 필지에 연결된 매물이 없습니다.</div></div>';
+    state.selectedItem = null;
+    state.selectedPnu = parcel && parcel.pnu || '';
+    state.selectedParcel = parcel || null;
+    state.selectedCandidates = [];
+    closeDetailPanel();
+    renderMarkers();
+    lookupLedgerForParcel(parcel).catch(function(err){ renderLedgerError(err); });
   }
-  function openPanel(){ els.sidePanel.classList.add('is-open'); }
-  function closePanel(){ els.sidePanel.classList.remove('is-open'); }
   function resetSidePanelToInitialState(){
-    // 새로고침 없이 오른쪽 패널만 최초 상태로 돌린다.
-    // 목록 스냅샷이 남아 있으면 핀 클릭 시 단건 상세 대신 목록 모드가 다시 열리므로 여기서 명확히 비운다.
     state.selectedItem = null;
     state.selectedPnu = '';
     state.selectedParcel = null;
     state.selectedCandidates = [];
+    state.selectedLookup = null;
     state.panelMode = 'default';
+    state.detailMode = 'none';
+    state.fixedMode = 'none';
     state.panelCardItems = [];
     state.visibleMapItems = [];
+    state.collapsedPanels.detail = false;
+    state.collapsedPanels.fixed = false;
     clearPolygonMap(state.listingPolygons);
+    clearPolygonMap(state.lookupPolygons);
     renderMarkers();
-    renderDefaultPanel();
   }
   function resetAndCloseSidePanel(){
     resetSidePanelToInitialState();
     closePanel();
-    els.mapNote.textContent = '오른쪽 패널을 초기화했습니다. 매물 핀을 클릭하면 단건 상세를 볼 수 있습니다.';
+    els.mapNote.textContent = '오른쪽 패널을 초기화했습니다. 지도 빈 곳을 누르면 공부조회, 매물 핀을 누르면 매물상세와 공부조회를 봅니다.';
   }
 
   function renderDefaultPanel(){
-    if(state.panelMode === 'mapCards') return;
-    if(state.selectedItem && state.filteredItems.some(i => i.listingNumber === state.selectedItem.listingNumber)) return;
-    state.selectedItem = null;
-    state.panelMode = 'default';
-    els.panelTitle.textContent = '매물 선택';
-    els.panelSub.textContent = state.filteredItems.length + '건 표시 중';
-    els.panelBody.innerHTML = noGeometryMessage();
+    if(state.fixedMode !== 'none' || state.detailMode !== 'none') return;
+    if(els.panelTitle) els.panelTitle.textContent = '매물 선택';
+    if(els.panelSub) els.panelSub.textContent = state.filteredItems.length + '건 표시 중';
+    if(els.panelBody) els.panelBody.innerHTML = noGeometryMessage();
   }
 
   function renderMapViewCardPanel(options){
@@ -1579,22 +1680,17 @@
       state.visibleMapItems = items;
       state.panelCardItems = items.slice();
     }else{
-      // 중요: 오른쪽 카드 리스트는 하단 "매물 N개" 버튼을 누른 시점의 스냅샷을 유지한다.
-      // 지도 이동/줌/선택/필지조회로 현재 화면 핀 수가 달라져도 여기서 다시 getItemsInCurrentMapView()를 호출하지 않는다.
       items = Array.isArray(state.panelCardItems) ? state.panelCardItems : [];
     }
     state.panelMode = 'mapCards';
-    openPanel();
-    els.panelTitle.textContent = '현재 화면 매물 ' + items.length + '개';
-    els.panelSub.textContent = items.length ? '하단 매물 개수 버튼을 누른 시점의 매물카드입니다. 지도를 움직여도 다시 누르기 전까지 이 목록은 유지됩니다.' : '현재 지도 화면 안에 표시되는 매물이 없습니다.';
+    state.fixedMode = 'mapCards';
     if(!items.length){
-      els.panelBody.innerHTML = '<div class="empty-map-card-list"><div class="empty-icon">📍</div><b>매물 0개</b><div>지도를 이동하거나 확대/축소한 뒤 하단의 매물 개수 버튼을 다시 누르세요.</div></div>';
+      openFixedPanel('현재 화면 매물 0개', '현재 지도 화면 안에 표시되는 매물이 없습니다.', '<div class="empty-map-card-list"><div class="empty-icon">📍</div><b>매물 0개</b><div>지도를 이동하거나 확대/축소한 뒤 하단의 매물 개수 버튼을 다시 누르세요.</div></div>', 'mapCards');
       return;
     }
-    const list = items;
     let html = '<div class="map-card-head"><b>현재 화면 매물 ' + items.length + '개</b><span>전체 표시 · 스냅샷 유지</span></div>';
-    html += '<div class="map-card-list">' + list.map(buildMapDashboardCard).join('') + '</div>';
-    els.panelBody.innerHTML = html;
+    html += '<div class="map-card-list">' + items.map(buildMapDashboardCard).join('') + '</div>';
+    openFixedPanel('현재 화면 매물 ' + items.length + '개', '하단 매물 개수 버튼을 누른 시점의 매물카드입니다. 지도를 움직여도 다시 누르기 전까지 이 목록은 유지됩니다.', html, 'mapCards');
     if(state.selectedItem){
       window.setTimeout(function(){
         try{
@@ -1604,6 +1700,252 @@
       }, 30);
     }
   }
+
+  function renderItemPanel(){
+    const item = state.selectedItem;
+    if(!item){ closeDetailPanel(); return; }
+    const candidates = state.selectedCandidates || [item];
+    let html = '';
+    if(candidates.length > 1){
+      html += '<div class="item-list">' + candidates.map(c => '<button type="button" class="item-choice ' + (c.listingNumber === item.listingNumber ? 'is-active' : '') + '" data-listing="' + escapeHtml(c.listingNumber) + '"><span><strong>' + escapeHtml(c.title || c.listingNumber) + '</strong><span>' + escapeHtml(c.price || c.address || '') + '</span></span><em class="badge ' + escapeHtml(c.status) + '">' + (c.status === 'visible' ? '공개' : '비공개') + '</em></button>').join('') + '</div>';
+    }
+    html += '<div class="hero">' + (item.heroUrl ? '<img src="' + escapeHtml(item.heroUrl) + '" alt="">' : '<div class="hero-placeholder">🏭</div>') + '</div>';
+    html += '<div class="chip-line">' + statusLabels(item).map(pair => '<span class="badge ' + pair[1] + '">' + escapeHtml(pair[0]) + '</span>').join('') + '</div>';
+    html += '<div class="listing-title">' + escapeHtml(item.title || '-') + '</div>';
+    html += '<div class="price">' + escapeHtml(item.price || '-') + '</div>';
+    html += '<div class="addr">' + escapeHtml(item.address || '-') + '</div>';
+    const specs = [ ['거래형태', item.dealType], ['매물종류', item.propertyType], ['대지면적', formatArea(item.landAreaM2,item.landAreaPy)], ['연면적', formatArea(item.totalFloorAreaM2,item.totalFloorAreaPy)], ['용도지역', item.zoning], ['건축물', item.buildingComposition], ['접도/진입로', item.roadWidth], ['전력/호이스트', [item.powerCapacity,item.hoist || item.crane].filter(Boolean).join(' / ')] ];
+    html += '<div class="spec-grid">' + specs.map(s => '<div class="spec"><label>' + escapeHtml(s[0]) + '</label><div>' + escapeHtml(s[1] || '-') + '</div></div>').join('') + '</div>';
+    const summaries = [item.summary1,item.summary2,item.summary3].filter(Boolean);
+    if(summaries.length) html += '<ul class="summary">' + summaries.map(s => '<li>✔ ' + escapeHtml(s) + '</li>').join('') + '</ul>';
+    html += '<div class="section-title">필지 정보</div><div class="parcel-list">' + renderParcels(item) + '</div>';
+    if(item.memo) html += '<div class="section-title">메모</div><div class="parcel-card"><p>' + escapeHtml(item.memo).replace(/\n/g,'<br>') + '</p></div>';
+    html += '<div class="actions"><button class="action-btn blue" data-action="view">보기</button><button class="action-btn" data-action="edit">수정</button><button class="action-btn orange" data-action="status">상태</button><button class="action-btn light" data-action="memo">메모</button><button class="action-btn green" data-action="naver">네이버지도</button><button class="action-btn light" data-action="ddangya">땅야</button></div>';
+    openDetailPanel(item.title || '제목 없음', item.listingNumber + ' · ' + ((item.pnuList || []).length || 0) + '필지', html);
+  }
+
+  function renderLedgerLoading(title, message){
+    openFixedPanel(title || '공부조회', message || '좌표와 필지 정보를 확인합니다.', '<div class="panel-loading"><div class="mini-spinner"></div><b>공부조회 중</b><div>' + escapeHtml(message || '토지대장과 건축물대장 정보를 불러옵니다.') + '</div></div>', 'ledger');
+  }
+  function renderLedgerError(err){
+    const msg = err && err.message ? err.message : String(err || '조회 실패');
+    openFixedPanel('공부조회 실패', '좌표 또는 공부조회 응답을 확인하세요.', '<div class="empty-panel"><div class="empty-icon">⚠️</div><b>공부조회를 완료하지 못했습니다.</b><div>' + escapeHtml(msg) + '</div></div>', 'ledger');
+  }
+  function reverseGeocodePoint(lat, lng){
+    return fetchJsonWithTimeout('/api/route-setting/reverse-geocode', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({lat:lat,lng:lng})}, 14000).then(function(data){ return data.item || data; });
+  }
+  function publicLookup(params){
+    const q = new URLSearchParams();
+    Object.keys(params || {}).forEach(function(k){ if(k === 'callback' || k === '_ts') return; q.set(k, params[k] == null ? '' : String(params[k])); });
+    q.set('_ts', Date.now());
+    return fetchJsonWithTimeout('/api/public-property-lookup?' + q.toString(), {method:'GET', headers:{'Accept':'application/json'}, cache:'no-store'}, 60000);
+  }
+  function ledgerFirstNonEmpty(){
+    for(let i=0;i<arguments.length;i++){ const v = arguments[i]; if(v == null) continue; const t = String(v).trim(); if(t) return t; }
+    return '';
+  }
+  function ledgerNumberText(n){ if(!isFinite(n)) return ''; if(Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n)); return (Math.round(n*100)/100).toString(); }
+  function ledgerDate(v){ v = String(v == null ? '' : v).replace(/\D/g,''); if(v.length !== 8) return String(v || '').trim(); return v.slice(0,4)+'.'+v.slice(4,6)+'.'+v.slice(6,8); }
+  function ledgerAreaText(v){ if(v == null || v === '') return '-'; const n = Number(v); if(!isFinite(n) || n <= 0) return '-'; return ledgerNumberText(n) + '㎡ / ' + ledgerNumberText(n / 3.305785) + '평'; }
+  function ledgerPercent(v){ if(v == null || v === '') return ''; const n = Number(v); if(!isFinite(n)) return String(v).trim(); return ledgerNumberText(n) + '%'; }
+  function ledgerHeight(v){ if(v == null || v === '') return ''; const n = Number(v); if(!isFinite(n) || n === 0) return ''; return ledgerNumberText(n) + 'm'; }
+  function ledgerText(v){ v = String(v == null ? '' : v).trim(); return v || '-'; }
+  function ledgerUnique(arr){ const out=[]; (arr||[]).forEach(function(v){ v=String(v==null?'':v).trim(); if(v && out.indexOf(v)===-1) out.push(v); }); return out; }
+  function ledgerFindPositive(items, key){ let best=null; (items||[]).forEach(function(it){ const n=Number(it&&it[key]); if(isFinite(n)&&n>0&&(best==null||n>best)) best=n; }); return best; }
+  function ledgerBuildingSortKey(name){ const m=String(name||'').match(/(\d+)/); return m ? parseInt(m[1],10) : 9999; }
+  function ledgerFloorSortKey(name){ const m=String(name||'').trim().match(/-?\d+/); return m ? parseInt(m[0],10) : 9999; }
+  function ledgerFloorText(v){ const g=ledgerFirstNonEmpty(v&&v.grndFlrCnt); const u=ledgerFirstNonEmpty(v&&v.ugrndFlrCnt); if(!g&&!u) return ''; return '지상 ' + (g||'0') + '층 / 지하 ' + (u||'0') + '층'; }
+  function ledgerJoinAreaPurpose(area,purpose,struct){ const parts=[]; if(area&&area!=='-') parts.push(area); if(purpose&&purpose!=='-') parts.push(purpose); if(struct&&struct!=='-') parts.push(struct); return parts.length ? parts.join(' / ') : '-'; }
+  function ledgerFormatLandAreaText(m2, py){ const n=Number(String(m2==null?'':m2).replace(/,/g,'')); const p=Number(String(py==null?'':py).replace(/,/g,'')); if(isFinite(n)&&n>0){ if(isFinite(p)&&p>0) return ledgerNumberText(n)+'㎡ / '+ledgerNumberText(p)+'평'; return ledgerAreaText(n); } return ledgerFirstNonEmpty(m2,py,'-'); }
+  function ledgerParseNumber(value){ const n=Number(String(value==null?'':value).replace(/,/g,'').replace(/[^0-9.\-]/g,'')); return isFinite(n) ? n : null; }
+  function ledgerFormatWon(n){ if(!isFinite(n)) return ''; return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '원'; }
+  function ledgerLandTotalText(areaM2, pricePerM2){ const area=ledgerParseNumber(areaM2); const price=ledgerParseNumber(pricePerM2); if(!isFinite(area)||area<=0||!isFinite(price)||price<=0) return ''; const total=area*price; const manwon=Math.round(total/10000); return ledgerFormatWon(total)+' / 약 '+String(manwon).replace(/\B(?=(\d{3})+(?!\d))/g, ',')+'만원'; }
+  function ledgerRoadSideText(value){ const t=String(value==null?'':value).trim(); if(!t) return ''; const map={'광대로한면':'25m 이상','광대로':'25m 이상','대로한면':'12m 이상 25m 미만','대로':'12m 이상 25m 미만','중로한면':'8m 이상 12m 미만','중로':'8m 이상 12m 미만','소로한면':'4m 이상 8m 미만','소로':'4m 이상 8m 미만','세로한면':'4m 미만','세로':'4m 미만','맹지':'도로 접면 없음'}; let desc=map[t]||''; if(!desc){ Object.keys(map).some(function(k){ if(t.indexOf(k)!==-1){ desc=map[k]; return true; } return false; }); } return desc ? t+'('+desc+')' : t; }
+  function ledgerSplitValues(value){ if(Array.isArray(value)) return value.map(v=>String(v==null?'':v).trim()).filter(Boolean); return String(value==null?'':value).split(',').map(v=>v.trim()).filter(Boolean); }
+  function ledgerUsePlanItems(usePlan){ usePlan=usePlan||{}; if(Array.isArray(usePlan.usePlanItems)&&usePlan.usePlanItems.length){ return usePlan.usePlanItems.map(function(item){ return {name:ledgerFirstNonEmpty(item&&item.name,item&&item.zoningDistrict,item&&item.prposAreaDstrcCodeNm), conflict:ledgerFirstNonEmpty(item&&item.conflict,item&&item.conflictStatus,item&&item.cnflcAtNm)}; }).filter(i=>!!(i.name||i.conflict)); } const names=ledgerSplitValues(usePlan.zoningDistricts); const conflicts=ledgerSplitValues(usePlan.conflictStatus); const max=Math.max(names.length,conflicts.length); const items=[]; for(let i=0;i<max;i++) items.push({name:names[i]||'',conflict:conflicts[i]||''}); return items.filter(i=>!!(i.name||i.conflict)); }
+  function ledgerLandBaseYearMonth(y,m){ y=String(y==null?'':y).replace(/\D/g,''); m=String(m==null?'':m).replace(/\D/g,''); if(!y) return ''; if(y.length>4)y=y.slice(0,4); if(!m) return y; if(m.length===1)m='0'+m; if(m.length>2)m=m.slice(0,2); return y+'.'+m; }
+  function normalizeLandData(res){ return (res && res.land && (res.land.characteristic || res.land.usePlan)) ? res : {land:res || {}}; }
+  function buildLedgerLandRows(res){
+    const data=normalizeLandData(res); const land=(data&&data.land)||{}; const c=land.characteristic||{}; const use=land.usePlan||{}; const rows=[];
+    if(ledgerFirstNonEmpty(c.baseYear,c.baseMonth,c.landCategory,c.areaM2,c.zoning,c.zoning2,c.landUseSituation,c.terrainHeight,c.terrainShape,c.roadSide,c.officialLandPrice,c.officialLandPriceText,c.dataDate)){
+      const totalText=ledgerFirstNonEmpty(c.officialLandTotalPriceText,c.officialLandTotalPriceShortText,ledgerLandTotalText(c.areaM2,c.officialLandPrice));
+      rows.push(['기준년월', ledgerText(ledgerLandBaseYearMonth(c.baseYear,c.baseMonth))]);
+      rows.push(['지목', ledgerText(c.landCategory)]);
+      rows.push(['면적', ledgerFormatLandAreaText(c.areaM2,c.areaPy)]);
+      rows.push(['용도지역1', ledgerText(c.zoning)]);
+      if(ledgerFirstNonEmpty(c.zoning2)) rows.push(['용도지역2', ledgerText(c.zoning2)]);
+      if(ledgerFirstNonEmpty(c.landUseSituation)) rows.push(['토지이용상황', ledgerText(c.landUseSituation)]);
+      if(ledgerFirstNonEmpty(c.terrainHeight)) rows.push(['지형고저', ledgerText(c.terrainHeight)]);
+      rows.push(['지형형상', ledgerText(c.terrainShape)]);
+      rows.push(['도로접면', ledgerText(ledgerRoadSideText(c.roadSide))]);
+      rows.push(['공시지가', ledgerText(ledgerFirstNonEmpty(c.officialLandPriceText,c.officialLandPrice))]);
+      if(totalText) rows.push(['공시지가 총액', totalText]);
+      if(ledgerFirstNonEmpty(c.officialLandPriceAnnouncementDate)) rows.push(['개별공시지가 공시일자', ledgerText(ledgerDate(c.officialLandPriceAnnouncementDate)||c.officialLandPriceAnnouncementDate)]);
+      rows.push(['토지특성 기준일', ledgerText(ledgerDate(c.dataDate)||c.dataDate)]);
+    }
+    const useItems=ledgerUsePlanItems(use);
+    if(ledgerFirstNonEmpty(use.ledgerType) || useItems.length || ledgerFirstNonEmpty(use.dataDate)){
+      if(rows.length) rows.push(['[토지이용계획]', '']);
+      const ledgerTypes=[]; ledgerSplitValues(use.ledgerType).forEach(v=>{if(v&&ledgerTypes.indexOf(v)===-1)ledgerTypes.push(v);});
+      if(ledgerTypes.length) rows.push(['대장구분', ledgerTypes.join(', ')]);
+      useItems.forEach(item=>rows.push([ledgerText(item.name), ledgerText(item.conflict)]));
+      rows.push(['토지이용 기준일', ledgerText(ledgerDate(use.dataDate)||use.dataDate)]);
+    }
+    if(!rows.length && ledgerFirstNonEmpty(land.message)) rows.push(['조회상태', land.message]);
+    return rows;
+  }
+  function getLedgerBuildingArchArea(source, floorList){
+    const direct=Number(source&&source.archArea); if(isFinite(direct)&&direct>0) return direct; let first=null;
+    (floorList||[]).forEach(function(f){ const floorName=String(f.flrNoNm||'').trim(); const floorGb=String(f.flrGbCdNm||'').trim(); const floorNo=String(f.flrNo==null?'':f.flrNo).trim(); const area=Number(f&&f.area); if(!isFinite(area)||area<=0) return; if(floorName==='1층'||(floorGb==='지상'&&floorNo==='1')) first=area; });
+    return first;
+  }
+  function extractLedgerBuildingData(data){
+    data=data||{}; const apis=data.apis||{}; const titleItems=((apis.title||{}).items||[]).slice(); const recapItems=((apis.recap||{}).items||[]).slice(); const basisItems=((apis.basis||{}).items||[]).slice(); const jijiguItems=((apis.jijigu||{}).items||[]).slice(); const flrItems=((apis.flr||{}).items||[]).slice(); const titleFirst=((apis.title||{}).firstItem||{}); const recapFirst=((apis.recap||{}).firstItem||{});
+    const zoning=ledgerUnique(basisItems.map(it=>it.jiyukCdNm).concat(basisItems.map(it=>it.jiguCdNm)).concat(basisItems.map(it=>it.guyukCdNm)).concat(jijiguItems.map(it=>it.jiyukCdNm)).concat(jijiguItems.map(it=>it.jiguCdNm)).concat(jijiguItems.map(it=>it.guyukCdNm)).concat(jijiguItems.map(it=>it.jijigu))).join(' / ');
+    let landArea=Number(recapFirst.platArea); if(!isFinite(landArea)||landArea<=0) landArea=ledgerFindPositive(recapItems,'platArea'); if(!isFinite(landArea)||landArea<=0) landArea=ledgerFindPositive(titleItems,'platArea');
+    let archArea=Number(recapFirst.archArea); if(!isFinite(archArea)||archArea<=0) archArea=ledgerFindPositive(recapItems,'archArea'); if(!isFinite(archArea)||archArea<=0) archArea=titleItems.reduce((sum,it)=>sum+(isFinite(Number(it.archArea))&&Number(it.archArea)>0?Number(it.archArea):0),0);
+    let totArea=Number(recapFirst.totArea); if(!isFinite(totArea)||totArea<=0) totArea=ledgerFindPositive(recapItems,'totArea'); if(!isFinite(totArea)||totArea<=0) totArea=titleItems.reduce((sum,it)=>sum+(isFinite(Number(it.totArea))&&Number(it.totArea)>0?Number(it.totArea):0),0);
+    let mainCnt=titleItems.filter(it=>String(it.mainAtchGbCd||'').trim()==='0').length; let atchCnt=titleItems.filter(it=>String(it.mainAtchGbCd||'').trim()&&String(it.mainAtchGbCd||'').trim()!=='0').length; if(!mainCnt&&recapFirst.mainBldCnt) mainCnt=Number(recapFirst.mainBldCnt)||0; if(!atchCnt&&recapFirst.atchBldCnt) atchCnt=Number(recapFirst.atchBldCnt)||0; const totalCnt=titleItems.length||(mainCnt+atchCnt); let compText='-'; if(totalCnt){ compText='총 '+totalCnt+'동'; if(mainCnt||atchCnt) compText+=' (주건축물 '+(mainCnt||0)+'동, 부속건축물 '+(atchCnt||0)+'동)'; }
+    const summaryRows=[['주소', ledgerFirstNonEmpty(data.normalized&&data.normalized.jibunAddress,data.address,titleFirst.platPlc,recapFirst.platPlc,'-')],['도로명주소', ledgerFirstNonEmpty(data.normalized&&data.normalized.roadAddress,titleFirst.newPlatPlc,recapFirst.newPlatPlc,'-')],['건축물구성', compText],['건물용도', ledgerFirstNonEmpty(recapFirst.mainPurpsCdNm,titleFirst.mainPurpsCdNm,recapFirst.etcPurps,titleFirst.etcPurps,'-')],['용도지역', ledgerText(zoning)],['사용승인일', ledgerDate(ledgerFirstNonEmpty(recapFirst.useAprDay,titleFirst.useAprDay))||'-'],['대지면적', ledgerAreaText(landArea)],['건축면적', ledgerAreaText(archArea)],['연면적', ledgerAreaText(totArea)],['건폐율', ledgerPercent(ledgerFirstNonEmpty(recapFirst.bcRat,titleFirst.bcRat))||'-'],['용적률', ledgerPercent(ledgerFirstNonEmpty(recapFirst.vlRat,titleFirst.vlRat))||'-'],['주차대수', (function(){ const n=Number(ledgerFirstNonEmpty(recapFirst.totPkngCnt,'')); return isFinite(n)&&n>0?String(Math.round(n))+'대':'-'; })()]];
+    const floorsByDong={}; flrItems.forEach(function(it){ const dk=String(it.dongNm||'').trim(); if(!dk) return; if(!floorsByDong[dk]) floorsByDong[dk]=[]; floorsByDong[dk].push(it); });
+    const buildings=titleItems.slice().sort((a,b)=>ledgerBuildingSortKey(a.dongNm)-ledgerBuildingSortKey(b.dongNm)).map(function(it){ const floorList=(floorsByDong[String(it.dongNm||'').trim()]||[]).slice().sort((a,b)=>ledgerFloorSortKey(a.flrNoNm||a.flrGbCdNm)-ledgerFloorSortKey(b.flrNoNm||b.flrGbCdNm)); const isMain=String(it.mainAtchGbCd||'').trim()==='0'; const isApt=isMain && /공동주택|아파트/.test(ledgerFirstNonEmpty(it.mainPurpsCdNm,'')+' '+ledgerFirstNonEmpty(it.etcPurps,'')) && /(\d+동)$/.test(ledgerFirstNonEmpty(it.dongNm,'')); const floorSummary=isApt?'-':(floorList.length?floorList.map(function(f){ return ledgerFirstNonEmpty(f.flrNoNm,f.flrGbCdNm,'층정보')+': '+ledgerJoinAreaPurpose(ledgerAreaText(f.area),ledgerFirstNonEmpty(f.mainPurpsCdNm,f.etcPurps,'-'),ledgerFirstNonEmpty(f.strctCdNm,f.etcStrct,'-')); }).join('\n'):'-'); return {title:ledgerFirstNonEmpty(it.dongNm,'건물'), rows:[['동명',ledgerFirstNonEmpty(it.dongNm,'-')],['구분',ledgerFirstNonEmpty(it.mainAtchGbCdNm,'-')],['용도',ledgerFirstNonEmpty(it.mainPurpsCdNm,it.etcPurps,'-')],['구조',ledgerFirstNonEmpty(it.strctCdNm,it.etcStrct,'-')],['지붕',ledgerFirstNonEmpty(it.roofCdNm,it.etcRoof,'-')],['층수',ledgerFloorText(it)||'-'],['층고',ledgerHeight(it.heit)||'-'],['건축면적',ledgerAreaText(getLedgerBuildingArchArea(it,floorList))],['연면적',ledgerAreaText(it.totArea)],['사용승인일',ledgerDate(it.useAprDay)||'-'],['층별요약',floorSummary]]}; });
+    return {summaryRows:summaryRows, buildings:buildings};
+  }
+  function buildLedgerTable(rows){
+    if(!rows || !rows.length) return '<div class="ledger-status warn">표시할 항목이 없습니다.</div>';
+    return '<table class="ledger-table"><tbody>' + rows.map(function(row){
+      const isHead = String(row[0] || '').charAt(0) === '[';
+      if(isHead) return '<tr><th colspan="2">' + escapeHtml(row[0]) + '</th></tr>';
+      return '<tr><th>' + escapeHtml(row[0]) + '</th><td>' + escapeHtml(row[1]) + '</td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+  function ledgerSection(title, content){ return '<section class="ledger-section"><div class="ledger-section-head">' + escapeHtml(title) + '</div>' + content + '</section>'; }
+  function renderLedgerPanel(ctx){
+    ctx = ctx || {};
+    const parcel = ctx.parcel || {};
+    const rev = ctx.reverse || {};
+    const baseAddr = ledgerFirstNonEmpty(rev.jibunAddress, parcel.address, rev.address, ctx.address, '주소 확인 전');
+    let html = '';
+    html += ledgerSection('선택 위치', buildLedgerTable([
+      ['주소', baseAddr],
+      ['도로명주소', ledgerFirstNonEmpty(rev.roadAddress, '-')],
+      ['PNU', ledgerFirstNonEmpty(parcel.pnu, ctx.pnu, '-')],
+      ['좌표', (ctx.lat && ctx.lng) ? (Number(ctx.lat).toFixed(6) + ', ' + Number(ctx.lng).toFixed(6)) : '-']
+    ]));
+    if(ctx.parcelError) html += '<div class="ledger-status warn">필지 경계/PNU 조회 실패: ' + escapeHtml(ctx.parcelError) + '</div>';
+    if(ctx.landError) html += '<div class="ledger-status err">토지대장 조회 실패: ' + escapeHtml(ctx.landError) + '</div>';
+    else if(ctx.landData) html += ledgerSection('토지대장 / 토지이용계획', buildLedgerTable(buildLedgerLandRows(ctx.landData)));
+    else html += '<div class="ledger-status">토지대장 조회 대기중</div>';
+    if(ctx.buildingError) html += '<div class="ledger-status warn">건축물대장 조회 결과 없음 또는 실패: ' + escapeHtml(ctx.buildingError) + '</div>';
+    else if(ctx.buildingData){
+      const ex = extractLedgerBuildingData(ctx.buildingData);
+      html += ledgerSection('건축물대장 통합요약', buildLedgerTable(ex.summaryRows));
+      if(ex.buildings && ex.buildings.length){ ex.buildings.forEach(function(b){ html += ledgerSection('동별 건물정보 · ' + b.title, buildLedgerTable(b.rows)); }); }
+    }else html += '<div class="ledger-status">건축물대장 조회 대기중</div>';
+    openFixedPanel('공부조회', parcel && parcel.pnu ? parcel.pnu : baseAddr, html, 'ledger');
+  }
+  function renderLookupParcelPolygon(parcel){
+    clearPolygonMap(state.lookupPolygons);
+    if(!state.mapReady || !parcel || !parcel.geometry) return;
+    const paths = coordinatesToPaths(parcel.geometry);
+    if(!paths.length) return;
+    const polys = paths.map(function(path){
+      const poly = new naver.maps.Polygon({map:state.map, paths:path, clickable:true, zIndex:85, strokeColor:'#0f7cff', strokeWeight:4, strokeOpacity:1, fillColor:'#0f7cff', fillOpacity:.18});
+      if(parcel.pnu) naver.maps.Event.addListener(poly, 'click', function(){ state.suppressGroundClickUntil = Date.now() + 350; selectPnu(parcel.pnu, parcel); });
+      return poly;
+    });
+    state.lookupPolygons.set(parcel.pnu || 'lookup', polys);
+  }
+  function candidatesForParcel(parcel){
+    if(!parcel || !parcel.pnu) return [];
+    const all = state.pnuToItems.get(parcel.pnu) || [];
+    const allowed = new Set(state.filteredItems.map(i => i.listingNumber));
+    return all.filter(item => allowed.has(item.listingNumber));
+  }
+  async function lookupLedgerCore(input){
+    const seq = ++state.ledgerRequestSeq;
+    input = input || {};
+    let lat = Number(input.lat), lng = Number(input.lng);
+    let parcel = input.parcel || null;
+    let reverse = input.reverse || null;
+    if((!Number.isFinite(lat) || !Number.isFinite(lng)) && parcel && parcel.geometry){ const c = geometryCentroid(parcel.geometry); if(c){ lat = c.lat; lng = c.lng; } }
+    renderLedgerLoading('공부조회', '역지오코딩, 필지, 토지대장, 건축물대장 정보를 조립합니다.');
+    if(!reverse && Number.isFinite(lat) && Number.isFinite(lng)){
+      try{ reverse = await reverseGeocodePoint(lat, lng); }
+      catch(err){ reverse = {address:'', jibunAddress:'', roadAddress:'', error:err && err.message ? err.message : String(err)}; }
+    }
+    let parcelError = '';
+    if(!parcel && Number.isFinite(lat) && Number.isFinite(lng)){
+      try{
+        parcel = await requestVworldParcelByPointJsonp(lng, lat);
+      }catch(err){
+        parcelError = err && err.message ? err.message : String(err);
+        parcel = null;
+      }
+    }
+    if(parcel && parcel.pnu) state.polygonDataByPnu.set(parcel.pnu, parcel);
+    if(seq !== state.ledgerRequestSeq) return;
+    state.selectedParcel = parcel || null;
+    state.selectedPnu = parcel && parcel.pnu || '';
+    renderLookupParcelPolygon(parcel);
+    const ctx = {lat:lat, lng:lng, reverse:reverse || {}, parcel:parcel || {}, pnu:parcel && parcel.pnu || '', parcelError:parcelError};
+    renderLedgerPanel(ctx);
+    const earlyCandidates = candidatesForParcel(parcel);
+    if(earlyCandidates.length && !state.selectedItem){
+      state.selectedItem = earlyCandidates[0];
+      state.selectedCandidates = earlyCandidates;
+      renderMarkers();
+      renderItemPanel();
+    }
+    const addr = ledgerFirstNonEmpty(reverse && reverse.jibunAddress, parcel && parcel.address, reverse && reverse.address, input.address);
+    const road = ledgerFirstNonEmpty(reverse && reverse.roadAddress, '');
+    const landParams = {action:'fetchLandInfoBySearchResult', pnu:parcel && parcel.pnu || '', queryAddress:addr, lookupAddress:addr, address:addr};
+    const buildingParams = {action:'fetchPublicPropertyBySearchResult', jibunAddress:addr, roadAddress:road, lookupAddress:addr || road, queryAddress:addr || road, queryAddressType:addr ? 'JIBUN' : 'ROAD', address:addr || road};
+    const landPromise = parcel && parcel.pnu ? publicLookup(landParams).then(function(d){ ctx.landData=d; }).catch(function(e){ ctx.landError=e && e.message ? e.message : String(e); }) : Promise.resolve().then(function(){ ctx.landError='PNU 없음'; });
+    const buildingPromise = (addr || road) ? publicLookup(buildingParams).then(function(d){ ctx.buildingData=d; }).catch(function(e){ ctx.buildingError=e && e.message ? e.message : String(e); }) : Promise.resolve().then(function(){ ctx.buildingError='주소 없음'; });
+    await Promise.all([landPromise, buildingPromise]);
+    if(seq !== state.ledgerRequestSeq) return;
+    renderLedgerPanel(ctx);
+    const candidates = candidatesForParcel(parcel);
+    if(candidates.length && !state.selectedItem){
+      state.selectedItem = candidates[0];
+      state.selectedCandidates = candidates;
+      renderMarkers();
+      renderItemPanel();
+    }
+    els.mapNote.textContent = candidates.length ? '공부조회 완료 · 우리 DB 매물 ' + candidates.length + '건 매칭' : '공부조회 완료 · 우리 DB 매물 없음';
+  }
+  function lookupLedgerForItem(item, parcel){
+    const point = getItemPoint(item) || {};
+    return lookupLedgerCore({lat:point.lat, lng:point.lng, parcel:parcel, address:item && item.address || ''});
+  }
+  function lookupLedgerForParcel(parcel){
+    return lookupLedgerCore({parcel:parcel, address:parcel && parcel.address || ''});
+  }
+  function handleMapGroundClick(e){
+    if(Date.now() < (state.suppressGroundClickUntil || 0)) return;
+    if(!e || !e.coord) return;
+    const lat = typeof e.coord.lat === 'function' ? e.coord.lat() : Number(e.coord.y || e.coord.lat);
+    const lng = typeof e.coord.lng === 'function' ? e.coord.lng() : Number(e.coord.x || e.coord.lng);
+    if(!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    state.selectedItem = null;
+    state.selectedCandidates = [];
+    closeDetailPanel();
+    renderMarkers();
+    clearPolygonMap(state.listingPolygons);
+    lookupLedgerCore({lat:lat,lng:lng}).catch(function(err){ renderLedgerError(err); });
+  }
+
+  function formatArea(m2,py){ return [m2 ? m2 + '㎡' : '', py ? py + '평' : ''].filter(Boolean).join(' / '); }
+  function renderParcels(item){
+    const parcels = Array.isArray(item.landParcels) ? item.landParcels : [];
+    if(parcels.length){
+      return parcels.map((p,idx) => '<div class="parcel-card"><strong>' + (p.isRepresentative ? '대표필지 ' : '필지 ') + (idx+1) + '</strong><p>' + escapeHtml(p.displayAddress || p.address || '-') + '</p><p>PNU ' + escapeHtml(p.pnu || '-') + '</p><p>' + escapeHtml([formatArea(p.areaM2,p.areaPy), p.landCategory, p.zoning1, p.roadAccess || p.roadSide].filter(Boolean).join(' / ') || '-') + '</p></div>').join('');
+    }
+    if((item.pnuList || []).length){ return item.pnuList.map((pnu,idx) => '<div class="parcel-card"><strong>필지 ' + (idx+1) + '</strong><p>PNU ' + escapeHtml(pnu) + '</p></div>').join(''); }
+    return '<div class="parcel-card"><strong>필지 정보 확인 전</strong><p>카드나 핀을 클릭하면 좌표 기준으로 필지 정보를 확인합니다.</p></div>';
+  }
+
   function moveMapToItem(item){
     if(!state.mapReady || !state.map || !item) return;
     const point = getItemPoint(item);
@@ -1645,6 +1987,7 @@
       applyFilters();
       updateMapCountButton();
       if(state.panelMode === 'mapCards') renderMapViewCardPanel();
+      if(state.selectedItem && state.selectedItem.listingNumber === item.listingNumber) renderItemPanel();
     }catch(err){ alert(err.message || '공개 상태 변경 실패'); }
     finally{ hideLoading(); }
   }
@@ -1654,44 +1997,10 @@
     setItemPublicStatus(item, currentlyVisible ? 'hidden' : 'visible');
   }
 
-  function renderItemPanel(){
-    const item = state.selectedItem;
-    if(!item){ renderDefaultPanel(); return; }
-    els.panelTitle.textContent = item.title || '제목 없음';
-    els.panelSub.textContent = item.listingNumber + ' · ' + ((item.pnuList || []).length || 0) + '필지';
-    const candidates = state.selectedCandidates || [item];
-    let html = '';
-    if(candidates.length > 1){
-      html += '<div class="item-list">' + candidates.map(c => '<button type="button" class="item-choice ' + (c.listingNumber === item.listingNumber ? 'is-active' : '') + '" data-listing="' + escapeHtml(c.listingNumber) + '"><span><strong>' + escapeHtml(c.title || c.listingNumber) + '</strong><span>' + escapeHtml(c.price || c.address || '') + '</span></span><em class="badge ' + escapeHtml(c.status) + '">' + (c.status === 'visible' ? '공개' : '비공개') + '</em></button>').join('') + '</div>';
-    }
-    html += '<div class="hero">' + (item.heroUrl ? '<img src="' + escapeHtml(item.heroUrl) + '" alt="">' : '<div class="hero-placeholder">🏭</div>') + '</div>';
-    html += '<div class="chip-line">' + statusLabels(item).map(pair => '<span class="badge ' + pair[1] + '">' + escapeHtml(pair[0]) + '</span>').join('') + '</div>';
-    html += '<div class="listing-title">' + escapeHtml(item.title || '-') + '</div>';
-    html += '<div class="price">' + escapeHtml(item.price || '-') + '</div>';
-    html += '<div class="addr">' + escapeHtml(item.address || '-') + '</div>';
-    const specs = [ ['거래형태', item.dealType], ['매물종류', item.propertyType], ['대지면적', formatArea(item.landAreaM2,item.landAreaPy)], ['연면적', formatArea(item.totalFloorAreaM2,item.totalFloorAreaPy)], ['용도지역', item.zoning], ['건축물', item.buildingComposition], ['접도/진입로', item.roadWidth], ['전력/호이스트', [item.powerCapacity,item.hoist || item.crane].filter(Boolean).join(' / ')] ];
-    html += '<div class="spec-grid">' + specs.map(s => '<div class="spec"><label>' + escapeHtml(s[0]) + '</label><div>' + escapeHtml(s[1] || '-') + '</div></div>').join('') + '</div>';
-    const summaries = [item.summary1,item.summary2,item.summary3].filter(Boolean);
-    if(summaries.length) html += '<ul class="summary">' + summaries.map(s => '<li>✔ ' + escapeHtml(s) + '</li>').join('') + '</ul>';
-    html += '<div class="section-title">필지 정보</div><div class="parcel-list">' + renderParcels(item) + '</div>';
-    if(item.memo) html += '<div class="section-title">메모</div><div class="parcel-card"><p>' + escapeHtml(item.memo).replace(/\n/g,'<br>') + '</p></div>';
-    html += '<div class="actions"><button class="action-btn blue" data-action="view">보기</button><button class="action-btn" data-action="edit">수정</button><button class="action-btn orange" data-action="status">상태</button><button class="action-btn light" data-action="memo">메모</button><button class="action-btn green" data-action="naver">네이버지도</button><button class="action-btn light" data-action="ddangya">땅야</button></div>';
-    els.panelBody.innerHTML = html;
-  }
-  function formatArea(m2,py){ return [m2 ? m2 + '㎡' : '', py ? py + '평' : ''].filter(Boolean).join(' / '); }
-  function renderParcels(item){
-    const parcels = Array.isArray(item.landParcels) ? item.landParcels : [];
-    if(parcels.length){
-      return parcels.map((p,idx) => '<div class="parcel-card"><strong>' + (p.isRepresentative ? '대표필지 ' : '필지 ') + (idx+1) + '</strong><p>' + escapeHtml(p.displayAddress || p.address || '-') + '</p><p>PNU ' + escapeHtml(p.pnu || '-') + '</p><p>' + escapeHtml([formatArea(p.areaM2,p.areaPy), p.landCategory, p.zoning1, p.roadAccess || p.roadSide].filter(Boolean).join(' / ') || '-') + '</p></div>').join('');
-    }
-    if((item.pnuList || []).length){ return item.pnuList.map((pnu,idx) => '<div class="parcel-card"><strong>필지 ' + (idx+1) + '</strong><p>PNU ' + escapeHtml(pnu) + '</p></div>').join(''); }
-    return '<div class="parcel-card"><strong>필지 정보 확인 전</strong><p>카드나 핀을 클릭하면 좌표 기준으로 필지 정보를 확인합니다.</p></div>';
-  }
-
   function openExternal(url){ window.open(url, '_blank', 'noopener,noreferrer'); }
   function handlePanelClick(e){
     const choice = e.target.closest('.item-choice[data-listing]');
-    if(choice){ const item = state.items.find(i => i.listingNumber === choice.dataset.listing); if(item) selectItem(item, state.selectedPnu, state.selectedParcel, state.selectedCandidates); return; }
+    if(choice){ const item = state.items.find(i => i.listingNumber === choice.dataset.listing); if(item) selectItem(item, state.selectedPnu, state.selectedParcel, state.selectedCandidates, {source: state.fixedMode === 'ledger' ? 'map' : 'list'}); return; }
 
     const card = e.target.closest('.property-card[data-listing-number]');
     const cardActionEl = e.target.closest('[data-card-action]');
@@ -1702,7 +2011,7 @@
       if(action !== 'select') e.stopPropagation();
       if(action === 'select'){
         moveMapToItem(item);
-        selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item]);
+        selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item], {source:'list'});
         return;
       }
       if(action === 'view'){ openPreviewForItem(item); return; }
@@ -1755,7 +2064,7 @@
     try{
       const data = await fetchJson('/api/parcel-map/status', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({listingNumber:item.listingNumber,status,dashboardStatus}) });
       item.status = text(data.status || status).toLowerCase(); item.dashboardStatus = dashboardStatus; item.dashboardStatusJson = JSON.stringify(dashboardStatus); item.updatedAt = data.updatedAt || new Date().toISOString();
-      closeStatusModal(); applyFilters(); if(state.selectedItem && state.selectedItem.listingNumber === item.listingNumber){ state.selectedItem = item; if(state.panelMode === 'mapCards') renderMapViewCardPanel(); else renderItemPanel(); }
+      closeStatusModal(); applyFilters(); if(state.panelMode === 'mapCards') renderMapViewCardPanel(); if(state.selectedItem && state.selectedItem.listingNumber === item.listingNumber){ state.selectedItem = item; renderItemPanel(); }
     }catch(err){ alert(err.message || '상태 저장 실패'); }finally{ hideLoading(); }
   }
 
@@ -1768,7 +2077,7 @@
     try{
       const data = await fetchJson('/api/parcel-map/memo', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({listingNumber:item.listingNumber,memo,writerCode}) });
       item.memo = memo; item.updatedAt = data.updatedAt || new Date().toISOString(); item.memoUpdatedAt = data.memoUpdatedAt || item.memoUpdatedAt || item.updatedAt;
-      closeMemoModal(); if(state.panelMode === 'mapCards') renderMapViewCardPanel(); else renderItemPanel();
+      closeMemoModal(); if(state.panelMode === 'mapCards') renderMapViewCardPanel(); if(state.selectedItem && state.selectedItem.listingNumber === item.listingNumber) renderItemPanel();
     }catch(err){ alert(err.message || '메모 저장 실패'); }finally{ hideLoading(); }
   }
 
@@ -1805,9 +2114,7 @@
       });
     }catch(err){
       console.error(err);
-      els.panelTitle.textContent = '불러오기 실패';
-      els.panelSub.textContent = '새로고침하거나 API 설정을 확인하세요.';
-      els.panelBody.innerHTML = '<div class="empty-panel"><div class="empty-icon">⚠️</div><b>매물지도를 불러오지 못했습니다.</b><div>' + escapeHtml(err.message || err) + '</div></div>';
+      openFixedPanel('불러오기 실패', '새로고침하거나 API 설정을 확인하세요.', '<div class="empty-panel"><div class="empty-icon">⚠️</div><b>매물지도를 불러오지 못했습니다.</b><div>' + escapeHtml(err.message || err) + '</div></div>', 'default');
       setLoadState('실패');
     }finally{ hideLoading(); }
   }
@@ -1884,8 +2191,11 @@
     });
   }
   if(els.mapResetBtn) els.mapResetBtn.addEventListener('click', resetAndCloseSidePanel);
-  els.panelClose.addEventListener('click', resetAndCloseSidePanel);
-  els.panelBody.addEventListener('click', handlePanelClick);
+  if(els.panelClose) els.panelClose.addEventListener('click', resetAndCloseSidePanel);
+  if(els.fixedHandle) els.fixedHandle.addEventListener('click', function(){ togglePanelCollapsed('fixed'); });
+  if(els.detailHandle) els.detailHandle.addEventListener('click', function(){ togglePanelCollapsed('detail'); });
+  if(els.panelBody) els.panelBody.addEventListener('click', handlePanelClick);
+  if(els.detailPanelBody) els.detailPanelBody.addEventListener('click', handlePanelClick);
   els.statusCancel.addEventListener('click', closeStatusModal); els.statusSave.addEventListener('click', saveStatus); els.statusModal.addEventListener('click', e => { if(e.target === els.statusModal) closeStatusModal(); });
   els.memoCancel.addEventListener('click', closeMemoModal); els.memoSave.addEventListener('click', saveMemo); els.memoModal.addEventListener('click', e => { if(e.target === els.memoModal) closeMemoModal(); });
   if(els.dbgRefresh) els.dbgRefresh.addEventListener('click', updatePatchPanel);

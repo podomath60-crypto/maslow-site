@@ -53,6 +53,48 @@ function makeRoadAddress(result) {
   return roadName && number ? compactJoin([area1, area2, area3, roadName, number]) : '';
 }
 
+
+function pickDetailedAddresses(payload) {
+  const results = payload && Array.isArray(payload.results) ? payload.results : [];
+  let jibunAddress = '';
+  let roadAddress = '';
+
+  for (const r of results) {
+    if (!jibunAddress && r.name === 'addr') {
+      jibunAddress = makeJibunAddress(r);
+    }
+    if (!roadAddress && r.name === 'roadaddr') {
+      roadAddress = makeRoadAddress(r);
+    }
+  }
+
+  if (!jibunAddress) {
+    for (const r of results) {
+      const jibun = makeJibunAddress(r);
+      if (jibun && /\d/.test(jibun)) {
+        jibunAddress = jibun;
+        break;
+      }
+    }
+  }
+
+  if (!roadAddress) {
+    for (const r of results) {
+      const road = makeRoadAddress(r);
+      if (road) {
+        roadAddress = road;
+        break;
+      }
+    }
+  }
+
+  return {
+    jibunAddress,
+    roadAddress,
+    address: jibunAddress || roadAddress || ''
+  };
+}
+
 function pickAddress(payload) {
   const results = payload && Array.isArray(payload.results) ? payload.results : [];
   if (!results.length) return '';
@@ -134,12 +176,15 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const address = pickAddress(payload) || `현재위치: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    const picked = pickDetailedAddresses(payload);
+    const address = picked.address || pickAddress(payload) || `현재위치: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 
     return sendJson(res, 200, {
       ok: true,
       item: {
         address,
+        jibunAddress: picked.jibunAddress || '',
+        roadAddress: picked.roadAddress || '',
         lat,
         lng,
         raw: payload

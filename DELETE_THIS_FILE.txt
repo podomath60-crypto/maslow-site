@@ -1,6 +1,0 @@
-반드시 삭제할 파일:
-
-api/parcel-map/config.js
-
-이 파일은 Vercel Hobby serverless function 12개 제한을 넘기게 만든 원인입니다.
-파일을 비우는 게 아니라 repo에서 삭제해야 합니다.

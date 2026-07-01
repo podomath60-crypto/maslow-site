@@ -4969,14 +4969,14 @@
         setLandParcelLookupLoading_(card, true);
         searchVworldParcelPnu_(address)
           .then(function(found){
-            return lookupLandInfoWithFallback_({
+            return lookupLandInfoWithIntegratedFallback_({
               action: 'fetchLandInfoBySearchResult',
               pnu: found.pnu,
               queryAddress: found.query,
               lookupAddress: found.address || found.query,
               address: found.address || found.query
-            }).then(function(res){
-              if(!(res && res.ok)) throw new Error((res && (res.message || res.error)) || '토지정보 조회 실패');
+            }, found).then(function(res){
+              if(!(res && (res.ok || res.characteristic || res.usePlan))) throw new Error((res && (res.message || res.error)) || '토지정보 조회 실패');
               landParcels[idx] = mapLandLookupResultToParcel_(landParcels[idx], found, res);
               ensureSingleRepresentative_(landParcels);
               renderLandParcels_();
@@ -7330,6 +7330,56 @@
       function lookupLandInfoWithFallback_(params){
         return lookupPublicLookupWithFallback_(params, { lookupLabel: '토지대장', logLabel: '토지대장조회' });
       }
+
+      function buildIntegratedLookupParamsFromLandFound_(found){
+        found = found || {};
+        var parcelAddress = firstNonEmpty_(found.parcelAddress, found.address, found.query);
+        var lookupAddress = parcelAddress || firstNonEmpty_(found.roadAddress, found.query);
+        return {
+          action: 'fetchPublicPropertyBySearchResult',
+          lookupAddress: lookupAddress,
+          queryAddress: lookupAddress,
+          queryAddressType: 'JIBUN',
+          jibunAddress: parcelAddress,
+          autoJibunAddress: parcelAddress,
+          roadAddress: firstNonEmpty_(found.roadAddress, ''),
+          autoRoadAddress: firstNonEmpty_(found.roadAddress, ''),
+          bcode: found.pnu ? String(found.pnu).slice(0, 10) : '',
+          pnu: found.pnu || ''
+        };
+      }
+
+      function normalizeLandLookupPayload_(res){
+        if(res && res.land) return res.land;
+        return res || {};
+      }
+
+      function lookupLandInfoWithIntegratedFallback_(params, found){
+        var firstFailure = null;
+        return lookupLandInfoWithFallback_(params).then(function(payload){
+          return normalizeLandLookupPayload_(payload);
+        }).catch(function(err){
+          firstFailure = err;
+          console.warn('[매물입력기 토지대장조회] 토지 전용 조회 실패, 기존 통합조회 프록시로 재시도', err);
+          return fetchPublicPropertyViaApi_(buildIntegratedLookupParamsFromLandFound_(found)).then(function(payload){
+            var landPayload = normalizeLandLookupPayload_(payload);
+            if(landPayload && (landPayload.ok || landPayload.characteristic || landPayload.usePlan)){
+              return landPayload;
+            }
+            throw new Error((payload && (payload.error || payload.message)) || '통합조회 프록시 응답에 토지정보가 없습니다.');
+          }).catch(function(integratedErr){
+            var finalError = new Error('토지대장 조회 실패 · 토지 전용 조회와 기존 통합조회 프록시가 모두 실패했습니다.');
+            finalError.lookupLabel = '토지대장';
+            finalError.lookupErrors = [
+              '토지 전용 조회: ' + lookupErrorText_(firstFailure),
+              '기존 통합조회 프록시: ' + lookupErrorText_(integratedErr)
+            ];
+            throw finalError;
+          });
+        });
+      }
+
+
 
       function openAddressSearch_(){
         try{

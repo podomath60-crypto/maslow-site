@@ -1818,31 +1818,103 @@
     return null;
   }
 
-  function panToSelectedPolygonCenterKeepingZoom(){
-    if(!state.mapReady || !state.map || !state.selectedItem) return false;
-    const center = selectedPolygonBoundsCenter();
-    if(!center) return false;
+  function selectedItemLatLng(){
+    if(!state.selectedItem) return null;
+    const point = getItemPoint(state.selectedItem);
+    if(!point) return null;
+    try{ return new naver.maps.LatLng(point.lat, point.lng); }catch(e){ return null; }
+  }
+
+  function selectedSafePanTarget(options){
+    options = options || {};
+    const preferPolygon = options.preferPolygon !== false;
+    if(preferPolygon){
+      const center = selectedPolygonBoundsCenter();
+      if(center) return center;
+    }
+    return selectedItemLatLng();
+  }
+
+  function safeMapViewRect(){
+    if(!els.mapWrap) return null;
+    const rect = els.mapWrap.getBoundingClientRect();
+    if(!rect || !rect.width || !rect.height) return null;
+    const sidePad = Math.min(54, Math.max(28, rect.width * 0.07));
+    const topPad = 42;
+    const bottomPad = 72;
+    return {
+      left:sidePad,
+      top:topPad,
+      right:Math.max(sidePad + 1, rect.width - sidePad),
+      bottom:Math.max(topPad + 1, rect.height - bottomPad)
+    };
+  }
+
+  function coordToMapPixel(latlng){
     try{
-      // 축척은 절대 건드리지 않고, 실제 폴리곤 bounds 중심으로 화면을 부드럽게 슬라이드한다.
-      state.map.panTo(center);
-      return true;
-    }catch(e){ return false; }
+      const projection = state.map && state.map.getProjection ? state.map.getProjection() : null;
+      const point = projection && projection.fromCoordToOffset ? projection.fromCoordToOffset(latlng) : null;
+      if(!point) return null;
+      const x = typeof point.x === 'function' ? Number(point.x()) : Number(point.x);
+      const y = typeof point.y === 'function' ? Number(point.y()) : Number(point.y);
+      if(!Number.isFinite(x) || !Number.isFinite(y)) return null;
+      return {x:x, y:y};
+    }catch(e){ return null; }
+  }
+
+  function panBySoft(dx, dy){
+    if(!state.mapReady || !state.map) return false;
+    dx = Number(dx) || 0;
+    dy = Number(dy) || 0;
+    if(Math.abs(dx) < 2 && Math.abs(dy) < 2) return true;
+    try{
+      if(state.map.panBy){
+        state.map.panBy(new naver.maps.Point(dx, dy));
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+
+  function panSelectedTargetIntoSafeMapView(options){
+    options = options || {};
+    if(!state.mapReady || !state.map || !state.selectedItem) return false;
+    const target = selectedSafePanTarget(options);
+    const safe = safeMapViewRect();
+    if(!target || !safe) return false;
+    const pixel = coordToMapPixel(target);
+    if(!pixel){
+      try{ state.map.panTo(target); return true; }catch(e){ return false; }
+    }
+    const desiredX = Math.min(Math.max(pixel.x, safe.left), safe.right);
+    const desiredY = Math.min(Math.max(pixel.y, safe.top), safe.bottom);
+    const dx = pixel.x - desiredX;
+    const dy = pixel.y - desiredY;
+    if(Math.abs(dx) < 3 && Math.abs(dy) < 3) return true;
+    if(panBySoft(dx, dy)) return true;
+    try{ state.map.panTo(target); return true; }catch(e){ return false; }
+  }
+
+  function scheduleSelectedTargetSafePan(options){
+    options = options || {};
+    const run = function(){
+      try{
+        if(!state.selectedItem) return;
+        forceMapResize();
+        panSelectedTargetIntoSafeMapView(options);
+      }catch(e){}
+    };
+    try{ window.requestAnimationFrame(function(){ window.requestAnimationFrame(run); }); }catch(e){ window.setTimeout(run, 0); }
+    [140, 320].forEach(function(delay){ window.setTimeout(run, delay); });
+    return true;
+  }
+
+  function panToSelectedPolygonCenterKeepingZoom(){
+    return panSelectedTargetIntoSafeMapView({preferPolygon:true});
   }
 
   function repanToSelectedPolygonCenterKeepingZoom(){
-    if(!panToSelectedPolygonCenterKeepingZoom()) return false;
-    // 오른쪽 패널/상세패널이 열리면서 지도 DOM 폭이 바뀌면 첫 panTo가 빗나갈 수 있어
-    // resize 이후 같은 중심으로 다시 보정한다. zoom은 건드리지 않는다.
-    [80, 180, 360].forEach(function(delay){
-      window.setTimeout(function(){
-        try{
-          if(!state.selectedItem) return;
-          forceMapResize();
-          panToSelectedPolygonCenterKeepingZoom();
-        }catch(e){}
-      }, delay);
-    });
-    return true;
+    return scheduleSelectedTargetSafePan({preferPolygon:true});
   }
 
   async function fetchSelectedItemPolygons(item, options){
@@ -1874,8 +1946,10 @@
       renderListingPolygons();
       if(keepListZoom){
         if(!repanToSelectedPolygonCenterKeepingZoom() && options.fallbackPanToItem) moveMapToItem(item);
+      }else if(options.safePan){
+        scheduleSelectedTargetSafePan({preferPolygon:true});
       }else if(shouldFitPolygon) fitToSelectedPolygons();
-      els.mapNote.textContent = keepListZoom ? ('현재 축척을 유지하고 폴리곤 중심을 화면 가운데로 이동했습니다. PNU ' + pnus.length + '개만 표시합니다.') : ('저장된 필지 경계를 표시했습니다. 이 매물의 PNU ' + pnus.length + '개만 표시합니다.');
+      els.mapNote.textContent = keepListZoom ? ('현재 축척을 유지하고 선택 폴리곤을 안전영역 안으로 부드럽게 이동했습니다. PNU ' + pnus.length + '개만 표시합니다.') : ('저장된 필지 경계를 표시했습니다. 이 매물의 PNU ' + pnus.length + '개만 표시합니다.');
       return;
     }
 
@@ -1903,6 +1977,8 @@
     renderListingPolygons();
     if(keepListZoom){
       if(!repanToSelectedPolygonCenterKeepingZoom() && options.fallbackPanToItem) moveMapToItem(item);
+    }else if(options.safePan){
+      scheduleSelectedTargetSafePan({preferPolygon:true});
     }else if(shouldFitPolygon) fitToSelectedPolygons();
 
     const drawn = pnus.filter(pnu => state.polygonDataByPnu.has(pnu)).length;
@@ -2056,7 +2132,8 @@
     state.panelMode = 'ledger';
     state.fixedMode = 'ledger';
     renderLedgerLoading('공부조회', '선택한 매물의 필지와 공부 정보를 확인합니다.');
-    fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source})).then(function(){
+    scheduleSelectedTargetSafePan({preferPolygon:false});
+    fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source, safePan:true})).then(function(){
       if(!state.selectedItem || state.selectedItem.listingNumber !== item.listingNumber) return;
       const nextPnu = state.selectedPnu || item.representativePnu || (item.pnuList || [])[0] || '';
       const nextParcel = state.selectedParcel || (nextPnu ? state.polygonDataByPnu.get(nextPnu) : null) || parcel || null;

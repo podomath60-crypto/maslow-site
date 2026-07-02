@@ -1799,23 +1799,50 @@
     return source === 'list' || source === 'ourSearch';
   }
 
-  function panToSelectedPolygonCenterKeepingZoom(){
-    if(!state.mapReady || !state.map || !state.selectedItem) return false;
-    const centers = [];
+  function selectedPolygonBoundsCenter(){
+    if(!state.mapReady || !state.map || !state.selectedItem) return null;
+    const bounds = new naver.maps.LatLngBounds();
+    let count = 0;
     (state.selectedItem.pnuList || []).forEach(function(pnu){
       const parcel = state.polygonDataByPnu.get(pnu);
-      const c = parcel && parcel.geometry ? geometryCentroid(parcel.geometry) : null;
-      if(c && Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lng))) centers.push(c);
+      const paths = parcel && parcel.geometry ? coordinatesToPaths(parcel.geometry) : [];
+      if(paths.length){
+        extendBoundsByPaths(bounds, paths);
+        count += 1;
+      }
     });
-    if(!centers.length) return false;
-    const center = centers.reduce(function(acc, c){ acc.lat += Number(c.lat); acc.lng += Number(c.lng); return acc; }, {lat:0, lng:0});
-    center.lat = center.lat / centers.length;
-    center.lng = center.lng / centers.length;
+    if(!count) return null;
     try{
-      // 축척은 절대 건드리지 않고, 현재 화면에서 폴리곤 중심으로 부드럽게 슬라이드만 한다.
-      state.map.panTo(new naver.maps.LatLng(center.lat, center.lng));
+      if(bounds.getCenter) return bounds.getCenter();
+    }catch(e){}
+    return null;
+  }
+
+  function panToSelectedPolygonCenterKeepingZoom(){
+    if(!state.mapReady || !state.map || !state.selectedItem) return false;
+    const center = selectedPolygonBoundsCenter();
+    if(!center) return false;
+    try{
+      // 축척은 절대 건드리지 않고, 실제 폴리곤 bounds 중심으로 화면을 부드럽게 슬라이드한다.
+      state.map.panTo(center);
       return true;
     }catch(e){ return false; }
+  }
+
+  function repanToSelectedPolygonCenterKeepingZoom(){
+    if(!panToSelectedPolygonCenterKeepingZoom()) return false;
+    // 오른쪽 패널/상세패널이 열리면서 지도 DOM 폭이 바뀌면 첫 panTo가 빗나갈 수 있어
+    // resize 이후 같은 중심으로 다시 보정한다. zoom은 건드리지 않는다.
+    [80, 180, 360].forEach(function(delay){
+      window.setTimeout(function(){
+        try{
+          if(!state.selectedItem) return;
+          forceMapResize();
+          panToSelectedPolygonCenterKeepingZoom();
+        }catch(e){}
+      }, delay);
+    });
+    return true;
   }
 
   async function fetchSelectedItemPolygons(item, options){
@@ -1846,7 +1873,7 @@
     if(!missing.length){
       renderListingPolygons();
       if(keepListZoom){
-        if(!panToSelectedPolygonCenterKeepingZoom() && options.fallbackPanToItem) moveMapToItem(item);
+        if(!repanToSelectedPolygonCenterKeepingZoom() && options.fallbackPanToItem) moveMapToItem(item);
       }else if(shouldFitPolygon) fitToSelectedPolygons();
       els.mapNote.textContent = keepListZoom ? ('현재 축척을 유지하고 폴리곤 중심을 화면 가운데로 이동했습니다. PNU ' + pnus.length + '개만 표시합니다.') : ('저장된 필지 경계를 표시했습니다. 이 매물의 PNU ' + pnus.length + '개만 표시합니다.');
       return;
@@ -1875,7 +1902,7 @@
     addPolygonLog('selected-pnu:done', {listingNumber:item.listingNumber || '', requested:missing.length, totalPnu:pnus.length, success:okCount, failed:failed});
     renderListingPolygons();
     if(keepListZoom){
-      if(!panToSelectedPolygonCenterKeepingZoom() && options.fallbackPanToItem) moveMapToItem(item);
+      if(!repanToSelectedPolygonCenterKeepingZoom() && options.fallbackPanToItem) moveMapToItem(item);
     }else if(shouldFitPolygon) fitToSelectedPolygons();
 
     const drawn = pnus.filter(pnu => state.polygonDataByPnu.has(pnu)).length;

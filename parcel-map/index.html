@@ -83,9 +83,12 @@
     .panel-handle.is-open{display:block}
     .panel-handle::before{content:'';position:absolute;left:50%;top:0;width:28px;height:100%;transform:translateX(-50%);background:transparent}.panel-handle span{position:absolute;left:50%;top:50%;width:17px;height:84px;transform:translate(-50%,-50%);border:1px solid #0f7cff;border-radius:999px;background:#dbeafe;box-shadow:0 8px 18px rgba(15,124,255,.18)}
     .panel-handle span:before{content:'';position:absolute;left:50%;top:13px;bottom:13px;width:2px;transform:translateX(-50%);background:#0f7cff;border-radius:999px}.panel-handle:hover{background:transparent}.panel-handle:hover span{background:#bfdbfe;box-shadow:0 12px 24px rgba(15,124,255,.26)}
-    #detailHandle span{top:43%;height:76px}
-    #fixedHandle span{top:57%;height:76px}
-    #detailHandle:hover span,#detailHandle:focus-visible span,#fixedHandle:hover span,#fixedHandle:focus-visible span{z-index:90}
+    #detailHandle span{top:50%;height:72px;transform:translate(-50%,calc(-100% - 2px))}
+    #fixedHandle span{top:50%;height:72px;transform:translate(-50%,2px);border-color:#f97316;background:#ffedd5;box-shadow:0 8px 18px rgba(249,115,22,.18)}
+    #fixedHandle span:before{background:#f97316}
+    #fixedHandle:hover span,#fixedHandle:focus-visible span{background:#fed7aa;box-shadow:0 12px 24px rgba(249,115,22,.26)}
+    #detailHandle:hover span,#detailHandle:focus-visible span{z-index:90}
+    #fixedHandle:hover span,#fixedHandle:focus-visible span{z-index:90}
     .panel-head{padding:16px 16px 12px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex:0 0 auto}
     .panel-head-title{font-size:17px;font-weight:1000;line-height:1.2}
     .panel-head-sub{margin-top:4px;font-size:12px;font-weight:800;color:var(--muted);line-height:1.35}

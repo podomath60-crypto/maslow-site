@@ -1835,71 +1835,26 @@
     return selectedItemLatLng();
   }
 
-  function safeMapViewRect(){
-    if(!els.mapWrap) return null;
-    const rect = els.mapWrap.getBoundingClientRect();
-    if(!rect || !rect.width || !rect.height) return null;
-    const sidePad = Math.min(54, Math.max(28, rect.width * 0.07));
-    const topPad = 42;
-    const bottomPad = 72;
-    return {
-      left:sidePad,
-      top:topPad,
-      right:Math.max(sidePad + 1, rect.width - sidePad),
-      bottom:Math.max(topPad + 1, rect.height - bottomPad)
-    };
-  }
-
-  function coordToMapPixel(latlng){
-    try{
-      const projection = state.map && state.map.getProjection ? state.map.getProjection() : null;
-      const point = projection && projection.fromCoordToOffset ? projection.fromCoordToOffset(latlng) : null;
-      if(!point) return null;
-      const x = typeof point.x === 'function' ? Number(point.x()) : Number(point.x);
-      const y = typeof point.y === 'function' ? Number(point.y()) : Number(point.y);
-      if(!Number.isFinite(x) || !Number.isFinite(y)) return null;
-      return {x:x, y:y};
-    }catch(e){ return null; }
-  }
-
-  function panBySoft(dx, dy){
-    if(!state.mapReady || !state.map) return false;
-    dx = Number(dx) || 0;
-    dy = Number(dy) || 0;
-    if(Math.abs(dx) < 2 && Math.abs(dy) < 2) return true;
-    try{
-      if(state.map.panBy){
-        state.map.panBy(new naver.maps.Point(dx, dy));
-        return true;
-      }
-    }catch(e){}
-    return false;
-  }
-
   function panSelectedTargetIntoSafeMapView(options){
     options = options || {};
     if(!state.mapReady || !state.map || !state.selectedItem) return false;
     const target = selectedSafePanTarget(options);
-    const safe = safeMapViewRect();
-    if(!target || !safe) return false;
-    const pixel = coordToMapPixel(target);
-    if(!pixel){
-      try{ state.map.panTo(target); return true; }catch(e){ return false; }
-    }
-    const desiredX = Math.min(Math.max(pixel.x, safe.left), safe.right);
-    const desiredY = Math.min(Math.max(pixel.y, safe.top), safe.bottom);
-    const dx = pixel.x - desiredX;
-    const dy = pixel.y - desiredY;
-    if(Math.abs(dx) < 3 && Math.abs(dy) < 3) return true;
-    if(panBySoft(dx, dy)) return true;
-    try{ state.map.panTo(target); return true; }catch(e){ return false; }
+    if(!target) return false;
+    try{
+      // panBy 픽셀 보정은 좌표 방향이 틀어질 수 있어서 쓰지 않는다.
+      // 현재 축척 그대로, 네이버 지도 panTo 애니메이션만 사용한다.
+      state.map.panTo(target);
+      return true;
+    }catch(e){ return false; }
   }
 
   function scheduleSelectedTargetSafePan(options){
     options = options || {};
+    const selectedNo = state.selectedItem && state.selectedItem.listingNumber || '';
     const run = function(){
       try{
         if(!state.selectedItem) return;
+        if(selectedNo && state.selectedItem.listingNumber !== selectedNo) return;
         forceMapResize();
         panSelectedTargetIntoSafeMapView(options);
       }catch(e){}

@@ -288,7 +288,7 @@
   const INITIAL_MAP_ZOOM = 15; // 최초 진입 시 사무실 중심 500m 축척 수준
   const ADDRESS_SEARCH_ZOOM = 18; // 주소조회 성공 시 50m 축척 수준
   const LEDGER_CLICK_MIN_ZOOM = 18; // 네이버 지도 축척 50m 이하 수준에서 바닥 클릭 공부조회 허용
-  const LIST_POLYGON_KEEP_ZOOM_MIN = 17; // 리스트/우리매물검색 카드 클릭 시 100m 이하 수준이면 현재 축척 유지
+  const LIST_POLYGON_KEEP_ZOOM_MIN = 17; // legacy: 리스트/우리매물검색은 현재 축척을 무조건 유지
   const LEDGER_CLICK_ZOOM_MESSAGE = '공부조회는 지도 축척 50m 이하 수준에서 가능합니다. 지도를 조금 더 확대해주세요.';
   const CONFIG = {
     dashboardUrl:'/dashboard',
@@ -1794,10 +1794,29 @@
   function shouldKeepListPolygonZoom(options){
     options = options || {};
     const source = options.source || '';
-    if(source !== 'list' && source !== 'ourSearch') return false;
-    if(!state.map || !state.map.getZoom) return false;
-    const zoom = Number(state.map.getZoom());
-    return Number.isFinite(zoom) && zoom >= LIST_POLYGON_KEEP_ZOOM_MIN;
+    // 리스트/우리매물검색 결과에서 매물을 선택할 때는 매물별로 축척이 흔들리지 않도록
+    // 현재 지도 zoom을 무조건 유지한다. 폴리곤 때문에 fitBounds/setZoom 하지 않는다.
+    return source === 'list' || source === 'ourSearch';
+  }
+
+  function panToSelectedPolygonCenterKeepingZoom(){
+    if(!state.mapReady || !state.map || !state.selectedItem) return false;
+    const centers = [];
+    (state.selectedItem.pnuList || []).forEach(function(pnu){
+      const parcel = state.polygonDataByPnu.get(pnu);
+      const c = parcel && parcel.geometry ? geometryCentroid(parcel.geometry) : null;
+      if(c && Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lng))) centers.push(c);
+    });
+    if(!centers.length) return false;
+    const center = centers.reduce(function(acc, c){ acc.lat += Number(c.lat); acc.lng += Number(c.lng); return acc; }, {lat:0, lng:0});
+    center.lat = center.lat / centers.length;
+    center.lng = center.lng / centers.length;
+    try{
+      const zoom = state.map.getZoom ? state.map.getZoom() : null;
+      state.map.panTo(new naver.maps.LatLng(center.lat, center.lng));
+      if(zoom !== null && state.map.setZoom) state.map.setZoom(zoom);
+      return true;
+    }catch(e){ return false; }
   }
 
   async function fetchSelectedItemPolygons(item, options){
@@ -1826,8 +1845,9 @@
     const missing = pnus.filter(pnu => !state.polygonDataByPnu.has(pnu));
     if(!missing.length){
       renderListingPolygons();
-      if(shouldFitPolygon) fitToSelectedPolygons();
-      els.mapNote.textContent = keepListZoom ? ('현재 100m 이하 축척을 유지하고 저장된 필지 경계를 표시했습니다. PNU ' + pnus.length + '개만 표시합니다.') : ('저장된 필지 경계를 표시했습니다. 이 매물의 PNU ' + pnus.length + '개만 표시합니다.');
+      if(keepListZoom) panToSelectedPolygonCenterKeepingZoom();
+      else if(shouldFitPolygon) fitToSelectedPolygons();
+      els.mapNote.textContent = keepListZoom ? ('현재 축척을 유지하고 저장된 필지 경계를 표시했습니다. PNU ' + pnus.length + '개만 표시합니다.') : ('저장된 필지 경계를 표시했습니다. 이 매물의 PNU ' + pnus.length + '개만 표시합니다.');
       return;
     }
 
@@ -1853,11 +1873,12 @@
 
     addPolygonLog('selected-pnu:done', {listingNumber:item.listingNumber || '', requested:missing.length, totalPnu:pnus.length, success:okCount, failed:failed});
     renderListingPolygons();
-    if(shouldFitPolygon) fitToSelectedPolygons();
+    if(keepListZoom) panToSelectedPolygonCenterKeepingZoom();
+    else if(shouldFitPolygon) fitToSelectedPolygons();
 
     const drawn = pnus.filter(pnu => state.polygonDataByPnu.has(pnu)).length;
     if(drawn){
-      els.mapNote.textContent = (keepListZoom ? '현재 100m 이하 축척 유지 · ' : '') + '선택 매물 필지 ' + drawn + '/' + pnus.length + '개 표시 완료' + (failed.length ? ' · 실패 ' + failed.length + '개' : '') + '. 여러필지 매물은 지정된 PNU만 조회합니다.';
+      els.mapNote.textContent = (keepListZoom ? '현재 축척 유지 · ' : '') + '선택 매물 필지 ' + drawn + '/' + pnus.length + '개 표시 완료' + (failed.length ? ' · 실패 ' + failed.length + '개' : '') + '. 여러필지 매물은 지정된 PNU만 조회합니다.';
     }else{
       state.debug.lastError = 'polygon selected: ' + (failed[0] && failed[0].error || '조회 실패');
       els.mapNote.textContent = '선택 매물 필지 조회 실패: ' + (failed[0] && failed[0].error || '응답 없음');
@@ -1991,6 +2012,14 @@
     if(source === 'list'){
       state.panelMode = 'mapCards';
       renderMapViewCardPanel();
+      fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source}));
+      return;
+    }
+
+    if(source === 'ourSearch'){
+      state.panelMode = 'ourSearch';
+      state.fixedMode = 'ourSearch';
+      openOurSearchResultsPanel((state.ourSearch && state.ourSearch.items) || [], (state.ourSearch && state.ourSearch.query) || '', (state.ourSearch && state.ourSearch.filtersLabel) || '');
       fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source}));
       return;
     }

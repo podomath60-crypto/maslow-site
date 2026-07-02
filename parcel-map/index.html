@@ -1812,9 +1812,8 @@
     center.lat = center.lat / centers.length;
     center.lng = center.lng / centers.length;
     try{
-      const zoom = state.map.getZoom ? state.map.getZoom() : null;
+      // 축척은 절대 건드리지 않고, 현재 화면에서 폴리곤 중심으로 부드럽게 슬라이드만 한다.
       state.map.panTo(new naver.maps.LatLng(center.lat, center.lng));
-      if(zoom !== null && state.map.setZoom) state.map.setZoom(zoom);
       return true;
     }catch(e){ return false; }
   }
@@ -1834,7 +1833,8 @@
     const pnus = Array.from(new Set((item.pnuList || []).filter(Boolean)));
     if(pnus.length && !state.selectedPnu) state.selectedPnu = pnus[0];
     if(!pnus.length){
-      els.mapNote.textContent = '필지 경계를 확인하지 못했습니다. 핀 위치와 매물 정보만 표시합니다.';
+      if(options.fallbackPanToItem) moveMapToItem(item);
+      els.mapNote.textContent = '필지 경계를 확인하지 못했습니다. 현재 축척에서 매물 위치로만 이동합니다.';
       updatePatchPanel();
       return;
     }
@@ -1845,9 +1845,10 @@
     const missing = pnus.filter(pnu => !state.polygonDataByPnu.has(pnu));
     if(!missing.length){
       renderListingPolygons();
-      if(keepListZoom) panToSelectedPolygonCenterKeepingZoom();
-      else if(shouldFitPolygon) fitToSelectedPolygons();
-      els.mapNote.textContent = keepListZoom ? ('현재 축척을 유지하고 저장된 필지 경계를 표시했습니다. PNU ' + pnus.length + '개만 표시합니다.') : ('저장된 필지 경계를 표시했습니다. 이 매물의 PNU ' + pnus.length + '개만 표시합니다.');
+      if(keepListZoom){
+        if(!panToSelectedPolygonCenterKeepingZoom() && options.fallbackPanToItem) moveMapToItem(item);
+      }else if(shouldFitPolygon) fitToSelectedPolygons();
+      els.mapNote.textContent = keepListZoom ? ('현재 축척을 유지하고 폴리곤 중심을 화면 가운데로 이동했습니다. PNU ' + pnus.length + '개만 표시합니다.') : ('저장된 필지 경계를 표시했습니다. 이 매물의 PNU ' + pnus.length + '개만 표시합니다.');
       return;
     }
 
@@ -1873,8 +1874,9 @@
 
     addPolygonLog('selected-pnu:done', {listingNumber:item.listingNumber || '', requested:missing.length, totalPnu:pnus.length, success:okCount, failed:failed});
     renderListingPolygons();
-    if(keepListZoom) panToSelectedPolygonCenterKeepingZoom();
-    else if(shouldFitPolygon) fitToSelectedPolygons();
+    if(keepListZoom){
+      if(!panToSelectedPolygonCenterKeepingZoom() && options.fallbackPanToItem) moveMapToItem(item);
+    }else if(shouldFitPolygon) fitToSelectedPolygons();
 
     const drawn = pnus.filter(pnu => state.polygonDataByPnu.has(pnu)).length;
     if(drawn){
@@ -2010,19 +2012,17 @@
     renderItemPanel();
 
     if(source === 'list'){
-      moveMapToItem(item);
       state.panelMode = 'mapCards';
       renderMapViewCardPanel();
-      fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source}));
+      fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source, fallbackPanToItem:true}));
       return;
     }
 
     if(source === 'ourSearch'){
-      moveMapToItem(item);
       state.panelMode = 'ourSearch';
       state.fixedMode = 'ourSearch';
       openOurSearchResultsPanel((state.ourSearch && state.ourSearch.items) || [], (state.ourSearch && state.ourSearch.query) || '', (state.ourSearch && state.ourSearch.filtersLabel) || '');
-      fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source}));
+      fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source, fallbackPanToItem:true}));
       return;
     }
 
@@ -3047,15 +3047,10 @@
     const point = getItemPoint(item);
     if(!point) return;
     try{
-      const zoom = state.map.getZoom ? state.map.getZoom() : null;
+      // 축척은 건드리지 않고 현재 zoom에서 매물 좌표로 부드럽게 이동한다.
       state.map.panTo(new naver.maps.LatLng(point.lat, point.lng));
-      if(zoom !== null && state.map.setZoom) state.map.setZoom(zoom);
     }catch(e){
-      try{
-        const zoom = state.map.getZoom ? state.map.getZoom() : null;
-        state.map.setCenter(new naver.maps.LatLng(point.lat, point.lng));
-        if(zoom !== null && state.map.setZoom) state.map.setZoom(zoom);
-      }catch(_){}
+      try{ state.map.setCenter(new naver.maps.LatLng(point.lat, point.lng)); }catch(_){}
     }
   }
   function buildPreviewUrl(listingNumber){ return CONFIG.listingsUrl + '?listingNumber=' + encodeURIComponent(listingNumber || '') + '&open=1'; }

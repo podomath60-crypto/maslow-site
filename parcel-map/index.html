@@ -3225,6 +3225,9 @@
   els.baseParcelToggle.addEventListener('click', function(){ state.showBaseParcels = !state.showBaseParcels; this.textContent = state.showBaseParcels ? '필지선 ON' : '필지선 OFF'; this.classList.toggle('ghost', !state.showBaseParcels); if(state.showBaseParcels) scheduleBaseParcelFetch(); else { clearWmsTiles(); els.mapNote.textContent = '필지선을 껐습니다. 핀 클릭 시 선택 매물 필지만 조회합니다.'; } });
   if(els.mapCountBtn){
     els.mapCountBtn.addEventListener('click', function(){
+      // 하단 매물 개수 버튼은 상세/공부 패널을 열지 않고,
+      // 제일 오른쪽 리스트 스냅샷 패널만 보여준다.
+      closeDetailPanel();
       updateMapCountButton();
       renderMapViewCardPanel({refresh:true});
     });

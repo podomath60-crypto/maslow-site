@@ -2010,6 +2010,7 @@
     renderItemPanel();
 
     if(source === 'list'){
+      moveMapToItem(item);
       state.panelMode = 'mapCards';
       renderMapViewCardPanel();
       fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source}));
@@ -2017,6 +2018,7 @@
     }
 
     if(source === 'ourSearch'){
+      moveMapToItem(item);
       state.panelMode = 'ourSearch';
       state.fixedMode = 'ourSearch';
       openOurSearchResultsPanel((state.ourSearch && state.ourSearch.items) || [], (state.ourSearch && state.ourSearch.query) || '', (state.ourSearch && state.ourSearch.filtersLabel) || '');
@@ -3044,7 +3046,17 @@
     if(!state.mapReady || !state.map || !item) return;
     const point = getItemPoint(item);
     if(!point) return;
-    try{ state.map.panTo(new naver.maps.LatLng(point.lat, point.lng)); }catch(e){ try{ state.map.setCenter(new naver.maps.LatLng(point.lat, point.lng)); }catch(_){} }
+    try{
+      const zoom = state.map.getZoom ? state.map.getZoom() : null;
+      state.map.panTo(new naver.maps.LatLng(point.lat, point.lng));
+      if(zoom !== null && state.map.setZoom) state.map.setZoom(zoom);
+    }catch(e){
+      try{
+        const zoom = state.map.getZoom ? state.map.getZoom() : null;
+        state.map.setCenter(new naver.maps.LatLng(point.lat, point.lng));
+        if(zoom !== null && state.map.setZoom) state.map.setZoom(zoom);
+      }catch(_){}
+    }
   }
   function buildPreviewUrl(listingNumber){ return CONFIG.listingsUrl + '?listingNumber=' + encodeURIComponent(listingNumber || '') + '&open=1'; }
   function openPreviewForItem(item){ if(!item) return; openExternal(buildPreviewUrl(item.listingNumber)); }

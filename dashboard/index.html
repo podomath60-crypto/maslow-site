@@ -434,6 +434,7 @@
     .thumb{position:relative;width:112px;height:112px;border-radius:18px;background:#edf2f7 center/cover no-repeat;overflow:hidden;flex:0 0 112px}
     .dashboard-status-overlay{position:absolute;top:0;left:0;right:0;z-index:3;display:flex;flex-direction:column;gap:2px;pointer-events:none}
     .dashboard-status-line{display:block;width:100%;padding:6px 8px;background:rgba(0,0,0,.78);color:#fff;font-size:12px;font-weight:1000;line-height:1.1;letter-spacing:-0.03em;text-shadow:0 1px 2px rgba(0,0,0,.28)}
+    .naver-ad-badge{position:absolute;right:7px;bottom:7px;z-index:4;width:28px;height:28px;border-radius:999px;background:#19ce60;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:1000;line-height:1;letter-spacing:-0.04em;box-shadow:0 7px 16px rgba(25,206,96,.34),0 0 0 2px rgba(255,255,255,.9);pointer-events:none;user-select:none;-webkit-user-select:none}
     .property-copy-thumb{
       cursor:pointer;
       -webkit-user-select:none;
@@ -954,6 +955,9 @@
     .dashboard-status-modal-listing{margin:-6px 0 16px;padding:10px 12px;border-radius:14px;background:#f6f8fb;color:#55606b;font-size:13px;line-height:1.45;font-weight:900;word-break:break-all}
     .dashboard-status-section{display:grid;gap:9px;margin:0 0 16px}
     .dashboard-status-section-title{font-size:13px;line-height:1.3;font-weight:1000;color:#66707a;letter-spacing:-0.03em}
+    .dashboard-naver-ad-section{padding:12px 13px;border:1px solid #bff2d2;border-radius:16px;background:#f0fff6}
+    .dashboard-naver-ad-status-text{display:flex;align-items:center;gap:8px;color:#0b7a34;font-size:14px;line-height:1.45;font-weight:1000;letter-spacing:-0.03em;word-break:keep-all}
+    .dashboard-naver-ad-status-text::before{content:'N';width:24px;height:24px;border-radius:999px;background:#19ce60;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:1000;line-height:1;box-shadow:0 4px 10px rgba(25,206,96,.28);flex:0 0 24px}
     .dashboard-status-choice-row{display:flex;flex-wrap:wrap;gap:8px}
     .dashboard-status-choice{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 14px;border:1px solid #dce6f1;border-radius:999px;background:#fff;color:#30343a;font-size:14px;font-weight:1000;letter-spacing:-0.03em;cursor:pointer;user-select:none}
     .dashboard-status-choice input{position:absolute;opacity:0;pointer-events:none}
@@ -1392,6 +1396,13 @@
       .dashboard-status-line{
         padding:5px 7px;
         font-size:11px;
+      }
+      .naver-ad-badge{
+        right:6px;
+        bottom:6px;
+        width:25px;
+        height:25px;
+        font-size:15px;
       }
       .channel-link-input{
         min-height:42px;
@@ -2305,6 +2316,7 @@
           <button class="filter-chip" data-filter-group="sort" data-filter-value="updated" type="button">수정순</button>
           <button class="filter-chip" data-filter-group="status" data-filter-value="visible" type="button">공개중</button>
           <button class="filter-chip" data-filter-group="status" data-filter-value="hidden" type="button">비공개</button>
+          <button class="filter-chip" data-filter-group="ad" data-filter-value="naver" type="button">네이버광고중</button>
           <button class="filter-chip" data-filter-group="deal" data-filter-value="rent" type="button">임대</button>
           <button class="filter-chip" data-filter-group="deal" data-filter-value="sale" type="button">매매</button>
           <button class="filter-chip" data-filter-group="team" data-filter-value="factory" type="button">산업용</button>
@@ -2362,6 +2374,11 @@
         <button type="button" class="dashboard-status-modal-close" onclick="closeDashboardStatusModal()">✕</button>
       </div>
       <div id="dashboardStatusListingText" class="dashboard-status-modal-listing">-</div>
+
+      <section id="dashboardNaverAdStatusBox" class="dashboard-status-section dashboard-naver-ad-section" aria-label="네이버 광고상태" style="display:none">
+        <div class="dashboard-status-section-title">네이버 광고</div>
+        <div id="dashboardNaverAdStatusText" class="dashboard-naver-ad-status-text">-</div>
+      </section>
 
       <section class="dashboard-status-section" aria-label="공개상태">
         <div class="dashboard-status-section-title">공개상태</div>
@@ -2608,7 +2625,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
     let rawItems = [];
     let currentFilter = 'default';
-    let activeFilters = { sort: 'default', status: '', deal: '', team: '' };
+    let activeFilters = { sort: 'default', status: '', deal: '', team: '', ad: '' };
     let currentKeyword = '';
     let unlockedUserName = '';
     let visibleCount = 50;
@@ -4407,10 +4424,23 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
           needsPhoto: src.needsPhoto === true,
           needsContact: src.needsContact === true,
           dealDone: src.dealDone === true,
-          reviewHold: src.reviewHold === true
+          reviewHold: src.reviewHold === true,
+          naverAd: src.naverAd === true,
+          naverAdSource: text(src.naverAdSource),
+          naverAdFrom: text(src.naverAdFrom),
+          naverAdUntil: text(src.naverAdUntil),
+          naverAdStatus: text(src.naverAdStatus),
+          naverAdMatchedBy: text(src.naverAdMatchedBy),
+          naverAdAddressKey: text(src.naverAdAddressKey),
+          naverAdDealType: text(src.naverAdDealType),
+          naverAdSyncedAt: text(src.naverAdSyncedAt)
         };
       }catch(e){
-        return { internal:false, needsWork:false, needsPhoto:false, needsContact:false, dealDone:false, reviewHold:false };
+        return {
+          internal:false, needsWork:false, needsPhoto:false, needsContact:false, dealDone:false, reviewHold:false,
+          naverAd:false, naverAdSource:'', naverAdFrom:'', naverAdUntil:'', naverAdStatus:'',
+          naverAdMatchedBy:'', naverAdAddressKey:'', naverAdDealType:'', naverAdSyncedAt:''
+        };
       }
     }
 
@@ -4424,6 +4454,61 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         dealDone: src.dealDone === true,
         reviewHold: src.reviewHold === true
       });
+    }
+
+    function normalizeDashboardYmdKey(value){
+      const s = text(value);
+      if(!s) return '';
+      const m = s.match(/^(\d{4})[-./]?(\d{1,2})[-./]?(\d{1,2})/);
+      if(!m) return '';
+      return m[1] + String(m[2]).padStart(2, '0') + String(m[3]).padStart(2, '0');
+    }
+
+    function getDashboardTodayYmdKey(){
+      const d = new Date();
+      return String(d.getFullYear()) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+    }
+
+    function getNaverAdStatus(item){
+      const status = parseDashboardStatusJson(item && item.dashboardStatusJson);
+      const fromKey = normalizeDashboardYmdKey(status.naverAdFrom);
+      const untilKey = normalizeDashboardYmdKey(status.naverAdUntil);
+      const todayKey = getDashboardTodayYmdKey();
+      const active = status.naverAd === true && !!fromKey && !!untilKey && todayKey >= fromKey && todayKey <= untilKey;
+      const periodText = status.naverAdFrom && status.naverAdUntil
+        ? status.naverAdFrom + ' ~ ' + status.naverAdUntil
+        : '';
+      return {
+        active: active,
+        from: status.naverAdFrom,
+        until: status.naverAdUntil,
+        periodText: periodText,
+        label: active ? '네이버 광고중' : '',
+        statusText: status.naverAdStatus || ''
+      };
+    }
+
+    function isNaverAdActive(item){
+      return getNaverAdStatus(item).active === true;
+    }
+
+    function buildNaverAdBadgeHtml(item){
+      if(!isNaverAdActive(item)) return '';
+      return '<span class="naver-ad-badge" aria-label="네이버 광고중">N</span>';
+    }
+
+    function updateDashboardNaverAdStatusBox(item){
+      const box = document.getElementById('dashboardNaverAdStatusBox');
+      const textEl = document.getElementById('dashboardNaverAdStatusText');
+      if(!box || !textEl) return;
+      const info = getNaverAdStatus(item);
+      if(info.active){
+        textEl.textContent = '네이버 광고중 ' + (info.periodText || '');
+        box.style.display = 'grid';
+      }else{
+        textEl.textContent = '-';
+        box.style.display = 'none';
+      }
     }
 
     function getDashboardStatusLabels(item){
@@ -4488,6 +4573,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(listingText){
         listingText.textContent = (item.title ? item.title + ' · ' : '') + decodedListingNumber;
       }
+      updateDashboardNaverAdStatusBox(item);
       statusRadios.forEach(function(radio){
         radio.checked = radio.value === currentStatus;
       });
@@ -4520,6 +4606,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         modal.setAttribute('aria-hidden', 'true');
       }
       dashboardStatusModalListingNumber = '';
+      updateDashboardNaverAdStatusBox(null);
       if(dashboardStatusModalHistoryArmed){
         dashboardStatusModalHistoryArmed = false;
         if(!fromPopstate){
@@ -4759,7 +4846,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       dashboardRestoredFromReturnState = true;
       clearDashboardReturnState();
       rawItems = cachedItems;
-      activeFilters = Object.assign({ sort: 'default', status: '', deal: '', team: '' }, state.activeFilters || {});
+      activeFilters = Object.assign({ sort: 'default', status: '', deal: '', team: '', ad: '' }, state.activeFilters || {});
       currentTeamFilter = activeFilters.team || state.currentTeamFilter || '';
       nextTeamToggleTarget = state.nextTeamToggleTarget || nextTeamToggleTarget || 'factory';
       visibleCount = Math.max(PAGE_SIZE, Number(state.visibleCount) || PAGE_SIZE);
@@ -5054,6 +5141,10 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         result = result.filter(function(item){ return !(item.status === 'visible' || item.status === 'show' || item.status === '공개'); });
       }
 
+      if(activeFilters.ad === 'naver'){
+        result = result.filter(function(item){ return isNaverAdActive(item); });
+      }
+
       if(activeFilters.sort === 'updated'){
         result = result.slice().sort(function(a,b){
           return (parseDateValue(b.updatedAt) || 0) - (parseDateValue(a.updatedAt) || 0);
@@ -5299,6 +5390,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const ownSiteClass = ownSiteState.done ? '' : ' is-not-yet';
       const memoStarHtml = shouldShowMemoNewStar(item) ? '<span class="memo-new-star" aria-hidden="true">★</span>' : '';
       const dashboardStatusOverlayHtml = buildDashboardStatusOverlay(item);
+      const naverAdBadgeHtml = buildNaverAdBadgeHtml(item);
 
       return ''
         + '<article class="property-card" data-listing-number="' + escapeHtml(item.listingNumber || '') + '">'
@@ -5309,7 +5401,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         +       ' onpointerleave="clearPropertyCopyLongPress()"'
         +       ' onpointercancel="clearPropertyCopyLongPress()"'
         +       ' onclick="return handlePropertyThumbClick(event)"'
-        +     '>' + dashboardStatusOverlayHtml + '</div>'
+        +     '>' + dashboardStatusOverlayHtml + naverAdBadgeHtml + '</div>'
         +     '<div class="card-content">'
         +       '<div class="title-row">'
         +         '<h3 class="card-title property-edit-link" onpointerdown="safeEditItemPointerDown(\'' + encodeURIComponent(item.listingNumber || '') + '\', event)" onclick="return safeEditItemClick(\'' + encodeURIComponent(item.listingNumber || '') + '\', event)">' + escapeHtml(item.title || '제목 없음') + '</h3>'

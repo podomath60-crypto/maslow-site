@@ -288,6 +288,7 @@
   const INITIAL_MAP_ZOOM = 15; // 최초 진입 시 사무실 중심 500m 축척 수준
   const ADDRESS_SEARCH_ZOOM = 18; // 주소조회 성공 시 50m 축척 수준
   const LEDGER_CLICK_MIN_ZOOM = 18; // 네이버 지도 축척 50m 이하 수준에서 바닥 클릭 공부조회 허용
+  const LIST_POLYGON_KEEP_ZOOM_MIN = 17; // 리스트/우리매물검색 카드 클릭 시 100m 이하 수준이면 현재 축척 유지
   const LEDGER_CLICK_ZOOM_MESSAGE = '공부조회는 지도 축척 50m 이하 수준에서 가능합니다. 지도를 조금 더 확대해주세요.';
   const CONFIG = {
     dashboardUrl:'/dashboard',
@@ -1789,9 +1790,20 @@
     }
   }
 
+
+  function shouldKeepListPolygonZoom(options){
+    options = options || {};
+    const source = options.source || '';
+    if(source !== 'list' && source !== 'ourSearch') return false;
+    if(!state.map || !state.map.getZoom) return false;
+    const zoom = Number(state.map.getZoom());
+    return Number.isFinite(zoom) && zoom >= LIST_POLYGON_KEEP_ZOOM_MIN;
+  }
+
   async function fetchSelectedItemPolygons(item, options){
     options = options || {};
-    const shouldFitPolygon = options.fitPolygon !== false;
+    const keepListZoom = shouldKeepListPolygonZoom(options);
+    const shouldFitPolygon = options.fitPolygon !== false && !keepListZoom;
     if(!item) return;
     clearPolygonMap(state.listingPolygons);
     try{
@@ -1815,7 +1827,7 @@
     if(!missing.length){
       renderListingPolygons();
       if(shouldFitPolygon) fitToSelectedPolygons();
-      els.mapNote.textContent = '저장된 필지 경계를 표시했습니다. 이 매물의 PNU ' + pnus.length + '개만 표시합니다.';
+      els.mapNote.textContent = keepListZoom ? ('현재 100m 이하 축척을 유지하고 저장된 필지 경계를 표시했습니다. PNU ' + pnus.length + '개만 표시합니다.') : ('저장된 필지 경계를 표시했습니다. 이 매물의 PNU ' + pnus.length + '개만 표시합니다.');
       return;
     }
 
@@ -1845,7 +1857,7 @@
 
     const drawn = pnus.filter(pnu => state.polygonDataByPnu.has(pnu)).length;
     if(drawn){
-      els.mapNote.textContent = '선택 매물 필지 ' + drawn + '/' + pnus.length + '개 표시 완료' + (failed.length ? ' · 실패 ' + failed.length + '개' : '') + '. 여러필지 매물은 지정된 PNU만 조회합니다.';
+      els.mapNote.textContent = (keepListZoom ? '현재 100m 이하 축척 유지 · ' : '') + '선택 매물 필지 ' + drawn + '/' + pnus.length + '개 표시 완료' + (failed.length ? ' · 실패 ' + failed.length + '개' : '') + '. 여러필지 매물은 지정된 PNU만 조회합니다.';
     }else{
       state.debug.lastError = 'polygon selected: ' + (failed[0] && failed[0].error || '조회 실패');
       els.mapNote.textContent = '선택 매물 필지 조회 실패: ' + (failed[0] && failed[0].error || '응답 없음');
@@ -1979,14 +1991,14 @@
     if(source === 'list'){
       state.panelMode = 'mapCards';
       renderMapViewCardPanel();
-      fetchSelectedItemPolygons(item, options);
+      fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source}));
       return;
     }
 
     state.panelMode = 'ledger';
     state.fixedMode = 'ledger';
     renderLedgerLoading('공부조회', '선택한 매물의 필지와 공부 정보를 확인합니다.');
-    fetchSelectedItemPolygons(item, options).then(function(){
+    fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source})).then(function(){
       if(!state.selectedItem || state.selectedItem.listingNumber !== item.listingNumber) return;
       const nextPnu = state.selectedPnu || item.representativePnu || (item.pnuList || [])[0] || '';
       const nextParcel = state.selectedParcel || (nextPnu ? state.polygonDataByPnu.get(nextPnu) : null) || parcel || null;

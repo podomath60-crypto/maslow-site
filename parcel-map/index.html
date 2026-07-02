@@ -1739,7 +1739,7 @@
     clearSearchFlags();
     state.addressLookup = info;
     panToCachedAddressFlag(info);
-    renderLedgerLoading('주소조회', '캐시된 주소 정보로 공부조회합니다.');
+    renderLedgerLoading('주소조회', '깃발 위치의 PNU/필지주소 기준으로 공부조회합니다.');
     try{
       let parcel = null;
       const pnu = pnuDigits(info.pnu || '');
@@ -1750,23 +1750,40 @@
           if(parcel && parcel.pnu) state.polygonDataByPnu.set(parcel.pnu, parcel);
         }catch(e){}
       }
+      if(!parcel && Number.isFinite(Number(info.lat)) && Number.isFinite(Number(info.lng))){
+        try{
+          parcel = await requestVworldParcelByPointJsonp(Number(info.lng), Number(info.lat));
+          if(parcel && parcel.pnu) state.polygonDataByPnu.set(parcel.pnu, parcel);
+        }catch(e){}
+      }
+
+      if(parcel){
+        info.pnu = parcel.pnu || info.pnu || '';
+        info.parcelAddress = extractLedgerJibunAddress(parcel.address) || info.parcelAddress || '';
+        info.jibunAddress = ledgerFirstNonEmpty(info.parcelAddress, info.jibunAddress);
+        info.ledgerAddress = ledgerFirstNonEmpty(info.parcelAddress, info.jibunAddress, info.roadAddress, info.query);
+        info.flagLabel = addressFlagLabel(info);
+      }
+
+      const ledgerAddress = ledgerFirstNonEmpty(info.parcelAddress, info.jibunAddress, info.ledgerAddress, info.query);
       const ctx = await lookupLedgerCore({
         lat:Number(info.lat),
         lng:Number(info.lng),
-        rawInputAddress:info.rawInputAddress || info.query,
-        address:info.ledgerAddress || info.query,
-        jibunAddress:info.jibunAddress,
+        rawInputAddress:ledgerAddress,
+        address:ledgerAddress,
+        jibunAddress:ledgerAddress,
         roadAddress:info.roadAddress,
-        reverse:{address:info.resolvedAddress || info.query, jibunAddress:info.jibunAddress, roadAddress:info.roadAddress},
+        reverse:{address:ledgerAddress, jibunAddress:ledgerAddress, roadAddress:info.roadAddress},
         parcel:parcel,
         suppressMatchedItemDetail:true
       });
       if(ctx){
         info.pnu = ctx.pnu || (ctx.parcel && ctx.parcel.pnu) || info.pnu || '';
         info.parcelAddress = extractLedgerJibunAddress(ctx.parcel && ctx.parcel.address) || info.parcelAddress || '';
-        info.jibunAddress = ledgerFirstNonEmpty(extractLedgerJibunAddress(ctx.reverse && ctx.reverse.jibunAddress), info.parcelAddress, info.jibunAddress);
+        info.jibunAddress = ledgerFirstNonEmpty(info.parcelAddress, extractLedgerJibunAddress(ctx.reverse && ctx.reverse.jibunAddress), info.jibunAddress);
         info.roadAddress = ledgerFirstNonEmpty(extractLedgerRoadAddress(ctx.reverse && ctx.reverse.roadAddress), info.roadAddress);
-        info.ledgerAddress = ledgerFirstNonEmpty(info.jibunAddress, info.roadAddress, info.ledgerAddress);
+        info.ledgerAddress = ledgerFirstNonEmpty(info.parcelAddress, info.jibunAddress, info.roadAddress, info.ledgerAddress);
+        info.query = info.parcelAddress || info.query;
         info.flagLabel = addressFlagLabel(info);
         info.status = info.pnu ? 'pnu' : 'lookup';
         info.statusText = info.pnu ? 'PNU확정' : '조회완료';

@@ -1668,6 +1668,124 @@
       state.debug.lastError = '고정 주소 폴리곤 실패: ' + (err && err.message ? err.message : err);
     }
   }
+  function cachedAddressInfoFromHistory(h){
+    h = h || {};
+    const inputParts = normalizeLedgerAddressParts(h.query || '');
+    const info = Object.assign({}, h);
+    info.type = 'address';
+    info.query = h.query || h.resolvedAddress || h.ledgerAddress || '';
+    info.rawInputAddress = h.rawInputAddress || info.query;
+    info.lat = Number(h.lat);
+    info.lng = Number(h.lng);
+    info.inputJibunAddress = h.inputJibunAddress || inputParts.jibunAddress || '';
+    info.inputRoadAddress = h.inputRoadAddress || inputParts.roadAddress || '';
+    info.jibunAddress = ledgerFirstNonEmpty(h.jibunAddress, h.parcelAddress, h.geocodeJibunAddress, info.inputJibunAddress);
+    info.roadAddress = ledgerFirstNonEmpty(h.roadAddress, h.geocodeRoadAddress, info.inputRoadAddress);
+    info.ledgerAddress = ledgerFirstNonEmpty(h.ledgerAddress, info.jibunAddress, info.roadAddress, inputParts.ledgerAddress, info.query);
+    info.resolvedAddress = h.resolvedAddress || '';
+    info.flagLabel = h.flagLabel || addressFlagLabel(info);
+    info.status = h.status || 'cached';
+    info.statusText = h.statusText || '고정 주소';
+    return info;
+  }
+
+  function updateAddressHistoryEntryFromInfo(originalKey, info){
+    loadSearchHistory();
+    let changed = false;
+    (state.searchHistory || []).forEach(function(h){
+      if(!h || h.type !== 'address') return;
+      if(pinnedAddressKey(h) !== originalKey && String(h.query || '').trim() !== String(info.query || '').trim()) return;
+      h.lat = Number(info.lat);
+      h.lng = Number(info.lng);
+      h.pnu = info.pnu || h.pnu || '';
+      h.parcelAddress = info.parcelAddress || h.parcelAddress || '';
+      h.jibunAddress = info.jibunAddress || h.jibunAddress || '';
+      h.roadAddress = info.roadAddress || h.roadAddress || '';
+      h.ledgerAddress = info.ledgerAddress || h.ledgerAddress || '';
+      h.flagLabel = info.flagLabel || h.flagLabel || '';
+      h.status = info.status || h.status || '';
+      h.statusText = info.statusText || h.statusText || '';
+      changed = true;
+    });
+    if(changed) saveSearchHistory();
+  }
+
+  function panToCachedAddressFlag(info){
+    if(!state.mapReady || !state.map) return;
+    const lat = Number(info && info.lat), lng = Number(info && info.lng);
+    if(!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    try{ state.map.panTo(new naver.maps.LatLng(lat, lng)); }catch(e){ try{ state.map.setCenter(new naver.maps.LatLng(lat, lng)); }catch(_){} }
+  }
+
+  async function openCachedAddressLookup(h){
+    h = h || {};
+    const info = cachedAddressInfoFromHistory(h);
+    if(!Number.isFinite(Number(info.lat)) || !Number.isFinite(Number(info.lng))){
+      if(info.query) return runAddressLookup(info.query);
+      return;
+    }
+    const originalKey = pinnedAddressKey(h);
+    closeDetailPanel();
+    state.selectedItem = null;
+    state.selectedCandidates = [];
+    state.selectedPnu = '';
+    state.selectedParcel = null;
+    clearPolygonMap(state.listingPolygons);
+    renderMarkers();
+    state.ourSearch = {query:'', items:[], filtersLabel:''};
+    clearSearchFlags();
+    state.addressLookup = info;
+    panToCachedAddressFlag(info);
+    renderLedgerLoading('주소조회', '캐시된 주소 정보로 공부조회합니다.');
+    try{
+      let parcel = null;
+      const pnu = pnuDigits(info.pnu || '');
+      if(pnu && state.polygonDataByPnu.has(pnu)) parcel = state.polygonDataByPnu.get(pnu);
+      else if(pnu){
+        try{
+          parcel = await requestVworldParcelByPnuJsonp(pnu);
+          if(parcel && parcel.pnu) state.polygonDataByPnu.set(parcel.pnu, parcel);
+        }catch(e){}
+      }
+      const ctx = await lookupLedgerCore({
+        lat:Number(info.lat),
+        lng:Number(info.lng),
+        rawInputAddress:info.rawInputAddress || info.query,
+        address:info.ledgerAddress || info.query,
+        jibunAddress:info.jibunAddress,
+        roadAddress:info.roadAddress,
+        reverse:{address:info.resolvedAddress || info.query, jibunAddress:info.jibunAddress, roadAddress:info.roadAddress},
+        parcel:parcel,
+        suppressMatchedItemDetail:true
+      });
+      if(ctx){
+        info.pnu = ctx.pnu || (ctx.parcel && ctx.parcel.pnu) || info.pnu || '';
+        info.parcelAddress = extractLedgerJibunAddress(ctx.parcel && ctx.parcel.address) || info.parcelAddress || '';
+        info.jibunAddress = ledgerFirstNonEmpty(extractLedgerJibunAddress(ctx.reverse && ctx.reverse.jibunAddress), info.parcelAddress, info.jibunAddress);
+        info.roadAddress = ledgerFirstNonEmpty(extractLedgerRoadAddress(ctx.reverse && ctx.reverse.roadAddress), info.roadAddress);
+        info.ledgerAddress = ledgerFirstNonEmpty(info.jibunAddress, info.roadAddress, info.ledgerAddress);
+        info.flagLabel = addressFlagLabel(info);
+        info.status = info.pnu ? 'pnu' : 'lookup';
+        info.statusText = info.pnu ? 'PNU확정' : '조회완료';
+        state.addressLookup = info;
+        updateAddressHistoryEntryFromInfo(originalKey, info);
+        renderPinnedAddressOverlays();
+        panToCachedAddressFlag(info);
+        const matchedAddressItems = info.pnu ? (state.pnuToItems.get(info.pnu) || []) : [];
+        if(matchedAddressItems.length){
+          state.selectedItem = matchedAddressItems[0];
+          state.selectedCandidates = matchedAddressItems;
+          state.selectedPnu = info.pnu;
+          state.selectedParcel = ctx.parcel || state.selectedParcel || null;
+          renderMarkers();
+          renderItemPanel();
+        }
+      }
+    }catch(err){
+      renderLedgerError(new Error('캐시 주소 공부조회 실패: ' + (err && err.message ? err.message : err)));
+    }
+  }
+
   function renderPinnedAddressOverlays(){
     clearPinnedAddressOverlays();
     if(!state.mapReady || !state.map) return;
@@ -1689,8 +1807,7 @@
         });
         naver.maps.Event.addListener(marker, 'click', function(){
           state.suppressGroundClickUntil = Date.now() + 350;
-          state.addressLookup = Object.assign({statusText:'고정 주소'}, h);
-          renderAddressLookupSummaryPanel(state.addressLookup);
+          openCachedAddressLookup(h);
         });
         state.pinnedAddressFlags.set(key, marker);
         drawPinnedAddressPolygonForHistory(key, h);
@@ -2259,14 +2376,15 @@
   function toggleSearchHistoryPinned(index){
     loadSearchHistory();
     index = Number(index);
-    if(!Number.isFinite(index) || index < 0) return;
+    if(!Number.isFinite(index) || index < 0) return null;
     const h = state.searchHistory[index];
-    if(!h || h.type !== 'address') return;
+    if(!h || h.type !== 'address') return null;
     h.pinned = !h.pinned;
     state.searchHistory[index] = h;
     state.searchHistory = state.searchHistory.slice(0, 30);
     saveSearchHistory();
     renderPinnedAddressOverlays();
+    return h;
   }
   function searchHistoryTimeText(v){
     const t = Date.parse(v || '');
@@ -3279,6 +3397,8 @@
       e.preventDefault();
       e.stopPropagation();
       const currentQuery = panelSearchQuery();
+      // 검색내역 안의 깃발은 회색/주황 토글만 한다.
+      // 공부조회는 주소 카드 본문 클릭 또는 지도 위 고정 깃발 클릭에서만 실행한다.
       toggleSearchHistoryPinned(historyPin.dataset.searchHistoryPin);
       openSearchPanel(currentQuery);
       return;
@@ -3296,7 +3416,7 @@
     if(historyBtn){
       loadSearchHistory();
       const h = state.searchHistory[Number(historyBtn.dataset.searchHistoryIndex)] || null;
-      if(h){ if(h.type === 'address') runAddressLookup(h.query || ''); else runOurPropertySearch(h.query || ''); }
+      if(h){ if(h.type === 'address') openCachedAddressLookup(h); else runOurPropertySearch(h.query || ''); }
       return;
     }
     const addressMatch = e.target.closest('[data-address-match-listing]');

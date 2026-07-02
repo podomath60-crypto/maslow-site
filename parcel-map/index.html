@@ -1586,7 +1586,7 @@
             return;
           }
           moveMapToItem(item);
-          selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item], {source:'list'});
+          selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item], {source:'ourSearch'});
         });
         state.searchFlags.set(isGroup ? ('search-group-' + groupIdx) : (item.listingNumber || ('search-' + group.records[0].idx)), marker);
       }catch(err){ state.debug.lastError = '검색 플래그 실패: ' + (err.message || err); }
@@ -2163,6 +2163,8 @@
     }, { once:true });
   }
   function openSearchPanel(prefill){
+    // 돋보기 검색은 오른쪽 검색 패널만 열고 기존 매물 상세 패널은 닫는다.
+    closeDetailPanel();
     state.panelMode = 'search';
     state.fixedMode = 'search';
     if(els.searchPanelBtn) els.searchPanelBtn.classList.add('is-active');
@@ -2199,6 +2201,7 @@
   function runOurPropertySearch(query){
     query = String(query || '').trim();
     if(!query){ openSearchPanel(''); return; }
+    closeDetailPanel();
     state.addressLookup = null;
     clearAddressFlag();
     const filtersLabel = currentFilterLabel();
@@ -2229,6 +2232,13 @@
   async function runAddressLookup(query){
     query = String(query || '').trim();
     if(!query){ openSearchPanel(''); return; }
+    closeDetailPanel();
+    state.selectedItem = null;
+    state.selectedCandidates = [];
+    state.selectedPnu = '';
+    state.selectedParcel = null;
+    clearPolygonMap(state.listingPolygons);
+    renderMarkers();
     state.ourSearch = {query:'', items:[], filtersLabel:''};
     clearSearchFlags();
     renderLedgerLoading('주소조회', '주소를 좌표로 변환합니다.');
@@ -2268,7 +2278,8 @@
         address:info.ledgerAddress || query,
         jibunAddress:info.jibunAddress,
         roadAddress:info.roadAddress,
-        reverse:{address:info.resolvedAddress, jibunAddress:info.geocodeJibunAddress, roadAddress:info.geocodeRoadAddress}
+        reverse:{address:info.resolvedAddress, jibunAddress:info.geocodeJibunAddress, roadAddress:info.geocodeRoadAddress},
+        suppressMatchedItemDetail:true
       });
       if(ctx){
         info.pnu = ctx.pnu || (ctx.parcel && ctx.parcel.pnu) || '';
@@ -2281,6 +2292,15 @@
         info.statusText = info.pnu ? 'PNU확정' : '조회완료';
         state.addressLookup = info;
         setAddressFlag(lat, lng, info);
+        const matchedAddressItems = info.pnu ? (state.pnuToItems.get(info.pnu) || []) : [];
+        if(matchedAddressItems.length){
+          state.selectedItem = matchedAddressItems[0];
+          state.selectedCandidates = matchedAddressItems;
+          state.selectedPnu = info.pnu;
+          state.selectedParcel = ctx.parcel || state.selectedParcel || null;
+          renderMarkers();
+          renderItemPanel();
+        }
         pushSearchHistory({type:'address', query:query, resolvedAddress:info.resolvedAddress, lat:lat, lng:lng, pnu:info.pnu, status:info.status, statusText:info.statusText});
       }
     }catch(err){
@@ -2878,6 +2898,7 @@
   async function lookupLedgerCore(input){
     const seq = ++state.ledgerRequestSeq;
     input = input || {};
+    const suppressMatchedItemDetail = !!input.suppressMatchedItemDetail;
     let lat = Number(input.lat), lng = Number(input.lng);
     let parcel = input.parcel || null;
     let reverse = input.reverse || null;
@@ -2909,7 +2930,7 @@
     const ctx = {lat:lat, lng:lng, reverse:ctxReverse, parcel:parcel || {}, pnu:lookupMeta.pnu || (parcel && parcel.pnu) || '', parcelError:parcelError};
     renderLedgerPanel(ctx);
     const earlyCandidates = candidatesForParcel(parcel);
-    if(earlyCandidates.length && !state.selectedItem){
+    if(earlyCandidates.length && !state.selectedItem && !suppressMatchedItemDetail){
       state.selectedItem = earlyCandidates[0];
       state.selectedCandidates = earlyCandidates;
       renderMarkers();
@@ -2925,7 +2946,7 @@
     if(seq !== state.ledgerRequestSeq) return;
     renderLedgerPanel(ctx);
     const candidates = candidatesForParcel(parcel);
-    if(candidates.length && !state.selectedItem){
+    if(candidates.length && !state.selectedItem && !suppressMatchedItemDetail){
       state.selectedItem = candidates[0];
       state.selectedCandidates = candidates;
       renderMarkers();
@@ -3054,7 +3075,7 @@
       if(action !== 'select') e.stopPropagation();
       if(action === 'select'){
         moveMapToItem(item);
-        selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item], {source:'list'});
+        selectItem(item, item.representativePnu || (item.pnuList || [])[0] || '', null, [item], {source: state.panelMode === 'ourSearch' ? 'ourSearch' : 'list'});
         return;
       }
       if(action === 'view'){ openPreviewForItem(item); return; }

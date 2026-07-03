@@ -832,6 +832,16 @@
     return state.auxSatelliteMapType;
   }
 
+  function resetAuxSatelliteSourceToDefault(){
+    // 보조위성 기본값은 항상 브이월드로 둔다.
+    // 국토위성은 사용자가 체크했을 때만 임시 선택되고, 보조위성을 끄면 다시 브이월드로 복귀한다.
+    if(state.auxSatelliteSource !== AUX_SATELLITE_SOURCE_VWORLD){
+      state.auxSatelliteSource = AUX_SATELLITE_SOURCE_VWORLD;
+      state.auxSatelliteTileVersion += 1;
+      state.auxSatelliteMapType = null;
+    }
+  }
+
   function updateAuxSatellitePicker(){
     if(!els.auxSatellitePicker) return;
     const inputs = Array.from(els.auxSatellitePicker.querySelectorAll('input[data-aux-source]'));
@@ -852,6 +862,7 @@
     els.auxSatellitePicker.hidden = !next;
     els.auxSatellitePicker.classList.toggle('is-open', next);
     if(next){
+      if(!state.auxSatelliteActive) resetAuxSatelliteSourceToDefault();
       alignAuxSatellitePickerToMapTypeControl();
       updateAuxSatellitePicker();
     }
@@ -924,6 +935,7 @@
       state.map.setMapTypeId(prev);
     }catch(e){}
     state.auxSatelliteActive = false;
+    resetAuxSatelliteSourceToDefault();
     updateAuxSatellitePicker();
     toggleAuxSatellitePicker(false);
     els.mapNote.textContent = '보조위성을 껐습니다. 기존 네이버 지도 유형으로 돌아갑니다.';
@@ -945,6 +957,7 @@
         }
         toggleAuxSatellitePicker(true);
       }else{
+        resetAuxSatelliteSourceToDefault();
         toggleAuxSatellitePicker(false);
       }
       updateAuxSatellitePicker();
@@ -1447,7 +1460,7 @@
     });
     naver.maps.Event.addListener(state.map, 'click', handleMapGroundClick);
     try{ naver.maps.Event.addListener(state.map, 'mapTypeId_changed', syncAuxSatelliteStateFromMapType); }catch(e){}
-    updateAuxSatelliteButton();
+    updateAuxSatellitePicker();
   }
 
   async function loadListings(){

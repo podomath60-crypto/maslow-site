@@ -382,6 +382,7 @@
     roadviewMiniDot:null,
     roadviewMiniDirection:null,
     roadviewMiniListingMarkers:[],
+    roadviewMiniPolygons:[],
     roadviewMiniClickListener:null,
     roadviewHistoryActive:false,
     roadviewHistoryChanging:false,
@@ -1324,6 +1325,86 @@
     });
   }
 
+
+  function clearRoadviewMiniPolygons(){
+    (state.roadviewMiniPolygons || []).forEach(function(poly){
+      try{ poly.setMap(null); }catch(e){}
+    });
+    state.roadviewMiniPolygons = [];
+  }
+
+  function roadviewMiniPolygonStyle(type, item){
+    if(type === 'listing' && item){
+      const base = styleForItem(item, true);
+      return {
+        strokeColor:base.strokeColor || '#facc15',
+        strokeWeight:3,
+        strokeOpacity:.98,
+        fillColor:base.fillColor || '#0f7cff',
+        fillOpacity:.20
+      };
+    }
+    return {
+      strokeColor:'#0f7cff',
+      strokeWeight:3,
+      strokeOpacity:1,
+      fillColor:'#0f7cff',
+      fillOpacity:.16
+    };
+  }
+
+  function collectRoadviewMiniPolygonTargets(){
+    const targets = [];
+    const seen = new Set();
+    function addTarget(type, pnu, parcel, item){
+      const key = (type || 'polygon') + ':' + (pnu || (targets.length + 1));
+      if(pnu && seen.has(key)) return;
+      if(!parcel || !parcel.geometry) return;
+      if(pnu) seen.add(key);
+      targets.push({type:type, pnu:pnu || '', parcel:parcel, item:item || null});
+    }
+
+    const selectedParcel = state.selectedParcel || (state.selectedPnu ? state.polygonDataByPnu.get(state.selectedPnu) : null);
+    if(selectedParcel && selectedParcel.geometry){
+      addTarget('lookup', selectedParcel.pnu || state.selectedPnu || '', selectedParcel, null);
+    }
+
+    const item = state.selectedItem || null;
+    if(item && Array.isArray(item.pnuList)){
+      item.pnuList.forEach(function(pnu){
+        const parcel = state.polygonDataByPnu.get(pnu);
+        addTarget('listing', pnu, parcel, item);
+      });
+    }
+    return targets;
+  }
+
+  function syncRoadviewMiniPolygons(){
+    if(!state.roadviewMiniMap || !window.naver || !naver.maps){ return; }
+    clearRoadviewMiniPolygons();
+    collectRoadviewMiniPolygonTargets().forEach(function(target){
+      const paths = coordinatesToPaths(target.parcel && target.parcel.geometry);
+      if(!paths.length) return;
+      const style = roadviewMiniPolygonStyle(target.type, target.item);
+      paths.forEach(function(path){
+        try{
+          const poly = new naver.maps.Polygon({
+            map:state.roadviewMiniMap,
+            paths:path,
+            clickable:false,
+            zIndex:target.type === 'listing' ? 96 : 94,
+            strokeColor:style.strokeColor,
+            strokeWeight:style.strokeWeight,
+            strokeOpacity:style.strokeOpacity,
+            fillColor:style.fillColor,
+            fillOpacity:style.fillOpacity
+          });
+          state.roadviewMiniPolygons.push(poly);
+        }catch(e){}
+      });
+    });
+  }
+
   function positionRoadviewMiniToggle(){
     if(!els.roadviewMiniToggle) return;
     try{
@@ -1459,6 +1540,7 @@
       if(state.roadviewMiniStreetLayer && state.roadviewMiniMap) state.roadviewMiniStreetLayer.setMap(state.roadviewMiniMap);
     }catch(e){}
     syncRoadviewMiniListingDots();
+    syncRoadviewMiniPolygons();
     pinRoadviewMiniMap();
     applyRoadviewMiniMapCursor();
   }
@@ -1476,6 +1558,7 @@
         try{ if(state.roadviewMiniStreetLayer) state.roadviewMiniStreetLayer.setMap(state.roadviewMiniMap); }catch(e){}
         if(!state.roadviewMiniCollapsed) naver.maps.Event.trigger(state.roadviewMiniMap, 'resize');
         syncRoadviewMiniListingDots();
+        syncRoadviewMiniPolygons();
         applyRoadviewMiniMapCursor();
         positionRoadviewMiniToggle();
       }
@@ -1551,6 +1634,7 @@
     if(streetLayer){ try{ streetLayer.setMap(null); }catch(e){} }
     if(state.roadviewMiniStreetLayer){ try{ state.roadviewMiniStreetLayer.setMap(null); }catch(e){} }
     clearRoadviewMiniListingDots();
+    clearRoadviewMiniPolygons();
     if(!opts.fromPopState) replaceRoadviewHistoryAsMap();
     updateRoadviewButton();
     scheduleMapResize();
@@ -3172,7 +3256,7 @@
     if(!state.mapReady) return;
     clearPolygonMap(state.listingPolygons);
     const item = state.selectedItem;
-    if(!item) return;
+    if(!item){ syncRoadviewMiniPolygons(); return; }
     (item.pnuList || []).forEach(pnu => {
       const parcel = state.polygonDataByPnu.get(pnu);
       if(!parcel || !parcel.geometry) return;
@@ -3187,6 +3271,7 @@
       const prev = state.listingPolygons.get(pnu) || [];
       state.listingPolygons.set(pnu, prev.concat(polys));
     });
+    syncRoadviewMiniPolygons();
   }
 
   function fitToSelectedPolygons(){
@@ -4232,15 +4317,16 @@
   }
   function renderLookupParcelPolygon(parcel){
     clearPolygonMap(state.lookupPolygons);
-    if(!state.mapReady || !parcel || !parcel.geometry) return;
+    if(!state.mapReady || !parcel || !parcel.geometry){ syncRoadviewMiniPolygons(); return; }
     const paths = coordinatesToPaths(parcel.geometry);
-    if(!paths.length) return;
+    if(!paths.length){ syncRoadviewMiniPolygons(); return; }
     const polys = paths.map(function(path){
       const poly = new naver.maps.Polygon({map:state.map, paths:path, clickable:true, zIndex:85, strokeColor:'#0f7cff', strokeWeight:4, strokeOpacity:1, fillColor:'#0f7cff', fillOpacity:.18});
       if(parcel.pnu) naver.maps.Event.addListener(poly, 'click', function(){ state.suppressGroundClickUntil = Date.now() + 350; selectPnu(parcel.pnu, parcel); });
       return poly;
     });
     state.lookupPolygons.set(parcel.pnu || 'lookup', polys);
+    syncRoadviewMiniPolygons();
   }
   function candidatesForParcel(parcel){
     if(!parcel || !parcel.pnu) return [];

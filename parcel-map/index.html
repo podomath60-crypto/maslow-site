@@ -363,6 +363,7 @@
     auxSatelliteSource:AUX_SATELLITE_SOURCE_VWORLD,
     auxSatellitePickerOpen:false,
     auxSatelliteTileVersion:0,
+    auxSatelliteSuppressMapTypeSync:false,
     vworldKey:'',
     ngiiKey:'',
     pnuCorrectionCache:{},
@@ -855,8 +856,9 @@
       const source = input.getAttribute('data-aux-source');
       input.checked = !!state.auxSatelliteActive && state.auxSatelliteSource === source;
       if(source === AUX_SATELLITE_SOURCE_NGII){
-        input.disabled = !state.ngiiKey;
-        input.parentElement && input.parentElement.classList.toggle('is-disabled', !state.ngiiKey);
+        // 체크 자체를 막지 않는다. 키가 없으면 클릭 후 명확한 안내를 띄운다.
+        input.disabled = false;
+        input.parentElement && input.parentElement.classList.toggle('is-disabled', false);
       }
     });
   }
@@ -917,13 +919,26 @@
         }catch(e){}
         if(currentType === AUX_SATELLITE_MAP_TYPE_ID){
           const fallback = state.auxSatellitePrevMapTypeId && state.auxSatellitePrevMapTypeId !== AUX_SATELLITE_MAP_TYPE_ID ? state.auxSatellitePrevMapTypeId : ((naver.maps.MapTypeId && naver.maps.MapTypeId.NORMAL) || 'normal');
+          // 이미 보조위성 상태에서 브이월드↔국토위성만 바꿀 때는
+          // 타일 리로드용으로 지도유형을 잠깐 튕긴다. 이때 mapTypeId_changed 이벤트가
+          // source를 브이월드 기본값으로 되돌리지 못하게 sync를 잠시 막는다.
+          state.auxSatelliteSuppressMapTypeSync = true;
+          state.auxSatelliteActive = true;
+          updateAuxSatellitePicker();
           try{ state.map.setMapTypeId(fallback); }catch(e){}
-          window.setTimeout(function(){ try{ state.map.setMapTypeId(AUX_SATELLITE_MAP_TYPE_ID); }catch(e){} }, 0);
+          window.setTimeout(function(){
+            try{ state.map.setMapTypeId(AUX_SATELLITE_MAP_TYPE_ID); }catch(e){}
+            window.setTimeout(function(){
+              state.auxSatelliteSuppressMapTypeSync = false;
+              state.auxSatelliteActive = true;
+              updateAuxSatellitePicker();
+            }, 0);
+          }, 0);
         }else{
           state.map.setMapTypeId(AUX_SATELLITE_MAP_TYPE_ID);
+          state.auxSatelliteActive = true;
+          updateAuxSatellitePicker();
         }
-        state.auxSatelliteActive = true;
-        updateAuxSatellitePicker();
         const label = state.auxSatelliteSource === AUX_SATELLITE_SOURCE_NGII ? '국토위성' : '브이월드';
         els.mapNote.textContent = '보조위성: ' + label;
         if(!opts.preservePicker) toggleAuxSatellitePicker(true);
@@ -934,6 +949,7 @@
       }
       return;
     }
+    state.auxSatelliteSuppressMapTypeSync = false;
     try{
       const fallback = (naver.maps.MapTypeId && naver.maps.MapTypeId.NORMAL) || 'normal';
       const prev = state.auxSatellitePrevMapTypeId && state.auxSatellitePrevMapTypeId !== AUX_SATELLITE_MAP_TYPE_ID ? state.auxSatellitePrevMapTypeId : fallback;
@@ -947,6 +963,7 @@
   }
 
   function syncAuxSatelliteStateFromMapType(){
+    if(state.auxSatelliteSuppressMapTypeSync) return;
     if(!state.map || !state.map.getMapTypeId) return;
     const active = state.map.getMapTypeId() === AUX_SATELLITE_MAP_TYPE_ID;
     if(state.auxSatelliteActive !== active){

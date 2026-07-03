@@ -20,6 +20,7 @@ module.exports = async function handler(req, res) {
 
   
   const vworldKey = process.env.VWORLD_API_KEY || '';
+  const ngiiKey = process.env.NGII_API_KEY || '';
 
-  return sendJson(res, 200, { ok: true, clientId, vworldKey });
+  return sendJson(res, 200, { ok: true, clientId, vworldKey, ngiiKey });
 };

@@ -65,7 +65,7 @@
     .stat-num span{display:block;margin-top:4px;font-size:10px;font-weight:850;color:var(--muted)}
     .map-note{position:absolute;right:14px;bottom:14px;z-index:20;max-width:360px;padding:10px 12px;border-radius:16px;background:rgba(17,24,39,.86);color:#fff;font-size:12px;font-weight:850;line-height:1.35;box-shadow:0 14px 34px rgba(15,23,42,.22)}
     .map-count-btn{position:absolute;left:50%;bottom:18px;z-index:31;transform:translateX(-50%);height:42px;min-width:112px;padding:0 18px;border-radius:999px;background:rgba(17,24,39,.92);color:#fff;font-size:14px;font-weight:1000;box-shadow:0 14px 34px rgba(15,23,42,.24);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(10px)}
-    .map-count-btn:hover{background:#0f7cff}.map-count-btn.is-zero{background:rgba(100,116,139,.88)}.map-count-btn.is-hidden{display:none}.map-reset-btn{position:absolute;right:160px;top:10px;z-index:40;height:26px;padding:0 9px;border:1px solid #cfd8e3;border-radius:2px;background:#fff;color:#111827;box-shadow:0 1px 3px rgba(15,23,42,.18);font-size:12px;font-weight:1000;line-height:24px;white-space:nowrap}.map-reset-btn.is-native-aligned{top:var(--reset-top,10px);right:var(--reset-right,160px);height:var(--reset-height,26px);line-height:calc(var(--reset-height,26px) - 2px)}.map-reset-btn:hover{background:#f8fafc}
+    .map-count-btn:hover{background:#0f7cff}.map-count-btn.is-zero{background:rgba(100,116,139,.88)}.map-count-btn.is-hidden{display:none}.map-reset-btn{position:absolute;right:160px;top:10px;z-index:40;height:26px;padding:0 9px;border:1px solid #cfd8e3;border-radius:2px;background:#fff;color:#111827;box-shadow:0 1px 3px rgba(15,23,42,.18);font-size:12px;font-weight:1000;line-height:24px;white-space:nowrap}.map-reset-btn.is-native-aligned{top:var(--reset-top,10px);right:var(--reset-right,160px);height:var(--reset-height,26px);line-height:calc(var(--reset-height,26px) - 2px)}.map-reset-btn:hover{background:#f8fafc}.aux-satellite-picker{position:absolute;top:42px;right:14px;z-index:45;display:none;width:98px;padding:5px 7px;border:1px solid #cfd8e3;border-radius:6px;background:rgba(255,255,255,.96);box-shadow:0 4px 12px rgba(15,23,42,.22);font-size:12px;font-weight:950;color:#111827;line-height:1.25;backdrop-filter:blur(8px)}.aux-satellite-picker.is-open{display:block}.aux-satellite-picker.is-native-aligned{top:var(--aux-picker-top,42px);right:var(--aux-picker-right,14px)}.aux-satellite-picker label{display:flex;align-items:center;gap:5px;height:22px;white-space:nowrap;cursor:pointer;user-select:none}.aux-satellite-picker input{width:13px;height:13px;margin:0;accent-color:#0f7cff}.aux-satellite-picker label:hover{color:#0f7cff}.aux-satellite-picker label.is-disabled{opacity:.45;cursor:not-allowed}.aux-satellite-picker label.is-disabled:hover{color:#111827}
     /* 임시 숨김: 필지 기반 매물 현황 / 패치 진단 패널 */
     .map-overlay,.patch-panel{display:none!important}
     .patch-panel{position:absolute;left:14px;bottom:14px;z-index:35;width:360px;max-width:calc(100vw - var(--right) - 44px);max-height:46vh;overflow:auto;padding:12px 13px;border-radius:18px;background:rgba(17,24,39,.92);color:#fff;border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 44px rgba(15,23,42,.28);font-size:12px;font-weight:800;line-height:1.35;pointer-events:auto;backdrop-filter:blur(10px)}
@@ -184,6 +184,10 @@
       <section class="map-wrap">
         <div id="map"></div>
         <button class="map-reset-btn" id="mapResetBtn" type="button">초기화</button>
+        <div class="aux-satellite-picker" id="auxSatellitePicker" aria-label="보조위성" hidden>
+          <label><input type="checkbox" data-aux-source="vworld"> 브이월드</label>
+          <label><input type="checkbox" data-aux-source="ngii"> 국토위성</label>
+        </div>
         <div class="map-overlay">
           <div class="stat-card">
             <div class="stat-title"><span>필지 기반 매물 현황</span><span id="loadState">준비</span></div>
@@ -306,8 +310,10 @@
     ddangyaUrl:'https://ddangya.com/land/detail/',
     naverMapSearchUrl:'https://map.naver.com/p/search/'
   };
-  const AUX_SATELLITE_MAP_TYPE_ID = 'vworldAuxSatellite';
+  const AUX_SATELLITE_MAP_TYPE_ID = 'auxSatellite';
   const AUX_SATELLITE_MAX_ZOOM = 19;
+  const AUX_SATELLITE_SOURCE_VWORLD = 'vworld';
+  const AUX_SATELLITE_SOURCE_NGII = 'ngii';
   // 룩아웃 통합조회와 같은 GAS 직접(JSONP) → 매슬로우 프록시(GET) 순서로 공부조회한다.
   const PUBLIC_PROPERTY_GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
   const state = {
@@ -353,7 +359,11 @@
     auxSatelliteActive:false,
     auxSatellitePrevMapTypeId:null,
     auxSatelliteMapType:null,
+    auxSatelliteSource:AUX_SATELLITE_SOURCE_VWORLD,
+    auxSatellitePickerOpen:false,
+    auxSatelliteTileVersion:0,
     vworldKey:'',
+    ngiiKey:'',
     pnuCorrectionCache:{},
     pnuReverseRunning:new Map(),
     wmsOverlay:null,
@@ -382,7 +392,7 @@
     sidePanel:document.getElementById('sidePanel'),
     detailPanel:document.getElementById('detailPanel'), detailPanelTitle:document.getElementById('detailPanelTitle'), detailPanelSub:document.getElementById('detailPanelSub'), detailPanelBody:document.getElementById('detailPanelBody'), detailHandle:document.getElementById('detailHandle'),
     fixedPanel:document.getElementById('fixedPanel'), panelTitle:document.getElementById('panelTitle'), panelSub:document.getElementById('panelSub'), panelBody:document.getElementById('panelBody'), panelClose:document.getElementById('panelClose'), fixedHandle:document.getElementById('fixedHandle'),
-    loading:document.getElementById('loading'), loadingTitle:document.getElementById('loadingTitle'), loadingText:document.getElementById('loadingText'), loadState:document.getElementById('loadState'), statSub:document.getElementById('statSub'), statTotal:document.getElementById('statTotal'), statShown:document.getElementById('statShown'), statPnu:document.getElementById('statPnu'), statNoPnu:document.getElementById('statNoPnu'), mapNote:document.getElementById('mapNote'), mapCountBtn:document.getElementById('mapCountBtn'), mapResetBtn:document.getElementById('mapResetBtn'),
+    loading:document.getElementById('loading'), loadingTitle:document.getElementById('loadingTitle'), loadingText:document.getElementById('loadingText'), loadState:document.getElementById('loadState'), statSub:document.getElementById('statSub'), statTotal:document.getElementById('statTotal'), statShown:document.getElementById('statShown'), statPnu:document.getElementById('statPnu'), statNoPnu:document.getElementById('statNoPnu'), mapNote:document.getElementById('mapNote'), mapCountBtn:document.getElementById('mapCountBtn'), mapResetBtn:document.getElementById('mapResetBtn'), auxSatellitePicker:document.getElementById('auxSatellitePicker'),
     baseParcelToggle:document.getElementById('baseParcelToggle'), reloadBtn:document.getElementById('reloadBtn'),
     statusModal:document.getElementById('statusModal'), statusModalSub:document.getElementById('statusModalSub'), statusCancel:document.getElementById('statusCancel'), statusSave:document.getElementById('statusSave'),
     memoModal:document.getElementById('memoModal'), memoModalSub:document.getElementById('memoModalSub'), memoTextarea:document.getElementById('memoTextarea'), memoCancel:document.getElementById('memoCancel'), memoSave:document.getElementById('memoSave'),
@@ -686,6 +696,7 @@
     try{
       const data = await fetchJson('/api/route-setting/config', {method:'GET'});
       state.vworldKey = String(data.vworldKey || data.key || '').trim();
+      state.ngiiKey = String(data.ngiiKey || '').trim();
       if(!state.vworldKey) state.debug.lastError = 'VWORLD_API_KEY 없음';
       return data;
     }catch(err){
@@ -720,7 +731,89 @@
     const tileZ = Math.floor(z);
     const key = encodeURIComponent(state.vworldKey);
     const domain = encodeURIComponent(getVworldDomainParam());
-    return 'https://api.vworld.kr/req/wmts/1.0.0/' + key + '/Satellite/' + tileZ + '/' + tileY + '/' + wrappedX + '.jpeg?domain=' + domain;
+    return 'https://api.vworld.kr/req/wmts/1.0.0/' + key + '/Satellite/' + tileZ + '/' + tileY + '/' + wrappedX + '.jpeg?domain=' + domain + '&av=' + encodeURIComponent(state.auxSatelliteTileVersion || 0);
+  }
+
+  function webMercatorTileCenterToLatLng(x, y, z){
+    const n = Math.pow(2, z);
+    const lon = ((Number(x) + 0.5) / n) * 360 - 180;
+    const latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * ((Number(y) + 0.5) / n))));
+    return {lat:latRad * 180 / Math.PI, lng:lon};
+  }
+
+  function projectLonLatToEpsg5179(lon, lat){
+    const deg = Math.PI / 180;
+    const a = 6378137;
+    const f = 1 / 298.257222101;
+    const e2 = 2 * f - f * f;
+    const ep2 = e2 / (1 - e2);
+    const k0 = 0.9996;
+    const lat0 = 38 * deg;
+    const lon0 = 127.5 * deg;
+    const falseE = 1000000;
+    const falseN = 2000000;
+    const phi = Number(lat) * deg;
+    const lam = Number(lon) * deg;
+    if(!Number.isFinite(phi) || !Number.isFinite(lam)) return null;
+    const e4 = e2 * e2;
+    const e6 = e4 * e2;
+    function meridianArc(p){
+      return a * ((1 - e2/4 - 3*e4/64 - 5*e6/256) * p
+        - (3*e2/8 + 3*e4/32 + 45*e6/1024) * Math.sin(2*p)
+        + (15*e4/256 + 45*e6/1024) * Math.sin(4*p)
+        - (35*e6/3072) * Math.sin(6*p));
+    }
+    const sinPhi = Math.sin(phi);
+    const cosPhi = Math.cos(phi);
+    const tanPhi = Math.tan(phi);
+    const N = a / Math.sqrt(1 - e2 * sinPhi * sinPhi);
+    const T = tanPhi * tanPhi;
+    const C = ep2 * cosPhi * cosPhi;
+    const A = (lam - lon0) * cosPhi;
+    const M = meridianArc(phi);
+    const M0 = meridianArc(lat0);
+    const x5179 = falseE + k0 * N * (A + (1 - T + C) * Math.pow(A,3) / 6 + (5 - 18*T + T*T + 72*C - 58*ep2) * Math.pow(A,5) / 120);
+    const y5179 = falseN + k0 * ((M - M0) + N * tanPhi * (A*A/2 + (5 - T + 9*C + 4*C*C) * Math.pow(A,4) / 24 + (61 - 58*T + T*T + 600*C - 330*ep2) * Math.pow(A,6) / 720));
+    return {x:x5179, y:y5179};
+  }
+
+  function buildNgiiSatelliteTileUrl(x, y, z){
+    if(!state.ngiiKey) return '';
+    const tileZ = Math.floor(Number(z));
+    if(!Number.isFinite(tileZ) || tileZ < 6) return '';
+    const p = webMercatorTileCenterToLatLng(x, y, tileZ);
+    const projected = projectLonLatToEpsg5179(p.lng, p.lat);
+    if(!projected) return '';
+    // 국토정보플랫폼 OpenAPI 예제는 EPSG:5179 WMTS 기반이다.
+    // 네이버 지도 위 ImageMapType에 얹기 위해 WebMercator 타일 중심점을 EPSG:5179 WMTS 타일로 근사 매핑한다.
+    const resolutions = [2088.96,1044.48,522.24,261.12,130.56,65.28,32.64,16.32,8.16,4.08,2.04,1.02,0.51,0.255];
+    const matrixLevel = Math.max(5, Math.min(18, tileZ - 1));
+    const resolution = resolutions[matrixLevel - 5];
+    const originX = -200000.0;
+    const originY = 4000000.0;
+    const span = resolution * 256;
+    const tileCol = Math.floor((projected.x - originX) / span);
+    const tileRow = Math.floor((originY - projected.y) / span);
+    if(!Number.isFinite(tileCol) || !Number.isFinite(tileRow) || tileCol < 0 || tileRow < 0) return '';
+    const key = encodeURIComponent(state.ngiiKey);
+    const matrixId = 'L' + String(matrixLevel).padStart(2, '0');
+    const params = new URLSearchParams();
+    params.set('SERVICE', 'WMTS');
+    params.set('REQUEST', 'GetTile');
+    params.set('VERSION', '1.0.0');
+    params.set('LAYER', 'satellite_map');
+    params.set('STYLE', 'satellite');
+    params.set('FORMAT', 'image/png');
+    params.set('TILEMATRIXSET', 'EPSG:5179');
+    params.set('TILEMATRIX', matrixId);
+    params.set('TILECOL', String(tileCol));
+    params.set('TILEROW', String(tileRow));
+    return 'https://map.ngii.go.kr/openapi/Gettile.do?apikey=' + key + '&' + params.toString() + '&av=' + encodeURIComponent(state.auxSatelliteTileVersion || 0);
+  }
+
+  function buildAuxSatelliteTileUrl(x, y, z){
+    if(state.auxSatelliteSource === AUX_SATELLITE_SOURCE_NGII) return buildNgiiSatelliteTileUrl(x, y, z);
+    return buildVworldSatelliteTileUrl(x, y, z);
   }
 
   function ensureAuxSatelliteMapType(){
@@ -733,26 +826,69 @@
       tileSize:new naver.maps.Size(256, 256),
       projection:naver.maps.EPSG3857,
       repeatX:true,
-      getTileUrl:function(x, y, z){ return buildVworldSatelliteTileUrl(x, y, z); }
+      getTileUrl:function(x, y, z){ return buildAuxSatelliteTileUrl(x, y, z); }
     });
     state.map.mapTypes.set(AUX_SATELLITE_MAP_TYPE_ID, state.auxSatelliteMapType);
     return state.auxSatelliteMapType;
   }
 
-  function updateAuxSatelliteButton(){
-    if(!els.auxSatelliteBtn) return;
-    const active = !!state.auxSatelliteActive;
-    els.auxSatelliteBtn.classList.toggle('is-active', active);
-    els.auxSatelliteBtn.textContent = active ? '보조위성 ON' : '보조위성';
-    els.auxSatelliteBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  function updateAuxSatellitePicker(){
+    if(!els.auxSatellitePicker) return;
+    const inputs = Array.from(els.auxSatellitePicker.querySelectorAll('input[data-aux-source]'));
+    inputs.forEach(input => {
+      const source = input.getAttribute('data-aux-source');
+      input.checked = !!state.auxSatelliteActive && state.auxSatelliteSource === source;
+      if(source === AUX_SATELLITE_SOURCE_NGII){
+        input.disabled = !state.ngiiKey;
+        input.parentElement && input.parentElement.classList.toggle('is-disabled', !state.ngiiKey);
+      }
+    });
   }
 
-  function setAuxSatelliteActive(active){
+  function toggleAuxSatellitePicker(open){
+    if(!els.auxSatellitePicker) return;
+    const next = typeof open === 'boolean' ? open : !state.auxSatellitePickerOpen;
+    state.auxSatellitePickerOpen = next;
+    els.auxSatellitePicker.hidden = !next;
+    els.auxSatellitePicker.classList.toggle('is-open', next);
+    if(next){
+      alignAuxSatellitePickerToMapTypeControl();
+      updateAuxSatellitePicker();
+    }
+  }
+
+  function setAuxSatelliteSource(source){
+    const nextSource = source === AUX_SATELLITE_SOURCE_NGII ? AUX_SATELLITE_SOURCE_NGII : AUX_SATELLITE_SOURCE_VWORLD;
+    if(nextSource === AUX_SATELLITE_SOURCE_VWORLD && !state.vworldKey){
+      els.mapNote.textContent = '보조위성 표시 실패: VWORLD_API_KEY가 없습니다.';
+      updateAuxSatellitePicker();
+      return;
+    }
+    if(nextSource === AUX_SATELLITE_SOURCE_NGII && !state.ngiiKey){
+      els.mapNote.textContent = '국토위성 표시 실패: NGII_API_KEY가 없습니다.';
+      updateAuxSatellitePicker();
+      return;
+    }
+    state.auxSatelliteSource = nextSource;
+    state.auxSatelliteTileVersion += 1;
+    state.auxSatelliteMapType = null;
+    try{ ensureAuxSatelliteMapType(); }catch(e){}
+    setAuxSatelliteActive(true, {preservePicker:true});
+    updateAuxSatellitePicker();
+  }
+
+  function setAuxSatelliteActive(active, options){
     if(!state.mapReady || !state.map) return;
+    const opts = options || {};
     if(active){
-      if(!state.vworldKey){
-        alert('VWORLD_API_KEY가 없어 보조위성을 켤 수 없습니다.');
+      if(state.auxSatelliteSource === AUX_SATELLITE_SOURCE_NGII && !state.ngiiKey){
+        els.mapNote.textContent = '국토위성 표시 실패: NGII_API_KEY가 없습니다.';
+        updateAuxSatellitePicker();
+        return;
+      }
+      if(state.auxSatelliteSource !== AUX_SATELLITE_SOURCE_NGII && !state.vworldKey){
         els.mapNote.textContent = '보조위성 표시 실패: VWORLD_API_KEY가 없습니다.';
+        updateAuxSatellitePicker();
         return;
       }
       try{
@@ -763,13 +899,21 @@
           const z = state.map.getZoom && Number(state.map.getZoom());
           if(Number.isFinite(z) && z > AUX_SATELLITE_MAX_ZOOM) state.map.setZoom(AUX_SATELLITE_MAX_ZOOM);
         }catch(e){}
-        state.map.setMapTypeId(AUX_SATELLITE_MAP_TYPE_ID);
+        if(currentType === AUX_SATELLITE_MAP_TYPE_ID){
+          const fallback = state.auxSatellitePrevMapTypeId && state.auxSatellitePrevMapTypeId !== AUX_SATELLITE_MAP_TYPE_ID ? state.auxSatellitePrevMapTypeId : ((naver.maps.MapTypeId && naver.maps.MapTypeId.NORMAL) || 'normal');
+          try{ state.map.setMapTypeId(fallback); }catch(e){}
+          window.setTimeout(function(){ try{ state.map.setMapTypeId(AUX_SATELLITE_MAP_TYPE_ID); }catch(e){} }, 0);
+        }else{
+          state.map.setMapTypeId(AUX_SATELLITE_MAP_TYPE_ID);
+        }
         state.auxSatelliteActive = true;
-        updateAuxSatelliteButton();
-        els.mapNote.textContent = '보조위성 ON: 브이월드 Satellite WMTS로 신축 여부를 보조 확인합니다. 매물핀/폴리곤/필지선 로직은 그대로 유지됩니다.';
+        updateAuxSatellitePicker();
+        const label = state.auxSatelliteSource === AUX_SATELLITE_SOURCE_NGII ? '국토위성' : '브이월드';
+        els.mapNote.textContent = '보조위성: ' + label;
+        if(!opts.preservePicker) toggleAuxSatellitePicker(true);
       }catch(err){
         state.auxSatelliteActive = false;
-        updateAuxSatelliteButton();
+        updateAuxSatellitePicker();
         els.mapNote.textContent = '보조위성 표시 실패: ' + (err.message || err);
       }
       return;
@@ -780,7 +924,8 @@
       state.map.setMapTypeId(prev);
     }catch(e){}
     state.auxSatelliteActive = false;
-    updateAuxSatelliteButton();
+    updateAuxSatellitePicker();
+    toggleAuxSatellitePicker(false);
     els.mapNote.textContent = '보조위성을 껐습니다. 기존 네이버 지도 유형으로 돌아갑니다.';
   }
 
@@ -794,12 +939,79 @@
           const z = state.map.getZoom && Number(state.map.getZoom());
           if(Number.isFinite(z) && z > AUX_SATELLITE_MAX_ZOOM) state.map.setZoom(AUX_SATELLITE_MAX_ZOOM);
         }catch(e){}
-        if(els.mapNote) els.mapNote.textContent = '보조위성 ON: 브이월드 Satellite WMTS로 신축 여부를 보조 확인합니다. 매물핀/폴리곤/필지선 로직은 그대로 유지됩니다.';
+        if(els.mapNote){
+          const label = state.auxSatelliteSource === AUX_SATELLITE_SOURCE_NGII ? '국토위성' : '브이월드';
+          els.mapNote.textContent = '보조위성: ' + label;
+        }
+        toggleAuxSatellitePicker(true);
+      }else{
+        toggleAuxSatellitePicker(false);
       }
-      updateAuxSatelliteButton();
+      updateAuxSatellitePicker();
     }
   }
 
+  function handleAuxSatellitePickerChange(event){
+    const input = event && event.target && event.target.closest ? event.target.closest('input[data-aux-source]') : null;
+    if(!input) return;
+    const source = input.getAttribute('data-aux-source');
+    if(input.checked){
+      setAuxSatelliteSource(source);
+    }else{
+      setAuxSatelliteActive(false);
+    }
+  }
+
+  function isAuxSatelliteControlClickTarget(target){
+    let node = target;
+    while(node && node !== document && node !== els.mapWrap){
+      const text = (node.textContent || '').replace(/\s+/g, '');
+      if(text === '보조위성' || text === '보조위성ON') return true;
+      node = node.parentElement;
+    }
+    return false;
+  }
+
+  function bindAuxSatellitePickerEvents(){
+    if(els.auxSatellitePicker && !els.auxSatellitePicker.dataset.bound){
+      els.auxSatellitePicker.dataset.bound = '1';
+      els.auxSatellitePicker.addEventListener('change', handleAuxSatellitePickerChange);
+      els.auxSatellitePicker.addEventListener('click', function(event){ event.stopPropagation(); });
+    }
+    if(els.mapWrap && !els.mapWrap.dataset.auxPickerBound){
+      els.mapWrap.dataset.auxPickerBound = '1';
+      els.mapWrap.addEventListener('click', function(event){
+        if(isAuxSatelliteControlClickTarget(event.target)){
+          window.setTimeout(function(){ toggleAuxSatellitePicker(true); }, 60);
+        }
+      }, true);
+    }
+    if(!document.documentElement.dataset.auxPickerDocBound){
+      document.documentElement.dataset.auxPickerDocBound = '1';
+      document.addEventListener('click', function(event){
+        if(!state.auxSatellitePickerOpen) return;
+        if(els.auxSatellitePicker && els.auxSatellitePicker.contains(event.target)) return;
+        if(isAuxSatelliteControlClickTarget(event.target)) return;
+        toggleAuxSatellitePicker(false);
+      }, true);
+    }
+  }
+
+  function alignAuxSatellitePickerToMapTypeControl(){
+    if(!els.auxSatellitePicker || !els.mapWrap) return;
+    const control = findNativeMapTypeControlElement();
+    if(!control){
+      els.auxSatellitePicker.classList.remove('is-native-aligned');
+      return;
+    }
+    const wrapRect = els.mapWrap.getBoundingClientRect();
+    const rect = control.getBoundingClientRect();
+    const top = Math.max(8, Math.round(rect.bottom - wrapRect.top + 5));
+    const right = Math.max(8, Math.round(wrapRect.right - rect.right));
+    els.auxSatellitePicker.classList.add('is-native-aligned');
+    els.auxSatellitePicker.style.setProperty('--aux-picker-top', top + 'px');
+    els.auxSatellitePicker.style.setProperty('--aux-picker-right', right + 'px');
+  }
 
   function findNativeMapTypeControlElement(){
     if(!els.mapWrap) return null;
@@ -848,7 +1060,7 @@
 
   function scheduleResetButtonAlignment(){
     [0, 120, 350, 800, 1400].forEach(delay => {
-      window.setTimeout(alignResetButtonToMapTypeControl, delay);
+      window.setTimeout(function(){ alignResetButtonToMapTypeControl(); alignAuxSatellitePickerToMapTypeControl(); bindAuxSatellitePickerEvents(); }, delay);
     });
   }
 
@@ -1215,10 +1427,11 @@
     });
     state.mapReady = true;
     try{ ensureAuxSatelliteMapType(); }catch(e){ console.warn('[parcel-map] aux satellite map type register failed', e); }
+    bindAuxSatellitePickerEvents();
     scheduleResetButtonAlignment();
     scheduleMapResize();
     [700, 1400].forEach(delay => window.setTimeout(forceMapResize, delay));
-    window.addEventListener('resize', function(){ forceMapResize(); scheduleResetButtonAlignment(); });
+    window.addEventListener('resize', function(){ forceMapResize(); scheduleResetButtonAlignment(); alignAuxSatellitePickerToMapTypeControl(); });
     try{
       if(window.ResizeObserver && els.mapWrap){
         const ro = new ResizeObserver(function(){ scheduleMapResize(); });

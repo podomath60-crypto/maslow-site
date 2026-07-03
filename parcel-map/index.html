@@ -359,6 +359,7 @@
     auxSatelliteActive:false,
     auxSatellitePrevMapTypeId:null,
     auxSatelliteMapType:null,
+    auxSatelliteMapTypeRegistered:false,
     auxSatelliteSource:AUX_SATELLITE_SOURCE_VWORLD,
     auxSatellitePickerOpen:false,
     auxSatelliteTileVersion:0,
@@ -817,31 +818,30 @@
   }
 
   function ensureAuxSatelliteMapType(){
-    if(state.auxSatelliteMapType){
-      try{
-        if(state.map && state.map.mapTypes && !state.map.mapTypes.get(AUX_SATELLITE_MAP_TYPE_ID)){
-          state.map.mapTypes.set(AUX_SATELLITE_MAP_TYPE_ID, state.auxSatelliteMapType);
-        }
-      }catch(e){}
-      return state.auxSatelliteMapType;
-    }
-    if(!window.naver || !naver.maps || !naver.maps.ImageMapType || !state.map) return null;
+    if(state.auxSatelliteMapType) return state.auxSatelliteMapType;
+    if(!window.naver || !naver.maps || !naver.maps.ImageMapType) throw new Error('네이버 ImageMapType을 사용할 수 없습니다.');
     state.auxSatelliteMapType = new naver.maps.ImageMapType({
       name:'보조위성',
-      minZoom:6,
+      minZoom:7,
       maxZoom:AUX_SATELLITE_MAX_ZOOM,
       tileSize:new naver.maps.Size(256, 256),
-      projection:state.map.getProjection ? state.map.getProjection() : null,
+      projection:naver.maps.EPSG3857,
       repeatX:true,
       getTileUrl:function(x, y, z){ return buildAuxSatelliteTileUrl(x, y, z); }
     });
-    try{ state.map.mapTypes.set(AUX_SATELLITE_MAP_TYPE_ID, state.auxSatelliteMapType); }catch(e){}
+    // 네이버 기본 지도타입 컨트롤에 보조위성이 계속 늘어나는 원인은
+    // 소스 변경 때마다 ImageMapType을 새로 만들고 mapTypes.set을 반복한 데 있다.
+    // 커스텀 지도유형은 한 번만 등록하고, 소스 변경은 getTileUrl 내부 분기로 처리한다.
+    if(state.map && state.map.mapTypes && !state.auxSatelliteMapTypeRegistered){
+      state.map.mapTypes.set(AUX_SATELLITE_MAP_TYPE_ID, state.auxSatelliteMapType);
+      state.auxSatelliteMapTypeRegistered = true;
+    }
     return state.auxSatelliteMapType;
   }
 
   function resetAuxSatelliteSourceToDefault(){
-    // 보조위성 기본값은 항상 브이월드.
-    // ImageMapType은 한 번만 등록해야 네이버 지도 타입 컨트롤에 보조위성 버튼이 계속 늘어나지 않는다.
+    // 보조위성 기본값은 항상 브이월드로 둔다.
+    // 국토위성은 사용자가 체크했을 때만 임시 선택되고, 보조위성을 끄면 다시 브이월드로 복귀한다.
     if(state.auxSatelliteSource !== AUX_SATELLITE_SOURCE_VWORLD){
       state.auxSatelliteSource = AUX_SATELLITE_SOURCE_VWORLD;
       state.auxSatelliteTileVersion += 1;
@@ -874,41 +874,22 @@
     }
   }
 
-  function refreshAuxSatelliteMapTypeTiles(){
-    if(!state.map || !state.map.getMapTypeId) return;
-    if(state.map.getMapTypeId() !== AUX_SATELLITE_MAP_TYPE_ID) return;
-    const fallback = state.auxSatellitePrevMapTypeId && state.auxSatellitePrevMapTypeId !== AUX_SATELLITE_MAP_TYPE_ID
-      ? state.auxSatellitePrevMapTypeId
-      : ((naver.maps.MapTypeId && naver.maps.MapTypeId.NORMAL) || 'normal');
-    try{ state.map.setMapTypeId(fallback); }catch(e){}
-    window.setTimeout(function(){
-      try{ state.map.setMapTypeId(AUX_SATELLITE_MAP_TYPE_ID); }catch(e){}
-    }, 0);
-  }
-
   function setAuxSatelliteSource(source){
     const nextSource = source === AUX_SATELLITE_SOURCE_NGII ? AUX_SATELLITE_SOURCE_NGII : AUX_SATELLITE_SOURCE_VWORLD;
-    if(nextSource === AUX_SATELLITE_SOURCE_NGII){
-      // 국토위성 OpenAPI 공식 예제는 OpenLayers/EPSG:5179 방식이다.
-      // 네이버 ImageMapType에 직접 얹는 임시 URL은 지역에 따라 빈 타일/오류가 나서 지도 부팅과 컨트롤을 깨뜨릴 수 있으므로,
-      // 일단 실사용 보조위성은 브이월드로 유지한다. 국토위성은 별도 OpenLayers 오버레이로 다시 붙인다.
-      state.auxSatelliteSource = AUX_SATELLITE_SOURCE_VWORLD;
-      state.auxSatelliteTileVersion += 1;
-      if(els.mapNote) els.mapNote.textContent = '국토위성은 별도 방식으로 다시 붙입니다. 현재 보조위성은 브이월드로 유지합니다.';
-      setAuxSatelliteActive(true, {preservePicker:true});
-      updateAuxSatellitePicker();
-      return;
-    }
-    if(!state.vworldKey){
+    if(nextSource === AUX_SATELLITE_SOURCE_VWORLD && !state.vworldKey){
       els.mapNote.textContent = '보조위성 표시 실패: VWORLD_API_KEY가 없습니다.';
       updateAuxSatellitePicker();
       return;
     }
-    state.auxSatelliteSource = AUX_SATELLITE_SOURCE_VWORLD;
+    if(nextSource === AUX_SATELLITE_SOURCE_NGII && !state.ngiiKey){
+      els.mapNote.textContent = '국토위성 표시 실패: NGII_API_KEY가 없습니다.';
+      updateAuxSatellitePicker();
+      return;
+    }
+    state.auxSatelliteSource = nextSource;
     state.auxSatelliteTileVersion += 1;
-    ensureAuxSatelliteMapType();
+    try{ ensureAuxSatelliteMapType(); }catch(e){}
     setAuxSatelliteActive(true, {preservePicker:true});
-    refreshAuxSatelliteMapTypeTiles();
     updateAuxSatellitePicker();
   }
 
@@ -971,7 +952,6 @@
     if(state.auxSatelliteActive !== active){
       state.auxSatelliteActive = active;
       if(active){
-        if(!state.auxSatelliteSource) resetAuxSatelliteSourceToDefault();
         try{
           const z = state.map.getZoom && Number(state.map.getZoom());
           if(Number.isFinite(z) && z > AUX_SATELLITE_MAX_ZOOM) state.map.setZoom(AUX_SATELLITE_MAX_ZOOM);
@@ -1064,7 +1044,7 @@
       const rect = node.getBoundingClientRect();
       const width = rect.width;
       const height = rect.height;
-      if(width < 45 || width > 360 || height < 18 || height > 60) return;
+      if(width < 45 || width > 260 || height < 18 || height > 60) return;
       if(rect.top < wrapRect.top || rect.left < wrapRect.left) return;
       if(rect.top - wrapRect.top > 90) return;
       if(wrapRect.right - rect.right > 100) return;

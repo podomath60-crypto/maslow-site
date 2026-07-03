@@ -734,7 +734,7 @@
       tileSize:new naver.maps.Size(256, 256),
       projection:naver.maps.EPSG3857,
       repeatX:true,
-      getTile:function(x, y, z){ return buildVworldSatelliteTileUrl(x, y, z); }
+      getTileUrl:function(x, y, z){ return buildVworldSatelliteTileUrl(x, y, z); }
     });
     state.map.mapTypes.set(AUX_SATELLITE_MAP_TYPE_ID, state.auxSatelliteMapType);
     return state.auxSatelliteMapType;

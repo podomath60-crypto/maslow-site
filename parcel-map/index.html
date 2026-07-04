@@ -1429,7 +1429,7 @@
       state.roadviewMiniZoom = rv.miniZoom === 17 ? 17 : 16;
       const rvPos = plainToLatLng(rv.position);
       if(snap.mode === 'roadview' && rvPos){
-        openRoadviewAt(rvPos, {fromHistory:true});
+        openRoadviewAt(rvPos, {fromHistory:true, roadviewMode:rv.pick !== false});
       }else{
         if(state.roadviewVisible) closeRoadview({fromHistory:true});
         setRoadviewMode(snap.mode === 'roadviewPick', {fromHistory:true});
@@ -1874,15 +1874,16 @@
     if(!coord || !window.naver || !naver.maps || !naver.maps.Panorama || !els.roadviewLayer || !els.roadviewView) return false;
     try{
       state.roadviewPosition = coord;
-      try{ closePanel(); }catch(e){}
+      // 로드뷰는 지도 위 확인 화면만 덮는다.
+      // 로드뷰 진입 당시의 오른쪽 패널/목록/공부조회 내용은 닫거나 초기화하지 않는다.
       try{ if(state.map && state.map.panTo) state.map.panTo(coord); }catch(e){}
       els.roadviewLayer.hidden = false;
       state.roadviewVisible = true;
-      state.roadviewMode = false;
+      state.roadviewMode = (typeof openOpts.roadviewMode === 'boolean') ? !!openOpts.roadviewMode : true;
       if(typeof state.roadviewMiniCollapsed !== 'boolean') state.roadviewMiniCollapsed = false;
       pinRoadviewMiniMap();
-      const streetLayer = state.roadviewStreetLayer;
-      if(streetLayer){ try{ streetLayer.setMap(null); }catch(e){} }
+      const streetLayer = ensureRoadviewStreetLayer();
+      if(streetLayer){ try{ streetLayer.setMap(state.roadviewMode ? state.map : null); }catch(e){} }
       updateRoadviewButton();
       if(!openOpts.fromHistory) pushRoadviewHistoryState();
       if(!state.roadviewPanorama){
@@ -1917,13 +1918,16 @@
   function closeRoadview(options){
     const opts = options || {};
     state.roadviewVisible = false;
-    state.roadviewMode = false;
+    // 지도보기는 로드뷰 화면만 닫는다. 로드뷰 가능 도로선/선택 모드는 유지한다.
+    // 히스토리 복원에서 완전히 꺼야 할 때는 뒤에서 setRoadviewMode(false,{fromHistory:true})가 다시 정리한다.
+    if(opts.disableRoadviewMode) state.roadviewMode = false;
+    else state.roadviewMode = true;
     if(els.roadviewLayer) els.roadviewLayer.hidden = true;
     if(els.roadviewMiniMap){ try{ els.roadviewMiniMap.style.display = ''; els.roadviewMiniMap.style.visibility = ''; els.roadviewMiniMap.classList.remove('is-collapsed'); }catch(e){} }
     if(els.roadviewMiniToggle){ try{ els.roadviewMiniToggle.style.display = ''; els.roadviewMiniToggle.style.visibility = ''; els.roadviewMiniToggle.classList.remove('is-collapsed'); }catch(e){} }
     if(els.roadviewMiniZoomToggle){ try{ els.roadviewMiniZoomToggle.style.display = 'none'; els.roadviewMiniZoomToggle.style.visibility = 'hidden'; }catch(e){} }
-    const streetLayer = state.roadviewStreetLayer;
-    if(streetLayer){ try{ streetLayer.setMap(null); }catch(e){} }
+    const streetLayer = ensureRoadviewStreetLayer();
+    if(streetLayer){ try{ streetLayer.setMap(state.roadviewMode ? state.map : null); }catch(e){} }
     if(state.roadviewMiniStreetLayer){ try{ state.roadviewMiniStreetLayer.setMap(null); }catch(e){} }
     clearRoadviewHistoryReplaceTimer();
     clearRoadviewMiniListingDots();

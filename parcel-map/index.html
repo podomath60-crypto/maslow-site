@@ -51,6 +51,8 @@
     .top-btn{height:38px;padding:0 12px;border-radius:12px;background:#111827;color:#fff;font-weight:950;font-size:13px;box-shadow:0 8px 20px rgba(17,24,39,.15)}
     .top-btn.ghost{background:#fff;color:#263445;border:1px solid var(--line);box-shadow:none}
     .main{position:relative;display:flex;min-height:0;height:calc(100vh - var(--top));}
+    .main.is-roadview-cover .right-panels{display:none!important}
+    .main.is-roadview-cover .map-wrap{flex:1 1 100%!important;width:100%!important}
     .map-wrap{position:relative;min-width:0;min-height:0;background:#eaf0f6;flex:1 1 auto;overflow:hidden}
     #map{position:absolute;inset:0;width:100%;height:100%;min-height:360px}
     .vworld-wms-overlay{position:absolute;inset:0;z-index:8;pointer-events:none;overflow:hidden}
@@ -1190,12 +1192,22 @@
     }catch(e){}
   }
 
+  function setRoadviewCoverLayout(active){
+    try{
+      const main = els.mapWrap && els.mapWrap.closest ? els.mapWrap.closest('.main') : null;
+      if(main) main.classList.toggle('is-roadview-cover', !!active);
+      // 패널 내용은 닫거나 초기화하지 않고 화면에서만 숨긴다.
+      // 로드뷰에서 나오면 들어가기 직전의 리스트/상세/공부조회 상태가 그대로 다시 보인다.
+    }catch(e){}
+  }
+
   function updateRoadviewButton(){
     if(els.roadviewToggleBtn) els.roadviewToggleBtn.classList.toggle('is-active', !!state.roadviewMode || !!state.roadviewVisible);
     if(els.mapWrap){
       els.mapWrap.classList.toggle('is-roadview-pick', !!state.roadviewMode && !state.roadviewVisible);
       els.mapWrap.classList.toggle('is-roadview-open', !!state.roadviewVisible);
     }
+    setRoadviewCoverLayout(!!state.roadviewVisible);
     applyMapCursorMode();
   }
 
@@ -1885,6 +1897,8 @@
       const streetLayer = ensureRoadviewStreetLayer();
       if(streetLayer){ try{ streetLayer.setMap(state.roadviewMode ? state.map : null); }catch(e){} }
       updateRoadviewButton();
+      scheduleMapResize();
+      scheduleRoadviewResize();
       if(!openOpts.fromHistory) pushRoadviewHistoryState();
       if(!state.roadviewPanorama){
         state.roadviewPanorama = new naver.maps.Panorama(els.roadviewView, {
@@ -1910,6 +1924,7 @@
     }catch(e){
       state.roadviewVisible = false;
       if(els.roadviewLayer) els.roadviewLayer.hidden = true;
+      setRoadviewCoverLayout(false);
       updateRoadviewButton();
       return false;
     }
@@ -1923,6 +1938,7 @@
     if(opts.disableRoadviewMode) state.roadviewMode = false;
     else state.roadviewMode = true;
     if(els.roadviewLayer) els.roadviewLayer.hidden = true;
+    setRoadviewCoverLayout(false);
     if(els.roadviewMiniMap){ try{ els.roadviewMiniMap.style.display = ''; els.roadviewMiniMap.style.visibility = ''; els.roadviewMiniMap.classList.remove('is-collapsed'); }catch(e){} }
     if(els.roadviewMiniToggle){ try{ els.roadviewMiniToggle.style.display = ''; els.roadviewMiniToggle.style.visibility = ''; els.roadviewMiniToggle.classList.remove('is-collapsed'); }catch(e){} }
     if(els.roadviewMiniZoomToggle){ try{ els.roadviewMiniZoomToggle.style.display = 'none'; els.roadviewMiniZoomToggle.style.visibility = 'hidden'; }catch(e){} }

@@ -391,6 +391,10 @@
     roadviewHistoryChanging:false,
     roadviewHistoryBackTimer:null,
     roadviewHistoryReplaceTimer:null,
+    parcelHistoryReady:false,
+    parcelHistoryApplying:false,
+    parcelHistoryReplaceTimer:null,
+    parcelHistoryLastAction:'',
     roadviewPanoListeners:[],
     roadviewPosition:null,
     roadviewPovPan:0,
@@ -1012,6 +1016,7 @@
       }
       updateAuxSatellitePicker();
     }
+    if(!state.parcelHistoryApplying && !state.auxSatelliteSuppressMapTypeSync) pushParcelHistoryState('map-type-change');
   }
 
   function handleAuxSatellitePickerChange(event){
@@ -1020,8 +1025,10 @@
     const source = input.getAttribute('data-aux-source');
     if(input.checked){
       setAuxSatelliteSource(source);
+      pushParcelHistoryState('aux-source-change');
     }else{
       setAuxSatelliteActive(false);
+      pushParcelHistoryState('aux-off');
     }
   }
 
@@ -1199,7 +1206,8 @@
     return state.roadviewStreetLayer;
   }
 
-  function setRoadviewMode(active){
+  function setRoadviewMode(active, options){
+    const historyOpts = options || {};
     if(!state.mapReady || !state.map) return;
     state.roadviewMode = !!active;
     if(state.roadviewMode) toggleAuxSatellitePicker(false);
@@ -1208,6 +1216,235 @@
       try{ streetLayer.setMap(state.roadviewMode ? state.map : null); }catch(e){}
     }
     updateRoadviewButton();
+    if(!historyOpts.fromHistory) pushParcelHistoryState(state.roadviewMode ? 'roadview-mode-on' : 'roadview-mode-off');
+  }
+
+
+  function clonePlainObject(value){
+    try{ return JSON.parse(JSON.stringify(value || null)); }catch(e){ return value && typeof value === 'object' ? Object.assign({}, value) : null; }
+  }
+  function itemByListingNumber(listingNumber){
+    const key = String(listingNumber || '').trim();
+    if(!key) return null;
+    return (state.items || []).find(function(item){ return String(item && item.listingNumber || '') === key; }) || null;
+  }
+  function itemNumbersFromItems(items){
+    return (Array.isArray(items) ? items : []).map(function(item){ return item && item.listingNumber; }).filter(Boolean).map(String);
+  }
+  function itemsFromNumbers(numbers){
+    const seen = new Set();
+    return (Array.isArray(numbers) ? numbers : []).map(function(no){
+      const key = String(no || '').trim();
+      if(!key || seen.has(key)) return null;
+      seen.add(key);
+      return itemByListingNumber(key);
+    }).filter(Boolean);
+  }
+  function latLngPlain(pos){
+    if(!pos) return null;
+    const lat = latLngNumber(pos, 'lat');
+    const lng = latLngNumber(pos, 'lng');
+    if(!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return {lat:lat, lng:lng};
+  }
+  function plainToLatLng(point){
+    if(!point || !window.naver || !naver.maps) return null;
+    const lat = Number(point.lat), lng = Number(point.lng);
+    if(!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return new naver.maps.LatLng(lat, lng);
+  }
+  function currentMapSnapshot(){
+    let center = null;
+    let zoom = null;
+    let mapTypeId = null;
+    try{ center = latLngPlain(state.map && state.map.getCenter && state.map.getCenter()); }catch(e){}
+    try{ zoom = state.map && state.map.getZoom ? Number(state.map.getZoom()) : null; }catch(e){}
+    try{ mapTypeId = state.map && state.map.getMapTypeId ? String(state.map.getMapTypeId()) : ''; }catch(e){}
+    return {center:center, zoom:Number.isFinite(zoom) ? zoom : null, mapTypeId:mapTypeId || ''};
+  }
+  function currentParcelHistoryState(action, extra){
+    const mapSnap = currentMapSnapshot();
+    const rvPos = latLngPlain(readRoadviewPosition() || state.roadviewPosition);
+    const ourItems = state.ourSearch && Array.isArray(state.ourSearch.items) ? state.ourSearch.items : [];
+    const payload = {
+      maslowParcelMap:true,
+      historyVersion:2,
+      action:action || 'state',
+      savedAt:Date.now(),
+      mode:state.roadviewVisible ? 'roadview' : (state.roadviewMode ? 'roadviewPick' : 'map'),
+      map:centerSafeHistory(mapSnap.center),
+      zoom:mapSnap.zoom,
+      mapTypeId:mapSnap.mapTypeId,
+      auxSatelliteActive:!!state.auxSatelliteActive,
+      auxSatelliteSource:state.auxSatelliteSource || AUX_SATELLITE_SOURCE_VWORLD,
+      showBaseParcels:!!state.showBaseParcels,
+      filters:clonePlainObject(state.filters) || {},
+      panelMode:state.panelMode || 'default',
+      fixedMode:state.fixedMode || 'none',
+      detailMode:state.detailMode || 'none',
+      collapsedPanels:clonePlainObject(state.collapsedPanels) || {detail:false,fixed:false},
+      selectedListingNumber:state.selectedItem && state.selectedItem.listingNumber ? String(state.selectedItem.listingNumber) : '',
+      selectedPnu:String(state.selectedPnu || ''),
+      selectedCandidateNumbers:itemNumbersFromItems(state.selectedCandidates),
+      selectedParcelPnu:state.selectedParcel && state.selectedParcel.pnu ? String(state.selectedParcel.pnu) : '',
+      panelCardNumbers:itemNumbersFromItems(state.panelCardItems),
+      visibleMapNumbers:itemNumbersFromItems(state.visibleMapItems),
+      ourSearch:{query:String(state.ourSearch && state.ourSearch.query || ''), filtersLabel:String(state.ourSearch && state.ourSearch.filtersLabel || ''), itemNumbers:itemNumbersFromItems(ourItems)},
+      addressLookup:clonePlainObject(state.addressLookup),
+      roadview:{
+        open:!!state.roadviewVisible,
+        pick:!!state.roadviewMode,
+        position:rvPos,
+        pan:readRoadviewPan(),
+        miniCollapsed:!!state.roadviewMiniCollapsed,
+        miniZoom:(state.roadviewMiniZoom === 17 ? 17 : 16)
+      }
+    };
+    if(extra && typeof extra === 'object') Object.assign(payload, extra);
+    return payload;
+  }
+  function centerSafeHistory(center){
+    if(!center) return null;
+    const lat = Number(center.lat), lng = Number(center.lng);
+    return Number.isFinite(lat) && Number.isFinite(lng) ? {lat:lat,lng:lng} : null;
+  }
+  function initParcelHistoryRoot(){
+    if(state.parcelHistoryReady || !window.history || !history.replaceState) return;
+    try{
+      history.replaceState(currentParcelHistoryState('initial'), '', location.href);
+      state.parcelHistoryReady = true;
+    }catch(e){}
+  }
+  function pushParcelHistoryState(action, extra){
+    if(state.parcelHistoryApplying || !state.mapReady || !window.history || !history.pushState) return;
+    try{
+      const snap = currentParcelHistoryState(action, extra);
+      history.pushState(snap, '', location.href);
+      state.parcelHistoryLastAction = action || 'state';
+      state.roadviewHistoryActive = !!(snap.roadview && snap.roadview.open);
+    }catch(e){}
+  }
+  function replaceParcelHistoryState(action, extra){
+    if(state.parcelHistoryApplying || !state.mapReady || !window.history || !history.replaceState) return;
+    try{
+      history.replaceState(currentParcelHistoryState(action || 'replace', extra), '', location.href);
+    }catch(e){}
+  }
+  function replaceParcelHistoryStateSoon(action, extra, delay){
+    if(state.parcelHistoryApplying || !state.mapReady) return;
+    if(state.parcelHistoryReplaceTimer) clearTimeout(state.parcelHistoryReplaceTimer);
+    state.parcelHistoryReplaceTimer = window.setTimeout(function(){
+      state.parcelHistoryReplaceTimer = null;
+      replaceParcelHistoryState(action || 'replace', extra);
+    }, Number.isFinite(Number(delay)) ? Number(delay) : 160);
+  }
+  function clearParcelHistoryReplaceTimer(){
+    if(state.parcelHistoryReplaceTimer){
+      try{ clearTimeout(state.parcelHistoryReplaceTimer); }catch(e){}
+      state.parcelHistoryReplaceTimer = null;
+    }
+  }
+  function restoreMapVisualStateFromHistory(snap){
+    if(!snap || !state.mapReady || !state.map) return;
+    try{
+      state.auxSatelliteSource = snap.auxSatelliteSource === AUX_SATELLITE_SOURCE_NGII ? AUX_SATELLITE_SOURCE_NGII : AUX_SATELLITE_SOURCE_VWORLD;
+      if(snap.auxSatelliteActive){
+        state.auxSatelliteActive = true;
+        ensureAuxSatelliteMapType();
+        state.map.setMapTypeId(AUX_SATELLITE_MAP_TYPE_ID);
+      }else{
+        state.auxSatelliteActive = false;
+        const targetType = snap.mapTypeId && snap.mapTypeId !== AUX_SATELLITE_MAP_TYPE_ID ? snap.mapTypeId : ((naver.maps.MapTypeId && naver.maps.MapTypeId.NORMAL) || 'normal');
+        state.map.setMapTypeId(targetType);
+      }
+      updateAuxSatellitePicker();
+      toggleAuxSatellitePicker(false);
+    }catch(e){}
+    try{
+      const center = plainToLatLng(snap.map || snap.center);
+      if(center) state.map.setCenter(center);
+      const z = Number(snap.zoom);
+      if(Number.isFinite(z)) state.map.setZoom(z);
+    }catch(e){}
+  }
+  function restorePanelStateFromHistory(snap){
+    if(!snap) return;
+    closePanel();
+    clearSearchFlags();
+    clearAddressFlag();
+    state.visibleMapItems = itemsFromNumbers(snap.visibleMapNumbers);
+    state.panelCardItems = itemsFromNumbers(snap.panelCardNumbers);
+    const our = snap.ourSearch || {};
+    state.ourSearch = {query:String(our.query || ''), filtersLabel:String(our.filtersLabel || ''), items:itemsFromNumbers(our.itemNumbers)};
+    if(state.ourSearch.items.length) renderSearchFlags();
+    state.addressLookup = snap.addressLookup || null;
+    const selected = itemByListingNumber(snap.selectedListingNumber);
+    if(selected){
+      const candidates = itemsFromNumbers(snap.selectedCandidateNumbers);
+      const source = snap.panelMode === 'ourSearch' ? 'ourSearch' : (snap.panelMode === 'mapCards' ? 'list' : 'map');
+      selectItem(selected, snap.selectedPnu || selected.representativePnu || (selected.pnuList || [])[0] || '', null, candidates.length ? candidates : [selected], {source:source, fromHistory:true});
+    }else if(snap.panelMode === 'mapCards'){
+      state.panelMode = 'mapCards';
+      state.fixedMode = 'mapCards';
+      renderMapViewCardPanel({fromHistory:true});
+    }else if(snap.panelMode === 'ourSearch'){
+      openOurSearchResultsPanel(state.ourSearch.items, state.ourSearch.query, state.ourSearch.filtersLabel);
+    }else if(snap.panelMode === 'search'){
+      openSearchPanel(state.ourSearch.query || '');
+    }else if(snap.panelMode === 'addressLookup' && state.addressLookup){
+      renderAddressLookupSummaryPanel(state.addressLookup);
+    }else if((snap.fixedMode === 'ledger' || snap.panelMode === 'ledger') && snap.lookupPoint){
+      state.selectedItem = null;
+      state.selectedCandidates = [];
+      state.selectedPnu = '';
+      state.selectedParcel = null;
+      renderMarkers();
+      lookupLedgerCore({lat:Number(snap.lookupPoint.lat), lng:Number(snap.lookupPoint.lng)}).catch(function(err){ renderLedgerError(err); });
+    }else if(snap.fixedMode === 'none' && snap.detailMode === 'none'){
+      renderDefaultPanel();
+    }
+    try{
+      const collapsed = snap.collapsedPanels || {};
+      state.collapsedPanels.detail = !!collapsed.detail;
+      state.collapsedPanels.fixed = !!collapsed.fixed;
+      if(els.detailPanel) els.detailPanel.classList.toggle('is-collapsed', state.collapsedPanels.detail);
+      if(els.fixedPanel) els.fixedPanel.classList.toggle('is-collapsed', state.collapsedPanels.fixed);
+      updatePanelRail();
+    }catch(e){}
+  }
+  function applyParcelHistoryState(snap){
+    if(!snap || !snap.maslowParcelMap) return false;
+    clearParcelHistoryReplaceTimer();
+    clearRoadviewHistoryReplaceTimer();
+    state.parcelHistoryApplying = true;
+    try{
+      if(snap.filters && typeof snap.filters === 'object'){
+        state.filters = Object.assign({}, state.filters, snap.filters);
+        setFilterChipActive();
+        applyFilters();
+      }
+      restoreMapVisualStateFromHistory(snap);
+      const rv = snap.roadview || {};
+      state.roadviewMiniCollapsed = !!rv.miniCollapsed;
+      state.roadviewMiniZoom = rv.miniZoom === 17 ? 17 : 16;
+      const rvPos = plainToLatLng(rv.position);
+      if(snap.mode === 'roadview' && rvPos){
+        openRoadviewAt(rvPos, {fromHistory:true});
+      }else{
+        if(state.roadviewVisible) closeRoadview({fromHistory:true});
+        setRoadviewMode(snap.mode === 'roadviewPick', {fromHistory:true});
+      }
+      restorePanelStateFromHistory(snap);
+      scheduleMapResize();
+      scheduleRoadviewResize();
+      window.setTimeout(function(){
+        try{ forceMapResize(); }catch(e){}
+        try{ updateRoadviewMiniMap(); }catch(e){}
+      }, 80);
+      return true;
+    }finally{
+      window.setTimeout(function(){ state.parcelHistoryApplying = false; }, 0);
+    }
   }
 
   function cleanupRoadviewPanoListeners(){
@@ -1250,43 +1487,20 @@
   }
 
   function currentRoadviewHistoryState(){
-    const pos = roadviewLatLngToPlain(readRoadviewPosition() || state.roadviewPosition);
-    let mapCenter = null;
-    try{ mapCenter = roadviewLatLngToPlain(state.map && state.map.getCenter && state.map.getCenter()); }catch(e){}
-    let mapZoom = null;
-    try{ mapZoom = state.map && state.map.getZoom ? state.map.getZoom() : null; }catch(e){}
-    return {
-      maslowParcelMap:true,
-      mode:'roadview',
-      roadviewOpen:true,
-      pano:pos,
-      pan:readRoadviewPan(),
-      mapCenter:mapCenter,
-      mapZoom:mapZoom,
-      miniCollapsed:!!state.roadviewMiniCollapsed,
-      miniZoom:(state.roadviewMiniZoom === 17 ? 17 : 16)
-    };
+    return currentParcelHistoryState('roadview');
   }
 
   function pushRoadviewHistoryState(){
-    if(state.roadviewHistoryChanging || state.roadviewHistoryActive) return;
-    try{
-      history.pushState(currentRoadviewHistoryState(), '', location.href);
-      state.roadviewHistoryActive = true;
-    }catch(e){}
+    pushParcelHistoryState('roadview-open');
+    state.roadviewHistoryActive = !!state.roadviewVisible;
   }
 
   function replaceRoadviewHistoryStateSoon(){
-    if(!state.roadviewHistoryActive || state.roadviewHistoryChanging) return;
-    if(state.roadviewHistoryReplaceTimer) clearTimeout(state.roadviewHistoryReplaceTimer);
-    state.roadviewHistoryReplaceTimer = window.setTimeout(function(){
-      state.roadviewHistoryReplaceTimer = null;
-      if(!state.roadviewVisible || !state.roadviewHistoryActive || state.roadviewHistoryChanging) return;
-      try{ history.replaceState(currentRoadviewHistoryState(), '', location.href); }catch(e){}
-    }, 180);
+    replaceParcelHistoryStateSoon('roadview-update');
   }
 
   function clearRoadviewHistoryReplaceTimer(){
+    clearParcelHistoryReplaceTimer();
     if(state.roadviewHistoryReplaceTimer){
       try{ clearTimeout(state.roadviewHistoryReplaceTimer); }catch(e){}
       state.roadviewHistoryReplaceTimer = null;
@@ -1294,25 +1508,9 @@
   }
 
   function consumeRoadviewHistoryEntry(){
-    // 로드뷰 진입 때 pushState로 쌓아 둔 내부 히스토리를 지도보기/로드뷰 버튼으로 닫을 때 같이 소비한다.
-    // replaceState로 지도 상태만 덮어쓰면 같은 URL의 빈 히스토리 엔트리가 남아서,
-    // 이후 브라우저 뒤로가기를 눌러도 화면 변화가 없는 것처럼 보인다.
-    clearRoadviewHistoryReplaceTimer();
-    if(!state.roadviewHistoryActive || state.roadviewHistoryChanging){
-      state.roadviewHistoryActive = false;
-      return;
-    }
+    // 예전 로드뷰 전용 히스토리 소비 방식은 쓰지 않는다.
+    // 이제 매물지도 전체 클릭 상태를 pushState로 쌓고, 지도보기/패널닫기/필터변경도 내부 상태로 남긴다.
     state.roadviewHistoryActive = false;
-    state.roadviewHistoryChanging = true;
-    try{ history.back(); }catch(e){}
-    if(state.roadviewHistoryBackTimer){
-      try{ clearTimeout(state.roadviewHistoryBackTimer); }catch(e){}
-      state.roadviewHistoryBackTimer = null;
-    }
-    state.roadviewHistoryBackTimer = window.setTimeout(function(){
-      state.roadviewHistoryChanging = false;
-      state.roadviewHistoryBackTimer = null;
-    }, 450);
   }
 
   function clearRoadviewMiniListingDots(){
@@ -1530,7 +1728,7 @@
         updateRoadviewMiniMap();
       }, 120);
     }
-    replaceRoadviewHistoryStateSoon();
+    replaceParcelHistoryStateSoon('roadview-mini-collapsed');
   }
 
   function pinRoadviewMiniMap(){
@@ -1558,10 +1756,12 @@
       }
       positionRoadviewMiniZoomToggle();
       updateRoadviewMiniZoomToggle();
+      replaceParcelHistoryStateSoon('roadview-mini-zoom');
     }catch(e){}
   }
 
-  function jumpRoadviewTo(coord){
+  function jumpRoadviewTo(coord, options){
+    const jumpOpts = options || {};
     if(!coord || !window.naver || !naver.maps) return false;
     try{
       state.roadviewPosition = coord;
@@ -1574,7 +1774,8 @@
       }
       updateRoadviewMiniMap();
       scheduleRoadviewResize();
-      replaceRoadviewHistoryStateSoon();
+      if(jumpOpts.pushHistory) pushParcelHistoryState('roadview-mini-jump');
+      else replaceRoadviewHistoryStateSoon();
       return true;
     }catch(e){
       return false;
@@ -1620,7 +1821,7 @@
       try{
         state.roadviewMiniClickListener = naver.maps.Event.addListener(state.roadviewMiniMap, 'click', function(e){
           const coord = e && (e.coord || e.latlng || e.latLng || e.position);
-          if(coord) jumpRoadviewTo(coord);
+          if(coord) jumpRoadviewTo(coord, {pushHistory:true});
         });
       }catch(e){}
     }
@@ -1668,7 +1869,8 @@
     });
   }
 
-  function openRoadviewAt(coord){
+  function openRoadviewAt(coord, options){
+    const openOpts = options || {};
     if(!coord || !window.naver || !naver.maps || !naver.maps.Panorama || !els.roadviewLayer || !els.roadviewView) return false;
     try{
       state.roadviewPosition = coord;
@@ -1682,7 +1884,7 @@
       const streetLayer = state.roadviewStreetLayer;
       if(streetLayer){ try{ streetLayer.setMap(null); }catch(e){} }
       updateRoadviewButton();
-      pushRoadviewHistoryState();
+      if(!openOpts.fromHistory) pushRoadviewHistoryState();
       if(!state.roadviewPanorama){
         state.roadviewPanorama = new naver.maps.Panorama(els.roadviewView, {
           position:coord,
@@ -1726,10 +1928,11 @@
     clearRoadviewHistoryReplaceTimer();
     clearRoadviewMiniListingDots();
     clearRoadviewMiniPolygons();
-    if(opts.fromPopState){
+    if(opts.fromPopState || opts.fromHistory){
       state.roadviewHistoryActive = false;
     }else{
-      consumeRoadviewHistoryEntry();
+      state.roadviewHistoryActive = false;
+      pushParcelHistoryState('roadview-close');
     }
     updateRoadviewButton();
     scheduleMapResize();
@@ -2976,6 +3179,7 @@
     }catch(err){
       renderLedgerError(new Error('캐시 주소 공부조회 실패: ' + (err && err.message ? err.message : err)));
     }
+    pushParcelHistoryState('cached-address-lookup');
   }
 
   function renderPinnedAddressOverlays(){
@@ -3447,6 +3651,7 @@
     updatePanelRail();
     scheduleMapResize();
     scheduleRoadviewResize();
+    replaceParcelHistoryStateSoon('panel-collapse');
   }
 
   function selectPnu(pnu, parcel){
@@ -3476,6 +3681,7 @@
       state.panelMode = 'mapCards';
       renderMapViewCardPanel();
       fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source, fallbackPanToItem:true}));
+      if(!options.fromHistory) pushParcelHistoryState('select-item-list');
       return;
     }
 
@@ -3484,6 +3690,7 @@
       state.fixedMode = 'ourSearch';
       openOurSearchResultsPanel((state.ourSearch && state.ourSearch.items) || [], (state.ourSearch && state.ourSearch.query) || '', (state.ourSearch && state.ourSearch.filtersLabel) || '');
       fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source, fallbackPanToItem:true}));
+      if(!options.fromHistory) pushParcelHistoryState('select-item-search');
       return;
     }
 
@@ -3491,6 +3698,7 @@
     state.fixedMode = 'ledger';
     renderLedgerLoading('공부조회', '선택한 매물의 필지와 공부 정보를 확인합니다.');
     scheduleSelectedTargetSafePan({preferPolygon:false});
+    if(!options.fromHistory) pushParcelHistoryState('select-item-map');
     fetchSelectedItemPolygons(item, Object.assign({}, options, {source:source, safePan:true})).then(function(){
       if(!state.selectedItem || state.selectedItem.listingNumber !== item.listingNumber) return;
       const nextPnu = state.selectedPnu || item.representativePnu || (item.pnuList || [])[0] || '';
@@ -3509,6 +3717,7 @@
     closeDetailPanel();
     renderMarkers();
     lookupLedgerForParcel(parcel).catch(function(err){ renderLedgerError(err); });
+    pushParcelHistoryState('parcel-only');
   }
   function resetSidePanelToInitialState(){
     state.selectedItem = null;
@@ -3536,6 +3745,7 @@
     resetSidePanelToInitialState();
     closePanel();
     els.mapNote.textContent = '오른쪽 패널을 초기화했습니다. 지도 빈 곳을 누르면 공부조회, 매물 핀을 누르면 매물상세와 공부조회를 봅니다.';
+    pushParcelHistoryState('reset');
   }
 
   function loadSearchHistory(){
@@ -3731,7 +3941,8 @@
     html += '<div class="map-card-list">' + items.map(buildMapDashboardCard).join('') + '</div>';
     openFixedPanel('우리매물 검색결과 ' + items.length + '개', '검색어: ' + query + (filtersLabel ? ' · 필터: ' + filtersLabel : ''), html, 'ourSearch');
   }
-  function runOurPropertySearch(query){
+  function runOurPropertySearch(query, options){
+    const searchOpts = options || {};
     query = String(query || '').trim();
     if(!query){ openSearchPanel(''); return; }
     closeDetailPanel();
@@ -3745,6 +3956,8 @@
     openOurSearchResultsPanel(items, query, filtersLabel);
     if(items.length) focusItemsOnMap(items);
     els.mapNote.textContent = '우리매물검색 결과에 깃발을 표시했습니다. 전체 매물핀은 그대로 유지됩니다.';
+    if(searchOpts.replaceHistory) replaceParcelHistoryState('our-search');
+    else if(!searchOpts.suppressHistory) pushParcelHistoryState('our-search');
   }
   async function geocodeAddressForLookup(query){
     const data = await fetchJsonWithTimeout('/api/route-setting/geocode', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query:query})}, 14000);
@@ -3836,10 +4049,12 @@
         }
         pushSearchHistory({type:'address', query:query, resolvedAddress:info.resolvedAddress, lat:lat, lng:lng, pnu:info.pnu, status:info.status, statusText:info.statusText});
       }
+      pushParcelHistoryState('address-lookup');
     }catch(err){
       const msg = err && err.message ? err.message : String(err);
       pushSearchHistory({type:'address', query:query, status:'failed', statusText:'주소조회 실패'});
       renderLedgerError(new Error('주소조회 실패: ' + msg));
+      pushParcelHistoryState('address-lookup-failed');
     }
   }
 
@@ -4512,6 +4727,7 @@
     renderMarkers();
     clearPolygonMap(state.listingPolygons);
     lookupLedgerCore({lat:lat,lng:lng}).catch(function(err){ renderLedgerError(err); });
+    pushParcelHistoryState('ground-lookup', {lookupPoint:{lat:lat,lng:lng}});
   }
 
   function formatArea(m2,py){ return [m2 ? m2 + '㎡' : '', py ? py + '평' : ''].filter(Boolean).join(' / '); }
@@ -4748,7 +4964,8 @@
       state.filters[group] = state.filters[group] === value ? 'all' : value;
     }
     setFilterChipActive(); applyFilters();
-    if(state.ourSearch && state.ourSearch.query){ runOurPropertySearch(state.ourSearch.query); }
+    if(state.ourSearch && state.ourSearch.query){ runOurPropertySearch(state.ourSearch.query, {suppressHistory:true}); }
+    pushParcelHistoryState('filter-change');
   }
 
   async function boot(){
@@ -4759,6 +4976,7 @@
       forceMapResize();
       renderDefaultPanel();
       renderPinnedAddressOverlays();
+      initParcelHistoryRoot();
       hideLoading();
       els.mapNote.textContent = '네이버 지오코딩으로 매물 위치를 먼저 작은 핀으로 표시합니다. 핀을 클릭하면 해당 매물 필지만 조회합니다.';
       startGeocodingInBackground().catch(err => {
@@ -4835,10 +5053,10 @@
       if(document.activeElement !== els.searchInput){ els.searchInput.dataset.userTouched = ''; hardLockSearchAutofill(); }
     });
   }
-  if(els.searchPanelBtn) els.searchPanelBtn.addEventListener('click', function(){ openSearchPanel(state.ourSearch && state.ourSearch.query || ''); });
+  if(els.searchPanelBtn) els.searchPanelBtn.addEventListener('click', function(){ openSearchPanel(state.ourSearch && state.ourSearch.query || ''); pushParcelHistoryState('open-search-panel'); });
   els.chipbar.addEventListener('click', onChipClick);
   els.reloadBtn.addEventListener('click', function(){ location.reload(); });
-  els.baseParcelToggle.addEventListener('click', function(){ state.showBaseParcels = !state.showBaseParcels; this.textContent = state.showBaseParcels ? '필지선 ON' : '필지선 OFF'; this.classList.toggle('ghost', !state.showBaseParcels); if(state.showBaseParcels) scheduleBaseParcelFetch(); else { clearWmsTiles(); els.mapNote.textContent = '필지선을 껐습니다. 핀 클릭 시 선택 매물 필지만 조회합니다.'; } });
+  els.baseParcelToggle.addEventListener('click', function(){ state.showBaseParcels = !state.showBaseParcels; this.textContent = state.showBaseParcels ? '필지선 ON' : '필지선 OFF'; this.classList.toggle('ghost', !state.showBaseParcels); if(state.showBaseParcels) scheduleBaseParcelFetch(); else { clearWmsTiles(); els.mapNote.textContent = '필지선을 껐습니다. 핀 클릭 시 선택 매물 필지만 조회합니다.'; } pushParcelHistoryState('base-parcel-toggle'); });
   if(els.mapCountBtn){
     els.mapCountBtn.addEventListener('click', function(){
       // 하단 매물 개수 버튼은 상세/공부 패널을 열지 않고,
@@ -4846,6 +5064,7 @@
       closeDetailPanel();
       updateMapCountButton();
       renderMapViewCardPanel({refresh:true});
+      pushParcelHistoryState('map-list');
     });
   }
   if(els.mapResetBtn) els.mapResetBtn.addEventListener('click', resetAndCloseSidePanel);
@@ -4859,21 +5078,13 @@
     event.stopPropagation();
     setRoadviewMiniZoom(Number(btn.getAttribute('data-roadview-mini-zoom')));
   });
-  window.addEventListener('popstate', function(){
-    clearRoadviewHistoryReplaceTimer();
-    if(!state.roadviewVisible){
-      // 지도보기 버튼으로 닫으면서 history.back()을 호출한 경우 여기로 들어온다.
-      // 이때 화면은 이미 지도 상태이므로 플래그만 정리한다.
-      if(state.roadviewHistoryChanging){
-        window.setTimeout(function(){ state.roadviewHistoryChanging = false; }, 0);
-      }
-      state.roadviewHistoryActive = false;
+  window.addEventListener('popstate', function(event){
+    const snap = event && event.state;
+    if(snap && snap.maslowParcelMap){
+      applyParcelHistoryState(snap);
       return;
     }
-    state.roadviewHistoryChanging = true;
-    try{ closeRoadview({fromPopState:true}); }catch(e){}
-    state.roadviewHistoryActive = false;
-    window.setTimeout(function(){ state.roadviewHistoryChanging = false; }, 0);
+    // 내부 히스토리 상태가 없는 곳까지 뒤로 간 경우는 브라우저 기본 동작에 맡긴다.
   });
   if(els.panelClose) els.panelClose.addEventListener('click', resetAndCloseSidePanel);
   if(els.fixedHandle) els.fixedHandle.addEventListener('click', function(){ togglePanelCollapsed('fixed'); });

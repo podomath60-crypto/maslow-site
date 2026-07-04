@@ -389,6 +389,7 @@
     roadviewMiniClickListener:null,
     roadviewHistoryActive:false,
     roadviewHistoryChanging:false,
+    roadviewHistoryBackTimer:null,
     roadviewHistoryReplaceTimer:null,
     roadviewPanoListeners:[],
     roadviewPosition:null,
@@ -1285,12 +1286,33 @@
     }, 180);
   }
 
-  function replaceRoadviewHistoryAsMap(){
-    if(!state.roadviewHistoryActive || state.roadviewHistoryChanging) return;
-    try{
-      history.replaceState({maslowParcelMap:true, mode:'map', roadviewOpen:false}, '', location.href);
-    }catch(e){}
+  function clearRoadviewHistoryReplaceTimer(){
+    if(state.roadviewHistoryReplaceTimer){
+      try{ clearTimeout(state.roadviewHistoryReplaceTimer); }catch(e){}
+      state.roadviewHistoryReplaceTimer = null;
+    }
+  }
+
+  function consumeRoadviewHistoryEntry(){
+    // 로드뷰 진입 때 pushState로 쌓아 둔 내부 히스토리를 지도보기/로드뷰 버튼으로 닫을 때 같이 소비한다.
+    // replaceState로 지도 상태만 덮어쓰면 같은 URL의 빈 히스토리 엔트리가 남아서,
+    // 이후 브라우저 뒤로가기를 눌러도 화면 변화가 없는 것처럼 보인다.
+    clearRoadviewHistoryReplaceTimer();
+    if(!state.roadviewHistoryActive || state.roadviewHistoryChanging){
+      state.roadviewHistoryActive = false;
+      return;
+    }
     state.roadviewHistoryActive = false;
+    state.roadviewHistoryChanging = true;
+    try{ history.back(); }catch(e){}
+    if(state.roadviewHistoryBackTimer){
+      try{ clearTimeout(state.roadviewHistoryBackTimer); }catch(e){}
+      state.roadviewHistoryBackTimer = null;
+    }
+    state.roadviewHistoryBackTimer = window.setTimeout(function(){
+      state.roadviewHistoryChanging = false;
+      state.roadviewHistoryBackTimer = null;
+    }, 450);
   }
 
   function clearRoadviewMiniListingDots(){
@@ -1701,9 +1723,14 @@
     const streetLayer = state.roadviewStreetLayer;
     if(streetLayer){ try{ streetLayer.setMap(null); }catch(e){} }
     if(state.roadviewMiniStreetLayer){ try{ state.roadviewMiniStreetLayer.setMap(null); }catch(e){} }
+    clearRoadviewHistoryReplaceTimer();
     clearRoadviewMiniListingDots();
     clearRoadviewMiniPolygons();
-    if(!opts.fromPopState) replaceRoadviewHistoryAsMap();
+    if(opts.fromPopState){
+      state.roadviewHistoryActive = false;
+    }else{
+      consumeRoadviewHistoryEntry();
+    }
     updateRoadviewButton();
     scheduleMapResize();
     window.setTimeout(forceMapResize, 140);
@@ -4833,9 +4860,17 @@
     setRoadviewMiniZoom(Number(btn.getAttribute('data-roadview-mini-zoom')));
   });
   window.addEventListener('popstate', function(){
-    if(!state.roadviewVisible) return;
+    clearRoadviewHistoryReplaceTimer();
+    if(!state.roadviewVisible){
+      // 지도보기 버튼으로 닫으면서 history.back()을 호출한 경우 여기로 들어온다.
+      // 이때 화면은 이미 지도 상태이므로 플래그만 정리한다.
+      if(state.roadviewHistoryChanging){
+        window.setTimeout(function(){ state.roadviewHistoryChanging = false; }, 0);
+      }
+      state.roadviewHistoryActive = false;
+      return;
+    }
     state.roadviewHistoryChanging = true;
-    if(state.roadviewHistoryReplaceTimer){ clearTimeout(state.roadviewHistoryReplaceTimer); state.roadviewHistoryReplaceTimer = null; }
     try{ closeRoadview({fromPopState:true}); }catch(e){}
     state.roadviewHistoryActive = false;
     window.setTimeout(function(){ state.roadviewHistoryChanging = false; }, 0);

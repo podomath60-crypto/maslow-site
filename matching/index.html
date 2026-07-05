@@ -39,7 +39,7 @@
     .top-btn.primary{background:#111318;color:#fff;border-color:#111318}
     .top-btn:disabled{opacity:.42;cursor:not-allowed}
 
-    .workspace{width:100%;max-width:1740px;margin:0 auto;padding:16px 10px 56px;display:grid;grid-template-columns:168px minmax(0,1380px) 156px;gap:10px;align-items:start}
+    .workspace{width:100%;max-width:1820px;margin:0 auto;padding:16px 8px 56px;display:grid;grid-template-columns:168px minmax(0,1380px) 220px;gap:9px;align-items:start}
     .section-sidebar{position:sticky;top:92px;display:grid;gap:9px;align-self:start}
     .section-jump{width:100%;min-height:66px;border-radius:16px;border:1px solid #dce5ef;background:#fff;box-shadow:0 10px 22px rgba(15,23,42,.04);display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:10px;padding:0 12px;text-align:left;color:#1f2933;transition:.16s ease}
     .section-jump:hover{transform:translateY(-1px);border-color:var(--section-color,#a7b2c0);background:linear-gradient(90deg,var(--section-soft,#f6f8fb),#fff 82%)}
@@ -52,10 +52,38 @@
     .section-jump[data-section="3"]{--section-color:#16a34a;--section-soft:#ecfff5}
     .section-jump[data-section="4"]{--section-color:#f59e0b;--section-soft:#fff8e6}
     .shell{min-width:0;width:100%;padding:0;display:grid;gap:18px}
-    .right-sidebar{position:sticky;top:92px;display:grid;gap:10px;align-self:start}
-    .right-placeholder{min-height:76px;border-radius:18px;border:1px dashed #d7e0ea;background:linear-gradient(180deg,#ffffff,#f8fbff);box-shadow:0 10px 22px rgba(15,23,42,.035);padding:14px 13px;color:#7b8794;font-weight:900;letter-spacing:-.03em}
-    .right-placeholder strong{display:block;margin-bottom:7px;color:#2f3b4a;font-size:13px;font-weight:1000;letter-spacing:-.04em}
-    .right-placeholder span{display:block;font-size:11px;line-height:1.45}
+    .right-sidebar{position:sticky;top:92px;display:grid;gap:10px;align-self:start;min-width:0}
+    .progress-memo-panel{border:1px solid #e0e7ef;border-radius:22px;background:rgba(255,255,255,.96);box-shadow:0 14px 30px rgba(15,23,42,.07);padding:12px;display:grid;gap:10px;min-width:0;max-height:calc(100vh - 112px);overflow:auto}
+    .progress-memo-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;border-bottom:1px solid #edf2f7;padding-bottom:10px}
+    .progress-memo-title{font-size:14px;font-weight:1000;letter-spacing:-.05em;color:#151922;line-height:1.25}
+    .progress-memo-latest{margin-top:4px;font-size:10px;font-weight:900;color:#7b8794;line-height:1.35}
+    .progress-memo-add{width:34px;height:34px;border-radius:13px;background:#111318;color:#fff;font-size:20px;font-weight:1000;line-height:1;box-shadow:0 10px 20px rgba(15,23,42,.12);flex:0 0 auto}
+    .progress-memo-list{display:grid;gap:10px}
+    .progress-memo-empty{border:1px dashed #d7e0ea;border-radius:18px;background:#fbfdff;padding:16px 10px;color:#7b8794;font-size:12px;font-weight:900;line-height:1.5;text-align:center}
+    .progress-memo-card{position:relative;border:1px solid rgba(15,23,42,.08);border-radius:18px;padding:11px 10px 12px;box-shadow:0 10px 18px rgba(15,23,42,.055);display:grid;gap:8px;color:#27210a;min-width:0}
+    .progress-memo-card[data-color=yellow]{background:#fff7b2}
+    .progress-memo-card[data-color=green]{background:#dcfce7}
+    .progress-memo-card[data-color=blue]{background:#dbeafe}
+    .progress-memo-card[data-color=pink]{background:#ffe4e6}
+    .progress-memo-card[data-color=purple]{background:#ede9fe}
+    .progress-memo-card[data-color=orange]{background:#ffedd5}
+    .progress-memo-card[data-color=gray]{background:#f3f4f6}
+    .progress-memo-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+    .progress-memo-meta{font-size:10px;font-weight:1000;color:rgba(17,24,39,.58);line-height:1.45;min-width:0}
+    .progress-memo-author{outline:none;color:#111318;display:inline-block;min-width:34px;padding:0 2px;border-radius:5px}
+    .progress-memo-author:focus{background:rgba(255,255,255,.62);box-shadow:0 0 0 2px rgba(17,19,24,.08)}
+    .progress-memo-menu-btn{width:26px;height:26px;border-radius:10px;background:rgba(255,255,255,.55);color:#384252;font-size:18px;font-weight:1000;line-height:1;flex:0 0 auto}
+    .progress-memo-menu{position:absolute;right:9px;top:40px;width:144px;border:1px solid #dbe5ee;border-radius:15px;background:#fff;box-shadow:0 18px 34px rgba(15,23,42,.16);padding:8px;display:none;z-index:20}
+    .progress-memo-card.menu-open .progress-memo-menu{display:grid;gap:8px}
+    .progress-menu-label{font-size:10px;font-weight:1000;color:#7b8794}
+    .progress-color-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+    .progress-color-dot{width:24px;height:24px;border-radius:9px;border:1px solid rgba(15,23,42,.16);box-shadow:inset 0 0 0 2px rgba(255,255,255,.45)}
+    .progress-color-dot[data-color=yellow]{background:#fff7b2}.progress-color-dot[data-color=green]{background:#dcfce7}.progress-color-dot[data-color=blue]{background:#dbeafe}.progress-color-dot[data-color=pink]{background:#ffe4e6}.progress-color-dot[data-color=purple]{background:#ede9fe}.progress-color-dot[data-color=orange]{background:#ffedd5}.progress-color-dot[data-color=gray]{background:#f3f4f6}
+    .progress-delete-btn{min-height:30px;border-radius:11px;background:#fff1f1;border:1px solid #ffd2d2;color:#d43737;font-size:12px;font-weight:1000}
+    .progress-memo-content{min-height:72px;outline:none;font-size:12px;line-height:1.48;font-weight:900;color:#26200a;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;border-radius:10px;padding:5px 4px}
+    .progress-memo-content:empty::before{content:'진행 메모를 입력하세요';color:rgba(17,24,39,.38)}
+    .progress-memo-content:focus{background:rgba(255,255,255,.54);box-shadow:0 0 0 2px rgba(17,19,24,.08)}
+    .progress-memo-updated{font-size:10px;font-weight:900;color:rgba(17,24,39,.52);border-top:1px solid rgba(15,23,42,.08);padding-top:7px}
     .section{--section-color:#64748b;--section-soft:#f6f8fb;background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;scroll-margin-top:92px}
     .section[data-section="1"]{--section-color:#2563eb;--section-soft:#eef5ff}
     .section[data-section="2"]{--section-color:#7c3aed;--section-soft:#f5f0ff}
@@ -136,7 +164,9 @@
     .project-line:last-child{border-bottom:none}
     .inline-label{font-size:11px;font-weight:1000;color:#88919c;padding-top:4px;white-space:nowrap}
     .inline-value{font-size:14px;line-height:1.35;font-weight:950;color:#27303a;outline:none;padding:1px 2px;min-height:22px;white-space:pre-wrap;word-break:keep-all}
-    .memo-note{margin-top:10px;display:block;width:100%;max-width:100%;box-sizing:border-box;background:#fff8bf;border:1px solid #f3df75;box-shadow:0 9px 18px rgba(161,124,0,.08);padding:10px 11px;min-height:92px;height:auto;overflow:visible;transform:none;font-size:13px;line-height:1.48;font-weight:900;color:#3a3000;outline:none;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+    .memo-block{margin-top:10px;display:grid;gap:6px}
+    .memo-block .inline-label{font-size:11px;color:#9b8500}
+    .memo-note{display:block;width:100%;max-width:100%;box-sizing:border-box;background:#fff8bf;border:1px solid #f3df75;box-shadow:0 9px 18px rgba(161,124,0,.08);padding:10px 11px;min-height:92px;height:auto;overflow:visible;transform:none;font-size:13px;line-height:1.48;font-weight:900;color:#3a3000;outline:none;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
     .inline-hint{display:none}
     .info-card{border:1px solid #edf2f7;border-radius:20px;background:#fbfdff;padding:14px;min-height:86px;position:relative}
     .info-label{font-size:12px;font-weight:1000;color:#88919c;margin-bottom:7px}
@@ -231,7 +261,7 @@
     .business-card-viewer-frame{height:min(62vh,560px);border-radius:18px;background:#f6f8fb;border:1px solid #e5ebf2;display:flex;align-items:center;justify-content:center;overflow:hidden}
     .business-card-viewer-frame img{max-width:100%;max-height:100%;object-fit:contain;display:block;background:#fff}
 
-    @media(max-width:1500px){.workspace{grid-template-columns:150px minmax(0,1fr) 132px;gap:8px;padding-left:8px;padding-right:8px}.section-jump{min-height:62px;grid-template-columns:26px minmax(0,1fr);gap:8px;padding:0 10px}.section-jump-title{font-size:13px}.section-jump-desc{font-size:10px}.right-placeholder{padding:12px 10px}}
+    @media(max-width:1500px){.workspace{grid-template-columns:150px minmax(0,1fr) 190px;gap:8px;padding-left:7px;padding-right:7px}.section-jump{min-height:62px;grid-template-columns:26px minmax(0,1fr);gap:8px;padding:0 10px}.section-jump-title{font-size:13px}.section-jump-desc{font-size:10px}.progress-memo-panel{padding:10px}.progress-memo-title{font-size:13px}.progress-memo-content{font-size:11px}}
     @media(max-width:1100px){.workspace{grid-template-columns:1fr}.section-sidebar{position:static;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.right-sidebar{display:none}.section-jump{min-height:62px;grid-template-columns:1fr;gap:4px;padding:10px 12px}.section-jump-desc{display:none}.project-summary{grid-template-columns:1fr}.project-hero{grid-template-columns:1fr}.business-card-grid{width:360px;max-width:100%}.business-card-slot{max-width:100%}.candidate-grid,.db-result-grid,.search-log-grid,.recommend-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.search-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
     @media(max-width:760px){.title-contact-row{grid-template-columns:1fr}.business-card-grid{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}.business-card-slot{height:132px}.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.workspace{padding:14px 12px 42px;gap:12px}.section-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.section-jump{border-radius:16px;min-height:58px}.shell{padding:0}.section{border-radius:22px;scroll-margin-top:118px}.section-head{padding-top:22px}.section-head::before{left:14px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.section-title{font-size:22px}.section-title-no{font-size:26px}.summary-grid,.project-line-grid,.candidate-grid,.db-result-grid,.search-log-grid,.recommend-grid,.metric-row,.edit-row,.modal-grid,.search-filter-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
   </style>
@@ -323,7 +353,7 @@
                 <div class="inline-label">의뢰구분</div>
                 <div class="inline-value picker-value" tabindex="0" data-inline-field="inquiryType" data-picker="inquiryType">매수 의뢰</div>
               </div>
-              <div class="memo-note" contenteditable="true" data-inline-field="inquiryMemo">블로그 보고 전화. 군산권 먼저 보고 익산까지 확장 검토.</div>
+              <div class="memo-block"><div class="inline-label">접수 메모</div><div class="memo-note" contenteditable="true" data-inline-field="inquiryMemo">블로그 보고 전화. 군산권 먼저 보고 익산까지 확장 검토.</div></div>
             </div>
 
             <div class="project-col">
@@ -435,10 +465,17 @@
         <div class="section-body"><div class="contract-empty"></div></div>
       </section>
       </div>
-      <aside class="right-sidebar" aria-label="오른쪽 예정 패널">
-        <div class="right-placeholder"><strong>예정 패널 1</strong><span>다음 작업 / 알림 영역</span></div>
-        <div class="right-placeholder"><strong>예정 패널 2</strong><span>빠른 메모 / 체크 영역</span></div>
-        <div class="right-placeholder"><strong>예정 패널 3</strong><span>외부 링크 / 도구 영역</span></div>
+      <aside class="right-sidebar" aria-label="프로젝트 진행 메모">
+        <section class="progress-memo-panel">
+          <div class="progress-memo-head">
+            <div>
+              <div class="progress-memo-title">프로젝트 진행 메모</div>
+              <div class="progress-memo-latest" id="progressMemoLatest">최종수정 없음</div>
+            </div>
+            <button type="button" class="progress-memo-add" id="addProgressMemoBtn" aria-label="진행 메모 추가">+</button>
+          </div>
+          <div class="progress-memo-list" id="progressMemoList"></div>
+        </section>
       </aside>
     </main>
   </div>
@@ -493,6 +530,10 @@
         {id:'SL-001', source:'네이버', title:'군산 산북동 외부 매물', address:'군산시 산북동', price:'22억', area:'대지 약 2,000평', contact:'중개사 확인 필요', link:'', memo:'네이버에서 확인. 사진상 야드는 괜찮아 보임. DB 등록 전.', status:'검토중'},
         {id:'SL-002', source:'전화', title:'익산 식품공장 가능 물건', address:'익산시 왕궁면', price:'가격 미정', area:'대지 2,500평 전후', contact:'소유자 지인', link:'', memo:'전화로 들은 후보. 자료 받으면 admin 등록 검토.', status:'매물등록필요'}
       ],
+      progressMemos:[
+        {id:'PM-001', author:'한이사', content:'오식도 후보는 소유자 통화 후 전력 조건 확인 필요.', color:'yellow', createdAt:'2026-06-23T10:20:00+09:00', updatedAt:'2026-06-23T10:20:00+09:00'},
+        {id:'PM-002', author:'한이사', content:'고객은 군산 우선, 익산은 조건이 좋으면 검토 가능.', color:'blue', createdAt:'2026-06-24T15:10:00+09:00', updatedAt:'2026-06-24T15:10:00+09:00'}
+      ],
       visits:[
         {id:'V-001', roundNo:1, title:'1차 임장', date:'2026.06.26 14:00', status:'완료', companions:'김OO, 한이사', summary:'오식도동 선호. 왕궁면은 보류. 팔봉동은 탈락.', nextAction:'오식도동 전력 확인 후 가격협의 검토', items:[{property:'오식도동 공장', reaction:'긍정', memo:'야드 넓음 / 전력 확인 필요'},{property:'왕궁면 공장', reaction:'보류', memo:'위치는 좋으나 폐수 가능 여부 확인'},{property:'팔봉동 창고', reaction:'탈락', memo:'진입로 문제'}]}
       ]
@@ -503,6 +544,8 @@
     let activeFilter = '전체';
     let activeSection2Tab = '후보매물';
     let activeSearchLogId = '';
+    let activeProgressMemoMenuId = '';
+    let progressMemoBefore = null;
     let dirty = false;
 
     function clone(v){ return structuredClone(v); }
@@ -572,9 +615,51 @@
       else if(activeSection2Tab==='서칭기록') content.innerHTML=renderSearchLogs();
       else content.innerHTML=renderCandidateCards(getFilteredCandidates());
     }
+    function progressMemoColors(){ return ['yellow','green','blue','pink','purple','orange','gray']; }
+    function displayDateTime(value){
+      if(!value) return '미기록';
+      const d=new Date(value);
+      if(Number.isNaN(d.getTime())) return String(value);
+      const pad=n=>String(n).padStart(2,'0');
+      return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    function nowIso(){ return new Date().toISOString(); }
+    function latestProgressMemoUpdate(){
+      const memos=state.progressMemos||[];
+      if(!memos.length) return '';
+      return memos.reduce((latest,m)=>{
+        const t=new Date(m.updatedAt||m.createdAt||0).getTime();
+        return t>latest.time ? {time:t, value:m.updatedAt||m.createdAt} : latest;
+      },{time:-Infinity,value:''}).value;
+    }
+    function renderProgressMemos(){
+      const latest=document.getElementById('progressMemoLatest');
+      const list=document.getElementById('progressMemoList');
+      if(!latest || !list) return;
+      const memos=[...(state.progressMemos||[])].sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));
+      const last=latestProgressMemoUpdate();
+      latest.textContent=last ? `최종수정 ${displayDateTime(last)}` : '최종수정 없음';
+      if(!memos.length){
+        list.innerHTML='<div class="progress-memo-empty">아직 진행 메모가 없습니다.<br>+ 버튼으로 새 메모를 추가하세요.</div>';
+        return;
+      }
+      list.innerHTML=memos.map(m=>`<article class="progress-memo-card ${activeProgressMemoMenuId===m.id?'menu-open':''}" data-progress-memo="${escapeAttr(m.id)}" data-color="${escapeAttr(m.color||'yellow')}">
+        <div class="progress-memo-card-top">
+          <div class="progress-memo-meta">작성 ${displayDateTime(m.createdAt)}<br>작성자 <span class="progress-memo-author" contenteditable="true" data-progress-memo-author="${escapeAttr(m.id)}">${escapeHtml(m.author||'한이사')}</span></div>
+          <button type="button" class="progress-memo-menu-btn" data-progress-menu="${escapeAttr(m.id)}" aria-label="메모 메뉴">⋯</button>
+        </div>
+        <div class="progress-memo-content" contenteditable="true" data-progress-memo-content="${escapeAttr(m.id)}">${escapeHtml(m.content||'')}</div>
+        <div class="progress-memo-updated">수정 ${displayDateTime(m.updatedAt||m.createdAt)}</div>
+        <div class="progress-memo-menu">
+          <div class="progress-menu-label">표시 색</div>
+          <div class="progress-color-grid">${progressMemoColors().map(color=>`<button type="button" class="progress-color-dot" data-progress-color="${color}" data-progress-color-id="${escapeAttr(m.id)}" data-color="${color}" aria-label="${color}"></button>`).join('')}</div>
+          <button type="button" class="progress-delete-btn" data-progress-delete="${escapeAttr(m.id)}">삭제</button>
+        </div>
+      </article>`).join('');
+    }
     function renderCandidates(){ renderSection2(); }
     function renderVisits(){ const list=document.getElementById('visitList'); list.innerHTML=state.visits.map(v=>`<article class="visit-card" data-visit="${v.id}"><div class="visit-top"><div><div class="visit-title">${v.title}</div><div class="visit-meta">${v.date} / ${v.status} / 동행자 ${v.companions}<br>전체 반응: ${v.summary}<br>다음 액션: ${v.nextAction}</div></div><div><button class="small-btn" data-toggle-visit="${v.id}">상세 펼치기</button><button class="small-btn primary" data-next-visit="${v.id}">다음 차수 만들기</button></div></div><div class="visit-items">${v.items.map(i=>`<div class="visit-item"><b>${i.property}</b><br>${i.reaction} · ${i.memo}</div>`).join('')}</div><div class="visit-detail"><textarea class="edit-field textarea">${v.summary}\n${v.nextAction}</textarea><div class="inline-actions"><button class="small-btn primary" data-save-visit="${v.id}">임장 메모 저장</button></div></div></article>`).join(''); }
-    function renderAll(){ renderProject(); renderRouteChecks(); renderCandidates(); renderVisits(); updateSaveState(); }
+    function renderAll(){ renderProject(); renderRouteChecks(); renderCandidates(); renderVisits(); renderProgressMemos(); updateSaveState(); }
 
 
     let inlineBefore = null;
@@ -678,7 +763,62 @@
       }
       inlineBefore=null;
     });
+    document.addEventListener('focusin', e=>{
+      const content=e.target.closest('[data-progress-memo-content]');
+      const author=e.target.closest('[data-progress-memo-author]');
+      const el=content || author;
+      if(!el) return;
+      progressMemoBefore={id: content ? content.dataset.progressMemoContent : author.dataset.progressMemoAuthor, field: content ? 'content' : 'author', value:(el.innerText||el.textContent||'').trim()};
+    });
+    document.addEventListener('keydown', e=>{
+      const author=e.target.closest('[data-progress-memo-author]');
+      if(author && e.key==='Enter'){ e.preventDefault(); author.blur(); }
+      if((author || e.target.closest('[data-progress-memo-content]')) && e.key==='Escape'){
+        e.preventDefault();
+        if(progressMemoBefore) e.target.textContent=progressMemoBefore.value;
+        e.target.blur();
+      }
+    });
+    document.addEventListener('focusout', e=>{
+      const content=e.target.closest('[data-progress-memo-content]');
+      const author=e.target.closest('[data-progress-memo-author]');
+      const el=content || author;
+      if(!el || !progressMemoBefore) return;
+      const id=content ? content.dataset.progressMemoContent : author.dataset.progressMemoAuthor;
+      const field=content ? 'content' : 'author';
+      const value=(el.innerText||el.textContent||'').trim();
+      if(id===progressMemoBefore.id && field===progressMemoBefore.field && value!==progressMemoBefore.value){
+        const memo=(state.progressMemos||[]).find(m=>m.id===id);
+        if(memo){
+          markChange(field==='content'?'진행 메모 수정':'진행 메모 작성자 수정');
+          memo[field]=value;
+          memo.updatedAt=nowIso();
+          renderProgressMemos();
+        }
+      }
+      progressMemoBefore=null;
+    });
     document.addEventListener('click', e=>{
+      const addProgress=e.target.closest('#addProgressMemoBtn');
+      if(addProgress){
+        markChange('진행 메모 추가');
+        const next=(state.progressMemos||[]).length+1;
+        const now=nowIso();
+        state.progressMemos=state.progressMemos||[];
+        const id='PM-'+String(next).padStart(3,'0');
+        state.progressMemos.push({id, author:'한이사', content:'', color:'yellow', createdAt:now, updatedAt:now});
+        activeProgressMemoMenuId='';
+        renderProgressMemos();
+        setTimeout(()=>document.querySelector(`[data-progress-memo-content="${id}"]`)?.focus(),0);
+        return;
+      }
+      const menuBtn=e.target.closest('[data-progress-menu]');
+      if(menuBtn){ activeProgressMemoMenuId = activeProgressMemoMenuId===menuBtn.dataset.progressMenu ? '' : menuBtn.dataset.progressMenu; renderProgressMemos(); return; }
+      const colorBtn=e.target.closest('[data-progress-color-id]');
+      if(colorBtn){ const memo=(state.progressMemos||[]).find(m=>m.id===colorBtn.dataset.progressColorId); if(memo){ markChange('진행 메모 색상 변경'); memo.color=colorBtn.dataset.progressColor||'yellow'; memo.updatedAt=nowIso(); activeProgressMemoMenuId=''; renderProgressMemos(); } return; }
+      const delBtn=e.target.closest('[data-progress-delete]');
+      if(delBtn){ const id=delBtn.dataset.progressDelete; const memo=(state.progressMemos||[]).find(m=>m.id===id); if(memo && confirm('이 메모를 삭제할까요?')){ markChange('진행 메모 삭제'); state.progressMemos=(state.progressMemos||[]).filter(m=>m.id!==id); activeProgressMemoMenuId=''; renderProgressMemos(); } return; }
+      if(!e.target.closest('.progress-memo-card')){ if(activeProgressMemoMenuId){ activeProgressMemoMenuId=''; renderProgressMemos(); } }
       const routePick=e.target.closest('[data-pick-route]');
       if(routePick){ const v=routePick.dataset.pickRoute; activePickerValues = activePickerValues.includes(v) ? activePickerValues.filter(x=>x!==v) : [...activePickerValues, v]; routePick.classList.toggle('active'); if(v==='기타' && activePickerValues.includes('기타')) setTimeout(()=>modalContent.querySelector('[data-picker-etc-input]')?.focus(),0); return; }
       const singlePick=e.target.closest('[data-pick-single]');

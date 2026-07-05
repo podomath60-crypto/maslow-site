@@ -102,6 +102,8 @@
     .section-title{margin:4px 0 0;font-size:24px;line-height:1.15;font-weight:1000;letter-spacing:-.055em;display:flex;align-items:baseline;gap:8px}
     .section-title-no{font-size:29px;line-height:1;color:var(--section-color);font-weight:1000;letter-spacing:-.04em}
     .section-desc{font-size:13px;font-weight:800;color:#7b8794;line-height:1.5}
+    .section-title-action{height:38px;padding:0 13px;border-radius:8px;border:1px solid color-mix(in srgb,var(--section-color) 28%,#dbe5ee);background:#fff;color:var(--section-color);font-size:13px;font-weight:1000;letter-spacing:-.025em;box-shadow:0 8px 18px rgba(15,23,42,.045);white-space:nowrap}
+    .section-title-action:hover{background:var(--section-soft)}
     .section-body{padding:18px 20px 20px}
 
     .project-summary{display:grid;grid-template-columns:1.25fr .9fr;gap:14px}
@@ -427,15 +429,13 @@
           <div>
             <div class="section-kicker">SECTION 2</div>
             <div class="section-title"><span class="section-title-no">2</span> 매물 매칭 · 후보 관리 · 서칭 기록</div>
-            <div class="section-desc">후보매물은 반드시 우리 DB에 등록된 매물만 사용합니다. 외부에서 본 매물은 서칭기록으로만 남기고, 필요하면 admin에서 등록 후 전체매물검색으로 끌어옵니다.</div>
           </div>
+          <button class="section-title-action" id="listingEditorBtn" type="button">+ 매물입력기</button>
         </div>
         <div class="section-body">
-          <div class="section2-rule"><b>원칙</b> 후보매물 = 우리 DB 매물(listingNumber 필수) · 후보 추가 경로 = 전체매물검색 / 추천매물시스템 · 새 매물 등록 = admin 이동만</div>
           <div class="metric-row" id="candidateMetrics"></div>
           <div class="action-strip">
             <div class="action-strip-left">
-              <button class="main-action dark" id="newListingBtn">새 매물 등록</button>
               <button class="main-action blue" data-open-modal="dbSearch">전체매물 검색</button>
               <button class="main-action green" id="recommendBtn">추천매물 찾기</button>
               <button class="main-action" data-open-modal="searchLog">서칭기록 추가</button>
@@ -892,7 +892,7 @@
     }
     function addVisitRound(){ markChange('임장 라운드 추가'); const n=state.visits.length+1; const selected=state.candidates.filter(c=>c.proposal&&!c.rejected).slice(0,4); state.visits.push({id:'V-'+String(n).padStart(3,'0'),roundNo:n,title:n+'차 임장',date:'일정 협의',status:'예정',companions:'',summary:'제안선정 매물 중심으로 임장 예정',nextAction:'일정 확정',items:selected.map(c=>({property:c.title,reaction:'예정',memo:'방문 예정'}))}); renderAll(); }
     document.getElementById('todayInquiryBtn').addEventListener('click',()=>{ markChange('최초문의 오늘 입력'); state.project.inquiryDate=formatToday(); renderAll(); });
-    document.getElementById('newListingBtn').addEventListener('click',()=>{ window.location.href='/admin?mode=new'; });
+    document.getElementById('listingEditorBtn').addEventListener('click',()=>{ window.open('/admin?mode=new','_blank','noopener,noreferrer'); });
     document.getElementById('recommendBtn').addEventListener('click',()=>{ activeSection2Tab='추천매물'; activeFilter='전체'; renderSection2(); });
     document.getElementById('addVisitBtn').addEventListener('click',addVisitRound); document.getElementById('visitFromSelectedBtn').addEventListener('click',addVisitRound);
     document.getElementById('undoBtn').addEventListener('click',()=>{ if(!undoStack.length)return; const item=undoStack.pop(); redoStack.push({after:clone(state), label:item.label}); state=clone(item.before); dirty=true; persistUndo(); renderAll(); });

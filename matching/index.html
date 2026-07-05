@@ -39,11 +39,29 @@
     .top-btn.primary{background:#111318;color:#fff;border-color:#111318}
     .top-btn:disabled{opacity:.42;cursor:not-allowed}
 
-    .shell{width:100%;max-width:1380px;margin:0 auto;padding:22px 22px 56px;display:grid;gap:18px}
-    .section{background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden}
-    .section-head{padding:18px 20px;border-bottom:1px solid #edf2f7;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    .section-kicker{font-size:12px;font-weight:1000;color:#7d8792;letter-spacing:.08em;text-transform:uppercase}
-    .section-title{margin:3px 0 0;font-size:24px;line-height:1.15;font-weight:1000;letter-spacing:-.055em}
+    .workspace{width:100%;max-width:1380px;margin:0 auto;padding:22px 22px 56px;display:grid;grid-template-columns:240px minmax(0,1fr);gap:18px;align-items:start}
+    .section-sidebar{position:sticky;top:96px;display:grid;gap:10px;align-self:start}
+    .section-jump{width:100%;min-height:74px;border-radius:18px;border:1px solid #dce5ef;background:#fff;box-shadow:0 10px 22px rgba(15,23,42,.04);display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;gap:12px;padding:0 14px;text-align:left;color:#1f2933;transition:.16s ease}
+    .section-jump:hover{transform:translateY(-1px);border-color:var(--section-color,#a7b2c0);background:linear-gradient(90deg,var(--section-soft,#f6f8fb),#fff 82%)}
+    .section-jump.active{border-color:var(--section-color,#111318);background:linear-gradient(90deg,var(--section-soft,#f6f8fb),#fff 78%);box-shadow:0 12px 26px rgba(15,23,42,.07)}
+    .section-jump-no{font-size:12px;font-weight:1000;color:var(--section-color,#111318);letter-spacing:.02em}
+    .section-jump-title{font-size:15px;font-weight:1000;letter-spacing:-.04em;line-height:1.25;color:#151922}
+    .section-jump-desc{grid-column:2;font-size:11px;font-weight:850;color:#7b8794;margin-top:-8px;line-height:1.25}
+    .section-jump[data-section="1"]{--section-color:#2563eb;--section-soft:#eef5ff}
+    .section-jump[data-section="2"]{--section-color:#7c3aed;--section-soft:#f5f0ff}
+    .section-jump[data-section="3"]{--section-color:#16a34a;--section-soft:#ecfff5}
+    .section-jump[data-section="4"]{--section-color:#f59e0b;--section-soft:#fff8e6}
+    .shell{min-width:0;padding:0;display:grid;gap:18px}
+    .section{--section-color:#64748b;--section-soft:#f6f8fb;background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;scroll-margin-top:92px}
+    .section[data-section="1"]{--section-color:#2563eb;--section-soft:#eef5ff}
+    .section[data-section="2"]{--section-color:#7c3aed;--section-soft:#f5f0ff}
+    .section[data-section="3"]{--section-color:#16a34a;--section-soft:#ecfff5}
+    .section[data-section="4"]{--section-color:#f59e0b;--section-soft:#fff8e6}
+    .section-head{position:relative;padding:22px 20px 18px;border-bottom:1px solid #edf2f7;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(90deg,var(--section-soft),#fff 72%)}
+    .section-head::before{content:"";position:absolute;left:20px;top:14px;width:42px;height:3px;border-radius:999px;background:var(--section-color)}
+    .section-kicker{margin-top:8px;font-size:12px;font-weight:1000;color:var(--section-color);letter-spacing:.08em;text-transform:uppercase}
+    .section-title{margin:4px 0 0;font-size:24px;line-height:1.15;font-weight:1000;letter-spacing:-.055em;display:flex;align-items:baseline;gap:8px}
+    .section-title-no{font-size:29px;line-height:1;color:var(--section-color);font-weight:1000;letter-spacing:-.04em}
     .section-desc{font-size:13px;font-weight:800;color:#7b8794;line-height:1.5}
     .section-body{padding:18px 20px 20px}
 
@@ -209,8 +227,8 @@
     .business-card-viewer-frame{height:min(62vh,560px);border-radius:18px;background:#f6f8fb;border:1px solid #e5ebf2;display:flex;align-items:center;justify-content:center;overflow:hidden}
     .business-card-viewer-frame img{max-width:100%;max-height:100%;object-fit:contain;display:block;background:#fff}
 
-    @media(max-width:1100px){.project-summary{grid-template-columns:1fr}.project-hero{grid-template-columns:1fr}.business-card-grid{width:360px;max-width:100%}.business-card-slot{max-width:100%}.candidate-grid,.db-result-grid,.search-log-grid,.recommend-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.search-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
-    @media(max-width:760px){.title-contact-row{grid-template-columns:1fr}.business-card-grid{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}.business-card-slot{height:132px}.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.shell{padding:14px 12px 42px}.section{border-radius:22px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.summary-grid,.project-line-grid,.candidate-grid,.db-result-grid,.search-log-grid,.recommend-grid,.metric-row,.edit-row,.modal-grid,.search-filter-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
+    @media(max-width:1100px){.workspace{grid-template-columns:1fr}.section-sidebar{position:static;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.section-jump{min-height:62px;grid-template-columns:1fr;gap:4px;padding:10px 12px}.section-jump-desc{display:none}.project-summary{grid-template-columns:1fr}.project-hero{grid-template-columns:1fr}.business-card-grid{width:360px;max-width:100%}.business-card-slot{max-width:100%}.candidate-grid,.db-result-grid,.search-log-grid,.recommend-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.search-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
+    @media(max-width:760px){.title-contact-row{grid-template-columns:1fr}.business-card-grid{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}.business-card-slot{height:132px}.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.workspace{padding:14px 12px 42px;gap:12px}.section-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.section-jump{border-radius:16px;min-height:58px}.shell{padding:0}.section{border-radius:22px;scroll-margin-top:118px}.section-head{padding-top:22px}.section-head::before{left:14px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.section-title{font-size:22px}.section-title-no{font-size:26px}.summary-grid,.project-line-grid,.candidate-grid,.db-result-grid,.search-log-grid,.recommend-grid,.metric-row,.edit-row,.modal-grid,.search-filter-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
   </style>
 </head>
 <body>
@@ -230,12 +248,19 @@
       </div>
     </header>
 
-    <main class="shell">
-      <section class="section" id="sectionProject">
+    <main class="workspace">
+      <aside class="section-sidebar" aria-label="섹션 바로가기">
+        <button type="button" class="section-jump active" data-section="1" data-target="sectionProject"><span class="section-jump-no">01</span><span class="section-jump-title">프로젝트 정보</span><span class="section-jump-desc">의뢰·고객·조건</span></button>
+        <button type="button" class="section-jump" data-section="2" data-target="sectionCandidates"><span class="section-jump-no">02</span><span class="section-jump-title">매물 매칭</span><span class="section-jump-desc">후보·검색·서칭</span></button>
+        <button type="button" class="section-jump" data-section="3" data-target="sectionVisits"><span class="section-jump-no">03</span><span class="section-jump-title">임장</span><span class="section-jump-desc">라운드·방문기록</span></button>
+        <button type="button" class="section-jump" data-section="4" data-target="sectionContract"><span class="section-jump-no">04</span><span class="section-jump-title">계약</span><span class="section-jump-desc">진행상태·정산</span></button>
+      </aside>
+      <div class="shell">
+      <section class="section" id="sectionProject" data-section="1">
         <div class="section-head">
           <div>
             <div class="section-kicker">SECTION 1</div>
-            <div class="section-title">프로젝트 정보</div>
+            <div class="section-title"><span class="section-title-no">1</span> 프로젝트 정보</div>
           </div>
         </div>
         <div class="section-body project-flat">
@@ -355,11 +380,11 @@
         </div>
       </section>
 
-      <section class="section" id="sectionCandidates">
+      <section class="section" id="sectionCandidates" data-section="2">
         <div class="section-head">
           <div>
             <div class="section-kicker">SECTION 2</div>
-            <div class="section-title">매물 매칭 · 후보 관리 · 서칭 기록</div>
+            <div class="section-title"><span class="section-title-no">2</span> 매물 매칭 · 후보 관리 · 서칭 기록</div>
             <div class="section-desc">후보매물은 반드시 우리 DB에 등록된 매물만 사용합니다. 외부에서 본 매물은 서칭기록으로만 남기고, 필요하면 admin에서 등록 후 전체매물검색으로 끌어옵니다.</div>
           </div>
         </div>
@@ -380,11 +405,11 @@
         </div>
       </section>
 
-      <section class="section" id="sectionVisits">
+      <section class="section" id="sectionVisits" data-section="3">
         <div class="section-head">
           <div>
             <div class="section-kicker">SECTION 3</div>
-            <div class="section-title">임장</div>
+            <div class="section-title"><span class="section-title-no">3</span> 임장</div>
           </div>
         </div>
         <div class="section-body">
@@ -395,15 +420,16 @@
         </div>
       </section>
 
-      <section class="section" id="sectionContract">
+      <section class="section" id="sectionContract" data-section="4">
         <div class="section-head">
           <div>
             <div class="section-kicker">SECTION 4</div>
-            <div class="section-title">계약</div>
+            <div class="section-title"><span class="section-title-no">4</span> 계약</div>
           </div>
         </div>
         <div class="section-body"><div class="contract-empty"></div></div>
       </section>
+      </div>
     </main>
   </div>
 
@@ -834,6 +860,30 @@
         reader.readAsDataURL(file);
       });
     });
+    function initSectionNav(){
+      const jumps=Array.from(document.querySelectorAll('.section-jump'));
+      const sections=Array.from(document.querySelectorAll('.section[data-section]'));
+      if(!jumps.length || !sections.length) return;
+      const setActive=(id)=>{
+        jumps.forEach(btn=>btn.classList.toggle('active', btn.dataset.target===id));
+      };
+      jumps.forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const target=document.getElementById(btn.dataset.target);
+          if(!target) return;
+          target.scrollIntoView({behavior:'smooth', block:'start'});
+          setActive(btn.dataset.target);
+        });
+      });
+      if('IntersectionObserver' in window){
+        const observer=new IntersectionObserver(entries=>{
+          const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+          if(visible && visible.target) setActive(visible.target.id);
+        },{root:null, rootMargin:'-110px 0px -55% 0px', threshold:[0,.12,.28,.5]});
+        sections.forEach(section=>observer.observe(section));
+      }
+    }
+    initSectionNav();
     renderAll();
   </script>
 </body>

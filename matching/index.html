@@ -194,26 +194,26 @@
     .small-btn{min-height:32px;padding:0 11px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#48515d;font-size:12px;font-weight:950}
     .small-btn.primary{background:#0f7cff;border-color:#0f7cff;color:#fff}
 
-    .metric-row{display:block;margin-bottom:14px}
+    .metric-row{display:grid;grid-template-columns:minmax(250px,2fr) minmax(0,4fr);gap:10px;margin-bottom:14px;align-items:stretch}
     .metric-small-grid{display:grid;grid-template-columns:repeat(4,minmax(112px,1fr));grid-template-rows:repeat(2,minmax(76px,1fr));gap:10px;min-width:0}
     .metric{appearance:none;position:relative;overflow:hidden;text-align:left;border:1px solid #e6ebf1;border-radius:18px;background:#fff;padding:14px 18px;min-height:76px;display:flex;align-items:center;justify-content:flex-start;gap:12px;cursor:pointer;box-shadow:0 8px 18px rgba(15,23,42,.03);transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease,background .15s ease}
     .metric:hover{transform:translateY(-1px);border-color:#cfd9e6;box-shadow:0 12px 24px rgba(15,23,42,.055)}
     .metric.active{border-color:#111318;box-shadow:0 12px 26px rgba(17,19,24,.085)}
-    .metric.metric-main{min-height:76px;background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%);padding:14px 18px;gap:12px;grid-column:1;grid-row:1}
+    .metric.metric-main{min-height:162px;background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%);padding:24px 28px;gap:18px}
     .metric.map-toggle{border-color:#c7d2fe;background:linear-gradient(135deg,#f8fbff 0%,#f5f3ff 100%)}
     .metric.map-toggle.active{border-color:#7c3aed;background:#f7f3ff;box-shadow:0 0 0 3px rgba(124,58,237,.10),0 12px 26px rgba(17,19,24,.07)}
     .metric-core{position:relative;z-index:2;display:flex;align-items:center;gap:10px;min-width:0;order:2}
     .metric-num{font-size:30px;font-weight:850;letter-spacing:-.06em;line-height:.92;color:#334155;min-width:26px}
-    .metric.metric-main .metric-num{font-size:30px;font-weight:850;min-width:26px;color:#273243}
+    .metric.metric-main .metric-num{font-size:58px;font-weight:850;min-width:58px;color:#273243}
     .metric-label{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:1000;color:#475569;line-height:1.05;letter-spacing:-.03em;white-space:nowrap}
-    .metric.metric-main .metric-label{font-size:12px;line-height:1.05;color:#273243}
+    .metric.metric-main .metric-label{font-size:20px;line-height:1.06;color:#273243}
     .metric-label span{display:block}
     .metric-icon{position:relative;right:auto;bottom:auto;width:42px;height:42px;flex:0 0 42px;z-index:2;opacity:.92;filter:drop-shadow(0 5px 8px rgba(15,23,42,.08));pointer-events:none;order:1}
-    .metric.metric-main .metric-icon{width:42px;height:42px;flex-basis:42px;opacity:.94}
+    .metric.metric-main .metric-icon{width:78px;height:78px;flex-basis:78px;opacity:.94}
     .metric-icon svg{display:block;width:100%;height:100%}
-    .metric.algo{grid-column:2;grid-row:1}.metric.manual{grid-column:3;grid-row:1}.metric.log{grid-column:4;grid-row:1}.metric.proposal{grid-column:1;grid-row:2}.metric.visit{grid-column:2;grid-row:2}.metric.hold{grid-column:3;grid-row:2}.metric.rejected{grid-column:4;grid-row:2}
-    .metric.algo.active{border-color:#16a34a;background:#f3fff8}.metric.manual.active{border-color:#0f7cff;background:#f3f8ff}.metric.log.active{border-color:#7c3aed;background:#f7f3ff}.metric.proposal.active{border-color:#059669;background:#f2fff9}.metric.visit.active{border-color:#f97316;background:#fff8f1}.metric.hold.active{border-color:#64748b;background:#f8fafc}.metric.rejected.active{border-color:#ef4444;background:#fff5f5}
-    @media(max-width:1200px){.metric-row{display:block}.metric.metric-main{min-height:76px}.metric.metric-main .metric-icon{width:42px;height:42px;flex-basis:42px}.metric.metric-main .metric-num{font-size:30px}.metric.metric-main .metric-label{font-size:12px}.metric-small-grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:auto}.metric.metric-main,.metric.algo,.metric.manual,.metric.log,.metric.proposal,.metric.visit,.metric.hold,.metric.rejected{grid-column:auto;grid-row:auto}}
+    .metric.total{grid-column:1;grid-row:1}.metric.algo{grid-column:2;grid-row:1}.metric.manual{grid-column:3;grid-row:1}.metric.log{grid-column:4;grid-row:1}.metric.proposal{grid-column:1;grid-row:2}.metric.visit{grid-column:2;grid-row:2}.metric.hold{grid-column:3;grid-row:2}.metric.rejected{grid-column:4;grid-row:2}
+    .metric.total.active{border-color:#111318;background:#f8fbff}.metric.algo.active{border-color:#16a34a;background:#f3fff8}.metric.manual.active{border-color:#0f7cff;background:#f3f8ff}.metric.log.active{border-color:#7c3aed;background:#f7f3ff}.metric.proposal.active{border-color:#059669;background:#f2fff9}.metric.visit.active{border-color:#f97316;background:#fff8f1}.metric.hold.active{border-color:#64748b;background:#f8fafc}.metric.rejected.active{border-color:#ef4444;background:#fff5f5}
+    @media(max-width:1200px){.metric-row{grid-template-columns:1fr}.metric.metric-main{min-height:118px}.metric.metric-main .metric-icon{width:58px;height:58px;flex-basis:58px}.metric.metric-main .metric-num{font-size:44px}.metric.metric-main .metric-label{font-size:17px}.metric-small-grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:auto}.metric.metric-main,.metric.total,.metric.algo,.metric.manual,.metric.log,.metric.proposal,.metric.visit,.metric.hold,.metric.rejected{grid-column:auto;grid-row:auto}}
     .action-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
     .action-strip-left,.action-strip-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .main-action{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#253041;font-size:14px;font-weight:1000;box-shadow:0 8px 18px rgba(15,23,42,.04)}
@@ -811,8 +811,9 @@
     function renderMetrics(){
       const c=candidateCounts();
       const viewLabel=candidateViewMode==='map' ? ['매칭-맵으로','보는중'] : ['매칭-패널로','보는중'];
+      const main={key:'mapToggle', target:'toggleCandidateView', count:c.total, lines:viewLabel, cls:'metric-main map-toggle'};
       const metrics=[
-        {key:'mapToggle', target:'toggleCandidateView', count:c.total, lines:viewLabel, cls:'metric-main map-toggle'},
+        {key:'total', target:'candidates', count:c.total, lines:['전체','후보'], cls:'total'},
         {key:'algo', target:'recommendation', count:c.recommendation, lines:['알고리즘','추천'], cls:'algo'},
         {key:'manual', target:'manual', count:c.manual, lines:['수동','선정'], cls:'manual'},
         {key:'log', target:'searchLogs', count:c.searchLogs, lines:['서칭','기록'], cls:'log'},
@@ -821,7 +822,7 @@
         {key:'hold', target:'hold', count:c.hold, lines:['보류'], cls:'hold'},
         {key:'rejected', target:'rejected', count:c.rejected, lines:['탈락'], cls:'rejected'}
       ];
-      document.getElementById('candidateMetrics').innerHTML=`<div class="metric-small-grid">${metrics.map(renderMetricButton).join('')}</div>`;
+      document.getElementById('candidateMetrics').innerHTML=renderMetricButton(main)+`<div class="metric-small-grid">${metrics.map(renderMetricButton).join('')}</div>`;
     }
     function renderSection2Tabs(){ const el=document.getElementById('section2Tabs'); if(el) el.innerHTML=''; }
     function renderFilters(){ const wrap=document.getElementById('candidateFilters'); if(wrap) wrap.innerHTML=''; }

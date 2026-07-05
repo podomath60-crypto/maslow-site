@@ -297,7 +297,9 @@
     .search-log-card{padding:12px;gap:8px}
     .search-log-card.is-active{border-color:#7c3aed;box-shadow:0 12px 24px rgba(124,58,237,.09)}
     .search-log-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-    .search-log-id{font-size:11px;font-weight:1000;color:#8a94a1}
+    .search-log-id{font-size:11px;font-weight:1000;color:#8a94a1;display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0}
+    .search-log-meta{font-size:11px;font-weight:900;color:#6b7280;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .search-log-meta-dot{color:#c4ccd6;font-weight:900}
     .search-log-fields{display:grid;gap:7px}
     .search-log-row{display:grid;grid-template-columns:58px minmax(0,1fr);gap:7px;align-items:center}
     .search-log-row label{font-size:11px;font-weight:1000;color:#7b8794;letter-spacing:-.02em}
@@ -666,8 +668,8 @@
         {propertyId:'MK-260623-022', title:'소룡동 야드 넓은 공장', address:'전북 군산시 소룡동', dealType:'매매', price:'31억', area:'대지 3,100평 / 건물 760평', status:'가격협의', sourceType:'recommendation', sourceLabel:'추천매물', score:82, reason:'위치와 규모는 좋지만 현재 예산 상단을 약간 넘습니다.', strengths:['군산권','면적 우수','진입 좋음'], weakPoints:['예산 초과'], risks:['가격 협의 필요']}
       ],
       searchLogs:[
-        {id:'SL-001', source:'네이버', title:'군산 산북동 외부 매물', address:'군산시 산북동', price:'22억', area:'대지 약 2,000평', contact:'중개사 확인 필요', link:'', memo:'네이버에서 확인. 사진상 야드는 괜찮아 보임. DB 등록 전.', status:'검토중'},
-        {id:'SL-002', source:'전화', title:'익산 식품공장 가능 물건', address:'익산시 왕궁면', price:'가격 미정', area:'대지 2,500평 전후', contact:'소유자 지인', link:'', memo:'전화로 들은 후보. 자료 받으면 admin 등록 검토.', status:'매물등록필요'}
+        {id:'SL-001', source:'네이버', author:'한이사', title:'군산 산북동 외부 매물', address:'군산시 산북동', price:'22억', area:'대지 약 2,000평', contact:'중개사 확인 필요', link:'', memo:'네이버에서 확인. 사진상 야드는 괜찮아 보임. DB 등록 전.', status:'검토중', createdAt:'2026-07-05T10:20:00+09:00', updatedAt:'2026-07-05T10:20:00+09:00'},
+        {id:'SL-002', source:'전화', author:'한이사', title:'익산 식품공장 가능 물건', address:'익산시 왕궁면', price:'가격 미정', area:'대지 2,500평 전후', contact:'소유자 지인', link:'', memo:'전화로 들은 후보. 자료 받으면 admin 등록 검토.', status:'매물등록 필요', createdAt:'2026-07-05T11:10:00+09:00', updatedAt:'2026-07-05T11:10:00+09:00'}
       ],
       progressMemos:[
         {id:'PM-001', author:'한이사', content:'오식도 후보는 소유자 통화 후 전력 조건 확인 필요.', color:'yellow', createdAt:'2026-06-23T10:20:00+09:00', updatedAt:'2026-06-23T10:20:00+09:00'},
@@ -1776,6 +1778,13 @@
     }
     function renderRecommendationPanel(){ return `<div class="section2-rule"><b>추천매물시스템</b> 현재 의뢰 조건을 기준으로 우리 DB에서 추천된 매물입니다. 결과를 검토한 뒤 필요한 매물만 후보로 추가합니다.</div>${renderDbCards(state.recommendationResults||[], 'recommendation')}`; }
     function searchLogSources(){ return ['블로그','네이버부동산','땅야','한방','부동산포스','문자','전화','현장','소개','기타']; }
+    function searchLogStatusOptions(){ return ['기록중','검토중','매물등록 필요','등록완료','보류','탈락']; }
+    function normalizeSearchLogStatus(value){
+      const v=String(value||'').trim();
+      if(v==='기록만') return '기록중';
+      if(v==='매물등록필요') return '매물등록 필요';
+      return v || '기록중';
+    }
     function nextSearchLogId(){
       const nums=(state.searchLogs||[]).map(x=>Number(String(x.id||'').replace(/\D/g,''))).filter(Number.isFinite);
       const n=(nums.length ? Math.max(...nums) : 0) + 1;
@@ -1786,7 +1795,7 @@
       state.searchLogs=state.searchLogs||[];
       const now=nowIso();
       const id=nextSearchLogId();
-      state.searchLogs.push({id, source:'네이버부동산', title:'', address:'', price:'', area:'', link:'', memo:'', status:'기록중', createdAt:now, updatedAt:now, studyStatus:'', studyResult:null, studyMemo:''});
+      state.searchLogs.push({id, source:'네이버부동산', author:'한이사', title:'', address:'', price:'', area:'', link:'', memo:'', status:'기록중', createdAt:now, updatedAt:now, studyStatus:'', studyResult:null, studyMemo:''});
       activeSection2Tab='서칭기록';
       activeFilter='전체';
       activeStudyLogId=id;
@@ -1796,13 +1805,44 @@
     function updateSearchLogField(id, field, value){
       const log=(state.searchLogs||[]).find(x=>x.id===id);
       if(!log) return;
-      log[field]=value;
+      log[field]=field==='status' ? normalizeSearchLogStatus(value) : value;
       if(field==='link' && !log.title) log.title=value;
       log.updatedAt=nowIso();
       dirty=true;
       updateSaveState();
       renderMetrics();
       renderSearchStudyPanel();
+      if(field==='link'){
+        const btn=Array.from(document.querySelectorAll('[data-log-open-url]')).find(el=>String(el.dataset.logOpenUrl || '')===String(id || ''));
+        if(btn) btn.disabled=!String(value||'').trim();
+      }
+    }
+    function commitSearchLogCard(id){
+      const log=(state.searchLogs||[]).find(x=>x.id===id);
+      if(!log) return;
+      ['source','author','status','link','address','area','price','memo'].forEach(field=>{
+        const value=getSearchLogDomFieldValue(id, field);
+        if(value !== undefined){
+          log[field]=field==='status' ? normalizeSearchLogStatus(value) : value;
+        }
+      });
+      if(!log.title && log.link) log.title=log.link;
+      log.updatedAt=nowIso();
+      markChange('서칭기록 저장');
+      activeStudyLogId=id;
+      renderAll();
+    }
+    function deleteSearchLogCard(id){
+      const logs=state.searchLogs||[];
+      const log=logs.find(x=>x.id===id);
+      if(!log) return;
+      const label=[log.id, log.address || log.link || log.title || '서칭기록'].filter(Boolean).join(' · ');
+      if(!confirm(label + '\n\n이 서칭기록 패널을 완전히 삭제할까요?')) return;
+      markChange('서칭기록 삭제');
+      state.searchLogs=logs.filter(x=>x.id!==id);
+      if(activeSearchLogId===id) activeSearchLogId='';
+      if(activeStudyLogId===id) activeStudyLogId='';
+      renderAll();
     }
     function normalizeSearchLogUrl(value){
       const v=String(value||'').trim();
@@ -1812,12 +1852,19 @@
     }
     function openSearchLogUrl(id){
       const log=(state.searchLogs||[]).find(x=>x.id===id);
-      if(!log) return;
       const domValue=getSearchLogDomFieldValue(id, 'link');
-      if(domValue) log.link=domValue;
-      const url=normalizeSearchLogUrl(log.link || log.title || '');
-      if(!url) return;
-      window.open(url, '_blank', 'noopener,noreferrer');
+      const raw=(domValue || (log && (log.link || log.title)) || '').trim();
+      const url=normalizeSearchLogUrl(raw);
+      if(!url){ alert('URL을 먼저 입력하세요.'); return; }
+      if(log){
+        log.link=raw;
+        if(!log.title) log.title=raw;
+        log.updatedAt=nowIso();
+        dirty=true;
+        updateSaveState();
+      }
+      const opened=window.open(url, '_blank', 'noopener,noreferrer');
+      if(opened) opened.opener=null;
     }
     function cleanStudyLookupError(err){
       function one(e){ return e && e.message ? String(e.message) : String(e || '조회 실패'); }
@@ -1896,6 +1943,16 @@
       return {bcode:pnu.slice(0,10), mainMountainCode:pnu.slice(10,11), bun:pnu.slice(11,15), ji:pnu.slice(15,19)};
     }
     function normalizeStudyAddressText(value){ return String(value || '').replace(/\s+/g,' ').trim(); }
+    function cleanStudyBuildingLookupAddress(value){
+      let text=normalizeStudyAddressText(value);
+      if(!text) return '';
+      text=text.replace(/[（]/g,'(').replace(/[）]/g,')');
+      // 지번 주소 뒤에 붙은 업체명/상호명 제거: 예) 전북 군산시 오식도동 813-9 (주)탑피온
+      text=text.replace(/((?:^|\s)(?:산\s*)?\d{1,5}(?:-\d{1,5})?)\s*\([^)]*\).*$/,'$1').trim();
+      // 괄호 없이 붙은 흔한 법인 표기도 지번 뒤에서는 제거
+      text=text.replace(/((?:^|\s)(?:산\s*)?\d{1,5}(?:-\d{1,5})?)\s+(?:주식회사|유한회사|㈜|\(주\)|[가-힣A-Za-z0-9._&-]+(?:주식회사|산업|공업|테크|푸드|물류|에너지|금속|기계|정공|화학|전자|건설|개발|산단|공장)).*$/,'$1').trim();
+      return normalizeStudyAddressText(text);
+    }
     async function ensureMatchingVworldKey(){
       if(matchingMapState.vworldKey) return matchingMapState.vworldKey;
       try{
@@ -1911,9 +1968,9 @@
     }
     function syncSearchLogDomFields(log){
       if(!log) return;
-      ['source','link','title','address','area','price','memo'].forEach(field=>{
+      ['source','status','link','title','address','area','price','memo'].forEach(field=>{
         const value=getSearchLogDomFieldValue(log.id, field);
-        if(value) log[field]=value;
+        if(value) log[field]=field==='status' ? normalizeSearchLogStatus(value) : value;
       });
     }
     async function geocodeSearchLogAddress(address){
@@ -1952,13 +2009,16 @@
       return {action:'fetchLandInfoBySearchResult', pnu:meta.pnu || '', queryAddress:meta.queryAddress || meta.address || '', lookupAddress:meta.lookupAddress || meta.queryAddress || meta.address || '', address:meta.address || meta.queryAddress || ''};
     }
     function buildSearchLogBuildingParams(meta){
+      const cleanJibun=cleanStudyBuildingLookupAddress(meta.jibunAddress || meta.queryAddress || meta.address || meta.lookupAddress || '');
+      const cleanRoad=cleanStudyBuildingLookupAddress(meta.roadAddress || meta.autoRoadAddress || '');
+      const cleanQuery=firstStudyNonEmpty(cleanJibun, cleanRoad, cleanStudyBuildingLookupAddress(meta.queryAddress || meta.address || ''));
       return {
-        action:'fetchPublicPropertyBySearchResult', address:meta.queryAddress || meta.address || '',
-        jibunAddress:meta.jibunAddress || '', roadAddress:meta.roadAddress || '',
-        autoJibunAddress:meta.autoJibunAddress || meta.jibunAddress || '', autoRoadAddress:meta.autoRoadAddress || meta.roadAddress || '',
-        lookupAddress:meta.lookupAddress || meta.queryAddress || meta.address || '', bcode:meta.bcode || '',
+        action:'fetchPublicPropertyBySearchResult', address:cleanQuery,
+        jibunAddress:cleanJibun, roadAddress:cleanRoad,
+        autoJibunAddress:cleanJibun, autoRoadAddress:cleanRoad,
+        lookupAddress:cleanQuery, bcode:meta.bcode || '',
         sido:'', sigungu:'', bname:'', buildingName:'', zonecode:'', apartment:'',
-        addressType:meta.addressType || '', pnu:meta.pnu || '', queryAddress:meta.queryAddress || meta.address || '', queryAddressType:meta.queryAddressType || ''
+        addressType:cleanJibun ? 'JIBUN' : (cleanRoad ? 'ROAD' : (meta.addressType || '')), pnu:meta.pnu || '', queryAddress:cleanQuery, queryAddressType:cleanJibun ? 'JIBUN' : (cleanRoad ? 'ROAD' : (meta.queryAddressType || ''))
       };
     }
     async function publicLookupLandWithYearFallback(params){
@@ -2188,25 +2248,32 @@
       if(!logs.length) return '<div class="candidate-empty">서칭기록이 없습니다.<br>+ 서칭기록저장으로 외부 매물 기록 패널을 추가하세요.</div>';
       const statusClass=s=>s==='보류'?'hold':s==='탈락'?'rejected':s==='등록완료'?'registered':'';
       const sources=searchLogSources();
+      const statuses=searchLogStatusOptions();
       return `<div class="search-log-grid">${logs.map(log=>`
         <article class="search-log-card ${activeStudyLogId===log.id?'is-active':''}" data-search-log-card="${escapeAttr(log.id)}">
           <div class="search-log-top">
-            <div class="search-log-id">${escapeHtml(log.id)}</div>
-            <span class="log-status ${statusClass(log.status)}">${escapeHtml(log.status||'기록중')}</span>
+            <div class="search-log-id">
+              <span>${escapeHtml(log.id)}</span><span class="search-log-meta-dot">·</span><span class="search-log-meta">${escapeHtml(log.author||'한이사')} · ${escapeHtml(displayDateTime(log.createdAt||log.updatedAt))}</span>
+            </div>
+            <span class="log-status ${statusClass(log.status)}">${escapeHtml(normalizeSearchLogStatus(log.status))}</span>
           </div>
           <div class="search-log-fields">
+            <div class="search-log-row"><label>작성자</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="author" value="${escapeAttr(log.author||'한이사')}" placeholder="작성자"></div>
             <div class="search-log-row"><label>가져온곳</label><select class="search-log-select" data-log-field-id="${escapeAttr(log.id)}" data-log-field="source">${sources.map(src=>`<option value="${escapeAttr(src)}" ${src===(log.source||'')?'selected':''}>${escapeHtml(src)}</option>`).join('')}</select></div>
-            <div class="search-log-row"><label>URL</label><div class="search-log-url-wrap"><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="link" value="${escapeAttr(log.link||log.title||'')}" placeholder="URL 입력"><button class="search-log-open" type="button" data-log-open-url="${escapeAttr(log.id)}" ${(log.link||log.title)?'':'disabled'}>열기</button></div></div>
+            <div class="search-log-row"><label>상태</label><select class="search-log-select" data-log-field-id="${escapeAttr(log.id)}" data-log-field="status">${statuses.map(st=>`<option value="${escapeAttr(st)}" ${st===normalizeSearchLogStatus(log.status)?'selected':''}>${escapeHtml(st)}</option>`).join('')}</select></div>
+            <div class="search-log-row"><label>URL</label><div class="search-log-url-wrap"><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="link" value="${escapeAttr(log.link||log.title||'')}" placeholder="URL 입력"><button class="search-log-open" type="button" data-log-open-url="${escapeAttr(log.id)}">열기</button></div></div>
             <div class="search-log-row"><label>주소</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="address" value="${escapeAttr(log.address||'')}" placeholder="주소 입력"></div>
             <div class="search-log-row"><label>면적</label><textarea class="search-log-textarea search-log-area" data-log-field-id="${escapeAttr(log.id)}" data-log-field="area" placeholder="대지/건물 면적을 여러 줄로 입력">${escapeHtml(log.area||'')}</textarea></div>
             <div class="search-log-row"><label>가격</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="price" value="${escapeAttr(log.price||'')}" placeholder="매매가/임대가"></div>
             <textarea class="search-log-textarea" data-log-field-id="${escapeAttr(log.id)}" data-log-field="memo" placeholder="메모">${escapeHtml(log.memo||'')}</textarea>
           </div>
           <div class="cand-actions">
+            <button class="card-btn green" data-log-save="${escapeAttr(log.id)}">저장</button>
             <button class="card-btn" data-log-study="${escapeAttr(log.id)}">공부조회</button>
             <button class="card-btn dark" data-log-admin="${escapeAttr(log.id)}">매물입력기로 등록</button>
             <button class="card-btn" data-log-status="${escapeAttr(log.id)}" data-status="보류">보류</button>
             <button class="card-btn red" data-log-status="${escapeAttr(log.id)}" data-status="탈락">탈락</button>
+            <button class="card-btn red" data-log-delete="${escapeAttr(log.id)}">삭제</button>
           </div>
         </article>`).join('')}</div>`;
     }
@@ -2449,14 +2516,18 @@
       const mapChip=e.target.closest('[data-map-value]'); if(mapChip){ applyMapChip(mapChip.dataset.mapGroup, mapChip.dataset.mapValue); return; }
       const mapGroup=e.target.closest('[data-map-group]'); if(mapGroup){ selectMapGroup(mapGroup.dataset.mapGroup); return; }
       const resultCard=e.target.closest('[data-map-result-id]'); if(resultCard && !e.target.closest('button,a,input,textarea,select,[contenteditable]')){ focusMatchingMapResultItem(resultCard.dataset.mapResultId); return; }
+      const logSave=e.target.closest('[data-log-save]');
+      if(logSave){ commitSearchLogCard(logSave.dataset.logSave); return; }
       const logStudy=e.target.closest('[data-log-study]');
       if(logStudy){ runSearchLogStudy(logStudy.dataset.logStudy); return; }
       const logAdmin=e.target.closest('[data-log-admin]');
       if(logAdmin){ window.open('/admin?mode=new','_blank','noopener,noreferrer'); return; }
       const logOpenUrl=e.target.closest('[data-log-open-url]');
       if(logOpenUrl){ openSearchLogUrl(logOpenUrl.dataset.logOpenUrl); return; }
+      const logDelete=e.target.closest('[data-log-delete]');
+      if(logDelete){ deleteSearchLogCard(logDelete.dataset.logDelete); return; }
       const logStatus=e.target.closest('[data-log-status]');
-      if(logStatus){ const log=(state.searchLogs||[]).find(x=>x.id===logStatus.dataset.logStatus); if(log){ markChange('서칭기록 상태 변경'); log.status=logStatus.dataset.status||'기록중'; log.updatedAt=nowIso(); activeStudyLogId=log.id; renderAll(); } return; }
+      if(logStatus){ const log=(state.searchLogs||[]).find(x=>x.id===logStatus.dataset.logStatus); if(log){ markChange('서칭기록 상태 변경'); log.status=normalizeSearchLogStatus(logStatus.dataset.status||'기록중'); log.updatedAt=nowIso(); activeStudyLogId=log.id; renderAll(); } return; }
       const addDb=e.target.closest('[data-add-db-candidate]'); if(addDb){ addCandidateFromDb(addDb.dataset.addDbCandidate, addDb.dataset.addSource); return; }
       const reject=e.target.closest('[data-reject]'); if(reject){ openCandidateInline(reject.dataset.reject,'reject'); }
       const owner=e.target.closest('[data-owner]'); if(owner){ openCandidateInline(owner.dataset.owner,'owner'); }
@@ -2619,7 +2690,7 @@
       if(mode==='searchLog'){
         modalTitle.textContent='서칭기록 추가';
         modalDesc.textContent='외부에서 본 매물은 후보로 바로 올리지 않고 기록만 남깁니다.';
-        modalContent.innerHTML=`<div class="modal-grid"><select class="edit-field" id="logSource"><option>네이버</option><option>한방</option><option>부동산포스</option><option>문자</option><option>전화</option><option>현장</option><option>소개</option><option>블로그</option><option>기타</option></select><select class="edit-field" id="logStatus"><option>기록만</option><option selected>검토중</option><option>매물등록필요</option><option>등록완료</option><option>보류</option><option>탈락</option></select><input class="edit-field" id="logLink" placeholder="URL"><input class="edit-field" id="logAddress" placeholder="주소"><input class="edit-field" id="logPrice" placeholder="가격"><textarea class="edit-field textarea" id="logArea" placeholder="면적"></textarea></div><textarea class="edit-field textarea" id="logMemo" style="margin-top:10px" placeholder="메모"></textarea>`;
+        modalContent.innerHTML=`<div class="modal-grid"><input class="edit-field" id="logAuthor" placeholder="작성자" value="한이사"><select class="edit-field" id="logSource"><option>네이버부동산</option><option>땅야</option><option>한방</option><option>부동산포스</option><option>문자</option><option>전화</option><option>현장</option><option>소개</option><option>블로그</option><option>기타</option></select><select class="edit-field" id="logStatus"><option>기록중</option><option selected>검토중</option><option>매물등록 필요</option><option>등록완료</option><option>보류</option><option>탈락</option></select><input class="edit-field" id="logLink" placeholder="URL"><input class="edit-field" id="logAddress" placeholder="주소"><input class="edit-field" id="logPrice" placeholder="가격"><textarea class="edit-field textarea" id="logArea" placeholder="면적"></textarea></div><textarea class="edit-field textarea" id="logMemo" style="margin-top:10px" placeholder="메모"></textarea>`;
         modal.classList.add('show'); setTimeout(()=>document.getElementById('logLink')?.focus(),0); return;
       }
     }
@@ -2651,21 +2722,29 @@
         closeModal(); renderAll(); return;
       }
       if(modalMode==='searchLog'){
-        const next=(state.searchLogs||[]).length+1;
         markChange('서칭기록 추가');
         state.searchLogs=state.searchLogs||[];
+        const now=nowIso();
+        const id=nextSearchLogId();
         state.searchLogs.push({
-          id:'SL-'+String(next).padStart(3,'0'),
+          id,
           source:document.getElementById('logSource')?.value || '기타',
+          author:(document.getElementById('logAuthor')?.value || '한이사').trim() || '한이사',
           title:(document.getElementById('logLink')?.value || '').trim(),
           address:(document.getElementById('logAddress')?.value || '').trim(),
           price:(document.getElementById('logPrice')?.value || '').trim(),
           area:(document.getElementById('logArea')?.value || '').trim(),
           link:(document.getElementById('logLink')?.value || '').trim(),
           memo:(document.getElementById('logMemo')?.value || '').trim(),
-          status:document.getElementById('logStatus')?.value || '기록만'
+          status:normalizeSearchLogStatus(document.getElementById('logStatus')?.value || '기록중'),
+          createdAt:now,
+          updatedAt:now,
+          studyStatus:'',
+          studyResult:null,
+          studyMemo:''
         });
         activeSection2Tab='서칭기록';
+        activeStudyLogId=id;
         closeModal(); renderAll(); return;
       }
       if(modalMode==='searchLogMemo'){

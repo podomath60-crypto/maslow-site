@@ -604,9 +604,10 @@
     let activeProgressMemoMenuId = '';
     let progressMemoBefore = null;
     let mapSearchState = { query:'', category:'all', deal:'all', adOnly:false, excludeCandidates:false, selectedGroupId:'', resultIds:[] };
-    const matchingMapState = { map:null, mapEl:null, markers:[], groups:[], items:[], loaded:false, loadingPromise:null, scriptPromise:null, error:'', didFitInitial:false, resizeObserver:null };
+    const matchingMapState = { map:null, mapEl:null, markers:[], groups:[], items:[], loaded:false, loadingPromise:null, scriptPromise:null, error:'', didFitInitial:false, resizeObserver:null, geocodeCache:new Map(), geocodeRunning:false, geocodePromise:null, geocodeDone:false, geocodeTried:0, geocodeSuccess:0 };
     const MATCHING_MAP_CENTER_LAT = 35.9634838;
     const MATCHING_MAP_CENTER_LNG = 126.6930552;
+    const MATCHING_MAP_GEOCODE_CACHE_KEY = 'MATCHING_MAP_GEOCODE_CACHE_V1';
     let dirty = false;
 
     function clone(v){ return structuredClone(v); }
@@ -726,6 +727,110 @@
       return matchingMapState.scriptPromise;
     }
     function parseNumber(value){ const n=Number(String(value == null ? '' : value).replace(/,/g,'').trim()); return Number.isFinite(n) ? n : null; }
+    function isKoreaLatLng(lat, lng){ return Number.isFinite(Number(lat)) && Number.isFinite(Number(lng)) && Number(lat) >= 33 && Number(lat) <= 39.5 && Number(lng) >= 124 && Number(lng) <= 132.5; }
+    function isSwappedKoreaLatLng(lat, lng){ return Number.isFinite(Number(lat)) && Number.isFinite(Number(lng)) && Number(lng) >= 33 && Number(lng) <= 39.5 && Number(lat) >= 124 && Number(lat) <= 132.5; }
+    function geocodeKeyForMatchingItem(item){
+      return String((item && (item.geocodeAddress || item.address || item.title || item.listingNumber || item.propertyId)) || '').trim().replace(/\s+/g,' ');
+    }
+    function getMatchingItemPoint(item){
+      if(!item) return null;
+      let lat=Number(item.lat);
+      let lng=Number(item.lng);
+      if(isKoreaLatLng(lat,lng)) return {lat,lng};
+      if(isSwappedKoreaLatLng(lat,lng)){
+        item.lat=lng;
+        item.lng=lat;
+        return {lat:Number(item.lat),lng:Number(item.lng)};
+      }
+      return null;
+    }
+    function loadMatchingGeocodeCache(){
+      if(matchingMapState.geocodeCache && matchingMapState.geocodeCache.size) return;
+      try{
+        const raw=localStorage.getItem(MATCHING_MAP_GEOCODE_CACHE_KEY) || localStorage.getItem('PARCEL_MAP_GEOCODE_CACHE_V1') || '{}';
+        const obj=JSON.parse(raw);
+        Object.keys(obj || {}).forEach(key=>{
+          const v=obj[key];
+          if(v && isKoreaLatLng(Number(v.lat), Number(v.lng))) matchingMapState.geocodeCache.set(key, v);
+        });
+      }catch(e){}
+    }
+    function saveMatchingGeocodeCache(){
+      try{
+        const obj={};
+        Array.from(matchingMapState.geocodeCache.entries()).slice(-1000).forEach(([key,value])=>{ obj[key]=value; });
+        localStorage.setItem(MATCHING_MAP_GEOCODE_CACHE_KEY, JSON.stringify(obj));
+      }catch(e){}
+    }
+    function applyCachedMatchingPoint(item){
+      const key=geocodeKeyForMatchingItem(item);
+      if(!key) return false;
+      const cached=matchingMapState.geocodeCache.get(key);
+      if(cached && isKoreaLatLng(Number(cached.lat), Number(cached.lng))){
+        item.lat=Number(cached.lat);
+        item.lng=Number(cached.lng);
+        item.resolvedAddress=cached.resolvedAddress || item.resolvedAddress || '';
+        item.roadAddress=cached.roadAddress || item.roadAddress || '';
+        item.jibunAddress=cached.jibunAddress || item.jibunAddress || '';
+        item.hasPoint=true;
+        return true;
+      }
+      return false;
+    }
+    async function geocodeMatchingItem(item){
+      if(!item || getMatchingItemPoint(item)) return true;
+      if(applyCachedMatchingPoint(item)) return true;
+      const query=geocodeKeyForMatchingItem(item);
+      if(!query) return false;
+      const data=await fetchJson('/api/route-setting/geocode', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query})});
+      const result=data && data.item;
+      if(!result || !isKoreaLatLng(Number(result.lat), Number(result.lng))) return false;
+      item.lat=Number(result.lat);
+      item.lng=Number(result.lng);
+      item.hasPoint=true;
+      item.resolvedAddress=result.resolvedAddress || '';
+      item.roadAddress=result.roadAddress || '';
+      item.jibunAddress=result.jibunAddress || '';
+      matchingMapState.geocodeCache.set(query, {lat:item.lat,lng:item.lng,resolvedAddress:item.resolvedAddress,roadAddress:item.roadAddress,jibunAddress:item.jibunAddress,savedAt:Date.now()});
+      saveMatchingGeocodeCache();
+      return true;
+    }
+    function startMatchingMapGeocode(){
+      if(matchingMapState.geocodeRunning || matchingMapState.geocodePromise) return matchingMapState.geocodePromise;
+      const targets=(matchingMapState.items || []).filter(item=>item && !getMatchingItemPoint(item) && geocodeKeyForMatchingItem(item));
+      if(!targets.length){ matchingMapState.geocodeDone=true; updateMatchingMapStatus(filteredMapItems(), matchingMapState.groups || []); return Promise.resolve(); }
+      matchingMapState.geocodeRunning=true;
+      matchingMapState.geocodeTried=0;
+      matchingMapState.geocodeSuccess=0;
+      matchingMapState.geocodePromise=(async()=>{
+        const workerCount=Math.min(3, targets.length);
+        let cursor=0;
+        async function worker(){
+          while(cursor < targets.length){
+            const item=targets[cursor++];
+            matchingMapState.geocodeTried += 1;
+            try{ if(await geocodeMatchingItem(item)) matchingMapState.geocodeSuccess += 1; }catch(e){}
+            if(matchingMapState.geocodeTried === 1 || matchingMapState.geocodeTried % 6 === 0 || matchingMapState.geocodeTried === targets.length){
+              renderMatchingMapMarkers();
+              updateMatchingMapListPanel();
+            }
+          }
+        }
+        await Promise.all(Array.from({length:workerCount}, worker));
+      })().finally(()=>{
+        matchingMapState.geocodeRunning=false;
+        matchingMapState.geocodeDone=true;
+        matchingMapState.geocodePromise=null;
+        renderMatchingMapMarkers();
+        updateMatchingMapListPanel();
+        if(!matchingMapState.didFitInitial){
+          const pts=mapPointItems(filteredMapItems());
+          if(pts.length){ focusItemsOnRealMap(pts, {}); matchingMapState.didFitInitial=true; }
+        }
+      });
+      updateMatchingMapStatus(filteredMapItems(), matchingMapState.groups || []);
+      return matchingMapState.geocodePromise;
+    }
     function listingAreaText(item){
       const parts=[];
       if(item.landAreaPy) parts.push('대지 ' + item.landAreaPy + '평');
@@ -756,8 +861,9 @@
       if(!item) return null;
       const no=String(item.listingNumber || item.propertyId || '').trim();
       if(!no) return null;
-      const lat=parseNumber(item.lat);
-      const lng=parseNumber(item.lng);
+      let lat=parseNumber(item.lat);
+      let lng=parseNumber(item.lng);
+      if(!isKoreaLatLng(lat,lng) && isSwappedKoreaLatLng(lat,lng)){ const t=lat; lat=lng; lng=t; }
       const area=listingAreaText(item) || item.area || '';
       const strengths=[item.summary1,item.summary2,item.summary3].filter(Boolean);
       const risks=[item.restrictedUse,item.memo].filter(Boolean).slice(0,2);
@@ -767,6 +873,7 @@
         listingNumber:no,
         title:item.title || no,
         address:item.address || item.geocodeAddress || '',
+        geocodeAddress:item.geocodeAddress || item.address || '',
         dealType:item.dealType || dealKeyForMapItem(item),
         price:item.price || '',
         area:area,
@@ -784,7 +891,7 @@
         zoning:item.zoning || '',
         lat:lat,
         lng:lng,
-        hasPoint:Number.isFinite(lat) && Number.isFinite(lng),
+        hasPoint:isKoreaLatLng(lat,lng),
         landParcels:Array.isArray(item.landParcels) ? item.landParcels : []
       };
     }
@@ -793,7 +900,10 @@
       if(matchingMapState.loadingPromise) return matchingMapState.loadingPromise;
       matchingMapState.loadingPromise=(async()=>{
         const data=await fetchJson('/api/parcel-map/listings');
-        const items=(Array.isArray(data.items) ? data.items : []).map(normalizeRealListingItem).filter(Boolean);
+        const sourceItems=Array.isArray(data.items) ? data.items : (Array.isArray(data.listings) ? data.listings : (Array.isArray(data.data) ? data.data : []));
+        loadMatchingGeocodeCache();
+        const items=sourceItems.map(normalizeRealListingItem).filter(Boolean);
+        items.forEach(item=>{ if(!getMatchingItemPoint(item)) applyCachedMatchingPoint(item); item.hasPoint=!!getMatchingItemPoint(item); });
         matchingMapState.items=items;
         matchingMapState.loaded=true;
         matchingMapState.error='';
@@ -832,7 +942,7 @@
         return true;
       });
     }
-    function mapPointItems(items){ return (items || []).filter(item=>item && item.hasPoint); }
+    function mapPointItems(items){ return (items || []).filter(item=>!!getMatchingItemPoint(item)); }
     function searchFlagScreenPoint(point){
       if(!matchingMapState.map || !matchingMapState.mapEl || !point) return null;
       try{
@@ -856,8 +966,10 @@
       const groups=[];
       const records=[];
       mapPointItems(items).forEach((item,idx)=>{
-        const screen=searchFlagScreenPoint({lat:item.lat,lng:item.lng}) || {x:idx*9999,y:idx*9999};
-        records.push({item, idx, x:Number(screen.x), y:Number(screen.y), point:{lat:item.lat,lng:item.lng}});
+        const point=getMatchingItemPoint(item);
+        if(!point) return;
+        const screen=searchFlagScreenPoint(point) || {x:idx*9999,y:idx*9999};
+        records.push({item, idx, x:Number(screen.x), y:Number(screen.y), point:point});
       });
       records.sort((a,b)=>(a.y-b.y)||(a.x-b.x));
       records.forEach(rec=>{
@@ -905,16 +1017,28 @@
       (matchingMapState.markers || []).forEach(marker=>{ try{ marker.setMap(null); }catch(e){} });
       matchingMapState.markers=[];
     }
+    function matchingPinAssetForItem(item, candidate){
+      if(candidate) return '/parcel-map/assets/pin-green.svg';
+      const cat=listingCategory(item && item.propertyId);
+      if(cat==='commercial') return '/parcel-map/assets/pin-teal.svg';
+      if(cat==='land') return '/parcel-map/assets/pin-yellow.svg';
+      return '/parcel-map/assets/pin-blue.svg';
+    }
     function matchingMarkerIcon(group){
       const items=group.items || [];
       const count=items.length;
       const selected=mapSearchState.selectedGroupId===group.id;
       const candidate=items.length && items.every(isMapItemCandidate);
-      const cls=['matching-map-marker', count>1?'group':'single'];
+      if(count===1){
+        const w=selected ? 30 : 26;
+        const h=selected ? 40 : 35;
+        return {url:matchingPinAssetForItem(items[0], candidate), size:new naver.maps.Size(w,h), scaledSize:new naver.maps.Size(w,h), anchor:new naver.maps.Point(Math.round(w/2), h)};
+      }
+      const cls=['matching-map-marker','group'];
       if(selected) cls.push('active');
       if(candidate) cls.push('candidate');
-      const label=count>1 ? ('매물 ' + count + '개') : '';
-      return {content:`<div class="${cls.join(' ')}">${escapeHtml(label)}</div>`, anchor:new naver.maps.Point(0,0)};
+      const label='매물 ' + count + '개';
+      return {content:`<div class="${cls.join(' ')}">${escapeHtml(label)}</div>`, size:new naver.maps.Size(96,38), anchor:new naver.maps.Point(0,0)};
     }
     function renderMatchingMapMarkers(){
       clearMatchingMapMarkers();
@@ -949,6 +1073,9 @@
       el.classList.remove('error');
       if(!matchingMapState.loaded){ el.textContent='우리매물 지도를 불러오는 중입니다.'; return; }
       if(!total){ el.textContent='조건에 맞는 우리매물이 없습니다. 검색어 또는 분류칩을 바꿔보세요.'; return; }
+      if(!pointCount && !matchingMapState.geocodeDone){ el.textContent='좌표 없는 매물을 주소로 변환하는 중입니다.'; return; }
+      if(matchingMapState.geocodeRunning){ el.innerHTML=`좌표 변환 ${matchingMapState.geocodeTried}건 진행 · 지도 표시 ${pointCount}건 / 검색대상 ${total}건<br>성공한 매물부터 핀을 표시합니다.`; return; }
+      if(!pointCount){ el.textContent='좌표가 있는 우리매물이 없습니다. 주소/좌표 저장 상태를 확인해야 합니다.'; return; }
       el.innerHTML=`지도 표시 ${pointCount}건 / 검색대상 ${total}건<br>지도에서 <b>매물 N개</b> 또는 핀을 누르면 오른쪽 리스트가 만들어집니다.`;
     }
     function renderMapResultList(items){
@@ -986,12 +1113,13 @@
       if(!pts.length) return;
       try{
         if(pts.length===1){
-          matchingMapState.map.panTo(new naver.maps.LatLng(pts[0].lat, pts[0].lng));
+          const p=getMatchingItemPoint(pts[0]);
+          matchingMapState.map.panTo(new naver.maps.LatLng(p.lat, p.lng));
           if(opts && opts.singleZoom) matchingMapState.map.setZoom(Math.max(Number(matchingMapState.map.getZoom && matchingMapState.map.getZoom()) || 14, 17));
           return;
         }
         const bounds=new naver.maps.LatLngBounds();
-        pts.forEach(item=>bounds.extend(new naver.maps.LatLng(item.lat,item.lng)));
+        pts.forEach(item=>{ const p=getMatchingItemPoint(item); if(p) bounds.extend(new naver.maps.LatLng(p.lat,p.lng)); });
         matchingMapState.map.fitBounds(bounds, {top:48,right:48,bottom:48,left:48});
       }catch(e){}
     }
@@ -1033,7 +1161,7 @@
             }
           }catch(e){}
         }
-        setTimeout(()=>{ try{ naver.maps.Event.trigger(matchingMapState.map,'resize'); }catch(e){} renderMatchingMapMarkers(); updateMatchingMapListPanel(); },60);
+        setTimeout(()=>{ try{ naver.maps.Event.trigger(matchingMapState.map,'resize'); }catch(e){} renderMatchingMapMarkers(); updateMatchingMapListPanel(); startMatchingMapGeocode(); },60);
         if(!matchingMapState.didFitInitial){
           const pts=mapPointItems(filteredMapItems());
           if(pts.length){ setTimeout(()=>focusItemsOnRealMap(pts, {}),120); matchingMapState.didFitInitial=true; }

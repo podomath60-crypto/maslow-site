@@ -2349,12 +2349,10 @@
             <textarea class="search-log-textarea" data-log-field-id="${escapeAttr(log.id)}" data-log-field="memo" placeholder="메모">${escapeHtml(log.memo||'')}</textarea>
           </div>
           <div class="cand-actions">
+            <button class="card-btn red" data-log-delete="${escapeAttr(log.id)}">삭제</button>
             <button class="card-btn green" data-log-save="${escapeAttr(log.id)}">저장</button>
             <button class="card-btn" data-log-study="${escapeAttr(log.id)}">공부조회</button>
             <button class="card-btn dark" data-log-admin="${escapeAttr(log.id)}">매물입력기로 등록</button>
-            <button class="card-btn" data-log-status="${escapeAttr(log.id)}" data-status="보류">보류</button>
-            <button class="card-btn red" data-log-status="${escapeAttr(log.id)}" data-status="탈락">탈락</button>
-            <button class="card-btn red" data-log-delete="${escapeAttr(log.id)}">삭제</button>
           </div>
         </article>`}).join('')}</div>`;
     }

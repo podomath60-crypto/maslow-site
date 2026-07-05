@@ -191,10 +191,18 @@
     .small-btn{min-height:32px;padding:0 11px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#48515d;font-size:12px;font-weight:950}
     .small-btn.primary{background:#0f7cff;border-color:#0f7cff;color:#fff}
 
-    .metric-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-bottom:16px}
-    .metric{border:1px solid #edf2f7;border-radius:18px;background:#fff;padding:12px 12px 11px}
-    .metric-num{font-size:24px;font-weight:1000;letter-spacing:-.04em}
-    .metric-label{font-size:12px;font-weight:900;color:#7b8794;margin-top:2px}
+    .metric-row{display:grid;grid-template-columns:minmax(150px,2fr) repeat(7,minmax(76px,1fr));gap:8px;margin-bottom:14px}
+    .metric{appearance:none;text-align:left;border:1px solid #e6ebf1;border-radius:16px;background:#fff;padding:10px 11px;min-height:74px;display:grid;align-content:center;gap:4px;cursor:pointer;box-shadow:0 8px 18px rgba(15,23,42,.035);transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease,background .15s ease}
+    .metric:hover{transform:translateY(-1px);border-color:#cfd9e6;box-shadow:0 12px 24px rgba(15,23,42,.06)}
+    .metric.active{border-color:#111318;box-shadow:0 12px 26px rgba(17,19,24,.10)}
+    .metric.metric-main{min-height:82px;background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%)}
+    .metric-num{font-size:26px;font-weight:1000;letter-spacing:-.05em;line-height:1;color:#111318}
+    .metric.metric-main .metric-num{font-size:34px}
+    .metric-label{display:flex;flex-direction:column;gap:1px;font-size:12px;font-weight:1000;color:#697483;line-height:1.12;letter-spacing:-.02em}
+    .metric-label span{display:block}
+    .metric-hint{font-size:10px;font-weight:1000;color:#9aa4b1;letter-spacing:-.02em;line-height:1.15}
+    .metric.algo.active{border-color:#16a34a;background:#f3fff8}.metric.manual.active{border-color:#0f7cff;background:#f3f8ff}.metric.log.active{border-color:#7c3aed;background:#f7f3ff}.metric.proposal.active{border-color:#059669;background:#f2fff9}.metric.visit.active{border-color:#f97316;background:#fff8f1}.metric.hold.active{border-color:#64748b;background:#f8fafc}.metric.rejected.active{border-color:#ef4444;background:#fff5f5}
+    @media(max-width:1200px){.metric-row{grid-template-columns:repeat(4,minmax(0,1fr))}.metric.metric-main{grid-column:span 2}}
     .action-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
     .action-strip-left,.action-strip-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .main-action{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#253041;font-size:14px;font-weight:1000;box-shadow:0 8px 18px rgba(15,23,42,.04)}
@@ -501,15 +509,6 @@
         </div>
         <div class="section-body">
           <div class="metric-row" id="candidateMetrics"></div>
-          <div class="action-strip">
-            <div class="action-strip-left">
-              <button class="main-action blue" id="dbSearchTabBtn" type="button">전체매물 검색</button>
-              <button class="main-action green" id="recommendBtn">추천매물 찾기</button>
-              <button class="main-action" data-open-modal="searchLog">서칭기록 추가</button>
-            </div>
-            <div class="action-strip-right" id="candidateFilters"></div>
-          </div>
-          <div class="section2-tabs" id="section2Tabs"></div>
           <div class="section2-content" id="section2Content"></div>
         </div>
       </section>
@@ -645,15 +644,33 @@
       const searchLogs=(state.searchLogs||[]).length;
       return {total, active, recommendation, manual, searchLogs, proposal, visit, hold, rejected};
     }
-    function renderMetrics(){ const c=candidateCounts(); document.getElementById('candidateMetrics').innerHTML=[['전체 후보',c.total],['추천',c.recommendation],['지도검색',c.manual],['서칭기록',c.searchLogs],['제안선정',c.proposal],['임장예정',c.visit],['보류',c.hold],['탈락',c.rejected]].map(x=>`<div class="metric"><div class="metric-num">${x[1]}</div><div class="metric-label">${x[0]}</div></div>`).join(''); }
-    function renderSection2Tabs(){ const tabs=['후보매물','전체매물검색','추천매물','서칭기록','보류/탈락']; document.getElementById('section2Tabs').innerHTML=tabs.map(t=>`<button class="section2-tab ${activeSection2Tab===t?'active':''}" data-section2-tab="${t}">${t}</button>`).join(''); }
-    function renderFilters(){
-      const wrap=document.getElementById('candidateFilters');
-      if(!['후보매물','보류/탈락'].includes(activeSection2Tab)){ wrap.innerHTML=''; return; }
-      const filters= activeSection2Tab==='보류/탈락' ? ['보류','탈락'] : ['전체','검토중','소유자확인필요','소유자확인완료','고객제안선정','임장예정'];
-      if(!filters.includes(activeFilter)) activeFilter=filters[0];
-      wrap.innerHTML=filters.map(f=>`<button class="filter-chip ${activeFilter===f?'active':''}" data-filter="${f}">${f}</button>`).join('');
+    function metricActive(key){
+      if(key==='total') return activeSection2Tab==='후보매물' && activeFilter==='전체';
+      if(key==='algo') return activeSection2Tab==='추천매물';
+      if(key==='manual') return activeSection2Tab==='전체매물검색';
+      if(key==='log') return activeSection2Tab==='서칭기록';
+      if(key==='proposal') return activeSection2Tab==='후보매물' && activeFilter==='고객제안선정';
+      if(key==='visit') return activeSection2Tab==='후보매물' && activeFilter==='임장예정';
+      if(key==='hold') return activeSection2Tab==='보류/탈락' && activeFilter==='보류';
+      if(key==='rejected') return activeSection2Tab==='보류/탈락' && activeFilter==='탈락';
+      return false;
     }
+    function renderMetrics(){
+      const c=candidateCounts();
+      const metrics=[
+        {key:'total', target:'candidates', count:c.total, lines:['전체','후보'], cls:'metric-main', hint:'후보 전체'},
+        {key:'algo', target:'recommendation', count:c.recommendation, lines:['알고리즘','추천'], cls:'algo', hint:'자동 추천'},
+        {key:'manual', target:'manual', count:c.manual, lines:['수동','선정'], cls:'manual', hint:'직접 추가'},
+        {key:'log', target:'searchLogs', count:c.searchLogs, lines:['서칭','기록'], cls:'log', hint:'외부 기록'},
+        {key:'proposal', target:'proposal', count:c.proposal, lines:['제안','선정'], cls:'proposal', hint:'고객 제안'},
+        {key:'visit', target:'visit', count:c.visit, lines:['임장','예정'], cls:'visit', hint:'방문 후보'},
+        {key:'hold', target:'hold', count:c.hold, lines:['보류'], cls:'hold', hint:'잠정 보류'},
+        {key:'rejected', target:'rejected', count:c.rejected, lines:['탈락'], cls:'rejected', hint:'제외'}
+      ];
+      document.getElementById('candidateMetrics').innerHTML=metrics.map(m=>`<button type="button" class="metric ${m.cls} ${metricActive(m.key)?'active':''}" data-metric-target="${m.target}"><div class="metric-num">${m.count}</div><div class="metric-label">${m.lines.map(line=>`<span>${line}</span>`).join('')}</div><div class="metric-hint">${m.hint}</div></button>`).join('');
+    }
+    function renderSection2Tabs(){ const el=document.getElementById('section2Tabs'); if(el) el.innerHTML=''; }
+    function renderFilters(){ const wrap=document.getElementById('candidateFilters'); if(wrap) wrap.innerHTML=''; }
     function getFilteredCandidates(){ return state.candidates.filter(c=>{ if(activeSection2Tab==='보류/탈락'){ if(activeFilter==='보류') return c.stage==='보류' && !c.rejected; return c.rejected || c.stage==='탈락'; } if(activeFilter==='전체') return !c.rejected && c.stage!=='보류'; if(activeFilter==='임장예정') return String(c.visit).includes('임장') && !c.rejected; return c.stage===activeFilter && !c.rejected; }); }
     function candidateView(c){
       const db = findDbItem(c.propertyId) || {};
@@ -670,7 +687,7 @@
         confirm:c.confirm || db.reason || '매물번호로 연결된 우리 DB 후보매물'
       });
     }
-    function sourceBadge(c){ const isReco=c.sourceType==='recommendation'; return `<span class="source-badge ${isReco?'':'manual'}">${isReco?'추천매물':'지도검색'}</span>`; }
+    function sourceBadge(c){ const isReco=c.sourceType==='recommendation'; return `<span class="source-badge ${isReco?'':'manual'}">${isReco?'알고리즘추천':'수동선정'}</span>`; }
     function listText(items){ return Array.isArray(items) && items.length ? items.join(' · ') : '확인 필요'; }
     function renderCandidateCards(list){
       if(!list.length) return '<div class="candidate-empty">현재 표시할 후보매물이 없습니다.<br>전체매물검색 또는 추천매물 결과에서 우리 DB 매물을 후보로 추가하세요.</div>';
@@ -1674,7 +1691,7 @@
       return `<div class="search-log-grid">${logs.map(log=>`<article class="search-log-card"><div><div class="db-title">${escapeHtml(log.title)}</div><div class="db-no">${escapeHtml(log.source)} · <span class="log-status ${statusClass(log.status)}">${escapeHtml(log.status)}</span></div></div><div class="db-meta">${escapeHtml(log.address||'주소 미기록')}<br>${escapeHtml(log.price||'가격 미기록')} · ${escapeHtml(log.area||'면적 미기록')}<br>연락처 ${escapeHtml(log.contact||'미기록')}</div>${log.link?`<div class="db-meta">링크: ${escapeHtml(log.link)}</div>`:''}<div class="db-reason">${escapeHtml(log.memo||'메모 없음')}</div><div class="cand-actions"><button class="card-btn dark" data-log-admin="${log.id}">매물입력기로 등록</button><button class="card-btn" data-log-memo="${log.id}">메모</button><button class="card-btn" data-log-status="${log.id}" data-status="보류">보류</button><button class="card-btn red" data-log-status="${log.id}" data-status="탈락">탈락</button></div></article>`).join('')}</div>`;
     }
     function renderSection2(){
-      renderMetrics(); renderSection2Tabs(); renderFilters();
+      renderMetrics();
       const content=document.getElementById('section2Content');
       if(activeSection2Tab==='전체매물검색'){
         content.innerHTML=renderSearchPanel();
@@ -1899,6 +1916,11 @@
       const singlePick=e.target.closest('[data-pick-single]');
       if(singlePick){ activePickerValues=[singlePick.dataset.pickSingle]; document.querySelectorAll('[data-pick-single]').forEach(btn=>btn.classList.toggle('active', btn===singlePick)); if(activePickerValues[0]==='기타') setTimeout(()=>modalContent.querySelector('[data-picker-etc-input]')?.focus(),0); return; }
       const tab=e.target.closest('[data-section2-tab]'); if(tab){ if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState(); activeSection2Tab=tab.dataset.section2Tab; activeFilter='전체'; renderSection2(); return; }
+      const metric=e.target.closest('[data-metric-target]');
+      if(metric){
+        jumpSection2Metric(metric.dataset.metricTarget);
+        return;
+      }
       if(e.target.closest('#mapSearchRunBtn')){ runMapSearch(); return; }
       if(e.target.closest('#mapSearchResetBtn')){ resetMapSearch(); return; }
       if(e.target.closest('#matchingMapCountBtn')){ openMatchingMapViewList(); return; }
@@ -1921,6 +1943,19 @@
       const toggle=e.target.closest('[data-toggle-visit]'); if(toggle){ toggle.closest('.visit-card').classList.toggle('open'); }
       const next=e.target.closest('[data-next-visit]'); if(next){ addVisitRound(); }
     });
+    function jumpSection2Metric(target){
+      if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState();
+      if(target==='candidates'){ activeSection2Tab='후보매물'; activeFilter='전체'; }
+      else if(target==='recommendation'){ activeSection2Tab='추천매물'; activeFilter='전체'; }
+      else if(target==='manual'){ activeSection2Tab='전체매물검색'; activeFilter='전체'; }
+      else if(target==='searchLogs'){ activeSection2Tab='서칭기록'; activeFilter='전체'; }
+      else if(target==='proposal'){ activeSection2Tab='후보매물'; activeFilter='고객제안선정'; }
+      else if(target==='visit'){ activeSection2Tab='후보매물'; activeFilter='임장예정'; }
+      else if(target==='hold'){ activeSection2Tab='보류/탈락'; activeFilter='보류'; }
+      else if(target==='rejected'){ activeSection2Tab='보류/탈락'; activeFilter='탈락'; }
+      renderSection2();
+      setTimeout(()=>document.getElementById('section2Content')?.scrollIntoView({behavior:'smooth', block:'start'}), 20);
+    }
     function resetNonAdMapFilters(){
       mapSearchState.filters.public='all';
       mapSearchState.filters.work='all';
@@ -2003,7 +2038,7 @@
         id:'C-'+String(next).padStart(3,'0'),
         propertyId:item.propertyId,
         sourceType:sourceType==='recommendation'?'recommendation':'map_search',
-        sourceLabel:sourceType==='recommendation'?'추천매물':'지도검색',
+        sourceLabel:sourceType==='recommendation'?'알고리즘추천':'수동선정',
         score:sourceType==='recommendation'?(item.score||0):0,
         stage:'검토중',
         ownerStatus:'미접촉',
@@ -2023,8 +2058,8 @@
     document.addEventListener('scroll', e=>{ if(e.target && e.target.id==='mapListBody'){ mapSearchState.listScrollTop=e.target.scrollTop || 0; } }, true);
     document.addEventListener('keydown', e=>{ if(e.target && e.target.id==='mapSearchInput' && e.key==='Enter'){ e.preventDefault(); runMapSearch(); } });
     document.getElementById('listingEditorBtn').addEventListener('click',()=>{ window.open('/admin?mode=new','_blank','noopener,noreferrer'); });
-    document.getElementById('dbSearchTabBtn').addEventListener('click',()=>{ if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState(); activeSection2Tab='전체매물검색'; activeFilter='전체'; renderSection2(); });
-    document.getElementById('recommendBtn').addEventListener('click',()=>{ if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState(); activeSection2Tab='추천매물'; activeFilter='전체'; renderSection2(); });
+    document.getElementById('dbSearchTabBtn')?.addEventListener('click',()=>{ if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState(); activeSection2Tab='전체매물검색'; activeFilter='전체'; renderSection2(); });
+    document.getElementById('recommendBtn')?.addEventListener('click',()=>{ if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState(); activeSection2Tab='추천매물'; activeFilter='전체'; renderSection2(); });
     document.getElementById('addVisitBtn').addEventListener('click',addVisitRound); document.getElementById('visitFromSelectedBtn').addEventListener('click',addVisitRound);
     document.getElementById('undoBtn').addEventListener('click',()=>{ if(!undoStack.length)return; const item=undoStack.pop(); redoStack.push({after:clone(state), label:item.label}); state=clone(item.before); dirty=true; persistUndo(); renderAll(); });
     document.getElementById('redoBtn').addEventListener('click',()=>{ if(!redoStack.length)return; const item=redoStack.pop(); undoStack.push({before:clone(state), label:item.label}); state=clone(item.after); dirty=true; persistUndo(); renderAll(); });

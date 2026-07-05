@@ -2293,6 +2293,25 @@
       html += `<textarea class="search-study-memo" data-study-memo="${escapeAttr(log.id)}" placeholder="공부조회 메모">${escapeHtml(log.studyMemo||'')}</textarea>`;
       body.innerHTML=html;
     }
+
+    function hasSearchLogAddressDetail(address){
+      const raw=String(address || '').trim();
+      if(!raw) return false;
+      const addr=raw
+        .replace(/\([^)]*\)/g, ' ')
+        .replace(/\[[^\]]*\]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if(!addr) return false;
+      if(/(?:동|리|가)\s+산?\s*\d+(?:\s*-\s*\d+)?(?:\s*번지)?/u.test(addr)) return true;
+      if(/(?:읍|면)\s+[^\s]+(?:리|동|가)\s+산?\s*\d+(?:\s*-\s*\d+)?(?:\s*번지)?/u.test(addr)) return true;
+      if(/(?:로|길)\s*\d+(?:\s*-\s*\d+)?(?:\s*번길)?/u.test(addr)) return true;
+      if(/\d+(?:\s*-\s*\d+)?(?:\s*번지)?\s*(?:호|층|동)/u.test(addr)) return true;
+      return false;
+    }
+    function getSearchLogAddressDetailGuardMessage(){
+      return '번지수 또는 세부주소까지 입력해야 공부조회할 수 있습니다.\n예: 전북특별자치도 군산시 오식도동 813-9';
+    }
     async function runSearchLogStudy(logId){
       const log=(state.searchLogs||[]).find(x=>x.id===logId);
       if(!log) return;
@@ -2303,6 +2322,12 @@
       if(!address){
         log.studyStatus='error';
         log.studyError='주소를 먼저 입력하세요.';
+        renderSearchStudyPanel();
+        return;
+      }
+      if(!hasSearchLogAddressDetail(address)){
+        log.studyStatus='error';
+        log.studyError=getSearchLogAddressDetailGuardMessage();
         renderSearchStudyPanel();
         return;
       }

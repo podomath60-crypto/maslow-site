@@ -2002,10 +2002,45 @@
       }catch(e){}
       return matchingMapState.vworldKey || '';
     }
+    function looksLikeBrowserCredentialAutofill(value){
+      const text=String(value || '').trim();
+      if(!text) return false;
+      // 가격칸에 크롬/비밀번호관리자가 계정 ID를 밀어넣는 경우 차단
+      // 예: maslowrealty, park7444 같은 저장 로그인값
+      if(/[A-Za-z]/.test(text) && !/[원억만천보월임매㎡평\d,./-]/.test(text)) return true;
+      if(/^[A-Za-z][A-Za-z0-9._-]{2,}$/.test(text) && !/[원억만천보월임매㎡평]/.test(text)) return true;
+      return false;
+    }
     function getSearchLogDomFieldValue(logId, field){
       const nodes=Array.from(document.querySelectorAll('[data-log-field-id][data-log-field]'));
       const node=nodes.find(el=>String(el.dataset.logFieldId || '')===String(logId || '') && String(el.dataset.logField || '')===String(field || ''));
-      return node ? String(node.value || '').trim() : '';
+      if(!node) return '';
+      const value=String(node.value || '').trim();
+      if(String(field || '')==='price'){
+        const log=(state.searchLogs||[]).find(x=>String(x.id || '')===String(logId || ''));
+        const saved=String(log && log.price || '').trim();
+        if(!saved && looksLikeBrowserCredentialAutofill(value)){
+          node.value='';
+          return '';
+        }
+      }
+      return value;
+    }
+    function clearSearchLogPriceAutofill(){
+      document.querySelectorAll('[data-log-field="price"]').forEach(node=>{
+        const log=(state.searchLogs||[]).find(x=>String(x.id || '')===String(node.dataset.logFieldId || ''));
+        const saved=String(log && log.price || '').trim();
+        const value=String(node.value || '').trim();
+        if(!saved && looksLikeBrowserCredentialAutofill(value)) node.value='';
+      });
+      const modalPrice=document.getElementById('logPrice');
+      if(modalPrice && looksLikeBrowserCredentialAutofill(modalPrice.value)) modalPrice.value='';
+    }
+    function armSearchLogAutofillGuard(){
+      setTimeout(clearSearchLogPriceAutofill, 0);
+      setTimeout(clearSearchLogPriceAutofill, 80);
+      setTimeout(clearSearchLogPriceAutofill, 300);
+      setTimeout(clearSearchLogPriceAutofill, 900);
     }
     function syncSearchLogDomFields(log){
       if(!log) return;
@@ -2304,7 +2339,7 @@
             <div class="search-log-row"><label>URL</label><div class="search-log-url-wrap"><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="link" value="${escapeAttr(log.link||log.title||'')}" placeholder="URL 입력"><button class="search-log-open" type="button" data-log-open-url="${escapeAttr(log.id)}">열기</button></div></div>
             <div class="search-log-row"><label>주소</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="address" value="${escapeAttr(log.address||'')}" placeholder="주소 입력"></div>
             <div class="search-log-row"><label>면적</label><textarea class="search-log-textarea search-log-area" data-log-field-id="${escapeAttr(log.id)}" data-log-field="area" placeholder="대지/건물 면적을 여러 줄로 입력">${escapeHtml(log.area||'')}</textarea></div>
-            <div class="search-log-row"><label>가격</label><input class="search-log-input" type="text" inputmode="text" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-log-field-id="${escapeAttr(log.id)}" data-log-field="price" value="${escapeAttr(log.price||'')}" placeholder="매매가/임대가"></div>
+            <div class="search-log-row"><label>가격</label><input class="search-log-input" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly'); if(looksLikeBrowserCredentialAutofill(this.value)){ this.value=''; }" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-no-autofill="true" data-log-field-id="${escapeAttr(log.id)}" data-log-field="price" value="${escapeAttr(log.price||'')}" placeholder="매매가/임대가"></div>
             <textarea class="search-log-textarea" data-log-field-id="${escapeAttr(log.id)}" data-log-field="memo" placeholder="메모">${escapeHtml(log.memo||'')}</textarea>
           </div>
           <div class="cand-actions">
@@ -2443,7 +2478,7 @@
     }
     function renderCandidates(){ renderSection2(); }
     function renderVisits(){ const list=document.getElementById('visitList'); list.innerHTML=state.visits.map(v=>`<article class="visit-card" data-visit="${v.id}"><div class="visit-top"><div><div class="visit-title">${v.title}</div><div class="visit-meta">${v.date} / ${v.status} / 동행자 ${v.companions}<br>전체 반응: ${v.summary}<br>다음 액션: ${v.nextAction}</div></div><div><button class="small-btn" data-toggle-visit="${v.id}">상세 펼치기</button><button class="small-btn primary" data-next-visit="${v.id}">다음 차수 만들기</button></div></div><div class="visit-items">${v.items.map(i=>`<div class="visit-item"><b>${i.property}</b><br>${i.reaction} · ${i.memo}</div>`).join('')}</div><div class="visit-detail"><textarea class="edit-field textarea">${v.summary}\n${v.nextAction}</textarea><div class="inline-actions"><button class="small-btn primary" data-save-visit="${v.id}">임장 메모 저장</button></div></div></article>`).join(''); }
-    function renderAll(){ renderProject(); renderRouteChecks(); renderCandidates(); renderVisits(); renderProgressMemos(); renderSearchStudyPanel(); updateSaveState(); }
+    function renderAll(){ renderProject(); renderRouteChecks(); renderCandidates(); renderVisits(); renderProgressMemos(); renderSearchStudyPanel(); updateSaveState(); armSearchLogAutofillGuard(); }
 
 
     let inlineBefore = null;
@@ -2794,7 +2829,7 @@
       if(mode==='searchLog'){
         modalTitle.textContent='서칭기록 추가';
         modalDesc.textContent='외부에서 본 매물은 후보로 바로 올리지 않고 기록만 남깁니다.';
-        modalContent.innerHTML=`<div class="modal-grid"><select class="edit-field" id="logSource"><option>네이버부동산</option><option>땅야</option><option>한방</option><option>부동산포스</option><option>문자</option><option>전화</option><option>현장</option><option>소개</option><option>블로그</option><option>기타</option></select><select class="edit-field" id="logStatus"><option>기록중</option><option selected>검토중</option><option>매물등록 필요</option><option>등록완료</option><option>보류</option><option>탈락</option></select><input class="edit-field" id="logLink" placeholder="URL"><input class="edit-field" id="logAddress" placeholder="주소"><input class="edit-field" id="logPrice" type="text" inputmode="text" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" placeholder="가격"><textarea class="edit-field textarea" id="logArea" placeholder="면적"></textarea></div><textarea class="edit-field textarea" id="logMemo" style="margin-top:10px" placeholder="메모"></textarea>`;
+        modalContent.innerHTML=`<div class="modal-grid"><select class="edit-field" id="logSource"><option>네이버부동산</option><option>땅야</option><option>한방</option><option>부동산포스</option><option>문자</option><option>전화</option><option>현장</option><option>소개</option><option>블로그</option><option>기타</option></select><select class="edit-field" id="logStatus"><option>기록중</option><option selected>검토중</option><option>매물등록 필요</option><option>등록완료</option><option>보류</option><option>탈락</option></select><input class="edit-field" id="logLink" placeholder="URL"><input class="edit-field" id="logAddress" placeholder="주소"><input class="edit-field" id="logPrice" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly'); if(looksLikeBrowserCredentialAutofill(this.value)){ this.value=''; }" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-no-autofill="true" placeholder="가격"><textarea class="edit-field textarea" id="logArea" placeholder="면적"></textarea></div><textarea class="edit-field textarea" id="logMemo" style="margin-top:10px" placeholder="메모"></textarea>`;
         modal.classList.add('show'); setTimeout(()=>document.getElementById('logLink')?.focus(),0); return;
       }
     }

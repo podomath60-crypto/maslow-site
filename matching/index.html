@@ -194,24 +194,26 @@
     .small-btn{min-height:32px;padding:0 11px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#48515d;font-size:12px;font-weight:950}
     .small-btn.primary{background:#0f7cff;border-color:#0f7cff;color:#fff}
 
-    .metric-row{display:grid;grid-template-columns:minmax(250px,2fr) minmax(0,4fr);gap:10px;margin-bottom:14px;align-items:stretch}
+    .metric-row{display:block;margin-bottom:14px}
     .metric-small-grid{display:grid;grid-template-columns:repeat(4,minmax(112px,1fr));grid-template-rows:repeat(2,minmax(76px,1fr));gap:10px;min-width:0}
     .metric{appearance:none;position:relative;overflow:hidden;text-align:left;border:1px solid #e6ebf1;border-radius:18px;background:#fff;padding:14px 18px;min-height:76px;display:flex;align-items:center;justify-content:flex-start;gap:12px;cursor:pointer;box-shadow:0 8px 18px rgba(15,23,42,.03);transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease,background .15s ease}
     .metric:hover{transform:translateY(-1px);border-color:#cfd9e6;box-shadow:0 12px 24px rgba(15,23,42,.055)}
     .metric.active{border-color:#111318;box-shadow:0 12px 26px rgba(17,19,24,.085)}
-    .metric.metric-main{min-height:162px;background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%);padding:24px 28px;gap:18px}
+    .metric.metric-main{min-height:76px;background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%);padding:14px 18px;gap:12px;grid-column:1;grid-row:1}
+    .metric.map-toggle{border-color:#c7d2fe;background:linear-gradient(135deg,#f8fbff 0%,#f5f3ff 100%)}
+    .metric.map-toggle.active{border-color:#7c3aed;background:#f7f3ff;box-shadow:0 0 0 3px rgba(124,58,237,.10),0 12px 26px rgba(17,19,24,.07)}
     .metric-core{position:relative;z-index:2;display:flex;align-items:center;gap:10px;min-width:0;order:2}
     .metric-num{font-size:30px;font-weight:850;letter-spacing:-.06em;line-height:.92;color:#334155;min-width:26px}
-    .metric.metric-main .metric-num{font-size:58px;font-weight:850;min-width:58px;color:#273243}
+    .metric.metric-main .metric-num{font-size:30px;font-weight:850;min-width:26px;color:#273243}
     .metric-label{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:1000;color:#475569;line-height:1.05;letter-spacing:-.03em;white-space:nowrap}
-    .metric.metric-main .metric-label{font-size:20px;line-height:1.06;color:#273243}
+    .metric.metric-main .metric-label{font-size:12px;line-height:1.05;color:#273243}
     .metric-label span{display:block}
     .metric-icon{position:relative;right:auto;bottom:auto;width:42px;height:42px;flex:0 0 42px;z-index:2;opacity:.92;filter:drop-shadow(0 5px 8px rgba(15,23,42,.08));pointer-events:none;order:1}
-    .metric.metric-main .metric-icon{width:78px;height:78px;flex-basis:78px;opacity:.94}
+    .metric.metric-main .metric-icon{width:42px;height:42px;flex-basis:42px;opacity:.94}
     .metric-icon svg{display:block;width:100%;height:100%}
-    .metric.algo{grid-column:1;grid-row:1}.metric.manual{grid-column:2;grid-row:1}.metric.log{grid-column:3;grid-row:1}.metric.proposal{grid-column:1;grid-row:2}.metric.visit{grid-column:2;grid-row:2}.metric.hold{grid-column:3;grid-row:2}.metric.rejected{grid-column:4;grid-row:2}
+    .metric.algo{grid-column:2;grid-row:1}.metric.manual{grid-column:3;grid-row:1}.metric.log{grid-column:4;grid-row:1}.metric.proposal{grid-column:1;grid-row:2}.metric.visit{grid-column:2;grid-row:2}.metric.hold{grid-column:3;grid-row:2}.metric.rejected{grid-column:4;grid-row:2}
     .metric.algo.active{border-color:#16a34a;background:#f3fff8}.metric.manual.active{border-color:#0f7cff;background:#f3f8ff}.metric.log.active{border-color:#7c3aed;background:#f7f3ff}.metric.proposal.active{border-color:#059669;background:#f2fff9}.metric.visit.active{border-color:#f97316;background:#fff8f1}.metric.hold.active{border-color:#64748b;background:#f8fafc}.metric.rejected.active{border-color:#ef4444;background:#fff5f5}
-    @media(max-width:1200px){.metric-row{grid-template-columns:1fr}.metric.metric-main{min-height:118px}.metric.metric-main .metric-icon{width:58px;height:58px;flex-basis:58px}.metric.metric-main .metric-num{font-size:44px}.metric.metric-main .metric-label{font-size:17px}.metric-small-grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:auto}.metric.algo,.metric.manual,.metric.log,.metric.proposal,.metric.visit,.metric.hold,.metric.rejected{grid-column:auto;grid-row:auto}}
+    @media(max-width:1200px){.metric-row{display:block}.metric.metric-main{min-height:76px}.metric.metric-main .metric-icon{width:42px;height:42px;flex-basis:42px}.metric.metric-main .metric-num{font-size:30px}.metric.metric-main .metric-label{font-size:12px}.metric-small-grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:auto}.metric.metric-main,.metric.algo,.metric.manual,.metric.log,.metric.proposal,.metric.visit,.metric.hold,.metric.rejected{grid-column:auto;grid-row:auto}}
     .action-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
     .action-strip-left,.action-strip-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .main-action{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#253041;font-size:14px;font-weight:1000;box-shadow:0 8px 18px rgba(15,23,42,.04)}
@@ -382,7 +384,22 @@
     .matching-map-marker.single.active{background:#7c3aed}
     .matching-map-marker.single.candidate{background:#16a34a}
     .matching-map-marker:hover{filter:brightness(.98);transform:translate(-50%,-50%) scale(1.04)}
-    @media(max-width:1100px){.map-search-layout{grid-template-columns:1fr;min-height:0}.matching-map-stage{min-height:420px}.map-list-panel{min-height:380px}.map-list-body{max-height:310px}}
+    .candidate-map-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:10px;align-items:stretch;min-height:560px}
+    .candidate-map-side{min-height:560px;border:1px solid #e6ebf1;border-radius:24px;background:#fff;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 22px rgba(15,23,42,.04)}
+    .candidate-map-side-head{padding:10px 11px;border-bottom:1px solid #edf2f7;background:#fbfdff;display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .candidate-map-side-title{font-size:13px;font-weight:1000;color:#111318}.candidate-map-side-sub{font-size:10px;font-weight:900;color:#88919c;margin-top:2px}
+    .candidate-map-mini-list{padding:10px;display:grid;gap:8px;max-height:224px;overflow:auto;border-bottom:1px solid #edf2f7;scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.28) transparent}
+    .candidate-map-mini{appearance:none;text-align:left;border:1px solid #e6ebf1;border-radius:14px;background:#fff;padding:8px;display:grid;gap:4px;cursor:pointer;box-shadow:0 6px 14px rgba(15,23,42,.035)}
+    .candidate-map-mini:hover{border-color:#bfdbfe}.candidate-map-mini.active{border-color:#7c3aed;background:#f7f3ff;box-shadow:0 0 0 3px rgba(124,58,237,.10)}
+    .candidate-map-mini-title{font-size:12px;font-weight:1000;color:#111318;line-height:1.25}.candidate-map-mini-meta{font-size:10px;font-weight:850;color:#64748b;line-height:1.35}
+    .candidate-map-detail{padding:10px;overflow:auto;flex:1;display:block}.candidate-map-empty{min-height:230px;border:1px dashed #d3dce7;border-radius:18px;background:#fbfdff;color:#7b8794;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:900;line-height:1.6;padding:18px}
+    .candidate-map-detail-card{border:1px solid #e6ebf1;border-radius:18px;background:#fff;padding:12px;display:grid;gap:9px;box-shadow:0 8px 18px rgba(15,23,42,.035)}
+    .candidate-map-detail-title{font-size:16px;font-weight:1000;color:#111318;line-height:1.24;letter-spacing:-.045em}.candidate-map-detail-no{font-size:10px;font-weight:1000;color:#8a94a1;margin-top:3px}
+    .candidate-map-marker{position:relative;display:inline-flex;align-items:center;justify-content:center;width:31px;height:31px;border-radius:999px;background:#0f7cff;border:3px solid #fff;box-shadow:0 10px 22px rgba(15,23,42,.24);transform:translate(-50%,-50%);cursor:pointer}
+    .candidate-map-marker::after{content:"";width:8px;height:8px;border-radius:999px;background:#fff}.candidate-map-marker.active{background:#7c3aed;transform:translate(-50%,-50%) scale(1.08)}.candidate-map-marker.rejected{background:#ef4444}.candidate-map-marker.hold{background:#64748b}.candidate-map-marker.proposal{background:#16a34a}
+    .candidate-map-status{position:absolute;left:12px;bottom:12px;z-index:8;border:1px solid rgba(203,213,225,.9);background:rgba(255,255,255,.9);border-radius:14px;padding:8px 10px;font-size:11px;font-weight:950;color:#475569;line-height:1.45;backdrop-filter:blur(8px);max-width:380px}
+    .candidate-map-status.error{color:#b42318;border-color:#fecaca;background:rgba(255,241,241,.94)}
+    @media(max-width:1100px){.candidate-map-layout{grid-template-columns:1fr;min-height:0}.candidate-map-side{min-height:380px}.candidate-map-mini-list{max-height:220px}.map-search-layout{grid-template-columns:1fr;min-height:0}.matching-map-stage{min-height:420px}.map-list-panel{min-height:380px}.map-list-body{max-height:310px}}
 
     .visit-list{display:grid;gap:12px}
     .visit-card{border:1px solid #e6ebf1;border-radius:24px;background:#fff;padding:16px;box-shadow:0 10px 22px rgba(15,23,42,.04)}
@@ -729,12 +746,15 @@
     let redoStack = [];
     let activeFilter = '전체';
     let activeSection2Tab = '후보매물';
+    let candidateViewMode = 'panel';
+    let activeCandidateMapId = '';
     let activeSearchLogId = '';
     let activeStudyLogId = '';
     let activeProgressMemoMenuId = '';
     let progressMemoBefore = null;
     let mapSearchState = { query:'', inputValue:'', filters:{ q:'', public:'all', work:'all', data:'all', deal:'all', category:'all', ad:'all', adIncludeAll:true }, excludeCandidates:false, selectedGroupId:'', resultIds:[], view:null, listScrollTop:0 };
     const matchingMapState = { map:null, mapEl:null, markers:[], polygons:[], groups:[], items:[], visibleMapItems:[], loaded:false, loadingPromise:null, scriptPromise:null, vworldKey:'', error:'', didFitInitial:false, resizeObserver:null, geocodeCache:new Map(), polygonDataByPnu:new Map(), polygonLoadingId:'', geocodeRunning:false, geocodePromise:null, geocodeDone:false, geocodeTried:0, geocodeSuccess:0 };
+    const candidateMapState = { map:null, mapEl:null, markers:[], loaded:false, error:'', didFitInitial:false, userMoved:false, restoring:false, view:null, resizeObserver:null };
     const MATCHING_MAP_CENTER_LAT = 35.9634838;
     const MATCHING_MAP_CENTER_LNG = 126.6930552;
     const MATCHING_MAP_GEOCODE_CACHE_KEY = 'MATCHING_MAP_GEOCODE_CACHE_V1';
@@ -760,7 +780,8 @@
       return {total, active, recommendation, manual, searchLogs, proposal, visit, hold, rejected};
     }
     function metricActive(key){
-      if(key==='total') return activeSection2Tab==='후보매물' && activeFilter==='전체';
+      if(key==='mapToggle') return activeSection2Tab==='후보매물';
+      if(key==='total') return activeSection2Tab==='후보매물';
       if(key==='algo') return activeSection2Tab==='추천매물';
       if(key==='manual') return activeSection2Tab==='후보매물' && activeFilter==='수동선정';
       if(key==='log') return activeSection2Tab==='서칭기록';
@@ -779,7 +800,8 @@
         proposal:`<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M9 13h28v19H22l-8 7v-7H9V13Z" fill="#ECFFF5" stroke="#059669" stroke-width="2.5" stroke-linejoin="round"/><circle cx="35" cy="28" r="7" fill="#E8F3FF" stroke="#0F7CFF" stroke-width="2.2"/><path d="M31.8 28.1l2.3 2.3 4.4-5" stroke="#0F7CFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
         visit:`<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M24 7c7 0 12 5.2 12 11.8 0 8.5-12 21.2-12 21.2S12 27.3 12 18.8C12 12.2 17 7 24 7Z" fill="#FFF7ED" stroke="#F97316" stroke-width="2.6"/><circle cx="24" cy="19" r="4.5" fill="#FDBA74"/><path d="M12 39c2.5-2 5.2-2 7.5 0M28.5 39c2.5-2 5.2-2 7.5 0" stroke="#C2410C" stroke-width="2.5" stroke-linecap="round"/></svg>`,
         hold:`<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="16" fill="#F8FAFC" stroke="#64748B" stroke-width="2.5"/><path d="M19 16v16M29 16v16" stroke="#475569" stroke-width="4" stroke-linecap="round"/></svg>`,
-        rejected:`<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="16" fill="#FFF1F1" stroke="#EF4444" stroke-width="2.5"/><path d="M18 18l12 12M30 18L18 30" stroke="#DC2626" stroke-width="3.2" stroke-linecap="round"/></svg>`
+        rejected:`<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="16" fill="#FFF1F1" stroke="#EF4444" stroke-width="2.5"/><path d="M18 18l12 12M30 18L18 30" stroke="#DC2626" stroke-width="3.2" stroke-linecap="round"/></svg>`,
+        mapToggle:`<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M9 13.5l9-4.5 12 5 9-4.5v25l-9 4.5-12-5-9 4.5v-25Z" fill="#F5F3FF" stroke="#7C3AED" stroke-width="2.4" stroke-linejoin="round"/><path d="M18 9v25M30 14v25" stroke="#7C3AED" stroke-width="2.2" stroke-linecap="round"/><path d="M15 23c3.8-5.2 9.1-5.2 13 0s8.7 5.2 12 0" stroke="#0F7CFF" stroke-width="2.4" stroke-linecap="round"/><circle cx="24" cy="23" r="4.5" fill="#16A34A" stroke="#fff" stroke-width="2"/></svg>`
       };
       return icons[key] || '';
     }
@@ -788,8 +810,9 @@
     }
     function renderMetrics(){
       const c=candidateCounts();
-      const main={key:'total', target:'candidates', count:c.total, lines:['전체','후보'], cls:'metric-main'};
+      const viewLabel=candidateViewMode==='map' ? ['매칭-맵으로','보는중'] : ['매칭-패널로','보는중'];
       const metrics=[
+        {key:'mapToggle', target:'toggleCandidateView', count:c.total, lines:viewLabel, cls:'metric-main map-toggle'},
         {key:'algo', target:'recommendation', count:c.recommendation, lines:['알고리즘','추천'], cls:'algo'},
         {key:'manual', target:'manual', count:c.manual, lines:['수동','선정'], cls:'manual'},
         {key:'log', target:'searchLogs', count:c.searchLogs, lines:['서칭','기록'], cls:'log'},
@@ -798,7 +821,7 @@
         {key:'hold', target:'hold', count:c.hold, lines:['보류'], cls:'hold'},
         {key:'rejected', target:'rejected', count:c.rejected, lines:['탈락'], cls:'rejected'}
       ];
-      document.getElementById('candidateMetrics').innerHTML=renderMetricButton(main)+`<div class="metric-small-grid">${metrics.map(renderMetricButton).join('')}</div>`;
+      document.getElementById('candidateMetrics').innerHTML=`<div class="metric-small-grid">${metrics.map(renderMetricButton).join('')}</div>`;
     }
     function renderSection2Tabs(){ const el=document.getElementById('section2Tabs'); if(el) el.innerHTML=''; }
     function renderFilters(){ const wrap=document.getElementById('candidateFilters'); if(wrap) wrap.innerHTML=''; }
@@ -841,6 +864,164 @@
         </div>
         <div class="rejected-panel"><div class="rejected-title">탈락</div><div class="rejected-meta">사유: ${escapeHtml(c.rejectReason||'미기록')}<br>재검토: ${escapeHtml(c.reconsiderType||'미정')}<br>${escapeHtml(c.rejectMemo||'')}</div><div class="cand-actions" style="margin-top:10px"><button class="card-btn green" data-restore="${c.id}">탈락해제</button><button class="card-btn" data-recheck="${c.id}">재검토</button><button class="card-btn dark" data-admin="${escapeAttr(c.propertyId)}">매물입력기</button></div></div>
       </article>`; }).join('')}</div>`;
+    }
+
+    function candidateMapItems(){
+      return getFilteredCandidates().map(c=>{
+        const db=findDbItem(c.propertyId) || {};
+        const v=candidateView(c);
+        return Object.assign({}, db, v, c, {
+          candidateId:c.id,
+          propertyId:c.propertyId || db.propertyId || c.id,
+          title:v.title || db.title || c.title || '',
+          address:v.address || db.address || c.address || '',
+          price:v.price || db.price || c.price || '',
+          area:v.area || db.area || c.area || '',
+          dealType:v.dealType || db.dealType || c.dealType || '',
+          lat:c.lat || db.lat || v.lat,
+          lng:c.lng || db.lng || v.lng,
+          raw:db.raw || {}
+        });
+      });
+    }
+    function clearCandidateMapMarkers(){
+      (candidateMapState.markers || []).forEach(marker=>{ try{ marker.setMap(null); }catch(e){} });
+      candidateMapState.markers=[];
+    }
+    function rememberCandidateMapViewport(){
+      const map=candidateMapState.map;
+      if(!map || !window.naver || !naver.maps) return;
+      try{
+        const center=map.getCenter && map.getCenter();
+        const zoom=map.getZoom && map.getZoom();
+        if(center){ candidateMapState.view={lat:Number(center.lat()), lng:Number(center.lng()), zoom:Number(zoom || 15)}; }
+      }catch(e){}
+    }
+    function candidateMapInitialView(){
+      const v=candidateMapState.view || {};
+      const lat=Number(v.lat), lng=Number(v.lng), zoom=Number(v.zoom);
+      return {lat:Number.isFinite(lat)?lat:MATCHING_MAP_CENTER_LAT, lng:Number.isFinite(lng)?lng:MATCHING_MAP_CENTER_LNG, zoom:Number.isFinite(zoom)?zoom:15};
+    }
+    function candidateMapStatus(text, isError){
+      const el=document.getElementById('candidateMapStatus');
+      if(!el) return;
+      el.classList.toggle('error', !!isError);
+      el.textContent=text;
+    }
+    function fitCandidateMapAllOnce(items){
+      if(!candidateMapState.map || !window.naver || !naver.maps || candidateMapState.didFitInitial || candidateMapState.userMoved) return;
+      const pts=mapPointItems(items);
+      if(!pts.length) return;
+      try{
+        candidateMapState.restoring=true;
+        if(pts.length===1){
+          const p=getMatchingItemPoint(pts[0]);
+          candidateMapState.map.setCenter(new naver.maps.LatLng(p.lat,p.lng));
+          candidateMapState.map.setZoom(16);
+        }else{
+          const bounds=new naver.maps.LatLngBounds();
+          pts.forEach(item=>{ const p=getMatchingItemPoint(item); if(p) bounds.extend(new naver.maps.LatLng(p.lat,p.lng)); });
+          candidateMapState.map.fitBounds(bounds, {top:54,right:54,bottom:54,left:54});
+        }
+        candidateMapState.didFitInitial=true;
+        setTimeout(()=>{ candidateMapState.restoring=false; rememberCandidateMapViewport(); },250);
+      }catch(e){ candidateMapState.restoring=false; }
+    }
+    function renderCandidateMapMarkers(){
+      clearCandidateMapMarkers();
+      if(!candidateMapState.map || !window.naver || !naver.maps) return;
+      const items=candidateMapItems();
+      const pointItems=mapPointItems(items);
+      pointItems.forEach((item,idx)=>{
+        const p=getMatchingItemPoint(item);
+        if(!p) return;
+        const div=document.createElement('div');
+        const cls=['candidate-map-marker'];
+        if(String(activeCandidateMapId)===String(item.candidateId)) cls.push('active');
+        if(item.rejected || item.stage==='탈락') cls.push('rejected');
+        else if(item.stage==='보류') cls.push('hold');
+        else if(item.proposal) cls.push('proposal');
+        div.className=cls.join(' ');
+        div.title=item.title || item.propertyId || '후보매물';
+        try{
+          const marker=new naver.maps.Marker({position:new naver.maps.LatLng(p.lat,p.lng), map:candidateMapState.map, icon:{content:div, anchor:new naver.maps.Point(15,15)}, clickable:true, zIndex:2000+idx});
+          naver.maps.Event.addListener(marker,'click',()=>selectCandidateMapItem(item.candidateId, {pan:false}));
+          candidateMapState.markers.push(marker);
+        }catch(e){ candidateMapState.error=e && e.message ? e.message : String(e); }
+      });
+      if(candidateMapState.error) candidateMapStatus(candidateMapState.error, true);
+      else if(!items.length) candidateMapStatus('표시할 후보매물이 없습니다.', false);
+      else if(!pointItems.length) candidateMapStatus('좌표가 있는 후보매물이 없습니다. 매물번호 또는 주소 좌표 저장 상태를 확인해야 합니다.', true);
+      else candidateMapStatus('후보 핀 ' + pointItems.length + '개 / 후보 ' + items.length + '개. 핀이나 오른쪽 작은 패널을 누르면 단건 패널이 표시됩니다.', false);
+    }
+    function selectedCandidateMapItem(){
+      const items=candidateMapItems();
+      return items.find(item=>String(item.candidateId)===String(activeCandidateMapId)) || null;
+    }
+    function renderCandidateMapMiniList(items){
+      if(!items.length) return '<div class="candidate-map-empty">후보매물이 없습니다.</div>';
+      return items.map(item=>`<button type="button" class="candidate-map-mini ${String(activeCandidateMapId)===String(item.candidateId)?'active':''}" data-candidate-map-select="${escapeAttr(item.candidateId)}"><div class="candidate-map-mini-title">${escapeHtml(item.title || item.propertyId || '후보매물')}</div><div class="candidate-map-mini-meta">${escapeHtml(item.price || '가격 확인')} · ${escapeHtml(item.area || '면적 확인')}<br>${escapeHtml(item.address || '주소 확인 필요')}</div></button>`).join('');
+    }
+    function renderCandidateMapDetail(item){
+      if(!item) return '<div class="candidate-map-empty">오른쪽 작은 후보 패널 또는 지도 핀을 누르면<br>해당 매물 패널 1개만 여기에 표시됩니다.</div>';
+      return `<article class="candidate-map-detail-card"><div><div class="candidate-map-detail-title">${escapeHtml(item.title || '후보매물')} / ${escapeHtml(item.price || '가격 확인')}</div><div class="candidate-map-detail-no">listingNumber ${escapeHtml(item.propertyId || '')}</div></div><div class="summary-line">${sourceBadge(item)}<span class="chip">${escapeHtml(item.stage || '검토중')}</span><span class="chip">${escapeHtml(item.dealType || '거래유형')}</span></div><div class="cand-meta"><div class="meta-box"><b>소재지</b>${escapeHtml(item.address || '주소 확인 필요')}</div><div class="meta-box"><b>면적</b>${escapeHtml(item.area || '면적 확인')}</div><div class="meta-box"><b>소유자 연락</b>${escapeHtml(item.ownerStatus || '확인 필요')}</div><div class="meta-box"><b>고객/임장</b>${item.proposal?'제안선정':'미선정'} · ${escapeHtml(item.visit || '')}</div></div><div class="confirm-box"><b>핵심장점</b> ${escapeHtml(listText(item.strengths))}<br><b>부족조건</b> ${escapeHtml(listText(item.weakPoints))}<br><b>리스크</b> ${escapeHtml(listText(item.risks))}</div><div class="cand-actions"><button class="card-btn dark" data-admin="${escapeAttr(item.propertyId)}">매물입력기</button><button class="card-btn" data-owner="${escapeAttr(item.candidateId)}">소유자 확인</button><button class="card-btn green" data-proposal="${escapeAttr(item.candidateId)}">고객 제안 선정</button><button class="card-btn" data-visit-candidate="${escapeAttr(item.candidateId)}">임장에 추가</button></div></article>`;
+    }
+    function updateCandidateMapSidePanel(){
+      const items=candidateMapItems();
+      const mini=document.getElementById('candidateMapMiniList');
+      const detail=document.getElementById('candidateMapDetail');
+      const sub=document.getElementById('candidateMapSideSub');
+      if(mini) mini.innerHTML=renderCandidateMapMiniList(items);
+      if(detail) detail.innerHTML=renderCandidateMapDetail(selectedCandidateMapItem());
+      if(sub) sub.textContent='후보 ' + items.length + '개 · 지도 핀 선택 시 단건 표시';
+    }
+    function selectCandidateMapItem(candidateId, opts){
+      activeCandidateMapId=candidateId || '';
+      const item=selectedCandidateMapItem();
+      updateCandidateMapSidePanel();
+      renderCandidateMapMarkers();
+      if(item && (!opts || opts.pan !== false) && candidateMapState.map && window.naver && naver.maps){
+        const p=getMatchingItemPoint(item);
+        if(p){
+          try{ candidateMapState.map.panTo(new naver.maps.LatLng(p.lat,p.lng)); }catch(e){}
+        }
+      }
+    }
+    async function ensureCandidateMapWorkspace(){
+      const mapEl=document.getElementById('candidateRealMap');
+      if(!mapEl || activeSection2Tab!=='후보매물' || candidateViewMode!=='map') return;
+      if(candidateMapState.mapEl !== mapEl){
+        clearCandidateMapMarkers();
+        candidateMapState.map=null;
+        candidateMapState.mapEl=mapEl;
+        if(candidateMapState.resizeObserver){ try{ candidateMapState.resizeObserver.disconnect(); }catch(e){} candidateMapState.resizeObserver=null; }
+      }
+      updateCandidateMapSidePanel();
+      try{
+        candidateMapStatus('후보 지도를 준비 중입니다.', false);
+        await Promise.all([loadMatchingNaverMapScript(), loadMatchingMapListings()]);
+        if(!candidateMapState.map){
+          const initial=candidateMapInitialView();
+          candidateMapState.map=new naver.maps.Map(mapEl, {center:new naver.maps.LatLng(initial.lat, initial.lng), zoom:initial.zoom, minZoom:7, mapTypeControl:true, scaleControl:true, logoControl:true, mapDataControl:false});
+          naver.maps.Event.addListener(candidateMapState.map,'idle',()=>{ if(candidateMapState.restoring) return; rememberCandidateMapViewport(); });
+          naver.maps.Event.addListener(candidateMapState.map,'dragend',()=>{ if(candidateMapState.restoring) return; candidateMapState.userMoved=true; rememberCandidateMapViewport(); });
+          naver.maps.Event.addListener(candidateMapState.map,'zoom_changed',()=>{ if(candidateMapState.restoring) return; if(candidateMapState.didFitInitial){ candidateMapState.userMoved=true; rememberCandidateMapViewport(); } });
+          try{
+            if(window.ResizeObserver){
+              candidateMapState.resizeObserver=new ResizeObserver(()=>{ try{ naver.maps.Event.trigger(candidateMapState.map,'resize'); renderCandidateMapMarkers(); }catch(e){} });
+              candidateMapState.resizeObserver.observe(mapEl);
+            }
+          }catch(e){}
+        }
+        setTimeout(()=>{ try{ naver.maps.Event.trigger(candidateMapState.map,'resize'); }catch(e){} updateCandidateMapSidePanel(); renderCandidateMapMarkers(); fitCandidateMapAllOnce(candidateMapItems()); },80);
+      }catch(err){
+        candidateMapState.error=err && err.message ? err.message : String(err || '후보 지도를 불러오지 못했습니다.');
+        candidateMapStatus(candidateMapState.error, true);
+      }
+    }
+    function renderCandidateMapPanel(){
+      const items=candidateMapItems();
+      return `<div class="candidate-map-layout"><div class="matching-map-stage real-map"><div id="candidateRealMap" class="matching-real-map-canvas"></div><div id="candidateMapStatus" class="candidate-map-status">후보 지도를 준비 중입니다.</div></div><aside class="candidate-map-side"><div class="candidate-map-side-head"><div><div class="candidate-map-side-title">매칭 후보</div><div class="candidate-map-side-sub" id="candidateMapSideSub">후보 ${items.length}개</div></div><span class="source-badge manual">단건패널</span></div><div class="candidate-map-mini-list" id="candidateMapMiniList">${renderCandidateMapMiniList(items)}</div><div class="candidate-map-detail" id="candidateMapDetail">${renderCandidateMapDetail(selectedCandidateMapItem())}</div></aside></div>`;
     }
     function renderDbCards(items, sourceType){
       if(!items.length) return '<div class="candidate-empty">검색 결과가 없습니다.</div>';
@@ -2390,6 +2571,10 @@
       }
       else if(activeSection2Tab==='추천매물') content.innerHTML=renderRecommendationPanel();
       else if(activeSection2Tab==='서칭기록') content.innerHTML=renderSearchLogs();
+      else if(activeSection2Tab==='후보매물' && candidateViewMode==='map'){
+        content.innerHTML=renderCandidateMapPanel();
+        setTimeout(ensureCandidateMapWorkspace,0);
+      }
       else content.innerHTML=renderCandidateCards(getFilteredCandidates());
       renderSearchStudyPanel();
     }
@@ -2715,7 +2900,7 @@
       if(routePick){ const v=routePick.dataset.pickRoute; activePickerValues = activePickerValues.includes(v) ? activePickerValues.filter(x=>x!==v) : [...activePickerValues, v]; routePick.classList.toggle('active'); if(v==='기타' && activePickerValues.includes('기타')) setTimeout(()=>modalContent.querySelector('[data-picker-etc-input]')?.focus(),0); return; }
       const singlePick=e.target.closest('[data-pick-single]');
       if(singlePick){ activePickerValues=[singlePick.dataset.pickSingle]; document.querySelectorAll('[data-pick-single]').forEach(btn=>btn.classList.toggle('active', btn===singlePick)); if(activePickerValues[0]==='기타') setTimeout(()=>modalContent.querySelector('[data-picker-etc-input]')?.focus(),0); return; }
-      const tab=e.target.closest('[data-section2-tab]'); if(tab){ if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState(); activeSection2Tab=tab.dataset.section2Tab; activeFilter='전체'; renderSection2(); return; }
+      const tab=e.target.closest('[data-section2-tab]'); if(tab){ if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState(); if(activeSection2Tab==='후보매물' && candidateViewMode==='map') rememberCandidateMapViewport(); activeSection2Tab=tab.dataset.section2Tab; activeFilter='전체'; renderSection2(); return; }
       const metric=e.target.closest('[data-metric-target]');
       if(metric){
         jumpSection2Metric(metric.dataset.metricTarget);
@@ -2740,6 +2925,7 @@
       if(logDelete){ deleteSearchLogCard(logDelete.dataset.logDelete); return; }
       const logStatus=e.target.closest('[data-log-status]');
       if(logStatus){ const log=(state.searchLogs||[]).find(x=>x.id===logStatus.dataset.logStatus); if(log){ markChange('서칭기록 상태 변경'); log.status=normalizeSearchLogStatus(logStatus.dataset.status||'기록중'); log.updatedAt=nowIso(); activeStudyLogId=log.id; renderAll(); } return; }
+      const candidateMapSelect=e.target.closest('[data-candidate-map-select]'); if(candidateMapSelect){ selectCandidateMapItem(candidateMapSelect.dataset.candidateMapSelect, {pan:true}); return; }
       const addDb=e.target.closest('[data-add-db-candidate]'); if(addDb){ addCandidateFromDb(addDb.dataset.addDbCandidate, addDb.dataset.addSource); return; }
       const reject=e.target.closest('[data-reject]'); if(reject){ openCandidateInline(reject.dataset.reject,'reject'); }
       const owner=e.target.closest('[data-owner]'); if(owner){ openCandidateInline(owner.dataset.owner,'owner'); }
@@ -2754,12 +2940,18 @@
     });
     function jumpSection2Metric(target){
       if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState();
-      if(target==='candidates'){ activeSection2Tab='후보매물'; activeFilter='전체'; }
+      if(activeSection2Tab==='후보매물' && candidateViewMode==='map') rememberCandidateMapViewport();
+      if(target==='toggleCandidateView'){
+        activeSection2Tab='후보매물';
+        activeFilter='전체';
+        candidateViewMode = candidateViewMode==='map' ? 'panel' : 'map';
+      }
+      else if(target==='candidates'){ activeSection2Tab='후보매물'; activeFilter='전체'; candidateViewMode='panel'; }
       else if(target==='recommendation'){ activeSection2Tab='추천매물'; activeFilter='전체'; }
-      else if(target==='manual'){ activeSection2Tab='후보매물'; activeFilter='수동선정'; }
+      else if(target==='manual'){ activeSection2Tab='후보매물'; activeFilter='수동선정'; candidateViewMode='panel'; }
       else if(target==='searchLogs'){ activeSection2Tab='서칭기록'; activeFilter='전체'; }
-      else if(target==='proposal'){ activeSection2Tab='후보매물'; activeFilter='고객제안선정'; }
-      else if(target==='visit'){ activeSection2Tab='후보매물'; activeFilter='임장예정'; }
+      else if(target==='proposal'){ activeSection2Tab='후보매물'; activeFilter='고객제안선정'; candidateViewMode='panel'; }
+      else if(target==='visit'){ activeSection2Tab='후보매물'; activeFilter='임장예정'; candidateViewMode='panel'; }
       else if(target==='hold'){ activeSection2Tab='보류/탈락'; activeFilter='보류'; }
       else if(target==='rejected'){ activeSection2Tab='보류/탈락'; activeFilter='탈락'; }
       renderSection2();

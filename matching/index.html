@@ -304,6 +304,10 @@
     .search-log-input,.search-log-select,.search-log-textarea{width:100%;border:1px solid #e1e8f0;background:#fff;border-radius:10px;padding:0 9px;min-height:32px;color:#111318;font-size:12px;font-weight:850;outline:none}
     .search-log-input:focus,.search-log-select:focus,.search-log-textarea:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.08)}
     .search-log-textarea{min-height:72px;padding:8px 9px;resize:vertical;line-height:1.45}
+    .search-log-area{min-height:58px}
+    .search-log-url-wrap{display:grid;grid-template-columns:minmax(0,1fr)48px;gap:6px;align-items:center}
+    .search-log-open{border:1px solid #d7e0eb;background:#f8fafc;border-radius:10px;min-height:32px;font-size:11px;font-weight:1000;color:#374151;cursor:pointer}
+    .search-log-open:disabled{opacity:.38;cursor:default}
     @media(max-width:1200px){.search-log-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:760px){.search-log-grid{grid-template-columns:1fr}.search-log-row{grid-template-columns:1fr}}
 
@@ -1782,7 +1786,7 @@
       state.searchLogs=state.searchLogs||[];
       const now=nowIso();
       const id=nextSearchLogId();
-      state.searchLogs.push({id, source:'네이버부동산', title:'', address:'', price:'', area:'', contact:'', link:'', memo:'', status:'기록중', createdAt:now, updatedAt:now, studyStatus:'', studyResult:null, studyMemo:''});
+      state.searchLogs.push({id, source:'네이버부동산', title:'', address:'', price:'', area:'', link:'', memo:'', status:'기록중', createdAt:now, updatedAt:now, studyStatus:'', studyResult:null, studyMemo:''});
       activeSection2Tab='서칭기록';
       activeFilter='전체';
       activeStudyLogId=id;
@@ -1793,11 +1797,27 @@
       const log=(state.searchLogs||[]).find(x=>x.id===id);
       if(!log) return;
       log[field]=value;
+      if(field==='link' && !log.title) log.title=value;
       log.updatedAt=nowIso();
       dirty=true;
       updateSaveState();
       renderMetrics();
       renderSearchStudyPanel();
+    }
+    function normalizeSearchLogUrl(value){
+      const v=String(value||'').trim();
+      if(!v) return '';
+      if(/^https?:\/\//i.test(v)) return v;
+      return 'https://' + v;
+    }
+    function openSearchLogUrl(id){
+      const log=(state.searchLogs||[]).find(x=>x.id===id);
+      if(!log) return;
+      const domValue=getSearchLogDomFieldValue(id, 'link');
+      if(domValue) log.link=domValue;
+      const url=normalizeSearchLogUrl(log.link || log.title || '');
+      if(!url) return;
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
     function cleanStudyLookupError(err){
       function one(e){ return e && e.message ? String(e.message) : String(e || '조회 실패'); }
@@ -1891,7 +1911,7 @@
     }
     function syncSearchLogDomFields(log){
       if(!log) return;
-      ['source','title','address','area','price','contact','memo'].forEach(field=>{
+      ['source','link','title','address','area','price','memo'].forEach(field=>{
         const value=getSearchLogDomFieldValue(log.id, field);
         if(value) log[field]=value;
       });
@@ -2176,11 +2196,10 @@
           </div>
           <div class="search-log-fields">
             <div class="search-log-row"><label>가져온곳</label><select class="search-log-select" data-log-field-id="${escapeAttr(log.id)}" data-log-field="source">${sources.map(src=>`<option value="${escapeAttr(src)}" ${src===(log.source||'')?'selected':''}>${escapeHtml(src)}</option>`).join('')}</select></div>
-            <div class="search-log-row"><label>제목</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="title" value="${escapeAttr(log.title||'')}" placeholder="외부 매물 제목"></div>
+            <div class="search-log-row"><label>URL</label><div class="search-log-url-wrap"><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="link" value="${escapeAttr(log.link||log.title||'')}" placeholder="URL 입력"><button class="search-log-open" type="button" data-log-open-url="${escapeAttr(log.id)}" ${(log.link||log.title)?'':'disabled'}>열기</button></div></div>
             <div class="search-log-row"><label>주소</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="address" value="${escapeAttr(log.address||'')}" placeholder="주소 입력"></div>
-            <div class="search-log-row"><label>면적</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="area" value="${escapeAttr(log.area||'')}" placeholder="대지/건물 면적"></div>
+            <div class="search-log-row"><label>면적</label><textarea class="search-log-textarea search-log-area" data-log-field-id="${escapeAttr(log.id)}" data-log-field="area" placeholder="대지/건물 면적을 여러 줄로 입력">${escapeHtml(log.area||'')}</textarea></div>
             <div class="search-log-row"><label>가격</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="price" value="${escapeAttr(log.price||'')}" placeholder="매매가/임대가"></div>
-            <div class="search-log-row"><label>연락처</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="contact" value="${escapeAttr(log.contact||'')}" placeholder="연락처/담당자"></div>
             <textarea class="search-log-textarea" data-log-field-id="${escapeAttr(log.id)}" data-log-field="memo" placeholder="메모">${escapeHtml(log.memo||'')}</textarea>
           </div>
           <div class="cand-actions">
@@ -2434,6 +2453,8 @@
       if(logStudy){ runSearchLogStudy(logStudy.dataset.logStudy); return; }
       const logAdmin=e.target.closest('[data-log-admin]');
       if(logAdmin){ window.open('/admin?mode=new','_blank','noopener,noreferrer'); return; }
+      const logOpenUrl=e.target.closest('[data-log-open-url]');
+      if(logOpenUrl){ openSearchLogUrl(logOpenUrl.dataset.logOpenUrl); return; }
       const logStatus=e.target.closest('[data-log-status]');
       if(logStatus){ const log=(state.searchLogs||[]).find(x=>x.id===logStatus.dataset.logStatus); if(log){ markChange('서칭기록 상태 변경'); log.status=logStatus.dataset.status||'기록중'; log.updatedAt=nowIso(); activeStudyLogId=log.id; renderAll(); } return; }
       const addDb=e.target.closest('[data-add-db-candidate]'); if(addDb){ addCandidateFromDb(addDb.dataset.addDbCandidate, addDb.dataset.addSource); return; }
@@ -2598,8 +2619,8 @@
       if(mode==='searchLog'){
         modalTitle.textContent='서칭기록 추가';
         modalDesc.textContent='외부에서 본 매물은 후보로 바로 올리지 않고 기록만 남깁니다.';
-        modalContent.innerHTML=`<div class="modal-grid"><select class="edit-field" id="logSource"><option>네이버</option><option>한방</option><option>부동산포스</option><option>문자</option><option>전화</option><option>현장</option><option>소개</option><option>블로그</option><option>기타</option></select><select class="edit-field" id="logStatus"><option>기록만</option><option selected>검토중</option><option>매물등록필요</option><option>등록완료</option><option>보류</option><option>탈락</option></select><input class="edit-field" id="logTitle" placeholder="제목"><input class="edit-field" id="logAddress" placeholder="주소"><input class="edit-field" id="logPrice" placeholder="가격"><input class="edit-field" id="logArea" placeholder="면적"><input class="edit-field" id="logContact" placeholder="연락처"><input class="edit-field" id="logLink" placeholder="링크"></div><textarea class="edit-field textarea" id="logMemo" style="margin-top:10px" placeholder="메모"></textarea>`;
-        modal.classList.add('show'); setTimeout(()=>document.getElementById('logTitle')?.focus(),0); return;
+        modalContent.innerHTML=`<div class="modal-grid"><select class="edit-field" id="logSource"><option>네이버</option><option>한방</option><option>부동산포스</option><option>문자</option><option>전화</option><option>현장</option><option>소개</option><option>블로그</option><option>기타</option></select><select class="edit-field" id="logStatus"><option>기록만</option><option selected>검토중</option><option>매물등록필요</option><option>등록완료</option><option>보류</option><option>탈락</option></select><input class="edit-field" id="logLink" placeholder="URL"><input class="edit-field" id="logAddress" placeholder="주소"><input class="edit-field" id="logPrice" placeholder="가격"><textarea class="edit-field textarea" id="logArea" placeholder="면적"></textarea></div><textarea class="edit-field textarea" id="logMemo" style="margin-top:10px" placeholder="메모"></textarea>`;
+        modal.classList.add('show'); setTimeout(()=>document.getElementById('logLink')?.focus(),0); return;
       }
     }
     document.querySelectorAll('[data-open-modal]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.openModal))); function closeModal(){modal.classList.remove('show')} document.getElementById('modalClose').onclick=closeModal; document.getElementById('modalCancel').onclick=closeModal; document.getElementById('modalApply').onclick=()=>{
@@ -2636,11 +2657,10 @@
         state.searchLogs.push({
           id:'SL-'+String(next).padStart(3,'0'),
           source:document.getElementById('logSource')?.value || '기타',
-          title:(document.getElementById('logTitle')?.value || '제목 미정').trim(),
+          title:(document.getElementById('logLink')?.value || '').trim(),
           address:(document.getElementById('logAddress')?.value || '').trim(),
           price:(document.getElementById('logPrice')?.value || '').trim(),
           area:(document.getElementById('logArea')?.value || '').trim(),
-          contact:(document.getElementById('logContact')?.value || '').trim(),
           link:(document.getElementById('logLink')?.value || '').trim(),
           memo:(document.getElementById('logMemo')?.value || '').trim(),
           status:document.getElementById('logStatus')?.value || '기록만'

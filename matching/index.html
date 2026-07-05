@@ -1855,6 +1855,122 @@
       try{ return await publicPropertyProxyLookupCall(Object.assign({}, params)); }
       catch(secondError){ const err=new Error('BOTH_LOOKUP_FAILED'); err.firstError=firstError; err.secondError=secondError; throw err; }
     }
+    function firstStudyNonEmpty(){
+      for(let i=0;i<arguments.length;i++){
+        const v=arguments[i];
+        if(v===undefined || v===null) continue;
+        const t=String(v).trim();
+        if(t) return t;
+      }
+      return '';
+    }
+    function studyPnuDigits(value){ return String(value || '').replace(/\D/g,''); }
+    function studyPnuParts(pnu){
+      pnu=studyPnuDigits(pnu);
+      if(pnu.length !== 19) return {bcode:'', mainMountainCode:'', bun:'', ji:''};
+      return {bcode:pnu.slice(0,10), mainMountainCode:pnu.slice(10,11), bun:pnu.slice(11,15), ji:pnu.slice(15,19)};
+    }
+    function normalizeStudyAddressText(value){ return String(value || '').replace(/\s+/g,' ').trim(); }
+    async function ensureMatchingVworldKey(){
+      if(matchingMapState.vworldKey) return matchingMapState.vworldKey;
+      try{
+        const cfg=await fetchJson('/api/route-setting/config');
+        matchingMapState.vworldKey=String(cfg.vworldKey || cfg.vworldApiKey || cfg.VWORLD_API_KEY || cfg.key || '').trim();
+      }catch(e){}
+      return matchingMapState.vworldKey || '';
+    }
+    function getSearchLogDomFieldValue(logId, field){
+      const nodes=Array.from(document.querySelectorAll('[data-log-field-id][data-log-field]'));
+      const node=nodes.find(el=>String(el.dataset.logFieldId || '')===String(logId || '') && String(el.dataset.logField || '')===String(field || ''));
+      return node ? String(node.value || '').trim() : '';
+    }
+    function syncSearchLogDomFields(log){
+      if(!log) return;
+      ['source','title','address','area','price','contact','memo'].forEach(field=>{
+        const value=getSearchLogDomFieldValue(log.id, field);
+        if(value) log[field]=value;
+      });
+    }
+    async function geocodeSearchLogAddress(address){
+      const query=normalizeStudyAddressText(address);
+      if(!query) return null;
+      loadMatchingGeocodeCache();
+      const cached=matchingMapState.geocodeCache && matchingMapState.geocodeCache.get(query);
+      if(cached && isKoreaLatLng(Number(cached.lat), Number(cached.lng))) return cached;
+      const data=await fetchJson('/api/route-setting/geocode', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query})});
+      const result=data && data.item;
+      if(!result || !isKoreaLatLng(Number(result.lat), Number(result.lng))) return null;
+      const out={lat:Number(result.lat), lng:Number(result.lng), resolvedAddress:result.resolvedAddress || '', roadAddress:result.roadAddress || '', jibunAddress:result.jibunAddress || '', savedAt:Date.now()};
+      matchingMapState.geocodeCache.set(query, out);
+      saveMatchingGeocodeCache();
+      return out;
+    }
+    function buildSearchLogStudyMeta(address, geocoded, parcel){
+      address=normalizeStudyAddressText(address);
+      geocoded=geocoded || {};
+      parcel=parcel || {};
+      const pnu=studyPnuDigits(parcel.pnu || '');
+      const parts=studyPnuParts(pnu);
+      const parcelAddress=normalizeStudyAddressText(parcel.address || '');
+      const jibunAddress=firstStudyNonEmpty(geocoded.jibunAddress, parcelAddress, address);
+      const roadAddress=firstStudyNonEmpty(geocoded.roadAddress, '');
+      const queryAddress=firstStudyNonEmpty(jibunAddress, roadAddress, address);
+      return {
+        pnu:pnu, bcode:parts.bcode, lat:geocoded.lat || '', lng:geocoded.lng || '',
+        pickedAddress:address, address:queryAddress, lookupAddress:queryAddress, queryAddress:queryAddress,
+        jibunAddress:jibunAddress, roadAddress:roadAddress, autoJibunAddress:jibunAddress, autoRoadAddress:roadAddress,
+        queryAddressType:jibunAddress ? 'JIBUN' : (roadAddress ? 'ROAD' : ''),
+        addressType:jibunAddress ? 'JIBUN' : (roadAddress ? 'ROAD' : '')
+      };
+    }
+    function buildSearchLogLandParams(meta){
+      return {action:'fetchLandInfoBySearchResult', pnu:meta.pnu || '', queryAddress:meta.queryAddress || meta.address || '', lookupAddress:meta.lookupAddress || meta.queryAddress || meta.address || '', address:meta.address || meta.queryAddress || ''};
+    }
+    function buildSearchLogBuildingParams(meta){
+      return {
+        action:'fetchPublicPropertyBySearchResult', address:meta.queryAddress || meta.address || '',
+        jibunAddress:meta.jibunAddress || '', roadAddress:meta.roadAddress || '',
+        autoJibunAddress:meta.autoJibunAddress || meta.jibunAddress || '', autoRoadAddress:meta.autoRoadAddress || meta.roadAddress || '',
+        lookupAddress:meta.lookupAddress || meta.queryAddress || meta.address || '', bcode:meta.bcode || '',
+        sido:'', sigungu:'', bname:'', buildingName:'', zonecode:'', apartment:'',
+        addressType:meta.addressType || '', pnu:meta.pnu || '', queryAddress:meta.queryAddress || meta.address || '', queryAddressType:meta.queryAddressType || ''
+      };
+    }
+    async function publicLookupLandWithYearFallback(params){
+      params=params || {};
+      const currentYear=new Date().getFullYear();
+      const years=[];
+      for(let y=currentYear; y>=currentYear-5; y--) years.push(String(y));
+      let lastError=null;
+      for(const year of years){
+        try{
+          const data=await publicLookup(Object.assign({}, params, {stdrYear:year}));
+          if(data && typeof data==='object') data._stdrYear=year;
+          return data;
+        }catch(err){ lastError=err; }
+      }
+      throw lastError || new Error('토지대장 조회 실패');
+    }
+    async function lookupSearchLogStudyWithParcelFlow(address){
+      const inputAddress=normalizeStudyAddressText(address);
+      if(!inputAddress) throw new Error('주소를 먼저 입력하세요.');
+      let geocoded=null, parcel=null, geocodeError='', parcelError='';
+      try{ geocoded=await geocodeSearchLogAddress(inputAddress); }
+      catch(err){ geocodeError=err && err.message ? err.message : String(err || '주소 좌표변환 실패'); }
+      if(geocoded && isKoreaLatLng(Number(geocoded.lat), Number(geocoded.lng))){
+        try{ await ensureMatchingVworldKey(); parcel=await requestMatchingParcelByPoint(geocoded.lng, geocoded.lat); }
+        catch(err){ parcelError=err && err.message ? err.message : String(err || '필지 조회 실패'); }
+      }
+      const meta=buildSearchLogStudyMeta(inputAddress, geocoded || {}, parcel || {});
+      const result=Object.assign({ok:true, source:'matching-search-log-parcel-flow', usedPath:'주소입력 → 좌표변환 → VWorld PNU/필지 → GAS 직접조회 → 프록시 폴백', message:'공부조회 완료', geocodeError:geocodeError, parcelError:parcelError, parcel:parcel || null}, meta);
+      const landParams=buildSearchLogLandParams(meta);
+      const buildingParams=buildSearchLogBuildingParams(meta);
+      const landPromise=meta.pnu ? publicLookupLandWithYearFallback(landParams).then(data=>{ result.land=data && data.land ? data.land : data; }).catch(err=>{ result.landError=cleanStudyLookupError(err); }) : Promise.resolve().then(()=>{ result.landError=parcelError || geocodeError || 'PNU 없음'; });
+      const buildingPromise=(meta.jibunAddress || meta.roadAddress || inputAddress) ? publicLookup(buildingParams).then(data=>{ result.building=data; if(data && data.land && !result.land) result.land=data.land; }).catch(err=>{ result.buildingError=cleanStudyLookupError(err); }) : Promise.resolve().then(()=>{ result.buildingError='주소 없음'; });
+      await Promise.all([landPromise, buildingPromise]);
+      if(!result.land && !result.building) throw new Error([result.landError, result.buildingError].filter(Boolean).join(' / ') || '공부조회 실패');
+      return result;
+    }
     function flattenStudyValue(value, depth){
       depth=depth||0;
       if(value==null || value==='') return '';
@@ -1951,7 +2067,9 @@
       const log=(state.searchLogs||[]).find(x=>x.id===logId);
       if(!log) return;
       activeStudyLogId=logId;
-      const address=String(log.address || '').trim();
+      syncSearchLogDomFields(log);
+      const address=firstStudyNonEmpty(getSearchLogDomFieldValue(logId,'address'), log.address);
+      log.address=address;
       if(!address){
         log.studyStatus='error';
         log.studyError='주소를 먼저 입력하세요.';
@@ -1964,15 +2082,7 @@
       log.updatedAt=nowIso();
       renderSearchStudyPanel();
       try{
-        const result=await publicLookup({
-          action:'fetchPublicPropertyBySearchResult',
-          pickedAddress:address,
-          queryAddress:address,
-          address:address,
-          lookupAddress:address,
-          source:'matching-search-log',
-          pageUrl:window.location.href || ''
-        });
+        const result=await lookupSearchLogStudyWithParcelFlow(address);
         log.studyStatus='done';
         log.studyResult=result;
         log.updatedAt=nowIso();

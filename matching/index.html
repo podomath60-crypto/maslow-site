@@ -53,14 +53,21 @@
     .section-jump[data-section="4"]{--section-color:#f59e0b;--section-soft:#fff8e6}
     .shell{min-width:0;width:100%;padding:0;display:grid;gap:18px}
     .right-sidebar{position:sticky;top:92px;display:grid;gap:10px;align-self:start;min-width:0}
-    .progress-memo-panel{border:1px solid #e0e7ef;border-radius:22px;background:rgba(255,255,255,.96);box-shadow:0 14px 30px rgba(15,23,42,.07);padding:12px;display:grid;gap:10px;min-width:0;max-height:calc(100vh - 112px);overflow:auto}
-    .progress-memo-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;border-bottom:1px solid #edf2f7;padding-bottom:10px}
+    .progress-memo-panel{padding:0;display:grid;gap:9px;min-width:0;max-height:calc(100vh - 112px);overflow:auto;background:transparent;border:0;border-radius:0;box-shadow:none}
+    .progress-memo-panel{scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.28) transparent}
+    .progress-memo-panel::-webkit-scrollbar{width:4px}
+    .progress-memo-panel::-webkit-scrollbar-track{background:transparent}
+    .progress-memo-panel::-webkit-scrollbar-thumb{background:rgba(148,163,184,.26);border-radius:999px}
+    .progress-memo-panel::-webkit-scrollbar-thumb:hover{background:rgba(148,163,184,.38)}
+    .progress-memo-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:0 1px 2px;background:transparent;border:0}
     .progress-memo-title{font-size:14px;font-weight:1000;letter-spacing:-.05em;color:#151922;line-height:1.25}
-    .progress-memo-latest{margin-top:4px;font-size:10px;font-weight:900;color:#7b8794;line-height:1.35}
-    .progress-memo-add{width:34px;height:34px;border-radius:13px;background:#111318;color:#fff;font-size:20px;font-weight:1000;line-height:1;box-shadow:0 10px 20px rgba(15,23,42,.12);flex:0 0 auto}
-    .progress-memo-list{display:grid;gap:10px}
-    .progress-memo-empty{border:1px dashed #d7e0ea;border-radius:18px;background:#fbfdff;padding:16px 10px;color:#7b8794;font-size:12px;font-weight:900;line-height:1.5;text-align:center}
-    .progress-memo-card{position:relative;border:1px solid rgba(15,23,42,.08);border-radius:18px;padding:11px 10px 12px;box-shadow:0 10px 18px rgba(15,23,42,.055);display:grid;gap:8px;color:#27210a;min-width:0}
+    .progress-memo-latest{margin-top:3px;font-size:10px;font-weight:900;color:#7b8794;line-height:1.32}
+    .progress-memo-add{width:30px;height:30px;border-radius:999px;background:transparent;color:#111318;border:0;padding:0;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:none}
+    .progress-memo-add svg{width:28px;height:28px;display:block;stroke:currentColor;stroke-width:1.45;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .progress-memo-list{display:grid;gap:8px}
+    .progress-memo-empty{border:1px dashed #d7e0ea;background:rgba(255,255,255,.55);padding:12px 8px;color:#7b8794;font-size:11px;font-weight:900;line-height:1.45;text-align:center;border-radius:0}
+    .progress-memo-card{position:relative;border:0;border-radius:0;padding:8px 8px 9px;box-shadow:0 7px 12px rgba(15,23,42,.10);display:grid;gap:6px;color:#27210a;min-width:0;outline:1px solid rgba(15,23,42,.045)}
+    .progress-memo-card::before{content:"";position:absolute;left:50%;top:-5px;width:42px;height:11px;transform:translateX(-50%);background:rgba(255,255,255,.42);box-shadow:0 1px 2px rgba(15,23,42,.05);pointer-events:none}
     .progress-memo-card[data-color=yellow]{background:#fff7b2}
     .progress-memo-card[data-color=green]{background:#dcfce7}
     .progress-memo-card[data-color=blue]{background:#dbeafe}
@@ -68,22 +75,22 @@
     .progress-memo-card[data-color=purple]{background:#ede9fe}
     .progress-memo-card[data-color=orange]{background:#ffedd5}
     .progress-memo-card[data-color=gray]{background:#f3f4f6}
-    .progress-memo-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
-    .progress-memo-meta{font-size:10px;font-weight:1000;color:rgba(17,24,39,.58);line-height:1.45;min-width:0}
-    .progress-memo-author{outline:none;color:#111318;display:inline-block;min-width:34px;padding:0 2px;border-radius:5px}
-    .progress-memo-author:focus{background:rgba(255,255,255,.62);box-shadow:0 0 0 2px rgba(17,19,24,.08)}
-    .progress-memo-menu-btn{width:26px;height:26px;border-radius:10px;background:rgba(255,255,255,.55);color:#384252;font-size:18px;font-weight:1000;line-height:1;flex:0 0 auto}
-    .progress-memo-menu{position:absolute;right:9px;top:40px;width:144px;border:1px solid #dbe5ee;border-radius:15px;background:#fff;box-shadow:0 18px 34px rgba(15,23,42,.16);padding:8px;display:none;z-index:20}
+    .progress-memo-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:5px}
+    .progress-memo-meta{font-size:10px;font-weight:1000;color:rgba(17,24,39,.56);line-height:1.38;min-width:0}
+    .progress-memo-author{outline:none;color:#111318;display:inline-block;min-width:32px;padding:0 1px;border-radius:0}
+    .progress-memo-author:focus{background:rgba(255,255,255,.58);box-shadow:0 0 0 1px rgba(17,19,24,.12)}
+    .progress-memo-menu-btn{width:17px;height:22px;border:0;border-radius:0;background:transparent;color:rgba(17,24,39,.62);font-size:18px;font-weight:1000;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:none}
+    .progress-memo-menu-btn:hover{background:transparent;color:#111318}
+    .progress-memo-menu{position:absolute;right:4px;top:30px;width:138px;border:1px solid #dbe5ee;border-radius:12px;background:#fff;box-shadow:0 16px 30px rgba(15,23,42,.16);padding:8px;display:none;z-index:20}
     .progress-memo-card.menu-open .progress-memo-menu{display:grid;gap:8px}
     .progress-menu-label{font-size:10px;font-weight:1000;color:#7b8794}
     .progress-color-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-    .progress-color-dot{width:24px;height:24px;border-radius:9px;border:1px solid rgba(15,23,42,.16);box-shadow:inset 0 0 0 2px rgba(255,255,255,.45)}
+    .progress-color-dot{width:23px;height:23px;border-radius:0;border:1px solid rgba(15,23,42,.16);box-shadow:inset 0 0 0 2px rgba(255,255,255,.42)}
     .progress-color-dot[data-color=yellow]{background:#fff7b2}.progress-color-dot[data-color=green]{background:#dcfce7}.progress-color-dot[data-color=blue]{background:#dbeafe}.progress-color-dot[data-color=pink]{background:#ffe4e6}.progress-color-dot[data-color=purple]{background:#ede9fe}.progress-color-dot[data-color=orange]{background:#ffedd5}.progress-color-dot[data-color=gray]{background:#f3f4f6}
-    .progress-delete-btn{min-height:30px;border-radius:11px;background:#fff1f1;border:1px solid #ffd2d2;color:#d43737;font-size:12px;font-weight:1000}
-    .progress-memo-content{min-height:72px;outline:none;font-size:12px;line-height:1.48;font-weight:900;color:#26200a;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;border-radius:10px;padding:5px 4px}
+    .progress-delete-btn{min-height:28px;border-radius:9px;background:#fff1f1;border:1px solid #ffd2d2;color:#d43737;font-size:12px;font-weight:1000}
+    .progress-memo-content{min-height:58px;outline:none;font-size:12px;line-height:1.42;font-weight:900;color:#26200a;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;border-radius:0;padding:3px 2px}
     .progress-memo-content:empty::before{content:'진행 메모를 입력하세요';color:rgba(17,24,39,.38)}
-    .progress-memo-content:focus{background:rgba(255,255,255,.54);box-shadow:0 0 0 2px rgba(17,19,24,.08)}
-    .progress-memo-updated{font-size:10px;font-weight:900;color:rgba(17,24,39,.52);border-top:1px solid rgba(15,23,42,.08);padding-top:7px}
+    .progress-memo-content:focus{background:rgba(255,255,255,.5);box-shadow:0 0 0 1px rgba(17,19,24,.12)}
     .section{--section-color:#64748b;--section-soft:#f6f8fb;background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;scroll-margin-top:92px}
     .section[data-section="1"]{--section-color:#2563eb;--section-soft:#eef5ff}
     .section[data-section="2"]{--section-color:#7c3aed;--section-soft:#f5f0ff}
@@ -261,7 +268,7 @@
     .business-card-viewer-frame{height:min(62vh,560px);border-radius:18px;background:#f6f8fb;border:1px solid #e5ebf2;display:flex;align-items:center;justify-content:center;overflow:hidden}
     .business-card-viewer-frame img{max-width:100%;max-height:100%;object-fit:contain;display:block;background:#fff}
 
-    @media(max-width:1500px){.workspace{grid-template-columns:150px minmax(0,1fr) 190px;gap:8px;padding-left:7px;padding-right:7px}.section-jump{min-height:62px;grid-template-columns:26px minmax(0,1fr);gap:8px;padding:0 10px}.section-jump-title{font-size:13px}.section-jump-desc{font-size:10px}.progress-memo-panel{padding:10px}.progress-memo-title{font-size:13px}.progress-memo-content{font-size:11px}}
+    @media(max-width:1500px){.workspace{grid-template-columns:150px minmax(0,1fr) 190px;gap:8px;padding-left:7px;padding-right:7px}.section-jump{min-height:62px;grid-template-columns:26px minmax(0,1fr);gap:8px;padding:0 10px}.section-jump-title{font-size:13px}.section-jump-desc{font-size:10px}.progress-memo-panel{padding:0}.progress-memo-title{font-size:13px}.progress-memo-content{font-size:11px}}
     @media(max-width:1100px){.workspace{grid-template-columns:1fr}.section-sidebar{position:static;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.right-sidebar{display:none}.section-jump{min-height:62px;grid-template-columns:1fr;gap:4px;padding:10px 12px}.section-jump-desc{display:none}.project-summary{grid-template-columns:1fr}.project-hero{grid-template-columns:1fr}.business-card-grid{width:360px;max-width:100%}.business-card-slot{max-width:100%}.candidate-grid,.db-result-grid,.search-log-grid,.recommend-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.search-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
     @media(max-width:760px){.title-contact-row{grid-template-columns:1fr}.business-card-grid{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}.business-card-slot{height:132px}.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.workspace{padding:14px 12px 42px;gap:12px}.section-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.section-jump{border-radius:16px;min-height:58px}.shell{padding:0}.section{border-radius:22px;scroll-margin-top:118px}.section-head{padding-top:22px}.section-head::before{left:14px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.section-title{font-size:22px}.section-title-no{font-size:26px}.summary-grid,.project-line-grid,.candidate-grid,.db-result-grid,.search-log-grid,.recommend-grid,.metric-row,.edit-row,.modal-grid,.search-filter-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
   </style>
@@ -472,7 +479,7 @@
               <div class="progress-memo-title">프로젝트 진행 메모</div>
               <div class="progress-memo-latest" id="progressMemoLatest">최종수정 없음</div>
             </div>
-            <button type="button" class="progress-memo-add" id="addProgressMemoBtn" aria-label="진행 메모 추가">+</button>
+            <button type="button" class="progress-memo-add" id="addProgressMemoBtn" aria-label="진행 메모 추가"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13.5"></circle><path d="M16 10.5v11M10.5 16h11"></path></svg></button>
           </div>
           <div class="progress-memo-list" id="progressMemoList"></div>
         </section>
@@ -643,19 +650,25 @@
         list.innerHTML='<div class="progress-memo-empty">아직 진행 메모가 없습니다.<br>+ 버튼으로 새 메모를 추가하세요.</div>';
         return;
       }
-      list.innerHTML=memos.map(m=>`<article class="progress-memo-card ${activeProgressMemoMenuId===m.id?'menu-open':''}" data-progress-memo="${escapeAttr(m.id)}" data-color="${escapeAttr(m.color||'yellow')}">
+      list.innerHTML=memos.map(m=>{
+        const createdTime=new Date(m.createdAt||0).getTime();
+        const updatedTime=new Date(m.updatedAt||m.createdAt||0).getTime();
+        const isEdited=Number.isFinite(createdTime) && Number.isFinite(updatedTime) && Math.abs(updatedTime-createdTime)>1000;
+        const dateLabel=isEdited?'수정':'작성';
+        const dateValue=isEdited?(m.updatedAt||m.createdAt):m.createdAt;
+        return `<article class="progress-memo-card ${activeProgressMemoMenuId===m.id?'menu-open':''}" data-progress-memo="${escapeAttr(m.id)}" data-color="${escapeAttr(m.color||'yellow')}">
         <div class="progress-memo-card-top">
-          <div class="progress-memo-meta">작성 ${displayDateTime(m.createdAt)}<br>작성자 <span class="progress-memo-author" contenteditable="true" data-progress-memo-author="${escapeAttr(m.id)}">${escapeHtml(m.author||'한이사')}</span></div>
-          <button type="button" class="progress-memo-menu-btn" data-progress-menu="${escapeAttr(m.id)}" aria-label="메모 메뉴">⋯</button>
+          <div class="progress-memo-meta">${dateLabel} ${displayDateTime(dateValue)}<br>작성자 <span class="progress-memo-author" contenteditable="true" data-progress-memo-author="${escapeAttr(m.id)}">${escapeHtml(m.author||'한이사')}</span></div>
+          <button type="button" class="progress-memo-menu-btn" data-progress-menu="${escapeAttr(m.id)}" aria-label="메모 메뉴">⋮</button>
         </div>
         <div class="progress-memo-content" contenteditable="true" data-progress-memo-content="${escapeAttr(m.id)}">${escapeHtml(m.content||'')}</div>
-        <div class="progress-memo-updated">수정 ${displayDateTime(m.updatedAt||m.createdAt)}</div>
         <div class="progress-memo-menu">
           <div class="progress-menu-label">표시 색</div>
           <div class="progress-color-grid">${progressMemoColors().map(color=>`<button type="button" class="progress-color-dot" data-progress-color="${color}" data-progress-color-id="${escapeAttr(m.id)}" data-color="${color}" aria-label="${color}"></button>`).join('')}</div>
           <button type="button" class="progress-delete-btn" data-progress-delete="${escapeAttr(m.id)}">삭제</button>
         </div>
-      </article>`).join('');
+      </article>`;
+      }).join('');
     }
     function renderCandidates(){ renderSection2(); }
     function renderVisits(){ const list=document.getElementById('visitList'); list.innerHTML=state.visits.map(v=>`<article class="visit-card" data-visit="${v.id}"><div class="visit-top"><div><div class="visit-title">${v.title}</div><div class="visit-meta">${v.date} / ${v.status} / 동행자 ${v.companions}<br>전체 반응: ${v.summary}<br>다음 액션: ${v.nextAction}</div></div><div><button class="small-btn" data-toggle-visit="${v.id}">상세 펼치기</button><button class="small-btn primary" data-next-visit="${v.id}">다음 차수 만들기</button></div></div><div class="visit-items">${v.items.map(i=>`<div class="visit-item"><b>${i.property}</b><br>${i.reaction} · ${i.memo}</div>`).join('')}</div><div class="visit-detail"><textarea class="edit-field textarea">${v.summary}\n${v.nextAction}</textarea><div class="inline-actions"><button class="small-btn primary" data-save-visit="${v.id}">임장 메모 저장</button></div></div></article>`).join(''); }

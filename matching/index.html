@@ -256,7 +256,16 @@
     .matching-map-panel{display:grid;gap:10px}
     .map-filter-chipbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:9px 10px;border:1px solid #edf2f7;background:#fbfdff;border-radius:18px}
     .map-filter-chip{min-height:30px;padding:0 10px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#5d6670;font-size:12px;font-weight:1000;box-shadow:0 5px 12px rgba(15,23,42,.035)}
-    .map-filter-chip.active{background:#111318;border-color:#111318;color:#fff}
+    .map-filter-chip.active{background:#0f7cff;border-color:#0f7cff;color:#fff}
+    .map-filter-chip.warn.active{background:#f97316;border-color:#f97316;color:#fff}
+    .map-filter-chip.red.active{background:#ef4444;border-color:#ef4444;color:#fff}
+    .map-filter-chip.purple.active{background:#7c3aed;border-color:#7c3aed;color:#fff}
+    .map-filter-chip.dark.active{background:#111827;border-color:#111827;color:#fff}
+    .map-filter-chip.brown.active{background:#a16207;border-color:#a16207;color:#fff}
+    .map-filter-chip.gray.active{background:#64748b;border-color:#64748b;color:#fff}
+    .map-filter-chip.green.active{background:#16a34a;border-color:#16a34a;color:#fff}
+    .map-filter-chip.teal.active{background:#0891b2;border-color:#0891b2;color:#fff}
+    .map-filter-chip.yellow.active{background:#ca8a04;border-color:#ca8a04;color:#fff}
     .map-search-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:10px;align-items:stretch;min-height:520px}
     .matching-map-stage{position:relative;min-height:520px;border:1px solid #dbe5ee;border-radius:24px;overflow:hidden;background:linear-gradient(135deg,#e9f2fa 0%,#f6faf5 42%,#e8f1fb 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)}
     .matching-map-stage::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(15,23,42,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,.055) 1px,transparent 1px);background-size:42px 42px;opacity:.5;pointer-events:none}
@@ -281,12 +290,15 @@
     .map-list-title{font-size:13px;font-weight:1000;color:#111318;line-height:1.25}.map-list-sub{font-size:10px;font-weight:900;color:#88919c;margin-top:2px}
     .map-list-body{padding:10px;display:grid;gap:8px;overflow:auto;max-height:412px;scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.28) transparent}
     .map-list-body::-webkit-scrollbar{width:4px}.map-list-body::-webkit-scrollbar-track{background:transparent}.map-list-body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.26);border-radius:999px}
-    .map-result-card{border:1px solid #e6ebf1;border-radius:16px;background:#fff;padding:10px;display:grid;gap:7px;box-shadow:0 7px 16px rgba(15,23,42,.035)}
+    .map-result-card{border:1px solid #e6ebf1;border-radius:14px;background:#fff;padding:8px;display:grid;grid-template-columns:74px minmax(0,1fr);gap:9px;box-shadow:0 7px 16px rgba(15,23,42,.035)}
     .map-result-card.is-candidate{background:#fbfffd;border-color:#bdf8d8}
-    .map-result-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-    .map-result-title{font-size:14px;font-weight:1000;line-height:1.25;color:#111318;letter-spacing:-.045em}.map-result-no{font-size:10px;font-weight:1000;color:#8a94a1;margin-top:2px}
-    .map-result-meta{font-size:12px;font-weight:850;color:#4f5863;line-height:1.45;word-break:keep-all}
-    .map-result-tags{display:flex;gap:5px;flex-wrap:wrap}.map-result-tag{min-height:22px;padding:0 7px;border-radius:999px;background:#f5f7fa;border:1px solid #e5ebf2;color:#5b6470;font-size:10px;font-weight:1000;display:inline-flex;align-items:center}
+    .map-result-photo{width:74px;height:74px;background:#f1f5f9;border:1px solid #e5ebf2;overflow:hidden;align-self:start}
+    .map-result-photo img{width:100%;height:100%;object-fit:cover;display:block}
+    .map-result-photo-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#a0aab6;font-size:11px;font-weight:1000;letter-spacing:-.04em;background:linear-gradient(135deg,#f8fafc,#eef2f7)}
+    .map-result-main{min-width:0;display:grid;gap:6px}
+    .map-result-top{display:block;min-width:0}
+    .map-result-title{font-size:13px;font-weight:1000;line-height:1.25;color:#111318;letter-spacing:-.045em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.map-result-no{font-size:10px;font-weight:1000;color:#8a94a1;margin-top:2px}
+    .map-result-meta{font-size:11px;font-weight:850;color:#4f5863;line-height:1.42;word-break:keep-all;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
     .map-empty{height:100%;min-height:220px;display:flex;align-items:center;justify-content:center;text-align:center;color:#7b8794;font-size:13px;font-weight:900;line-height:1.6;border:1px dashed #d3dce7;border-radius:18px;background:#fbfdff;padding:18px}
     .matching-map-stage.real-map{background:#eef2f7;border-radius:24px;isolation:isolate}
     .matching-map-stage.real-map::before,.matching-map-stage.real-map::after{display:none}
@@ -605,7 +617,7 @@
     let activeSearchLogId = '';
     let activeProgressMemoMenuId = '';
     let progressMemoBefore = null;
-    let mapSearchState = { query:'', category:'all', deal:'all', adOnly:false, excludeCandidates:false, selectedGroupId:'', resultIds:[] };
+    let mapSearchState = { query:'', filters:{ q:'', public:'all', work:'all', data:'all', deal:'all', category:'all', ad:'all', adIncludeAll:true }, excludeCandidates:false, selectedGroupId:'', resultIds:[] };
     const matchingMapState = { map:null, mapEl:null, markers:[], groups:[], items:[], visibleMapItems:[], loaded:false, loadingPromise:null, scriptPromise:null, error:'', didFitInitial:false, resizeObserver:null, geocodeCache:new Map(), geocodeRunning:false, geocodePromise:null, geocodeDone:false, geocodeTried:0, geocodeSuccess:0 };
     const MATCHING_MAP_CENTER_LAT = 35.9634838;
     const MATCHING_MAP_CENTER_LNG = 126.6930552;
@@ -855,6 +867,110 @@
       const no=String(item && item.propertyId || item && item.listingNumber || '');
       return !!no && state.candidates.some(c=>String(c.propertyId||c.listingNumber||'')===no);
     }
+    function dashboardStatus(item){
+      const src = item && (item.dashboardStatus || (item.raw && item.raw.dashboardStatus)) || null;
+      return src && typeof src === 'object' ? src : {internal:false,needsWork:false,needsPhoto:false,needsContact:false,dealDone:false,reviewHold:false};
+    }
+    function parseDashboardStatusRaw(item){
+      const raw = item && (item.dashboardStatusJson || (item.raw && item.raw.dashboardStatusJson));
+      if(raw && typeof raw === 'object' && !Array.isArray(raw)) return raw;
+      try{
+        const parsed = JSON.parse(String(raw || '{}'));
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+      }catch(e){ return {}; }
+    }
+    function normalizeNaverAdYmdKey(value){
+      const str=String(value||'').trim();
+      const m=str.match(/^(\d{4})[-./]?(\d{1,2})[-./]?(\d{1,2})/);
+      if(!m) return '';
+      return m[1] + String(m[2]).padStart(2,'0') + String(m[3]).padStart(2,'0');
+    }
+    function currentLocalYmdKey(){
+      const d=new Date();
+      return String(d.getFullYear()) + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+    }
+    function getNaverAdStatus(item){
+      const raw=parseDashboardStatusRaw(item);
+      const from=String(raw.naverAdFrom || '').slice(0,10);
+      const until=String(raw.naverAdUntil || '').slice(0,10);
+      const fromKey=normalizeNaverAdYmdKey(from);
+      const untilKey=normalizeNaverAdYmdKey(until);
+      const todayKey=currentLocalYmdKey();
+      const active=raw.naverAd === true && !!fromKey && !!untilKey && todayKey >= fromKey && todayKey <= untilKey;
+      return {active, from, until, statusText:String(raw.naverAdStatus || '')};
+    }
+    function isNaverAdActive(item){ return getNaverAdStatus(item).active === true; }
+    function listingPrefixForItem(item){
+      const listingNumber=String(item && (item.listingNumber || item.propertyId) || '').trim().toUpperCase();
+      const match=listingNumber.match(/^[A-Z]{2}/);
+      return match ? match[0] : '';
+    }
+    function categoryKeyForItem(item){
+      switch(listingPrefixForItem(item)){
+        case 'MK': return 'industrial';
+        case 'SK': return 'commercial';
+        case 'DK': return 'land';
+        default: return '';
+      }
+    }
+    function matchesCategory(item, category){
+      if(!category || category === 'all') return true;
+      return categoryKeyForItem(item) === category;
+    }
+    function itemPublicState(item){
+      const st=String(item && (item.statusRaw || item.status) || '').trim().toLowerCase();
+      return (st === 'visible' || st === 'show' || st === '공개') ? 'visible' : 'hidden';
+    }
+    function dealKeyForItem(item){
+      const value=[item && item.dealType, item && item.price, item && item.title].join(' ');
+      if(/임대|월세|전세/.test(value)) return 'rent';
+      if(/매매|매각/.test(value)) return 'sale';
+      return '';
+    }
+    function itemMatchesCurrentChips(item){
+      const filters=mapSearchState.filters || {};
+      if(filters.public !== 'all' && itemPublicState(item) !== filters.public) return false;
+      const ds=dashboardStatus(item);
+      if(filters.work !== 'all' && ds[filters.work] !== true) return false;
+      if(filters.data === 'multiParcel' && ((item && item.pnuList) || []).length < 2) return false;
+      if(filters.deal !== 'all' && dealKeyForItem(item) !== filters.deal) return false;
+      if(filters.ad === 'naverAd' && filters.adIncludeAll === false && !isNaverAdActive(item)) return false;
+      if(!matchesCategory(item, filters.category)) return false;
+      return true;
+    }
+    function ourPropertySearchText(item){
+      const raw=item && item.raw || {};
+      const parts=[
+        item && item.listingNumber, item && item.propertyId, item && item.title, item && item.address, item && item.dealType, item && item.price,
+        raw.summary1 || item.summary1, raw.summary2 || item.summary2, raw.summary3 || item.summary3, raw.propertyType || item.propertyType,
+        raw.zoning || item.zoning, raw.approvalDate || item.approvalDate, raw.landAreaM2 || item.landAreaM2, raw.landAreaPy || item.landAreaPy,
+        raw.totalFloorAreaM2 || item.totalFloorAreaM2, raw.totalFloorAreaPy || item.totalFloorAreaPy, raw.exclusiveAreaM2 || item.exclusiveAreaM2, raw.exclusiveAreaPy || item.exclusiveAreaPy,
+        raw.buildingComposition || item.buildingComposition, raw.parkingCount || item.parkingCount, raw.mainDirection || item.mainDirection, raw.moveInDate || item.moveInDate,
+        raw.floorInfo || item.floorInfo, raw.restroom || item.restroom, raw.managementFee || item.managementFee, raw.floorHeight || item.floorHeight || raw.ceilingHeight,
+        raw.crane || item.crane, raw.hoist || item.hoist, raw.powerCapacity || item.powerCapacity, raw.mainFacilities || item.mainFacilities,
+        raw.recommendedUse || item.recommendedUse, raw.restrictedUse || item.restrictedUse, raw.roadWidth || item.roadWidth, raw.doorWidth || item.doorWidth,
+        raw.largeVehicleAccess || item.largeVehicleAccess || raw.truckAccess, raw.loadingAvailable || item.loadingAvailable, raw.officeIncluded || item.officeIncluded, raw.yardSize || item.yardSize,
+        raw.availableNow || item.availableNow || raw.readyToOperate, raw.clientName || raw.requesterName || item.clientName, raw.clientPhone || raw.requesterPhone || item.clientPhone, raw.clientType || item.clientType,
+        raw.clientMemo || item.clientMemo, raw.memo || item.memo
+      ];
+      if(Array.isArray(item && item.landParcels)){
+        item.landParcels.forEach(function(parcel){ parts.push(parcel && parcel.displayAddress, parcel && parcel.address, parcel && parcel.pnu, parcel && parcel.landCategory, parcel && parcel.zoning1, parcel && parcel.roadAccess, parcel && parcel.roadSide); });
+      }
+      return parts.join(' ').toLowerCase();
+    }
+    function matchesOurPropertyKeyword(item, query){
+      const q=String(query || '').trim().toLowerCase();
+      if(!q) return true;
+      return ourPropertySearchText(item).indexOf(q) !== -1;
+    }
+    function currentMatchingFilterLabel(){
+      const filters=mapSearchState.filters || {};
+      const parts=[];
+      const labels={visible:'공개중',hidden:'비공개',needsWork:'작업필요',needsPhoto:'사진필요',needsContact:'컨택필요',dealDone:'거래완료',reviewHold:'검토보류',multiParcel:'여러필지',sale:'매매',rent:'임대',industrial:'산업용',commercial:'상업용',land:'토지',naverAd:'네이버광고중'};
+      ['public','work','data','deal','category','ad'].forEach(function(k){ const v=filters[k]; if(v && v !== 'all') parts.push(labels[v] || v); });
+      if(mapSearchState.excludeCandidates) parts.push('후보제외');
+      return parts.join(' / ');
+    }
     function normalizeRealListingItem(item){
       if(!item) return null;
       const no=String(item.listingNumber || item.propertyId || '').trim();
@@ -877,6 +993,17 @@
         area:area,
         status:displayStatusText(item.status),
         statusRaw:item.status || '',
+        heroUrl:item.heroUrl || item.thumbnailUrl || item.mainPhotoUrl || item.photoUrl || item.imageUrl || '',
+        dashboardStatusJson:item.dashboardStatusJson || '',
+        dashboardStatus:item.dashboardStatus || {},
+        memo:item.memo || '',
+        summary1:item.summary1 || '',
+        summary2:item.summary2 || '',
+        summary3:item.summary3 || '',
+        landAreaM2:item.landAreaM2 || '',
+        landAreaPy:item.landAreaPy || '',
+        totalFloorAreaM2:item.totalFloorAreaM2 || '',
+        totalFloorAreaPy:item.totalFloorAreaPy || '',
         sourceType:'map_search',
         sourceLabel:'우리DB',
         score:0,
@@ -915,30 +1042,14 @@
       return matchingMapState.loadingPromise;
     }
     function allMapSearchItems(){ return matchingMapState.loaded ? (matchingMapState.items || []) : []; }
-    function listingCategory(no){ no=String(no||'').toUpperCase(); if(no.startsWith('SK')) return 'commercial'; if(no.startsWith('DK')) return 'land'; return 'industrial'; }
-    function mapSearchHaystack(item){
-      const raw=item && item.raw || {};
-      const parts=[
-        item && item.propertyId, item && item.title, item && item.address, item && item.dealType, item && item.price, item && item.area,
-        item && item.status, item && item.propertyType, item && item.propertyKind, item && item.zoning,
-        raw.summary1, raw.summary2, raw.summary3, raw.approvalDate, raw.landAreaM2, raw.landAreaPy, raw.totalFloorAreaM2, raw.totalFloorAreaPy,
-        raw.buildingComposition, raw.ceilingHeight, raw.crane, raw.hoist, raw.powerCapacity, raw.mainFacilities, raw.recommendedUse,
-        raw.restrictedUse, raw.roadWidth, raw.doorWidth, raw.truckAccess, raw.loadingAvailable, raw.officeIncluded, raw.yardSize,
-        raw.readyToOperate, raw.requesterName, raw.requesterPhone, raw.memo
-      ];
-      if(Array.isArray(item && item.landParcels)){
-        item.landParcels.forEach(p=>parts.push(p && p.displayAddress, p && p.address, p && p.pnu, p && p.landCategory, p && p.zoning1, p && p.zoning2, p && p.roadSide, p && p.roadAccess));
-      }
-      return parts.join(' ').toLowerCase();
-    }
+    function listingCategory(no){ no=String(no||'').toUpperCase(); if(no.startsWith('SK')) return 'commercial'; if(no.startsWith('DK')) return 'land'; if(no.startsWith('MK')) return 'industrial'; return ''; }
+    function mapSearchHaystack(item){ return ourPropertySearchText(item); }
     function filteredMapItems(){
-      const q=String(mapSearchState.query||'').trim().toLowerCase();
-      return allMapSearchItems().filter(item=>{
-        if(mapSearchState.category !== 'all' && listingCategory(item.propertyId) !== mapSearchState.category) return false;
-        if(mapSearchState.deal !== 'all' && dealKeyForMapItem(item) !== mapSearchState.deal) return false;
-        if(mapSearchState.adOnly && !/광고|naver/i.test([item.status,item.statusRaw,item.raw && item.raw.memo].join(' '))) return false;
+      const q=String(mapSearchState.query || '').trim();
+      return allMapSearchItems().filter(function(item){
+        if(!itemMatchesCurrentChips(item)) return false;
         if(mapSearchState.excludeCandidates && isMapItemCandidate(item)) return false;
-        if(q && !mapSearchHaystack(item).includes(q)) return false;
+        if(q && !matchesOurPropertyKeyword(item, q)) return false;
         return true;
       });
     }
@@ -962,35 +1073,34 @@
         return {x:((Number(point.lng)-west)/lngSpan)*width, y:((north-Number(point.lat))/latSpan)*height};
       }catch(e){ return null; }
     }
-    function matchingParcelGroupKey(item){
-      const pnus=[];
-      if(item && item.representativePnu) pnus.push(item.representativePnu);
-      if(item && Array.isArray(item.pnuList)) item.pnuList.forEach(p=>{ if(p) pnus.push(p); });
-      if(item && Array.isArray(item.landParcels)) item.landParcels.forEach(p=>{ if(p && p.pnu) pnus.push(p.pnu); });
-      const pnu=String(pnus[0] || '').trim();
-      if(pnu) return 'pnu:' + pnu;
+    function matchingDuplicatePointKey(item){
+      const p=getMatchingItemPoint(item);
+      if(!p) return 'no-point:' + String(item && item.propertyId || Math.random());
+      return Number(p.lat).toFixed(7) + ',' + Number(p.lng).toFixed(7);
+    }
+    function markerDisplayPointForItem(item, duplicateIndex, duplicateCount){
       const point=getMatchingItemPoint(item);
-      if(point) return 'point:' + Number(point.lat).toFixed(7) + ',' + Number(point.lng).toFixed(7);
-      return 'item:' + String(item && item.propertyId || Math.random());
+      if(!point) return null;
+      if(!duplicateCount || duplicateCount <= 1) return point;
+      // 같은 좌표/같은 필지 매물도 묶지 않고 개별 핀으로 보이도록 최소 오프셋만 준다.
+      const step=0.000035;
+      const idx=Number(duplicateIndex || 0);
+      const center=(duplicateCount - 1) / 2;
+      return {lat:Number(point.lat), lng:Number(point.lng) + ((idx - center) * step)};
     }
     function mapGroups(items){
-      // parcel-map의 기본 매물핀 로직처럼 화면 겹침으로 묶지 않는다.
-      // 같은 필지/PNU 또는 같은 좌표에 여러 매물이 있는 경우만 하나의 선택 묶음으로 처리한다.
-      const buckets=new Map();
-      mapPointItems(items).forEach((item,idx)=>{
-        const point=getMatchingItemPoint(item);
-        if(!point) return;
-        const key=matchingParcelGroupKey(item);
-        if(!buckets.has(key)) buckets.set(key, {records:[], lat:Number(point.lat), lng:Number(point.lng)});
-        buckets.get(key).records.push({item, idx, point});
+      const duplicateCounts=new Map();
+      mapPointItems(items).forEach(function(item){
+        const key=matchingDuplicatePointKey(item);
+        duplicateCounts.set(key, (duplicateCounts.get(key) || 0) + 1);
       });
-      const groups=Array.from(buckets.values()).map((g,idx)=>{
-        const records=g.records || [];
-        if(records.length > 1){
-          g.lat=records.reduce((sum,v)=>sum+Number(v.point.lat),0)/records.length;
-          g.lng=records.reduce((sum,v)=>sum+Number(v.point.lng),0)/records.length;
-        }
-        return {id:'G-'+idx, records, lat:g.lat, lng:g.lng, items:records.map(v=>v.item)};
+      const duplicateSeen=new Map();
+      const groups=mapPointItems(items).map(function(item, idx){
+        const key=matchingDuplicatePointKey(item);
+        const seen=duplicateSeen.get(key) || 0;
+        duplicateSeen.set(key, seen + 1);
+        const displayPoint=markerDisplayPointForItem(item, seen, duplicateCounts.get(key) || 1);
+        return {id:String(item.propertyId || item.listingNumber || ('item-' + idx)), records:[{item, idx, point:getMatchingItemPoint(item)}], lat:displayPoint.lat, lng:displayPoint.lng, items:[item]};
       });
       matchingMapState.groups=groups;
       return groups;
@@ -1004,17 +1114,37 @@
       return [];
     }
     function mapFilterChipsHtml(){
+      const filters=mapSearchState.filters || {};
       const chips=[
-        ['reset','전체', mapSearchState.category==='all' && mapSearchState.deal==='all' && !mapSearchState.adOnly && !mapSearchState.excludeCandidates],
-        ['category:industrial','산업용', mapSearchState.category==='industrial'],
-        ['category:commercial','상업용', mapSearchState.category==='commercial'],
-        ['category:land','토지', mapSearchState.category==='land'],
-        ['deal:매매','매매', mapSearchState.deal==='매매'],
-        ['deal:임대','임대', mapSearchState.deal==='임대'],
-        ['toggle:ad','네이버광고중', mapSearchState.adOnly],
-        ['toggle:exclude','후보제외', mapSearchState.excludeCandidates]
+        {group:'work', value:'all', label:'전체'},
+        {group:'public', value:'visible', label:'공개중'},
+        {group:'public', value:'hidden', label:'비공개', cls:'gray'},
+        {group:'work', value:'needsWork', label:'작업필요', cls:'warn'},
+        {group:'work', value:'needsPhoto', label:'사진필요', cls:'purple'},
+        {group:'work', value:'needsContact', label:'컨택필요', cls:'red'},
+        {group:'work', value:'dealDone', label:'거래완료', cls:'dark'},
+        {group:'work', value:'reviewHold', label:'검토보류', cls:'brown'},
+        {group:'ad', value:'naverAd', label:'네이버광고중', cls:'green'},
+        {group:'data', value:'multiParcel', label:'여러필지'},
+        {group:'deal', value:'sale', label:'매매'},
+        {group:'deal', value:'rent', label:'임대'},
+        {group:'category', value:'industrial', label:'산업용', cls:'green'},
+        {group:'category', value:'commercial', label:'상업용', cls:'teal'},
+        {group:'category', value:'land', label:'토지', cls:'yellow'},
+        {group:'extra', value:'excludeCandidates', label:'후보제외'}
       ];
-      return chips.map(c=>`<button type="button" class="map-filter-chip ${c[2]?'active':''}" data-map-chip="${escapeAttr(c[0])}">${escapeHtml(c[1])}</button>`).join('');
+      return chips.map(function(chip){
+        let active=false;
+        if(chip.value === 'all'){
+          const nonAdAll=filters.public === 'all' && filters.work === 'all' && filters.data === 'all' && filters.deal === 'all' && filters.category === 'all';
+          active=nonAdAll && (filters.ad === 'all' || (filters.ad === 'naverAd' && filters.adIncludeAll !== false));
+        }else if(chip.value === 'excludeCandidates'){
+          active=!!mapSearchState.excludeCandidates;
+        }else{
+          active=filters[chip.group] === chip.value;
+        }
+        return '<button type="button" class="map-filter-chip ' + (chip.cls || '') + (active ? ' active' : '') + '" data-map-group="' + escapeAttr(chip.group) + '" data-map-value="' + escapeAttr(chip.value) + '">' + escapeHtml(chip.label) + '</button>';
+      }).join('');
     }
     function renderMapFilterChips(){ return `<div class="map-filter-chipbar">${mapFilterChipsHtml()}</div>`; }
     function updateMapFilterChips(){ const bar=document.querySelector('.map-filter-chipbar'); if(bar) bar.innerHTML=mapFilterChipsHtml(); }
@@ -1030,20 +1160,12 @@
       return '/parcel-map/assets/pin-blue.svg';
     }
     function matchingMarkerIcon(group){
-      const items=group.items || [];
-      const count=items.length;
+      const item=group && group.items && group.items[0];
       const selected=mapSearchState.selectedGroupId===group.id;
-      const candidate=items.length && items.every(isMapItemCandidate);
-      if(count===1){
-        const w=selected ? 15 : 13;
-        const h=selected ? 20 : 18;
-        return {url:matchingPinAssetForItem(items[0], candidate), size:new naver.maps.Size(w,h), scaledSize:new naver.maps.Size(w,h), anchor:new naver.maps.Point(Math.round(w/2), h)};
-      }
-      const cls=['matching-map-marker','group'];
-      if(selected) cls.push('active');
-      if(candidate) cls.push('candidate');
-      const label='매물 ' + count + '개';
-      return {content:`<div class="${cls.join(' ')}">${escapeHtml(label)}</div>`, size:new naver.maps.Size(96,38), anchor:new naver.maps.Point(0,0)};
+      const candidate=isMapItemCandidate(item);
+      const w=selected ? 15 : 13;
+      const h=selected ? 20 : 18;
+      return {url:matchingPinAssetForItem(item, candidate), size:new naver.maps.Size(w,h), scaledSize:new naver.maps.Size(w,h), anchor:new naver.maps.Point(Math.round(w/2), h)};
     }
     function renderMatchingMapMarkers(){
       clearMatchingMapMarkers();
@@ -1057,12 +1179,12 @@
             map:matchingMapState.map,
             clickable:true,
             icon:matchingMarkerIcon(group),
-            title:group.items.length>1 ? ('같은 필지 매물 ' + group.items.length + '개') : (group.items[0] && group.items[0].title || '우리매물'),
-            zIndex:(group.items.length>1 ? 1800 : 1200) + idx
+            title:group.items[0] && group.items[0].title || '우리매물',
+            zIndex:(isMapItemCandidate(group.items[0]) ? 1800 : 1200) + idx
           });
           naver.maps.Event.addListener(marker,'click',()=>{
             selectMatchingMapItems(group.items, group.id);
-            if(group.items.length===1) focusItemsOnRealMap(group.items, {singleZoom:false});
+            focusItemsOnRealMap(group.items, {singleZoom:false});
           });
           matchingMapState.markers.push(marker);
         }catch(e){ matchingMapState.error=e && e.message ? e.message : String(e); }
@@ -1111,17 +1233,37 @@
       updateMatchingMapListPanel();
       renderMatchingMapMarkers();
     }
+    function mapItemPhotoUrl(item){
+      if(!item) return '';
+      const raw=item.raw || {};
+      let url=item.heroUrl || raw.heroUrl || raw.thumbnailUrl || raw.mainPhotoUrl || raw.photoUrl || raw.imageUrl || '';
+      if(url) return String(url).trim();
+      const json=raw.photoUrlsJson || raw.photosJson || raw.photoListJson || '';
+      if(json){
+        try{
+          const arr=JSON.parse(json);
+          if(Array.isArray(arr) && arr[0]){
+            url=arr[0].url || arr[0].src || arr[0].thumbnailUrl || '';
+            if(url) return String(url).trim();
+          }
+        }catch(e){}
+      }
+      return '';
+    }
     function renderMapResultList(items){
       if(!matchingMapState.loaded && !matchingMapState.error){ return '<div class="map-empty">우리매물 목록을 불러오는 중입니다.</div>'; }
       if(matchingMapState.error){ return `<div class="map-empty">${escapeHtml(matchingMapState.error)}</div>`; }
       if(!items.length){ return '<div class="map-empty">하단 매물 개수 또는 지도 핀을 누르거나<br>위 검색어로 우리매물을 검색하세요.</div>'; }
       return items.map(item=>{
         const exists=isMapItemCandidate(item);
+        const photo=mapItemPhotoUrl(item);
         return `<article class="map-result-card ${exists?'is-candidate':''}">
-          <div class="map-result-top"><div><div class="map-result-title">${escapeHtml(item.title)}</div><div class="map-result-no">listingNumber ${escapeHtml(item.propertyId)}</div></div><span class="source-badge manual">우리DB</span></div>
-          <div class="map-result-meta">${escapeHtml(item.address || '주소 확인 필요')}<br>${escapeHtml(item.price || '가격 확인')} · ${escapeHtml(item.area || '면적 확인')}</div>
-          <div class="map-result-tags"><span class="map-result-tag">${escapeHtml(item.dealType||'거래')}</span><span class="map-result-tag">${escapeHtml(item.status||'상태')}</span>${item.propertyType?`<span class="map-result-tag">${escapeHtml(item.propertyType)}</span>`:''}</div>
-          <div class="cand-actions"><button class="card-btn green" ${exists?'disabled':''} data-add-db-candidate="${escapeAttr(item.propertyId)}" data-add-source="map_search">${exists?'이미 후보':'후보로 선택'}</button><button class="card-btn dark" data-admin="${escapeAttr(item.propertyId)}">매물입력기</button></div>
+          <div class="map-result-photo">${photo?`<img src="${escapeAttr(photo)}" alt="">`:'<div class="map-result-photo-empty">사진없음</div>'}</div>
+          <div class="map-result-main">
+            <div class="map-result-top"><div class="map-result-title">${escapeHtml(item.title)}</div><div class="map-result-no">${escapeHtml(item.propertyId)}</div></div>
+            <div class="map-result-meta">${escapeHtml(item.address || '주소 확인 필요')}<br>${escapeHtml(item.price || '가격 확인')} · ${escapeHtml(item.area || '면적 확인')}</div>
+            <div class="cand-actions"><button class="card-btn green" ${exists?'disabled':''} data-add-db-candidate="${escapeAttr(item.propertyId)}" data-add-source="map_search">${exists?'이미 후보':'후보로 선택'}</button><button class="card-btn dark" data-admin="${escapeAttr(item.propertyId)}">매물입력기</button></div>
+          </div>
         </article>`;
       }).join('');
     }
@@ -1451,7 +1593,7 @@
       if(e.target.closest('#mapSearchResetBtn')){ resetMapSearch(); return; }
       if(e.target.closest('#matchingMapCountBtn')){ openMatchingMapViewList(); return; }
       const filter=e.target.closest('[data-filter]'); if(filter){ activeFilter=filter.dataset.filter; renderCandidates(); return; }
-      const mapChip=e.target.closest('[data-map-chip]'); if(mapChip){ applyMapChip(mapChip.dataset.mapChip); return; }
+      const mapChip=e.target.closest('[data-map-value]'); if(mapChip){ applyMapChip(mapChip.dataset.mapGroup, mapChip.dataset.mapValue); return; }
       const mapGroup=e.target.closest('[data-map-group]'); if(mapGroup){ selectMapGroup(mapGroup.dataset.mapGroup); return; }
       const addDb=e.target.closest('[data-add-db-candidate]'); if(addDb){ addCandidateFromDb(addDb.dataset.addDbCandidate, addDb.dataset.addSource); return; }
       const reject=e.target.closest('[data-reject]'); if(reject){ openCandidateInline(reject.dataset.reject,'reject'); }
@@ -1468,19 +1610,38 @@
       const toggle=e.target.closest('[data-toggle-visit]'); if(toggle){ toggle.closest('.visit-card').classList.toggle('open'); }
       const next=e.target.closest('[data-next-visit]'); if(next){ addVisitRound(); }
     });
-    function applyMapChip(value){
-      if(value === 'reset'){
-        mapSearchState.category='all'; mapSearchState.deal='all'; mapSearchState.adOnly=false; mapSearchState.excludeCandidates=false;
-      }else if(value.startsWith('category:')){
-        const v=value.split(':')[1]; mapSearchState.category = mapSearchState.category===v ? 'all' : v;
-      }else if(value.startsWith('deal:')){
-        const v=value.split(':')[1]; mapSearchState.deal = mapSearchState.deal===v ? 'all' : v;
-      }else if(value === 'toggle:ad'){
-        mapSearchState.adOnly = !mapSearchState.adOnly;
-      }else if(value === 'toggle:exclude'){
+    function resetNonAdMapFilters(){
+      mapSearchState.filters.public='all';
+      mapSearchState.filters.work='all';
+      mapSearchState.filters.data='all';
+      mapSearchState.filters.deal='all';
+      mapSearchState.filters.category='all';
+    }
+    function applyMapChip(group, value){
+      const filters=mapSearchState.filters;
+      if(value === 'excludeCandidates'){
         mapSearchState.excludeCandidates = !mapSearchState.excludeCandidates;
+      }else if(value === 'all'){
+        resetNonAdMapFilters();
+        if(filters.ad === 'naverAd'){
+          filters.adIncludeAll = filters.adIncludeAll === false;
+        }else{
+          filters.ad='all';
+          filters.adIncludeAll = true;
+        }
+      }else if(group === 'ad' && value === 'naverAd'){
+        if(filters.ad === 'naverAd'){
+          filters.ad = 'all';
+          filters.adIncludeAll = true;
+        }else{
+          filters.ad = 'naverAd';
+          filters.adIncludeAll = true;
+        }
+      }else{
+        filters[group] = filters[group] === value ? 'all' : value;
       }
-      mapSearchState.selectedGroupId=''; mapSearchState.resultIds=[];
+      mapSearchState.selectedGroupId='';
+      mapSearchState.resultIds=[];
       updateMapFilterChips();
       updateMatchingMapListPanel();
       renderMatchingMapMarkers();

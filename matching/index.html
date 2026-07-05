@@ -290,7 +290,9 @@
     .map-list-title{font-size:13px;font-weight:1000;color:#111318;line-height:1.25}.map-list-sub{font-size:10px;font-weight:900;color:#88919c;margin-top:2px}
     .map-list-body{padding:10px;display:grid;gap:8px;overflow:auto;max-height:412px;scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.28) transparent}
     .map-list-body::-webkit-scrollbar{width:4px}.map-list-body::-webkit-scrollbar-track{background:transparent}.map-list-body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.26);border-radius:999px}
-    .map-result-card{border:1px solid #e6ebf1;border-radius:14px;background:#fff;padding:8px;display:grid;grid-template-columns:74px minmax(0,1fr);gap:9px;box-shadow:0 7px 16px rgba(15,23,42,.035)}
+    .map-result-card{border:1px solid #e6ebf1;border-radius:14px;background:#fff;padding:8px;display:grid;grid-template-columns:74px minmax(0,1fr);gap:9px;box-shadow:0 7px 16px rgba(15,23,42,.035);cursor:pointer;transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+    .map-result-card:hover{border-color:#bfdbfe;box-shadow:0 10px 22px rgba(15,23,42,.07);transform:translateY(-1px)}
+    .map-result-card.active{border-color:#0f7cff;box-shadow:0 0 0 3px rgba(15,124,255,.12),0 10px 22px rgba(15,23,42,.07)}
     .map-result-card.is-candidate{background:#fbfffd;border-color:#bdf8d8}
     .map-result-photo{width:74px;height:74px;background:#f1f5f9;border:1px solid #e5ebf2;overflow:hidden;align-self:start}
     .map-result-photo img{width:100%;height:100%;object-fit:cover;display:block}
@@ -619,7 +621,7 @@
     let activeProgressMemoMenuId = '';
     let progressMemoBefore = null;
     let mapSearchState = { query:'', inputValue:'', filters:{ q:'', public:'all', work:'all', data:'all', deal:'all', category:'all', ad:'all', adIncludeAll:true }, excludeCandidates:false, selectedGroupId:'', resultIds:[], view:null, listScrollTop:0 };
-    const matchingMapState = { map:null, mapEl:null, markers:[], groups:[], items:[], visibleMapItems:[], loaded:false, loadingPromise:null, scriptPromise:null, error:'', didFitInitial:false, resizeObserver:null, geocodeCache:new Map(), geocodeRunning:false, geocodePromise:null, geocodeDone:false, geocodeTried:0, geocodeSuccess:0 };
+    const matchingMapState = { map:null, mapEl:null, markers:[], polygons:[], groups:[], items:[], visibleMapItems:[], loaded:false, loadingPromise:null, scriptPromise:null, vworldKey:'', error:'', didFitInitial:false, resizeObserver:null, geocodeCache:new Map(), polygonDataByPnu:new Map(), polygonLoadingId:'', geocodeRunning:false, geocodePromise:null, geocodeDone:false, geocodeTried:0, geocodeSuccess:0 };
     const MATCHING_MAP_CENTER_LAT = 35.9634838;
     const MATCHING_MAP_CENTER_LNG = 126.6930552;
     const MATCHING_MAP_GEOCODE_CACHE_KEY = 'MATCHING_MAP_GEOCODE_CACHE_V1';
@@ -725,6 +727,7 @@
       if(matchingMapState.scriptPromise) return matchingMapState.scriptPromise;
       matchingMapState.scriptPromise=(async()=>{
         const cfg=await fetchJson('/api/route-setting/config');
+        matchingMapState.vworldKey = String(cfg.vworldKey || cfg.vworldApiKey || cfg.VWORLD_API_KEY || cfg.key || '').trim();
         const rawId=cfg.clientId || cfg.ncpKeyId || cfg.ncpClientId || cfg.naverClientId || '';
         const id=encodeURIComponent(rawId);
         if(!id) throw new Error('네이버 지도 Client ID가 없습니다.');
@@ -842,6 +845,267 @@
       updateMatchingMapStatus(filteredMapItems(), matchingMapState.groups || []);
       return matchingMapState.geocodePromise;
     }
+
+    function appendParams(url, params){
+      const qs=Object.keys(params || {}).filter(k=>params[k]!==undefined && params[k]!==null && params[k] !== '').map(k=>encodeURIComponent(k)+'='+encodeURIComponent(params[k])).join('&');
+      return url + (url.indexOf('?') >= 0 ? '&' : '?') + qs;
+    }
+    function matchingVworldDomainParam(){
+      try{ return window.location && window.location.hostname ? window.location.hostname : ''; }catch(e){ return ''; }
+    }
+    function matchingVworldJsonp(url, timeoutMs){
+      return new Promise((resolve,reject)=>{
+        const cb='matching_vworld_cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        const sep=url.indexOf('?') >= 0 ? '&' : '?';
+        const finalUrl=url + sep + 'callback=' + encodeURIComponent(cb);
+        const script=document.createElement('script');
+        let done=false;
+        const timer=setTimeout(()=>{
+          if(done) return;
+          done=true;
+          cleanup();
+          reject(new Error('브이월드 필지 경계 요청 시간초과'));
+        }, timeoutMs || 12000);
+        function cleanup(){
+          clearTimeout(timer);
+          try{ delete window[cb]; }catch(e){ window[cb]=undefined; }
+          try{ script.remove(); }catch(e){}
+        }
+        window[cb]=payload=>{
+          if(done) return;
+          done=true;
+          cleanup();
+          resolve(payload);
+        };
+        script.onerror=()=>{
+          if(done) return;
+          done=true;
+          cleanup();
+          reject(new Error('브이월드 필지 경계 요청 실패'));
+        };
+        script.src=finalUrl;
+        document.head.appendChild(script);
+      });
+    }
+    function getMatchingVworldFeatureCollection(payload){
+      if(payload && payload.type === 'FeatureCollection') return payload;
+      const response=payload && payload.response;
+      return response && response.result && response.result.featureCollection || null;
+    }
+    function extractMatchingPnuFromProps(props){
+      props=props || {};
+      return String(props.pnu || props.PNU || props.PNU_ID || props.pnu_id || props.gid || '').replace(/\D/g,'');
+    }
+    function normalizeMatchingVworldParcelFeature(feature, fallbackPnu){
+      if(!feature || !feature.geometry || !feature.geometry.coordinates) return null;
+      const props=feature.properties || {};
+      const pnu=extractMatchingPnuFromProps(props) || String(fallbackPnu || '').replace(/\D/g,'');
+      return {
+        pnu:pnu,
+        geometry:feature.geometry,
+        properties:props,
+        address:String(props.addr || props.ADDR || props.jibun || props.JIBUN || props.pnu_nm || props.PNU_NM || ''),
+        areaM2:String(props.area || props.AREA || props.jiga_parea || props.JIGA_PAREA || ''),
+        landCategory:String(props.jimok || props.JIMOK || props.jimok_nm || props.JIMOK_NM || ''),
+        source:'vworld:data/jsonp'
+      };
+    }
+    async function requestMatchingParcelByPnu(pnu){
+      pnu=String(pnu || '').replace(/\D/g,'');
+      if(!pnu || pnu.length !== 19) throw new Error('PNU 없음');
+      if(matchingMapState.polygonDataByPnu.has(pnu)) return matchingMapState.polygonDataByPnu.get(pnu);
+      if(!matchingMapState.vworldKey) throw new Error('VWORLD_API_KEY 없음');
+      const url=appendParams('https://api.vworld.kr/req/data', {
+        key:matchingMapState.vworldKey,
+        service:'data',
+        version:'2.0',
+        request:'getfeature',
+        format:'json',
+        size:'1',
+        page:'1',
+        geometry:'true',
+        crs:'EPSG:4326',
+        data:'LP_PA_CBND_BUBUN',
+        attrfilter:'pnu:=:' + pnu,
+        domain:matchingVworldDomainParam()
+      });
+      const payload=await matchingVworldJsonp(url, 12000);
+      const fc=getMatchingVworldFeatureCollection(payload);
+      const features=Array.isArray(fc && fc.features) ? fc.features : [];
+      const parcel=normalizeMatchingVworldParcelFeature(features[0], pnu);
+      if(!parcel) throw new Error('필지 geometry 없음');
+      if(parcel.pnu) matchingMapState.polygonDataByPnu.set(parcel.pnu, parcel);
+      return parcel;
+    }
+    function buildMatchingSmallBoxGeomFilter(lng, lat, delta){
+      const x=Number(lng), y=Number(lat), d=Number(delta) || 0.00008;
+      return 'BOX(' + (x-d).toFixed(8) + ' ' + (y-d).toFixed(8) + ',' + (x+d).toFixed(8) + ' ' + (y+d).toFixed(8) + ')';
+    }
+    async function requestMatchingParcelByPoint(lng, lat){
+      if(!matchingMapState.vworldKey) throw new Error('VWORLD_API_KEY 없음');
+      const x=Number(lng), y=Number(lat);
+      if(!Number.isFinite(x) || !Number.isFinite(y)) throw new Error('좌표 없음');
+      const attempts=[
+        {geomFilter:'POINT(' + x.toFixed(8) + ' ' + y.toFixed(8) + ')', size:'5'},
+        {geomFilter:buildMatchingSmallBoxGeomFilter(x,y,0.00008), size:'10'},
+        {geomFilter:buildMatchingSmallBoxGeomFilter(x,y,0.00020), size:'20'}
+      ];
+      let lastError=null;
+      for(const attempt of attempts){
+        try{
+          const url=appendParams('https://api.vworld.kr/req/data', {
+            key:matchingMapState.vworldKey,
+            service:'data',
+            version:'2.0',
+            request:'getfeature',
+            format:'json',
+            size:attempt.size,
+            page:'1',
+            geometry:'true',
+            attribute:'true',
+            crs:'EPSG:4326',
+            data:'LP_PA_CBND_BUBUN',
+            geomFilter:attempt.geomFilter,
+            domain:matchingVworldDomainParam()
+          });
+          const payload=await matchingVworldJsonp(url, 12000);
+          const fc=getMatchingVworldFeatureCollection(payload);
+          const features=Array.isArray(fc && fc.features) ? fc.features : [];
+          const parcel=normalizeMatchingVworldParcelFeature(features[0], '');
+          if(parcel && parcel.pnu){
+            matchingMapState.polygonDataByPnu.set(parcel.pnu, parcel);
+            return parcel;
+          }
+          lastError=new Error('필지 결과 없음');
+        }catch(err){ lastError=err; }
+      }
+      throw lastError || new Error('필지 결과 없음');
+    }
+    function matchingCoordinatesToPaths(geometry){
+      if(!geometry || !geometry.coordinates || !window.naver || !naver.maps) return [];
+      const type=geometry.type;
+      const coords=geometry.coordinates;
+      const paths=[];
+      function ringToPath(ring){
+        if(!Array.isArray(ring)) return [];
+        return ring.map(pt=>{
+          if(!Array.isArray(pt) || pt.length < 2) return null;
+          const lng=Number(pt[0]);
+          const lat=Number(pt[1]);
+          if(!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          return new naver.maps.LatLng(lat,lng);
+        }).filter(Boolean);
+      }
+      if(type === 'Polygon'){
+        const outer=ringToPath(coords[0]);
+        if(outer.length >= 3) paths.push(outer);
+      }else if(type === 'MultiPolygon'){
+        coords.forEach(poly=>{ const outer=ringToPath(poly && poly[0]); if(outer.length >= 3) paths.push(outer); });
+      }
+      return paths;
+    }
+    function clearMatchingMapPolygons(){
+      (matchingMapState.polygons || []).forEach(poly=>{ try{ poly.setMap(null); }catch(e){} });
+      matchingMapState.polygons=[];
+    }
+    function matchingPolygonStyleForItem(item){
+      return {strokeColor:matchingMarkerColorForItem(item), strokeWeight:3, strokeOpacity:1, fillColor:matchingMarkerColorForItem(item), fillOpacity:.16};
+    }
+    function matchingMarkerColorForItem(item){
+      const cat=listingCategory(item && item.propertyId);
+      if(isMapItemCandidate(item)) return '#16a34a';
+      if(cat === 'commercial') return '#0891b2';
+      if(cat === 'land') return '#ca8a04';
+      return '#0f7cff';
+    }
+    function matchingItemPnuList(item){
+      const out=[];
+      const seen=new Set();
+      function add(v){
+        const p=String(v || '').replace(/\D/g,'');
+        if(p.length === 19 && !seen.has(p)){ seen.add(p); out.push(p); }
+      }
+      add(item && item.representativePnu);
+      (item && item.pnuList || []).forEach(add);
+      (item && item.landParcels || []).forEach(parcel=>add(parcel && parcel.pnu));
+      const raw=item && item.raw || {};
+      add(raw.representativePnu);
+      (raw.pnuList || []).forEach && raw.pnuList.forEach(add);
+      return out;
+    }
+    async function loadMatchingItemParcels(item){
+      const parcels=[];
+      const direct=(item && item.landParcels || []).filter(parcel=>parcel && parcel.geometry);
+      direct.forEach(parcel=>{
+        if(parcel.pnu) matchingMapState.polygonDataByPnu.set(String(parcel.pnu).replace(/\D/g,''), parcel);
+        parcels.push(parcel);
+      });
+      const pnus=matchingItemPnuList(item);
+      for(const pnu of pnus){
+        if(direct.some(parcel=>String(parcel.pnu || '').replace(/\D/g,'') === pnu)) continue;
+        try{ parcels.push(await requestMatchingParcelByPnu(pnu)); }catch(e){}
+      }
+      if(!parcels.length){
+        const point=getMatchingItemPoint(item);
+        if(point){
+          try{
+            const parcel=await requestMatchingParcelByPoint(point.lng, point.lat);
+            if(parcel && parcel.pnu){
+              item.pnuList=Array.from(new Set([...(item.pnuList || []), parcel.pnu]));
+            }
+            parcels.push(parcel);
+          }catch(e){}
+        }
+      }
+      return parcels.filter(Boolean);
+    }
+    function drawMatchingItemPolygons(item, parcels){
+      clearMatchingMapPolygons();
+      if(!matchingMapState.map || !window.naver || !naver.maps) return null;
+      const bounds=new naver.maps.LatLngBounds();
+      let pathCount=0;
+      const style=matchingPolygonStyleForItem(item);
+      (parcels || []).forEach(parcel=>{
+        const paths=matchingCoordinatesToPaths(parcel && parcel.geometry);
+        paths.forEach(path=>{
+          const poly=new naver.maps.Polygon({map:matchingMapState.map, paths:path, clickable:false, zIndex:860, ...style});
+          matchingMapState.polygons.push(poly);
+          path.forEach(latlng=>bounds.extend(latlng));
+          pathCount += 1;
+        });
+      });
+      return pathCount ? bounds : null;
+    }
+    function panToMatchingBoundsCenter(bounds, fallbackItem){
+      if(!matchingMapState.map || !window.naver || !naver.maps) return;
+      try{
+        if(bounds && bounds.getCenter){
+          matchingMapState.map.panTo(bounds.getCenter());
+          return;
+        }
+      }catch(e){}
+      const p=getMatchingItemPoint(fallbackItem);
+      if(p){ try{ matchingMapState.map.panTo(new naver.maps.LatLng(p.lat,p.lng)); }catch(e){} }
+    }
+    async function focusMatchingMapResultItem(propertyId){
+      const item=allMapSearchItems().find(x=>String(x.propertyId) === String(propertyId));
+      if(!item) return;
+      mapSearchState.selectedGroupId=item.propertyId;
+      rememberMatchingMapPanelState();
+      updateMatchingMapListPanel();
+      renderMatchingMapMarkers();
+      const point=getMatchingItemPoint(item);
+      if(point && matchingMapState.map && window.naver && naver.maps){
+        try{ matchingMapState.map.panTo(new naver.maps.LatLng(point.lat, point.lng)); }catch(e){}
+      }
+      const requestId=item.propertyId + ':' + Date.now();
+      matchingMapState.polygonLoadingId=requestId;
+      const parcels=await loadMatchingItemParcels(item);
+      if(matchingMapState.polygonLoadingId !== requestId) return;
+      const bounds=drawMatchingItemPolygons(item, parcels);
+      panToMatchingBoundsCenter(bounds, item);
+    }
+
     function listingAreaText(item){
       const parts=[];
       if(item.landAreaPy) parts.push('대지 ' + item.landAreaPy + '평');
@@ -1296,7 +1560,7 @@
       return items.map(item=>{
         const exists=isMapItemCandidate(item);
         const photo=mapItemPhotoUrl(item);
-        return `<article class="map-result-card ${exists?'is-candidate':''}">
+        return `<article class="map-result-card ${exists?'is-candidate':''} ${mapSearchState.selectedGroupId===item.propertyId?'active':''}" data-map-result-id="${escapeAttr(item.propertyId)}">
           <div class="map-result-photo">${photo?`<img src="${escapeAttr(photo)}" alt="">`:'<div class="map-result-photo-empty">사진없음</div>'}</div>
           <div class="map-result-main">
             <div class="map-result-top"><div class="map-result-title">${escapeHtml(item.title)}</div><div class="map-result-no">${escapeHtml(item.propertyId)}</div></div>
@@ -1353,6 +1617,7 @@
       if(!mapEl || activeSection2Tab!=='전체매물검색') return;
       if(matchingMapState.mapEl !== mapEl){
         clearMatchingMapMarkers();
+        clearMatchingMapPolygons();
         matchingMapState.map=null;
         matchingMapState.mapEl=mapEl;
         if(matchingMapState.resizeObserver){ try{ matchingMapState.resizeObserver.disconnect(); }catch(e){} matchingMapState.resizeObserver=null; }
@@ -1640,6 +1905,7 @@
       const filter=e.target.closest('[data-filter]'); if(filter){ activeFilter=filter.dataset.filter; renderCandidates(); return; }
       const mapChip=e.target.closest('[data-map-value]'); if(mapChip){ applyMapChip(mapChip.dataset.mapGroup, mapChip.dataset.mapValue); return; }
       const mapGroup=e.target.closest('[data-map-group]'); if(mapGroup){ selectMapGroup(mapGroup.dataset.mapGroup); return; }
+      const resultCard=e.target.closest('[data-map-result-id]'); if(resultCard && !e.target.closest('button,a,input,textarea,select,[contenteditable]')){ focusMatchingMapResultItem(resultCard.dataset.mapResultId); return; }
       const addDb=e.target.closest('[data-add-db-candidate]'); if(addDb){ addCandidateFromDb(addDb.dataset.addDbCandidate, addDb.dataset.addSource); return; }
       const reject=e.target.closest('[data-reject]'); if(reject){ openCandidateInline(reject.dataset.reject,'reject'); }
       const owner=e.target.closest('[data-owner]'); if(owner){ openCandidateInline(owner.dataset.owner,'owner'); }
@@ -1688,6 +1954,7 @@
       mapSearchState.selectedGroupId='';
       mapSearchState.resultIds=[];
       mapSearchState.listScrollTop=0;
+      clearMatchingMapPolygons();
       updateMapFilterChips();
       updateMatchingMapListPanel();
       renderMatchingMapMarkers();
@@ -1704,13 +1971,14 @@
       mapSearchState.selectedGroupId='';
       mapSearchState.resultIds=[];
       mapSearchState.listScrollTop=0;
+      clearMatchingMapPolygons();
       updateMatchingMapListPanel();
       renderMatchingMapMarkers();
       updateMatchingMapViewCount();
       if(mapSearchState.query) setTimeout(()=>focusItemsOnRealMap(filteredMapItems(), {}),80);
     }
     function resetMapSearch(){
-      mapSearchState.query=''; mapSearchState.inputValue=''; mapSearchState.selectedGroupId=''; mapSearchState.resultIds=[]; mapSearchState.listScrollTop=0;
+      mapSearchState.query=''; mapSearchState.inputValue=''; mapSearchState.selectedGroupId=''; mapSearchState.resultIds=[]; mapSearchState.listScrollTop=0; clearMatchingMapPolygons();
       const input=document.getElementById('mapSearchInput');
       if(input) input.value='';
       updateMatchingMapListPanel();

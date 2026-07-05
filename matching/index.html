@@ -308,6 +308,12 @@
     .search-log-textarea{min-height:72px;padding:8px 9px;resize:vertical;line-height:1.45}
     .search-log-area{min-height:58px}
     .search-log-url-wrap{display:grid;grid-template-columns:minmax(0,1fr)48px;gap:6px;align-items:center}
+    .search-log-line.project-line{grid-template-columns:58px minmax(0,1fr);gap:7px;align-items:center;padding:0;border-bottom:0}
+    .search-log-line .inline-value{min-height:32px;border:1px solid #e1e8f0;border-radius:10px;padding:7px 9px;background:#fff;font-size:12px;font-weight:850;color:#111318}
+    .search-log-line .inline-value:focus,.search-log-note:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.08);outline:none}
+    .search-log-note{min-height:58px;border:1px solid #e1e8f0;border-radius:10px;padding:8px 9px;background:#fff;font-size:12px;font-weight:850;color:#111318;line-height:1.45;white-space:pre-wrap}
+    .search-log-memo-block{gap:6px}
+    .search-log-memo-block .inline-label{font-size:11px;font-weight:1000;color:#7b8794;letter-spacing:-.02em}
     .search-log-open{border:1px solid #d7e0eb;background:#f8fafc;border-radius:10px;min-height:32px;font-size:11px;font-weight:1000;color:#374151;cursor:pointer}
     .search-log-open:disabled{opacity:.38;cursor:default}
     @media(max-width:1200px){.search-log-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -2002,10 +2008,15 @@
       }catch(e){}
       return matchingMapState.vworldKey || '';
     }
+    function getLogFieldElementValue(node){
+      if(!node) return '';
+      if(node.isContentEditable) return String(node.textContent || '').trim();
+      return String(node.value || '').trim();
+    }
     function getSearchLogDomFieldValue(logId, field){
       const nodes=Array.from(document.querySelectorAll('[data-log-field-id][data-log-field]'));
       const node=nodes.find(el=>String(el.dataset.logFieldId || '')===String(logId || '') && String(el.dataset.logField || '')===String(field || ''));
-      return node ? String(node.value || '').trim() : '';
+      return getLogFieldElementValue(node);
     }
     function syncSearchLogDomFields(log){
       if(!log) return;
@@ -2299,13 +2310,13 @@
             <span class="log-status ${statusClass(log.status)}">${escapeHtml(normalizeSearchLogStatus(log.status))}</span>
           </div>
           <div class="search-log-fields">
-            <div class="search-log-row"><label>가져온곳</label><select class="search-log-select" data-log-field-id="${escapeAttr(log.id)}" data-log-field="source">${sources.map(src=>`<option value="${escapeAttr(src)}" ${src===(log.source||'')?'selected':''}>${escapeHtml(src)}</option>`).join('')}</select></div>
-            <div class="search-log-row"><label>상태</label><select class="search-log-select" data-log-field-id="${escapeAttr(log.id)}" data-log-field="status">${statuses.map(st=>`<option value="${escapeAttr(st)}" ${st===normalizeSearchLogStatus(log.status)?'selected':''}>${escapeHtml(st)}</option>`).join('')}</select></div>
-            <div class="search-log-row"><label>URL</label><div class="search-log-url-wrap"><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="link" value="${escapeAttr(log.link||log.title||'')}" placeholder="URL 입력"><button class="search-log-open" type="button" data-log-open-url="${escapeAttr(log.id)}">열기</button></div></div>
-            <div class="search-log-row"><label>주소</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="address" value="${escapeAttr(log.address||'')}" placeholder="주소 입력"></div>
-            <div class="search-log-row"><label>면적</label><textarea class="search-log-textarea search-log-area" data-log-field-id="${escapeAttr(log.id)}" data-log-field="area" placeholder="대지/건물 면적을 여러 줄로 입력">${escapeHtml(log.area||'')}</textarea></div>
-            <div class="search-log-row"><label>가격</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="price" value="${escapeAttr(log.price||'')}" placeholder="매매가/임대가"></div>
-            <textarea class="search-log-textarea" data-log-field-id="${escapeAttr(log.id)}" data-log-field="memo" placeholder="메모">${escapeHtml(log.memo||'')}</textarea>
+            <div class="project-line search-log-line"><div class="inline-label">가져온곳</div><div class="inline-value" contenteditable="true" data-log-field-id="${escapeAttr(log.id)}" data-log-field="source">${escapeHtml(log.source||'')}</div></div>
+            <div class="project-line search-log-line"><div class="inline-label">상태</div><div class="inline-value" contenteditable="true" data-log-field-id="${escapeAttr(log.id)}" data-log-field="status">${escapeHtml(normalizeSearchLogStatus(log.status))}</div></div>
+            <div class="project-line search-log-line"><div class="inline-label">URL</div><div class="search-log-url-wrap"><div class="inline-value" contenteditable="true" data-log-field-id="${escapeAttr(log.id)}" data-log-field="link">${escapeHtml(log.link||log.title||'')}</div><button class="search-log-open" type="button" data-log-open-url="${escapeAttr(log.id)}">열기</button></div></div>
+            <div class="project-line search-log-line"><div class="inline-label">주소</div><div class="inline-value" contenteditable="true" data-log-field-id="${escapeAttr(log.id)}" data-log-field="address">${escapeHtml(log.address||'')}</div></div>
+            <div class="memo-block search-log-memo-block"><div class="inline-label">면적</div><div class="memo-note search-log-note" contenteditable="true" data-log-field-id="${escapeAttr(log.id)}" data-log-field="area">${escapeHtml(log.area||'')}</div></div>
+            <div class="project-line search-log-line"><div class="inline-label">가격</div><div class="inline-value" contenteditable="true" data-log-field-id="${escapeAttr(log.id)}" data-log-field="price">${escapeHtml(log.price||'')}</div></div>
+            <div class="memo-block search-log-memo-block"><div class="inline-label">메모</div><div class="memo-note search-log-note" contenteditable="true" data-log-field-id="${escapeAttr(log.id)}" data-log-field="memo">${escapeHtml(log.memo||'')}</div></div>
           </div>
           <div class="cand-actions">
             <button class="card-btn green" data-log-save="${escapeAttr(log.id)}">저장</button>
@@ -2757,13 +2768,13 @@
     document.addEventListener('input', e=>{
       if(e.target && e.target.id==='mapSearchInput'){ mapSearchState.inputValue=e.target.value || ''; }
       const logField=e.target.closest('[data-log-field-id]');
-      if(logField){ updateSearchLogField(logField.dataset.logFieldId, logField.dataset.logField, logField.value || ''); return; }
+      if(logField){ updateSearchLogField(logField.dataset.logFieldId, logField.dataset.logField, getLogFieldElementValue(logField)); return; }
       const studyMemo=e.target.closest('[data-study-memo]');
       if(studyMemo){ const log=(state.searchLogs||[]).find(x=>x.id===studyMemo.dataset.studyMemo); if(log){ log.studyMemo=studyMemo.value || ''; log.updatedAt=nowIso(); dirty=true; updateSaveState(); } return; }
     });
     document.addEventListener('change', e=>{
       const logField=e.target.closest('[data-log-field-id]');
-      if(logField){ updateSearchLogField(logField.dataset.logFieldId, logField.dataset.logField, logField.value || ''); return; }
+      if(logField){ updateSearchLogField(logField.dataset.logFieldId, logField.dataset.logField, getLogFieldElementValue(logField)); return; }
     });
     document.addEventListener('scroll', e=>{ if(e.target && e.target.id==='mapListBody'){ mapSearchState.listScrollTop=e.target.scrollTop || 0; } }, true);
     document.addEventListener('keydown', e=>{ if(e.target && e.target.id==='mapSearchInput' && e.key==='Enter'){ e.preventDefault(); runMapSearch(); } });
@@ -2794,11 +2805,19 @@
       if(mode==='searchLog'){
         modalTitle.textContent='서칭기록 추가';
         modalDesc.textContent='외부에서 본 매물은 후보로 바로 올리지 않고 기록만 남깁니다.';
-        modalContent.innerHTML=`<div class="modal-grid"><select class="edit-field" id="logSource"><option>네이버부동산</option><option>땅야</option><option>한방</option><option>부동산포스</option><option>문자</option><option>전화</option><option>현장</option><option>소개</option><option>블로그</option><option>기타</option></select><select class="edit-field" id="logStatus"><option>기록중</option><option selected>검토중</option><option>매물등록 필요</option><option>등록완료</option><option>보류</option><option>탈락</option></select><input class="edit-field" id="logLink" placeholder="URL"><input class="edit-field" id="logAddress" placeholder="주소"><input class="edit-field" id="logPrice" placeholder="가격"><textarea class="edit-field textarea" id="logArea" placeholder="면적"></textarea></div><textarea class="edit-field textarea" id="logMemo" style="margin-top:10px" placeholder="메모"></textarea>`;
+        modalContent.innerHTML=`<div class="search-log-fields">
+          <div class="project-line search-log-line"><div class="inline-label">가져온곳</div><div class="inline-value" id="logSource" contenteditable="true">네이버부동산</div></div>
+          <div class="project-line search-log-line"><div class="inline-label">상태</div><div class="inline-value" id="logStatus" contenteditable="true">검토중</div></div>
+          <div class="project-line search-log-line"><div class="inline-label">URL</div><div class="inline-value" id="logLink" contenteditable="true"></div></div>
+          <div class="project-line search-log-line"><div class="inline-label">주소</div><div class="inline-value" id="logAddress" contenteditable="true"></div></div>
+          <div class="memo-block search-log-memo-block"><div class="inline-label">면적</div><div class="memo-note search-log-note" id="logArea" contenteditable="true"></div></div>
+          <div class="project-line search-log-line"><div class="inline-label">가격</div><div class="inline-value" id="logPrice" contenteditable="true"></div></div>
+          <div class="memo-block search-log-memo-block"><div class="inline-label">메모</div><div class="memo-note search-log-note" id="logMemo" contenteditable="true"></div></div>
+        </div>`;
         modal.classList.add('show'); setTimeout(()=>document.getElementById('logLink')?.focus(),0); return;
       }
     }
-    document.querySelectorAll('[data-open-modal]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.openModal))); function closeModal(){modal.classList.remove('show')} document.getElementById('modalClose').onclick=closeModal; document.getElementById('modalCancel').onclick=closeModal; document.getElementById('modalApply').onclick=()=>{
+    document.querySelectorAll('[data-open-modal]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.openModal))); function closeModal(){modal.classList.remove('show')} function getModalFieldValue(id){ const el=document.getElementById(id); if(!el) return ''; return String(el.isContentEditable ? (el.textContent || '') : (el.value || '')).trim(); } document.getElementById('modalClose').onclick=closeModal; document.getElementById('modalCancel').onclick=closeModal; document.getElementById('modalApply').onclick=()=>{
       if(modalMode==='contactLog'){
         const existing = Array.from(document.querySelectorAll('[data-contact-existing]')).map(el=>(el.value || '').trim()).filter(Boolean);
         const date=(document.getElementById('newContactDate')?.value || '').trim();
@@ -2832,15 +2851,15 @@
         const id=nextSearchLogId();
         state.searchLogs.push({
           id,
-          source:document.getElementById('logSource')?.value || '기타',
+          source:getModalFieldValue('logSource') || '기타',
           writerCode:getUnlockedWriterCode(),
-          title:(document.getElementById('logLink')?.value || '').trim(),
-          address:(document.getElementById('logAddress')?.value || '').trim(),
-          price:(document.getElementById('logPrice')?.value || '').trim(),
-          area:(document.getElementById('logArea')?.value || '').trim(),
-          link:(document.getElementById('logLink')?.value || '').trim(),
-          memo:(document.getElementById('logMemo')?.value || '').trim(),
-          status:normalizeSearchLogStatus(document.getElementById('logStatus')?.value || '기록중'),
+          title:getModalFieldValue('logLink'),
+          address:getModalFieldValue('logAddress'),
+          price:getModalFieldValue('logPrice'),
+          area:getModalFieldValue('logArea'),
+          link:getModalFieldValue('logLink'),
+          memo:getModalFieldValue('logMemo'),
+          status:normalizeSearchLogStatus(getModalFieldValue('logStatus') || '기록중'),
           createdAt:now,
           updatedAt:now,
           studyStatus:'',

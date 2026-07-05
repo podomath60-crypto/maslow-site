@@ -267,6 +267,41 @@
     .db-reason b{color:#111318}
     .log-status{display:inline-flex;align-items:center;min-height:26px;padding:0 9px;border-radius:999px;background:#f3f7fb;border:1px solid #e2eaf2;color:#4b5563;font-size:12px;font-weight:1000;white-space:nowrap}
     .log-status.hold{background:#fff8e6;border-color:#fde6a8;color:#986000}.log-status.rejected{background:#fff1f1;border-color:#ffd2d2;color:#d43737}.log-status.registered{background:#ecfff5;border-color:#bdf8d8;color:#087a3b}
+
+    .search-study-panel{margin-top:9px;border:1px solid #e6ebf1;background:#fff;border-radius:16px;box-shadow:0 10px 22px rgba(15,23,42,.04);overflow:hidden}
+    .search-study-head{padding:10px 11px;border-bottom:1px solid #edf2f7;background:#fbfdff}
+    .search-study-title{font-size:13px;font-weight:1000;color:#151922;letter-spacing:-.04em;line-height:1.25}
+    .search-study-sub{margin-top:3px;font-size:10px;font-weight:850;color:#7b8794;line-height:1.35}
+    .search-study-body{padding:10px;max-height:calc(100vh - 430px);overflow:auto;display:grid;gap:8px;scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.28) transparent}
+    .search-study-body::-webkit-scrollbar{width:4px}.search-study-body::-webkit-scrollbar-track{background:transparent}.search-study-body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.26);border-radius:999px}
+    .search-study-empty{font-size:11px;font-weight:850;color:#7b8794;line-height:1.45;border:1px dashed #dbe5ee;background:#fbfdff;padding:10px;text-align:center}
+    .search-study-section{border:1px solid #e5edf5;background:#fff;border-radius:12px;overflow:hidden}
+    .search-study-section-head{padding:8px 9px;background:linear-gradient(90deg,#eff6ff,#f8fafc);border-bottom:1px solid #e5edf5;font-size:11px;font-weight:1000;color:#1f2937}
+    .search-study-section.is-land .search-study-section-head{background:linear-gradient(90deg,#ecfdf5,#f8fafc)}
+    .search-study-section.is-building .search-study-section-head{background:linear-gradient(90deg,#eff6ff,#f8fafc)}
+    .search-study-section.is-use .search-study-section-head{background:linear-gradient(90deg,#fffbeb,#f8fafc)}
+    .search-study-table{width:100%;border-collapse:collapse;font-size:10px;line-height:1.35}
+    .search-study-table tr+tr{border-top:1px solid #eef2f7}
+    .search-study-table th,.search-study-table td{padding:6px 7px;vertical-align:top;text-align:left}
+    .search-study-table th{width:58px;color:#64748b;font-weight:1000;word-break:keep-all}
+    .search-study-table td{color:#111827;font-weight:850;word-break:keep-all;overflow-wrap:anywhere;white-space:pre-line}
+    .search-study-memo{width:100%;min-height:84px;border:1px solid #e6ebf1;background:#fffdf4;border-radius:10px;padding:8px;color:#3f3a21;font-size:11px;font-weight:800;line-height:1.45;resize:vertical;outline:none}
+    .search-study-status{border:1px solid #e6ebf1;background:#f8fafc;border-radius:10px;padding:8px;color:#475569;font-size:11px;font-weight:900;line-height:1.45}
+    .search-study-status.err{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+    .search-log-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .search-log-card{padding:12px;gap:8px}
+    .search-log-card.is-active{border-color:#7c3aed;box-shadow:0 12px 24px rgba(124,58,237,.09)}
+    .search-log-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .search-log-id{font-size:11px;font-weight:1000;color:#8a94a1}
+    .search-log-fields{display:grid;gap:7px}
+    .search-log-row{display:grid;grid-template-columns:58px minmax(0,1fr);gap:7px;align-items:center}
+    .search-log-row label{font-size:11px;font-weight:1000;color:#7b8794;letter-spacing:-.02em}
+    .search-log-input,.search-log-select,.search-log-textarea{width:100%;border:1px solid #e1e8f0;background:#fff;border-radius:10px;padding:0 9px;min-height:32px;color:#111318;font-size:12px;font-weight:850;outline:none}
+    .search-log-input:focus,.search-log-select:focus,.search-log-textarea:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.08)}
+    .search-log-textarea{min-height:72px;padding:8px 9px;resize:vertical;line-height:1.45}
+    @media(max-width:1200px){.search-log-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:760px){.search-log-grid{grid-template-columns:1fr}.search-log-row{grid-template-columns:1fr}}
+
     .modal-result-list{display:grid;gap:10px;margin-top:12px}
     .modal-result-card{border:1px solid #edf2f7;border-radius:18px;background:#fbfdff;padding:12px;display:grid;gap:8px}
     .field-label{display:grid;gap:5px;font-size:11px;font-weight:1000;color:#7b8794;letter-spacing:-.02em}
@@ -382,6 +417,15 @@
         <button type="button" class="section-jump" data-section="2" data-target="sectionCandidates"><span class="section-jump-no">02</span><span class="section-jump-title">매물 매칭</span><span class="section-jump-desc">후보·검색·서칭</span></button>
         <button type="button" class="section-jump" data-section="3" data-target="sectionVisits"><span class="section-jump-no">03</span><span class="section-jump-title">임장</span><span class="section-jump-desc">라운드·방문기록</span></button>
         <button type="button" class="section-jump" data-section="4" data-target="sectionContract"><span class="section-jump-no">04</span><span class="section-jump-title">계약</span><span class="section-jump-desc">진행상태·정산</span></button>
+        <section class="search-study-panel" id="searchStudyPanel" aria-label="서칭기록 공부조회">
+          <div class="search-study-head">
+            <div class="search-study-title">공부조회</div>
+            <div class="search-study-sub" id="searchStudySub">서칭기록 카드에서 공부조회를 누르면 여기에 표시됩니다.</div>
+          </div>
+          <div class="search-study-body" id="searchStudyBody">
+            <div class="search-study-empty">아직 조회한 서칭기록이 없습니다.</div>
+          </div>
+        </section>
       </aside>
       <div class="shell">
       <section class="section" id="sectionProject" data-section="1">
@@ -515,6 +559,7 @@
             <div class="section-title"><span class="section-title-no">2</span> 매물 매칭 · 후보 관리 · 서칭 기록</div>
           </div>
           <div class="section-head-actions">
+            <button class="section-title-action" id="addSearchLogBtn" type="button">+ 서칭기록저장</button>
             <button class="section-title-action" id="candidateSearchBtn" type="button">+ 매물후보검색</button>
             <button class="section-title-action" id="listingEditorBtn" type="button">+ 매물입력기</button>
           </div>
@@ -629,6 +674,7 @@
     let activeFilter = '전체';
     let activeSection2Tab = '후보매물';
     let activeSearchLogId = '';
+    let activeStudyLogId = '';
     let activeProgressMemoMenuId = '';
     let progressMemoBefore = null;
     let mapSearchState = { query:'', inputValue:'', filters:{ q:'', public:'all', work:'all', data:'all', deal:'all', category:'all', ad:'all', adIncludeAll:true }, excludeCandidates:false, selectedGroupId:'', resultIds:[], view:null, listScrollTop:0 };
@@ -636,6 +682,7 @@
     const MATCHING_MAP_CENTER_LAT = 35.9634838;
     const MATCHING_MAP_CENTER_LNG = 126.6930552;
     const MATCHING_MAP_GEOCODE_CACHE_KEY = 'MATCHING_MAP_GEOCODE_CACHE_V1';
+    const PUBLIC_PROPERTY_GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
     let dirty = false;
 
     function clone(v){ return structuredClone(v); }
@@ -1719,11 +1766,252 @@
       </div>`;
     }
     function renderRecommendationPanel(){ return `<div class="section2-rule"><b>추천매물시스템</b> 현재 의뢰 조건을 기준으로 우리 DB에서 추천된 매물입니다. 결과를 검토한 뒤 필요한 매물만 후보로 추가합니다.</div>${renderDbCards(state.recommendationResults||[], 'recommendation')}`; }
+    function searchLogSources(){ return ['블로그','네이버부동산','땅야','한방','부동산포스','문자','전화','현장','소개','기타']; }
+    function nextSearchLogId(){
+      const nums=(state.searchLogs||[]).map(x=>Number(String(x.id||'').replace(/\D/g,''))).filter(Number.isFinite);
+      const n=(nums.length ? Math.max(...nums) : 0) + 1;
+      return 'SL-' + String(n).padStart(3,'0');
+    }
+    function addSearchLogPanel(){
+      markChange('서칭기록 추가');
+      state.searchLogs=state.searchLogs||[];
+      const now=nowIso();
+      const id=nextSearchLogId();
+      state.searchLogs.push({id, source:'네이버부동산', title:'', address:'', price:'', area:'', contact:'', link:'', memo:'', status:'기록중', createdAt:now, updatedAt:now, studyStatus:'', studyResult:null, studyMemo:''});
+      activeSection2Tab='서칭기록';
+      activeFilter='전체';
+      activeStudyLogId=id;
+      renderAll();
+      setTimeout(()=>document.querySelector(`[data-log-field-id="${id}"][data-log-field="address"]`)?.focus(),0);
+    }
+    function updateSearchLogField(id, field, value){
+      const log=(state.searchLogs||[]).find(x=>x.id===id);
+      if(!log) return;
+      log[field]=value;
+      log.updatedAt=nowIso();
+      dirty=true;
+      updateSaveState();
+      renderMetrics();
+      renderSearchStudyPanel();
+    }
+    function cleanStudyLookupError(err){
+      function one(e){ return e && e.message ? String(e.message) : String(e || '조회 실패'); }
+      if(err && err.message === 'BOTH_LOOKUP_FAILED'){
+        return ('1차 GAS 직접 조회 실패: ' + one(err.firstError) + ' / 2차 매슬로우 프록시 조회 실패: ' + one(err.secondError)).replace(/https?:\/\/[^\s<]+/g,'').replace(/\s+/g,' ').trim();
+      }
+      return one(err).replace(/https?:\/\/[^\s<]+/g,'').replace(/\s+/g,' ').trim() || '조회 실패';
+    }
+    function normalizeStudyLookupParams(params){
+      const out={};
+      Object.keys(params||{}).forEach(k=>{
+        if(k==='callback' || k==='_ts') return;
+        const v=params[k];
+        if(v===undefined || v===null) return;
+        out[k]=String(v);
+      });
+      return out;
+    }
+    function publicPropertyJsonpCall(params){
+      return new Promise(function(resolve,reject){
+        params=normalizeStudyLookupParams(params);
+        const cb='matchingSearchLogLedgerCb_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+        const script=document.createElement('script');
+        let done=false;
+        let timer=null;
+        function cleanup(){
+          try{ delete window[cb]; }catch(e){}
+          if(timer) window.clearTimeout(timer);
+          if(script.parentNode) script.parentNode.removeChild(script);
+        }
+        window[cb]=function(payload){ if(done) return; done=true; cleanup(); resolve(payload); };
+        script.onerror=function(){ if(done) return; done=true; cleanup(); reject(new Error('JSONP 요청 실패')); };
+        const q=new URLSearchParams();
+        Object.keys(params).forEach(k=>q.set(k, params[k]==null?'':String(params[k])));
+        q.set('callback', cb);
+        q.set('_ts', String(Date.now()));
+        script.src=PUBLIC_PROPERTY_GAS_URL + '?' + q.toString();
+        document.body.appendChild(script);
+        timer=window.setTimeout(function(){ if(done) return; done=true; cleanup(); reject(new Error('JSONP 타임아웃')); }, 15000);
+      });
+    }
+    async function publicPropertyProxyLookupCall(params){
+      params=normalizeStudyLookupParams(params);
+      const action=String(params.action || 'fetchPublicPropertyBySearchResult').trim();
+      const q=new URLSearchParams();
+      Object.keys(params).forEach(k=>q.set(k, params[k]==null?'':String(params[k])));
+      q.set('action', action);
+      q.set('_ts', String(Date.now()));
+      const res=await fetch('/api/public-property-lookup?' + q.toString(), {method:'GET', headers:{Accept:'application/json'}, cache:'no-store'});
+      if(!res.ok) throw new Error('프록시 조회 실패');
+      return await res.json();
+    }
+    async function publicLookup(params){
+      let firstError=null;
+      try{
+        const direct=await publicPropertyJsonpCall(Object.assign({}, params));
+        if(direct && direct.ok !== false) return direct;
+        firstError=new Error((direct && direct.message) || 'GAS 직접 조회 응답 실패');
+      }catch(e){ firstError=e; }
+      try{ return await publicPropertyProxyLookupCall(Object.assign({}, params)); }
+      catch(secondError){ const err=new Error('BOTH_LOOKUP_FAILED'); err.firstError=firstError; err.secondError=secondError; throw err; }
+    }
+    function flattenStudyValue(value, depth){
+      depth=depth||0;
+      if(value==null || value==='') return '';
+      if(typeof value==='string' || typeof value==='number' || typeof value==='boolean') return String(value);
+      if(Array.isArray(value)){
+        return value.slice(0,8).map(v=>flattenStudyValue(v, depth+1)).filter(Boolean).join('\n');
+      }
+      if(typeof value==='object'){
+        return Object.keys(value).slice(0,12).map(k=>{
+          const v=flattenStudyValue(value[k], depth+1);
+          return v ? k + ': ' + v : '';
+        }).filter(Boolean).join('\n');
+      }
+      return String(value);
+    }
+    function pickStudyRows(obj, keys){
+      obj=obj||{};
+      return keys.map(pair=>{
+        const label=pair[0], candidates=pair.slice(1);
+        let val='';
+        for(const k of candidates){
+          if(obj && obj[k]!=null && obj[k]!==''){ val=obj[k]; break; }
+        }
+        return [label, flattenStudyValue(val)];
+      }).filter(row=>row[1]);
+    }
+    function renderStudyTable(rows){
+      if(!rows || !rows.length) return '<div class="search-study-status">표시할 세부 항목이 없습니다.</div>';
+      return `<table class="search-study-table"><tbody>${rows.map(r=>`<tr><th>${escapeHtml(r[0])}</th><td>${escapeHtml(r[1])}</td></tr>`).join('')}</tbody></table>`;
+    }
+    function studyResultRoot(result){
+      if(!result) return {};
+      return result.data || result.result || result.payload || result;
+    }
+    function renderSearchStudyPanel(){
+      const body=document.getElementById('searchStudyBody');
+      const sub=document.getElementById('searchStudySub');
+      if(!body || !sub) return;
+      const log=(state.searchLogs||[]).find(x=>x.id===activeStudyLogId);
+      if(!log){
+        sub.textContent='서칭기록 카드에서 공부조회를 누르면 여기에 표시됩니다.';
+        body.innerHTML='<div class="search-study-empty">아직 조회한 서칭기록이 없습니다.</div>';
+        return;
+      }
+      sub.textContent=`${log.source||'출처 미기록'} · ${log.address||'주소 미기록'}`;
+      if(log.studyStatus==='loading'){
+        body.innerHTML='<div class="search-study-status">공부조회 중입니다. 매물지도와 같은 1차 GAS 직접조회 → 2차 프록시 순서로 조회합니다.</div>';
+        return;
+      }
+      if(log.studyStatus==='error'){
+        body.innerHTML=`<div class="search-study-status err">공부조회 실패<br>${escapeHtml(log.studyError||'조회 실패')}</div><textarea class="search-study-memo" data-study-memo="${escapeAttr(log.id)}" placeholder="공부조회 메모">${escapeHtml(log.studyMemo||'')}</textarea>`;
+        return;
+      }
+      const root=studyResultRoot(log.studyResult);
+      const land=root.land || root.landInfo || root.ledger || root;
+      const building=root.building || root.buildingInfo || root.buildingData || root;
+      const usePlan=root.usePlan || root.landUse || root.landUsePlan || root;
+      const basicRows=[
+        ['주소','pickedAddress','queryAddress','address','jibunAddress','roadAddress'],
+        ['PNU','pnu','PNU'],
+        ['메시지','message','statusMessage'],
+        ['조회경로','path','usedPath','finalPath']
+      ];
+      const landRows=[
+        ['지목','jimok','landCategory','지목'],
+        ['면적','area','landArea','areaM2','면적'],
+        ['용도지역','zoning','useDistrict','용도지역','region'],
+        ['공시지가','officialLandPrice','jiga','landPrice'],
+        ['접도','roadContact','road','roadWidth']
+      ];
+      const buildingRows=[
+        ['주용도','mainUse','mainPurpsCdNm','용도'],
+        ['구조','structure','strctCdNm','구조'],
+        ['연면적','totalFloorArea','totArea','연면적'],
+        ['건축면적','buildingArea','archArea','건축면적'],
+        ['층수','floor','grndFlrCnt','층수'],
+        ['사용승인','approvalDate','useAprDay','사용승인일']
+      ];
+      const useRows=[
+        ['토지이용','usePlan','landUse','내용','restriction'],
+        ['기타제한','limits','restrictions','기타'],
+        ['원문','raw','list']
+      ];
+      body.innerHTML=`
+        <section class="search-study-section"><div class="search-study-section-head">선택 위치</div>${renderStudyTable(pickStudyRows(root, basicRows))}</section>
+        <section class="search-study-section is-land"><div class="search-study-section-head">토지대장</div>${renderStudyTable(pickStudyRows(land, landRows))}</section>
+        <section class="search-study-section is-use"><div class="search-study-section-head">토지이용계획</div>${renderStudyTable(pickStudyRows(usePlan, useRows))}</section>
+        <section class="search-study-section is-building"><div class="search-study-section-head">건축물대장 통합요약</div>${renderStudyTable(pickStudyRows(building, buildingRows))}</section>
+        <section class="search-study-section"><div class="search-study-section-head">원본 응답</div><div class="search-study-status">${escapeHtml(flattenStudyValue(root).slice(0,2400) || '원본 없음')}</div></section>
+        <textarea class="search-study-memo" data-study-memo="${escapeAttr(log.id)}" placeholder="공부조회 메모">${escapeHtml(log.studyMemo||'')}</textarea>
+      `;
+    }
+    async function runSearchLogStudy(logId){
+      const log=(state.searchLogs||[]).find(x=>x.id===logId);
+      if(!log) return;
+      activeStudyLogId=logId;
+      const address=String(log.address || '').trim();
+      if(!address){
+        log.studyStatus='error';
+        log.studyError='주소를 먼저 입력하세요.';
+        renderSearchStudyPanel();
+        return;
+      }
+      markChange('서칭기록 공부조회');
+      log.studyStatus='loading';
+      log.studyError='';
+      log.updatedAt=nowIso();
+      renderSearchStudyPanel();
+      try{
+        const result=await publicLookup({
+          action:'fetchPublicPropertyBySearchResult',
+          pickedAddress:address,
+          queryAddress:address,
+          address:address,
+          lookupAddress:address,
+          source:'matching-search-log',
+          pageUrl:window.location.href || ''
+        });
+        log.studyStatus='done';
+        log.studyResult=result;
+        log.updatedAt=nowIso();
+      }catch(err){
+        log.studyStatus='error';
+        log.studyError=cleanStudyLookupError(err);
+        log.updatedAt=nowIso();
+      }
+      renderSearchLogs();
+      renderSearchStudyPanel();
+      updateSaveState();
+    }
     function renderSearchLogs(){
       const logs=state.searchLogs||[];
-      if(!logs.length) return '<div class="candidate-empty">서칭기록이 없습니다.<br>외부에서 본 매물은 후보로 바로 올리지 말고 서칭기록으로 남겨두세요.</div>';
+      if(!logs.length) return '<div class="candidate-empty">서칭기록이 없습니다.<br>+ 서칭기록저장으로 외부 매물 기록 패널을 추가하세요.</div>';
       const statusClass=s=>s==='보류'?'hold':s==='탈락'?'rejected':s==='등록완료'?'registered':'';
-      return `<div class="search-log-grid">${logs.map(log=>`<article class="search-log-card"><div><div class="db-title">${escapeHtml(log.title)}</div><div class="db-no">${escapeHtml(log.source)} · <span class="log-status ${statusClass(log.status)}">${escapeHtml(log.status)}</span></div></div><div class="db-meta">${escapeHtml(log.address||'주소 미기록')}<br>${escapeHtml(log.price||'가격 미기록')} · ${escapeHtml(log.area||'면적 미기록')}<br>연락처 ${escapeHtml(log.contact||'미기록')}</div>${log.link?`<div class="db-meta">링크: ${escapeHtml(log.link)}</div>`:''}<div class="db-reason">${escapeHtml(log.memo||'메모 없음')}</div><div class="cand-actions"><button class="card-btn dark" data-log-admin="${log.id}">매물입력기로 등록</button><button class="card-btn" data-log-memo="${log.id}">메모</button><button class="card-btn" data-log-status="${log.id}" data-status="보류">보류</button><button class="card-btn red" data-log-status="${log.id}" data-status="탈락">탈락</button></div></article>`).join('')}</div>`;
+      const sources=searchLogSources();
+      return `<div class="search-log-grid">${logs.map(log=>`
+        <article class="search-log-card ${activeStudyLogId===log.id?'is-active':''}" data-search-log-card="${escapeAttr(log.id)}">
+          <div class="search-log-top">
+            <div class="search-log-id">${escapeHtml(log.id)}</div>
+            <span class="log-status ${statusClass(log.status)}">${escapeHtml(log.status||'기록중')}</span>
+          </div>
+          <div class="search-log-fields">
+            <div class="search-log-row"><label>가져온곳</label><select class="search-log-select" data-log-field-id="${escapeAttr(log.id)}" data-log-field="source">${sources.map(src=>`<option value="${escapeAttr(src)}" ${src===(log.source||'')?'selected':''}>${escapeHtml(src)}</option>`).join('')}</select></div>
+            <div class="search-log-row"><label>제목</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="title" value="${escapeAttr(log.title||'')}" placeholder="외부 매물 제목"></div>
+            <div class="search-log-row"><label>주소</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="address" value="${escapeAttr(log.address||'')}" placeholder="주소 입력"></div>
+            <div class="search-log-row"><label>면적</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="area" value="${escapeAttr(log.area||'')}" placeholder="대지/건물 면적"></div>
+            <div class="search-log-row"><label>가격</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="price" value="${escapeAttr(log.price||'')}" placeholder="매매가/임대가"></div>
+            <div class="search-log-row"><label>연락처</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="contact" value="${escapeAttr(log.contact||'')}" placeholder="연락처/담당자"></div>
+            <textarea class="search-log-textarea" data-log-field-id="${escapeAttr(log.id)}" data-log-field="memo" placeholder="메모">${escapeHtml(log.memo||'')}</textarea>
+          </div>
+          <div class="cand-actions">
+            <button class="card-btn" data-log-study="${escapeAttr(log.id)}">공부조회</button>
+            <button class="card-btn dark" data-log-admin="${escapeAttr(log.id)}">매물입력기로 등록</button>
+            <button class="card-btn" data-log-status="${escapeAttr(log.id)}" data-status="보류">보류</button>
+            <button class="card-btn red" data-log-status="${escapeAttr(log.id)}" data-status="탈락">탈락</button>
+          </div>
+        </article>`).join('')}</div>`;
     }
     function renderSection2(){
       renderMetrics();
@@ -1735,6 +2023,7 @@
       else if(activeSection2Tab==='추천매물') content.innerHTML=renderRecommendationPanel();
       else if(activeSection2Tab==='서칭기록') content.innerHTML=renderSearchLogs();
       else content.innerHTML=renderCandidateCards(getFilteredCandidates());
+      renderSearchStudyPanel();
     }
     function progressMemoColors(){ return ['yellow','green','blue','pink','purple','orange','gray']; }
     function displayDateTime(value){
@@ -1786,7 +2075,7 @@
     }
     function renderCandidates(){ renderSection2(); }
     function renderVisits(){ const list=document.getElementById('visitList'); list.innerHTML=state.visits.map(v=>`<article class="visit-card" data-visit="${v.id}"><div class="visit-top"><div><div class="visit-title">${v.title}</div><div class="visit-meta">${v.date} / ${v.status} / 동행자 ${v.companions}<br>전체 반응: ${v.summary}<br>다음 액션: ${v.nextAction}</div></div><div><button class="small-btn" data-toggle-visit="${v.id}">상세 펼치기</button><button class="small-btn primary" data-next-visit="${v.id}">다음 차수 만들기</button></div></div><div class="visit-items">${v.items.map(i=>`<div class="visit-item"><b>${i.property}</b><br>${i.reaction} · ${i.memo}</div>`).join('')}</div><div class="visit-detail"><textarea class="edit-field textarea">${v.summary}\n${v.nextAction}</textarea><div class="inline-actions"><button class="small-btn primary" data-save-visit="${v.id}">임장 메모 저장</button></div></div></article>`).join(''); }
-    function renderAll(){ renderProject(); renderRouteChecks(); renderCandidates(); renderVisits(); renderProgressMemos(); updateSaveState(); }
+    function renderAll(){ renderProject(); renderRouteChecks(); renderCandidates(); renderVisits(); renderProgressMemos(); renderSearchStudyPanel(); updateSaveState(); }
 
 
     let inlineBefore = null;
@@ -1963,6 +2252,12 @@
       const mapChip=e.target.closest('[data-map-value]'); if(mapChip){ applyMapChip(mapChip.dataset.mapGroup, mapChip.dataset.mapValue); return; }
       const mapGroup=e.target.closest('[data-map-group]'); if(mapGroup){ selectMapGroup(mapGroup.dataset.mapGroup); return; }
       const resultCard=e.target.closest('[data-map-result-id]'); if(resultCard && !e.target.closest('button,a,input,textarea,select,[contenteditable]')){ focusMatchingMapResultItem(resultCard.dataset.mapResultId); return; }
+      const logStudy=e.target.closest('[data-log-study]');
+      if(logStudy){ runSearchLogStudy(logStudy.dataset.logStudy); return; }
+      const logAdmin=e.target.closest('[data-log-admin]');
+      if(logAdmin){ window.open('/admin?mode=new','_blank','noopener,noreferrer'); return; }
+      const logStatus=e.target.closest('[data-log-status]');
+      if(logStatus){ const log=(state.searchLogs||[]).find(x=>x.id===logStatus.dataset.logStatus); if(log){ markChange('서칭기록 상태 변경'); log.status=logStatus.dataset.status||'기록중'; log.updatedAt=nowIso(); activeStudyLogId=log.id; renderAll(); } return; }
       const addDb=e.target.closest('[data-add-db-candidate]'); if(addDb){ addCandidateFromDb(addDb.dataset.addDbCandidate, addDb.dataset.addSource); return; }
       const reject=e.target.closest('[data-reject]'); if(reject){ openCandidateInline(reject.dataset.reject,'reject'); }
       const owner=e.target.closest('[data-owner]'); if(owner){ openCandidateInline(owner.dataset.owner,'owner'); }
@@ -1972,9 +2267,6 @@
       const restore=e.target.closest('[data-restore]'); if(restore){ const c=state.candidates.find(x=>x.id===restore.dataset.restore); markChange('탈락 해제'); c.rejected=false; c.stage='검토중'; renderAll(); }
       const recheck=e.target.closest('[data-recheck]'); if(recheck){ const c=state.candidates.find(x=>x.id===recheck.dataset.recheck); markChange('재검토 이동'); c.rejected=false; c.stage='재검토'; renderAll(); }
       const admin=e.target.closest('[data-admin]'); if(admin){ const id=admin.dataset.admin; window.open(`/admin?listingNumber=${encodeURIComponent(id)}`,'_blank','noopener,noreferrer'); return; }
-      const logAdmin=e.target.closest('[data-log-admin]'); if(logAdmin){ window.location.href='/admin?mode=new'; return; }
-      const logStatus=e.target.closest('[data-log-status]'); if(logStatus){ const log=(state.searchLogs||[]).find(x=>x.id===logStatus.dataset.logStatus); if(log){ markChange('서칭기록 상태 변경'); log.status=logStatus.dataset.status; renderAll(); } return; }
-      const logMemo=e.target.closest('[data-log-memo]'); if(logMemo){ openSearchLogMemo(logMemo.dataset.logMemo); return; }
       const toggle=e.target.closest('[data-toggle-visit]'); if(toggle){ toggle.closest('.visit-card').classList.toggle('open'); }
       const next=e.target.closest('[data-next-visit]'); if(next){ addVisitRound(); }
     });
@@ -2088,9 +2380,20 @@
     }
     function addVisitRound(){ markChange('임장 라운드 추가'); const n=state.visits.length+1; const selected=state.candidates.filter(c=>c.proposal&&!c.rejected).slice(0,4); state.visits.push({id:'V-'+String(n).padStart(3,'0'),roundNo:n,title:n+'차 임장',date:'일정 협의',status:'예정',companions:'',summary:'제안선정 매물 중심으로 임장 예정',nextAction:'일정 확정',items:selected.map(c=>({property:c.title,reaction:'예정',memo:'방문 예정'}))}); renderAll(); }
     document.getElementById('todayInquiryBtn').addEventListener('click',()=>{ markChange('최초문의 오늘 입력'); state.project.inquiryDate=formatToday(); renderAll(); });
-    document.addEventListener('input', e=>{ if(e.target && e.target.id==='mapSearchInput'){ mapSearchState.inputValue=e.target.value || ''; } });
+    document.addEventListener('input', e=>{
+      if(e.target && e.target.id==='mapSearchInput'){ mapSearchState.inputValue=e.target.value || ''; }
+      const logField=e.target.closest('[data-log-field-id]');
+      if(logField){ updateSearchLogField(logField.dataset.logFieldId, logField.dataset.logField, logField.value || ''); return; }
+      const studyMemo=e.target.closest('[data-study-memo]');
+      if(studyMemo){ const log=(state.searchLogs||[]).find(x=>x.id===studyMemo.dataset.studyMemo); if(log){ log.studyMemo=studyMemo.value || ''; log.updatedAt=nowIso(); dirty=true; updateSaveState(); } return; }
+    });
+    document.addEventListener('change', e=>{
+      const logField=e.target.closest('[data-log-field-id]');
+      if(logField){ updateSearchLogField(logField.dataset.logFieldId, logField.dataset.logField, logField.value || ''); return; }
+    });
     document.addEventListener('scroll', e=>{ if(e.target && e.target.id==='mapListBody'){ mapSearchState.listScrollTop=e.target.scrollTop || 0; } }, true);
     document.addEventListener('keydown', e=>{ if(e.target && e.target.id==='mapSearchInput' && e.key==='Enter'){ e.preventDefault(); runMapSearch(); } });
+    document.getElementById('addSearchLogBtn').addEventListener('click',addSearchLogPanel);
     document.getElementById('candidateSearchBtn').addEventListener('click',()=>{
       if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState();
       activeSection2Tab='전체매물검색';

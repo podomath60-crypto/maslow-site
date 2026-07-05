@@ -394,6 +394,17 @@
 
     .contract-empty{border:1px dashed #d3dce7;border-radius:22px;background:#fbfdff;padding:22px;color:#7b8794;font-weight:900;line-height:1.65;text-align:center}
 
+
+    .auth-overlay{position:fixed;inset:0;z-index:1000;background:rgba(247,249,252,.96);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px}
+    .auth-overlay.show{display:flex}
+    .auth-card{width:min(420px,calc(100vw - 36px));background:#fff;border:1px solid #dbe5ee;border-radius:24px;box-shadow:0 24px 70px rgba(15,23,42,.18);padding:24px;display:grid;gap:14px}
+    .auth-title{font-size:24px;font-weight:1000;letter-spacing:-.06em;color:#111318}
+    .auth-desc{font-size:13px;font-weight:850;line-height:1.55;color:#6b7480}
+    .auth-input{width:100%;height:46px;border:1px solid #dbe5ee;border-radius:14px;padding:0 14px;font-size:18px;font-weight:1000;letter-spacing:.12em;outline:none;text-align:center}
+    .auth-input:focus{border-color:#111318;box-shadow:0 0 0 3px rgba(17,19,24,.08)}
+    .auth-error{min-height:18px;font-size:12px;font-weight:950;color:#ef4444}
+    .auth-btn{height:44px;border-radius:14px;background:#111318;color:#fff;font-size:14px;font-weight:1000}
+
     .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.38);backdrop-filter:blur(4px)}
     .modal.show{display:flex}.modal-card{width:min(640px,calc(100vw - 32px));max-height:86vh;overflow:auto;background:#fff;border-radius:24px;border:1px solid #dbe5ee;box-shadow:0 24px 70px rgba(15,23,42,.26);padding:20px;display:grid;gap:14px}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.modal-title{font-size:22px;font-weight:1000;letter-spacing:-.05em}.modal-desc{font-size:13px;color:#7b8794;font-weight:800;line-height:1.55;margin-top:4px}.modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px}.close-x{width:34px;height:34px;border-radius:12px;background:#f3f6fa;color:#4b5563;font-weight:1000}
     .business-card-viewer .modal-card{width:min(920px,calc(100vw - 36px));padding:14px;gap:10px}
@@ -414,6 +425,7 @@
           <div class="brand-title">매칭 작업실</div>
         </div>
         <div class="save-cluster">
+          <span id="matchingUserBadge" class="save-state">작성자 확인 전</span>
           <span id="saveState" class="save-state">변경사항 없음</span>
           <button id="undoBtn" class="top-btn" disabled>되돌리기</button>
           <button id="redoBtn" class="top-btn" disabled>다시실행</button>
@@ -621,6 +633,19 @@
     </main>
   </div>
 
+
+  <div class="auth-overlay" id="matchingAuthOverlay" aria-hidden="true">
+    <div class="auth-card">
+      <div>
+        <div class="auth-title">매칭 작업실 잠금</div>
+        <div class="auth-desc">대시보드와 같은 비밀번호를 입력하면 이 브라우저에 작성자가 저장됩니다. 서칭기록 작성자는 저장된 비밀번호 기준으로 자동 입력됩니다.</div>
+      </div>
+      <input class="auth-input" id="matchingAuthInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="비밀번호" />
+      <div class="auth-error" id="matchingAuthError"></div>
+      <button type="button" class="auth-btn" id="matchingAuthBtn">들어가기</button>
+    </div>
+  </div>
+
   <div class="modal" id="simpleModal" aria-hidden="true">
     <div class="modal-card">
       <div class="modal-head"><div><div class="modal-title" id="modalTitle">작업</div><div class="modal-desc" id="modalDesc"></div></div><button class="close-x" id="modalClose">×</button></div>
@@ -640,6 +665,20 @@
   <script>
     const STORAGE_UNDO_KEY = 'matchingUndo:PJ-DEMO-001';
     const STORAGE_REDO_KEY = 'matchingRedo:PJ-DEMO-001';
+    const MATCHING_AUTH_STORAGE_KEY = 'MK_ADMIN_DASHBOARD_UNLOCKED_V1';
+    const MATCHING_PASSWORD_MAP = {
+      '6857': '한정인 이사',
+      '0444': '박성연 대표',
+      '1053': '나득균 팀장',
+      '8198': '이유나 팀장'
+    };
+    const MATCHING_WRITER_META = {
+      '0444': { name:'대표님', emoji:'👨‍⚖️' },
+      '6857': { name:'한이사', emoji:'👩‍🚒' },
+      '8198': { name:'이팀장', emoji:'👩‍🦰' },
+      '1053': { name:'나팀장', emoji:'👦' }
+    };
+    let unlockedWriterCode = '';
     const routes = ['전화','문자','카카오톡','블로그','유튜브','네이버부동산','한방','자사사이트(net)','자사사이트(site)','소개','기존고객','현장문의','부동산포스','불분명','기타'];
     const pickerOptions = {
       inquiryType:['매수 의뢰','임차 의뢰','매도 의뢰','임대 의뢰','투자 문의','정보 문의','기타'],
@@ -668,8 +707,8 @@
         {propertyId:'MK-260623-022', title:'소룡동 야드 넓은 공장', address:'전북 군산시 소룡동', dealType:'매매', price:'31억', area:'대지 3,100평 / 건물 760평', status:'가격협의', sourceType:'recommendation', sourceLabel:'추천매물', score:82, reason:'위치와 규모는 좋지만 현재 예산 상단을 약간 넘습니다.', strengths:['군산권','면적 우수','진입 좋음'], weakPoints:['예산 초과'], risks:['가격 협의 필요']}
       ],
       searchLogs:[
-        {id:'SL-001', source:'네이버', author:'한이사', title:'군산 산북동 외부 매물', address:'군산시 산북동', price:'22억', area:'대지 약 2,000평', contact:'중개사 확인 필요', link:'', memo:'네이버에서 확인. 사진상 야드는 괜찮아 보임. DB 등록 전.', status:'검토중', createdAt:'2026-07-05T10:20:00+09:00', updatedAt:'2026-07-05T10:20:00+09:00'},
-        {id:'SL-002', source:'전화', author:'한이사', title:'익산 식품공장 가능 물건', address:'익산시 왕궁면', price:'가격 미정', area:'대지 2,500평 전후', contact:'소유자 지인', link:'', memo:'전화로 들은 후보. 자료 받으면 admin 등록 검토.', status:'매물등록 필요', createdAt:'2026-07-05T11:10:00+09:00', updatedAt:'2026-07-05T11:10:00+09:00'}
+        {id:'SL-001', source:'네이버', writerCode:'6857', title:'군산 산북동 외부 매물', address:'군산시 산북동', price:'22억', area:'대지 약 2,000평', contact:'중개사 확인 필요', link:'', memo:'네이버에서 확인. 사진상 야드는 괜찮아 보임. DB 등록 전.', status:'검토중', createdAt:'2026-07-05T10:20:00+09:00', updatedAt:'2026-07-05T10:20:00+09:00'},
+        {id:'SL-002', source:'전화', writerCode:'6857', title:'익산 식품공장 가능 물건', address:'익산시 왕궁면', price:'가격 미정', area:'대지 2,500평 전후', contact:'소유자 지인', link:'', memo:'전화로 들은 후보. 자료 받으면 admin 등록 검토.', status:'매물등록 필요', createdAt:'2026-07-05T11:10:00+09:00', updatedAt:'2026-07-05T11:10:00+09:00'}
       ],
       progressMemos:[
         {id:'PM-001', author:'한이사', content:'오식도 후보는 소유자 통화 후 전력 조건 확인 필요.', color:'yellow', createdAt:'2026-06-23T10:20:00+09:00', updatedAt:'2026-06-23T10:20:00+09:00'},
@@ -1795,7 +1834,7 @@
       state.searchLogs=state.searchLogs||[];
       const now=nowIso();
       const id=nextSearchLogId();
-      state.searchLogs.push({id, source:'네이버부동산', author:'한이사', title:'', address:'', price:'', area:'', link:'', memo:'', status:'기록중', createdAt:now, updatedAt:now, studyStatus:'', studyResult:null, studyMemo:''});
+      state.searchLogs.push({id, source:'네이버부동산', writerCode:getUnlockedWriterCode(), title:'', address:'', price:'', area:'', link:'', memo:'', status:'기록중', createdAt:now, updatedAt:now, studyStatus:'', studyResult:null, studyMemo:''});
       activeSection2Tab='서칭기록';
       activeFilter='전체';
       activeStudyLogId=id;
@@ -1820,12 +1859,14 @@
     function commitSearchLogCard(id){
       const log=(state.searchLogs||[]).find(x=>x.id===id);
       if(!log) return;
-      ['source','author','status','link','address','area','price','memo'].forEach(field=>{
+      ['source','status','link','address','area','price','memo'].forEach(field=>{
         const value=getSearchLogDomFieldValue(id, field);
         if(value !== undefined){
           log[field]=field==='status' ? normalizeSearchLogStatus(value) : value;
         }
       });
+      log.writerCode=getUnlockedWriterCode() || normalizeSearchLogWriter(log);
+      if(Object.prototype.hasOwnProperty.call(log,'author')) delete log.author;
       if(!log.title && log.link) log.title=log.link;
       log.updatedAt=nowIso();
       markChange('서칭기록 저장');
@@ -2249,16 +2290,15 @@
       const statusClass=s=>s==='보류'?'hold':s==='탈락'?'rejected':s==='등록완료'?'registered':'';
       const sources=searchLogSources();
       const statuses=searchLogStatusOptions();
-      return `<div class="search-log-grid">${logs.map(log=>`
+      return `<div class="search-log-grid">${logs.map(log=>{ const writer=getWriterMetaByCode(normalizeSearchLogWriter(log)); return `
         <article class="search-log-card ${activeStudyLogId===log.id?'is-active':''}" data-search-log-card="${escapeAttr(log.id)}">
           <div class="search-log-top">
             <div class="search-log-id">
-              <span>${escapeHtml(log.id)}</span><span class="search-log-meta-dot">·</span><span class="search-log-meta">${escapeHtml(log.author||'한이사')} · ${escapeHtml(displayDateTime(log.createdAt||log.updatedAt))}</span>
+              <span>${escapeHtml(log.id)}</span><span class="search-log-meta-dot">·</span><span class="search-log-meta">${escapeHtml(writer.emoji)} ${escapeHtml(writer.name)} · ${escapeHtml(displayDateTime(log.createdAt||log.updatedAt))}</span>
             </div>
             <span class="log-status ${statusClass(log.status)}">${escapeHtml(normalizeSearchLogStatus(log.status))}</span>
           </div>
           <div class="search-log-fields">
-            <div class="search-log-row"><label>작성자</label><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="author" value="${escapeAttr(log.author||'한이사')}" placeholder="작성자"></div>
             <div class="search-log-row"><label>가져온곳</label><select class="search-log-select" data-log-field-id="${escapeAttr(log.id)}" data-log-field="source">${sources.map(src=>`<option value="${escapeAttr(src)}" ${src===(log.source||'')?'selected':''}>${escapeHtml(src)}</option>`).join('')}</select></div>
             <div class="search-log-row"><label>상태</label><select class="search-log-select" data-log-field-id="${escapeAttr(log.id)}" data-log-field="status">${statuses.map(st=>`<option value="${escapeAttr(st)}" ${st===normalizeSearchLogStatus(log.status)?'selected':''}>${escapeHtml(st)}</option>`).join('')}</select></div>
             <div class="search-log-row"><label>URL</label><div class="search-log-url-wrap"><input class="search-log-input" data-log-field-id="${escapeAttr(log.id)}" data-log-field="link" value="${escapeAttr(log.link||log.title||'')}" placeholder="URL 입력"><button class="search-log-open" type="button" data-log-open-url="${escapeAttr(log.id)}">열기</button></div></div>
@@ -2275,7 +2315,7 @@
             <button class="card-btn red" data-log-status="${escapeAttr(log.id)}" data-status="탈락">탈락</button>
             <button class="card-btn red" data-log-delete="${escapeAttr(log.id)}">삭제</button>
           </div>
-        </article>`).join('')}</div>`;
+        </article>`}).join('')}</div>`;
     }
     function renderSection2(){
       renderMetrics();
@@ -2298,6 +2338,70 @@
       return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
     function nowIso(){ return new Date().toISOString(); }
+
+    function writerCodeFromSavedName(name){
+      const saved=String(name||'').trim();
+      const entry=Object.entries(MATCHING_PASSWORD_MAP).find(pair=>pair[1]===saved);
+      return entry ? entry[0] : '';
+    }
+    function getWriterMetaByCode(code){
+      const key=String(code||'').trim();
+      return MATCHING_WRITER_META[key] || { name:'작성자', emoji:'📝' };
+    }
+    function getUnlockedWriterCode(){
+      if(unlockedWriterCode) return unlockedWriterCode;
+      const saved=localStorage.getItem(MATCHING_AUTH_STORAGE_KEY) || '';
+      unlockedWriterCode=writerCodeFromSavedName(saved);
+      return unlockedWriterCode;
+    }
+    function getCurrentWriterMeta(){ return getWriterMetaByCode(getUnlockedWriterCode()); }
+    function legacyWriterCodeFromAuthor(author){
+      const a=String(author||'').trim();
+      if(!a) return '';
+      const byShort={ '대표님':'0444', '박성연 대표':'0444', '한이사':'6857', '한정인 이사':'6857', '이팀장':'8198', '이유나 팀장':'8198', '나팀장':'1053', '나득균 팀장':'1053' };
+      return byShort[a] || '';
+    }
+    function normalizeSearchLogWriter(log){
+      if(!log) return '';
+      if(!log.writerCode) log.writerCode=legacyWriterCodeFromAuthor(log.author) || getUnlockedWriterCode() || '6857';
+      if(Object.prototype.hasOwnProperty.call(log,'author')) delete log.author;
+      return log.writerCode;
+    }
+    function normalizeAllSearchLogWriters(){ (state.searchLogs||[]).forEach(normalizeSearchLogWriter); }
+    function updateMatchingUserBadge(){
+      const badge=document.getElementById('matchingUserBadge');
+      if(!badge) return;
+      const meta=getCurrentWriterMeta();
+      badge.textContent = getUnlockedWriterCode() ? `작성자 ${meta.emoji} ${meta.name}` : '작성자 확인 전';
+    }
+    function unlockMatchingWithPassword(){
+      const input=document.getElementById('matchingAuthInput');
+      const error=document.getElementById('matchingAuthError');
+      const pw=String(input && input.value || '').trim();
+      const name=MATCHING_PASSWORD_MAP[pw];
+      if(!name){ if(error) error.textContent='비밀번호가 올바르지 않습니다.'; if(input) input.focus(); return false; }
+      unlockedWriterCode=pw;
+      localStorage.setItem(MATCHING_AUTH_STORAGE_KEY, name);
+      const overlay=document.getElementById('matchingAuthOverlay');
+      if(overlay){ overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true'); }
+      normalizeAllSearchLogWriters();
+      updateMatchingUserBadge();
+      renderAll();
+      return true;
+    }
+    function initMatchingAuth(){
+      const saved=localStorage.getItem(MATCHING_AUTH_STORAGE_KEY) || '';
+      unlockedWriterCode=writerCodeFromSavedName(saved);
+      const overlay=document.getElementById('matchingAuthOverlay');
+      const input=document.getElementById('matchingAuthInput');
+      const btn=document.getElementById('matchingAuthBtn');
+      if(btn) btn.addEventListener('click', unlockMatchingWithPassword);
+      if(input) input.addEventListener('keydown', e=>{ if(e.key==='Enter') unlockMatchingWithPassword(); });
+      if(!unlockedWriterCode && overlay){ overlay.classList.add('show'); overlay.setAttribute('aria-hidden','false'); setTimeout(()=>input && input.focus(),0); }
+      normalizeAllSearchLogWriters();
+      updateMatchingUserBadge();
+    }
+
     function latestProgressMemoUpdate(){
       const memos=state.progressMemos||[];
       if(!memos.length) return '';
@@ -2690,7 +2794,7 @@
       if(mode==='searchLog'){
         modalTitle.textContent='서칭기록 추가';
         modalDesc.textContent='외부에서 본 매물은 후보로 바로 올리지 않고 기록만 남깁니다.';
-        modalContent.innerHTML=`<div class="modal-grid"><input class="edit-field" id="logAuthor" placeholder="작성자" value="한이사"><select class="edit-field" id="logSource"><option>네이버부동산</option><option>땅야</option><option>한방</option><option>부동산포스</option><option>문자</option><option>전화</option><option>현장</option><option>소개</option><option>블로그</option><option>기타</option></select><select class="edit-field" id="logStatus"><option>기록중</option><option selected>검토중</option><option>매물등록 필요</option><option>등록완료</option><option>보류</option><option>탈락</option></select><input class="edit-field" id="logLink" placeholder="URL"><input class="edit-field" id="logAddress" placeholder="주소"><input class="edit-field" id="logPrice" placeholder="가격"><textarea class="edit-field textarea" id="logArea" placeholder="면적"></textarea></div><textarea class="edit-field textarea" id="logMemo" style="margin-top:10px" placeholder="메모"></textarea>`;
+        modalContent.innerHTML=`<div class="modal-grid"><select class="edit-field" id="logSource"><option>네이버부동산</option><option>땅야</option><option>한방</option><option>부동산포스</option><option>문자</option><option>전화</option><option>현장</option><option>소개</option><option>블로그</option><option>기타</option></select><select class="edit-field" id="logStatus"><option>기록중</option><option selected>검토중</option><option>매물등록 필요</option><option>등록완료</option><option>보류</option><option>탈락</option></select><input class="edit-field" id="logLink" placeholder="URL"><input class="edit-field" id="logAddress" placeholder="주소"><input class="edit-field" id="logPrice" placeholder="가격"><textarea class="edit-field textarea" id="logArea" placeholder="면적"></textarea></div><textarea class="edit-field textarea" id="logMemo" style="margin-top:10px" placeholder="메모"></textarea>`;
         modal.classList.add('show'); setTimeout(()=>document.getElementById('logLink')?.focus(),0); return;
       }
     }
@@ -2729,7 +2833,7 @@
         state.searchLogs.push({
           id,
           source:document.getElementById('logSource')?.value || '기타',
-          author:(document.getElementById('logAuthor')?.value || '한이사').trim() || '한이사',
+          writerCode:getUnlockedWriterCode(),
           title:(document.getElementById('logLink')?.value || '').trim(),
           address:(document.getElementById('logAddress')?.value || '').trim(),
           price:(document.getElementById('logPrice')?.value || '').trim(),
@@ -2833,6 +2937,7 @@
       }
     }
     initSectionNav();
+    initMatchingAuth();
     renderAll();
   </script>
 </body>

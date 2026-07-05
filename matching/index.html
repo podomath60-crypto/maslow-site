@@ -288,6 +288,11 @@
     .search-study-memo{width:100%;min-height:84px;border:1px solid #e6ebf1;background:#fffdf4;border-radius:10px;padding:8px;color:#3f3a21;font-size:11px;font-weight:800;line-height:1.45;resize:vertical;outline:none}
     .search-study-status{border:1px solid #e6ebf1;background:#f8fafc;border-radius:10px;padding:8px;color:#475569;font-size:11px;font-weight:900;line-height:1.45}
     .search-study-status.err{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+    .search-study-status.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
+    .search-study-section.is-building-dong .search-study-section-head{background:linear-gradient(90deg,#f5f3ff,#f8fafc)}
+    .search-study-useplan-list{display:grid;gap:6px;padding:8px}
+    .search-study-useplan-item{border:1px solid #e5edf5;background:#fbfdff;border-radius:10px;padding:7px 8px;font-size:10px;font-weight:950;color:#111827;line-height:1.35}
+    .search-study-useplan-meta{border-top:1px solid #edf2f7}
     .search-log-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
     .search-log-card{padding:12px;gap:8px}
     .search-log-card.is-active{border-color:#7c3aed;box-shadow:0 12px 24px rgba(124,58,237,.09)}
@@ -1971,39 +1976,118 @@
       if(!result.land && !result.building) throw new Error([result.landError, result.buildingError].filter(Boolean).join(' / ') || '공부조회 실패');
       return result;
     }
-    function flattenStudyValue(value, depth){
-      depth=depth||0;
-      if(value==null || value==='') return '';
-      if(typeof value==='string' || typeof value==='number' || typeof value==='boolean') return String(value);
-      if(Array.isArray(value)){
-        return value.slice(0,8).map(v=>flattenStudyValue(v, depth+1)).filter(Boolean).join('\n');
+    function studyLedgerNumberText(n){ if(!isFinite(n)) return ''; if(Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n)); return (Math.round(n*100)/100).toString(); }
+    function studyLedgerDate(v){ v = String(v == null ? '' : v).replace(/\D/g,''); if(v.length !== 8) return String(v || '').trim(); return v.slice(0,4)+'.'+v.slice(4,6)+'.'+v.slice(6,8); }
+    function studyLedgerAreaText(v){ if(v == null || v === '') return '-'; const n = Number(v); if(!isFinite(n) || n <= 0) return '-'; return studyLedgerNumberText(n) + '㎡ / ' + studyLedgerNumberText(n / 3.305785) + '평'; }
+    function studyLedgerPercent(v){ if(v == null || v === '') return ''; const n = Number(v); if(!isFinite(n)) return String(v).trim(); return studyLedgerNumberText(n) + '%'; }
+    function studyLedgerHeight(v){ if(v == null || v === '') return ''; const n = Number(v); if(!isFinite(n) || n === 0) return ''; return studyLedgerNumberText(n) + 'm'; }
+    function studyLedgerText(v){ v = String(v == null ? '' : v).trim(); return v || '-'; }
+    function studyLedgerUnique(arr){ const out=[]; (arr||[]).forEach(function(v){ v=String(v==null?'':v).trim(); if(v && out.indexOf(v)===-1) out.push(v); }); return out; }
+    function studyLedgerFindPositive(items, key){ let best=null; (items||[]).forEach(function(it){ const n=Number(it&&it[key]); if(isFinite(n)&&n>0&&(best==null||n>best)) best=n; }); return best; }
+    function studyLedgerBuildingSortKey(name){ const m=String(name||'').match(/(\d+)/); return m ? parseInt(m[1],10) : 9999; }
+    function studyLedgerFloorSortKey(name){ const m=String(name||'').trim().match(/-?\d+/); return m ? parseInt(m[0],10) : 9999; }
+    function studyLedgerFloorText(v){ const g=firstStudyNonEmpty(v&&v.grndFlrCnt); const u=firstStudyNonEmpty(v&&v.ugrndFlrCnt); if(!g&&!u) return ''; return '지상 ' + (g||'0') + '층 / 지하 ' + (u||'0') + '층'; }
+    function studyLedgerJoinAreaPurpose(area,purpose,struct){ const parts=[]; if(area&&area!=='-') parts.push(area); if(purpose&&purpose!=='-') parts.push(purpose); if(struct&&struct!=='-') parts.push(struct); return parts.length ? parts.join(' / ') : '-'; }
+    function studyLedgerFormatLandAreaText(m2, py){ const n=Number(String(m2==null?'':m2).replace(/,/g,'')); const p=Number(String(py==null?'':py).replace(/,/g,'')); if(isFinite(n)&&n>0){ if(isFinite(p)&&p>0) return studyLedgerNumberText(n)+'㎡ / '+studyLedgerNumberText(p)+'평'; return studyLedgerAreaText(n); } return firstStudyNonEmpty(m2,py,'-'); }
+    function studyLedgerParseNumber(value){ const n=Number(String(value==null?'':value).replace(/,/g,'').replace(/[^0-9.\-]/g,'')); return isFinite(n) ? n : null; }
+    function studyLedgerFormatWon(n){ if(!isFinite(n)) return ''; return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '원'; }
+    function studyLedgerLandTotalText(areaM2, pricePerM2){ const area=studyLedgerParseNumber(areaM2); const price=studyLedgerParseNumber(pricePerM2); if(!isFinite(area)||area<=0||!isFinite(price)||price<=0) return ''; const total=area*price; const manwon=Math.round(total/10000); return studyLedgerFormatWon(total)+' / 약 '+String(manwon).replace(/\B(?=(\d{3})+(?!\d))/g, ',')+'만원'; }
+    function studyLedgerRoadSideText(value){ const t=String(value==null?'':value).trim(); if(!t) return ''; const map={'광대로한면':'25m 이상','광대로':'25m 이상','대로한면':'12m 이상 25m 미만','대로':'12m 이상 25m 미만','중로한면':'8m 이상 12m 미만','중로':'8m 이상 12m 미만','소로한면':'4m 이상 8m 미만','소로':'4m 이상 8m 미만','세로한면':'4m 미만','세로':'4m 미만','맹지':'도로 접면 없음'}; let desc=map[t]||''; if(!desc){ Object.keys(map).some(function(k){ if(t.indexOf(k)!==-1){ desc=map[k]; return true; } return false; }); } return desc ? t+'('+desc+')' : t; }
+    function studyLedgerSplitValues(value){ if(Array.isArray(value)) return value.map(v=>String(v==null?'':v).trim()).filter(Boolean); return String(value==null?'':value).split(',').map(v=>v.trim()).filter(Boolean); }
+    function studyLedgerUsePlanItems(usePlan){ usePlan=usePlan||{}; if(Array.isArray(usePlan.usePlanItems)&&usePlan.usePlanItems.length){ return usePlan.usePlanItems.map(function(item){ return {name:firstStudyNonEmpty(item&&item.name,item&&item.zoningDistrict,item&&item.prposAreaDstrcCodeNm), conflict:firstStudyNonEmpty(item&&item.conflict,item&&item.conflictStatus,item&&item.cnflcAtNm)}; }).filter(i=>!!(i.name||i.conflict)); } const names=studyLedgerSplitValues(usePlan.zoningDistricts); const conflicts=studyLedgerSplitValues(usePlan.conflictStatus); const max=Math.max(names.length,conflicts.length); const items=[]; for(let i=0;i<max;i++) items.push({name:names[i]||'',conflict:conflicts[i]||''}); return items.filter(i=>!!(i.name||i.conflict)); }
+    function studyLedgerLandBaseYearMonth(y,m){ y=String(y==null?'':y).replace(/\D/g,''); m=String(m==null?'':m).replace(/\D/g,''); if(!y) return ''; if(y.length>4)y=y.slice(0,4); if(!m) return y; if(m.length===1)m='0'+m; if(m.length>2)m=m.slice(0,2); return y+'.'+m; }
+    function normalizeSearchStudyLandData(res){ return (res && res.land && (res.land.characteristic || res.land.usePlan)) ? res : {land:res || {}}; }
+    function buildSearchStudyLandRows(res){
+      const data=normalizeSearchStudyLandData(res); const land=(data&&data.land)||{}; const c=land.characteristic||{}; const use=land.usePlan||{}; const rows=[];
+      if(firstStudyNonEmpty(c.baseYear,c.baseMonth,c.landCategory,c.areaM2,c.zoning,c.zoning2,c.landUseSituation,c.terrainHeight,c.terrainShape,c.roadSide,c.officialLandPrice,c.officialLandPriceText,c.dataDate)){
+        const totalText=firstStudyNonEmpty(c.officialLandTotalPriceText,c.officialLandTotalPriceShortText,studyLedgerLandTotalText(c.areaM2,c.officialLandPrice));
+        rows.push(['기준년월', studyLedgerText(studyLedgerLandBaseYearMonth(c.baseYear,c.baseMonth))]);
+        rows.push(['지목', studyLedgerText(c.landCategory)]);
+        rows.push(['면적', studyLedgerFormatLandAreaText(c.areaM2,c.areaPy)]);
+        rows.push(['용도지역1', studyLedgerText(c.zoning)]);
+        if(firstStudyNonEmpty(c.zoning2)) rows.push(['용도지역2', studyLedgerText(c.zoning2)]);
+        if(firstStudyNonEmpty(c.landUseSituation)) rows.push(['토지이용상황', studyLedgerText(c.landUseSituation)]);
+        if(firstStudyNonEmpty(c.terrainHeight)) rows.push(['지형고저', studyLedgerText(c.terrainHeight)]);
+        rows.push(['지형형상', studyLedgerText(c.terrainShape)]);
+        rows.push(['도로접면', studyLedgerText(studyLedgerRoadSideText(c.roadSide))]);
+        rows.push(['공시지가', studyLedgerText(firstStudyNonEmpty(c.officialLandPriceText,c.officialLandPrice))]);
+        if(totalText) rows.push(['공시지가 총액', totalText]);
+        if(firstStudyNonEmpty(c.officialLandPriceAnnouncementDate)) rows.push(['개별공시지가 공시일자', studyLedgerText(studyLedgerDate(c.officialLandPriceAnnouncementDate)||c.officialLandPriceAnnouncementDate)]);
+        rows.push(['토지특성 기준일', studyLedgerText(studyLedgerDate(c.dataDate)||c.dataDate)]);
       }
-      if(typeof value==='object'){
-        return Object.keys(value).slice(0,12).map(k=>{
-          const v=flattenStudyValue(value[k], depth+1);
-          return v ? k + ': ' + v : '';
-        }).filter(Boolean).join('\n');
+      const useItems=studyLedgerUsePlanItems(use);
+      if(firstStudyNonEmpty(use.ledgerType) || useItems.length || firstStudyNonEmpty(use.dataDate)){
+        if(rows.length) rows.push(['[토지이용계획]', '']);
+        const ledgerTypes=[]; studyLedgerSplitValues(use.ledgerType).forEach(v=>{if(v&&ledgerTypes.indexOf(v)===-1)ledgerTypes.push(v);});
+        if(ledgerTypes.length) rows.push(['대장구분', ledgerTypes.join(', ')]);
+        useItems.forEach(item=>rows.push([studyLedgerText(item.name), studyLedgerText(item.conflict)]));
+        rows.push(['토지이용 기준일', studyLedgerText(studyLedgerDate(use.dataDate)||use.dataDate)]);
       }
-      return String(value);
+      if(!rows.length && firstStudyNonEmpty(land.message)) rows.push(['조회상태', land.message]);
+      return rows;
     }
-    function pickStudyRows(obj, keys){
-      obj=obj||{};
-      return keys.map(pair=>{
-        const label=pair[0], candidates=pair.slice(1);
-        let val='';
-        for(const k of candidates){
-          if(obj && obj[k]!=null && obj[k]!==''){ val=obj[k]; break; }
-        }
-        return [label, flattenStudyValue(val)];
-      }).filter(row=>row[1]);
+    function getSearchStudyBuildingArchArea(source, floorList){
+      const direct=Number(source&&source.archArea); if(isFinite(direct)&&direct>0) return direct; let first=null;
+      (floorList||[]).forEach(function(f){ const floorName=String(f.flrNoNm||'').trim(); const floorGb=String(f.flrGbCdNm||'').trim(); const floorNo=String(f.flrNo==null?'':f.flrNo).trim(); const area=Number(f&&f.area); if(!isFinite(area)||area<=0) return; if(floorName==='1층'||(floorGb==='지상'&&floorNo==='1')) first=area; });
+      return first;
     }
-    function renderStudyTable(rows){
-      if(!rows || !rows.length) return '<div class="search-study-status">표시할 세부 항목이 없습니다.</div>';
-      return `<table class="search-study-table"><tbody>${rows.map(r=>`<tr><th>${escapeHtml(r[0])}</th><td>${escapeHtml(r[1])}</td></tr>`).join('')}</tbody></table>`;
+    function unwrapSearchStudyBuildingData(data){
+      if(!data || typeof data !== 'object') return data || {};
+      if(data.apis) return data;
+      if(data.data && data.data.apis) return data.data;
+      if(data.result && data.result.apis) return data.result;
+      if(data.payload && data.payload.apis) return data.payload;
+      if(data.building && data.building.apis) return data.building;
+      return data;
     }
-    function studyResultRoot(result){
-      if(!result) return {};
-      return result.data || result.result || result.payload || result;
+    function extractSearchStudyBuildingData(data){
+      data=unwrapSearchStudyBuildingData(data)||{}; const apis=data.apis||{}; const titleItems=((apis.title||{}).items||[]).slice(); const recapItems=((apis.recap||{}).items||[]).slice(); const basisItems=((apis.basis||{}).items||[]).slice(); const jijiguItems=((apis.jijigu||{}).items||[]).slice(); const flrItems=((apis.flr||{}).items||[]).slice(); const titleFirst=((apis.title||{}).firstItem||{}); const recapFirst=((apis.recap||{}).firstItem||{});
+      const zoning=studyLedgerUnique(basisItems.map(it=>it.jiyukCdNm).concat(basisItems.map(it=>it.jiguCdNm)).concat(basisItems.map(it=>it.guyukCdNm)).concat(jijiguItems.map(it=>it.jiyukCdNm)).concat(jijiguItems.map(it=>it.jiguCdNm)).concat(jijiguItems.map(it=>it.guyukCdNm)).concat(jijiguItems.map(it=>it.jijigu))).join(' / ');
+      let landArea=Number(recapFirst.platArea); if(!isFinite(landArea)||landArea<=0) landArea=studyLedgerFindPositive(recapItems,'platArea'); if(!isFinite(landArea)||landArea<=0) landArea=studyLedgerFindPositive(titleItems,'platArea');
+      let archArea=Number(recapFirst.archArea); if(!isFinite(archArea)||archArea<=0) archArea=studyLedgerFindPositive(recapItems,'archArea'); if(!isFinite(archArea)||archArea<=0) archArea=titleItems.reduce((sum,it)=>sum+(isFinite(Number(it.archArea))&&Number(it.archArea)>0?Number(it.archArea):0),0);
+      let totArea=Number(recapFirst.totArea); if(!isFinite(totArea)||totArea<=0) totArea=studyLedgerFindPositive(recapItems,'totArea'); if(!isFinite(totArea)||totArea<=0) totArea=titleItems.reduce((sum,it)=>sum+(isFinite(Number(it.totArea))&&Number(it.totArea)>0?Number(it.totArea):0),0);
+      let mainCnt=titleItems.filter(it=>String(it.mainAtchGbCd||'').trim()==='0').length; let atchCnt=titleItems.filter(it=>String(it.mainAtchGbCd||'').trim()&&String(it.mainAtchGbCd||'').trim()!=='0').length; if(!mainCnt&&recapFirst.mainBldCnt) mainCnt=Number(recapFirst.mainBldCnt)||0; if(!atchCnt&&recapFirst.atchBldCnt) atchCnt=Number(recapFirst.atchBldCnt)||0; const totalCnt=titleItems.length||(mainCnt+atchCnt); let compText='-'; if(totalCnt){ compText='총 '+totalCnt+'동'; if(mainCnt||atchCnt) compText+=' (주건축물 '+(mainCnt||0)+'동, 부속건축물 '+(atchCnt||0)+'동)'; }
+      const summaryRows=[['주소', firstStudyNonEmpty(data.normalized&&data.normalized.jibunAddress,data.address,titleFirst.platPlc,recapFirst.platPlc,'-')],['도로명주소', firstStudyNonEmpty(data.normalized&&data.normalized.roadAddress,titleFirst.newPlatPlc,recapFirst.newPlatPlc,'-')],['건축물구성', compText],['건물용도', firstStudyNonEmpty(recapFirst.mainPurpsCdNm,titleFirst.mainPurpsCdNm,recapFirst.etcPurps,titleFirst.etcPurps,'-')],['용도지역', studyLedgerText(zoning)],['사용승인일', studyLedgerDate(firstStudyNonEmpty(recapFirst.useAprDay,titleFirst.useAprDay))||'-'],['대지면적', studyLedgerAreaText(landArea)],['건축면적', studyLedgerAreaText(archArea)],['연면적', studyLedgerAreaText(totArea)],['건폐율', studyLedgerPercent(firstStudyNonEmpty(recapFirst.bcRat,titleFirst.bcRat))||'-'],['용적률', studyLedgerPercent(firstStudyNonEmpty(recapFirst.vlRat,titleFirst.vlRat))||'-'],['주차대수', (function(){ const n=Number(firstStudyNonEmpty(recapFirst.totPkngCnt,'')); return isFinite(n)&&n>0?String(Math.round(n))+'대':'-'; })()]];
+      const floorsByDong={}; flrItems.forEach(function(it){ const dk=String(it.dongNm||'').trim(); if(!dk) return; if(!floorsByDong[dk]) floorsByDong[dk]=[]; floorsByDong[dk].push(it); });
+      const buildings=titleItems.slice().sort((a,b)=>studyLedgerBuildingSortKey(a.dongNm)-studyLedgerBuildingSortKey(b.dongNm)).map(function(it){ const floorList=(floorsByDong[String(it.dongNm||'').trim()]||[]).slice().sort((a,b)=>studyLedgerFloorSortKey(a.flrNoNm||a.flrGbCdNm)-studyLedgerFloorSortKey(b.flrNoNm||b.flrGbCdNm)); const isMain=String(it.mainAtchGbCd||'').trim()==='0'; const isApt=isMain && /공동주택|아파트/.test(firstStudyNonEmpty(it.mainPurpsCdNm,'')+' '+firstStudyNonEmpty(it.etcPurps,'')) && /(\d+동)$/.test(firstStudyNonEmpty(it.dongNm,'')); const floorSummary=isApt?'-':(floorList.length?floorList.map(function(f){ return firstStudyNonEmpty(f.flrNoNm,f.flrGbCdNm,'층정보')+': '+studyLedgerJoinAreaPurpose(studyLedgerAreaText(f.area),firstStudyNonEmpty(f.mainPurpsCdNm,f.etcPurps,'-'),firstStudyNonEmpty(f.strctCdNm,f.etcStrct,'-')); }).join('\n'):'-'); return {title:firstStudyNonEmpty(it.dongNm,'건물'), rows:[['동명',firstStudyNonEmpty(it.dongNm,'-')],['구분',firstStudyNonEmpty(it.mainAtchGbCdNm,'-')],['용도',firstStudyNonEmpty(it.mainPurpsCdNm,it.etcPurps,'-')],['구조',firstStudyNonEmpty(it.strctCdNm,it.etcStrct,'-')],['지붕',firstStudyNonEmpty(it.roofCdNm,it.etcRoof,'-')],['층수',studyLedgerFloorText(it)||'-'],['층고',studyLedgerHeight(it.heit)||'-'],['건축면적',studyLedgerAreaText(getSearchStudyBuildingArchArea(it,floorList))],['연면적',studyLedgerAreaText(it.totArea)],['사용승인일',studyLedgerDate(it.useAprDay)||'-'],['층별요약',floorSummary]]}; });
+      return {summaryRows:summaryRows, buildings:buildings};
+    }
+    function buildSearchStudyTable(rows){
+      if(!rows || !rows.length) return '<div class="search-study-status warn">표시할 항목이 없습니다.</div>';
+      return '<table class="search-study-table"><tbody>' + rows.map(function(row){
+        const isHead = String(row[0] || '').charAt(0) === '[';
+        if(isHead) return '<tr><th colspan="2">' + escapeHtml(String(row[0]).replace(/^\[|\]$/g,'')) + '</th></tr>';
+        return '<tr><th>' + escapeHtml(row[0]) + '</th><td>' + escapeHtml(row[1]) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    }
+    function buildSearchStudyUsePlanContent(rows){
+      const metaRows=[]; const items=[]; const seen={};
+      (rows||[]).forEach(function(row){
+        const key=String(row&&row[0]||'').trim(); const value=String(row&&row[1]||'').trim();
+        if(!key || key==='-') return;
+        if(key==='대장구분' || key==='토지이용 기준일'){ metaRows.push([key, value || '-']); return; }
+        if(!seen[key]){ seen[key]=true; items.push(key); }
+      });
+      let html='';
+      if(items.length){ html += '<div class="search-study-useplan-list">' + items.map(function(name){ return '<div class="search-study-useplan-item">' + escapeHtml(name) + '</div>'; }).join('') + '</div>'; }
+      if(metaRows.length){ html += '<div class="search-study-useplan-meta">' + buildSearchStudyTable(metaRows) + '</div>'; }
+      if(!html) html = '<div class="search-study-status warn">표시할 토지이용계획 항목이 없습니다.</div>';
+      return html;
+    }
+    function searchStudySection(title, content, className){
+      const cls='search-study-section' + (className ? ' ' + className : '');
+      return '<section class="' + cls + '"><div class="search-study-section-head">' + escapeHtml(title) + '</div>' + content + '</section>';
+    }
+    function buildSearchStudyLandGroupedHtml(land){
+      const rows=buildSearchStudyLandRows(land);
+      const splitIndex=rows.findIndex(function(row){ return String(row[0] || '') === '[토지이용계획]'; });
+      let landRows=rows; let useRows=[];
+      if(splitIndex >= 0){ landRows=rows.slice(0, splitIndex); useRows=rows.slice(splitIndex + 1); }
+      let out='';
+      if(landRows.length) out += searchStudySection('토지대장', buildSearchStudyTable(landRows), 'is-land');
+      if(useRows.length) out += searchStudySection('토지이용계획', buildSearchStudyUsePlanContent(useRows), 'is-use');
+      if(!out) out = searchStudySection('토지대장', buildSearchStudyTable(rows), 'is-land');
+      return out;
     }
     function renderSearchStudyPanel(){
       const body=document.getElementById('searchStudyBody');
@@ -2017,51 +2101,35 @@
       }
       sub.textContent=`${log.source||'출처 미기록'} · ${log.address||'주소 미기록'}`;
       if(log.studyStatus==='loading'){
-        body.innerHTML='<div class="search-study-status">공부조회 중입니다. 매물지도와 같은 1차 GAS 직접조회 → 2차 프록시 순서로 조회합니다.</div>';
+        body.innerHTML='<div class="search-study-status">공부조회 중입니다. 파셀맵과 같은 주소입력 → 좌표변환 → VWorld PNU/필지 → 토지대장/건축물대장 조회 순서로 조회합니다.</div>';
         return;
       }
       if(log.studyStatus==='error'){
         body.innerHTML=`<div class="search-study-status err">공부조회 실패<br>${escapeHtml(log.studyError||'조회 실패')}</div><textarea class="search-study-memo" data-study-memo="${escapeAttr(log.id)}" placeholder="공부조회 메모">${escapeHtml(log.studyMemo||'')}</textarea>`;
         return;
       }
-      const root=studyResultRoot(log.studyResult);
-      const land=root.land || root.landInfo || root.ledger || root;
-      const building=root.building || root.buildingInfo || root.buildingData || root;
-      const usePlan=root.usePlan || root.landUse || root.landUsePlan || root;
-      const basicRows=[
-        ['주소','pickedAddress','queryAddress','address','jibunAddress','roadAddress'],
-        ['PNU','pnu','PNU'],
-        ['메시지','message','statusMessage'],
-        ['조회경로','path','usedPath','finalPath']
-      ];
-      const landRows=[
-        ['지목','jimok','landCategory','지목'],
-        ['면적','area','landArea','areaM2','면적'],
-        ['용도지역','zoning','useDistrict','용도지역','region'],
-        ['공시지가','officialLandPrice','jiga','landPrice'],
-        ['접도','roadContact','road','roadWidth']
-      ];
-      const buildingRows=[
-        ['주용도','mainUse','mainPurpsCdNm','용도'],
-        ['구조','structure','strctCdNm','구조'],
-        ['연면적','totalFloorArea','totArea','연면적'],
-        ['건축면적','buildingArea','archArea','건축면적'],
-        ['층수','floor','grndFlrCnt','층수'],
-        ['사용승인','approvalDate','useAprDay','사용승인일']
-      ];
-      const useRows=[
-        ['토지이용','usePlan','landUse','내용','restriction'],
-        ['기타제한','limits','restrictions','기타'],
-        ['원문','raw','list']
-      ];
-      body.innerHTML=`
-        <section class="search-study-section"><div class="search-study-section-head">선택 위치</div>${renderStudyTable(pickStudyRows(root, basicRows))}</section>
-        <section class="search-study-section is-land"><div class="search-study-section-head">토지대장</div>${renderStudyTable(pickStudyRows(land, landRows))}</section>
-        <section class="search-study-section is-use"><div class="search-study-section-head">토지이용계획</div>${renderStudyTable(pickStudyRows(usePlan, useRows))}</section>
-        <section class="search-study-section is-building"><div class="search-study-section-head">건축물대장 통합요약</div>${renderStudyTable(pickStudyRows(building, buildingRows))}</section>
-        <section class="search-study-section"><div class="search-study-section-head">원본 응답</div><div class="search-study-status">${escapeHtml(flattenStudyValue(root).slice(0,2400) || '원본 없음')}</div></section>
-        <textarea class="search-study-memo" data-study-memo="${escapeAttr(log.id)}" placeholder="공부조회 메모">${escapeHtml(log.studyMemo||'')}</textarea>
-      `;
+      const root=log.studyResult || {};
+      const parcel=root.parcel || {};
+      const baseAddr=firstStudyNonEmpty(root.jibunAddress, parcel.address, root.address, root.queryAddress, log.address, '주소 확인 전');
+      let html='';
+      html += searchStudySection('선택 위치', buildSearchStudyTable([
+        ['주소', baseAddr],
+        ['도로명주소', firstStudyNonEmpty(root.roadAddress, '-')],
+        ['PNU', firstStudyNonEmpty(parcel.pnu, root.pnu, '-')],
+        ['좌표', (root.lat && root.lng) ? (Number(root.lat).toFixed(6) + ', ' + Number(root.lng).toFixed(6)) : '-']
+      ]));
+      if(root.parcelError) html += '<div class="search-study-status warn">필지 경계/PNU 조회 실패: ' + escapeHtml(root.parcelError) + '</div>';
+      if(root.landError) html += '<div class="search-study-status err">토지대장 조회 실패: ' + escapeHtml(root.landError) + '</div>';
+      else if(root.land) html += buildSearchStudyLandGroupedHtml(root.land);
+      else html += '<div class="search-study-status">토지대장 조회 대기중</div>';
+      if(root.buildingError) html += '<div class="search-study-status warn">건축물대장 조회 결과 없음 또는 실패: ' + escapeHtml(root.buildingError) + '</div>';
+      else if(root.building){
+        const ex=extractSearchStudyBuildingData(root.building);
+        html += searchStudySection('건축물대장 통합요약', buildSearchStudyTable(ex.summaryRows), 'is-building');
+        if(ex.buildings && ex.buildings.length){ ex.buildings.forEach(function(b){ html += searchStudySection('동별 건물정보 · ' + b.title, buildSearchStudyTable(b.rows), 'is-building-dong'); }); }
+      }else html += '<div class="search-study-status">건축물대장 조회 대기중</div>';
+      html += `<textarea class="search-study-memo" data-study-memo="${escapeAttr(log.id)}" placeholder="공부조회 메모">${escapeHtml(log.studyMemo||'')}</textarea>`;
+      body.innerHTML=html;
     }
     async function runSearchLogStudy(logId){
       const log=(state.searchLogs||[]).find(x=>x.id===logId);

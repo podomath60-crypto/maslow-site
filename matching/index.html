@@ -102,8 +102,11 @@
     .section-title{margin:4px 0 0;font-size:24px;line-height:1.15;font-weight:1000;letter-spacing:-.055em;display:flex;align-items:baseline;gap:8px}
     .section-title-no{font-size:29px;line-height:1;color:var(--section-color);font-weight:1000;letter-spacing:-.04em}
     .section-desc{font-size:13px;font-weight:800;color:#7b8794;line-height:1.5}
+    .section-head-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
     .section-title-action{height:38px;padding:0 13px;border-radius:8px;border:1px solid color-mix(in srgb,var(--section-color) 28%,#dbe5ee);background:#fff;color:var(--section-color);font-size:13px;font-weight:1000;letter-spacing:-.025em;box-shadow:0 8px 18px rgba(15,23,42,.045);white-space:nowrap}
     .section-title-action:hover{background:var(--section-soft)}
+    .section-title-action.strong{background:var(--section-color);border-color:var(--section-color);color:#fff}
+    .section-title-action.strong:hover{filter:brightness(.96);background:var(--section-color)}
     .section-body{padding:18px 20px 20px}
 
     .project-summary{display:grid;grid-template-columns:1.25fr .9fr;gap:14px}
@@ -511,7 +514,10 @@
             <div class="section-kicker">SECTION 2</div>
             <div class="section-title"><span class="section-title-no">2</span> 매물 매칭 · 후보 관리 · 서칭 기록</div>
           </div>
-          <button class="section-title-action" id="listingEditorBtn" type="button">+ 매물입력기</button>
+          <div class="section-head-actions">
+            <button class="section-title-action strong" id="candidateSearchBtn" type="button">+ 매물후보검색</button>
+            <button class="section-title-action" id="listingEditorBtn" type="button">+ 매물입력기</button>
+          </div>
         </div>
         <div class="section-body">
           <div class="metric-row" id="candidateMetrics"></div>
@@ -653,7 +659,7 @@
     function metricActive(key){
       if(key==='total') return activeSection2Tab==='후보매물' && activeFilter==='전체';
       if(key==='algo') return activeSection2Tab==='추천매물';
-      if(key==='manual') return activeSection2Tab==='전체매물검색';
+      if(key==='manual') return activeSection2Tab==='후보매물' && activeFilter==='수동선정';
       if(key==='log') return activeSection2Tab==='서칭기록';
       if(key==='proposal') return activeSection2Tab==='후보매물' && activeFilter==='고객제안선정';
       if(key==='visit') return activeSection2Tab==='후보매물' && activeFilter==='임장예정';
@@ -693,7 +699,14 @@
     }
     function renderSection2Tabs(){ const el=document.getElementById('section2Tabs'); if(el) el.innerHTML=''; }
     function renderFilters(){ const wrap=document.getElementById('candidateFilters'); if(wrap) wrap.innerHTML=''; }
-    function getFilteredCandidates(){ return state.candidates.filter(c=>{ if(activeSection2Tab==='보류/탈락'){ if(activeFilter==='보류') return c.stage==='보류' && !c.rejected; return c.rejected || c.stage==='탈락'; } if(activeFilter==='전체') return !c.rejected && c.stage!=='보류'; if(activeFilter==='임장예정') return String(c.visit).includes('임장') && !c.rejected; return c.stage===activeFilter && !c.rejected; }); }
+    function getFilteredCandidates(){ return state.candidates.filter(c=>{
+      if(activeSection2Tab==='보류/탈락'){ if(activeFilter==='보류') return c.stage==='보류' && !c.rejected; return c.rejected || c.stage==='탈락'; }
+      if(activeFilter==='전체') return !c.rejected && c.stage!=='보류';
+      if(activeFilter==='수동선정') return (c.sourceType==='manual_search' || c.sourceType==='map_search') && !c.rejected && c.stage!=='보류';
+      if(activeFilter==='알고리즘추천') return c.sourceType==='recommendation' && !c.rejected && c.stage!=='보류';
+      if(activeFilter==='임장예정') return String(c.visit).includes('임장') && !c.rejected;
+      return c.stage===activeFilter && !c.rejected;
+    }); }
     function candidateView(c){
       const db = findDbItem(c.propertyId) || {};
       return Object.assign({}, db, c, {
@@ -1969,7 +1982,7 @@
       if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState();
       if(target==='candidates'){ activeSection2Tab='후보매물'; activeFilter='전체'; }
       else if(target==='recommendation'){ activeSection2Tab='추천매물'; activeFilter='전체'; }
-      else if(target==='manual'){ activeSection2Tab='전체매물검색'; activeFilter='전체'; }
+      else if(target==='manual'){ activeSection2Tab='후보매물'; activeFilter='수동선정'; }
       else if(target==='searchLogs'){ activeSection2Tab='서칭기록'; activeFilter='전체'; }
       else if(target==='proposal'){ activeSection2Tab='후보매물'; activeFilter='고객제안선정'; }
       else if(target==='visit'){ activeSection2Tab='후보매물'; activeFilter='임장예정'; }
@@ -2078,6 +2091,12 @@
     document.addEventListener('input', e=>{ if(e.target && e.target.id==='mapSearchInput'){ mapSearchState.inputValue=e.target.value || ''; } });
     document.addEventListener('scroll', e=>{ if(e.target && e.target.id==='mapListBody'){ mapSearchState.listScrollTop=e.target.scrollTop || 0; } }, true);
     document.addEventListener('keydown', e=>{ if(e.target && e.target.id==='mapSearchInput' && e.key==='Enter'){ e.preventDefault(); runMapSearch(); } });
+    document.getElementById('candidateSearchBtn').addEventListener('click',()=>{
+      if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState();
+      activeSection2Tab='전체매물검색';
+      activeFilter='전체';
+      renderSection2();
+    });
     document.getElementById('listingEditorBtn').addEventListener('click',()=>{ window.open('/admin?mode=new','_blank','noopener,noreferrer'); });
     document.getElementById('dbSearchTabBtn')?.addEventListener('click',()=>{ if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState(); activeSection2Tab='전체매물검색'; activeFilter='전체'; renderSection2(); });
     document.getElementById('recommendBtn')?.addEventListener('click',()=>{ if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState(); activeSection2Tab='추천매물'; activeFilter='전체'; renderSection2(); });

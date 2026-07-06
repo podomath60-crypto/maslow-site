@@ -1319,6 +1319,8 @@
         floorAreaMaxPy:'',
         requiredMemo:p.coreNeeds || '',
         specialMemo:[p.areaSummary, p.land, p.building].filter(Boolean).join(' / '),
+        lastContact:p.lastContact || '',
+        nextAction:p.nextAction || '',
         internalMemo:JSON.stringify({project:p, savedFrom:'matching/index.html'}),
         lastSaleAlgorithmRunId:state.lastAlgorithmRunByDeal && state.lastAlgorithmRunByDeal.sale ? state.lastAlgorithmRunByDeal.sale.algorithmRunId : '',
         lastRentAlgorithmRunId:state.lastAlgorithmRunByDeal && state.lastAlgorithmRunByDeal.rent ? state.lastAlgorithmRunByDeal.rent.algorithmRunId : '',
@@ -1336,7 +1338,25 @@
         algorithmRunId:c.algorithmRunId || '',
         score:c.score || '',
         rank:c.algorithmRank || c.rank || '',
-        memo:c.rejectMemo || c.memo || ''
+        memo:c.rejectMemo || c.memo || '',
+        title:c.title || '',
+        address:c.address || '',
+        dealType:c.dealType || '',
+        price:c.price || '',
+        area:c.area || '',
+        lat:c.lat || '',
+        lng:c.lng || '',
+        sourceType:c.sourceType || '',
+        stage:c.stage || '',
+        ownerStatus:c.ownerStatus || '',
+        proposal:c.proposal ? 'true' : '',
+        visit:c.visit || '',
+        rejected:c.rejected ? 'true' : '',
+        rejectReason:c.rejectReason || '',
+        rejectMemo:c.rejectMemo || '',
+        reconsiderType:c.reconsiderType || '',
+        snapshotJson:JSON.stringify(snapshotForListingLike(c)),
+        candidateJson:JSON.stringify(c || {})
       };
     }
     function matchingStatusForCandidate(c){
@@ -1446,6 +1466,224 @@
         if(btn){ btn.disabled=false; btn.textContent=oldText || '저장'; }
       }
     }
+
+    function firstNonEmptyValue(obj, keys){
+      obj=obj || {};
+      for(const key of keys){
+        if(Object.prototype.hasOwnProperty.call(obj,key) && obj[key] !== undefined && obj[key] !== null && String(obj[key]).trim() !== '') return obj[key];
+      }
+      return '';
+    }
+    function safeParseObject(value){
+      if(!value) return null;
+      if(typeof value === 'object') return value;
+      try{ const parsed=JSON.parse(String(value)); return parsed && typeof parsed === 'object' ? parsed : null; }catch(e){ return null; }
+    }
+    function truthySavedValue(value){
+      if(value===true) return true;
+      const v=String(value || '').trim().toLowerCase();
+      return v==='true' || v==='1' || v==='y' || v==='yes' || v==='on' || v==='사용';
+    }
+    function listFromSavedResponse(res, keys){
+      if(Array.isArray(res)) return res;
+      res=res || {};
+      for(const key of keys || []){
+        const value=res[key];
+        if(Array.isArray(value)) return value;
+      }
+      if(res.data){
+        for(const key of keys || []){
+          const value=res.data[key];
+          if(Array.isArray(value)) return value;
+        }
+        if(Array.isArray(res.data)) return res.data;
+      }
+      if(res.item && Array.isArray(res.item.items)) return res.item.items;
+      return [];
+    }
+    function objectFromSavedResponse(res, keys){
+      res=res || {};
+      for(const key of keys || []){
+        if(res[key] && typeof res[key] === 'object' && !Array.isArray(res[key])) return res[key];
+      }
+      if(res.item && typeof res.item === 'object') return res.item;
+      if(res.data && typeof res.data === 'object' && !Array.isArray(res.data)) return res.data;
+      if(res.projectId || res.projectTitle || res.internalMemo) return res;
+      return {};
+    }
+    function getProjectIdFromUrl(){
+      const params=new URLSearchParams(window.location.search || '');
+      return String(params.get('projectId') || params.get('id') || '').trim();
+    }
+    function splitSavedRoutes(value){
+      if(Array.isArray(value)) return value.filter(Boolean);
+      return String(value || '').split(',').map(x=>x.trim()).filter(Boolean);
+    }
+    function normalizeSavedProjectRecord(record){
+      record=record || {};
+      const internal=safeParseObject(firstNonEmptyValue(record, ['internalMemo','internal_memo','내부메모','내부 메모'])) || {};
+      const savedProject=internal && internal.project && typeof internal.project === 'object' ? internal.project : {};
+      const restored=Object.assign({}, initialState.project, savedProject || {});
+      const projectId=firstNonEmptyValue(record, ['projectId','project_id','id','프로젝트ID','프로젝트 ID']) || restored.projectId;
+      restored.projectId=projectId || '';
+      restored.title=restored.title || firstNonEmptyValue(record, ['projectTitle','title','projectName','프로젝트명','프로젝트 제목','제목']);
+      restored.status=restored.status || firstNonEmptyValue(record, ['projectStatus','status','진행상태','상태']);
+      restored.inquiryDate=restored.inquiryDate || firstNonEmptyValue(record, ['requestDate','inquiryDate','createdAt','접수일','문의일']);
+      if(!Array.isArray(restored.inquiryRoutes) || !restored.inquiryRoutes.length) restored.inquiryRoutes=splitSavedRoutes(firstNonEmptyValue(record, ['inflowChannel','inquiryRoutes','유입경로']));
+      restored.clientName=restored.clientName || firstNonEmptyValue(record, ['clientName','customerName','의뢰인','고객명']);
+      restored.clientCategory=restored.clientCategory || firstNonEmptyValue(record, ['clientType','clientCategory','고객구분','의뢰인구분']);
+      restored.companyName=restored.companyName || firstNonEmptyValue(record, ['companyName','company','회사명']);
+      restored.requesterRelation=restored.requesterRelation || firstNonEmptyValue(record, ['requesterRelation','contactName','managerName','담당자']);
+      restored.phone=restored.phone || firstNonEmptyValue(record, ['phone','tel','mobile','연락처']);
+      restored.industry=restored.industry || firstNonEmptyValue(record, ['industryText','industry','업종']);
+      const dealTypeMode=firstNonEmptyValue(record, ['dealTypeMode','dealType','거래형태','거래유형']) || restored.dealTypeMode || '';
+      restored.saleEnabled = restored.saleEnabled || truthySavedValue(firstNonEmptyValue(record, ['saleEnabled','매매사용'])) || String(dealTypeMode).indexOf('매매')>=0 || String(dealTypeMode).toLowerCase()==='sale' || String(dealTypeMode).toLowerCase()==='both';
+      restored.rentEnabled = restored.rentEnabled || truthySavedValue(firstNonEmptyValue(record, ['rentEnabled','임대사용'])) || String(dealTypeMode).indexOf('임대')>=0 || String(dealTypeMode).indexOf('임차')>=0 || String(dealTypeMode).toLowerCase()==='rent' || String(dealTypeMode).toLowerCase()==='both';
+      restored.saleBudgetMin=restored.saleBudgetMin || firstNonEmptyValue(record, ['saleBudgetMin','saleMin','매매하한','매매가하한']);
+      restored.saleBudgetMax=restored.saleBudgetMax || firstNonEmptyValue(record, ['saleBudgetMax','saleMax','매매상한','매매가상한']);
+      restored.salePriceMemo=restored.salePriceMemo || firstNonEmptyValue(record, ['salePriceMemo','saleMemo','매매메모']);
+      restored.rentDepositMin=restored.rentDepositMin || firstNonEmptyValue(record, ['rentDepositMin','depositMin','보증금하한']);
+      restored.rentDepositMax=restored.rentDepositMax || firstNonEmptyValue(record, ['rentDepositMax','depositMax','보증금상한']);
+      restored.rentMonthlyMin=restored.rentMonthlyMin || firstNonEmptyValue(record, ['rentMonthlyMin','monthlyMin','월세하한']);
+      restored.rentMonthlyMax=restored.rentMonthlyMax || firstNonEmptyValue(record, ['rentMonthlyMax','monthlyMax','월세상한']);
+      restored.rentPriceMemo=restored.rentPriceMemo || firstNonEmptyValue(record, ['rentPriceMemo','rentMemo','임대메모']);
+      restored.regions=restored.regions || firstNonEmptyValue(record, ['regionText','regions','region','희망지역']);
+      restored.usePurpose=restored.usePurpose || firstNonEmptyValue(record, ['useText','usePurpose','usage','용도']);
+      restored.coreNeeds=restored.coreNeeds || firstNonEmptyValue(record, ['requiredMemo','coreNeeds','requirements','요구조건']);
+      restored.lastContact=restored.lastContact || firstNonEmptyValue(record, ['lastContact','recentContact','최근연락']);
+      restored.nextAction=restored.nextAction || firstNonEmptyValue(record, ['nextAction','다음액션']);
+      return restored;
+    }
+    function normalizeSavedMatchingStatus(status){
+      const v=String(status || '').trim();
+      if(v==='rejected' || v==='탈락') return {stage:'탈락', rejected:true, proposal:false, visit:'미정'};
+      if(v==='hold' || v==='보류') return {stage:'보류', rejected:false, proposal:false, visit:'미정'};
+      if(v==='visit' || v==='임장예정') return {stage:'임장예정', rejected:false, proposal:true, visit:'임장예정'};
+      if(v==='suggested' || v==='고객제안선정') return {stage:'고객제안선정', rejected:false, proposal:true, visit:'미정'};
+      return {stage:v && v!=='candidate' && v!=='manual' ? v : '검토중', rejected:false, proposal:false, visit:'미정'};
+    }
+    function normalizeSavedCandidateRecord(record, index){
+      if(!record) return null;
+      if(typeof record === 'string') record=safeParseObject(record) || {listingNumber:record};
+      const full=safeParseObject(firstNonEmptyValue(record, ['candidateJson','candidate_json','fullJson','json'])) || {};
+      const snap=safeParseObject(firstNonEmptyValue(record, ['snapshotJson','snapshot_json','snapshot'])) || {};
+      const merged=Object.assign({}, snap, full, record);
+      const listingNumber=firstNonEmptyValue(merged, ['listingNumber','propertyId','listing_number','매물번호']);
+      if(!listingNumber && !merged.title) return null;
+      const statusInfo=normalizeSavedMatchingStatus(firstNonEmptyValue(merged, ['status','stage','매칭상태']));
+      return Object.assign({
+        id:merged.id || ('C-' + String(index+1).padStart(3,'0')),
+        propertyId:listingNumber || merged.propertyId || '',
+        listingNumber:listingNumber || '',
+        title:merged.title || (listingNumber ? ('매물 ' + listingNumber) : '후보 매물'),
+        address:merged.address || '',
+        dealType:merged.dealType || '',
+        price:merged.price || '',
+        area:merged.area || '',
+        lat:merged.lat || '',
+        lng:merged.lng || '',
+        heroUrl:merged.heroUrl || '',
+        photoUrlsJson:merged.photoUrlsJson || '',
+        sourceType:merged.sourceType || (merged.source==='algorithm' ? 'recommendation' : 'map_search'),
+        sourceLabel:merged.sourceLabel || (merged.source==='algorithm' ? '알고리즘추천' : '저장후보'),
+        score:merged.score || '',
+        algorithmRunId:merged.algorithmRunId || '',
+        algorithmRank:merged.algorithmRank || merged.rank || '',
+        rank:merged.rank || merged.algorithmRank || '',
+        dealTypeScope:normalizeDealScope(merged.dealTypeScope || merged.dealScope || merged.algorithmDealScope) || dealScopeFromListing(merged),
+        matchingId:merged.matchingId || '',
+        stage:statusInfo.stage,
+        ownerStatus:merged.ownerStatus || '미접촉',
+        proposal:merged.proposal===true || String(merged.proposal||'').toLowerCase()==='true' || statusInfo.proposal,
+        visit:merged.visit || statusInfo.visit,
+        strengths:Array.isArray(merged.strengths) ? merged.strengths : [],
+        weakPoints:Array.isArray(merged.weakPoints) ? merged.weakPoints : [],
+        risks:Array.isArray(merged.risks) ? merged.risks : [],
+        rejected:merged.rejected===true || String(merged.rejected||'').toLowerCase()==='true' || statusInfo.rejected,
+        rejectReason:merged.rejectReason || '',
+        rejectMemo:merged.rejectMemo || merged.memo || '',
+        reconsiderType:merged.reconsiderType || ''
+      }, full && full.id ? full : {});
+    }
+    function extractCandidateRowsFromMatchingResponse(res){
+      const direct=listFromSavedResponse(res, ['candidates','items','matchings','rows']);
+      if(direct.length) return direct;
+      const obj=objectFromSavedResponse(res, ['matching','item','row']);
+      const rows=[];
+      Object.keys(obj || {}).forEach(key=>{
+        if(/^candidate\d+$/i.test(key) && obj[key]) rows.push(obj[key]);
+      });
+      return rows;
+    }
+    function normalizeSavedSearchLog(record, index){
+      if(!record) return null;
+      if(typeof record === 'string') record=safeParseObject(record) || {url:record};
+      const deleted=truthySavedValue(firstNonEmptyValue(record, ['isDeleted','deleted','삭제']));
+      if(deleted) return null;
+      const study=safeParseObject(firstNonEmptyValue(record, ['studyLookupJson','studyResult','공부조회JSON'])) || null;
+      return {
+        id:firstNonEmptyValue(record, ['id','searchLogId','search_log_id']) || ('SL-' + String(index+1).padStart(3,'0')),
+        searchLogId:firstNonEmptyValue(record, ['searchLogId','search_log_id']) || '',
+        source:firstNonEmptyValue(record, ['sourceName','source','sourceType','가져온곳']) || '기타',
+        writerCode:legacyWriterCodeFromAuthor(firstNonEmptyValue(record, ['createdBy','author','작성자'])) || getUnlockedWriterCode() || '6857',
+        title:firstNonEmptyValue(record, ['url','link','title','URL']),
+        address:firstNonEmptyValue(record, ['address','addressText','주소']),
+        price:firstNonEmptyValue(record, ['priceText','price','가격']),
+        area:firstNonEmptyValue(record, ['areaText','area','면적']),
+        link:firstNonEmptyValue(record, ['url','link','URL']),
+        memo:firstNonEmptyValue(record, ['memo','studyMemo','메모']),
+        status:normalizeSearchLogStatus(firstNonEmptyValue(record, ['status','상태']) || '기록중'),
+        createdAt:firstNonEmptyValue(record, ['createdAt','created_at','생성일']) || nowIso(),
+        updatedAt:firstNonEmptyValue(record, ['updatedAt','updated_at','수정일']) || nowIso(),
+        studyStatus:study ? '조회완료' : '',
+        studyResult:study,
+        studyMemo:firstNonEmptyValue(record, ['studyMemo','memo','공부메모']),
+        registeredListingNumber:firstNonEmptyValue(record, ['registeredListingNumber','listingNumber','등록매물번호'])
+      };
+    }
+    async function loadMatchingWorkspaceFromUrl(){
+      const projectId=getProjectIdFromUrl();
+      if(!projectId) return;
+      const saveStateEl=document.getElementById('saveState');
+      try{
+        if(saveStateEl) saveStateEl.textContent='저장된 프로젝트 불러오는 중...';
+        const projectRes=await gasPost('getProject', {projectId});
+        const projectRecord=objectFromSavedResponse(projectRes, ['project','item','data']);
+        state.project=normalizeSavedProjectRecord(Object.assign({}, projectRecord, {projectId:projectId}));
+        try{
+          const matchingRes=await gasPost('getMatching', {projectId});
+          const rows=extractCandidateRowsFromMatchingResponse(matchingRes);
+          const candidates=rows.map(normalizeSavedCandidateRecord).filter(Boolean);
+          if(candidates.length) state.candidates=candidates;
+        }catch(matchErr){ console.warn('getMatching 실패', matchErr); }
+        try{
+          const searchRes=await gasPost('listPropertySearches', {projectId});
+          const logs=listFromSavedResponse(searchRes, ['searchLogs','logs','items','rows']).map(normalizeSavedSearchLog).filter(Boolean);
+          if(logs.length) state.searchLogs=logs;
+        }catch(searchErr){ console.warn('listPropertySearches 실패', searchErr); }
+        try{
+          const algoRes=await gasPost('listMatchingAlgorithms', {projectId});
+          const runs=listFromSavedResponse(algoRes, ['algorithmRuns','runs','items','rows']);
+          if(runs.length) state.algorithmRuns=runs;
+        }catch(algoErr){ console.warn('listMatchingAlgorithms 실패', algoErr); }
+        normalizeAllSearchLogWriters();
+        syncProjectDealFields();
+        dirty=false;
+        undoStack=[];
+        redoStack=[];
+        persistUndo();
+        activeSection2Tab=state.candidates && state.candidates.length ? '후보매물' : '서칭기록';
+        if(!(state.searchLogs||[]).length && !(state.candidates||[]).length) activeSection2Tab='후보매물';
+        renderAll();
+        if(saveStateEl) saveStateEl.textContent='저장된 프로젝트 불러옴';
+        setTimeout(updateSaveState, 1000);
+      }catch(err){
+        console.error(err);
+        if(saveStateEl) saveStateEl.textContent='프로젝트 불러오기 실패';
+        alert('프로젝트 불러오기 실패: ' + (err && err.message ? err.message : String(err)));
+      }
+    }
+
     function waitForNaverMaps(timeoutMs){
       const started=Date.now();
       return new Promise((resolve,reject)=>{
@@ -3984,6 +4222,7 @@
     initSectionNav();
     initMatchingAuth();
     renderAll();
+    loadMatchingWorkspaceFromUrl();
   </script>
 </body>
 </html>

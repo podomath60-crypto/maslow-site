@@ -255,6 +255,18 @@
     .rejected-title{font-size:18px;font-weight:1000;margin-bottom:5px}.rejected-meta{font-size:13px;line-height:1.5;font-weight:800;color:rgba(255,255,255,.86)}
 
 
+
+    .restore-loading-card{border:1px solid #e6edf5;background:#fbfdff;border-radius:20px;padding:18px 20px;display:flex;align-items:center;gap:12px;color:#526071;font-weight:900;line-height:1.5;box-shadow:0 10px 22px rgba(15,23,42,.035)}
+    .restore-loading-card.compact{margin-top:12px;padding:12px 14px;border-radius:16px;font-size:13px}
+    .restore-spinner{width:20px;height:20px;border-radius:999px;border:3px solid #dbe7f4;border-top-color:#2f8cff;flex:0 0 20px;animation:restoreSpin .8s linear infinite}
+    .restore-spinner.small{width:16px;height:16px;border-width:2px;flex-basis:16px}
+    .restore-loading-title{font-size:15px;font-weight:1000;color:#1f2937;letter-spacing:-.035em}
+    .restore-loading-sub{font-size:13px;color:#7b8794;font-weight:850;margin-top:2px}
+    .restore-error-card{border:1px solid #ffd2d2;background:#fff7f7;border-radius:18px;padding:16px 18px;color:#b42323;font-weight:900;line-height:1.55}
+    .project-restore-status{display:none}
+    .project-restore-status.show{display:flex}
+    @keyframes restoreSpin{to{transform:rotate(360deg)}}
+
     .section2-rule{margin:0 0 14px;border:1px solid #eaf0f6;background:#fbfdff;border-radius:18px;padding:12px 14px;color:#5f6873;font-size:13px;font-weight:850;line-height:1.55}
     .section2-rule b{color:#111318;font-weight:1000}
     .section2-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px}
@@ -789,6 +801,7 @@
       lastAlgorithmRunByDeal:{sale:null, rent:null}
     };
     let state = structuredClone(initialState);
+    const workspaceRestoreState = { active:false, project:false, matching:false, searches:false, algorithms:false, projectError:'', matchingError:'', searchesError:'', algorithmsError:'' };
     let undoStack = [];
     let redoStack = [];
     let activeFilter = '전체';
@@ -848,6 +861,35 @@
       }
       if(budgetParts.length) p.budget=budgetParts.join(' · ');
     }
+
+    function renderRestoreLoadingCard(title, sub, compact){
+      return `<div class="restore-loading-card ${compact?'compact':''}"><span class="restore-spinner ${compact?'small':''}" aria-hidden="true"></span><div><div class="restore-loading-title">${escapeHtml(title||'불러오는 중')}</div>${sub?`<div class="restore-loading-sub">${escapeHtml(sub)}</div>`:''}</div></div>`;
+    }
+    function renderRestoreErrorCard(message){
+      return `<div class="restore-error-card">${escapeHtml(message||'불러오지 못했습니다.')}</div>`;
+    }
+    function renderProjectRestoreStatus(){
+      const heroLeft=document.querySelector('.project-hero-left');
+      if(!heroLeft) return;
+      let el=heroLeft.querySelector('[data-project-restore-status]');
+      if(!el){
+        el=document.createElement('div');
+        el.className='project-restore-status';
+        el.setAttribute('data-project-restore-status','');
+        heroLeft.appendChild(el);
+      }
+      if(workspaceRestoreState.project){
+        el.className='project-restore-status show restore-loading-card compact';
+        el.innerHTML='<span class="restore-spinner small" aria-hidden="true"></span><div><div class="restore-loading-title">섹션1 프로젝트 정보를 불러오는 중</div><div class="restore-loading-sub">기본정보를 먼저 복원합니다.</div></div>';
+      }else if(workspaceRestoreState.projectError){
+        el.className='project-restore-status show restore-error-card';
+        el.textContent=workspaceRestoreState.projectError;
+      }else{
+        el.className='project-restore-status';
+        el.innerHTML='';
+      }
+    }
+
     function renderProject(){
       ensureProjectDealState();
       const p=state.project;
@@ -855,6 +897,7 @@
       document.querySelectorAll('[data-deal-toggle]').forEach(btn=>{ const scope=btn.dataset.dealToggle; btn.classList.toggle('active', scope==='sale' ? !!p.saleEnabled : !!p.rentEnabled); });
       const saleBox=document.querySelector('[data-sale-condition]'); if(saleBox) saleBox.style.display=p.saleEnabled ? '' : 'none';
       const rentBox=document.querySelector('[data-rent-condition]'); if(rentBox) rentBox.style.display=p.rentEnabled ? '' : 'none';
+      renderProjectRestoreStatus();
     }
     function renderRouteChecks(){}
     function candidateCounts(){
@@ -1645,44 +1688,98 @@
       const projectId=getProjectIdFromUrl();
       if(!projectId) return;
       const saveStateEl=document.getElementById('saveState');
+      workspaceRestoreState.active=true;
+      workspaceRestoreState.project=true;
+      workspaceRestoreState.matching=true;
+      workspaceRestoreState.searches=true;
+      workspaceRestoreState.algorithms=true;
+      workspaceRestoreState.projectError='';
+      workspaceRestoreState.matchingError='';
+      workspaceRestoreState.searchesError='';
+      workspaceRestoreState.algorithmsError='';
+      if(saveStateEl) saveStateEl.textContent='프로젝트 불러오는 중...';
+      renderAll();
       try{
-        if(saveStateEl) saveStateEl.textContent='저장된 프로젝트 불러오는 중...';
         const projectRes=await gasPost('getProject', {projectId});
         const projectRecord=objectFromSavedResponse(projectRes, ['project','item','data']);
         state.project=normalizeSavedProjectRecord(Object.assign({}, projectRecord, {projectId:projectId}));
+        syncProjectDealFields();
+        workspaceRestoreState.project=false;
+        renderProject();
+        if(saveStateEl) saveStateEl.textContent='섹션1 프로젝트 정보 불러옴';
+      }catch(err){
+        console.error(err);
+        workspaceRestoreState.project=false;
+        workspaceRestoreState.projectError='섹션1 프로젝트 정보를 불러오지 못했습니다.';
+        workspaceRestoreState.matching=false;
+        workspaceRestoreState.searches=false;
+        workspaceRestoreState.algorithms=false;
+        if(saveStateEl) saveStateEl.textContent='프로젝트 불러오기 실패';
+        renderAll();
+        alert('프로젝트 불러오기 실패: ' + (err && err.message ? err.message : String(err)));
+        return;
+      }
+
+      const matchingTask=(async()=>{
         try{
           const matchingRes=await gasPost('getMatching', {projectId});
           const rows=extractCandidateRowsFromMatchingResponse(matchingRes);
           const candidates=rows.map(normalizeSavedCandidateRecord).filter(Boolean);
           if(candidates.length) state.candidates=candidates;
-        }catch(matchErr){ console.warn('getMatching 실패', matchErr); }
+          if(candidates.length) activeSection2Tab='후보매물';
+        }catch(matchErr){
+          console.warn('getMatching 실패', matchErr);
+          workspaceRestoreState.matchingError='후보 매물을 불러오지 못했습니다.';
+        }finally{
+          workspaceRestoreState.matching=false;
+          renderSection2();
+        }
+      })();
+
+      const searchesTask=(async()=>{
         try{
           const searchRes=await gasPost('listPropertySearches', {projectId});
           const logs=listFromSavedResponse(searchRes, ['searchLogs','logs','items','rows']).map(normalizeSavedSearchLog).filter(Boolean);
           if(logs.length) state.searchLogs=logs;
-        }catch(searchErr){ console.warn('listPropertySearches 실패', searchErr); }
+          normalizeAllSearchLogWriters();
+          if(!(state.candidates||[]).length && logs.length) activeSection2Tab='서칭기록';
+        }catch(searchErr){
+          console.warn('listPropertySearches 실패', searchErr);
+          workspaceRestoreState.searchesError='서칭기록을 불러오지 못했습니다.';
+        }finally{
+          workspaceRestoreState.searches=false;
+          renderSection2();
+          renderSearchStudyPanel();
+        }
+      })();
+
+      const algorithmsTask=(async()=>{
         try{
           const algoRes=await gasPost('listMatchingAlgorithms', {projectId});
           const runs=listFromSavedResponse(algoRes, ['algorithmRuns','runs','items','rows']);
           if(runs.length) state.algorithmRuns=runs;
-        }catch(algoErr){ console.warn('listMatchingAlgorithms 실패', algoErr); }
-        normalizeAllSearchLogWriters();
-        syncProjectDealFields();
-        dirty=false;
-        undoStack=[];
-        redoStack=[];
-        persistUndo();
-        activeSection2Tab=state.candidates && state.candidates.length ? '후보매물' : '서칭기록';
-        if(!(state.searchLogs||[]).length && !(state.candidates||[]).length) activeSection2Tab='후보매물';
-        renderAll();
-        if(saveStateEl) saveStateEl.textContent='저장된 프로젝트 불러옴';
-        setTimeout(updateSaveState, 1000);
-      }catch(err){
-        console.error(err);
-        if(saveStateEl) saveStateEl.textContent='프로젝트 불러오기 실패';
-        alert('프로젝트 불러오기 실패: ' + (err && err.message ? err.message : String(err)));
-      }
+        }catch(algoErr){
+          console.warn('listMatchingAlgorithms 실패', algoErr);
+          workspaceRestoreState.algorithmsError='알고리즘 실행기록을 불러오지 못했습니다.';
+        }finally{
+          workspaceRestoreState.algorithms=false;
+          renderSection2();
+        }
+      })();
+
+      await Promise.allSettled([matchingTask, searchesTask, algorithmsTask]);
+      normalizeAllSearchLogWriters();
+      syncProjectDealFields();
+      dirty=false;
+      undoStack=[];
+      redoStack=[];
+      persistUndo();
+      if(!(state.searchLogs||[]).length && !(state.candidates||[]).length) activeSection2Tab='후보매물';
+      renderAll();
+      if(saveStateEl) saveStateEl.textContent='저장된 프로젝트 불러옴';
+      setTimeout(updateSaveState, 1000);
     }
+
 
     function waitForNaverMaps(timeoutMs){
       const started=Date.now();
@@ -3510,12 +3607,31 @@
     function renderSection2(){
       renderMetrics();
       const content=document.getElementById('section2Content');
-      if(activeSection2Tab==='전체매물검색'){
+      if(!content) return;
+      if(activeSection2Tab==='추천매물' && workspaceRestoreState.algorithms){
+        content.innerHTML=renderRestoreLoadingCard('알고리즘 실행기록을 불러오는 중', '저장된 추천 결과가 있으면 들어오는 대로 표시합니다.');
+      }
+      else if(activeSection2Tab==='추천매물' && workspaceRestoreState.algorithmsError){
+        content.innerHTML=renderRestoreErrorCard(workspaceRestoreState.algorithmsError);
+      }
+      else if(activeSection2Tab==='서칭기록' && workspaceRestoreState.searches){
+        content.innerHTML=renderRestoreLoadingCard('서칭기록을 불러오는 중', '저장된 검색 패널을 복원하고 있습니다.');
+      }
+      else if(activeSection2Tab==='서칭기록' && workspaceRestoreState.searchesError){
+        content.innerHTML=renderRestoreErrorCard(workspaceRestoreState.searchesError);
+      }
+      else if(activeSection2Tab==='전체매물검색'){
         content.innerHTML=renderSearchPanel();
         setTimeout(ensureMatchingMapWorkspace,0);
       }
       else if(activeSection2Tab==='추천매물') content.innerHTML=renderRecommendationPanel();
       else if(activeSection2Tab==='서칭기록') content.innerHTML=renderSearchLogs();
+      else if(activeSection2Tab==='후보매물' && workspaceRestoreState.matching){
+        content.innerHTML=renderRestoreLoadingCard('후보 매물을 불러오는 중', '섹션1은 먼저 표시하고, 후보 매물은 들어오는 대로 붙입니다.');
+      }
+      else if(activeSection2Tab==='후보매물' && workspaceRestoreState.matchingError){
+        content.innerHTML=renderRestoreErrorCard(workspaceRestoreState.matchingError);
+      }
       else if(activeSection2Tab==='후보매물' && candidateViewMode==='map'){
         content.innerHTML=renderCandidateMapPanel();
         setTimeout(ensureCandidateMapWorkspace,0);

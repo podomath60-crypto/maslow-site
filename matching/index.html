@@ -1330,9 +1330,30 @@
       const max=parseWonValue(maxText || '');
       return {min:min || '', max:max || ''};
     }
+    function sanitizeBusinessCardItems(items){
+      const arr=Array.isArray(items) ? items : safeParseArray(items);
+      return arr.map(item=>({
+        slotKey:String(item && item.slotKey || '').trim(),
+        order:Number(item && item.order || 0) || '',
+        tempKey:String(item && item.tempKey || '').trim(),
+        name:String(item && item.name || '').trim(),
+        kind:String(item && item.kind || 'businessCard').trim(),
+        fileId:String(item && item.fileId || '').trim(),
+        fileName:String(item && item.fileName || '').trim(),
+        url:String(item && item.url || '').trim()
+      })).filter(item=>item.tempKey || item.fileId || item.url);
+    }
+    function businessCardProjectSnapshot(project){
+      const copy=Object.assign({}, project || {});
+      const cards=sanitizeBusinessCardItems(copy.businessCardTemps || copy.businessCardsJson);
+      copy.businessCardTemps=cards;
+      copy.businessCardsJson=JSON.stringify(cards);
+      return copy;
+    }
     function projectPayloadForSave(){
       ensureProjectDealState();
       const p=state.project || {};
+      const businessCards=sanitizeBusinessCardItems(p.businessCardTemps || p.businessCardsJson);
       const criteria=buildAlgorithmCriteria ? buildAlgorithmCriteria() : {};
       const writer=currentWriterLabel();
       return {
@@ -1373,9 +1394,9 @@
         specialMemo:[p.areaSummary, p.land, p.building].filter(Boolean).join(' / '),
         lastContact:p.lastContact || '',
         nextAction:p.nextAction || '',
-        businessCardTemps:Array.isArray(p.businessCardTemps) ? p.businessCardTemps : [],
-        businessCardsJson:p.businessCardsJson || '',
-        internalMemo:JSON.stringify({project:p, savedFrom:'matching/index.html'}),
+        businessCardTemps:businessCards,
+        businessCardsJson:JSON.stringify(businessCards),
+        internalMemo:JSON.stringify({project:businessCardProjectSnapshot(p), savedFrom:'matching/index.html'}),
         lastSaleAlgorithmRunId:state.lastAlgorithmRunByDeal && state.lastAlgorithmRunByDeal.sale ? state.lastAlgorithmRunByDeal.sale.algorithmRunId : '',
         lastRentAlgorithmRunId:state.lastAlgorithmRunByDeal && state.lastAlgorithmRunByDeal.rent ? state.lastAlgorithmRunByDeal.rent.algorithmRunId : '',
         lastAlgorithmRunAt:state.lastAlgorithmRun && state.lastAlgorithmRun.createdAt || '',
@@ -1613,7 +1634,7 @@
       restored.lastContact=restored.lastContact || firstNonEmptyValue(record, ['lastContact','recentContact','최근연락']);
       restored.nextAction=restored.nextAction || firstNonEmptyValue(record, ['nextAction','다음액션']);
       const savedBusinessCards=firstNonEmptyValue(record, ['businessCardsJson','businessCardTemps','명함JSON']);
-      const parsedBusinessCards=safeParseArray(savedBusinessCards);
+      const parsedBusinessCards=sanitizeBusinessCardItems(safeParseArray(savedBusinessCards));
       if(parsedBusinessCards.length){
         restored.businessCardTemps=parsedBusinessCards;
         restored.businessCardsJson=typeof savedBusinessCards === 'string' ? savedBusinessCards : JSON.stringify(parsedBusinessCards);
@@ -4291,11 +4312,34 @@
     const businessCardViewerChange=document.getElementById('businessCardViewerChange');
     let activeBusinessCardKey=null;
 
+    function businessCardThumbnailUrl(fileId, size){
+      const id=String(fileId || '').trim();
+      if(!id) return '';
+      return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=' + (size || 'w1200');
+    }
+    function normalizeBusinessCardThumbnailUrl(url, size){
+      const raw=String(url || '').trim();
+      if(!raw) return '';
+      if(raw.indexOf('drive.google.com/thumbnail') >= 0){
+        return raw.replace(/([?&])sz=[^&]*/,'$1sz=' + (size || 'w1200'));
+      }
+      if(raw.indexOf('data:image/') === 0) return raw;
+      return raw;
+    }
+    function getBusinessCardDisplayUrl(item, fallback, size){
+      if(item && item.fileId) return businessCardThumbnailUrl(item.fileId, size || 'w1200');
+      if(item && item.url) return normalizeBusinessCardThumbnailUrl(item.url, size || 'w1200');
+      if(item && item.dataUrl) return item.dataUrl;
+      const fb=String(fallback || '').trim();
+      if(fb && fb.indexOf('drive.google.com/uc?export=view') < 0) return normalizeBusinessCardThumbnailUrl(fb, size || 'w1200');
+      return '';
+    }
     function getBusinessCardItems(){
       const p=state.project || {};
       if(Array.isArray(p.businessCardTemps)) return p.businessCardTemps;
-      const parsed=safeParseArray(p.businessCardsJson);
+      const parsed=sanitizeBusinessCardItems(safeParseArray(p.businessCardsJson));
       p.businessCardTemps=parsed;
+      p.businessCardsJson=JSON.stringify(parsed);
       return p.businessCardTemps;
     }
     function getBusinessCardItem(key){
@@ -4305,7 +4349,7 @@
     function setBusinessCardItem(key, item){
       const slotKey='businessCard' + key;
       const items=getBusinessCardItems().filter(x=>String(x.slotKey||'')!==slotKey && String(x.order||'')!==String(key));
-      const next=Object.assign({}, item || {}, {slotKey, order:Number(key) || (items.length+1), kind:'businessCard'});
+      const next=sanitizeBusinessCardItems([Object.assign({}, item || {}, {slotKey, order:Number(key) || (items.length+1), kind:'businessCard'})])[0] || {slotKey, order:Number(key)||1, kind:'businessCard'};
       items.push(next);
       items.sort((a,b)=>Number(a.order||0)-Number(b.order||0));
       state.project.businessCardTemps=items;
@@ -4329,7 +4373,7 @@
         const preview=document.querySelector(`[data-business-card-preview="${key}"]`);
         if(!slot || !preview) return;
         const item=getBusinessCardItem(key);
-        const src=String((item && (item.url || item.originalUrl || item.dataUrl)) || '').trim();
+        const src=getBusinessCardDisplayUrl(item, '', 'w1200');
         if(src){
           preview.src=src;
           slot.classList.add('has-image');
@@ -4385,13 +4429,13 @@
           kind:res.fileKind || 'businessCard',
           fileId:res.fileId || '',
           fileName:res.fileName || '',
-          url:res.url || '',
-          originalUrl:res.originalUrl || ''
+          url:res.url || ''
         });
-        if(saved.url || saved.originalUrl){
-          preview.src=saved.url || saved.originalUrl;
+        const savedDisplayUrl=getBusinessCardDisplayUrl(saved, dataUrl, 'w1200');
+        if(savedDisplayUrl){
+          preview.src=savedDisplayUrl;
           if(businessCardViewer.classList.contains('show') && activeBusinessCardKey===String(key)){
-            businessCardViewerImage.src=saved.originalUrl || saved.url;
+            businessCardViewerImage.src=getBusinessCardDisplayUrl(saved, dataUrl, 'w2000');
           }
         }
         setBusinessCardStatus(key, 'upload-done', 'Drive 저장 완료');
@@ -4406,7 +4450,7 @@
       activeBusinessCardKey=String(key);
       const item=getBusinessCardItem(key);
       businessCardViewerTitle.textContent=`명함 ${key}`;
-      businessCardViewerImage.src=(item && (item.originalUrl || item.url)) || src;
+      businessCardViewerImage.src=getBusinessCardDisplayUrl(item, src, 'w2000');
       businessCardViewer.classList.add('show');
     }
     function closeBusinessCardViewer(){

@@ -304,6 +304,11 @@
 
     .card-list{display:grid;grid-template-columns:1fr;gap:12px}
     .property-card{border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
+    .project-dashboard-card{cursor:pointer}
+    .project-dashboard-card .property-main{display:block;padding:20px 22px 18px;cursor:pointer}
+    .project-dashboard-card .card-content{display:grid;gap:12px}
+    .project-dashboard-card .card-title{font-size:30px;line-height:1.14;font-weight:1000;letter-spacing:-.065em;color:#111318}
+    .project-card-meta{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;font-size:12px;line-height:1.45;color:#8a94a3;font-weight:850;letter-spacing:-.02em}
     .property-card.is-card-refreshing{position:relative}
     .property-card.is-card-refreshing::before{
       content:'';position:absolute;inset:0;z-index:4;background:rgba(255,255,255,.66);backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px)
@@ -2256,7 +2261,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         contactName: firstText(p.contactName, p.managerName, p['담당자']),
         phone: firstText(p.phone, p.tel, p.mobile, p['연락처']),
         requestDate: firstText(p.requestDate, p.createdAt, p.savedAt, p['접수일']),
-        updatedAt: firstText(p.updatedAt, p.modifiedAt, p.savedAt, p.createdAt, p['수정일'], p['저장일']),
+        createdAt: firstText(p.createdAt, p.created_at, p.savedAt, p.requestDate, p['생성일'], p['저장일'], p['접수일']),
+        updatedAt: firstText(p.updatedAt, p.modifiedAt, p.updated_at, p.savedAt, p.createdAt, p['수정일'], p['저장일']),
         dealTypeMode: firstText(p.dealTypeMode, p.dealType),
         saleEnabled: saleEnabled,
         rentEnabled: rentEnabled,
@@ -2327,47 +2333,37 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(/협의|계약|진행/.test(s)) return 'deal';
       return 'matching';
     }
+    function formatDashboardDate(value){
+      const raw = oneLine(value);
+      if(!raw) return '미확인';
+      const d = new Date(raw);
+      if(!Number.isNaN(d.getTime())){
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return y + '.' + m + '.' + day + ' ' + hh + ':' + mm;
+      }
+      return raw;
+    }
     function matchingUrl(projectId){
       return '/matching?projectId=' + encodeURIComponent(projectId || '');
     }
     function renderProjectCard(p){
       const id = p.projectId || '';
       const href = matchingUrl(id);
-      const clientLine = [p.clientName, p.companyName].filter(Boolean).join(' / ');
-      const metaLine = [
-        '최근연락 ' + (p.lastContact || '미입력'),
-        '다음액션 ' + (p.nextAction || '미입력')
-      ].join(' · ');
-      const bottomBits = [];
-      if(p.useText) bottomBits.push('용도 ' + p.useText);
-      if(p.industryText) bottomBits.push('업종 ' + p.industryText);
-      if(p.requiredMemo) bottomBits.push('요구조건 있음');
-      if(!bottomBits.length) bottomBits.push('상세조건 미입력');
       return `
-<article class="property-card" data-project-id="${escapeAttr(id)}" data-status-filter="${escapeAttr(projectStatusFilterValue(p.projectStatus))}" data-deal-filter="${escapeAttr(projectDealFilterValue(p))}" onclick="location.href='${escapeAttr(href)}'">
+<article class="property-card project-dashboard-card" data-project-id="${escapeAttr(id)}" data-status-filter="${escapeAttr(projectStatusFilterValue(p.projectStatus))}" data-deal-filter="${escapeAttr(projectDealFilterValue(p))}" onclick="location.href='${escapeAttr(href)}'">
   <div class="property-main">
-    <div class="thumb" style="background:linear-gradient(135deg,#18C76B,#2F8CFF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:1000;font-size:20px;letter-spacing:-.05em">${escapeHtml(projectThumbLabel(p))}</div>
     <div class="card-content">
-      <div class="title-row">
-        <h3 class="card-title property-edit-link">${escapeHtml(p.projectTitle)}</h3>
-        <span class="status-chip visible">${escapeHtml(p.projectStatus || '조건정리중')}</span>
-      </div>
-      <div class="card-address">희망지역: ${escapeHtml(p.regionText || '미입력')}</div>
-      <div class="card-deal-price">${formatDealCondition(p)}</div>
-      <div class="card-meta"><strong>${escapeHtml(id || '프로젝트ID 미확정')}</strong>${clientLine ? '<br>' + escapeHtml(clientLine) : ''}<br>${escapeHtml(metaLine)}</div>
-    </div>
-  </div>
-  <div class="card-bottom">
-    <div class="action-row">
-      <div class="action-left">
-        <button class="mini-btn visibility-text-btn active-show" type="button" onclick="event.stopPropagation()">진행</button>
-        <button class="mini-btn visibility-text-btn" type="button" onclick="event.stopPropagation()">보류</button>
-        <span class="memo-btn-wrap"><button class="mini-btn square memo-square" type="button" onclick="event.stopPropagation()"><span class="btn-emoji">📌</span><span class="btn-text">메모</span></button></span>
-        <button class="mini-btn square share-square" type="button" onclick="event.stopPropagation();location.href='${escapeAttr(href)}'"><span class="btn-emoji">💫</span><span class="btn-text">추천</span></button>
-        <button class="mini-btn square edit-square" type="button" onclick="event.stopPropagation();location.href='${escapeAttr(href)}'"><span class="btn-emoji">👀</span><span class="btn-text">관리</span></button>
+      <h3 class="card-title property-edit-link">${escapeHtml(p.projectTitle)}</h3>
+      <div class="project-card-meta">
+        <span>프로젝트 번호 ${escapeHtml(id || '미확정')}</span>
+        <span>생성일 ${escapeHtml(formatDashboardDate(p.createdAt || p.requestDate))}</span>
+        <span>수정일 ${escapeHtml(formatDashboardDate(p.updatedAt))}</span>
       </div>
     </div>
-    <div class="card-meta">${escapeHtml(bottomBits.join(' / '))}</div>
   </div>
 </article>`;
     }

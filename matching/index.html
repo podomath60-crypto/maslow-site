@@ -172,6 +172,12 @@
     .business-card-slot.has-image .business-card-empty{display:none}
     .business-card-empty{display:grid;gap:4px;text-align:center;color:#7f8a96;font-size:12px;font-weight:900}
     .business-card-empty b{font-size:15px;color:#27303a}
+    .business-card-slot.is-uploading::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.72);backdrop-filter:blur(1px);z-index:2}
+    .business-card-status{position:absolute;left:8px;right:8px;bottom:8px;min-height:20px;padding:4px 7px;border-radius:999px;background:rgba(15,23,42,.68);color:#fff;font-size:11px;font-weight:900;text-align:center;z-index:3;display:none;pointer-events:none}
+    .business-card-slot.is-uploading .business-card-status,.business-card-slot.upload-failed .business-card-status,.business-card-slot.upload-done .business-card-status{display:block}
+    .business-card-slot.is-uploading .business-card-status::before{content:'';display:inline-block;width:10px;height:10px;border-radius:999px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;margin-right:5px;vertical-align:-2px;animation:restoreSpin .8s linear infinite}
+    .business-card-slot.upload-failed .business-card-status{background:rgba(185,28,28,.86)}
+    .business-card-slot.upload-done .business-card-status{background:rgba(22,101,52,.78)}
     .project-line-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:1px solid #edf2f7;border-bottom:1px solid #edf2f7}
     .project-col{padding:10px 14px 12px;display:grid;align-content:start;gap:2px;min-height:168px;min-width:0;border-right:1px solid #edf2f7;background:transparent}
     .project-col:last-child{border-right:none}
@@ -534,6 +540,7 @@
                   <b>명함 1</b>
                   <span>이미지 넣기</span>
                 </div>
+                <div class="business-card-status" data-business-card-status="1"></div>
               </div>
               <div class="business-card-slot" data-business-card-slot="2" role="button" tabindex="0" aria-label="명함 이미지 2 넣기">
                 <input data-business-card-input="2" type="file" accept="image/*" hidden>
@@ -542,6 +549,7 @@
                   <b>명함 2</b>
                   <span>이미지 넣기</span>
                 </div>
+                <div class="business-card-status" data-business-card-status="2"></div>
               </div>
             </div>
           </div>
@@ -785,7 +793,7 @@
       project:{
         projectId:'', title:'', status:'', inquiryDate:'', inquiryRoutes:[], inquiryRouteEtc:'', inquiryType:'', inquiryMemo:'', clientName:'', phone:'', companyName:'', clientCategory:'', requesterRelation:'', industry:'',
         dealType:'', budget:'', dealTypeMode:'any', saleEnabled:false, rentEnabled:false, saleBudgetMin:'', saleBudgetMax:'', salePriceMemo:'', rentDepositMin:'', rentDepositMax:'', rentMonthlyMin:'', rentMonthlyMax:'', rentPriceMemo:'',
-        regions:'', usePurpose:'', land:'', building:'', areaSummary:'', coreNeeds:'', lastContact:'', nextAction:'', contactLogs:[]
+        regions:'', usePurpose:'', land:'', building:'', areaSummary:'', coreNeeds:'', lastContact:'', nextAction:'', contactLogs:[], businessCardTemps:[], businessCardsJson:''
       },
       candidates:[],
       dbSearchResults:[],
@@ -898,6 +906,7 @@
       const saleBox=document.querySelector('[data-sale-condition]'); if(saleBox) saleBox.style.display=p.saleEnabled ? '' : 'none';
       const rentBox=document.querySelector('[data-rent-condition]'); if(rentBox) rentBox.style.display=p.rentEnabled ? '' : 'none';
       renderProjectRestoreStatus();
+      renderBusinessCardSlots();
     }
     function renderRouteChecks(){}
     function candidateCounts(){
@@ -1364,6 +1373,8 @@
         specialMemo:[p.areaSummary, p.land, p.building].filter(Boolean).join(' / '),
         lastContact:p.lastContact || '',
         nextAction:p.nextAction || '',
+        businessCardTemps:Array.isArray(p.businessCardTemps) ? p.businessCardTemps : [],
+        businessCardsJson:p.businessCardsJson || '',
         internalMemo:JSON.stringify({project:p, savedFrom:'matching/index.html'}),
         lastSaleAlgorithmRunId:state.lastAlgorithmRunByDeal && state.lastAlgorithmRunByDeal.sale ? state.lastAlgorithmRunByDeal.sale.algorithmRunId : '',
         lastRentAlgorithmRunId:state.lastAlgorithmRunByDeal && state.lastAlgorithmRunByDeal.rent ? state.lastAlgorithmRunByDeal.rent.algorithmRunId : '',
@@ -1455,6 +1466,7 @@
       const projectId=projectRes.projectId || (projectRes.item && projectRes.item.projectId) || (state.project && state.project.projectId);
       if(!projectId) throw new Error('projectId 저장 응답이 없습니다.');
       state.project.projectId=projectId;
+      try{ const url=new URL(window.location.href); url.searchParams.set('projectId', projectId); window.history.replaceState({}, '', url.toString()); }catch(e){}
       return projectId;
     }
     async function saveMatchingWorkspaceToServer(){
@@ -1521,6 +1533,11 @@
       if(!value) return null;
       if(typeof value === 'object') return value;
       try{ const parsed=JSON.parse(String(value)); return parsed && typeof parsed === 'object' ? parsed : null; }catch(e){ return null; }
+    }
+    function safeParseArray(value){
+      if(!value) return [];
+      if(Array.isArray(value)) return value;
+      try{ const parsed=JSON.parse(String(value)); return Array.isArray(parsed) ? parsed : []; }catch(e){ return []; }
     }
     function truthySavedValue(value){
       if(value===true) return true;
@@ -1595,6 +1612,14 @@
       restored.coreNeeds=restored.coreNeeds || firstNonEmptyValue(record, ['requiredMemo','coreNeeds','requirements','요구조건']);
       restored.lastContact=restored.lastContact || firstNonEmptyValue(record, ['lastContact','recentContact','최근연락']);
       restored.nextAction=restored.nextAction || firstNonEmptyValue(record, ['nextAction','다음액션']);
+      const savedBusinessCards=firstNonEmptyValue(record, ['businessCardsJson','businessCardTemps','명함JSON']);
+      const parsedBusinessCards=safeParseArray(savedBusinessCards);
+      if(parsedBusinessCards.length){
+        restored.businessCardTemps=parsedBusinessCards;
+        restored.businessCardsJson=typeof savedBusinessCards === 'string' ? savedBusinessCards : JSON.stringify(parsedBusinessCards);
+      }else if(!Array.isArray(restored.businessCardTemps)){
+        restored.businessCardTemps=[];
+      }
       return restored;
     }
     function normalizeSavedMatchingStatus(status){
@@ -4265,10 +4290,123 @@
     const businessCardViewerDone=document.getElementById('businessCardViewerDone');
     const businessCardViewerChange=document.getElementById('businessCardViewerChange');
     let activeBusinessCardKey=null;
+
+    function getBusinessCardItems(){
+      const p=state.project || {};
+      if(Array.isArray(p.businessCardTemps)) return p.businessCardTemps;
+      const parsed=safeParseArray(p.businessCardsJson);
+      p.businessCardTemps=parsed;
+      return p.businessCardTemps;
+    }
+    function getBusinessCardItem(key){
+      const slotKey='businessCard' + key;
+      return getBusinessCardItems().find(item=>String(item.slotKey||'')===slotKey || String(item.order||'')===String(key)) || null;
+    }
+    function setBusinessCardItem(key, item){
+      const slotKey='businessCard' + key;
+      const items=getBusinessCardItems().filter(x=>String(x.slotKey||'')!==slotKey && String(x.order||'')!==String(key));
+      const next=Object.assign({}, item || {}, {slotKey, order:Number(key) || (items.length+1), kind:'businessCard'});
+      items.push(next);
+      items.sort((a,b)=>Number(a.order||0)-Number(b.order||0));
+      state.project.businessCardTemps=items;
+      state.project.businessCardsJson=JSON.stringify(items);
+      return next;
+    }
+    function setBusinessCardStatus(key, status, text){
+      const slot=document.querySelector(`[data-business-card-slot="${key}"]`);
+      const statusEl=document.querySelector(`[data-business-card-status="${key}"]`);
+      if(!slot || !statusEl) return;
+      slot.classList.remove('is-uploading','upload-failed','upload-done');
+      if(status) slot.classList.add(status);
+      statusEl.textContent=text || '';
+      if(status==='upload-done') setTimeout(()=>{
+        if(slot.classList.contains('upload-done')){ slot.classList.remove('upload-done'); statusEl.textContent=''; }
+      }, 1600);
+    }
+    function renderBusinessCardSlots(){
+      [1,2].forEach(key=>{
+        const slot=document.querySelector(`[data-business-card-slot="${key}"]`);
+        const preview=document.querySelector(`[data-business-card-preview="${key}"]`);
+        if(!slot || !preview) return;
+        const item=getBusinessCardItem(key);
+        const src=String((item && (item.url || item.originalUrl || item.dataUrl)) || '').trim();
+        if(src){
+          preview.src=src;
+          slot.classList.add('has-image');
+        }else{
+          preview.removeAttribute('src');
+          slot.classList.remove('has-image');
+        }
+      });
+    }
+    function readFileAsDataUrl(file){
+      return new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=()=>resolve(String(reader.result || ''));
+        reader.onerror=()=>reject(new Error('파일을 읽지 못했습니다.'));
+        reader.readAsDataURL(file);
+      });
+    }
+    async function ensureProjectIdForBusinessCardUpload(){
+      if(state.project && state.project.projectId) return state.project.projectId;
+      const projectId=await saveProjectAndReturnId();
+      state.project.projectId=projectId;
+      return projectId;
+    }
+    async function uploadBusinessCardFile(key, file){
+      const slot=document.querySelector(`[data-business-card-slot="${key}"]`);
+      const preview=document.querySelector(`[data-business-card-preview="${key}"]`);
+      if(!file || !slot || !preview) return;
+      const dataUrl=await readFileAsDataUrl(file);
+      preview.src=dataUrl;
+      slot.classList.add('has-image');
+      setBusinessCardStatus(key, 'is-uploading', 'Drive 업로드 중');
+      if(businessCardViewer.classList.contains('show') && activeBusinessCardKey===String(key)){
+        businessCardViewerImage.src=dataUrl;
+      }
+      try{
+        const projectId=await ensureProjectIdForBusinessCardUpload();
+        const prev=getBusinessCardItem(key);
+        const tempKey=(prev && prev.tempKey) || ('businessCard' + key + '_' + nowCompactId('BC'));
+        const res=await gasPost('uploadProjectTempFile', {
+          projectId,
+          fileKind:'businessCard',
+          slotKey:'businessCard' + key,
+          tempKey,
+          fileName:file.name || ('businessCard' + key + '.jpg'),
+          dataUrl
+        });
+        if(!res || res.ok===false) throw new Error((res && (res.message || res.error)) || '명함 업로드 실패');
+        const saved=setBusinessCardItem(key, {
+          slotKey:res.slotKey || ('businessCard' + key),
+          order:Number(res.order || key),
+          tempKey:res.tempKey || tempKey,
+          name:res.originalFileName || file.name || '',
+          kind:res.fileKind || 'businessCard',
+          fileId:res.fileId || '',
+          fileName:res.fileName || '',
+          url:res.url || '',
+          originalUrl:res.originalUrl || ''
+        });
+        if(saved.url || saved.originalUrl){
+          preview.src=saved.url || saved.originalUrl;
+          if(businessCardViewer.classList.contains('show') && activeBusinessCardKey===String(key)){
+            businessCardViewerImage.src=saved.originalUrl || saved.url;
+          }
+        }
+        setBusinessCardStatus(key, 'upload-done', 'Drive 저장 완료');
+        markChange(`명함 ${key} Drive 저장`);
+      }catch(err){
+        console.error(err);
+        setBusinessCardStatus(key, 'upload-failed', '업로드 실패');
+        alert('명함 업로드 실패: ' + (err && err.message ? err.message : String(err)));
+      }
+    }
     function openBusinessCardViewer(key,src){
-      activeBusinessCardKey=key;
+      activeBusinessCardKey=String(key);
+      const item=getBusinessCardItem(key);
       businessCardViewerTitle.textContent=`명함 ${key}`;
-      businessCardViewerImage.src=src;
+      businessCardViewerImage.src=(item && (item.originalUrl || item.url)) || src;
       businessCardViewer.classList.add('show');
     }
     function closeBusinessCardViewer(){
@@ -4290,6 +4428,7 @@
       const preview=document.querySelector(`[data-business-card-preview="${key}"]`);
       if(!input || !preview) return;
       slot.addEventListener('click',()=>{
+        if(slot.classList.contains('is-uploading')) return;
         if(slot.classList.contains('has-image') && preview.src){
           openBusinessCardViewer(key,preview.src);
           return;
@@ -4300,16 +4439,7 @@
       input.addEventListener('change',()=>{
         const file=input.files && input.files[0];
         if(!file) return;
-        const reader=new FileReader();
-        reader.onload=()=>{
-          preview.src=reader.result;
-          slot.classList.add('has-image');
-          markChange(`명함 ${key} 이미지 추가`);
-          if(businessCardViewer.classList.contains('show') && activeBusinessCardKey===key){
-            businessCardViewerImage.src=reader.result;
-          }
-        };
-        reader.readAsDataURL(file);
+        uploadBusinessCardFile(key, file).finally(()=>{ input.value=''; });
       });
     });
     function initSectionNav(){

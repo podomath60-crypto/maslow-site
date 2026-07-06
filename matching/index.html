@@ -125,6 +125,10 @@
     .project-hero-left{min-width:0;display:grid;gap:6px}
     .project-title-input{font-size:32px;line-height:1.06;font-weight:1000;letter-spacing:-.065em;outline:none;padding:1px 0;min-height:36px}
     .project-title-input:focus,.inline-value:focus,.project-summary-text [contenteditable]:focus,.memo-note:focus{background:#fff7d6;box-shadow:0 0 0 2px rgba(245,158,11,.16);border-radius:6px}
+    .inline-value[data-placeholder]:empty::before,.memo-note[data-placeholder]:empty::before{content:attr(data-placeholder);color:#bccddd}
+    .picker-value[data-placeholder]:empty::before{content:attr(data-placeholder);color:#bccddd}
+    .deal-scope-grid .inline-value[data-placeholder]:empty::before{color:#c3d4e3}
+
     .project-summary-text{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:13px;font-weight:950;color:#202833;line-height:1.35}
     .project-summary-text [contenteditable]{outline:none;padding:1px 2px;min-height:18px}
     .project-summary-text .sep{color:#b5bdc7;font-weight:900}
@@ -540,44 +544,44 @@
               <div class="project-col-title">의뢰 접수</div>
               <div class="project-line">
                 <div class="inline-label">최초문의</div>
-                <div><span class="inline-value" contenteditable="true" data-inline-field="inquiryDate"></span><button type="button" class="today-btn" id="todayInquiryBtn">오늘</button></div>
+                <div><span class="inline-value" contenteditable="true" data-inline-field="inquiryDate" data-placeholder="날짜 입력"></span><button type="button" class="today-btn" id="todayInquiryBtn">오늘</button></div>
               </div>
               <div class="project-line">
                 <div class="inline-label">문의루트</div>
-                <div class="inline-value picker-value" tabindex="0" data-inline-field="inquiryRoutesText" data-picker="routes"></div>
+                <div class="inline-value picker-value" tabindex="0" data-inline-field="inquiryRoutesText" data-picker="routes" data-placeholder="문의 경로 선택"></div>
               </div>
               <div class="project-line">
                 <div class="inline-label">의뢰구분</div>
-                <div class="inline-value picker-value" tabindex="0" data-inline-field="inquiryType" data-picker="inquiryType"></div>
+                <div class="inline-value picker-value" tabindex="0" data-inline-field="inquiryType" data-picker="inquiryType" data-placeholder="의뢰 구분 선택"></div>
               </div>
-              <div class="memo-block"><div class="inline-label">접수 메모</div><div class="memo-note" contenteditable="true" data-inline-field="inquiryMemo"></div></div>
+              <div class="memo-block"><div class="inline-label">접수 메모</div><div class="memo-note" contenteditable="true" data-inline-field="inquiryMemo" data-placeholder="접수 메모"></div></div>
             </div>
 
             <div class="project-col">
               <div class="project-col-title">의뢰인</div>
               <div class="project-line">
                 <div class="inline-label">고객명</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="clientName"></div>
+                <div class="inline-value" contenteditable="true" data-inline-field="clientName" data-placeholder="고객명 입력"></div>
               </div>
               <div class="project-line">
                 <div class="inline-label">연락처</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="phone"></div>
+                <div class="inline-value" contenteditable="true" data-inline-field="phone" data-placeholder="연락처 입력"></div>
               </div>
               <div class="project-line">
                 <div class="inline-label">회사명</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="companyName"></div>
+                <div class="inline-value" contenteditable="true" data-inline-field="companyName" data-placeholder="회사명 입력"></div>
               </div>
               <div class="project-line">
                 <div class="inline-label">고객주체</div>
-                <div class="inline-value picker-value" tabindex="0" data-inline-field="clientCategory" data-picker="clientCategory"></div>
+                <div class="inline-value picker-value" tabindex="0" data-inline-field="clientCategory" data-picker="clientCategory" data-placeholder="고객주체 선택"></div>
               </div>
               <div class="project-line">
                 <div class="inline-label">관계</div>
-                <div class="inline-value picker-value" tabindex="0" data-inline-field="requesterRelation" data-picker="requesterRelation"></div>
+                <div class="inline-value picker-value" tabindex="0" data-inline-field="requesterRelation" data-picker="requesterRelation" data-placeholder="관계 선택"></div>
               </div>
               <div class="project-line">
                 <div class="inline-label">업종</div>
-                <div class="inline-value picker-value" tabindex="0" data-inline-field="industry" data-picker="industry"></div>
+                <div class="inline-value picker-value" tabindex="0" data-inline-field="industry" data-picker="industry" data-placeholder="업종 선택"></div>
               </div>
             </div>
 
@@ -596,14 +600,14 @@
                   <div class="deal-range-line">
                     <div class="inline-label">매매가</div>
                     <div class="deal-range-fields">
-                      <div class="inline-value" contenteditable="true" data-inline-field="saleBudgetMin"></div>
+                      <div class="inline-value" contenteditable="true" data-inline-field="saleBudgetMin" data-placeholder="하한"></div>
                       <div class="deal-range-sep">-</div>
-                      <div class="inline-value" contenteditable="true" data-inline-field="saleBudgetMax"></div>
+                      <div class="inline-value" contenteditable="true" data-inline-field="saleBudgetMax" data-placeholder="상한"></div>
                     </div>
                   </div>
                   <div class="deal-memo-line">
                     <div class="inline-label">매매 메모</div>
-                    <div class="inline-value" contenteditable="true" data-inline-field="salePriceMemo"></div>
+                    <div class="inline-value" contenteditable="true" data-inline-field="salePriceMemo" data-placeholder="매매 조건 메모"></div>
                   </div>
                 </div>
               </div>
@@ -613,40 +617,40 @@
                   <div class="deal-range-line">
                     <div class="inline-label">보증금</div>
                     <div class="deal-range-fields">
-                      <div class="inline-value" contenteditable="true" data-inline-field="rentDepositMin"></div>
+                      <div class="inline-value" contenteditable="true" data-inline-field="rentDepositMin" data-placeholder="하한"></div>
                       <div class="deal-range-sep">-</div>
-                      <div class="inline-value" contenteditable="true" data-inline-field="rentDepositMax"></div>
+                      <div class="inline-value" contenteditable="true" data-inline-field="rentDepositMax" data-placeholder="상한"></div>
                     </div>
                   </div>
                   <div class="deal-range-line">
                     <div class="inline-label">월세</div>
                     <div class="deal-range-fields">
-                      <div class="inline-value" contenteditable="true" data-inline-field="rentMonthlyMin"></div>
+                      <div class="inline-value" contenteditable="true" data-inline-field="rentMonthlyMin" data-placeholder="하한"></div>
                       <div class="deal-range-sep">-</div>
-                      <div class="inline-value" contenteditable="true" data-inline-field="rentMonthlyMax"></div>
+                      <div class="inline-value" contenteditable="true" data-inline-field="rentMonthlyMax" data-placeholder="상한"></div>
                     </div>
                   </div>
                   <div class="deal-memo-line">
                     <div class="inline-label">임대 메모</div>
-                    <div class="inline-value" contenteditable="true" data-inline-field="rentPriceMemo"></div>
+                    <div class="inline-value" contenteditable="true" data-inline-field="rentPriceMemo" data-placeholder="임대 조건 메모"></div>
                   </div>
                 </div>
               </div>
               <div class="project-line">
                 <div class="inline-label">지역</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="regions"></div>
+                <div class="inline-value" contenteditable="true" data-inline-field="regions" data-placeholder="희망 지역 입력"></div>
               </div>
               <div class="project-line">
                 <div class="inline-label">용도</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="usePurpose"></div>
+                <div class="inline-value" contenteditable="true" data-inline-field="usePurpose" data-placeholder="용도 입력"></div>
               </div>
               <div class="project-line">
                 <div class="inline-label">면적</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="areaSummary"></div>
+                <div class="inline-value" contenteditable="true" data-inline-field="areaSummary" data-placeholder="면적 조건 입력"></div>
               </div>
               <div class="project-line">
                 <div class="inline-label">핵심조건</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="coreNeeds"></div>
+                <div class="inline-value" contenteditable="true" data-inline-field="coreNeeds" data-placeholder="핵심조건 입력"></div>
               </div>
             </div>
           </div>

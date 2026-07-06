@@ -399,6 +399,14 @@
     .candidate-map-marker::after{content:"";width:8px;height:8px;border-radius:999px;background:#fff}.candidate-map-marker.active{background:#7c3aed;transform:translate(-50%,-50%) scale(1.08)}.candidate-map-marker.rejected{background:#ef4444}.candidate-map-marker.hold{background:#64748b}.candidate-map-marker.proposal{background:#16a34a}
     .candidate-map-status{position:absolute;left:12px;bottom:12px;z-index:8;border:1px solid rgba(203,213,225,.9);background:rgba(255,255,255,.9);border-radius:14px;padding:8px 10px;font-size:11px;font-weight:950;color:#475569;line-height:1.45;backdrop-filter:blur(8px);max-width:380px}
     .candidate-map-status.error{color:#b42318;border-color:#fecaca;background:rgba(255,241,241,.94)}
+
+    .section-title-action.algo{background:#111318;color:#fff;border-color:#111318}
+    .algo-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;border:1px solid #e6ebf1;background:#fbfdff;border-radius:20px;padding:10px 12px}
+    .algo-toolbar-title{font-size:13px;font-weight:1000;color:#111318;line-height:1.35}.algo-toolbar-sub{font-size:11px;font-weight:850;color:#64748b;margin-top:2px;line-height:1.35}
+    .algo-rank-buttons{display:flex;gap:6px;flex-wrap:wrap}.algo-rank-btn{height:32px;border:1px solid #dbe5ee;background:#fff;border-radius:999px;padding:0 11px;font-size:11px;font-weight:1000;color:#374151;cursor:pointer}.algo-rank-btn.active{background:#111318;border-color:#111318;color:#fff}
+    .db-thumb{width:100%;aspect-ratio:16/9;border:1px solid #edf2f7;background:#f8fafc;border-radius:16px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;font-weight:1000}
+    .db-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .db-rank-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.rank-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#111318;color:#fff;padding:5px 8px;font-size:11px;font-weight:1000}.algo-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;padding:5px 8px;font-size:11px;font-weight:1000}
     @media(max-width:1100px){.candidate-map-layout{grid-template-columns:1fr;min-height:0}.candidate-map-side{min-height:380px}.candidate-map-mini-list{max-height:220px}.map-search-layout{grid-template-columns:1fr;min-height:0}.matching-map-stage{min-height:420px}.map-list-panel{min-height:380px}.map-list-body{max-height:310px}}
 
     .visit-list{display:grid;gap:12px}
@@ -601,6 +609,7 @@
           </div>
           <div class="section-head-actions">
             <button class="section-title-action" id="addSearchLogBtn" type="button">+ 서칭기록저장</button>
+            <button class="section-title-action algo" id="runAlgorithmBtn" type="button">+ 알고리즘가동</button>
             <button class="section-title-action" id="candidateSearchBtn" type="button">+ 매물후보검색</button>
             <button class="section-title-action" id="listingEditorBtn" type="button">+ 매물입력기</button>
           </div>
@@ -747,6 +756,7 @@
     let activeFilter = '전체';
     let activeSection2Tab = '후보매물';
     let candidateViewMode = 'panel';
+    let algorithmTopN = 10;
     let activeCandidateMapId = '';
     let activeSearchLogId = '';
     let activeStudyLogId = '';
@@ -772,7 +782,7 @@
       const rejected=state.candidates.filter(c=>c.rejected || c.stage==='탈락').length;
       const hold=state.candidates.filter(c=>c.stage==='보류' && !c.rejected).length;
       const proposal=state.candidates.filter(c=>c.proposal&&!c.rejected).length;
-      const recommendation=state.candidates.filter(c=>c.sourceType==='recommendation').length;
+      const recommendation=Array.isArray(state.recommendationResults) ? state.recommendationResults.length : state.candidates.filter(c=>c.sourceType==='recommendation').length;
       const manual=state.candidates.filter(c=>c.sourceType==='manual_search' || c.sourceType==='map_search').length;
       const visit=state.candidates.filter(c=>String(c.visit).includes('임장')&&!c.rejected).length;
       const active=total-rejected;
@@ -1024,9 +1034,21 @@
       const items=candidateMapItems();
       return `<div class="candidate-map-layout"><div class="matching-map-stage real-map"><div id="candidateRealMap" class="matching-real-map-canvas"></div><div id="candidateMapStatus" class="candidate-map-status">후보 지도를 준비 중입니다.</div></div><aside class="candidate-map-side"><div class="candidate-map-side-head"><div><div class="candidate-map-side-title">매칭 후보</div><div class="candidate-map-side-sub" id="candidateMapSideSub">후보 ${items.length}개</div></div><span class="source-badge manual">단건패널</span></div><div class="candidate-map-mini-list" id="candidateMapMiniList">${renderCandidateMapMiniList(items)}</div><div class="candidate-map-detail" id="candidateMapDetail">${renderCandidateMapDetail(selectedCandidateMapItem())}</div></aside></div>`;
     }
+    function renderDbThumb(item){
+      const url=String(item.heroUrl || firstPhotoUrlFromJson(item.photoUrlsJson) || (item.raw && firstPhotoUrlFromJson(item.raw.photoUrlsJson)) || '').trim();
+      if(!url) return '<div class="db-thumb">사진 없음</div>';
+      return `<div class="db-thumb"><img src="${escapeAttr(url)}" alt="${escapeAttr(item.title || '매물 사진')}" loading="lazy"></div>`;
+    }
     function renderDbCards(items, sourceType){
       if(!items.length) return '<div class="candidate-empty">검색 결과가 없습니다.</div>';
-      return `<div class="db-result-grid">${items.map(item=>{ const exists=state.candidates.some(c=>c.propertyId===item.propertyId); return `<article class="db-card"><div><div class="db-title">${escapeHtml(item.title)}</div><div class="db-no">listingNumber ${escapeHtml(item.propertyId)} · ${escapeHtml(item.status||'상태 확인')}</div></div><div class="summary-line"><span class="chip">${escapeHtml(item.dealType||'거래')}</span><span class="chip">${escapeHtml(item.price||'가격')}</span></div><div class="db-meta">${escapeHtml(item.address||'주소 확인 필요')}<br>${escapeHtml(item.area||'면적 확인 필요')}</div>${item.score?`<div class="score-badge" style="width:max-content">추천점수 ${item.score}점</div>`:''}${item.reason?`<div class="db-reason"><b>추천사유</b><br>${escapeHtml(item.reason)}<br><b>맞는 조건</b> ${escapeHtml(listText(item.strengths))}<br><b>부족 조건</b> ${escapeHtml(listText(item.weakPoints))}<br><b>리스크</b> ${escapeHtml(listText(item.risks))}</div>`:''}<div class="cand-actions"><button class="card-btn green" ${exists?'disabled':''} data-add-db-candidate="${escapeAttr(item.propertyId)}" data-add-source="${sourceType}">${exists?'이미 후보':'후보에 추가'}</button><button class="card-btn dark" data-admin="${escapeAttr(item.propertyId)}">매물입력기 열기</button></div></article>`; }).join('')}</div>`;
+      return `<div class="db-result-grid">${items.map((item,idx)=>{ const exists=state.candidates.some(c=>c.propertyId===item.propertyId); const rank=item.algorithmRank || (sourceType==='recommendation' ? idx+1 : ''); return `<article class="db-card">
+        ${renderDbThumb(item)}
+        <div>${sourceType==='recommendation'?`<div class="db-rank-line"><span class="rank-badge">추천 ${rank}위</span><span class="algo-badge">${Number(item.score||0)}점</span></div>`:''}<div class="db-title">${escapeHtml(item.title)}</div><div class="db-no">listingNumber ${escapeHtml(item.propertyId)} · ${escapeHtml(item.status||'상태 확인')}</div></div>
+        <div class="summary-line"><span class="chip">${escapeHtml(item.dealType||'거래')}</span><span class="chip">${escapeHtml(item.price||'가격')}</span>${item.statusBadges?item.statusBadges.map(b=>`<span class="chip">${escapeHtml(b)}</span>`).join(''):''}</div>
+        <div class="db-meta">${escapeHtml(item.address||'주소 확인 필요')}<br>${escapeHtml(item.area||'면적 확인 필요')}</div>
+        ${item.score && sourceType!=='recommendation'?`<div class="score-badge" style="width:max-content">추천점수 ${item.score}점</div>`:''}
+        <div class="cand-actions"><button class="card-btn green" ${exists?'disabled':''} data-add-db-candidate="${escapeAttr(item.propertyId)}" data-add-source="${sourceType}">${exists?'이미 후보':'후보로 지정'}</button><button class="card-btn dark" data-admin="${escapeAttr(item.propertyId)}">매물입력기 열기</button></div>
+      </article>`; }).join('')}</div>`;
     }
     function fetchJson(url, options){
       return fetch(url, options || {}).then(async res=>{
@@ -1471,7 +1493,9 @@
     }
     function dashboardStatus(item){
       const src = item && (item.dashboardStatus || (item.raw && item.raw.dashboardStatus)) || null;
-      return src && typeof src === 'object' ? src : {internal:false,needsWork:false,needsPhoto:false,needsContact:false,dealDone:false,reviewHold:false};
+      if(src && typeof src === 'object' && Object.keys(src).length) return src;
+      const parsed=parseDashboardStatusRaw(item);
+      return parsed && typeof parsed === 'object' ? parsed : {internal:false,needsWork:false,needsPhoto:false,needsContact:false,dealDone:false,reviewHold:false};
     }
     function parseDashboardStatusRaw(item){
       const raw = item && (item.dashboardStatusJson || (item.raw && item.raw.dashboardStatusJson));
@@ -1565,6 +1589,17 @@
       if(!q) return true;
       return ourPropertySearchText(item).indexOf(q) !== -1;
     }
+
+    function firstPhotoUrlFromJson(value){
+      try{
+        const arr=typeof value === 'string' ? JSON.parse(value || '[]') : value;
+        if(Array.isArray(arr) && arr.length){
+          const first=arr.find(x=>x && (x.url || x.originalUrl || x.src)) || arr[0];
+          return String(first.url || first.originalUrl || first.src || '').trim();
+        }
+      }catch(e){}
+      return '';
+    }
     function currentMatchingFilterLabel(){
       const filters=mapSearchState.filters || {};
       const parts=[];
@@ -1595,7 +1630,7 @@
         area:area,
         status:displayStatusText(item.status),
         statusRaw:item.status || '',
-        heroUrl:item.heroUrl || item.thumbnailUrl || item.mainPhotoUrl || item.photoUrl || item.imageUrl || '',
+        heroUrl:item.heroUrl || item.thumbnailUrl || item.mainPhotoUrl || item.photoUrl || item.imageUrl || firstPhotoUrlFromJson(item.photoUrlsJson) || '',
         dashboardStatusJson:item.dashboardStatusJson || '',
         dashboardStatus:item.dashboardStatus || {},
         memo:item.memo || '',
@@ -1606,6 +1641,24 @@
         landAreaPy:item.landAreaPy || '',
         totalFloorAreaM2:item.totalFloorAreaM2 || '',
         totalFloorAreaPy:item.totalFloorAreaPy || '',
+        buildingAreaM2:item.buildingAreaM2 || '',
+        buildingAreaPy:item.buildingAreaPy || '',
+        exclusiveAreaM2:item.exclusiveAreaM2 || '',
+        exclusiveAreaPy:item.exclusiveAreaPy || '',
+        ceilingHeight:item.ceilingHeight || item.floorHeight || '',
+        crane:item.crane || '',
+        hoist:item.hoist || '',
+        powerCapacity:item.powerCapacity || '',
+        mainFacilities:item.mainFacilities || '',
+        recommendedUse:item.recommendedUse || '',
+        restrictedUse:item.restrictedUse || '',
+        roadWidth:item.roadWidth || '',
+        truckAccess:item.truckAccess || item.largeVehicleAccess || '',
+        loadingAvailable:item.loadingAvailable || '',
+        officeIncluded:item.officeIncluded || '',
+        yardSize:item.yardSize || '',
+        readyToOperate:item.readyToOperate || item.availableNow || '',
+        photoUrlsJson:item.photoUrlsJson || '',
         sourceType:'map_search',
         sourceLabel:'우리DB',
         score:0,
@@ -2003,7 +2056,166 @@
         </div>
       </div>`;
     }
-    function renderRecommendationPanel(){ return `<div class="section2-rule"><b>추천매물시스템</b> 현재 의뢰 조건을 기준으로 우리 DB에서 추천된 매물입니다. 결과를 검토한 뒤 필요한 매물만 후보로 추가합니다.</div>${renderDbCards(state.recommendationResults||[], 'recommendation')}`; }
+    function parseWonValue(text){
+      text=String(text||'').replace(/,/g,'').trim();
+      if(!text) return null;
+      let total=0, found=false;
+      const eok=text.match(/(\d+(?:\.\d+)?)\s*억/);
+      if(eok){ total += Number(eok[1]) * 100000000; found=true; }
+      const man=text.match(/(\d+(?:\.\d+)?)\s*만/);
+      if(man){ total += Number(man[1]) * 10000; found=true; }
+      if(!found){ const n=Number(text.replace(/[^0-9.]/g,'')); if(Number.isFinite(n) && n>0){ total = n; found=true; } }
+      return found ? total : null;
+    }
+    function parsePriceRange(text){
+      text=String(text||'');
+      const parts=text.split(/~|-|부터|에서|–|—/).map(x=>x.trim()).filter(Boolean);
+      if(parts.length>=2){ return {min:parseWonValue(parts[0]), max:parseWonValue(parts[1])}; }
+      const one=parseWonValue(text);
+      return {min:null, max:one};
+    }
+    function parseListingPrice(item){
+      const text=String(item && item.price || '');
+      const monthly=text.match(/월(?:세)?\s*([0-9,.]+)\s*(억|만)?/);
+      const deposit=text.match(/보증금\s*([0-9,.]+)\s*(억|만)?/);
+      function unitWon(m){ if(!m) return null; return parseWonValue(m[1] + (m[2] || '만')); }
+      return { sale:parseWonValue(text), deposit:unitWon(deposit), monthly:unitWon(monthly), raw:text };
+    }
+    function numText(value){ const n=Number(String(value||'').replace(/[^0-9.\-]/g,'')); return Number.isFinite(n) ? n : null; }
+    function parseAreaCriteria(text){
+      text=String(text||'');
+      const land=text.match(/대지\s*([0-9,.]+)\s*평/);
+      const building=text.match(/(?:건물|연면적|건축)\s*([0-9,.]+)\s*평/);
+      return { landMinPy: land ? numText(land[1]) : null, buildingMinPy: building ? numText(building[1]) : null };
+    }
+    function splitCriteriaWords(text){ return String(text||'').split(/[·,\/\n\s]+/).map(x=>x.trim()).filter(Boolean); }
+    function buildAlgorithmCriteria(){
+      const p=state.project || {};
+      const deal=String(p.dealType||'').indexOf('임대')>=0 ? '임대' : (String(p.dealType||'').indexOf('매매')>=0 ? '매매' : '무관');
+      const area=parseAreaCriteria([p.areaSummary,p.land,p.building].join(' '));
+      return { dealType:deal, budget:parsePriceRange(p.budget), regions:splitCriteriaWords(p.regions), useWords:splitCriteriaWords(p.usePurpose), coreWords:splitCriteriaWords(p.coreNeeds), area };
+    }
+    function normalizeRegionToken(token){ return String(token||'').replace(/전북특별자치도|전라북도|충청남도|전라남도|경기도|특별시|광역시/g,'').replace(/[()]/g,'').trim(); }
+    function scoreRegionForAlgorithm(criteria, item){
+      const address=String(item.address||'');
+      const regions=(criteria.regions||[]).map(normalizeRegionToken).filter(Boolean);
+      if(!regions.length) return 0;
+      let best=0;
+      regions.forEach(r=>{
+        if(!r) return;
+        if(address.indexOf(r)>=0){ best=Math.max(best, 25); return; }
+        const city=(r.match(/([가-힣]+(?:시|군|구))/)||[])[1] || (r.match(/([가-힣]+시)/)||[])[1] || '';
+        const dong=(r.match(/([가-힣0-9]+(?:동|읍|면|리))/)||[])[1] || '';
+        let sc=0;
+        if(city && address.indexOf(city)>=0) sc += dong ? 15 : 25;
+        if(dong && address.indexOf(dong)>=0) sc += 10;
+        best=Math.max(best, Math.min(25, sc));
+      });
+      return best;
+    }
+    function scoreBudgetForAlgorithm(criteria, item){
+      const budget=criteria.budget || {};
+      const parsed=parseListingPrice(item);
+      const price=(criteria.dealType==='임대') ? (parsed.monthly || parsed.deposit || parsed.sale) : parsed.sale;
+      if(!price) return 0;
+      const min=budget.min, max=budget.max;
+      if(!min && !max) return 0;
+      const lower=min ? min*0.9 : null;
+      const upper=max ? max*1.1 : null;
+      if((!lower || price>=lower) && (!upper || price<=upper)) return 25;
+      if(upper && price>upper){ return Math.max(0, 25 - Math.min(25, Math.round(((price-upper)/upper)*100))); }
+      if(lower && price<lower){ return Math.max(0, 25 - Math.min(25, Math.round(((lower-price)/lower)*100))); }
+      return 0;
+    }
+    function scoreAreaForAlgorithm(criteria, item){
+      const a=criteria.area || {};
+      let score=0, parts=0;
+      const land=numText(item.landAreaPy || item.raw?.landAreaPy);
+      const building=numText(item.totalFloorAreaPy || item.raw?.totalFloorAreaPy);
+      if(a.landMinPy){ parts+=10; if(land && land>=a.landMinPy) score+=10; else if(land && land>=a.landMinPy*0.8) score+=5; }
+      if(a.buildingMinPy){ parts+=10; if(building && building>=a.buildingMinPy) score+=10; else if(building && building>=a.buildingMinPy*0.8) score+=5; }
+      return parts ? Math.round(score * 20 / parts) : 0;
+    }
+    function scoreUseForAlgorithm(criteria, item){
+      const hay=ourPropertySearchText(item);
+      const words=(criteria.useWords||[]).filter(w=>w.length>1);
+      if(!words.length) return 0;
+      let hit=0; words.forEach(w=>{ if(hay.indexOf(String(w).toLowerCase())>=0) hit++; });
+      if(String(criteria.useWords||'').indexOf('공장')>=0 && /공장|제조|창고/.test(hay)) hit++;
+      return Math.min(15, Math.round((hit / Math.max(1, words.length)) * 15));
+    }
+    function scoreFactoryForAlgorithm(criteria, item){
+      const hay=ourPropertySearchText(item);
+      const core=(criteria.coreWords||[]).join(' ');
+      let score=0;
+      if(/야드|마당|부지/.test(core)){
+        const land=numText(item.landAreaPy || item.raw?.landAreaPy);
+        const buildingArea=numText(item.buildingAreaPy || item.raw?.buildingAreaPy);
+        if(land && buildingArea && land>0){ const ratio=(land-buildingArea)/land; if(ratio>=0.7) score+=8; else if(ratio>=0.5) score+=6; else if(ratio>=0.3) score+=3; }
+        if(/야드|마당|넓은.?부지|넓은야드/.test(hay)) score+=4;
+      }
+      if(/진입|대형|25톤|트레일러|차량/.test(core) && /대형차|트레일러|진출입|진입|대로|회차|중로|광대/.test(hay)) score+=4;
+      if(/호이스트|크레인/.test(core) && /호이스트|크레인|crane/.test(hay)) score+=4;
+      if(/전력|kw|수전/.test(core) && /전력|kw|수전/.test(hay)) score+=3;
+      return Math.min(15, score);
+    }
+    function algorithmStatusBadges(item){
+      const ds=dashboardStatus(item); const out=[];
+      if(ds.needsWork) out.push('작업필요');
+      if(ds.needsPhoto) out.push('사진필요');
+      if(ds.needsContact) out.push('연락필요');
+      if(String(item.statusRaw||'').toLowerCase()==='hidden') out.push('비공개');
+      return out;
+    }
+    function isAlgorithmExcluded(item, criteria){
+      const status=String(item.statusRaw || item.status || '').toLowerCase();
+      const ds=dashboardStatus(item);
+      if(status==='invisible') return true;
+      if(ds.dealDone === true || ds.reviewHold === true) return true;
+      if(state.candidates.some(c=>String(c.propertyId)===String(item.propertyId) && (c.rejected || c.stage==='탈락'))) return true;
+      if(criteria.dealType && criteria.dealType !== '무관' && item.dealType && item.dealType !== criteria.dealType) return true;
+      return false;
+    }
+    function scoreListingForAlgorithm(criteria, item){
+      const score=scoreRegionForAlgorithm(criteria,item)+scoreBudgetForAlgorithm(criteria,item)+scoreAreaForAlgorithm(criteria,item)+scoreUseForAlgorithm(criteria,item)+scoreFactoryForAlgorithm(criteria,item);
+      return Math.max(0, Math.min(100, Math.round(score)));
+    }
+    async function fetchAdminListingsForAlgorithm(){
+      try{
+        const data=await fetchJson(PUBLIC_PROPERTY_GAS_URL, {method:'POST', mode:'cors', headers:{'Content-Type':'text/plain;charset=UTF-8'}, body:JSON.stringify({action:'listAdminProperties'})});
+        const rows=Array.isArray(data.items) ? data.items : [];
+        return rows.map(normalizeRealListingItem).filter(Boolean);
+      }catch(err){
+        await loadMatchingMapListings();
+        return (matchingMapState.items || []).slice();
+      }
+    }
+    async function runMatchingAlgorithm(){
+      const btn=document.getElementById('runAlgorithmBtn');
+      if(btn){ btn.disabled=true; btn.textContent='알고리즘 가동중...'; }
+      try{
+        const criteria=buildAlgorithmCriteria();
+        const listings=await fetchAdminListingsForAlgorithm();
+        const results=listings.filter(item=>!isAlgorithmExcluded(item, criteria)).map(item=>{
+          const score=scoreListingForAlgorithm(criteria,item);
+          return Object.assign({}, item, {sourceType:'recommendation', sourceLabel:'알고리즘추천', score, statusBadges:algorithmStatusBadges(item)});
+        }).filter(item=>item.score>0).sort((a,b)=>b.score-a.score).map((item,idx)=>Object.assign(item,{algorithmRank:idx+1}));
+        markChange('알고리즘 추천 가동');
+        state.recommendationResults=results;
+        activeSection2Tab='추천매물';
+        activeFilter='전체';
+        candidateViewMode='panel';
+        renderAll();
+      }catch(err){ alert('알고리즘가동 실패: ' + (err && err.message ? err.message : String(err))); }
+      finally{ if(btn){ btn.disabled=false; btn.textContent='+ 알고리즘가동'; } }
+    }
+    function setAlgorithmTopN(n){ algorithmTopN=Number(n)||10; renderSection2(); }
+    function renderRecommendationPanel(){
+      const items=(state.recommendationResults||[]).slice(0, algorithmTopN);
+      const total=(state.recommendationResults||[]).length;
+      return `<div class="algo-toolbar"><div><div class="algo-toolbar-title">알고리즘 추천 ${total}건</div><div class="algo-toolbar-sub">기존 매물 검색 패널과 같은 형태로 표시합니다. 후보로 지정할 매물만 선택하세요.</div></div><div class="algo-rank-buttons">${[5,10,15,20].map(n=>`<button type="button" class="algo-rank-btn ${algorithmTopN===n?'active':''}" data-algo-top="${n}">TOP ${n}</button>`).join('')}</div></div>${renderDbCards(items, 'recommendation')}`;
+    }
+
     function searchLogSources(){ return ['블로그','네이버부동산','땅야','한방','부동산포스','문자','전화','현장','소개','기타']; }
     function searchLogStatusOptions(){ return ['기록중','검토중','매물등록 필요','등록완료','보류','탈락']; }
     function normalizeSearchLogStatus(value){
@@ -2927,6 +3139,7 @@
       const logStatus=e.target.closest('[data-log-status]');
       if(logStatus){ const log=(state.searchLogs||[]).find(x=>x.id===logStatus.dataset.logStatus); if(log){ markChange('서칭기록 상태 변경'); log.status=normalizeSearchLogStatus(logStatus.dataset.status||'기록중'); log.updatedAt=nowIso(); activeStudyLogId=log.id; renderAll(); } return; }
       const candidateMapSelect=e.target.closest('[data-candidate-map-select]'); if(candidateMapSelect){ selectCandidateMapItem(candidateMapSelect.dataset.candidateMapSelect, {pan:true}); return; }
+      const algoTop=e.target.closest('[data-algo-top]'); if(algoTop){ setAlgorithmTopN(algoTop.dataset.algoTop); return; }
       const addDb=e.target.closest('[data-add-db-candidate]'); if(addDb){ addCandidateFromDb(addDb.dataset.addDbCandidate, addDb.dataset.addSource); return; }
       const reject=e.target.closest('[data-reject]'); if(reject){ openCandidateInline(reject.dataset.reject,'reject'); }
       const owner=e.target.closest('[data-owner]'); if(owner){ openCandidateInline(owner.dataset.owner,'owner'); }
@@ -3038,6 +3251,14 @@
       state.candidates.push({
         id:'C-'+String(next).padStart(3,'0'),
         propertyId:item.propertyId,
+        title:item.title || '',
+        address:item.address || '',
+        dealType:item.dealType || '',
+        price:item.price || '',
+        area:item.area || '',
+        lat:item.lat,
+        lng:item.lng,
+        heroUrl:item.heroUrl || '',
         sourceType:sourceType==='recommendation'?'recommendation':'map_search',
         sourceLabel:sourceType==='recommendation'?'알고리즘추천':'수동선정',
         score:sourceType==='recommendation'?(item.score||0):0,
@@ -3045,6 +3266,9 @@
         ownerStatus:'미접촉',
         proposal:false,
         visit:'미정',
+        strengths:item.strengths || [],
+        weakPoints:item.weakPoints || [],
+        risks:item.risks || [],
         rejected:false,
         rejectReason:'',
         rejectMemo:'',
@@ -3069,6 +3293,7 @@
     document.addEventListener('scroll', e=>{ if(e.target && e.target.id==='mapListBody'){ mapSearchState.listScrollTop=e.target.scrollTop || 0; } }, true);
     document.addEventListener('keydown', e=>{ if(e.target && e.target.id==='mapSearchInput' && e.key==='Enter'){ e.preventDefault(); runMapSearch(); } });
     document.getElementById('addSearchLogBtn').addEventListener('click',addSearchLogPanel);
+    document.getElementById('runAlgorithmBtn').addEventListener('click',runMatchingAlgorithm);
     document.getElementById('candidateSearchBtn').addEventListener('click',()=>{
       if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState();
       activeSection2Tab='전체매물검색';

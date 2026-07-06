@@ -730,14 +730,16 @@
     };
     const initialState = {
       project:{
-        title:'', status:'', inquiryDate:'', inquiryRoutes:[], inquiryRouteEtc:'', inquiryType:'', inquiryMemo:'', clientName:'', phone:'', companyName:'', clientCategory:'', requesterRelation:'', industry:'', dealType:'', budget:'', regions:'', usePurpose:'', land:'', building:'', areaSummary:'', coreNeeds:'', lastContact:'', nextAction:'', contactLogs:[]
+        projectId:'', title:'', status:'', inquiryDate:'', inquiryRoutes:[], inquiryRouteEtc:'', inquiryType:'', inquiryMemo:'', clientName:'', phone:'', companyName:'', clientCategory:'', requesterRelation:'', industry:'', dealType:'', budget:'', regions:'', usePurpose:'', land:'', building:'', areaSummary:'', coreNeeds:'', lastContact:'', nextAction:'', contactLogs:[]
       },
       candidates:[],
       dbSearchResults:[],
       recommendationResults:[],
       searchLogs:[],
       progressMemos:[],
-      visits:[]
+      visits:[],
+      algorithmRuns:[],
+      lastAlgorithmRun:null
     };
     let state = structuredClone(initialState);
     let undoStack = [];
@@ -1127,6 +1129,214 @@
         }
         return data || {};
       });
+    }
+
+    function gasPost(action, payload){
+      return fetchJson(PUBLIC_PROPERTY_GAS_URL, {
+        method:'POST',
+        mode:'cors',
+        headers:{'Content-Type':'text/plain;charset=UTF-8'},
+        body:JSON.stringify(Object.assign({action}, payload || {}))
+      });
+    }
+    function currentWriterLabel(){
+      const code=getUnlockedWriterCode ? getUnlockedWriterCode() : unlockedWriterCode;
+      const meta=MATCHING_WRITER_META[code] || null;
+      return meta ? (meta.name + ' ' + meta.emoji) : (MATCHING_PASSWORD_MAP[code] || '');
+    }
+    function nowCompactId(prefix){
+      const d=new Date();
+      const pad=n=>String(n).padStart(2,'0');
+      return `${prefix}-${String(d.getFullYear()).slice(2)}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}-${Math.floor(Math.random()*9000+1000)}`;
+    }
+    function parseBudgetForSave(text){
+      const parsed=parsePriceRange(text || '');
+      return {min:parsed.min || '', max:parsed.max || ''};
+    }
+    function projectPayloadForSave(){
+      const p=state.project || {};
+      const budget=parseBudgetForSave(p.budget || '');
+      const criteria=buildAlgorithmCriteria ? buildAlgorithmCriteria() : {};
+      const writer=currentWriterLabel();
+      return {
+        projectId:p.projectId || '',
+        createdBy:writer,
+        updatedBy:writer,
+        projectStatus:p.status || 'active',
+        clientName:p.clientName || '',
+        clientType:p.clientCategory || '',
+        companyName:p.companyName || '',
+        contactName:p.requesterRelation || '',
+        phone:p.phone || '',
+        inflowChannel:(p.inquiryRoutes || []).join(', '),
+        dealType:p.dealType || '',
+        budgetMin:budget.min,
+        budgetMax:budget.max,
+        regionText:p.regions || '',
+        useText:p.usePurpose || '',
+        landAreaMinPy:'',
+        landAreaMaxPy:'',
+        buildingAreaMinPy:'',
+        buildingAreaMaxPy:'',
+        floorAreaMinPy:'',
+        floorAreaMaxPy:'',
+        requiredMemo:p.coreNeeds || '',
+        specialMemo:[p.areaSummary, p.land, p.building].filter(Boolean).join(' / '),
+        internalMemo:JSON.stringify({project:p, savedFrom:'matching/index.html'}),
+        lastAlgorithmRunAt:state.lastAlgorithmRun && state.lastAlgorithmRun.createdAt || '',
+        lastAlgorithmTopLimit:algorithmTopN,
+        lastAlgorithmCriteriaJson:criteria
+      };
+    }
+    function matchingStatusForCandidate(c){
+      if(!c) return 'candidate';
+      if(c.rejected || c.stage==='탈락') return 'rejected';
+      if(c.stage==='보류') return 'hold';
+      if(String(c.visit||'').indexOf('임장')>=0 || c.stage==='임장예정') return 'visit';
+      if(c.proposal) return 'suggested';
+      if(c.sourceType==='recommendation') return 'candidate';
+      if(c.sourceType==='manual_search' || c.sourceType==='map_search') return 'manual';
+      return 'candidate';
+    }
+    function sourceTypeForCandidate(c){
+      if(!c) return 'manual';
+      if(c.sourceType==='recommendation') return 'algorithm';
+      if(c.sourceType==='map_search') return 'manual';
+      if(c.sourceType==='manual_search') return 'manual';
+      return c.sourceType || 'manual';
+    }
+    function snapshotForListingLike(item){
+      if(!item) return {};
+      return {
+        listingNumber:item.propertyId || item.listingNumber || '',
+        title:item.title || '',
+        address:item.address || '',
+        dealType:item.dealType || '',
+        price:item.price || '',
+        area:item.area || '',
+        heroUrl:item.heroUrl || firstPhotoUrlFromJson(item.photoUrlsJson) || '',
+        photoUrlsJson:item.photoUrlsJson || '',
+        lat:item.lat || '',
+        lng:item.lng || ''
+      };
+    }
+    function localMatchingId(projectId, c){
+      if(c.matchingId) return c.matchingId;
+      const no=String(c.propertyId || c.listingNumber || c.id || '').replace(/[^A-Za-z0-9가-힣_-]/g,'');
+      return ['MT', projectId || 'NO_PROJECT', no || nowCompactId('ROW')].join('-');
+    }
+    function algorithmRecommendationMatchingId(projectId, item){
+      if(item.matchingId) return item.matchingId;
+      const runId=(item.algorithmRunId || (state.lastAlgorithmRun && state.lastAlgorithmRun.algorithmRunId) || 'NO_RUN');
+      const no=String(item.propertyId || item.listingNumber || '').replace(/[^A-Za-z0-9가-힣_-]/g,'');
+      return ['MT', projectId || 'NO_PROJECT', 'ALG', runId, no || item.algorithmRank || nowCompactId('ROW')].join('-');
+    }
+    function searchLogIdForSave(projectId, log){
+      if(log.searchLogId) return log.searchLogId;
+      const id=String(log.id || '').replace(/[^A-Za-z0-9가-힣_-]/g,'');
+      return ['PS', projectId || 'NO_PROJECT', id || nowCompactId('LOG')].join('-');
+    }
+    async function saveMatchingWorkspaceToServer(){
+      const btn=document.getElementById('saveBtn');
+      const oldText=btn ? btn.textContent : '';
+      if(btn){ btn.disabled=true; btn.textContent='저장중...'; }
+      try{
+        const projectRes=await gasPost('saveProject', projectPayloadForSave());
+        const projectId=projectRes.projectId || (projectRes.item && projectRes.item.projectId) || (state.project && state.project.projectId);
+        if(!projectId) throw new Error('projectId 저장 응답이 없습니다.');
+        state.project.projectId=projectId;
+        const writer=currentWriterLabel();
+        if(state.lastAlgorithmRun){
+          const run=state.lastAlgorithmRun;
+          await gasPost('saveMatchingAlgorithm', {
+            algorithmRunId:run.algorithmRunId,
+            projectId,
+            createdAt:run.createdAt,
+            createdBy:run.createdBy || writer,
+            criteriaJson:run.criteriaJson || {},
+            topLimit:run.topLimit || algorithmTopN,
+            totalScanned:run.totalScanned || 0,
+            totalExcluded:run.totalExcluded || 0,
+            totalScored:run.totalScored || 0,
+            totalRecommended:run.totalRecommended || 0,
+            excludedSummaryJson:run.excludedSummaryJson || {},
+            scoreVersion:run.scoreVersion || 'matching-score-v1',
+            memo:run.memo || ''
+          });
+        }
+        for(const item of (state.recommendationResults || []).slice(0,20)){
+          const matchingId=algorithmRecommendationMatchingId(projectId, item);
+          const res=await gasPost('saveMatchingItem', {
+            matchingId,
+            projectId,
+            listingNumber:item.propertyId || item.listingNumber || '',
+            createdBy:writer,
+            updatedBy:writer,
+            sourceType:'algorithm',
+            matchingStatus:'recommended',
+            score:item.score || '',
+            rank:item.algorithmRank || '',
+            algorithmRunId:item.algorithmRunId || (state.lastAlgorithmRun && state.lastAlgorithmRun.algorithmRunId) || '',
+            snapshotJson:snapshotForListingLike(item),
+            memo:item.reason || '',
+            userMemo:''
+          });
+          item.matchingId=res.matchingId || matchingId;
+        }
+        for(const c of (state.candidates || [])){
+          const matchingId=localMatchingId(projectId, c);
+          const res=await gasPost('saveMatchingItem', {
+            matchingId,
+            projectId,
+            listingNumber:c.propertyId || c.listingNumber || '',
+            createdBy:writer,
+            updatedBy:writer,
+            sourceType:sourceTypeForCandidate(c),
+            matchingStatus:matchingStatusForCandidate(c),
+            score:c.score || '',
+            rank:c.algorithmRank || c.rank || '',
+            algorithmRunId:c.algorithmRunId || '',
+            snapshotJson:snapshotForListingLike(c),
+            memo:c.rejectMemo || c.ownerStatus || '',
+            userMemo:c.memo || '',
+            isDeleted:c.isDeleted ? 'true' : ''
+          });
+          c.matchingId=res.matchingId || matchingId;
+        }
+        for(const log of (state.searchLogs || [])){
+          const searchLogId=searchLogIdForSave(projectId, log);
+          const res=await gasPost('savePropertySearch', {
+            searchLogId,
+            projectId,
+            createdAt:log.createdAt || '',
+            createdBy:writer || log.writerCode || '',
+            updatedBy:writer,
+            url:log.link || log.title || '',
+            address:log.address || '',
+            areaText:log.area || '',
+            priceText:log.price || '',
+            status:normalizeSearchLogStatus(log.status || '기록중'),
+            memo:log.memo || log.studyMemo || '',
+            studyLookupJson:log.studyResult || '',
+            registeredListingNumber:log.registeredListingNumber || '',
+            isDeleted:log.isDeleted ? 'true' : ''
+          });
+          log.searchLogId=res.searchLogId || searchLogId;
+        }
+        dirty=false;
+        undoStack=[];
+        redoStack=[];
+        persistUndo();
+        updateSaveState();
+        const url=new URL(window.location.href);
+        url.searchParams.set('projectId', projectId);
+        window.history.replaceState({}, '', url.toString());
+        alert('저장 완료');
+      }catch(err){
+        alert('저장 실패: ' + (err && err.message ? err.message : String(err)));
+      }finally{
+        if(btn){ btn.disabled=false; btn.textContent=oldText || '저장'; }
+      }
     }
     function waitForNaverMaps(timeoutMs){
       const started=Date.now();
@@ -2244,6 +2454,18 @@
       if(criteria.dealType && criteria.dealType !== '무관' && item.dealType && item.dealType !== criteria.dealType) return true;
       return false;
     }
+
+    function algorithmExcludeReason(item, criteria){
+      const status=String(item.statusRaw || item.status || '').toLowerCase();
+      const ds=dashboardStatus(item);
+      if(status==='invisible') return 'invisible';
+      if(ds.dealDone === true) return 'dealDone';
+      if(ds.reviewHold === true) return 'reviewHold';
+      if(state.candidates.some(c=>String(c.propertyId)===String(item.propertyId) && (c.rejected || c.stage==='탈락'))) return 'projectRejected';
+      if(criteria.dealType && criteria.dealType !== '무관' && item.dealType && item.dealType !== criteria.dealType) return 'dealTypeMismatch';
+      if(!String(item.address || '').trim()) return 'missingAddress';
+      return '';
+    }
     function scoreListingForAlgorithm(criteria, item){
       const score=scoreRegionForAlgorithm(criteria,item)+scoreBudgetForAlgorithm(criteria,item)+scoreAreaForAlgorithm(criteria,item)+scoreUseForAlgorithm(criteria,item)+scoreFactoryForAlgorithm(criteria,item);
       return Math.max(0, Math.min(100, Math.round(score)));
@@ -2264,11 +2486,34 @@
       try{
         const criteria=buildAlgorithmCriteria();
         const listings=await fetchAdminListingsForAlgorithm();
-        const results=listings.filter(item=>!isAlgorithmExcluded(item, criteria)).map(item=>{
+        const excludedSummary={};
+        const scored=[];
+        listings.forEach(item=>{
+          const reason=algorithmExcludeReason(item, criteria);
+          if(reason){ excludedSummary[reason]=(excludedSummary[reason] || 0) + 1; return; }
           const score=scoreListingForAlgorithm(criteria,item);
-          return Object.assign({}, item, {sourceType:'recommendation', sourceLabel:'알고리즘추천', score, statusBadges:algorithmStatusBadges(item)});
-        }).filter(item=>item.score>0).sort((a,b)=>b.score-a.score).map((item,idx)=>Object.assign(item,{algorithmRank:idx+1}));
+          if(score>0) scored.push(Object.assign({}, item, {sourceType:'recommendation', sourceLabel:'알고리즘추천', score, statusBadges:algorithmStatusBadges(item)}));
+        });
+        const run={
+          algorithmRunId:nowCompactId('AR'),
+          projectId:state.project.projectId || '',
+          createdAt:nowIso(),
+          createdBy:currentWriterLabel(),
+          criteriaJson:criteria,
+          topLimit:20,
+          totalScanned:listings.length,
+          totalExcluded:Object.values(excludedSummary).reduce((a,b)=>a+Number(b||0),0),
+          totalScored:scored.length,
+          totalRecommended:Math.min(20, scored.length),
+          excludedSummaryJson:excludedSummary,
+          scoreVersion:'matching-score-v1',
+          memo:''
+        };
+        const results=scored.sort((a,b)=>b.score-a.score).map((item,idx)=>Object.assign(item,{algorithmRank:idx+1, algorithmRunId:run.algorithmRunId}));
         markChange('알고리즘 추천 가동');
+        state.lastAlgorithmRun=run;
+        state.algorithmRuns=state.algorithmRuns || [];
+        state.algorithmRuns.unshift(run);
         state.recommendationResults=results;
         activeSection2Tab='추천매물';
         activeFilter='전체';
@@ -3343,6 +3588,8 @@
         sourceType:sourceType==='recommendation'?'recommendation':'map_search',
         sourceLabel:sourceType==='recommendation'?'알고리즘추천':'수동선정',
         score:sourceType==='recommendation'?(item.score||0):0,
+        algorithmRunId:item.algorithmRunId || '',
+        matchingId:'',
         stage:'검토중',
         ownerStatus:'미접촉',
         proposal:false,
@@ -3390,7 +3637,7 @@
     document.getElementById('addVisitBtn').addEventListener('click',addVisitRound); document.getElementById('visitFromSelectedBtn').addEventListener('click',addVisitRound);
     document.getElementById('undoBtn').addEventListener('click',()=>{ if(!undoStack.length)return; const item=undoStack.pop(); redoStack.push({after:clone(state), label:item.label}); state=clone(item.before); dirty=true; persistUndo(); renderAll(); });
     document.getElementById('redoBtn').addEventListener('click',()=>{ if(!redoStack.length)return; const item=redoStack.pop(); undoStack.push({before:clone(state), label:item.label}); state=clone(item.after); dirty=true; persistUndo(); renderAll(); });
-    document.getElementById('saveBtn').addEventListener('click',()=>{ dirty=false; undoStack=[]; redoStack=[]; persistUndo(); updateSaveState(); alert('저장 완료'); });
+    document.getElementById('saveBtn').addEventListener('click',saveMatchingWorkspaceToServer);
     window.addEventListener('beforeunload',e=>{ if(activeSection2Tab==='전체매물검색') rememberMatchingMapPanelState(); if(!dirty)return; e.preventDefault(); e.returnValue='저장하지 않은 변경사항이 있습니다.'; });
     const modal=document.getElementById('simpleModal'), modalTitle=document.getElementById('modalTitle'), modalDesc=document.getElementById('modalDesc'), modalContent=document.getElementById('modalContent'); let modalMode='';
     function openModal(mode){

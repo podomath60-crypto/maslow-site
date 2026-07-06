@@ -184,6 +184,9 @@
     .project-col-title{font-size:15px;font-weight:1000;color:#111318;letter-spacing:-.04em;margin:0 0 7px;padding-bottom:5px;border-bottom:2px solid #111318}
     .project-line{display:grid;grid-template-columns:68px minmax(0,1fr);align-items:start;gap:8px;min-height:25px;padding:2px 0;border-bottom:1px solid #f0f3f7}
     .project-line:last-child{border-bottom:none}
+    .homepage-field-wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
+    .homepage-open-btn{min-height:24px;border:1px solid #dbe5ee;border-radius:999px;background:#fff;color:#475569;font-size:11px;font-weight:1000;padding:0 9px;white-space:nowrap;cursor:pointer}
+    .homepage-open-btn:hover{border-color:#0f7cff;color:#0f64d8;background:#eef5ff}
     .inline-label{font-size:11px;font-weight:1000;color:#88919c;padding-top:4px;white-space:nowrap}
     .inline-value{font-size:14px;line-height:1.35;font-weight:950;color:#27303a;outline:none;padding:1px 2px;min-height:22px;white-space:pre-wrap;word-break:keep-all}
     .memo-block{margin-top:10px;display:grid;gap:6px}
@@ -598,6 +601,13 @@
                 <div class="inline-label">업종</div>
                 <div class="inline-value picker-value" tabindex="0" data-inline-field="industry" data-picker="industry" data-placeholder="업종 선택"></div>
               </div>
+              <div class="project-line">
+                <div class="inline-label">홈페이지</div>
+                <div class="homepage-field-wrap">
+                  <div class="inline-value" contenteditable="true" data-inline-field="homepageUrl" data-placeholder="URL 입력"></div>
+                  <button type="button" class="homepage-open-btn" id="homepageOpenBtn">열기</button>
+                </div>
+              </div>
             </div>
 
             <div class="project-col">
@@ -782,7 +792,7 @@
     };
     const initialState = {
       project:{
-        projectId:'', title:'', status:'', inquiryDate:'', inquiryRoutes:[], inquiryRouteEtc:'', inquiryType:'', inquiryMemo:'', clientName:'', phone:'', companyName:'', clientCategory:'', requesterRelation:'', industry:'',
+        projectId:'', title:'', status:'', inquiryDate:'', inquiryRoutes:[], inquiryRouteEtc:'', inquiryType:'', inquiryMemo:'', clientName:'', phone:'', companyName:'', clientCategory:'', requesterRelation:'', industry:'', homepageUrl:'',
         dealType:'', budget:'', dealTypeMode:'any', saleEnabled:false, rentEnabled:false, saleBudgetMin:'', saleBudgetMax:'', salePriceMemo:'', rentDepositMin:'', rentDepositMax:'', rentMonthlyMin:'', rentMonthlyMax:'', rentPriceMemo:'',
         regions:'', usePurpose:'', land:'', building:'', areaSummary:'', coreNeeds:'', lastContact:'', nextAction:'', contactLogs:[], businessCardTemps:[], businessCardsJson:''
       },
@@ -1375,6 +1385,7 @@
         regionText:p.regions || '',
         useText:p.usePurpose || '',
         industryText:p.industry || '',
+        homepageUrl:p.homepageUrl || '',
         landAreaMinPy:'',
         landAreaMaxPy:'',
         buildingAreaMinPy:'',
@@ -1608,6 +1619,7 @@
       restored.requesterRelation=restored.requesterRelation || firstNonEmptyValue(record, ['requesterRelation','contactName','managerName','담당자']);
       restored.phone=restored.phone || firstNonEmptyValue(record, ['phone','tel','mobile','연락처']);
       restored.industry=restored.industry || firstNonEmptyValue(record, ['industryText','industry','업종']);
+      restored.homepageUrl=restored.homepageUrl || firstNonEmptyValue(record, ['homepageUrl','homepage','website','websiteUrl','url','홈페이지']);
       const dealTypeMode=firstNonEmptyValue(record, ['dealTypeMode','dealType','거래형태','거래유형']) || restored.dealTypeMode || '';
       restored.saleEnabled = restored.saleEnabled || truthySavedValue(firstNonEmptyValue(record, ['saleEnabled','매매사용'])) || String(dealTypeMode).indexOf('매매')>=0 || String(dealTypeMode).toLowerCase()==='sale' || String(dealTypeMode).toLowerCase()==='both';
       restored.rentEnabled = restored.rentEnabled || truthySavedValue(firstNonEmptyValue(record, ['rentEnabled','임대사용'])) || String(dealTypeMode).indexOf('임대')>=0 || String(dealTypeMode).indexOf('임차')>=0 || String(dealTypeMode).toLowerCase()==='rent' || String(dealTypeMode).toLowerCase()==='both';
@@ -3843,6 +3855,17 @@
     function formatToday(){ const d=new Date(); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); return `${yyyy}.${mm}.${dd}`; }
     function escapeHtml(value){ return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     function escapeAttr(value){ return escapeHtml(value).replace(/"/g,'&quot;'); }
+    function normalizeHomepageUrl(value){
+      const raw=String(value||'').trim();
+      if(!raw) return '';
+      if(/^https?:\/\//i.test(raw)) return raw;
+      return 'https://' + raw;
+    }
+    function openProjectHomepage(){
+      const url=normalizeHomepageUrl(state.project && state.project.homepageUrl);
+      if(!url){ alert('홈페이지 URL을 입력하세요.'); return; }
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
     function pickerEtcHtml(value=''){ return `<div class="picker-etc-box"><div class="picker-etc-label">기타 직접 입력</div><input class="picker-etc-input" data-picker-etc-input value="${String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" placeholder="기타 내용을 입력"></div>`; }
     function currentEtcValueFor(field, options){ const v=state.project[field] || ''; if(field==='inquiryRoutesText') return state.project.inquiryRouteEtc || ''; if(options && v && !options.includes(v)) return v; return ''; }
     function openProjectPicker(field){
@@ -4189,6 +4212,7 @@
     }
     function addVisitRound(){ markChange('임장 라운드 추가'); const n=state.visits.length+1; const selected=state.candidates.filter(c=>c.proposal&&!c.rejected).slice(0,4); state.visits.push({id:'V-'+String(n).padStart(3,'0'),roundNo:n,title:n+'차 임장',date:'일정 협의',status:'예정',companions:'',summary:'제안선정 매물 중심으로 임장 예정',nextAction:'일정 확정',items:selected.map(c=>({property:c.title,reaction:'예정',memo:'방문 예정'}))}); renderAll(); }
     document.getElementById('todayInquiryBtn').addEventListener('click',()=>{ markChange('최초문의 오늘 입력'); state.project.inquiryDate=formatToday(); renderAll(); });
+    document.getElementById('homepageOpenBtn')?.addEventListener('click', openProjectHomepage);
     document.addEventListener('input', e=>{
       if(e.target && e.target.id==='mapSearchInput'){ mapSearchState.inputValue=e.target.value || ''; }
       const logField=e.target.closest('[data-log-field-id]');

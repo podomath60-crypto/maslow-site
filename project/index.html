@@ -2191,102 +2191,261 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         else location.href = href;
       });
     });
-    function renderProjects(){
-      if(toolbarMeta) toolbarMeta.textContent = '전체 3건';
-      if(dashboardRoot) dashboardRoot.innerHTML = `
+    const PUBLIC_PROPERTY_GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
+    const projectDashboardState = {
+      allProjects: [],
+      visibleProjects: [],
+      filters: { sort:'default', status:'all', deal:'all' },
+      loading: false,
+      error: ''
+    };
+
+    function escapeHtml(value){
+      return String(value == null ? '' : value)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
+    }
+    function escapeAttr(value){ return escapeHtml(value); }
+    function oneLine(value){ return String(value == null ? '' : value).replace(/\s+/g,' ').trim(); }
+    function firstText(){
+      for(let i=0;i<arguments.length;i++){
+        const v = oneLine(arguments[i]);
+        if(v) return v;
+      }
+      return '';
+    }
+    function parseMaybeJson(value){
+      if(!value || typeof value !== 'string') return null;
+      try{ return JSON.parse(value); }catch(e){ return null; }
+    }
+    function fetchJson(url, options){
+      return fetch(url, options || {}).then(async function(res){
+        let data = null;
+        try{ data = await res.json(); }catch(e){}
+        if(!res.ok || (data && data.ok === false)){
+          throw new Error((data && (data.message || data.error)) || ('요청 실패: ' + res.status));
+        }
+        return data || {};
+      });
+    }
+    function gasPost(action, payload){
+      return fetchJson(PUBLIC_PROPERTY_GAS_URL, {
+        method:'POST',
+        mode:'cors',
+        headers:{'Content-Type':'text/plain;charset=UTF-8'},
+        body:JSON.stringify(Object.assign({action:action}, payload || {}))
+      });
+    }
+    function normalizeProjectRecord(raw){
+      const row = raw || {};
+      const memo = parseMaybeJson(row.internalMemo || row.internal_memo || row.memoJson || '');
+      const memoProject = memo && memo.project && typeof memo.project === 'object' ? memo.project : {};
+      const p = Object.assign({}, memoProject, row);
+      const projectId = firstText(p.projectId, p.id, p.project_id, p['프로젝트ID'], p['프로젝트 ID']);
+      const saleEnabled = String(p.saleEnabled).toLowerCase() === 'true' || p.saleEnabled === true || /매매/.test(String(p.dealType || p.dealTypeMode || ''));
+      const rentEnabled = String(p.rentEnabled).toLowerCase() === 'true' || p.rentEnabled === true || /임대|임차/.test(String(p.dealType || p.dealTypeMode || ''));
+      return {
+        projectId: projectId,
+        projectStatus: firstText(p.projectStatus, p.status, p['상태'], '조건정리중'),
+        projectTitle: firstText(p.projectTitle, p.title, p['프로젝트명'], p['제목'], '프로젝트 제목 미입력'),
+        clientName: firstText(p.clientName, p.contactName, p.customerName, p['고객명'], p['의뢰인']),
+        companyName: firstText(p.companyName, p.company, p['회사명']),
+        contactName: firstText(p.contactName, p.managerName, p['담당자']),
+        phone: firstText(p.phone, p.tel, p.mobile, p['연락처']),
+        requestDate: firstText(p.requestDate, p.createdAt, p.savedAt, p['접수일']),
+        updatedAt: firstText(p.updatedAt, p.modifiedAt, p.savedAt, p.createdAt, p['수정일'], p['저장일']),
+        dealTypeMode: firstText(p.dealTypeMode, p.dealType),
+        saleEnabled: saleEnabled,
+        rentEnabled: rentEnabled,
+        saleBudgetMin: firstText(p.saleBudgetMin, p.saleMin, p['매매하한']),
+        saleBudgetMax: firstText(p.saleBudgetMax, p.saleMax, p['매매상한']),
+        salePriceMemo: firstText(p.salePriceMemo, p['매매메모']),
+        rentDepositMin: firstText(p.rentDepositMin, p.depositMin, p['보증금하한']),
+        rentDepositMax: firstText(p.rentDepositMax, p.depositMax, p['보증금상한']),
+        rentMonthlyMin: firstText(p.rentMonthlyMin, p.monthlyMin, p['월세하한']),
+        rentMonthlyMax: firstText(p.rentMonthlyMax, p.monthlyMax, p['월세상한']),
+        rentPriceMemo: firstText(p.rentPriceMemo, p['임대메모']),
+        regionText: firstText(p.regionText, p.regions, p.region, p['희망지역']),
+        useText: firstText(p.useText, p.usePurpose, p.usage, p['용도']),
+        industryText: firstText(p.industryText, p.industry, p['업종']),
+        requiredMemo: firstText(p.requiredMemo, p.coreNeeds, p.requirements, p['요구조건']),
+        lastContact: firstText(p.lastContact, p.recentContact, p['최근연락']),
+        nextAction: firstText(p.nextAction, p['다음액션']),
+        raw: row
+      };
+    }
+    function listFromResponse(data){
+      if(Array.isArray(data)) return data;
+      if(Array.isArray(data.projects)) return data.projects;
+      if(Array.isArray(data.items)) return data.items;
+      if(Array.isArray(data.rows)) return data.rows;
+      if(data.project) return [data.project];
+      return [];
+    }
+    function compactRange(min, max){
+      const a = oneLine(min);
+      const b = oneLine(max);
+      if(a && b) return a + '~' + b;
+      return a || b || '';
+    }
+    function formatDealCondition(p){
+      const parts = [];
+      const saleRange = compactRange(p.saleBudgetMin, p.saleBudgetMax);
+      if(p.saleEnabled || saleRange || p.salePriceMemo){
+        parts.push('매매 ' + escapeHtml(firstText(saleRange, p.salePriceMemo, '조건 미입력')));
+      }
+      const depositRange = compactRange(p.rentDepositMin, p.rentDepositMax);
+      const monthlyRange = compactRange(p.rentMonthlyMin, p.rentMonthlyMax);
+      const rentBits = [];
+      if(depositRange) rentBits.push('보증금 ' + depositRange);
+      if(monthlyRange) rentBits.push('월세 ' + monthlyRange);
+      if(p.rentEnabled || rentBits.length || p.rentPriceMemo){
+        parts.push('임대 ' + escapeHtml(firstText(rentBits.join(' / '), p.rentPriceMemo, '조건 미입력')));
+      }
+      return parts.length ? parts.join('<br>') : '거래조건 미입력';
+    }
+    function projectThumbLabel(p){
+      if(p.saleEnabled && p.rentEnabled) return '매·임';
+      if(p.rentEnabled) return '임차';
+      if(p.saleEnabled) return '매수';
+      return 'PROJECT';
+    }
+    function projectDealFilterValue(p){
+      if(p.rentEnabled && !p.saleEnabled) return 'rent';
+      if(p.saleEnabled && !p.rentEnabled) return 'buy';
+      if(p.saleEnabled && p.rentEnabled) return 'both';
+      return 'none';
+    }
+    function projectStatusFilterValue(status){
+      const s = String(status || '');
+      if(/신규|접수|문의/.test(s)) return 'new';
+      if(/추천|매칭|검토|조건/.test(s)) return 'matching';
+      if(/임장|방문|현장/.test(s)) return 'visit';
+      if(/협의|계약|진행/.test(s)) return 'deal';
+      return 'matching';
+    }
+    function matchingUrl(projectId){
+      return '/matching?projectId=' + encodeURIComponent(projectId || '');
+    }
+    function renderProjectCard(p){
+      const id = p.projectId || '';
+      const href = matchingUrl(id);
+      const clientLine = [p.clientName, p.companyName].filter(Boolean).join(' / ');
+      const metaLine = [
+        '최근연락 ' + (p.lastContact || '미입력'),
+        '다음액션 ' + (p.nextAction || '미입력')
+      ].join(' · ');
+      const bottomBits = [];
+      if(p.useText) bottomBits.push('용도 ' + p.useText);
+      if(p.industryText) bottomBits.push('업종 ' + p.industryText);
+      if(p.requiredMemo) bottomBits.push('요구조건 있음');
+      if(!bottomBits.length) bottomBits.push('상세조건 미입력');
+      return `
+<article class="property-card" data-project-id="${escapeAttr(id)}" data-status-filter="${escapeAttr(projectStatusFilterValue(p.projectStatus))}" data-deal-filter="${escapeAttr(projectDealFilterValue(p))}" onclick="location.href='${escapeAttr(href)}'">
+  <div class="property-main">
+    <div class="thumb" style="background:linear-gradient(135deg,#18C76B,#2F8CFF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:1000;font-size:20px;letter-spacing:-.05em">${escapeHtml(projectThumbLabel(p))}</div>
+    <div class="card-content">
+      <div class="title-row">
+        <h3 class="card-title property-edit-link">${escapeHtml(p.projectTitle)}</h3>
+        <span class="status-chip visible">${escapeHtml(p.projectStatus || '조건정리중')}</span>
+      </div>
+      <div class="card-address">희망지역: ${escapeHtml(p.regionText || '미입력')}</div>
+      <div class="card-deal-price">${formatDealCondition(p)}</div>
+      <div class="card-meta"><strong>${escapeHtml(id || '프로젝트ID 미확정')}</strong>${clientLine ? '<br>' + escapeHtml(clientLine) : ''}<br>${escapeHtml(metaLine)}</div>
+    </div>
+  </div>
+  <div class="card-bottom">
+    <div class="action-row">
+      <div class="action-left">
+        <button class="mini-btn visibility-text-btn active-show" type="button" onclick="event.stopPropagation()">진행</button>
+        <button class="mini-btn visibility-text-btn" type="button" onclick="event.stopPropagation()">보류</button>
+        <span class="memo-btn-wrap"><button class="mini-btn square memo-square" type="button" onclick="event.stopPropagation()"><span class="btn-emoji">📌</span><span class="btn-text">메모</span></button></span>
+        <button class="mini-btn square share-square" type="button" onclick="event.stopPropagation();location.href='${escapeAttr(href)}'"><span class="btn-emoji">💫</span><span class="btn-text">추천</span></button>
+        <button class="mini-btn square edit-square" type="button" onclick="event.stopPropagation();location.href='${escapeAttr(href)}'"><span class="btn-emoji">👀</span><span class="btn-text">관리</span></button>
+      </div>
+    </div>
+    <div class="card-meta">${escapeHtml(bottomBits.join(' / '))}</div>
+  </div>
+</article>`;
+    }
+    function filteredProjects(){
+      let rows = projectDashboardState.allProjects.slice();
+      const f = projectDashboardState.filters;
+      if(f.status && f.status !== 'all') rows = rows.filter(function(p){ return projectStatusFilterValue(p.projectStatus) === f.status; });
+      if(f.deal && f.deal !== 'all') rows = rows.filter(function(p){
+        const v = projectDealFilterValue(p);
+        return v === f.deal || v === 'both';
+      });
+      if(f.sort === 'updated'){
+        rows.sort(function(a,b){ return String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')); });
+      }
+      return rows;
+    }
+    function renderProjects(projects){
+      const rows = Array.isArray(projects) ? projects : filteredProjects();
+      projectDashboardState.visibleProjects = rows;
+      if(toolbarMeta) toolbarMeta.textContent = '전체 ' + projectDashboardState.allProjects.length + '건' + (rows.length !== projectDashboardState.allProjects.length ? ' / 표시 ' + rows.length + '건' : '');
+      if(!dashboardRoot) return;
+      if(projectDashboardState.loading){
+        dashboardRoot.innerHTML = '<div class="empty">프로젝트 목록을 불러오는 중입니다.</div>';
+        return;
+      }
+      if(projectDashboardState.error){
+        dashboardRoot.innerHTML = '<div class="empty">프로젝트 목록을 불러오지 못했습니다.<br>' + escapeHtml(projectDashboardState.error) + '<br><br><button class="mini-btn" type="button" onclick="loadProjects()">다시 불러오기</button></div>';
+        return;
+      }
+      if(!projectDashboardState.allProjects.length){
+        dashboardRoot.innerHTML = '<div class="empty">저장된 프로젝트가 없습니다.<br>프로젝트 등록 버튼으로 새 프로젝트를 시작하세요.</div>';
+        return;
+      }
+      if(!rows.length){
+        dashboardRoot.innerHTML = '<div class="empty">현재 필터에 맞는 프로젝트가 없습니다.</div>';
+        return;
+      }
+      dashboardRoot.innerHTML = `
         <section class="group">
-          <div class="group-head"><div class="group-title">프로젝트</div><div class="group-count">3건</div></div>
-          <div class="card-list">
-<article class="property-card" data-project-id="PJ-260623-001" onclick="location.href='/matching?id=PJ-260623-001'">
-  <div class="property-main">
-    <div class="thumb" style="background:linear-gradient(135deg,#18C76B,#2F8CFF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:1000;font-size:22px;letter-spacing:-.05em">매수</div>
-    <div class="card-content">
-      <div class="title-row">
-        <h3 class="card-title property-edit-link">김OO / 군산·익산 공장 매수 의뢰</h3>
-        <span class="status-chip visible">추천중</span>
-      </div>
-      <div class="card-address">희망지역: 군산, 익산</div>
-      <div class="card-deal-price">예산 20억~30억</div>
-      <div class="card-meta"><strong>PJ-260623-001</strong><br>최근연락 06.23 통화 · 다음액션 익산 후보 전송</div>
-    </div>
-  </div>
-  <div class="card-bottom">
-    <div class="action-row">
-      <div class="action-left">
-        <button class="mini-btn visibility-text-btn active-show" type="button" onclick="event.stopPropagation()">진행</button>
-        <button class="mini-btn visibility-text-btn" type="button" onclick="event.stopPropagation()">보류</button>
-        <span class="memo-btn-wrap"><button class="mini-btn square memo-square" type="button" onclick="event.stopPropagation()"><span class="btn-emoji">📌</span><span class="btn-text">메모</span></button></span>
-        <button class="mini-btn square share-square" type="button" onclick="event.stopPropagation();location.href='/matching?id=PJ-260623-001'"><span class="btn-emoji">💫</span><span class="btn-text">추천</span></button>
-        <button class="mini-btn square edit-square" type="button" onclick="event.stopPropagation();location.href='/matching?id=PJ-260623-001'"><span class="btn-emoji">👀</span><span class="btn-text">관리</span></button>
-      </div>
-    </div>
-    <div class="card-meta">추천매물 4건 / 탈락 2건 / 임장예정 1건</div>
-  </div>
-</article>
-
-<article class="property-card" data-project-id="PJ-260623-002" onclick="location.href='/matching?id=PJ-260623-002'">
-  <div class="property-main">
-    <div class="thumb" style="background:linear-gradient(135deg,#FFB020,#FF5A5F);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:1000;font-size:22px;letter-spacing:-.05em">임차</div>
-    <div class="card-content">
-      <div class="title-row">
-        <h3 class="card-title property-edit-link">박OO / 익산 창고 임차 프로젝트</h3>
-        <span class="status-chip visible">임장예정</span>
-      </div>
-      <div class="card-address">희망지역: 익산 왕궁·팔봉</div>
-      <div class="card-deal-price">보증금 5천 / 월 500 내외</div>
-      <div class="card-meta"><strong>PJ-260623-002</strong><br>최근연락 06.22 문자 · 다음액션 현장 일정 확정</div>
-    </div>
-  </div>
-  <div class="card-bottom">
-    <div class="action-row">
-      <div class="action-left">
-        <button class="mini-btn visibility-text-btn active-show" type="button" onclick="event.stopPropagation()">진행</button>
-        <button class="mini-btn visibility-text-btn" type="button" onclick="event.stopPropagation()">보류</button>
-        <span class="memo-btn-wrap"><button class="mini-btn square memo-square" type="button" onclick="event.stopPropagation()"><span class="btn-emoji">📌</span><span class="btn-text">메모</span></button></span>
-        <button class="mini-btn square share-square" type="button" onclick="event.stopPropagation();location.href='/matching?id=PJ-260623-002'"><span class="btn-emoji">💫</span><span class="btn-text">추천</span></button>
-        <button class="mini-btn square edit-square" type="button" onclick="event.stopPropagation();location.href='/matching?id=PJ-260623-002'"><span class="btn-emoji">👀</span><span class="btn-text">관리</span></button>
-      </div>
-    </div>
-    <div class="card-meta">추천매물 2건 / 관심 1건 / 임장예정 1건</div>
-  </div>
-</article>
-
-<article class="property-card" data-project-id="PJ-260623-003" onclick="location.href='/matching?id=PJ-260623-003'">
-  <div class="property-main">
-    <div class="thumb" style="background:linear-gradient(135deg,#183A8F,#6AB7FF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:1000;font-size:22px;letter-spacing:-.05em">법인</div>
-    <div class="card-content">
-      <div class="title-row">
-        <h3 class="card-title property-edit-link">OO테크 / 군산 산단 공장 확장 검토</h3>
-        <span class="status-chip visible">조건정리중</span>
-      </div>
-      <div class="card-address">희망지역: 오식도동, 소룡동</div>
-      <div class="card-deal-price">매매 40억 이하 또는 장기임차</div>
-      <div class="card-meta"><strong>PJ-260623-003</strong><br>최근연락 06.21 카톡 · 다음액션 전력 조건 확인</div>
-    </div>
-  </div>
-  <div class="card-bottom">
-    <div class="action-row">
-      <div class="action-left">
-        <button class="mini-btn visibility-text-btn active-show" type="button" onclick="event.stopPropagation()">진행</button>
-        <button class="mini-btn visibility-text-btn" type="button" onclick="event.stopPropagation()">보류</button>
-        <span class="memo-btn-wrap"><button class="mini-btn square memo-square" type="button" onclick="event.stopPropagation()"><span class="btn-emoji">📌</span><span class="btn-text">메모</span></button></span>
-        <button class="mini-btn square share-square" type="button" onclick="event.stopPropagation();location.href='/matching?id=PJ-260623-003'"><span class="btn-emoji">💫</span><span class="btn-text">추천</span></button>
-        <button class="mini-btn square edit-square" type="button" onclick="event.stopPropagation();location.href='/matching?id=PJ-260623-003'"><span class="btn-emoji">👀</span><span class="btn-text">관리</span></button>
-      </div>
-    </div>
-    <div class="card-meta">추천매물 3건 / 보류 1건 / 확인필요 2건</div>
-  </div>
-</article></div>
+          <div class="group-head"><div class="group-title">프로젝트</div><div class="group-count">${rows.length}건</div></div>
+          <div class="card-list">${rows.map(renderProjectCard).join('')}</div>
         </section>`;
+    }
+    async function loadProjects(){
+      projectDashboardState.loading = true;
+      projectDashboardState.error = '';
+      renderProjects([]);
+      try{
+        const data = await gasPost('listProjects', { limit: 300 });
+        const rows = listFromResponse(data).map(normalizeProjectRecord).filter(function(p){ return p.projectId || p.projectTitle; });
+        projectDashboardState.allProjects = rows;
+        projectDashboardState.loading = false;
+        renderProjects(filteredProjects());
+      }catch(err){
+        projectDashboardState.loading = false;
+        projectDashboardState.error = err && err.message ? err.message : String(err || '알 수 없는 오류');
+        renderProjects([]);
+      }
     }
     document.querySelectorAll('.filter-chip').forEach(function(btn){
       btn.addEventListener('click', function(){
         const group = btn.dataset.filterGroup;
+        const value = btn.dataset.filterValue || 'all';
+        const wasActive = btn.classList.contains('active');
         document.querySelectorAll('.filter-chip[data-filter-group="' + group + '"]').forEach(function(x){x.classList.remove('active')});
-        btn.classList.add('active');
+        if(group === 'sort'){
+          btn.classList.add('active');
+          projectDashboardState.filters.sort = value || 'default';
+        }else if(wasActive){
+          projectDashboardState.filters[group] = 'all';
+        }else{
+          btn.classList.add('active');
+          projectDashboardState.filters[group] = value;
+        }
+        renderProjects(filteredProjects());
       });
     });
-    renderProjects();
+    loadProjects();
   </script>
 </body>
 </html>

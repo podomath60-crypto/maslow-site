@@ -395,15 +395,18 @@
     .candidate-map-side{min-height:560px;border:1px solid #e6ebf1;border-radius:24px;background:#fff;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 22px rgba(15,23,42,.04)}
     .candidate-map-side-head{padding:10px 11px;border-bottom:1px solid #edf2f7;background:#fbfdff;display:flex;align-items:center;justify-content:space-between;gap:8px}
     .candidate-map-side-title{font-size:13px;font-weight:1000;color:#111318}.candidate-map-side-sub{font-size:10px;font-weight:900;color:#88919c;margin-top:2px}
-    .candidate-map-mini-list{padding:10px;display:grid;gap:8px;max-height:224px;overflow:auto;border-bottom:1px solid #edf2f7;scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.28) transparent}
+    .candidate-map-mini-list{display:none}
     .candidate-map-mini{appearance:none;text-align:left;border:1px solid #e6ebf1;border-radius:14px;background:#fff;padding:8px;display:grid;gap:4px;cursor:pointer;box-shadow:0 6px 14px rgba(15,23,42,.035)}
     .candidate-map-mini:hover{border-color:#bfdbfe}.candidate-map-mini.active{border-color:#7c3aed;background:#f7f3ff;box-shadow:0 0 0 3px rgba(124,58,237,.10)}
     .candidate-map-mini-title{font-size:12px;font-weight:1000;color:#111318;line-height:1.25}.candidate-map-mini-meta{font-size:10px;font-weight:850;color:#64748b;line-height:1.35}
+    .candidate-map-top-chips{position:absolute;left:12px;top:12px;z-index:9;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 24px);padding:7px;border:1px solid rgba(203,213,225,.9);background:rgba(255,255,255,.88);border-radius:16px;box-shadow:0 10px 24px rgba(15,23,42,.12);backdrop-filter:blur(8px)}
+    .candidate-map-top-chip{height:30px;padding:0 10px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#374151;font-size:11px;font-weight:1000;box-shadow:0 5px 12px rgba(15,23,42,.035)}
+    .candidate-map-top-chip.active{background:#111318;border-color:#111318;color:#fff}
     .candidate-map-detail{padding:10px;overflow:auto;flex:1;display:block}.candidate-map-empty{min-height:230px;border:1px dashed #d3dce7;border-radius:18px;background:#fbfdff;color:#7b8794;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:900;line-height:1.6;padding:18px}
     .candidate-map-detail-card{border:1px solid #e6ebf1;border-radius:18px;background:#fff;padding:12px;display:grid;gap:9px;box-shadow:0 8px 18px rgba(15,23,42,.035)}
     .candidate-map-detail-title{font-size:16px;font-weight:1000;color:#111318;line-height:1.24;letter-spacing:-.045em}.candidate-map-detail-no{font-size:10px;font-weight:1000;color:#8a94a1;margin-top:3px}
-    .candidate-map-marker{position:relative;display:inline-flex;align-items:center;justify-content:center;width:31px;height:31px;border-radius:999px;background:#0f7cff;border:3px solid #fff;box-shadow:0 10px 22px rgba(15,23,42,.24);transform:translate(-50%,-50%);cursor:pointer}
-    .candidate-map-marker::after{content:"";width:8px;height:8px;border-radius:999px;background:#fff}.candidate-map-marker.active{background:#7c3aed;transform:translate(-50%,-50%) scale(1.08)}.candidate-map-marker.rejected{background:#ef4444}.candidate-map-marker.hold{background:#64748b}.candidate-map-marker.proposal{background:#16a34a}
+    .candidate-map-marker{position:relative;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:#0f7cff;border:2px solid #fff;box-shadow:0 8px 18px rgba(15,23,42,.24);transform:translate(-50%,-50%);cursor:pointer;color:#fff;font-size:10px;font-weight:1000;line-height:1}
+    .candidate-map-marker::after{content:"";width:6px;height:6px;border-radius:999px;background:#fff}.candidate-map-marker.algorithm::after{display:none}.candidate-map-marker.active{background:#7c3aed;transform:translate(-50%,-50%) scale(1.08)}.candidate-map-marker.rejected{background:#ef4444}.candidate-map-marker.hold{background:#64748b}.candidate-map-marker.proposal{background:#16a34a}
     .candidate-map-status{position:absolute;left:12px;bottom:12px;z-index:8;border:1px solid rgba(203,213,225,.9);background:rgba(255,255,255,.9);border-radius:14px;padding:8px 10px;font-size:11px;font-weight:950;color:#475569;line-height:1.45;backdrop-filter:blur(8px);max-width:380px}
     .candidate-map-status.error{color:#b42318;border-color:#fecaca;background:rgba(255,241,241,.94)}
 
@@ -877,7 +880,7 @@
     }
     function candidateMapItems(){
       if(activeFilter==='알고리즘추천' && Array.isArray(state.recommendationResults) && state.recommendationResults.length){
-        return state.recommendationResults.map((item,idx)=>{
+        return state.recommendationResults.slice(0, algorithmTopN).map((item,idx)=>{
           const db=findDbItem(item.propertyId || item.listingNumber) || {};
           const propertyId=item.propertyId || item.listingNumber || db.propertyId || db.listingNumber || ('ALG-' + idx);
           const exists=state.candidates.some(c=>String(c.propertyId)===String(propertyId));
@@ -979,22 +982,24 @@
         if(!p) return;
         const div=document.createElement('div');
         const cls=['candidate-map-marker'];
+        if(item.sourceType==='recommendation') cls.push('algorithm');
         if(String(activeCandidateMapId)===String(item.candidateId)) cls.push('active');
         if(item.rejected || item.stage==='탈락') cls.push('rejected');
         else if(item.stage==='보류') cls.push('hold');
         else if(item.proposal) cls.push('proposal');
         div.className=cls.join(' ');
         div.title=item.title || item.propertyId || '후보매물';
+        if(item.sourceType==='recommendation') div.textContent=String(item.algorithmRank || (idx + 1));
         try{
-          const marker=new naver.maps.Marker({position:new naver.maps.LatLng(p.lat,p.lng), map:candidateMapState.map, icon:{content:div, anchor:new naver.maps.Point(15,15)}, clickable:true, zIndex:2000+idx});
-          naver.maps.Event.addListener(marker,'click',()=>selectCandidateMapItem(item.candidateId, {pan:false}));
+          const marker=new naver.maps.Marker({position:new naver.maps.LatLng(p.lat,p.lng), map:candidateMapState.map, icon:{content:div, anchor:new naver.maps.Point(11,11)}, clickable:true, zIndex:2000+idx});
+          naver.maps.Event.addListener(marker,'click',()=>selectCandidateMapItem(item.candidateId, {pan:true}));
           candidateMapState.markers.push(marker);
         }catch(e){ candidateMapState.error=e && e.message ? e.message : String(e); }
       });
       if(candidateMapState.error) candidateMapStatus(candidateMapState.error, true);
       else if(!items.length) candidateMapStatus('표시할 후보매물이 없습니다.', false);
       else if(!pointItems.length) candidateMapStatus('좌표가 있는 후보매물이 없습니다. 매물번호 또는 주소 좌표 저장 상태를 확인해야 합니다.', true);
-      else candidateMapStatus('후보 핀 ' + pointItems.length + '개 / 후보 ' + items.length + '개. 핀이나 오른쪽 작은 패널을 누르면 단건 패널이 표시됩니다.', false);
+      else candidateMapStatus('후보 핀 ' + pointItems.length + '개 / 후보 ' + items.length + '개. 핀을 누르면 지도가 센터로 이동하고 단건 패널이 표시됩니다.', false);
     }
     function selectedCandidateMapItem(){
       const items=candidateMapItems();
@@ -1005,7 +1010,7 @@
       return items.map(item=>`<button type="button" class="candidate-map-mini ${String(activeCandidateMapId)===String(item.candidateId)?'active':''}" data-candidate-map-select="${escapeAttr(item.candidateId)}"><div class="candidate-map-mini-title">${escapeHtml(item.title || item.propertyId || '후보매물')}</div><div class="candidate-map-mini-meta">${escapeHtml(item.price || '가격 확인')} · ${escapeHtml(item.area || '면적 확인')}<br>${escapeHtml(item.address || '주소 확인 필요')}</div></button>`).join('');
     }
     function renderCandidateMapDetail(item){
-      if(!item) return '<div class="candidate-map-empty">오른쪽 작은 후보 패널 또는 지도 핀을 누르면<br>해당 매물 패널 1개만 여기에 표시됩니다.</div>';
+      if(!item) return '<div class="candidate-map-empty">지도 핀을 누르면<br>해당 매물 패널 1개만 여기에 표시됩니다.</div>';
       const isRealCandidate=state.candidates.some(c=>String(c.id)===String(item.candidateId));
       const alreadyCandidate=state.candidates.some(c=>String(c.propertyId)===String(item.propertyId));
       const actionHtml=isRealCandidate
@@ -1015,10 +1020,8 @@
     }
     function updateCandidateMapSidePanel(){
       const items=candidateMapItems();
-      const mini=document.getElementById('candidateMapMiniList');
       const detail=document.getElementById('candidateMapDetail');
       const sub=document.getElementById('candidateMapSideSub');
-      if(mini) mini.innerHTML=renderCandidateMapMiniList(items);
       if(detail) detail.innerHTML=renderCandidateMapDetail(selectedCandidateMapItem());
       if(sub) sub.textContent='후보 ' + items.length + '개 · 지도 핀 선택 시 단건 표시';
     }
@@ -1090,9 +1093,13 @@
         candidateMapStatus(candidateMapState.error, true);
       }
     }
+    function renderCandidateMapTopChips(){
+      if(activeFilter !== '알고리즘추천') return '';
+      return `<div class="candidate-map-top-chips" aria-label="알고리즘 추천 표시 개수">${[5,10,15,20].map(n=>`<button type="button" class="candidate-map-top-chip ${algorithmTopN===n?'active':''}" data-algo-top="${n}">TOP ${n}</button>`).join('')}</div>`;
+    }
     function renderCandidateMapPanel(){
       const items=candidateMapItems();
-      return `<div class="candidate-map-layout"><div class="matching-map-stage real-map"><div id="candidateRealMap" class="matching-real-map-canvas"></div><div id="candidateMapStatus" class="candidate-map-status">후보 지도를 준비 중입니다.</div></div><aside class="candidate-map-side"><div class="candidate-map-side-head"><div><div class="candidate-map-side-title">매칭 후보 · ${escapeHtml(activeFilter || '전체')}</div><div class="candidate-map-side-sub" id="candidateMapSideSub">후보 ${items.length}개</div></div><span class="source-badge manual">단건패널</span></div><div class="candidate-map-mini-list" id="candidateMapMiniList">${renderCandidateMapMiniList(items)}</div><div class="candidate-map-detail" id="candidateMapDetail">${renderCandidateMapDetail(selectedCandidateMapItem())}</div></aside></div>`;
+      return `<div class="candidate-map-layout"><div class="matching-map-stage real-map"><div id="candidateRealMap" class="matching-real-map-canvas"></div>${renderCandidateMapTopChips()}<div id="candidateMapStatus" class="candidate-map-status">후보 지도를 준비 중입니다.</div></div><aside class="candidate-map-side"><div class="candidate-map-side-head"><div><div class="candidate-map-side-title">매칭 후보 · ${escapeHtml(activeFilter || '전체')}</div><div class="candidate-map-side-sub" id="candidateMapSideSub">후보 ${items.length}개</div></div><span class="source-badge manual">단건패널</span></div><div class="candidate-map-detail" id="candidateMapDetail">${renderCandidateMapDetail(selectedCandidateMapItem())}</div></aside></div>`;
     }
     function renderDbThumb(item){
       const url=String(item.heroUrl || firstPhotoUrlFromJson(item.photoUrlsJson) || (item.raw && firstPhotoUrlFromJson(item.raw.photoUrlsJson)) || '').trim();
@@ -2270,7 +2277,7 @@
       }catch(err){ alert('알고리즘가동 실패: ' + (err && err.message ? err.message : String(err))); }
       finally{ if(btn){ btn.disabled=false; btn.textContent='+ 알고리즘가동'; } }
     }
-    function setAlgorithmTopN(n){ algorithmTopN=Number(n)||10; renderSection2(); }
+    function setAlgorithmTopN(n){ algorithmTopN=Number(n)||10; activeCandidateMapId=''; candidateMapState.didFitInitial=false; renderSection2(); }
     function renderRecommendationPanel(){
       const items=(state.recommendationResults||[]).slice(0, algorithmTopN);
       const total=(state.recommendationResults||[]).length;

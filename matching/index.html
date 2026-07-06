@@ -414,6 +414,7 @@
     .algo-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;border:1px solid #e6ebf1;background:#fbfdff;border-radius:20px;padding:10px 12px}
     .algo-toolbar-title{font-size:13px;font-weight:1000;color:#111318;line-height:1.35}.algo-toolbar-sub{font-size:11px;font-weight:850;color:#64748b;margin-top:2px;line-height:1.35}
     .algo-rank-buttons{display:flex;gap:6px;flex-wrap:wrap}.algo-rank-btn{height:32px;border:1px solid #dbe5ee;background:#fff;border-radius:999px;padding:0 11px;font-size:11px;font-weight:1000;color:#374151;cursor:pointer}.algo-rank-btn.active{background:#eef5ff;border-color:#0f7cff;color:#0f64d8}
+    .deal-toggle-row,.algo-deal-buttons{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.deal-toggle-btn,.algo-deal-btn{height:30px;border:1px solid #dbe5ee;background:#fff;border-radius:999px;padding:0 12px;font-size:11px;font-weight:1000;color:#475569;cursor:pointer}.deal-toggle-btn.active,.algo-deal-btn.active{background:#eef5ff;border-color:#0f7cff;color:#0f64d8}.deal-scope-block{margin-top:8px;padding-top:8px;border-top:1px dashed #e2e8f0}.deal-scope-title{font-size:11px;font-weight:1000;color:#334155;margin-bottom:6px}.deal-scope-grid{display:grid;grid-template-columns:78px minmax(0,1fr);gap:6px;align-items:center}.deal-scope-grid .inline-label{font-size:11px}.algo-toolbar-controls{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
     .db-thumb{width:100%;aspect-ratio:16/9;border:1px solid #edf2f7;background:#f8fafc;border-radius:16px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;font-weight:1000}
     .db-thumb img{width:100%;height:100%;object-fit:cover;display:block}
     .db-rank-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.rank-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#111318;color:#fff;padding:5px 8px;font-size:11px;font-weight:1000}.algo-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;padding:5px 8px;font-size:11px;font-weight:1000}
@@ -501,7 +502,7 @@
               <div class="project-summary-text">
                 <span contenteditable="true" data-inline-field="status"></span>
                 <span class="sep">·</span>
-                <span contenteditable="true" data-inline-field="budget"></span>
+                <span data-inline-field="budget"></span>
                 <span class="sep">·</span>
                 <span contenteditable="true" data-inline-field="regions"></span>
                 <span class="sep">·</span>
@@ -584,11 +585,28 @@
               <div class="project-col-title">요구 조건</div>
               <div class="project-line">
                 <div class="inline-label">거래</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="dealType"></div>
+                <div class="deal-toggle-row">
+                  <button type="button" class="deal-toggle-btn" data-deal-toggle="sale">매매</button>
+                  <button type="button" class="deal-toggle-btn" data-deal-toggle="rent">임대</button>
+                </div>
               </div>
-              <div class="project-line">
-                <div class="inline-label">예산</div>
-                <div class="inline-value" contenteditable="true" data-inline-field="budget"></div>
+              <div class="deal-scope-block" data-sale-condition>
+                <div class="deal-scope-title">매매 조건</div>
+                <div class="deal-scope-grid">
+                  <div class="inline-label">매매 하한</div><div class="inline-value" contenteditable="true" data-inline-field="saleBudgetMin"></div>
+                  <div class="inline-label">매매 상한</div><div class="inline-value" contenteditable="true" data-inline-field="saleBudgetMax"></div>
+                  <div class="inline-label">매매 메모</div><div class="inline-value" contenteditable="true" data-inline-field="salePriceMemo"></div>
+                </div>
+              </div>
+              <div class="deal-scope-block" data-rent-condition>
+                <div class="deal-scope-title">임대 조건</div>
+                <div class="deal-scope-grid">
+                  <div class="inline-label">보증금 하한</div><div class="inline-value" contenteditable="true" data-inline-field="rentDepositMin"></div>
+                  <div class="inline-label">보증금 상한</div><div class="inline-value" contenteditable="true" data-inline-field="rentDepositMax"></div>
+                  <div class="inline-label">월세 하한</div><div class="inline-value" contenteditable="true" data-inline-field="rentMonthlyMin"></div>
+                  <div class="inline-label">월세 상한</div><div class="inline-value" contenteditable="true" data-inline-field="rentMonthlyMax"></div>
+                  <div class="inline-label">임대 메모</div><div class="inline-value" contenteditable="true" data-inline-field="rentPriceMemo"></div>
+                </div>
               </div>
               <div class="project-line">
                 <div class="inline-label">지역</div>
@@ -730,16 +748,22 @@
     };
     const initialState = {
       project:{
-        projectId:'', title:'', status:'', inquiryDate:'', inquiryRoutes:[], inquiryRouteEtc:'', inquiryType:'', inquiryMemo:'', clientName:'', phone:'', companyName:'', clientCategory:'', requesterRelation:'', industry:'', dealType:'', budget:'', regions:'', usePurpose:'', land:'', building:'', areaSummary:'', coreNeeds:'', lastContact:'', nextAction:'', contactLogs:[]
+        projectId:'', title:'', status:'', inquiryDate:'', inquiryRoutes:[], inquiryRouteEtc:'', inquiryType:'', inquiryMemo:'', clientName:'', phone:'', companyName:'', clientCategory:'', requesterRelation:'', industry:'',
+        dealType:'', budget:'', dealTypeMode:'any', saleEnabled:false, rentEnabled:false, saleBudgetMin:'', saleBudgetMax:'', salePriceMemo:'', rentDepositMin:'', rentDepositMax:'', rentMonthlyMin:'', rentMonthlyMax:'', rentPriceMemo:'',
+        regions:'', usePurpose:'', land:'', building:'', areaSummary:'', coreNeeds:'', lastContact:'', nextAction:'', contactLogs:[]
       },
       candidates:[],
       dbSearchResults:[],
       recommendationResults:[],
+      recommendationResultsByDeal:{sale:[], rent:[]},
+      activeAlgorithmDealScope:'sale',
       searchLogs:[],
       progressMemos:[],
       visits:[],
       algorithmRuns:[],
-      lastAlgorithmRun:null
+      algorithmRunsByDeal:{sale:[], rent:[]},
+      lastAlgorithmRun:null,
+      lastAlgorithmRunByDeal:{sale:null, rent:null}
     };
     let state = structuredClone(initialState);
     let undoStack = [];
@@ -748,6 +772,7 @@
     let activeSection2Tab = '후보매물';
     let candidateViewMode = 'panel';
     let algorithmTopN = 10;
+    let activeAlgorithmDealScope = 'sale';
     let activeCandidateMapId = '';
     let activeSearchLogId = '';
     let activeStudyLogId = '';
@@ -766,14 +791,55 @@
     function markChange(label){ undoStack.push({label, before:clone(state), time:new Date().toISOString()}); if(undoStack.length>100) undoStack.shift(); redoStack=[]; dirty=true; persistUndo(); updateSaveState(); }
     function persistUndo(){ localStorage.setItem(STORAGE_UNDO_KEY, JSON.stringify(undoStack)); localStorage.setItem(STORAGE_REDO_KEY, JSON.stringify(redoStack)); }
     function updateSaveState(){ document.getElementById('undoBtn').disabled = undoStack.length===0; document.getElementById('redoBtn').disabled = redoStack.length===0; document.getElementById('saveState').textContent = dirty ? '저장 전 변경 있음' : '변경사항 없음'; }
-    function renderProject(){ const p=state.project; document.querySelectorAll('[data-inline-field]').forEach(el=>{ const f=el.dataset.inlineField; let v=''; if(f==='inquiryRoutesText') v=(p.inquiryRoutes||[]).map(x=>x==='기타' && p.inquiryRouteEtc ? `기타: ${p.inquiryRouteEtc}` : x).join(', '); else v=p[f] ?? ''; if(document.activeElement!==el) el.textContent=v; }); }
+    function ensureProjectDealState(){
+      const p=state.project || {};
+      if(p.saleEnabled === undefined) p.saleEnabled=String(p.dealType||'').indexOf('매매')>=0;
+      if(p.rentEnabled === undefined) p.rentEnabled=String(p.dealType||'').indexOf('임대')>=0;
+      if(!p.saleEnabled && !p.rentEnabled && !String(p.dealType||'').trim()){ p.dealTypeMode='any'; }
+      syncProjectDealFields();
+    }
+    function getDealTypeMode(project){
+      const p=project || state.project || {};
+      if(p.saleEnabled && p.rentEnabled) return 'both';
+      if(p.saleEnabled) return 'sale';
+      if(p.rentEnabled) return 'rent';
+      return 'any';
+    }
+    function syncProjectDealFields(){
+      const p=state.project || {};
+      p.dealTypeMode=getDealTypeMode(p);
+      if(p.dealTypeMode==='both') p.dealType='매매, 임대';
+      else if(p.dealTypeMode==='sale') p.dealType='매매';
+      else if(p.dealTypeMode==='rent') p.dealType='임대';
+      else p.dealType='무관';
+      const budgetParts=[];
+      if(p.saleEnabled){
+        const sale=[p.saleBudgetMin,p.saleBudgetMax].filter(Boolean).join(' ~ ');
+        if(sale) budgetParts.push('매매 ' + sale);
+      }
+      if(p.rentEnabled){
+        const dep=[p.rentDepositMin,p.rentDepositMax].filter(Boolean).join(' ~ ');
+        const mon=[p.rentMonthlyMin,p.rentMonthlyMax].filter(Boolean).join(' ~ ');
+        const rent=[]; if(dep) rent.push('보증금 ' + dep); if(mon) rent.push('월세 ' + mon);
+        if(rent.length) budgetParts.push('임대 ' + rent.join(' / '));
+      }
+      if(budgetParts.length) p.budget=budgetParts.join(' · ');
+    }
+    function renderProject(){
+      ensureProjectDealState();
+      const p=state.project;
+      document.querySelectorAll('[data-inline-field]').forEach(el=>{ const f=el.dataset.inlineField; let v=''; if(f==='inquiryRoutesText') v=(p.inquiryRoutes||[]).map(x=>x==='기타' && p.inquiryRouteEtc ? `기타: ${p.inquiryRouteEtc}` : x).join(', '); else v=p[f] ?? ''; if(document.activeElement!==el) el.textContent=v; });
+      document.querySelectorAll('[data-deal-toggle]').forEach(btn=>{ const scope=btn.dataset.dealToggle; btn.classList.toggle('active', scope==='sale' ? !!p.saleEnabled : !!p.rentEnabled); });
+      const saleBox=document.querySelector('[data-sale-condition]'); if(saleBox) saleBox.style.display=p.saleEnabled ? '' : 'none';
+      const rentBox=document.querySelector('[data-rent-condition]'); if(rentBox) rentBox.style.display=p.rentEnabled ? '' : 'none';
+    }
     function renderRouteChecks(){}
     function candidateCounts(){
       const total=state.candidates.length;
       const rejected=state.candidates.filter(c=>c.rejected || c.stage==='탈락').length;
       const hold=state.candidates.filter(c=>c.stage==='보류' && !c.rejected).length;
       const proposal=state.candidates.filter(c=>c.proposal&&!c.rejected).length;
-      const recommendation=Array.isArray(state.recommendationResults) ? state.recommendationResults.length : state.candidates.filter(c=>c.sourceType==='recommendation').length;
+      const recByDeal=state.recommendationResultsByDeal || {}; const recommendation=(recByDeal.sale||[]).length + (recByDeal.rent||[]).length || (Array.isArray(state.recommendationResults) ? state.recommendationResults.length : state.candidates.filter(c=>c.sourceType==='recommendation').length);
       const manual=state.candidates.filter(c=>c.sourceType==='manual_search' || c.sourceType==='map_search').length;
       const visit=state.candidates.filter(c=>String(c.visit).includes('임장')&&!c.rejected).length;
       const active=total-rejected;
@@ -881,8 +947,8 @@
       return getFilteredCandidates();
     }
     function candidateMapItems(){
-      if(activeFilter==='알고리즘추천' && Array.isArray(state.recommendationResults) && state.recommendationResults.length){
-        return state.recommendationResults.slice(0, algorithmTopN).map((item,idx)=>{
+      if(activeFilter==='알고리즘추천' && currentAlgorithmResults().length){
+        return currentAlgorithmResults().slice(0, algorithmTopN).map((item,idx)=>{
           const db=findDbItem(item.propertyId || item.listingNumber) || {};
           const propertyId=item.propertyId || item.listingNumber || db.propertyId || db.listingNumber || ('ALG-' + idx);
           const exists=state.candidates.some(c=>String(c.propertyId)===String(propertyId));
@@ -1097,7 +1163,9 @@
     }
     function renderCandidateMapTopChips(){
       if(activeFilter !== '알고리즘추천') return '';
-      return `<div class="candidate-map-top-chips" aria-label="알고리즘 추천 표시 개수">${[5,10,15,20].map(n=>`<button type="button" class="candidate-map-top-chip ${algorithmTopN===n?'active':''}" data-algo-top="${n}">TOP ${n}</button>`).join('')}</div>`;
+      const scopes=enabledDealScopes();
+      const dealButtons=scopes.length>1 ? scopes.map(scope=>`<button type="button" class="candidate-map-top-chip ${activeAlgorithmDealScope===scope?'active':''}" data-algo-deal="${scope}">${dealScopeLabel(scope)}</button>`).join('') : '';
+      return `<div class="candidate-map-top-chips" aria-label="알고리즘 추천 표시 개수">${dealButtons}${[5,10,15,20].map(n=>`<button type="button" class="candidate-map-top-chip ${algorithmTopN===n?'active':''}" data-algo-top="${n}">TOP ${n}</button>`).join('')}</div>`;
     }
     function renderCandidateMapPanel(){
       const items=candidateMapItems();
@@ -1144,6 +1212,35 @@
       const meta=MATCHING_WRITER_META[code] || null;
       return meta ? (meta.name + ' ' + meta.emoji) : (MATCHING_PASSWORD_MAP[code] || '');
     }
+    function normalizeDealScope(scope){
+      const v=String(scope||'').toLowerCase();
+      if(v==='sale' || v==='매매') return 'sale';
+      if(v==='rent' || v==='임대') return 'rent';
+      return '';
+    }
+    function dealScopeLabel(scope){ return normalizeDealScope(scope)==='rent' ? '임대' : '매매'; }
+    function enabledDealScopes(){
+      ensureProjectDealState();
+      const p=state.project || {};
+      const out=[];
+      if(p.saleEnabled) out.push('sale');
+      if(p.rentEnabled) out.push('rent');
+      if(!out.length) out.push('sale');
+      return out;
+    }
+    function currentAlgorithmResults(){
+      const by=state.recommendationResultsByDeal || {};
+      return by[activeAlgorithmDealScope] || state.recommendationResults || [];
+    }
+    function setActiveAlgorithmDealScope(scope){
+      const normalized=normalizeDealScope(scope) || 'sale';
+      activeAlgorithmDealScope=normalized;
+      state.activeAlgorithmDealScope=normalized;
+      state.recommendationResults=(state.recommendationResultsByDeal && state.recommendationResultsByDeal[normalized]) || [];
+      activeCandidateMapId='';
+      candidateMapState.didFitInitial=false;
+      renderSection2();
+    }
     function nowCompactId(prefix){
       const d=new Date();
       const pad=n=>String(n).padStart(2,'0');
@@ -1153,9 +1250,14 @@
       const parsed=parsePriceRange(text || '');
       return {min:parsed.min || '', max:parsed.max || ''};
     }
+    function parseRangeMinMaxText(minText, maxText){
+      const min=parseWonValue(minText || '');
+      const max=parseWonValue(maxText || '');
+      return {min:min || '', max:max || ''};
+    }
     function projectPayloadForSave(){
+      ensureProjectDealState();
       const p=state.project || {};
-      const budget=parseBudgetForSave(p.budget || '');
       const criteria=buildAlgorithmCriteria ? buildAlgorithmCriteria() : {};
       const writer=currentWriterLabel();
       return {
@@ -1163,17 +1265,29 @@
         createdBy:writer,
         updatedBy:writer,
         projectStatus:p.status || 'active',
+        projectTitle:p.title || '',
         clientName:p.clientName || '',
         clientType:p.clientCategory || '',
         companyName:p.companyName || '',
         contactName:p.requesterRelation || '',
         phone:p.phone || '',
+        subPhone:p.subPhone || '',
         inflowChannel:(p.inquiryRoutes || []).join(', '),
-        dealType:p.dealType || '',
-        budgetMin:budget.min,
-        budgetMax:budget.max,
+        requestDate:p.inquiryDate || '',
+        dealTypeMode:getDealTypeMode(p),
+        saleEnabled:p.saleEnabled ? 'true' : '',
+        rentEnabled:p.rentEnabled ? 'true' : '',
+        saleBudgetMin:p.saleBudgetMin || '',
+        saleBudgetMax:p.saleBudgetMax || '',
+        salePriceMemo:p.salePriceMemo || '',
+        rentDepositMin:p.rentDepositMin || '',
+        rentDepositMax:p.rentDepositMax || '',
+        rentMonthlyMin:p.rentMonthlyMin || '',
+        rentMonthlyMax:p.rentMonthlyMax || '',
+        rentPriceMemo:p.rentPriceMemo || '',
         regionText:p.regions || '',
         useText:p.usePurpose || '',
+        industryText:p.industry || '',
         landAreaMinPy:'',
         landAreaMaxPy:'',
         buildingAreaMinPy:'',
@@ -1183,9 +1297,23 @@
         requiredMemo:p.coreNeeds || '',
         specialMemo:[p.areaSummary, p.land, p.building].filter(Boolean).join(' / '),
         internalMemo:JSON.stringify({project:p, savedFrom:'matching/index.html'}),
+        lastSaleAlgorithmRunId:state.lastAlgorithmRunByDeal && state.lastAlgorithmRunByDeal.sale ? state.lastAlgorithmRunByDeal.sale.algorithmRunId : '',
+        lastRentAlgorithmRunId:state.lastAlgorithmRunByDeal && state.lastAlgorithmRunByDeal.rent ? state.lastAlgorithmRunByDeal.rent.algorithmRunId : '',
         lastAlgorithmRunAt:state.lastAlgorithmRun && state.lastAlgorithmRun.createdAt || '',
         lastAlgorithmTopLimit:algorithmTopN,
         lastAlgorithmCriteriaJson:criteria
+      };
+    }
+    function candidatePayloadForSave(c){
+      return {
+        listingNumber:c.propertyId || c.listingNumber || '',
+        status:matchingStatusForCandidate(c),
+        source:sourceTypeForCandidate(c),
+        dealTypeScope:normalizeDealScope(c.dealTypeScope || c.algorithmDealScope || c.dealScope) || dealScopeFromListing(c),
+        algorithmRunId:c.algorithmRunId || '',
+        score:c.score || '',
+        rank:c.algorithmRank || c.rank || '',
+        memo:c.rejectMemo || c.memo || ''
       };
     }
     function matchingStatusForCandidate(c){
@@ -1236,73 +1364,26 @@
       const id=String(log.id || '').replace(/[^A-Za-z0-9가-힣_-]/g,'');
       return ['PS', projectId || 'NO_PROJECT', id || nowCompactId('LOG')].join('-');
     }
+    async function saveProjectAndReturnId(){
+      const projectRes=await gasPost('saveProject', projectPayloadForSave());
+      const projectId=projectRes.projectId || (projectRes.item && projectRes.item.projectId) || (state.project && state.project.projectId);
+      if(!projectId) throw new Error('projectId 저장 응답이 없습니다.');
+      state.project.projectId=projectId;
+      return projectId;
+    }
     async function saveMatchingWorkspaceToServer(){
       const btn=document.getElementById('saveBtn');
       const oldText=btn ? btn.textContent : '';
       if(btn){ btn.disabled=true; btn.textContent='저장중...'; }
       try{
-        const projectRes=await gasPost('saveProject', projectPayloadForSave());
-        const projectId=projectRes.projectId || (projectRes.item && projectRes.item.projectId) || (state.project && state.project.projectId);
-        if(!projectId) throw new Error('projectId 저장 응답이 없습니다.');
-        state.project.projectId=projectId;
+        const projectId=await saveProjectAndReturnId();
         const writer=currentWriterLabel();
-        if(state.lastAlgorithmRun){
-          const run=state.lastAlgorithmRun;
-          await gasPost('saveMatchingAlgorithm', {
-            algorithmRunId:run.algorithmRunId,
-            projectId,
-            createdAt:run.createdAt,
-            createdBy:run.createdBy || writer,
-            criteriaJson:run.criteriaJson || {},
-            topLimit:run.topLimit || algorithmTopN,
-            totalScanned:run.totalScanned || 0,
-            totalExcluded:run.totalExcluded || 0,
-            totalScored:run.totalScored || 0,
-            totalRecommended:run.totalRecommended || 0,
-            excludedSummaryJson:run.excludedSummaryJson || {},
-            scoreVersion:run.scoreVersion || 'matching-score-v1',
-            memo:run.memo || ''
-          });
-        }
-        for(const item of (state.recommendationResults || []).slice(0,20)){
-          const matchingId=algorithmRecommendationMatchingId(projectId, item);
-          const res=await gasPost('saveMatchingItem', {
-            matchingId,
-            projectId,
-            listingNumber:item.propertyId || item.listingNumber || '',
-            createdBy:writer,
-            updatedBy:writer,
-            sourceType:'algorithm',
-            matchingStatus:'recommended',
-            score:item.score || '',
-            rank:item.algorithmRank || '',
-            algorithmRunId:item.algorithmRunId || (state.lastAlgorithmRun && state.lastAlgorithmRun.algorithmRunId) || '',
-            snapshotJson:snapshotForListingLike(item),
-            memo:item.reason || '',
-            userMemo:''
-          });
-          item.matchingId=res.matchingId || matchingId;
-        }
-        for(const c of (state.candidates || [])){
-          const matchingId=localMatchingId(projectId, c);
-          const res=await gasPost('saveMatchingItem', {
-            matchingId,
-            projectId,
-            listingNumber:c.propertyId || c.listingNumber || '',
-            createdBy:writer,
-            updatedBy:writer,
-            sourceType:sourceTypeForCandidate(c),
-            matchingStatus:matchingStatusForCandidate(c),
-            score:c.score || '',
-            rank:c.algorithmRank || c.rank || '',
-            algorithmRunId:c.algorithmRunId || '',
-            snapshotJson:snapshotForListingLike(c),
-            memo:c.rejectMemo || c.ownerStatus || '',
-            userMemo:c.memo || '',
-            isDeleted:c.isDeleted ? 'true' : ''
-          });
-          c.matchingId=res.matchingId || matchingId;
-        }
+        await gasPost('saveMatching', {
+          projectId,
+          createdBy:writer,
+          updatedBy:writer,
+          candidates:(state.candidates || []).map(candidatePayloadForSave)
+        });
         for(const log of (state.searchLogs || [])){
           const searchLogId=searchLogIdForSave(projectId, log);
           const res=await gasPost('savePropertySearch', {
@@ -1311,10 +1392,14 @@
             createdAt:log.createdAt || '',
             createdBy:writer || log.writerCode || '',
             updatedBy:writer,
+            sourceName:log.source || log.sourceName || '',
+            sourceType:log.sourceType || '',
             url:log.link || log.title || '',
+            title:log.titleText || log.name || '',
             address:log.address || '',
             areaText:log.area || '',
             priceText:log.price || '',
+            dealTypeText:log.dealTypeText || log.dealType || '',
             status:normalizeSearchLogStatus(log.status || '기록중'),
             memo:log.memo || log.studyMemo || '',
             studyLookupJson:log.studyResult || '',
@@ -2367,11 +2452,26 @@
       return { landMinPy: land ? numText(land[1]) : null, buildingMinPy: building ? numText(building[1]) : null };
     }
     function splitCriteriaWords(text){ return String(text||'').split(/[·,\/\n\s]+/).map(x=>x.trim()).filter(Boolean); }
-    function buildAlgorithmCriteria(){
+    function buildAlgorithmCriteria(scope){
+      ensureProjectDealState();
       const p=state.project || {};
-      const deal=String(p.dealType||'').indexOf('임대')>=0 ? '임대' : (String(p.dealType||'').indexOf('매매')>=0 ? '매매' : '무관');
+      const dealScope=normalizeDealScope(scope) || (p.rentEnabled && !p.saleEnabled ? 'rent' : 'sale');
       const area=parseAreaCriteria([p.areaSummary,p.land,p.building].join(' '));
-      return { dealType:deal, budget:parsePriceRange(p.budget), regions:splitCriteriaWords(p.regions), useWords:splitCriteriaWords(p.usePurpose), coreWords:splitCriteriaWords(p.coreNeeds), area };
+      const criteria={
+        dealScope,
+        dealType:dealScope==='rent' ? '임대' : '매매',
+        regions:splitCriteriaWords(p.regions),
+        useWords:splitCriteriaWords(p.usePurpose),
+        coreWords:splitCriteriaWords(p.coreNeeds),
+        area
+      };
+      if(dealScope==='rent'){
+        criteria.rentDeposit=parseRangeMinMaxText(p.rentDepositMin, p.rentDepositMax);
+        criteria.rentMonthly=parseRangeMinMaxText(p.rentMonthlyMin, p.rentMonthlyMax);
+      }else{
+        criteria.saleBudget=parseRangeMinMaxText(p.saleBudgetMin, p.saleBudgetMax);
+      }
+      return criteria;
     }
     function normalizeRegionToken(token){ return String(token||'').replace(/전북특별자치도|전라북도|충청남도|전라남도|경기도|특별시|광역시/g,'').replace(/[()]/g,'').trim(); }
     function scoreRegionForAlgorithm(criteria, item){
@@ -2391,12 +2491,10 @@
       });
       return best;
     }
-    function scoreBudgetForAlgorithm(criteria, item){
-      const budget=criteria.budget || {};
-      const parsed=parseListingPrice(item);
-      const price=(criteria.dealType==='임대') ? (parsed.monthly || parsed.deposit || parsed.sale) : parsed.sale;
+    function scoreRangeValue(value, range){
+      const price=Number(value || 0);
       if(!price) return 0;
-      const min=budget.min, max=budget.max;
+      const min=Number(range && range.min || 0), max=Number(range && range.max || 0);
       if(!min && !max) return 0;
       const lower=min ? min*0.9 : null;
       const upper=max ? max*1.1 : null;
@@ -2404,6 +2502,18 @@
       if(upper && price>upper){ return Math.max(0, 25 - Math.min(25, Math.round(((price-upper)/upper)*100))); }
       if(lower && price<lower){ return Math.max(0, 25 - Math.min(25, Math.round(((lower-price)/lower)*100))); }
       return 0;
+    }
+    function scoreBudgetForAlgorithm(criteria, item){
+      const parsed=parseListingPrice(item);
+      if(criteria.dealScope==='rent'){
+        const depositScore=scoreRangeValue(parsed.deposit || parsed.sale, criteria.rentDeposit || {});
+        const monthlyScore=scoreRangeValue(parsed.monthly, criteria.rentMonthly || {});
+        if((criteria.rentDeposit && (criteria.rentDeposit.min||criteria.rentDeposit.max)) && (criteria.rentMonthly && (criteria.rentMonthly.min||criteria.rentMonthly.max))){
+          return Math.round((depositScore + monthlyScore) / 2);
+        }
+        return monthlyScore || depositScore;
+      }
+      return scoreRangeValue(parsed.sale, criteria.saleBudget || {});
     }
     function scoreAreaForAlgorithm(criteria, item){
       const a=criteria.area || {};
@@ -2445,16 +2555,17 @@
       if(String(item.statusRaw||'').toLowerCase()==='hidden') out.push('비공개');
       return out;
     }
-    function isAlgorithmExcluded(item, criteria){
-      const status=String(item.statusRaw || item.status || '').toLowerCase();
-      const ds=dashboardStatus(item);
-      if(status==='invisible') return true;
-      if(ds.dealDone === true || ds.reviewHold === true) return true;
-      if(state.candidates.some(c=>String(c.propertyId)===String(item.propertyId) && (c.rejected || c.stage==='탈락'))) return true;
-      if(criteria.dealType && criteria.dealType !== '무관' && item.dealType && item.dealType !== criteria.dealType) return true;
-      return false;
+    function dealScopeFromListing(item){
+      const text=String((item && (item.dealType || item.price || item.title)) || '');
+      if(text.indexOf('임대')>=0 || text.indexOf('월세')>=0 || text.indexOf('보증금')>=0) return 'rent';
+      if(text.indexOf('매매')>=0) return 'sale';
+      return '';
     }
-
+    function isDealTypeMismatchForScope(item, scope){
+      const itemScope=dealScopeFromListing(item);
+      if(!itemScope) return false;
+      return normalizeDealScope(scope) && itemScope !== normalizeDealScope(scope);
+    }
     function algorithmExcludeReason(item, criteria){
       const status=String(item.statusRaw || item.status || '').toLowerCase();
       const ds=dashboardStatus(item);
@@ -2462,7 +2573,7 @@
       if(ds.dealDone === true) return 'dealDone';
       if(ds.reviewHold === true) return 'reviewHold';
       if(state.candidates.some(c=>String(c.propertyId)===String(item.propertyId) && (c.rejected || c.stage==='탈락'))) return 'projectRejected';
-      if(criteria.dealType && criteria.dealType !== '무관' && item.dealType && item.dealType !== criteria.dealType) return 'dealTypeMismatch';
+      if(isDealTypeMismatchForScope(item, criteria.dealScope)) return 'dealTypeMismatch';
       if(!String(item.address || '').trim()) return 'missingAddress';
       return '';
     }
@@ -2480,41 +2591,84 @@
         return (matchingMapState.items || []).slice();
       }
     }
+    async function saveMatchingAlgorithmRunToServer(projectId, run, results){
+      if(!projectId || !run) return null;
+      return gasPost('saveMatchingAlgorithm', {
+        algorithmRunId:run.algorithmRunId,
+        projectId,
+        createdAt:run.createdAt,
+        createdBy:run.createdBy || currentWriterLabel(),
+        runStatus:run.runStatus || 'success',
+        dealTypeScope:run.dealTypeScope,
+        topLimit:run.topLimit || 20,
+        totalLoaded:run.totalLoaded || run.totalScanned || 0,
+        totalScanned:run.totalScanned || 0,
+        totalExcluded:run.totalExcluded || 0,
+        totalScored:run.totalScored || 0,
+        totalRecommended:run.totalRecommended || 0,
+        excludedSummaryJson:run.excludedSummaryJson || {},
+        scoreVersion:run.scoreVersion || 'matching-score-v1',
+        memo:run.memo || '',
+        results:(results || []).slice(0,20).map(x=>({listingNumber:x.propertyId || x.listingNumber || '', score:x.score || ''}))
+      });
+    }
+    async function runAlgorithmForDealScope(scope, listings, projectId){
+      const criteria=buildAlgorithmCriteria(scope);
+      const excludedSummary={};
+      const scored=[];
+      listings.forEach(item=>{
+        const reason=algorithmExcludeReason(item, criteria);
+        if(reason){ excludedSummary[reason]=(excludedSummary[reason] || 0) + 1; return; }
+        const score=scoreListingForAlgorithm(criteria,item);
+        if(score>0) scored.push(Object.assign({}, item, {dealTypeScope:scope, sourceType:'recommendation', sourceLabel:'알고리즘추천', score, statusBadges:algorithmStatusBadges(item)}));
+      });
+      const run={
+        algorithmRunId:nowCompactId('AR'),
+        projectId:projectId || state.project.projectId || '',
+        createdAt:nowIso(),
+        createdBy:currentWriterLabel(),
+        dealTypeScope:scope,
+        criteriaJson:criteria,
+        topLimit:20,
+        totalLoaded:listings.length,
+        totalScanned:listings.length,
+        totalExcluded:Object.values(excludedSummary).reduce((a,b)=>a+Number(b||0),0),
+        totalScored:scored.length,
+        totalRecommended:Math.min(20, scored.length),
+        excludedSummaryJson:excludedSummary,
+        scoreVersion:'matching-score-v1',
+        runStatus:'success',
+        memo:''
+      };
+      const results=scored.sort((a,b)=>b.score-a.score).map((item,idx)=>Object.assign(item,{algorithmRank:idx+1, rank:idx+1, algorithmRunId:run.algorithmRunId, dealTypeScope:scope}));
+      await saveMatchingAlgorithmRunToServer(projectId, run, results);
+      return {run, results};
+    }
     async function runMatchingAlgorithm(){
       const btn=document.getElementById('runAlgorithmBtn');
       if(btn){ btn.disabled=true; btn.textContent='알고리즘 가동중...'; }
       try{
-        const criteria=buildAlgorithmCriteria();
+        ensureProjectDealState();
+        const scopes=enabledDealScopes();
+        const projectId=state.project.projectId || await saveProjectAndReturnId();
         const listings=await fetchAdminListingsForAlgorithm();
-        const excludedSummary={};
-        const scored=[];
-        listings.forEach(item=>{
-          const reason=algorithmExcludeReason(item, criteria);
-          if(reason){ excludedSummary[reason]=(excludedSummary[reason] || 0) + 1; return; }
-          const score=scoreListingForAlgorithm(criteria,item);
-          if(score>0) scored.push(Object.assign({}, item, {sourceType:'recommendation', sourceLabel:'알고리즘추천', score, statusBadges:algorithmStatusBadges(item)}));
-        });
-        const run={
-          algorithmRunId:nowCompactId('AR'),
-          projectId:state.project.projectId || '',
-          createdAt:nowIso(),
-          createdBy:currentWriterLabel(),
-          criteriaJson:criteria,
-          topLimit:20,
-          totalScanned:listings.length,
-          totalExcluded:Object.values(excludedSummary).reduce((a,b)=>a+Number(b||0),0),
-          totalScored:scored.length,
-          totalRecommended:Math.min(20, scored.length),
-          excludedSummaryJson:excludedSummary,
-          scoreVersion:'matching-score-v1',
-          memo:''
-        };
-        const results=scored.sort((a,b)=>b.score-a.score).map((item,idx)=>Object.assign(item,{algorithmRank:idx+1, algorithmRunId:run.algorithmRunId}));
+        state.recommendationResultsByDeal=state.recommendationResultsByDeal || {sale:[], rent:[]};
+        state.lastAlgorithmRunByDeal=state.lastAlgorithmRunByDeal || {sale:null, rent:null};
+        state.algorithmRunsByDeal=state.algorithmRunsByDeal || {sale:[], rent:[]};
+        for(const scope of scopes){
+          const packed=await runAlgorithmForDealScope(scope, listings, projectId);
+          state.recommendationResultsByDeal[scope]=packed.results;
+          state.lastAlgorithmRunByDeal[scope]=packed.run;
+          state.algorithmRunsByDeal[scope]=state.algorithmRunsByDeal[scope] || [];
+          state.algorithmRunsByDeal[scope].unshift(packed.run);
+          state.algorithmRuns=state.algorithmRuns || [];
+          state.algorithmRuns.unshift(packed.run);
+          state.lastAlgorithmRun=packed.run;
+        }
+        if(!scopes.includes(activeAlgorithmDealScope)) activeAlgorithmDealScope=scopes[0] || 'sale';
+        state.activeAlgorithmDealScope=activeAlgorithmDealScope;
+        state.recommendationResults=state.recommendationResultsByDeal[activeAlgorithmDealScope] || [];
         markChange('알고리즘 추천 가동');
-        state.lastAlgorithmRun=run;
-        state.algorithmRuns=state.algorithmRuns || [];
-        state.algorithmRuns.unshift(run);
-        state.recommendationResults=results;
         activeSection2Tab='추천매물';
         activeFilter='전체';
         candidateViewMode='panel';
@@ -2524,9 +2678,13 @@
     }
     function setAlgorithmTopN(n){ algorithmTopN=Number(n)||10; activeCandidateMapId=''; candidateMapState.didFitInitial=false; renderSection2(); }
     function renderRecommendationPanel(){
-      const items=(state.recommendationResults||[]).slice(0, algorithmTopN);
-      const total=(state.recommendationResults||[]).length;
-      return `<div class="algo-toolbar"><div><div class="algo-toolbar-title">알고리즘 추천 ${total}건</div><div class="algo-toolbar-sub">기존 매물 검색 패널과 같은 형태로 표시합니다. 후보로 지정할 매물만 선택하세요.</div></div><div class="algo-rank-buttons">${[5,10,15,20].map(n=>`<button type="button" class="algo-rank-btn ${algorithmTopN===n?'active':''}" data-algo-top="${n}">TOP ${n}</button>`).join('')}</div></div>${renderDbCards(items, 'recommendation')}`;
+      const scopes=enabledDealScopes();
+      if(!scopes.includes(activeAlgorithmDealScope)) activeAlgorithmDealScope=scopes[0] || 'sale';
+      const all=currentAlgorithmResults();
+      const items=all.slice(0, algorithmTopN);
+      const total=all.length;
+      const dealButtons=scopes.length>1 ? `<div class="algo-deal-buttons">${scopes.map(scope=>`<button type="button" class="algo-deal-btn ${activeAlgorithmDealScope===scope?'active':''}" data-algo-deal="${scope}">${dealScopeLabel(scope)} 추천</button>`).join('')}</div>` : '';
+      return `<div class="algo-toolbar"><div><div class="algo-toolbar-title">${dealScopeLabel(activeAlgorithmDealScope)} 알고리즘 추천 ${total}건</div><div class="algo-toolbar-sub">알고리즘 결과는 실행기록에 저장되고, 후보로 지정한 매물만 매칭 후보가 됩니다.</div></div><div class="algo-toolbar-controls">${dealButtons}<div class="algo-rank-buttons">${[5,10,15,20].map(n=>`<button type="button" class="algo-rank-btn ${algorithmTopN===n?'active':''}" data-algo-top="${n}">TOP ${n}</button>`).join('')}</div></div></div>${renderDbCards(items, 'recommendation')}`;
     }
 
     function searchLogSources(){ return ['블로그','네이버부동산','땅야','한방','부동산포스','문자','전화','현장','소개','기타']; }
@@ -3362,6 +3520,7 @@
         markChange('프로젝트 정보 수정');
         if(field==='inquiryRoutesText') state.project.inquiryRoutes=value.split(',').map(x=>x.trim()).filter(Boolean);
         else state.project[field]=value;
+        if(['saleBudgetMin','saleBudgetMax','salePriceMemo','rentDepositMin','rentDepositMax','rentMonthlyMin','rentMonthlyMax','rentPriceMemo'].includes(field)) syncProjectDealFields();
         renderProject();
       }
       inlineBefore=null;
@@ -3435,6 +3594,7 @@
       if(e.target.closest('#mapSearchRunBtn')){ runMapSearch(); return; }
       if(e.target.closest('#mapSearchResetBtn')){ resetMapSearch(); return; }
       if(e.target.closest('#matchingMapCountBtn')){ openMatchingMapViewList(); return; }
+      const dealToggle=e.target.closest('[data-deal-toggle]'); if(dealToggle){ const scope=dealToggle.dataset.dealToggle; markChange('거래유형 수정'); if(scope==='sale') state.project.saleEnabled=!state.project.saleEnabled; if(scope==='rent') state.project.rentEnabled=!state.project.rentEnabled; if(!state.project.saleEnabled && !state.project.rentEnabled){ state.project.saleEnabled=true; } syncProjectDealFields(); renderAll(); return; }
       const filter=e.target.closest('[data-filter]'); if(filter){ activeFilter=filter.dataset.filter; renderCandidates(); return; }
       const mapChip=e.target.closest('[data-map-value]'); if(mapChip){ applyMapChip(mapChip.dataset.mapGroup, mapChip.dataset.mapValue); return; }
       const mapGroup=e.target.closest('[data-map-group]'); if(mapGroup){ selectMapGroup(mapGroup.dataset.mapGroup); return; }
@@ -3452,6 +3612,7 @@
       const logStatus=e.target.closest('[data-log-status]');
       if(logStatus){ const log=(state.searchLogs||[]).find(x=>x.id===logStatus.dataset.logStatus); if(log){ markChange('서칭기록 상태 변경'); log.status=normalizeSearchLogStatus(logStatus.dataset.status||'기록중'); log.updatedAt=nowIso(); activeStudyLogId=log.id; renderAll(); } return; }
       const candidateMapSelect=e.target.closest('[data-candidate-map-select]'); if(candidateMapSelect){ selectCandidateMapItem(candidateMapSelect.dataset.candidateMapSelect, {pan:true}); return; }
+      const algoDeal=e.target.closest('[data-algo-deal]'); if(algoDeal){ setActiveAlgorithmDealScope(algoDeal.dataset.algoDeal); return; }
       const algoTop=e.target.closest('[data-algo-top]'); if(algoTop){ setAlgorithmTopN(algoTop.dataset.algoTop); return; }
       const addDb=e.target.closest('[data-add-db-candidate]'); if(addDb){ addCandidateFromDb(addDb.dataset.addDbCandidate, addDb.dataset.addSource); return; }
       const reject=e.target.closest('[data-reject]'); if(reject){ openCandidateInline(reject.dataset.reject,'reject'); }
@@ -3565,7 +3726,8 @@
     document.addEventListener('click', e=>{ if(e.target.matches('[data-close-inline]')) e.target.closest('.candidate-card').classList.remove('inline-open'); const sr=e.target.closest('[data-save-reject]'); if(sr){ const card=sr.closest('.candidate-card'); const c=state.candidates.find(x=>x.id===sr.dataset.saveReject); markChange('탈락 처리'); c.rejected=true; c.stage='탈락'; c.rejectReason=card.querySelector('[data-r-reason]').value; c.reconsiderType=card.querySelector('[data-r-type]').value; c.rejectMemo=card.querySelector('[data-r-memo]').value; renderAll(); } const so=e.target.closest('[data-save-owner]'); if(so){ const card=so.closest('.candidate-card'); const c=state.candidates.find(x=>x.id===so.dataset.saveOwner); markChange('소유자 연락 저장'); c.ownerStatus=`${card.querySelector('[data-o-result]').value} · ${card.querySelector('[data-o-intent]').value} · ${card.querySelector('[data-o-price]').value}`; c.stage='소유자확인완료'; renderAll(); } });
     function findDbItem(propertyId){
       const id=String(propertyId||'');
-      return [...(matchingMapState.items||[]), ...(state.dbSearchResults||[]), ...(state.recommendationResults||[])].find(x=>String(x.propertyId||x.listingNumber||'')===id);
+      const recByDeal=state.recommendationResultsByDeal || {};
+      return [...(matchingMapState.items||[]), ...(state.dbSearchResults||[]), ...(state.recommendationResults||[]), ...(recByDeal.sale||[]), ...(recByDeal.rent||[])].find(x=>String(x.propertyId||x.listingNumber||'')===id);
     }
     function addCandidateFromDb(propertyId, sourceType){
       const item=findDbItem(propertyId);
@@ -3589,6 +3751,9 @@
         sourceLabel:sourceType==='recommendation'?'알고리즘추천':'수동선정',
         score:sourceType==='recommendation'?(item.score||0):0,
         algorithmRunId:item.algorithmRunId || '',
+        algorithmRank:item.algorithmRank || item.rank || '',
+        rank:item.algorithmRank || item.rank || '',
+        dealTypeScope:normalizeDealScope(item.dealTypeScope) || (sourceType==='recommendation' ? activeAlgorithmDealScope : dealScopeFromListing(item)),
         matchingId:'',
         stage:'검토중',
         ownerStatus:'미접촉',

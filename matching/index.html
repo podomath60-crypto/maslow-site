@@ -243,14 +243,14 @@
     .main-action.dark{background:#111318;border-color:#111318;color:#fff}
     .filter-chip{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#5d6670;font-size:13px;font-weight:950}
     .filter-chip.active{background:#111318;border-color:#111318;color:#fff}
-    .candidate-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .candidate-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
     .candidate-card{position:relative;border:1px solid #e6ebf1;border-radius:24px;background:#fff;box-shadow:0 10px 22px rgba(15,23,42,.04);padding:15px;display:grid;gap:10px;overflow:hidden;min-height:246px}
     .candidate-card.is-rejected{opacity:.92}
     .candidate-card.is-rejected::after{content:"";position:absolute;inset:0;background:rgba(10,12,16,.58);border-radius:inherit;pointer-events:none;z-index:3}
     .rejected-panel{display:none;position:absolute;inset:auto 12px 12px 12px;z-index:4;border-radius:18px;background:rgba(17,19,24,.86);color:#fff;padding:12px;box-shadow:0 16px 34px rgba(0,0,0,.18)}
     .candidate-card.is-rejected .rejected-panel{display:block}
     .candidate-card.is-rejected .candidate-content{filter:grayscale(.2)}
-    .candidate-content{position:relative;z-index:1;display:grid;gap:10px}
+    .candidate-content{position:relative;z-index:1;display:grid;gap:10px;align-content:start}
     .candidate-visual-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;align-items:start}
     .candidate-thumb{width:76px;height:64px;border:1px solid #edf2f7;background:#f8fafc;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:11px;font-weight:1000;line-height:1.2;text-align:center;flex:0 0 76px}
     .candidate-thumb img{width:100%;height:100%;object-fit:cover;display:block}
@@ -263,8 +263,8 @@
     .meta-box b{display:block;color:#111318;font-size:13px;margin-bottom:2px}
     .confirm-box{border:1px dashed #dbe5ee;border-radius:16px;background:#fbfdff;padding:10px;font-size:13px;line-height:1.55;color:#4f5863;font-weight:850}
     .meta-box.full{grid-column:1/-1}.meta-box.multiline{white-space:pre-line}.candidate-memo-box{grid-column:1/-1;border:1px dashed #dbe5ee;border-radius:16px;background:#fbfdff;padding:10px;font-size:13px;line-height:1.55;color:#4f5863;font-weight:850;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}.candidate-memo-box b{display:block;color:#111318;font-size:13px;margin-bottom:4px}
-    .cand-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px}
-    .card-btn{min-height:32px;padding:0 10px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#344052;font-size:12px;font-weight:950;position:relative;z-index:5}
+    .cand-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:2px}
+    .card-btn{height:32px;min-height:32px;padding:0 10px;border-radius:999px;border:1px solid #dbe5ee;background:#fff;color:#344052;font-size:12px;font-weight:950;line-height:1;white-space:nowrap;flex:0 0 auto;position:relative;z-index:5}
     .card-btn.red{border-color:#ffd2d2;background:#fff1f1;color:#d43737}
     .card-btn.dark{border-color:#111318;background:#111318;color:#fff}
     .card-btn.green{border-color:#bdf8d8;background:#ecfff5;color:#087a3b}

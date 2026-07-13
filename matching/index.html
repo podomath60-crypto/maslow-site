@@ -88,7 +88,7 @@
     .progress-color-dot{width:23px;height:23px;border-radius:0;border:1px solid rgba(15,23,42,.16);box-shadow:inset 0 0 0 2px rgba(255,255,255,.42)}
     .progress-color-dot[data-color=yellow]{background:#fff7b2}.progress-color-dot[data-color=green]{background:#dcfce7}.progress-color-dot[data-color=blue]{background:#dbeafe}.progress-color-dot[data-color=pink]{background:#ffe4e6}.progress-color-dot[data-color=purple]{background:#ede9fe}.progress-color-dot[data-color=orange]{background:#ffedd5}.progress-color-dot[data-color=gray]{background:#f3f4f6}
     .progress-delete-btn{min-height:28px;border-radius:9px;background:#fff1f1;border:1px solid #ffd2d2;color:#d43737;font-size:12px;font-weight:1000}
-    .progress-memo-content{min-height:82px;outline:none;font-size:12px;line-height:1.42;font-weight:900;color:#26200a;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;border-radius:0;padding:3px 2px}
+    .progress-memo-content{min-height:82px;outline:none;font-size:15px;line-height:1.42;font-weight:900;color:#26200a;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;border-radius:0;padding:3px 2px}
     .progress-memo-content:empty::before{content:'진행 메모를 입력하세요';color:rgba(17,24,39,.38)}
     .progress-memo-content:focus{background:rgba(255,255,255,.5);box-shadow:0 0 0 1px rgba(17,19,24,.12)}
     .section{--section-color:#64748b;--section-soft:#f6f8fb;background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;scroll-margin-top:92px}
@@ -473,7 +473,7 @@
     .business-card-viewer-frame{height:min(62vh,560px);border-radius:18px;background:#f6f8fb;border:1px solid #e5ebf2;display:flex;align-items:center;justify-content:center;overflow:hidden}
     .business-card-viewer-frame img{max-width:100%;max-height:100%;object-fit:contain;display:block;background:#fff}
 
-    @media(max-width:1500px){.workspace{grid-template-columns:220px minmax(0,1fr) 220px;gap:8px;padding-left:7px;padding-right:7px}.section-jump{min-height:66px;grid-template-columns:30px minmax(0,1fr);gap:10px;padding:0 12px}.section-jump-title{font-size:14px}.section-jump-desc{font-size:10px}.progress-memo-panel{padding:0}.progress-memo-title{font-size:14px}.progress-memo-content{font-size:12px}}
+    @media(max-width:1500px){.workspace{grid-template-columns:220px minmax(0,1fr) 220px;gap:8px;padding-left:7px;padding-right:7px}.section-jump{min-height:66px;grid-template-columns:30px minmax(0,1fr);gap:10px;padding:0 12px}.section-jump-title{font-size:14px}.section-jump-desc{font-size:10px}.progress-memo-panel{padding:0}.progress-memo-title{font-size:14px}.progress-memo-content{font-size:15px}}
     @media(max-width:1100px){.workspace{grid-template-columns:1fr}.section-sidebar{position:static;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.right-sidebar{display:none}.section-jump{min-height:62px;grid-template-columns:1fr;gap:4px;padding:10px 12px}.section-jump-desc{display:none}.project-summary{grid-template-columns:1fr}.project-hero{grid-template-columns:1fr}.business-card-grid{width:360px;max-width:100%}.business-card-slot{max-width:100%}.candidate-grid,.db-result-grid,.db-result-grid.algorithm-grid,.search-log-grid,.recommend-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-small-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.search-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.visit-items{grid-template-columns:1fr}}
     @media(max-width:760px){.title-contact-row{grid-template-columns:1fr}.business-card-grid{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}.business-card-slot{height:132px}.topbar-inner{padding:0 14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:8px;min-height:104px}.brand-icon-project{width:122px;min-width:122px;flex-basis:122px}.workspace{padding:14px 12px 42px;gap:12px}.section-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.section-jump{border-radius:16px;min-height:58px}.shell{padding:0}.section{border-radius:22px;scroll-margin-top:118px}.section-head{padding-top:22px}.section-head::before{left:14px}.section-head,.section-body{padding-left:14px;padding-right:14px}.project-name{font-size:25px}.section-title{font-size:22px}.section-title-no{font-size:26px}.summary-grid,.project-line-grid,.candidate-grid,.db-result-grid,.db-result-grid.algorithm-grid,.search-log-grid,.recommend-grid,.edit-row,.modal-grid,.search-filter-grid{grid-template-columns:1fr}.metric-small-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-strip{align-items:stretch}.action-strip-left,.action-strip-right{width:100%}.main-action{flex:1 1 auto}.candidate-card{min-height:auto}}
   </style>
@@ -1406,6 +1406,21 @@
         lastAlgorithmCriteriaJson:criteria
       };
     }
+    function progressMemoPayloadForSave(memo){
+      const m=memo || {};
+      return {
+        memoId:m.memoId || m.id || '',
+        id:m.memoId || m.id || '',
+        content:m.content || '',
+        color:m.color || 'yellow',
+        createdAt:m.createdAt || '',
+        createdByCode:m.createdByCode || legacyWriterCodeFromAuthor(m.createdByName || m.author) || '',
+        createdByName:m.createdByName || m.author || '',
+        updatedAt:m.updatedAt || '',
+        updatedByCode:m.updatedByCode || '',
+        updatedByName:m.updatedByName || ''
+      };
+    }
     function candidatePayloadForSave(c){
       return {
         listingNumber:c.propertyId || c.listingNumber || '',
@@ -1505,6 +1520,17 @@
           updatedBy:writer,
           candidates:(state.candidates || []).map(candidatePayloadForSave)
         });
+        const writerCode=getUnlockedWriterCode();
+        const writerMeta=getWriterMetaByCode(writerCode);
+        const memoRes=await gasPost('saveProjectMemos', {
+          projectId,
+          writerCode,
+          writerName:writerMeta.name || '',
+          items:(state.progressMemos || []).map(progressMemoPayloadForSave)
+        });
+        state.progressMemos=listFromSavedResponse(memoRes, ['progressMemos','memos','items','rows'])
+          .map(normalizeSavedProgressMemo)
+          .filter(Boolean);
         for(const log of (state.searchLogs || [])){
           const searchLogId=searchLogIdForSave(projectId, log);
           const res=await gasPost('savePropertySearch', {
@@ -1733,6 +1759,26 @@
         registeredListingNumber:firstNonEmptyValue(record, ['registeredListingNumber','listingNumber','등록매물번호'])
       };
     }
+    function normalizeSavedProgressMemo(record, index){
+      if(!record) return null;
+      if(typeof record === 'string') record=safeParseObject(record) || {content:record};
+      const memoId=firstNonEmptyValue(record, ['memoId','id']) || nowCompactId('PM');
+      const createdByName=firstNonEmptyValue(record, ['createdByName','author','createdBy','작성자']) || '';
+      const createdAt=firstNonEmptyValue(record, ['createdAt','created_at','작성일']) || nowIso();
+      return {
+        id:memoId,
+        memoId:memoId,
+        author:createdByName,
+        content:firstNonEmptyValue(record, ['content','memo','내용']) || '',
+        color:firstNonEmptyValue(record, ['color','색상']) || 'yellow',
+        createdAt:createdAt,
+        createdByCode:firstNonEmptyValue(record, ['createdByCode','authorCode']) || legacyWriterCodeFromAuthor(createdByName) || '',
+        createdByName:createdByName,
+        updatedAt:firstNonEmptyValue(record, ['updatedAt','updated_at','수정일']) || createdAt,
+        updatedByCode:firstNonEmptyValue(record, ['updatedByCode']) || '',
+        updatedByName:firstNonEmptyValue(record, ['updatedByName']) || ''
+      };
+    }
     async function loadMatchingWorkspaceFromUrl(){
       const projectId=getProjectIdFromUrl();
       if(!projectId) return;
@@ -1816,7 +1862,21 @@
         }
       })();
 
-      await Promise.allSettled([matchingTask, searchesTask, algorithmsTask]);
+      const progressMemosTask=(async()=>{
+        try{
+          const memoRes=await gasPost('listProjectMemos', {projectId});
+          state.progressMemos=listFromSavedResponse(memoRes, ['progressMemos','memos','items','rows'])
+            .map(normalizeSavedProgressMemo)
+            .filter(Boolean);
+        }catch(memoErr){
+          console.warn('listProjectMemos 실패', memoErr);
+          state.progressMemos=[];
+        }finally{
+          renderProgressMemos();
+        }
+      })();
+
+      await Promise.allSettled([matchingTask, searchesTask, algorithmsTask, progressMemosTask]);
       normalizeAllSearchLogWriters();
       syncProjectDealFields();
       dirty=false;
@@ -3992,6 +4052,8 @@
           markChange(field==='content'?'진행 메모 수정':'진행 메모 작성자 수정');
           memo[field]=value;
           memo.updatedAt=nowIso();
+          memo.updatedByCode=getUnlockedWriterCode();
+          memo.updatedByName=getWriterMetaByCode(memo.updatedByCode).name || '';
           renderProgressMemos();
         }
       }
@@ -4001,11 +4063,24 @@
       const addProgress=e.target.closest('#addProgressMemoBtn');
       if(addProgress){
         markChange('진행 메모 추가');
-        const next=(state.progressMemos||[]).length+1;
         const now=nowIso();
+        const writerCode=getUnlockedWriterCode();
+        const writerName=getWriterMetaByCode(writerCode).name || '';
         state.progressMemos=state.progressMemos||[];
-        const id='PM-'+String(next).padStart(3,'0');
-        state.progressMemos.push({id, author:getWriterMetaByCode(getUnlockedWriterCode()).name || '', content:'', color:'yellow', createdAt:now, updatedAt:now});
+        const id=nowCompactId('PM');
+        state.progressMemos.push({
+          id,
+          memoId:id,
+          author:writerName,
+          content:'',
+          color:'yellow',
+          createdAt:now,
+          createdByCode:writerCode,
+          createdByName:writerName,
+          updatedAt:now,
+          updatedByCode:writerCode,
+          updatedByName:writerName
+        });
         activeProgressMemoMenuId='';
         renderProgressMemos();
         setTimeout(()=>document.querySelector(`[data-progress-memo-content="${id}"]`)?.focus(),0);
@@ -4014,7 +4089,7 @@
       const menuBtn=e.target.closest('[data-progress-menu]');
       if(menuBtn){ activeProgressMemoMenuId = activeProgressMemoMenuId===menuBtn.dataset.progressMenu ? '' : menuBtn.dataset.progressMenu; renderProgressMemos(); return; }
       const colorBtn=e.target.closest('[data-progress-color-id]');
-      if(colorBtn){ const memo=(state.progressMemos||[]).find(m=>m.id===colorBtn.dataset.progressColorId); if(memo){ markChange('진행 메모 색상 변경'); memo.color=colorBtn.dataset.progressColor||'yellow'; memo.updatedAt=nowIso(); activeProgressMemoMenuId=''; renderProgressMemos(); } return; }
+      if(colorBtn){ const memo=(state.progressMemos||[]).find(m=>m.id===colorBtn.dataset.progressColorId); if(memo){ markChange('진행 메모 색상 변경'); memo.color=colorBtn.dataset.progressColor||'yellow'; memo.updatedAt=nowIso(); memo.updatedByCode=getUnlockedWriterCode(); memo.updatedByName=getWriterMetaByCode(memo.updatedByCode).name || ''; activeProgressMemoMenuId=''; renderProgressMemos(); } return; }
       const delBtn=e.target.closest('[data-progress-delete]');
       if(delBtn){ const id=delBtn.dataset.progressDelete; const memo=(state.progressMemos||[]).find(m=>m.id===id); if(memo){ markChange('진행 메모 삭제'); state.progressMemos=(state.progressMemos||[]).filter(m=>m.id!==id); activeProgressMemoMenuId=''; renderProgressMemos(); } return; }
       if(!e.target.closest('.progress-memo-card')){ if(activeProgressMemoMenuId){ activeProgressMemoMenuId=''; renderProgressMemos(); } }

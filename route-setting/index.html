@@ -1638,7 +1638,7 @@ body.place-search-open .placeSearchBackdrop{
       </div>
 
       <div class="section">
-        <div class="label">방문지 <span class="hint">순서 상관없이 경유지 주소 붙여넣기 · 최대 8개</span></div>
+        <div class="label">방문지 <span class="hint">순서 상관없이 경유지 주소 붙여넣기 · 최대 12개</span></div>
         <textarea class="textarea" id="visits" placeholder="순서 상관없이 경유지 주소만 붙여넣기&#10;예) 전북 군산시 오식도동 601-8, 전북 군산시 산북동 3531-6"></textarea>
       </div>
 
@@ -1920,7 +1920,7 @@ function parseInputs(){
   const end=returnToStart?start:typedEnd;
 
   if(!start)throw makeInputValidationError('출발지를 입력하세요.');
-  if(visits.length>8)throw makeInputValidationError('경유지는 최대 8개까지 계산합니다.');
+  if(visits.length>12)throw makeInputValidationError('경유지는 최대 12개까지 계산합니다.');
   if(!returnToStart&&!typedEnd)throw makeInputValidationError('도착지를 입력하거나 출발지로 복귀를 체크하세요.');
   if(!end)throw makeInputValidationError('도착지를 입력하거나 출발지로 복귀를 체크하세요.');
   if(returnToStart&&!visits.length)throw makeInputValidationError('출발지와 도착지가 같거나 출발지로 복귀하는 계산은 경유지가 1개 이상 필요합니다.');
@@ -2003,27 +2003,107 @@ async function mapLimit(items,limit,worker,onProgress){
   return results;
 }
 
-function permutations(arr){
-  const res=[];const used=new Array(arr.length).fill(false);const cur=[];
-  function backtrack(){if(cur.length===arr.length){res.push(cur.slice());return}for(let i=0;i<arr.length;i++){if(used[i])continue;used[i]=true;cur.push(arr[i]);backtrack();cur.pop();used[i]=false}}
-  backtrack();return res;
+function buildRequiredPairs(start,visits,end){
+  if(!visits.length)return [[start,end]];
+  const pairs=[];
+  for(const visit of visits)pairs.push([start,visit]);
+  for(const from of visits){
+    for(const to of visits){
+      if(from.id!==to.id)pairs.push([from,to]);
+    }
+  }
+  for(const visit of visits)pairs.push([visit,end]);
+  return pairs;
 }
 
 function evaluateBest(start,visits,end,matrix){
-  let best=null;const orders=permutations(visits);
-  for(const order of orders){
-    const route=[start,...order,end];let durationMs=0,distanceM=0,segments=[],ok=true;
-    for(let i=0;i<route.length-1;i++){
-      const from=route[i],to=route[i+1];const d=matrix.get(coordKey(from,to));
-      if(!d){ok=false;break}
-      durationMs+=Number(d.summary.durationMs||0);distanceM+=Number(d.summary.distanceM||0);
-      segments.push({from,to,summary:d.summary,path:d.path||[]});
-    }
-    if(!ok)continue;
-    if(!best||durationMs<best.durationMs)best={route,durationMs,distanceM,segments,orderCount:orders.length};
+  const n=visits.length;
+  if(!n){
+    const data=matrix.get(coordKey(start,end));
+    if(!data)throw new Error('추천 순서를 계산하지 못했습니다.');
+    return {
+      route:[start,end],
+      durationMs:Number(data.summary.durationMs||0),
+      distanceM:Number(data.summary.distanceM||0),
+      segments:[{from:start,to:end,summary:data.summary,path:data.path||[]}],
+      stateCount:1
+    };
   }
-  if(!best)throw new Error('추천 순서를 계산하지 못했습니다.');
-  return best;
+
+  const maskCount=1<<n;
+  const fullMask=maskCount-1;
+  const cellCount=maskCount*n;
+  const dp=new Float64Array(cellCount);
+  dp.fill(Number.POSITIVE_INFINITY);
+  const previous=new Int16Array(cellCount);
+  previous.fill(-1);
+  const indexOf=(mask,last)=>mask*n+last;
+
+  for(let i=0;i<n;i++){
+    const data=matrix.get(coordKey(start,visits[i]));
+    if(data)dp[indexOf(1<<i,i)]=Number(data.summary.durationMs||0);
+  }
+
+  let stateCount=0;
+  for(let mask=1;mask<=fullMask;mask++){
+    for(let last=0;last<n;last++){
+      if(!(mask&(1<<last)))continue;
+      const currentTime=dp[indexOf(mask,last)];
+      if(!Number.isFinite(currentTime))continue;
+      stateCount++;
+      for(let next=0;next<n;next++){
+        if(mask&(1<<next))continue;
+        const data=matrix.get(coordKey(visits[last],visits[next]));
+        if(!data)continue;
+        const nextMask=mask|(1<<next);
+        const nextIndex=indexOf(nextMask,next);
+        const nextTime=currentTime+Number(data.summary.durationMs||0);
+        if(nextTime<dp[nextIndex]){
+          dp[nextIndex]=nextTime;
+          previous[nextIndex]=last;
+        }
+      }
+    }
+  }
+
+  let bestLast=-1;
+  let bestDuration=Number.POSITIVE_INFINITY;
+  for(let last=0;last<n;last++){
+    const currentTime=dp[indexOf(fullMask,last)];
+    const data=matrix.get(coordKey(visits[last],end));
+    if(!Number.isFinite(currentTime)||!data)continue;
+    const totalTime=currentTime+Number(data.summary.durationMs||0);
+    if(totalTime<bestDuration){
+      bestDuration=totalTime;
+      bestLast=last;
+    }
+  }
+  if(bestLast<0)throw new Error('추천 순서를 계산하지 못했습니다.');
+
+  const orderIndexes=[];
+  let mask=fullMask;
+  let last=bestLast;
+  while(last>=0){
+    orderIndexes.push(last);
+    const oldLast=last;
+    last=previous[indexOf(mask,oldLast)];
+    mask^=1<<oldLast;
+  }
+  orderIndexes.reverse();
+
+  const route=[start,...orderIndexes.map(index=>visits[index]),end];
+  let durationMs=0;
+  let distanceM=0;
+  const segments=[];
+  for(let i=0;i<route.length-1;i++){
+    const from=route[i],to=route[i+1];
+    const data=matrix.get(coordKey(from,to));
+    if(!data)throw new Error('추천 순서를 계산하지 못했습니다.');
+    durationMs+=Number(data.summary.durationMs||0);
+    distanceM+=Number(data.summary.distanceM||0);
+    segments.push({from,to,summary:data.summary,path:data.path||[]});
+  }
+  return {route,durationMs,distanceM,segments,stateCount};
 }
 
 function makeRouteLabel(point,idx,total,returnToStart){
@@ -2045,7 +2125,10 @@ function renderResult(best,returnToStart){
   if(window.matchMedia&&window.matchMedia('(max-width:760px)').matches){
     setMobilePanelState('middle');
   }
-  $('resultSummary').textContent=`${best.route.length}개 지점 · ${best.orderCount.toLocaleString('ko-KR')}개 순서 비교`;
+  const optimizationText=Number.isFinite(Number(best.stateCount))
+    ? `${Number(best.stateCount).toLocaleString('ko-KR')}개 상태 계산`
+    : `${Number(best.orderCount||0).toLocaleString('ko-KR')}개 순서 비교`;
+  $('resultSummary').textContent=`${best.route.length}개 지점 · ${optimizationText}`;
   $('routeList').innerHTML=best.route.map((p,i)=>{
     const meta=makeRouteLabel(p,i,best.route.length,returnToStart);
     const seg=best.segments[i];
@@ -2348,13 +2431,7 @@ async function findRoute(){
     const start={id:'A',role:'start',...resolved[0]};
     const visits=resolved.slice(1,1+input.visits.length).map((p,i)=>({id:`V${i+1}`,role:'visit',...p}));
     const end=input.returnToStart?start:{id:'Z',role:'end',...resolved[resolved.length-1]};
-    const nodes=input.returnToStart?[start,...visits]:[start,...visits,end];
-    const pairs=[];
-    if(!visits.length){
-      pairs.push([start,end]);
-    }else{
-      for(const a of nodes){for(const b of nodes){if(a.id!==b.id)pairs.push([a,b])}}
-    }
+    const pairs=buildRequiredPairs(start,visits,end);
     const matrix=new Map();
     await mapLimit(pairs,4,async(pair)=>{
       assertActive();
@@ -2371,7 +2448,7 @@ async function findRoute(){
     showStatus('추천 순서 계산 중...');
     const best=evaluateBest(start,visits,end,matrix);
     assertActive();
-    showStatus(`${best.orderCount.toLocaleString('ko-KR')}개 경로 검토 후 최적 경로 도출 완료`,'ok');
+    showStatus(`${best.stateCount.toLocaleString('ko-KR')}개 상태 계산 후 최적 경로 도출 완료`,'ok');
     renderResult(best,input.returnToStart);
     saveRecentRouteResult(best,input.returnToStart,input);
     renderRecentRouteResults();
@@ -2609,6 +2686,7 @@ function saveRecentRouteResult(best,returnToStart,input){
     title:makeRecentRouteTitle(savedInput,result),
     durationMs:Number(result.durationMs||0),
     pointCount:Array.isArray(result.route)?result.route.length:0,
+    stateCount:Number(result.stateCount||0),
     orderCount:Number(result.orderCount||0),
     returnToStart:!!returnToStart,
     input:savedInput,
@@ -2637,7 +2715,7 @@ function renderRecentRouteResults(){
       formatRecentRouteTime(item.savedAt),
       item.durationMs?formatDuration(item.durationMs):'시간 정보 없음',
       item.pointCount?`${item.pointCount}개 지점`:'',
-      item.orderCount?`${Number(item.orderCount).toLocaleString('ko-KR')}개 비교`:''
+      item.stateCount?`${Number(item.stateCount).toLocaleString('ko-KR')}개 상태 계산`:(item.orderCount?`${Number(item.orderCount).toLocaleString('ko-KR')}개 비교`:'')
     ].filter(Boolean).join(' · ');
     return `<div class="recentRouteItem" data-recent-route-idx="${idx}">
       <div class="recentRouteMain">

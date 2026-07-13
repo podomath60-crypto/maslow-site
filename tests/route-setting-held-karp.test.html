@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>Route-setting Held-Karp tests</title>
+</head>
+<body data-status="pending">
+  <pre id="output">테스트 준비 중...</pre>
+  <iframe id="app" src="/route-setting/index.html" hidden></iframe>
+  <script>
+  const output=document.getElementById('output');
+  const lines=[];
+  function log(message){lines.push(message);output.textContent=lines.join('\n')}
+  function assert(condition,message){if(!condition)throw new Error(message)}
+  function point(id){return {id,address:id,label:id,lat:35,lng:126}}
+  function data(duration){return {summary:{durationMs:duration,distanceM:duration*2,durationText:String(duration),distanceText:String(duration*2)},path:[]}}
+  function put(matrix,from,to,duration){matrix.set(`${from.id}->${to.id}`,data(duration))}
+  function makeRng(seed){return ()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}}
+
+  function buildMatrix(points,seed){
+    const matrix=new Map();
+    const random=makeRng(seed);
+    for(const from of points){
+      for(const to of points){
+        if(from.id!==to.id)put(matrix,from,to,1+Math.floor(random()*100000));
+      }
+    }
+    return matrix;
+  }
+
+  function bruteForce(start,visits,end,matrix){
+    let best=Number.POSITIVE_INFINITY;
+    const used=new Array(visits.length).fill(false);
+    function visit(last,depth,total){
+      if(total>=best)return;
+      if(depth===visits.length){
+        const edge=matrix.get(`${last.id}->${end.id}`);
+        if(edge)best=Math.min(best,total+Number(edge.summary.durationMs||0));
+        return;
+      }
+      for(let i=0;i<visits.length;i++){
+        if(used[i])continue;
+        const edge=matrix.get(`${last.id}->${visits[i].id}`);
+        if(!edge)continue;
+        used[i]=true;
+        visit(visits[i],depth+1,total+Number(edge.summary.durationMs||0));
+        used[i]=false;
+      }
+    }
+    if(!visits.length){
+      const edge=matrix.get(`${start.id}->${end.id}`);
+      return edge?Number(edge.summary.durationMs||0):best;
+    }
+    visit(start,0,0);
+    return best;
+  }
+
+  async function run(){
+    const app=document.getElementById('app').contentWindow;
+    assert(typeof app.evaluateBest==='function','evaluateBest 함수를 찾지 못했습니다.');
+    assert(typeof app.buildRequiredPairs==='function','buildRequiredPairs 함수를 찾지 못했습니다.');
+
+    const zeroStart=point('A'),zeroEnd=point('Z');
+    const zeroMatrix=new Map();
+    put(zeroMatrix,zeroStart,zeroEnd,321);
+    const zero=app.evaluateBest(zeroStart,[],zeroEnd,zeroMatrix);
+    assert(zero.durationMs===321&&zero.route.length===2&&zero.stateCount===1,'경유지 0개 계산 실패');
+    log('PASS: 경유지 0개');
+
+    for(let n=1;n<=8;n++){
+      for(let sample=0;sample<3;sample++){
+        const start=point('A');
+        const end=point('Z');
+        const visits=Array.from({length:n},(_,i)=>point(`V${i+1}`));
+        const matrix=buildMatrix([start,...visits,end],1000+n*10+sample);
+        const expected=bruteForce(start,visits,end,matrix);
+        const actual=app.evaluateBest(start,visits,end,matrix);
+        assert(actual.durationMs===expected,`별도 도착지 불일치: n=${n}, sample=${sample}`);
+        assert(actual.route.length===n+2&&actual.segments.length===n+1,`별도 도착지 경로 길이 오류: n=${n}`);
+
+        const returnExpected=bruteForce(start,visits,start,matrix);
+        const returned=app.evaluateBest(start,visits,start,matrix);
+        assert(returned.durationMs===returnExpected,`복귀 경로 불일치: n=${n}, sample=${sample}`);
+        assert(returned.route[0]===start&&returned.route[returned.route.length-1]===start,`복귀 지점 오류: n=${n}`);
+      }
+    }
+    log('PASS: 경유지 1~8개 전수조사 결과와 일치 (별도 도착지·출발지 복귀)');
+
+    const start=point('A');
+    const end=point('Z');
+    const visits=Array.from({length:12},(_,i)=>point(`V${i+1}`));
+    const pairs=app.buildRequiredPairs(start,visits,end);
+    assert(pairs.length===156,'12개 별도 도착지 필요 구간 수가 156개가 아닙니다.');
+    assert(new Set(pairs.map(([a,b])=>`${a.id}->${b.id}`)).size===156,'필요 구간에 중복이 있습니다.');
+    const returnPairs=app.buildRequiredPairs(start,visits,start);
+    assert(returnPairs.length===156,'12개 복귀 경로 필요 구간 수가 156개가 아닙니다.');
+    log('PASS: 12개 Directions 조회 구간 182개 → 156개');
+
+    const matrix=buildMatrix([start,...visits,end],20260713);
+    const started=performance.now();
+    const best=app.evaluateBest(start,visits,end,matrix);
+    const elapsed=performance.now()-started;
+    assert(best.route.length===14&&best.segments.length===13,'12개 경로 길이 오류');
+    assert(best.stateCount===24576,`12개 상태 수 오류: ${best.stateCount}`);
+    assert(elapsed<3000,`12개 계산이 3초를 초과했습니다: ${elapsed.toFixed(1)}ms`);
+    log(`PASS: 경유지 12개 Held-Karp 계산 (${best.stateCount.toLocaleString()}개 상태, ${elapsed.toFixed(1)}ms)`);
+
+    const blockedMatrix=new Map();
+    put(blockedMatrix,start,visits[0],10);
+    let failed=false;
+    try{app.evaluateBest(start,[visits[0]],end,blockedMatrix)}catch(error){failed=true}
+    assert(failed,'완성 불가능한 경로가 오류 처리되지 않았습니다.');
+    log('PASS: 완성 불가능한 경로 오류 처리');
+
+    const doc=app.document;
+    doc.getElementById('start').value='출발지';
+    doc.getElementById('end').value='도착지';
+    doc.getElementById('returnToStart').checked=false;
+    doc.getElementById('visits').value=Array.from({length:12},(_,i)=>`방문지 ${i+1}`).join('\n');
+    assert(app.parseInputs().visits.length===12,'경유지 12개 입력이 허용되지 않았습니다.');
+    doc.getElementById('visits').value=Array.from({length:13},(_,i)=>`방문지 ${i+1}`).join('\n');
+    let validationFailed=false;
+    try{app.parseInputs()}catch(error){validationFailed=error&&error.code==='INPUT_VALIDATION'}
+    assert(validationFailed,'경유지 13개 입력이 차단되지 않았습니다.');
+    log('PASS: 입력 제한 12개 허용·13개 차단');
+
+    document.body.dataset.status='passed';
+    log('ALL TESTS PASSED');
+  }
+
+  document.getElementById('app').addEventListener('load',()=>{
+    setTimeout(()=>run().catch(error=>{
+      document.body.dataset.status='failed';
+      log(`FAIL: ${error.stack||error.message||error}`);
+    }),200);
+  });
+  </script>
+</body>
+</html>

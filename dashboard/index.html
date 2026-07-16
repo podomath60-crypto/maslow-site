@@ -950,6 +950,56 @@
       background:#0f7cff;
       color:#fff;
     }
+    .hanbang-upload-box{
+      display:grid;
+      gap:10px;
+      margin:0 0 16px;
+      padding:14px;
+      border:1px solid #d7e7ff;
+      border-radius:18px;
+      background:linear-gradient(145deg,#f7fbff 0%,#eef6ff 100%);
+    }
+    .hanbang-upload-btn{
+      width:100%;
+      min-height:50px;
+      border:0;
+      border-radius:15px;
+      background:#0f7cff;
+      color:#fff;
+      font-size:16px;
+      font-weight:1000;
+      letter-spacing:-0.03em;
+      box-shadow:0 10px 22px rgba(15,124,255,.22);
+    }
+    .hanbang-upload-btn:disabled{
+      cursor:not-allowed;
+      background:#aab7c7;
+      box-shadow:none;
+    }
+    .hanbang-bridge-status{
+      display:flex;
+      align-items:flex-start;
+      gap:8px;
+      min-height:20px;
+      color:#5c6b7a;
+      font-size:13px;
+      line-height:1.45;
+      font-weight:800;
+      word-break:keep-all;
+    }
+    .hanbang-bridge-status::before{
+      content:'';
+      width:9px;
+      height:9px;
+      margin-top:5px;
+      border-radius:999px;
+      background:#aab7c7;
+      flex:0 0 9px;
+    }
+    .hanbang-bridge-status.ready::before{background:#19b36b;box-shadow:0 0 0 4px rgba(25,179,107,.12)}
+    .hanbang-bridge-status.working::before{background:#0f7cff;box-shadow:0 0 0 4px rgba(15,124,255,.12)}
+    .hanbang-bridge-status.error{color:#c43a3a}
+    .hanbang-bridge-status.error::before{background:#e5484d;box-shadow:0 0 0 4px rgba(229,72,77,.12)}
     .dashboard-status-modal{
       position:fixed;
       inset:0;
@@ -2368,6 +2418,10 @@
       <div id="naverBlogCreateBox" class="channel-links" style="display:none; margin:0 0 16px;">
         <button type="button" class="channel-action-btn primary" style="width:100%; justify-content:center; gap:6px; border-color:#19ce60; background:#19ce60; color:#fff;" onclick="openNaverBlogInputForCurrentListing()"><span style="font-weight:1000;color:#fff;">N</span><span>블로그 발행하기</span></button>
       </div>
+      <div id="hanbangUploadBox" class="hanbang-upload-box" style="display:none;">
+        <button id="hanbangUploadBtn" type="button" class="hanbang-upload-btn" onclick="uploadCurrentListingToHanbang()" disabled>한방 업로드</button>
+        <div id="hanbangBridgeStatus" class="hanbang-bridge-status" role="status" aria-live="polite">이 PC의 한방 연결을 확인합니다.</div>
+      </div>
       <div class="channel-status-row">
         <label class="channel-radio"><input type="radio" name="channelDoneState" value="done"> <span>Done</span></label>
         <label class="channel-radio"><input type="radio" name="channelDoneState" value="notYet"> <span>Not yet</span></label>
@@ -2590,6 +2644,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       priceLookupUrl: 'https://vos.land/',
       krasUrl: 'https://www.kras.go.kr/mainView.do',
       rfineUrl: 'https://new.rfine.kr/Pos/index.php',
+      hanbangBridgeUrl: 'http://127.0.0.1:18765',
       authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
     };
 
@@ -2667,6 +2722,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     let channelModalListingNumber = '';
     let channelModalChannelKey = '';
     let channelModalHistoryArmed = false;
+    let hanbangActiveJobId = '';
+    let hanbangJobPollTimer = null;
     let dashboardStatusModalListingNumber = '';
     let dashboardStatusModalHistoryArmed = false;
 
@@ -4261,6 +4318,193 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       }) || null;
     }
 
+    function fetchFullAdminProperty(listingNumber){
+      const decodedListingNumber = normalizeListingKey(listingNumber);
+      return fetch(CONFIG.adminListUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type':'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          action: 'getPropertyEditorByListingNumber',
+          listingNumber: decodedListingNumber
+        })
+      })
+      .then(function(res){
+        if(!res.ok) throw new Error('매물입력기 자료 조회 실패: ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(!data || data.ok === false || !data.item){
+          throw new Error((data && data.message) || '매물입력기에서 전체 매물정보를 찾지 못했습니다.');
+        }
+        return data.item;
+      });
+    }
+
+    function stopHanbangJobPolling(){
+      if(hanbangJobPollTimer){
+        window.clearTimeout(hanbangJobPollTimer);
+        hanbangJobPollTimer = null;
+      }
+    }
+
+    function setHanbangBridgeUi(state, message, options){
+      const button = document.getElementById('hanbangUploadBtn');
+      const status = document.getElementById('hanbangBridgeStatus');
+      const opts = options || {};
+      if(status){
+        status.className = 'hanbang-bridge-status';
+        if(state === 'ready') status.classList.add('ready');
+        else if(state === 'checking' || state === 'working') status.classList.add('working');
+        else if(state === 'error' || state === 'blocked') status.classList.add('error');
+        status.textContent = message || '';
+      }
+      if(button){
+        button.disabled = state !== 'ready';
+        button.textContent = opts.buttonText || (state === 'working' ? '한방 업로드 중…' : '한방 업로드');
+      }
+    }
+
+    function fetchHanbangBridge(path, options, timeoutMs){
+      const controller = typeof AbortController === 'function' ? new AbortController() : null;
+      const timer = window.setTimeout(function(){
+        if(controller) controller.abort();
+      }, timeoutMs || 5000);
+      const requestOptions = Object.assign({
+        method: 'GET',
+        cache: 'no-store',
+        credentials: 'omit'
+      }, options || {});
+      if(controller) requestOptions.signal = controller.signal;
+
+      return fetch(CONFIG.hanbangBridgeUrl + path, requestOptions)
+        .then(function(res){
+          return res.json().catch(function(){ return {}; }).then(function(data){
+            if(!res.ok){
+              const err = new Error(text(data && data.message) || ('한방 브리지 오류: ' + res.status));
+              err.status = res.status;
+              err.data = data;
+              throw err;
+            }
+            return data;
+          });
+        })
+        .finally(function(){ window.clearTimeout(timer); });
+    }
+
+    function describeHanbangStage(job){
+      const stage = text(job && job.stage);
+      if(stage === 'queued') return '업로드 순서를 기다리고 있습니다.';
+      if(stage === 'loading_property') return '매물입력기 전체 자료를 확인하고 있습니다.';
+      if(stage === 'resolving_address') return '한방 법정동 번호와 지번을 확인하고 있습니다.';
+      if(stage === 'downloading_photos') return '매물입력기의 원본 사진을 준비하고 있습니다.';
+      if(stage === 'uploading_photos') return '사진을 한방 서버로 전송하고 있습니다.';
+      if(stage === 'creating_listing') return '한방에 신규 매물을 생성하고 있습니다.';
+      if(stage === 'finalizing') return '등록 결과를 확인하고 있습니다.';
+      return text(job && job.message) || '한방 업로드를 처리하고 있습니다.';
+    }
+
+    function pollHanbangJob(jobId, listingNumber){
+      stopHanbangJobPolling();
+      fetchHanbangBridge('/v1/jobs/' + encodeURIComponent(jobId), null, 5000)
+        .then(function(result){
+          const job = result && result.job ? result.job : result;
+          if(!job || !job.id) throw new Error('한방 작업 상태를 읽지 못했습니다.');
+          hanbangActiveJobId = job.id;
+
+          if(job.state === 'completed'){
+            const hanbangNumber = text(job.hanbangListingNumber || job.hanbang_listing_number);
+            setHanbangBridgeUi('working', text(job.message) || ('한방 등록 완료' + (hanbangNumber ? ' · 매물번호 ' + hanbangNumber : '')), {
+              buttonText: '등록 완료'
+            });
+            hanbangActiveJobId = '';
+            updatePropertyChannel(listingNumber, 'hanbang', true, ['', '', '']);
+            return;
+          }
+          if(job.state === 'failed'){
+            hanbangActiveJobId = '';
+            setHanbangBridgeUi('error', text(job.message) || '한방 등록에 실패했습니다.');
+            return;
+          }
+          if(job.state === 'waiting_capture' || job.state === 'blocked'){
+            hanbangActiveJobId = '';
+            setHanbangBridgeUi('blocked', text(job.message) || '신규등록 전송 규격 캡처가 필요합니다.');
+            return;
+          }
+
+          setHanbangBridgeUi('working', describeHanbangStage(job));
+          hanbangJobPollTimer = window.setTimeout(function(){
+            pollHanbangJob(job.id, listingNumber);
+          }, 1000);
+        })
+        .catch(function(err){
+          hanbangActiveJobId = '';
+          setHanbangBridgeUi('error', err && err.name === 'AbortError'
+            ? '한방 브리지 응답이 없습니다.'
+            : ((err && err.message) || '한방 작업 상태 확인에 실패했습니다.'));
+        });
+    }
+
+    function checkHanbangBridge(listingNumber){
+      stopHanbangJobPolling();
+      setHanbangBridgeUi('checking', '이 PC의 한방 연결을 확인합니다.');
+      fetchHanbangBridge('/v1/health?listing_number=' + encodeURIComponent(listingNumber || ''), null, 2500)
+        .then(function(data){
+          if(data.activeJob && data.activeJob.id){
+            hanbangActiveJobId = data.activeJob.id;
+            setHanbangBridgeUi('working', describeHanbangStage(data.activeJob));
+            pollHanbangJob(data.activeJob.id, listingNumber);
+            return;
+          }
+          if(data.hanbangRunning === false){
+            setHanbangBridgeUi('error', '한방 프로그램을 먼저 실행하고 로그인해 주세요.');
+            return;
+          }
+          if(data.engineReady === false){
+            setHanbangBridgeUi('blocked', text(data.engineMessage) || '신규등록 전송 규격 캡처가 필요합니다.');
+            return;
+          }
+          setHanbangBridgeUi('ready', '한방 연결 완료 · 매물입력기 전체 정보와 사진을 전송합니다.');
+        })
+        .catch(function(err){
+          setHanbangBridgeUi('error', err && err.name === 'AbortError'
+            ? '한방 로컬 브리지가 응답하지 않습니다.'
+            : '한방 로컬 브리지를 먼저 실행해 주세요.');
+        });
+    }
+
+    function uploadCurrentListingToHanbang(){
+      const listingNumber = normalizeListingKey(channelModalListingNumber);
+      if(!listingNumber || channelModalChannelKey !== 'hanbang') return;
+
+      stopHanbangJobPolling();
+      setHanbangBridgeUi('working', '매물입력기에서 전체 정보와 사진 목록을 가져옵니다.');
+      fetchFullAdminProperty(listingNumber)
+        .then(function(fullProperty){
+          return fetchHanbangBridge('/v1/jobs', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json;charset=UTF-8' },
+            body: JSON.stringify({
+              listingNumber: listingNumber,
+              listing: fullProperty,
+              requestedBy: text(unlockedUserName),
+              sourceOrigin: location.origin
+            })
+          }, 15000);
+        })
+        .then(function(data){
+          const job = data && data.job ? data.job : data;
+          if(!job || !job.id) throw new Error('한방 작업번호를 받지 못했습니다.');
+          hanbangActiveJobId = job.id;
+          setHanbangBridgeUi('working', describeHanbangStage(job));
+          pollHanbangJob(job.id, listingNumber);
+        })
+        .catch(function(err){
+          hanbangActiveJobId = '';
+          setHanbangBridgeUi('error', (err && err.message) || '한방 업로드를 시작하지 못했습니다.');
+        });
+    }
+
     function openChannelModal(listingNumber, channelKey){
       const decodedListingNumber = normalizeListingKey(listingNumber);
       const modal = document.getElementById('channelModal');
@@ -4271,6 +4515,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const link3 = document.getElementById('channelLink3');
       const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
       const naverBlogCreateBox = document.getElementById('naverBlogCreateBox');
+      const hanbangUploadBox = document.getElementById('hanbangUploadBox');
       const radios = document.querySelectorAll('input[name="channelDoneState"]');
       const item = getItemByListingNumber(decodedListingNumber);
       const state = item ? getChannelStateByItem(item, channelKey) : { done:false, links:['','',''] };
@@ -4288,10 +4533,12 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(link3) link3.value = state.links[2] || '';
       if(youtubeVideoCreateBox) youtubeVideoCreateBox.style.display = channelKey === 'youtube' ? 'grid' : 'none';
       if(naverBlogCreateBox) naverBlogCreateBox.style.display = channelKey === 'naverBlog' ? 'grid' : 'none';
+      if(hanbangUploadBox) hanbangUploadBox.style.display = channelKey === 'hanbang' ? 'grid' : 'none';
       radios.forEach(function(radio){
         radio.checked = (state.done && radio.value === 'done') || (!state.done && radio.value === 'notYet');
       });
       if(modal) modal.classList.add('show');
+      if(channelKey === 'hanbang') checkHanbangBridge(decodedListingNumber);
       if(!channelModalHistoryArmed){
         history.pushState({ channelModal: true }, '');
         channelModalHistoryArmed = true;
@@ -4302,9 +4549,13 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const modal = document.getElementById('channelModal');
       const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
       const naverBlogCreateBox = document.getElementById('naverBlogCreateBox');
+      const hanbangUploadBox = document.getElementById('hanbangUploadBox');
       if(modal) modal.classList.remove('show');
       if(youtubeVideoCreateBox) youtubeVideoCreateBox.style.display = 'none';
       if(naverBlogCreateBox) naverBlogCreateBox.style.display = 'none';
+      if(hanbangUploadBox) hanbangUploadBox.style.display = 'none';
+      stopHanbangJobPolling();
+      hanbangActiveJobId = '';
       channelModalListingNumber = '';
       channelModalChannelKey = '';
       if(channelModalHistoryArmed){

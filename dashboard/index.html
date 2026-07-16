@@ -2426,7 +2426,7 @@
         <label class="channel-radio"><input type="radio" name="channelDoneState" value="done"> <span>Done</span></label>
         <label class="channel-radio"><input type="radio" name="channelDoneState" value="notYet"> <span>Not yet</span></label>
       </div>
-      <div class="channel-links">
+      <div id="channelLinksBox" class="channel-links">
         <div class="channel-link-row">
           <input id="channelLink1" class="channel-link-input" type="text" placeholder="링크1">
           <button type="button" class="channel-go-btn" onclick="openChannelLink(1)">Go</button>
@@ -4414,10 +4414,16 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
           if(job.state === 'completed'){
             const hanbangNumber = text(job.hanbangListingNumber || job.hanbang_listing_number);
+            if(!hanbangNumber){
+              hanbangActiveJobId = '';
+              setHanbangBridgeUi('error', '한방 등록번호를 확인하지 못해 DONE 처리를 중단했습니다.');
+              return;
+            }
             setHanbangBridgeUi('working', text(job.message) || ('한방 등록 완료' + (hanbangNumber ? ' · 매물번호 ' + hanbangNumber : '')), {
               buttonText: '등록 완료'
             });
             hanbangActiveJobId = '';
+            // 한방 서버가 신규 매물번호를 반환한 경우에만 대시보드 DONE을 저장한다.
             updatePropertyChannel(listingNumber, 'hanbang', true, ['', '', '']);
             return;
           }
@@ -4455,6 +4461,18 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
             setHanbangBridgeUi('working', describeHanbangStage(data.activeJob));
             pollHanbangJob(data.activeJob.id, listingNumber);
             return;
+          }
+          if(data.completedJob && data.completedJob.id){
+            const completedNumber = text(data.completedJob.hanbangListingNumber);
+            if(completedNumber){
+              setHanbangBridgeUi('working', '한방 등록 완료 · 매물번호 ' + completedNumber, { buttonText:'등록 완료' });
+              const item = getItemByListingNumber(listingNumber);
+              const state = item ? getChannelStateByItem(item, 'hanbang') : { done:false };
+              if(!state.done){
+                updatePropertyChannel(listingNumber, 'hanbang', true, ['', '', '']);
+              }
+              return;
+            }
           }
           if(data.hanbangRunning === false){
             setHanbangBridgeUi('error', '한방 프로그램을 먼저 실행하고 로그인해 주세요.');
@@ -4516,6 +4534,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
       const naverBlogCreateBox = document.getElementById('naverBlogCreateBox');
       const hanbangUploadBox = document.getElementById('hanbangUploadBox');
+      const channelLinksBox = document.getElementById('channelLinksBox');
       const radios = document.querySelectorAll('input[name="channelDoneState"]');
       const item = getItemByListingNumber(decodedListingNumber);
       const state = item ? getChannelStateByItem(item, channelKey) : { done:false, links:['','',''] };
@@ -4534,6 +4553,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(youtubeVideoCreateBox) youtubeVideoCreateBox.style.display = channelKey === 'youtube' ? 'grid' : 'none';
       if(naverBlogCreateBox) naverBlogCreateBox.style.display = channelKey === 'naverBlog' ? 'grid' : 'none';
       if(hanbangUploadBox) hanbangUploadBox.style.display = channelKey === 'hanbang' ? 'grid' : 'none';
+      // 한방은 외부 링크가 없으므로 링크 입력란 3개를 표시하지 않는다.
+      if(channelLinksBox) channelLinksBox.style.display = channelKey === 'hanbang' ? 'none' : 'grid';
       radios.forEach(function(radio){
         radio.checked = (state.done && radio.value === 'done') || (!state.done && radio.value === 'notYet');
       });
@@ -4550,10 +4571,12 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
       const naverBlogCreateBox = document.getElementById('naverBlogCreateBox');
       const hanbangUploadBox = document.getElementById('hanbangUploadBox');
+      const channelLinksBox = document.getElementById('channelLinksBox');
       if(modal) modal.classList.remove('show');
       if(youtubeVideoCreateBox) youtubeVideoCreateBox.style.display = 'none';
       if(naverBlogCreateBox) naverBlogCreateBox.style.display = 'none';
       if(hanbangUploadBox) hanbangUploadBox.style.display = 'none';
+      if(channelLinksBox) channelLinksBox.style.display = 'grid';
       stopHanbangJobPolling();
       hanbangActiveJobId = '';
       channelModalListingNumber = '';

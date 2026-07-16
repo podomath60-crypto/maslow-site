@@ -1403,6 +1403,16 @@
       content:attr(data-placeholder);
       color:rgba(35,38,43,.28);
     }
+    .additional-contact-wrap{padding:8px 18px 18px;border-top:1px solid #ece3e9}
+    .additional-contact-list{display:grid;gap:7px;margin-bottom:10px}
+    .additional-contact-card{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(150px,1.2fr) auto auto;gap:7px;align-items:center;padding:7px 9px;border:1px solid #e6d3df;border-radius:10px;background:#fff}
+    .additional-contact-source{color:#0f64b5;font-size:10px;font-weight:900;white-space:nowrap}
+    .additional-contact-source.agent{color:#b42361}
+    .additional-contact-grid{display:contents}
+    .additional-contact-field{width:100%;min-height:42px;padding:10px 12px;border:1px solid #ded3da;border-radius:11px;background:#fff;color:#23262b;font:inherit;box-sizing:border-box}
+    .additional-contact-add,.additional-contact-remove{border:1.5px solid #d9c3d1;border-radius:12px;background:#fff7fb;color:#a63a68;font-weight:900;padding:10px 14px;cursor:pointer}
+    .additional-contact-remove{width:28px;height:28px;border:0;border-radius:0;padding:0;background:transparent;color:#8b526b;font-size:18px}
+    @media(max-width:680px){.additional-contact-card{grid-template-columns:minmax(70px,.8fr) minmax(110px,1.2fr) auto auto}.additional-contact-field{min-height:36px;padding:7px 8px;font-size:12px}.additional-contact-source{font-size:9px}}
 
     .draft-clean-wrap{
       display:flex;
@@ -2709,6 +2719,10 @@
             <div class="requester-row"><div class="requester-label">의뢰 구분</div><div class="requester-value" contenteditable="true" data-placeholder="입력"></div></div>
             <div class="requester-row"><div class="requester-label">비고</div><div class="requester-value" contenteditable="true" data-placeholder="입력"></div></div>
           </div>
+          <div class="additional-contact-wrap">
+            <div id="additionalRequesterContactList" class="additional-contact-list"></div>
+            <button type="button" id="additionalRequesterContactAddBtn" class="additional-contact-add">추가 연락처 +</button>
+          </div>
         </div>
 
         <div class="memo-card bottom-memo-card">
@@ -2842,6 +2856,9 @@
       var statusToggleBtn = document.getElementById('statusToggleBtn');
       var saveToast = document.getElementById('saveToast');
       var requesterContactSearchBtn = document.getElementById('requesterContactSearchBtn');
+      var additionalRequesterContactList = document.getElementById('additionalRequesterContactList');
+      var additionalRequesterContactAddBtn = document.getElementById('additionalRequesterContactAddBtn');
+      var additionalRequesterContacts = [];
       var summaryHelperBtn = document.getElementById('summaryHelperBtn');
       var summaryHelperModal = document.getElementById('summaryHelperModal');
       var summaryHelperCloseBtn = document.getElementById('summaryHelperCloseBtn');
@@ -3752,6 +3769,74 @@
         };
       }
 
+      function parseContactsJson_(value){
+        if(Array.isArray(value)) return value;
+        if(!value) return [];
+        try{ var parsed=JSON.parse(value); return Array.isArray(parsed) ? parsed : []; }catch(_err){ return []; }
+      }
+
+      function contactPhoneText_(contact){
+        var phones=Array.isArray(contact && contact.phones) ? contact.phones : [];
+        return phones.map(function(phone){ return String((phone && (phone.phone || phone.number)) || phone || '').trim(); }).filter(Boolean).join(' / ');
+      }
+
+      function normalizeAdditionalContact_(contact){
+        var source=contact || {};
+        return {
+          personId:String(source.personId || source.id || ('WEB-' + Date.now() + '-' + Math.random().toString(16).slice(2))).trim(),
+          contactLookupKey:String(source.contactLookupKey || '').trim(),
+          displayName:String(source.displayName || source.name || '').trim(),
+          organizationName:String(source.organizationName || source.companyName || '').trim(),
+          role:String(source.role || source.position || '').trim(),
+          phone:normalizePhoneTextForPayload_(contactPhoneText_(source) || source.phone || ''),
+          note:String(source.note || '').trim(),
+          source:String(source.source || 'MANUAL').trim(),
+          isPrimary:false
+        };
+      }
+
+      function renderAdditionalRequesterContacts_(){
+        if(!additionalRequesterContactList) return;
+        additionalRequesterContactList.innerHTML=additionalRequesterContacts.map(function(contact,index){
+          var source=String(contact.source || 'MANUAL').toUpperCase();
+          var sourceClass=source === 'CONTACT_SYNC' || source === 'DEVICE_CONTACT' ? 'synced' : (source === 'AGENT' ? 'agent' : '');
+          var sourceLabel=sourceClass === 'synced' ? 'AUTO Matching' : (sourceClass === 'agent' ? '에이전트 입력' : '');
+          return '<div class="additional-contact-card" data-contact-index="'+index+'">'+
+            '<div class="additional-contact-grid">'+
+              '<input class="additional-contact-field" data-contact-field="displayName" placeholder="이름" value="'+escapeHtml_(contact.displayName)+'">'+
+              '<input class="additional-contact-field" data-contact-field="phone" placeholder="연락처" value="'+escapeHtml_(contact.phone)+'">'+
+            '</div>'+(sourceLabel ? '<span class="additional-contact-source '+sourceClass+'">'+sourceLabel+'</span>' : '<span></span>')+
+            '<button type="button" class="additional-contact-remove" data-remove-contact="'+index+'" aria-label="연락처 삭제">×</button></div>';
+        }).join('');
+      }
+
+      function collectEntityContacts_(){
+        var requester=collectRequester_();
+        var primary={
+          displayName:requester.name,
+          role:requester.requestType,
+          phones:requester.phone ? requester.phone.split(/\s*\/\s*/).filter(Boolean) : [],
+          isPrimary:true,
+          note:requester.note,
+          source:'MANUAL'
+        };
+        return [primary].concat(additionalRequesterContacts.map(function(contact){
+          return {
+            personId:contact.personId,
+            contactLookupKey:contact.contactLookupKey,
+            displayName:contact.displayName,
+            organizationName:contact.organizationName,
+            role:contact.role,
+            phones:contact.phone ? contact.phone.split(/\s*\/\s*/).filter(Boolean) : [],
+            isPrimary:false,
+            note:contact.note,
+            source:contact.source || 'MANUAL'
+          };
+        })).filter(function(contact){
+          return contact.displayName || contact.organizationName || contact.role || contact.note || contact.phones.length;
+        });
+      }
+
       function summaryTextForPayload_(el){
         return ((el && (el.innerText || el.textContent) || '') + '')
           .replace(/\u00A0/g, ' ')
@@ -3996,6 +4081,7 @@
           listingType: isLandListing ? 'DK' : getListingCategoryPrefix_(),
           status: listingStatus || 'hidden',
           requester: collectRequester_(),
+          contacts: collectEntityContacts_(),
           summary: collectSummary_(),
           basic: basicPayload,
           factory: factoryPayload,
@@ -5153,6 +5239,11 @@
         setRequesterFieldValue_('연락처', item.requesterPhone || '');
         setRequesterFieldValue_('의뢰 구분', item.requesterType || '');
         setRequesterFieldValue_('비고', item.requesterNote || '');
+        var loadedContacts=parseContactsJson_(item.contactsJson);
+        var primaryIndex=loadedContacts.findIndex(function(contact){ return contact && (contact.isPrimary === true || contact.isPrimary === 'true'); });
+        if(primaryIndex < 0 && loadedContacts.length) primaryIndex=0;
+        additionalRequesterContacts=loadedContacts.filter(function(_contact,index){ return index !== primaryIndex; }).map(normalizeAdditionalContact_);
+        renderAdditionalRequesterContacts_();
 
         var memoEl = document.querySelector('.memo-body');
         if (memoEl) memoEl.textContent = item.memo || '';
@@ -8434,6 +8525,8 @@
         photoItems = [];
         currentPhotoIndex = 0;
         landParcels = [];
+        additionalRequesterContacts = [];
+        renderAdditionalRequesterContacts_();
         renderLandParcels_();
         resetEditorEnteredSession_();
         if(listingNumberField) listingNumberField.textContent = '';
@@ -8535,7 +8628,8 @@
             deposit: String((rentPriceState && rentPriceState.deposit) || ''),
             monthly: String((rentPriceState && rentPriceState.monthly) || '')
           },
-          landParcels: Array.isArray(landParcels) ? landParcels : []
+          landParcels: Array.isArray(landParcels) ? landParcels : [],
+          additionalRequesterContacts: additionalRequesterContacts
         };
       }
 
@@ -8644,6 +8738,8 @@
             restoreEditables(data.editables || {});
             rentPriceState = data.rentPriceState || { deposit: '', monthly: '' };
             landParcels = normalizeLoadedLandParcels_(data.landParcels || []);
+            additionalRequesterContacts = Array.isArray(data.additionalRequesterContacts) ? data.additionalRequesterContacts.map(normalizeAdditionalContact_) : [];
+            renderAdditionalRequesterContacts_();
             renderLandParcels_();
             toggleFactorySectionByListingNumber_();
           }
@@ -8674,6 +8770,35 @@
       if(requesterContactSearchBtn){
         requesterContactSearchBtn.addEventListener('click', function(){
           pickRequesterContact_();
+        });
+      }
+
+      if(additionalRequesterContactAddBtn){
+        additionalRequesterContactAddBtn.addEventListener('click', function(){
+          additionalRequesterContacts.push(normalizeAdditionalContact_({}));
+          renderAdditionalRequesterContacts_();
+          queueSave();
+        });
+      }
+      if(additionalRequesterContactList){
+        additionalRequesterContactList.addEventListener('input', function(event){
+          var field=event.target.closest('[data-contact-field]');
+          var card=event.target.closest('[data-contact-index]');
+          if(!field || !card) return;
+          var index=Number(card.dataset.contactIndex);
+          if(!additionalRequesterContacts[index]) return;
+          var value=String(field.value || '').trim();
+          if(field.dataset.contactField === 'phone') value=normalizePhoneTextForPayload_(value);
+          additionalRequesterContacts[index][field.dataset.contactField]=value;
+          additionalRequesterContacts[index].source='MANUAL';
+          queueSave();
+        });
+        additionalRequesterContactList.addEventListener('click', function(event){
+          var button=event.target.closest('[data-remove-contact]');
+          if(!button) return;
+          additionalRequesterContacts.splice(Number(button.dataset.removeContact),1);
+          renderAdditionalRequesterContacts_();
+          queueSave();
         });
       }
 
@@ -8726,6 +8851,8 @@
           ledgerList = [];
           selectedAddressSearchData = null;
           landParcels = [];
+          additionalRequesterContacts = [];
+          renderAdditionalRequesterContacts_();
           renderLandParcels_();
           clearRentPriceState_();
           currentPhotoIndex = 0;

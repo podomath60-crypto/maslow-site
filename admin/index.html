@@ -2859,6 +2859,7 @@
       var additionalRequesterContactList = document.getElementById('additionalRequesterContactList');
       var additionalRequesterContactAddBtn = document.getElementById('additionalRequesterContactAddBtn');
       var additionalRequesterContacts = [];
+      var additionalRequesterContactExclusions = [];
       var summaryHelperBtn = document.getElementById('summaryHelperBtn');
       var summaryHelperModal = document.getElementById('summaryHelperModal');
       var summaryHelperCloseBtn = document.getElementById('summaryHelperCloseBtn');
@@ -3775,6 +3776,32 @@
         try{ var parsed=JSON.parse(value); return Array.isArray(parsed) ? parsed : []; }catch(_err){ return []; }
       }
 
+      function normalizeContactExclusions_(value){
+        var items=parseContactsJson_(value);
+        var seen={};
+        return items.map(function(item){ return String(item || '').trim(); }).filter(function(item){
+          if(!item || seen[item]) return false;
+          seen[item]=true;
+          return true;
+        });
+      }
+
+      function rememberContactExclusion_(contact){
+        var lookupKey=String(contact && contact.contactLookupKey || '').trim();
+        var exclusions=lookupKey ? ['lookup:' + lookupKey] : [];
+        String(contact && contact.phone || '').split(/[\n,;|/]+/).forEach(function(phone){
+          var digits=String(phone || '').replace(/\D/g, '');
+          if(digits.indexOf('82') === 0) digits='0' + digits.slice(2);
+          if(digits.length === 10 && digits.indexOf('10') === 0) digits='0' + digits;
+          if(digits) exclusions.push('phone:' + digits);
+        });
+        exclusions.forEach(function(exclusion){
+          if(additionalRequesterContactExclusions.indexOf(exclusion) < 0){
+            additionalRequesterContactExclusions.push(exclusion);
+          }
+        });
+      }
+
       function contactPhoneText_(contact){
         var phones=Array.isArray(contact && contact.phones) ? contact.phones : [];
         return phones.map(function(phone){ return String((phone && (phone.phone || phone.number)) || phone || '').trim(); }).filter(Boolean).join(' / ');
@@ -4082,6 +4109,7 @@
           status: listingStatus || 'hidden',
           requester: collectRequester_(),
           contacts: collectEntityContacts_(),
+          contactMatchExclusions: additionalRequesterContactExclusions.slice(),
           summary: collectSummary_(),
           basic: basicPayload,
           factory: factoryPayload,
@@ -5243,6 +5271,7 @@
         var primaryIndex=loadedContacts.findIndex(function(contact){ return contact && (contact.isPrimary === true || contact.isPrimary === 'true'); });
         if(primaryIndex < 0 && loadedContacts.length) primaryIndex=0;
         additionalRequesterContacts=loadedContacts.filter(function(_contact,index){ return index !== primaryIndex; }).map(normalizeAdditionalContact_);
+        additionalRequesterContactExclusions=normalizeContactExclusions_(item.contactMatchExclusionsJson);
         renderAdditionalRequesterContacts_();
 
         var memoEl = document.querySelector('.memo-body');
@@ -8526,6 +8555,7 @@
         currentPhotoIndex = 0;
         landParcels = [];
         additionalRequesterContacts = [];
+        additionalRequesterContactExclusions = [];
         renderAdditionalRequesterContacts_();
         renderLandParcels_();
         resetEditorEnteredSession_();
@@ -8629,7 +8659,8 @@
             monthly: String((rentPriceState && rentPriceState.monthly) || '')
           },
           landParcels: Array.isArray(landParcels) ? landParcels : [],
-          additionalRequesterContacts: additionalRequesterContacts
+          additionalRequesterContacts: additionalRequesterContacts,
+          contactMatchExclusions: additionalRequesterContactExclusions
         };
       }
 
@@ -8739,6 +8770,7 @@
             rentPriceState = data.rentPriceState || { deposit: '', monthly: '' };
             landParcels = normalizeLoadedLandParcels_(data.landParcels || []);
             additionalRequesterContacts = Array.isArray(data.additionalRequesterContacts) ? data.additionalRequesterContacts.map(normalizeAdditionalContact_) : [];
+            additionalRequesterContactExclusions = normalizeContactExclusions_(data.contactMatchExclusions);
             renderAdditionalRequesterContacts_();
             renderLandParcels_();
             toggleFactorySectionByListingNumber_();
@@ -8796,6 +8828,8 @@
         additionalRequesterContactList.addEventListener('click', function(event){
           var button=event.target.closest('[data-remove-contact]');
           if(!button) return;
+          var removedContact=additionalRequesterContacts[Number(button.dataset.removeContact)];
+          rememberContactExclusion_(removedContact);
           additionalRequesterContacts.splice(Number(button.dataset.removeContact),1);
           renderAdditionalRequesterContacts_();
           queueSave();

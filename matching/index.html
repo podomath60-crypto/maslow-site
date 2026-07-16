@@ -824,7 +824,7 @@
       project:{
         projectId:'', title:'', status:'', inquiryDate:'', inquiryRoutes:[], inquiryRouteEtc:'', inquiryType:'', inquiryMemo:'', clientName:'', phone:'', companyName:'', clientCategory:'', requesterRelation:'', industry:'', homepageUrl:'',
         dealType:'', budget:'', dealTypeMode:'any', saleEnabled:false, rentEnabled:false, saleBudgetMin:'', saleBudgetMax:'', salePriceMemo:'', rentDepositMin:'', rentDepositMax:'', rentMonthlyMin:'', rentMonthlyMax:'', rentPriceMemo:'',
-        regions:'', usePurpose:'', land:'', building:'', areaSummary:'', coreNeeds:'', lastContact:'', nextAction:'', contactLogs:[], additionalContacts:[], businessCardTemps:[], businessCardsJson:''
+        regions:'', usePurpose:'', land:'', building:'', areaSummary:'', coreNeeds:'', lastContact:'', nextAction:'', contactLogs:[], additionalContacts:[], contactMatchExclusions:[], businessCardTemps:[], businessCardsJson:''
       },
       candidates:[],
       dbSearchResults:[],
@@ -974,6 +974,24 @@
         contactLookupKey:String(source.contactLookupKey || '').trim(),
         source:String(source.source || 'USER').trim()
       };
+    }
+    function normalizeProjectContactExclusions(value){
+      const items=Array.isArray(value) ? value : safeParseArray(value);
+      return Array.from(new Set(items.map(item=>String(item || '').trim()).filter(Boolean)));
+    }
+    function rememberProjectContactExclusion(contact){
+      const lookupKey=String(contact && contact.contactLookupKey || '').trim();
+      if(!Array.isArray(state.project.contactMatchExclusions)) state.project.contactMatchExclusions=[];
+      const exclusions=lookupKey ? [`lookup:${lookupKey}`] : [];
+      projectContactPhones(contact).forEach(phone=>{
+        let digits=String(phone || '').replace(/\D/g,'');
+        if(digits.startsWith('82')) digits=`0${digits.slice(2)}`;
+        if(digits.length===10 && digits.startsWith('10')) digits=`0${digits}`;
+        if(digits) exclusions.push(`phone:${digits}`);
+      });
+      exclusions.forEach(exclusion=>{
+        if(!state.project.contactMatchExclusions.includes(exclusion)) state.project.contactMatchExclusions.push(exclusion);
+      });
     }
     function projectContactAttr(value){
       return String(value || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -1621,6 +1639,7 @@
         phone:p.phone || '',
         subPhone:p.subPhone || '',
         contacts:collectProjectContacts(),
+        contactMatchExclusions:normalizeProjectContactExclusions(p.contactMatchExclusions),
         inflowChannel:(p.inquiryRoutes || []).join(', '),
         requestDate:p.inquiryDate || '',
         dealTypeMode:getDealTypeMode(p),
@@ -1909,6 +1928,9 @@
       restored.companyName=restored.companyName || firstNonEmptyValue(record, ['companyName','company','회사명']);
       restored.requesterRelation=restored.requesterRelation || firstNonEmptyValue(record, ['requesterRelation','contactName','managerName','담당자']);
       restored.phone=restored.phone || firstNonEmptyValue(record, ['phone','tel','mobile','연락처']);
+      restored.contactMatchExclusions=normalizeProjectContactExclusions(
+        firstNonEmptyValue(record, ['contactMatchExclusionsJson','contactMatchExclusions']) || restored.contactMatchExclusions
+      );
       const savedContacts=safeParseArray(firstNonEmptyValue(record, ['contactsJson','contacts','관련연락처JSON']));
       if(savedContacts.length){
         const primaryIndex=Math.max(0, savedContacts.findIndex(contact=>contact && contact.isPrimary));
@@ -4360,6 +4382,7 @@
       const index=Number(button.dataset.projectContactRemove);
       if(!Number.isInteger(index) || !Array.isArray(state.project.additionalContacts)) return;
       markChange('추가 연락처 삭제');
+      rememberProjectContactExclusion(state.project.additionalContacts[index]);
       state.project.additionalContacts.splice(index,1);
       renderProjectAdditionalContacts();
     });

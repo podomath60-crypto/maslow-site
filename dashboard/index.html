@@ -2645,6 +2645,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       krasUrl: 'https://www.kras.go.kr/mainView.do',
       rfineUrl: 'https://new.rfine.kr/Pos/index.php',
       hanbangBridgeUrl: 'http://127.0.0.1:18765',
+      hanbangBridgeMinimumVersion: '0.4.0',
       authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
     };
 
@@ -2724,6 +2725,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     let channelModalHistoryArmed = false;
     let hanbangActiveJobId = '';
     let hanbangJobPollTimer = null;
+    let hanbangForceReupload = false;
     let dashboardStatusModalListingNumber = '';
     let dashboardStatusModalHistoryArmed = false;
 
@@ -4404,6 +4406,17 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       return text(job && job.message) || '한방 업로드를 처리하고 있습니다.';
     }
 
+    function isHanbangBridgeVersionSupported(version){
+      const actual = text(version).split('.').map(function(value){ return Number(value); });
+      const required = text(CONFIG.hanbangBridgeMinimumVersion).split('.').map(function(value){ return Number(value); });
+      if(actual.length < 3 || required.length < 3 || actual.some(isNaN) || required.some(isNaN)) return false;
+      for(let index = 0; index < 3; index += 1){
+        if(actual[index] > required[index]) return true;
+        if(actual[index] < required[index]) return false;
+      }
+      return true;
+    }
+
     function pollHanbangJob(jobId, listingNumber){
       stopHanbangJobPolling();
       fetchHanbangBridge('/v1/jobs/' + encodeURIComponent(jobId), null, 5000)
@@ -4453,9 +4466,15 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
 
     function checkHanbangBridge(listingNumber){
       stopHanbangJobPolling();
+      hanbangActiveJobId = '';
+      hanbangForceReupload = false;
       setHanbangBridgeUi('checking', '이 PC의 한방 연결을 확인합니다.');
       fetchHanbangBridge('/v1/health?listing_number=' + encodeURIComponent(listingNumber || ''), null, 2500)
         .then(function(data){
+          if(!isHanbangBridgeVersionSupported(data && data.version)){
+            setHanbangBridgeUi('blocked', '구버전 한방 브리지입니다. 한방자동업로드_시작.cmd를 다시 실행해 주세요.');
+            return;
+          }
           if(data.activeJob && data.activeJob.id){
             hanbangActiveJobId = data.activeJob.id;
             setHanbangBridgeUi('working', describeHanbangStage(data.activeJob));
@@ -4465,7 +4484,12 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
           if(data.completedJob && data.completedJob.id){
             const completedNumber = text(data.completedJob.hanbangListingNumber);
             if(completedNumber){
-              setHanbangBridgeUi('working', '한방 등록 완료 · 매물번호 ' + completedNumber, { buttonText:'등록 완료' });
+              hanbangForceReupload = true;
+              setHanbangBridgeUi(
+                'ready',
+                '기존 한방 등록 완료 · 매물번호 ' + completedNumber + ' · 한방에서 삭제한 경우 다시 업로드할 수 있습니다.',
+                { buttonText:'다시 업로드' }
+              );
               const item = getItemByListingNumber(listingNumber);
               const state = item ? getChannelStateByItem(item, 'hanbang') : { done:false };
               if(!state.done){
@@ -4495,7 +4519,13 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const listingNumber = normalizeListingKey(channelModalListingNumber);
       if(!listingNumber || channelModalChannelKey !== 'hanbang') return;
 
+      const forceReupload = hanbangForceReupload === true;
+      if(forceReupload && !window.confirm('기존 한방 매물을 한방 프로그램에서 삭제한 경우에만 다시 업로드하세요. 새 매물로 다시 등록할까요?')){
+        return;
+      }
+
       stopHanbangJobPolling();
+      hanbangForceReupload = false;
       setHanbangBridgeUi('working', '매물입력기에서 전체 정보와 사진 목록을 가져옵니다.');
       fetchFullAdminProperty(listingNumber)
         .then(function(fullProperty){
@@ -4506,7 +4536,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
               listingNumber: listingNumber,
               listing: fullProperty,
               requestedBy: text(unlockedUserName),
-              sourceOrigin: location.origin
+              sourceOrigin: location.origin,
+              force: forceReupload
             })
           }, 15000);
         })
@@ -4579,6 +4610,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(channelLinksBox) channelLinksBox.style.display = 'grid';
       stopHanbangJobPolling();
       hanbangActiveJobId = '';
+      hanbangForceReupload = false;
       channelModalListingNumber = '';
       channelModalChannelKey = '';
       if(channelModalHistoryArmed){

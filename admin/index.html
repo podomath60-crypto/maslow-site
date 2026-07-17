@@ -1405,7 +1405,7 @@
     }
     .additional-contact-wrap{padding:8px 18px 18px;border-top:1px solid #ece3e9}
     .additional-contact-list{display:grid;gap:7px;margin-bottom:10px}
-    .additional-contact-card{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(150px,1.2fr) auto auto;gap:7px;align-items:center;padding:7px 9px;border:1px solid #e6d3df;border-radius:10px;background:#fff}
+    .additional-contact-card{display:grid;grid-template-columns:minmax(160px,1.5fr) minmax(110px,.8fr) auto auto;gap:7px;align-items:center;padding:7px 9px;border:1px solid #e6d3df;border-radius:10px;background:#fff}
     .additional-contact-source{color:#0f64b5;font-size:10px;font-weight:900;white-space:nowrap}
     .additional-contact-source.agent{color:#b42361}
     .additional-contact-search{border:1px solid #d9c3d1;border-radius:9px;background:#fff7fb;color:#a63a68;font-size:11px;font-weight:900;padding:7px 9px;white-space:nowrap;cursor:pointer}
@@ -1413,22 +1413,31 @@
     .additional-contact-field{width:100%;min-height:42px;padding:10px 12px;border:1px solid #ded3da;border-radius:11px;background:#fff;color:#23262b;font:inherit;box-sizing:border-box}
     .additional-contact-add,.additional-contact-remove{border:1.5px solid #d9c3d1;border-radius:12px;background:#fff7fb;color:#a63a68;font-weight:900;padding:10px 14px;cursor:pointer}
     .additional-contact-remove{width:28px;height:28px;border:0;border-radius:0;padding:0;background:transparent;color:#8b526b;font-size:18px}
-    @media(max-width:680px){.additional-contact-card{grid-template-columns:minmax(70px,.8fr) minmax(110px,1.2fr) auto auto}.additional-contact-field{min-height:36px;padding:7px 8px;font-size:12px}.additional-contact-source{font-size:9px}}
+    @media(max-width:680px){.additional-contact-card{grid-template-columns:minmax(120px,1.4fr) minmax(92px,.8fr) auto auto}.additional-contact-field{min-height:36px;padding:7px 8px;font-size:12px}.additional-contact-source{font-size:9px}}
     .contact-directory-modal{position:fixed;inset:0;z-index:10020;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.46)}
     .contact-directory-modal.show{display:flex}
     .contact-directory-panel{width:min(520px,100%);max-height:min(720px,86vh);display:flex;flex-direction:column;overflow:hidden;border-radius:20px;background:#fff;box-shadow:0 24px 70px rgba(15,23,42,.24)}
     .contact-directory-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 10px}
     .contact-directory-title{font-size:19px;font-weight:950;color:#111318}
     .contact-directory-close{width:32px;height:32px;border:0;background:transparent;color:#667085;font-size:24px;cursor:pointer}
-    .contact-directory-search-wrap{padding:0 18px 12px}
+    .contact-directory-search-wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:0 18px 12px}
     .contact-directory-search-input{width:100%;min-height:46px;border:1.5px solid #d9c3d1;border-radius:12px;padding:0 14px;background:#fff;color:#111318;font-size:15px;outline:none}
     .contact-directory-search-input:focus{border-color:#a63a68;box-shadow:0 0 0 3px rgba(166,58,104,.1)}
+    .contact-directory-search-input:disabled{background:#f3f4f6;color:#98a2b3;cursor:wait}
+    .contact-directory-submit{min-width:68px;border:1px solid #a63a68;border-radius:12px;background:#a63a68;color:#fff;font-size:14px;font-weight:900;cursor:pointer}
+    .contact-directory-submit:disabled{border-color:#cbd0d8;background:#cbd0d8;color:#fff;cursor:wait}
     .contact-directory-results{display:grid;gap:6px;overflow:auto;padding:0 18px 18px}
-    .contact-directory-result{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:12px 13px;border:1px solid #eadde5;border-radius:12px;background:#fff;text-align:left;cursor:pointer}
+    .contact-directory-result{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:12px 13px;border:1px solid #eadde5;border-radius:12px;background:#fff;text-align:left;cursor:pointer}
     .contact-directory-result:hover{border-color:#c780a0;background:#fff8fb}
+    .contact-directory-result.selected{border-color:#a63a68;background:#fff0f6;box-shadow:0 0 0 2px rgba(166,58,104,.1)}
+    .contact-directory-check{display:flex;width:18px;height:18px;align-items:center;justify-content:center;border:1px solid #d7c2cd;border-radius:5px;background:#fff;color:transparent;font-size:12px;font-weight:900}
+    .contact-directory-result.selected .contact-directory-check{border-color:#a63a68;background:#a63a68;color:#fff}
     .contact-directory-name{font-size:14px;font-weight:900;color:#24272d;word-break:break-word}
     .contact-directory-phone{font-size:13px;font-weight:850;color:#a63a68;white-space:nowrap}
     .contact-directory-empty{padding:26px 8px;text-align:center;color:#8a929d;font-size:13px;line-height:1.6}
+    .contact-directory-footer{padding:12px 18px 16px;border-top:1px solid #f0e5eb;background:#fff}
+    .contact-directory-apply{width:100%;min-height:44px;border:0;border-radius:12px;background:#a63a68;color:#fff;font-size:14px;font-weight:900;cursor:pointer}
+    .contact-directory-apply:disabled{background:#d9dce2;color:#fff;cursor:not-allowed}
 
     .draft-clean-wrap{
       display:flex;
@@ -2878,8 +2887,10 @@
       var additionalRequesterContactExclusions = [];
       var requesterContactLookupKey = '';
       var contactDirectoryTarget = null;
-      var contactDirectorySearchTimer = null;
       var contactDirectoryItems = [];
+      var contactDirectorySelectedItems = [];
+      var contactDirectorySearchPending = false;
+      var contactDirectorySearchRequestId = 0;
       var summaryHelperBtn = document.getElementById('summaryHelperBtn');
       var summaryHelperModal = document.getElementById('summaryHelperModal');
       var summaryHelperCloseBtn = document.getElementById('summaryHelperCloseBtn');
@@ -3923,18 +3934,25 @@
         modal.className='contact-directory-modal';
         modal.innerHTML='<div class="contact-directory-panel" role="dialog" aria-modal="true" aria-labelledby="contactDirectoryTitle">'+
           '<div class="contact-directory-head"><div class="contact-directory-title" id="contactDirectoryTitle">연락처 검색</div><button type="button" class="contact-directory-close" data-contact-directory-close aria-label="닫기">×</button></div>'+
-          '<div class="contact-directory-search-wrap"><input class="contact-directory-search-input" id="contactDirectorySearchInput" placeholder="이름 또는 전화번호 검색" autocomplete="off"></div>'+
-          '<div class="contact-directory-results" id="contactDirectoryResults"><div class="contact-directory-empty">검색어를 입력하세요.</div></div></div>';
+          '<div class="contact-directory-search-wrap"><input class="contact-directory-search-input" id="contactDirectorySearchInput" placeholder="이름 또는 전화번호 검색" autocomplete="off"><button type="button" class="contact-directory-submit" id="contactDirectorySubmitBtn">검색</button></div>'+
+          '<div class="contact-directory-results" id="contactDirectoryResults"><div class="contact-directory-empty">검색어를 입력하세요.</div></div>'+
+          '<div class="contact-directory-footer"><button type="button" class="contact-directory-apply" id="contactDirectoryApplyBtn" disabled>선택 완료</button></div></div>';
         document.body.appendChild(modal);
         modal.addEventListener('click',function(event){
           if(event.target===modal || event.target.closest('[data-contact-directory-close]')) closeContactDirectoryModal_();
           var result=event.target.closest('[data-contact-directory-result]');
-          if(result) applyContactDirectoryResult_(contactDirectoryItems[Number(result.dataset.contactDirectoryResult)]);
+          if(result) toggleContactDirectoryResult_(Number(result.dataset.contactDirectoryResult),result);
         });
-        modal.querySelector('#contactDirectorySearchInput').addEventListener('input',function(event){
-          clearTimeout(contactDirectorySearchTimer);
-          var query=String(event.target.value || '').trim();
-          contactDirectorySearchTimer=setTimeout(function(){ searchContactDirectory_(query); },250);
+        modal.querySelector('#contactDirectorySubmitBtn').addEventListener('click',function(){
+          searchContactDirectory_(String(modal.querySelector('#contactDirectorySearchInput').value || '').trim());
+        });
+        modal.querySelector('#contactDirectorySearchInput').addEventListener('keydown',function(event){
+          if(event.key !== 'Enter') return;
+          event.preventDefault();
+          modal.querySelector('#contactDirectorySubmitBtn').click();
+        });
+        modal.querySelector('#contactDirectoryApplyBtn').addEventListener('click',function(){
+          applyContactDirectoryResults_(contactDirectorySelectedItems.slice());
         });
         return modal;
       }
@@ -3942,59 +3960,126 @@
       function openContactDirectoryModal_(target){
         contactDirectoryTarget=target;
         contactDirectoryItems=[];
+        contactDirectorySelectedItems=[];
         var modal=ensureContactDirectoryModal_();
         var input=modal.querySelector('#contactDirectorySearchInput');
+        var submit=modal.querySelector('#contactDirectorySubmitBtn');
         var results=modal.querySelector('#contactDirectoryResults');
         input.value='';
+        input.disabled=false;
+        submit.disabled=false;
+        contactDirectorySearchPending=false;
         results.innerHTML='<div class="contact-directory-empty">검색어를 입력하세요.</div>';
         modal.classList.add('show');
+        updateContactDirectoryApply_();
         setTimeout(function(){ input.focus(); },0);
       }
 
       function closeContactDirectoryModal_(){
         var modal=document.getElementById('contactDirectoryModal');
         if(modal) modal.classList.remove('show');
+        var input=document.getElementById('contactDirectorySearchInput');
+        var submit=document.getElementById('contactDirectorySubmitBtn');
+        if(input) input.disabled=false;
+        if(submit) submit.disabled=false;
+        contactDirectorySearchRequestId+=1;
+        contactDirectorySearchPending=false;
         contactDirectoryTarget=null;
         contactDirectoryItems=[];
+        contactDirectorySelectedItems=[];
+        updateContactDirectoryApply_();
       }
 
       function searchContactDirectory_(query){
         var results=document.getElementById('contactDirectoryResults');
         var input=document.getElementById('contactDirectorySearchInput');
+        var submit=document.getElementById('contactDirectorySubmitBtn');
         if(!results) return;
-        if(!query){ contactDirectoryItems=[]; results.innerHTML='<div class="contact-directory-empty">검색어를 입력하세요.</div>'; return; }
+        if(contactDirectorySearchPending) return;
+        if(!query){ contactDirectoryItems=[]; contactDirectorySelectedItems=[]; updateContactDirectoryApply_(); results.innerHTML='<div class="contact-directory-empty">검색어를 입력하세요.</div>'; return; }
+        var requestId=++contactDirectorySearchRequestId;
+        contactDirectorySearchPending=true;
+        contactDirectorySelectedItems=[];
+        updateContactDirectoryApply_();
+        if(input) input.disabled=true;
+        if(submit) submit.disabled=true;
         results.innerHTML='<div class="contact-directory-empty">검색 중...</div>';
         fetchJsonFromGas_({action:'searchSyncedContacts',query:query,limit:30})
           .then(function(data){
+            if(requestId !== contactDirectorySearchRequestId) return;
             if(String(input && input.value || '').trim() !== query) return;
             contactDirectoryItems=Array.isArray(data && data.items) ? data.items : [];
             results.innerHTML=contactDirectoryItems.length ? contactDirectoryItems.map(function(item,index){
-              return '<button type="button" class="contact-directory-result" data-contact-directory-result="'+index+'"><span class="contact-directory-name">'+escapeHtml_(item.displayName || '이름 없음')+'</span><span class="contact-directory-phone">'+escapeHtml_(item.phone || '')+'</span></button>';
+              return '<button type="button" class="contact-directory-result" data-contact-directory-result="'+index+'"><span class="contact-directory-check">✓</span><span class="contact-directory-name">'+escapeHtml_(item.displayName || '이름 없음')+'</span><span class="contact-directory-phone">'+escapeHtml_(item.phone || '')+'</span></button>';
             }).join('') : '<div class="contact-directory-empty">검색 결과가 없습니다.</div>';
           })
           .catch(function(){
+            if(requestId !== contactDirectorySearchRequestId) return;
             if(String(input && input.value || '').trim() === query){
               results.innerHTML='<div class="contact-directory-empty">연락처를 불러오지 못했습니다.</div>';
             }
+          })
+          .finally(function(){
+            if(requestId !== contactDirectorySearchRequestId) return;
+            contactDirectorySearchPending=false;
+            if(input){
+              input.disabled=false;
+              input.focus();
+            }
+            if(submit) submit.disabled=false;
+            updateContactDirectoryApply_();
           });
       }
 
-      function applyContactDirectoryResult_(item){
-        if(!contactDirectoryTarget) return;
+      function updateContactDirectoryApply_(){
+        var apply=document.getElementById('contactDirectoryApplyBtn');
+        if(!apply) return;
+        apply.disabled=contactDirectorySearchPending || !contactDirectorySelectedItems.length;
+        apply.textContent=contactDirectorySelectedItems.length ? '선택 완료 ('+contactDirectorySelectedItems.length+')' : '선택 완료';
+      }
+
+      function toggleContactDirectoryResult_(index,result){
+        var item=contactDirectoryItems[index];
+        if(!item || contactDirectorySearchPending) return;
+        var selectedIndex=contactDirectorySelectedItems.indexOf(item);
+        if(contactDirectoryTarget && contactDirectoryTarget.type==='requester'){
+          document.querySelectorAll('#contactDirectoryResults .contact-directory-result').forEach(function(button){ button.classList.remove('selected'); });
+          contactDirectorySelectedItems=selectedIndex >= 0 ? [] : [item];
+          if(result && selectedIndex < 0) result.classList.add('selected');
+        }else{
+          if(selectedIndex >= 0) contactDirectorySelectedItems.splice(selectedIndex,1);
+          else contactDirectorySelectedItems.push(item);
+          if(result) result.classList.toggle('selected',selectedIndex < 0);
+        }
+        updateContactDirectoryApply_();
+      }
+
+      function applyContactDirectoryResults_(items){
+        if(!contactDirectoryTarget || !Array.isArray(items) || !items.length) return;
+        var first=items[0];
+        var additional=contactDirectoryTarget.type==='requester' ? [] : items.slice(1);
         if(contactDirectoryTarget.type==='requester'){
-          setRequesterFieldValue_('의뢰인명',item.displayName || '');
-          setRequesterFieldValue_('연락처',item.phone || '');
-          requesterContactLookupKey=String(item.contactLookupKey || '').trim();
+          setRequesterFieldValue_('의뢰인명',first.displayName || '');
+          setRequesterFieldValue_('연락처',first.phone || '');
+          requesterContactLookupKey=String(first.contactLookupKey || '').trim();
           updateTopFields();
         }else if(contactDirectoryTarget.type==='additional'){
           var index=Number(contactDirectoryTarget.index);
           if(!additionalRequesterContacts[index]) return;
-          additionalRequesterContacts[index].displayName=String(item.displayName || '').trim();
-          additionalRequesterContacts[index].phone=normalizePhoneTextForPayload_(item.phone || '');
-          additionalRequesterContacts[index].contactLookupKey=String(item.contactLookupKey || '').trim();
+          additionalRequesterContacts[index].displayName=String(first.displayName || '').trim();
+          additionalRequesterContacts[index].phone=normalizePhoneTextForPayload_(first.phone || '');
+          additionalRequesterContacts[index].contactLookupKey=String(first.contactLookupKey || '').trim();
           additionalRequesterContacts[index].source='MANUAL';
-          renderAdditionalRequesterContacts_();
         }
+        additional.forEach(function(item){
+          additionalRequesterContacts.push(normalizeAdditionalContact_({
+            contactLookupKey:item.contactLookupKey,
+            displayName:item.displayName,
+            phone:item.phone,
+            source:'MANUAL'
+          }));
+        });
+        renderAdditionalRequesterContacts_();
         queueSave();
         closeContactDirectoryModal_();
       }

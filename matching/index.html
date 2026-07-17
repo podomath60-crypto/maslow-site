@@ -201,7 +201,7 @@
     .project-line:last-child{border-bottom:none}
     .additional-contact-wrap{display:grid;gap:5px;margin-top:7px}
     .additional-contact-list{display:grid;gap:5px}
-    .additional-contact-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto;gap:5px;align-items:center;min-height:33px;padding:4px 5px;border:1px solid #dce8f2;background:#f2f8fc}
+    .additional-contact-card{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(105px,.72fr) auto auto;gap:5px;align-items:center;min-height:33px;padding:4px 5px;border:1px solid #dce8f2;background:#f2f8fc}
     .additional-contact-source{color:#0f64b5;font-size:9px;font-weight:1000;white-space:nowrap}
     .additional-contact-source.agent{color:#b42361}
     .additional-contact-search{min-height:24px;border:1px solid #e2b8ca;border-radius:8px;background:#fff7fb;color:#a63a68;padding:0 8px;font-size:9px;font-weight:1000;white-space:nowrap;cursor:pointer}
@@ -214,15 +214,24 @@
     .contact-directory-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 10px}
     .contact-directory-title{font-size:19px;font-weight:1000;color:#111318}
     .contact-directory-close{width:32px;height:32px;border:0;background:transparent;color:#667085;font-size:24px;cursor:pointer}
-    .contact-directory-search-wrap{padding:0 18px 12px}
+    .contact-directory-search-wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:0 18px 12px}
     .contact-directory-search-input{width:100%;min-height:46px;border:1.5px solid #d9c3d1;border-radius:12px;padding:0 14px;background:#fff;color:#111318;font-size:15px;outline:none}
     .contact-directory-search-input:focus{border-color:#a63a68;box-shadow:0 0 0 3px rgba(166,58,104,.1)}
+    .contact-directory-search-input:disabled{background:#f3f4f6;color:#98a2b3;cursor:wait}
+    .contact-directory-submit{min-width:68px;border:1px solid #a63a68;border-radius:12px;background:#a63a68;color:#fff;font-size:14px;font-weight:1000;cursor:pointer}
+    .contact-directory-submit:disabled{border-color:#cbd0d8;background:#cbd0d8;color:#fff;cursor:wait}
     .contact-directory-results{display:grid;gap:6px;overflow:auto;padding:0 18px 18px}
-    .contact-directory-result{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:12px 13px;border:1px solid #eadde5;border-radius:12px;background:#fff;text-align:left;cursor:pointer}
+    .contact-directory-result{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:12px 13px;border:1px solid #eadde5;border-radius:12px;background:#fff;text-align:left;cursor:pointer}
     .contact-directory-result:hover{border-color:#c780a0;background:#fff8fb}
+    .contact-directory-result.selected{border-color:#a63a68;background:#fff0f6;box-shadow:0 0 0 2px rgba(166,58,104,.1)}
+    .contact-directory-check{display:flex;width:18px;height:18px;align-items:center;justify-content:center;border:1px solid #d7c2cd;border-radius:5px;background:#fff;color:transparent;font-size:12px;font-weight:1000}
+    .contact-directory-result.selected .contact-directory-check{border-color:#a63a68;background:#a63a68;color:#fff}
     .contact-directory-name{font-size:14px;font-weight:1000;color:#24272d;word-break:break-word}
     .contact-directory-phone{font-size:13px;font-weight:900;color:#a63a68;white-space:nowrap}
     .contact-directory-empty{padding:26px 8px;text-align:center;color:#8a929d;font-size:13px;line-height:1.6}
+    .contact-directory-footer{padding:12px 18px 16px;border-top:1px solid #f0e5eb;background:#fff}
+    .contact-directory-apply{width:100%;min-height:44px;border:0;border-radius:12px;background:#a63a68;color:#fff;font-size:14px;font-weight:1000;cursor:pointer}
+    .contact-directory-apply:disabled{background:#d9dce2;color:#fff;cursor:not-allowed}
     .homepage-field-wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
     .homepage-open-btn{min-height:24px;border:1px solid #dbe5ee;border-radius:999px;background:#fff;color:#475569;font-size:11px;font-weight:1000;padding:0 9px;white-space:nowrap;cursor:pointer}
     .homepage-open-btn:hover{border-color:#0f7cff;color:#0f64d8;background:#eef5ff}
@@ -881,8 +890,10 @@
     const PUBLIC_PROPERTY_GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
     let dirty = false;
     let contactDirectoryTarget = null;
-    let contactDirectorySearchTimer = null;
     let contactDirectoryItems = [];
+    let contactDirectorySelectedItems = [];
+    let contactDirectorySearchPending = false;
+    let contactDirectorySearchRequestId = 0;
 
     function clone(v){ return structuredClone(v); }
     function markChange(label){ undoStack.push({label, before:clone(state), time:new Date().toISOString()}); if(undoStack.length>100) undoStack.shift(); redoStack=[]; dirty=true; persistUndo(); updateSaveState(); }
@@ -1609,81 +1620,154 @@
       modal.className='contact-directory-modal';
       modal.innerHTML=`<div class="contact-directory-panel" role="dialog" aria-modal="true" aria-labelledby="contactDirectoryTitle">
         <div class="contact-directory-head"><div class="contact-directory-title" id="contactDirectoryTitle">연락처 검색</div><button type="button" class="contact-directory-close" data-contact-directory-close aria-label="닫기">×</button></div>
-        <div class="contact-directory-search-wrap"><input class="contact-directory-search-input" id="contactDirectorySearchInput" placeholder="이름 또는 전화번호 검색" autocomplete="off"></div>
+        <div class="contact-directory-search-wrap"><input class="contact-directory-search-input" id="contactDirectorySearchInput" placeholder="이름 또는 전화번호 검색" autocomplete="off"><button type="button" class="contact-directory-submit" id="contactDirectorySubmitBtn">검색</button></div>
         <div class="contact-directory-results" id="contactDirectoryResults"><div class="contact-directory-empty">검색어를 입력하세요.</div></div>
+        <div class="contact-directory-footer"><button type="button" class="contact-directory-apply" id="contactDirectoryApplyBtn" disabled>선택 완료</button></div>
       </div>`;
       document.body.appendChild(modal);
       modal.addEventListener('click',event=>{
         if(event.target===modal || event.target.closest('[data-contact-directory-close]')) closeContactDirectoryModal();
         const result=event.target.closest('[data-contact-directory-result]');
-        if(result) applyContactDirectoryResult(contactDirectoryItems[Number(result.dataset.contactDirectoryResult)]);
+        if(result) toggleContactDirectoryResult(Number(result.dataset.contactDirectoryResult),result);
       });
-      modal.querySelector('#contactDirectorySearchInput')?.addEventListener('input',event=>{
-        clearTimeout(contactDirectorySearchTimer);
-        const query=String(event.target.value || '').trim();
-        contactDirectorySearchTimer=setTimeout(()=>searchContactDirectory(query),250);
+      modal.querySelector('#contactDirectorySubmitBtn')?.addEventListener('click',()=>{
+        searchContactDirectory(String(modal.querySelector('#contactDirectorySearchInput')?.value || '').trim());
+      });
+      modal.querySelector('#contactDirectorySearchInput')?.addEventListener('keydown',event=>{
+        if(event.key!=='Enter') return;
+        event.preventDefault();
+        modal.querySelector('#contactDirectorySubmitBtn')?.click();
+      });
+      modal.querySelector('#contactDirectoryApplyBtn')?.addEventListener('click',()=>{
+        applyContactDirectoryResults(contactDirectorySelectedItems.slice());
       });
       return modal;
     }
     function openContactDirectoryModal(target){
       contactDirectoryTarget=target;
       contactDirectoryItems=[];
+      contactDirectorySelectedItems=[];
       const modal=ensureContactDirectoryModal();
       const input=modal.querySelector('#contactDirectorySearchInput');
+      const submit=modal.querySelector('#contactDirectorySubmitBtn');
       const results=modal.querySelector('#contactDirectoryResults');
       input.value='';
+      input.disabled=false;
+      submit.disabled=false;
+      contactDirectorySearchPending=false;
       results.innerHTML='<div class="contact-directory-empty">검색어를 입력하세요.</div>';
       modal.classList.add('show');
+      updateContactDirectoryApply();
       setTimeout(()=>input.focus(),0);
     }
     function closeContactDirectoryModal(){
       document.getElementById('contactDirectoryModal')?.classList.remove('show');
+      const input=document.getElementById('contactDirectorySearchInput');
+      const submit=document.getElementById('contactDirectorySubmitBtn');
+      if(input) input.disabled=false;
+      if(submit) submit.disabled=false;
+      contactDirectorySearchRequestId+=1;
+      contactDirectorySearchPending=false;
       contactDirectoryTarget=null;
       contactDirectoryItems=[];
+      contactDirectorySelectedItems=[];
+      updateContactDirectoryApply();
     }
     function searchContactDirectory(query){
       const modal=document.getElementById('contactDirectoryModal');
       const input=modal?.querySelector('#contactDirectorySearchInput');
+      const submit=modal?.querySelector('#contactDirectorySubmitBtn');
       const results=modal?.querySelector('#contactDirectoryResults');
       if(!results) return;
+      if(contactDirectorySearchPending) return;
       if(!query){
         contactDirectoryItems=[];
+        contactDirectorySelectedItems=[];
+        updateContactDirectoryApply();
         results.innerHTML='<div class="contact-directory-empty">검색어를 입력하세요.</div>';
         return;
       }
+      const requestId=++contactDirectorySearchRequestId;
+      contactDirectorySearchPending=true;
+      contactDirectorySelectedItems=[];
+      updateContactDirectoryApply();
+      if(input) input.disabled=true;
+      if(submit) submit.disabled=true;
       results.innerHTML='<div class="contact-directory-empty">검색 중...</div>';
       gasPost('searchSyncedContacts',{query,limit:30}).then(data=>{
+        if(requestId!==contactDirectorySearchRequestId) return;
         if(String(input?.value || '').trim()!==query) return;
         contactDirectoryItems=Array.isArray(data?.items) ? data.items : [];
         results.innerHTML=contactDirectoryItems.length ? contactDirectoryItems.map((item,index)=>
-          `<button type="button" class="contact-directory-result" data-contact-directory-result="${index}"><span class="contact-directory-name">${projectContactAttr(item.displayName || '이름 없음')}</span><span class="contact-directory-phone">${projectContactAttr(item.phone || '')}</span></button>`
+          `<button type="button" class="contact-directory-result" data-contact-directory-result="${index}"><span class="contact-directory-check">✓</span><span class="contact-directory-name">${projectContactAttr(item.displayName || '이름 없음')}</span><span class="contact-directory-phone">${projectContactAttr(item.phone || '')}</span></button>`
         ).join('') : '<div class="contact-directory-empty">검색 결과가 없습니다.</div>';
       }).catch(()=>{
+        if(requestId!==contactDirectorySearchRequestId) return;
         if(String(input?.value || '').trim()===query) results.innerHTML='<div class="contact-directory-empty">연락처를 불러오지 못했습니다.</div>';
+      }).finally(()=>{
+        if(requestId!==contactDirectorySearchRequestId) return;
+        contactDirectorySearchPending=false;
+        if(input){
+          input.disabled=false;
+          input.focus();
+        }
+        if(submit) submit.disabled=false;
+        updateContactDirectoryApply();
       });
     }
-    function applyContactDirectoryResult(item){
-      if(!item || !contactDirectoryTarget) return;
+    function updateContactDirectoryApply(){
+      const apply=document.getElementById('contactDirectoryApplyBtn');
+      if(!apply) return;
+      apply.disabled=contactDirectorySearchPending || !contactDirectorySelectedItems.length;
+      apply.textContent=contactDirectorySelectedItems.length ? `선택 완료 (${contactDirectorySelectedItems.length})` : '선택 완료';
+    }
+    function toggleContactDirectoryResult(index,result){
+      const item=contactDirectoryItems[index];
+      if(!item || contactDirectorySearchPending) return;
+      const selectedIndex=contactDirectorySelectedItems.indexOf(item);
+      if(contactDirectoryTarget?.type==='primary'){
+        document.querySelectorAll('#contactDirectoryResults .contact-directory-result').forEach(button=>button.classList.remove('selected'));
+        contactDirectorySelectedItems=selectedIndex>=0 ? [] : [item];
+        if(result && selectedIndex<0) result.classList.add('selected');
+      }else{
+        if(selectedIndex>=0) contactDirectorySelectedItems.splice(selectedIndex,1);
+        else contactDirectorySelectedItems.push(item);
+        result?.classList.toggle('selected',selectedIndex<0);
+      }
+      updateContactDirectoryApply();
+    }
+    function applyContactDirectoryResults(items){
+      if(!Array.isArray(items) || !items.length || !contactDirectoryTarget) return;
       if(contactDirectoryTarget.type==='additional'){
         const targetIndex=Number(contactDirectoryTarget.index);
         if(!Number.isInteger(targetIndex) || !state.project.additionalContacts[targetIndex]) return;
       }
+      const first=items[0];
+      const additional=contactDirectoryTarget.type==='primary' ? [] : items.slice(1);
       markChange('연락처 선택');
       if(contactDirectoryTarget.type==='primary'){
-        state.project.clientName=String(item.displayName || '').trim();
-        state.project.phone=String(item.phone || '').trim();
-        state.project.primaryContactLookupKey=String(item.contactLookupKey || '').trim();
+        state.project.clientName=String(first.displayName || '').trim();
+        state.project.phone=String(first.phone || '').trim();
+        state.project.primaryContactLookupKey=String(first.contactLookupKey || '').trim();
       }else if(contactDirectoryTarget.type==='additional'){
         const index=Number(contactDirectoryTarget.index);
         const current=state.project.additionalContacts[index];
         state.project.additionalContacts[index]=normalizeProjectAdditionalContact({
           personId:current.personId,
+          contactLookupKey:first.contactLookupKey,
+          displayName:first.displayName,
+          phone:first.phone,
+          source:'USER'
+        });
+      }
+      additional.forEach(item=>{
+        state.project.additionalContacts.push(normalizeProjectAdditionalContact({
           contactLookupKey:item.contactLookupKey,
           displayName:item.displayName,
           phone:item.phone,
           source:'USER'
-        });
-      }
+        }));
+      });
       renderProject();
       closeContactDirectoryModal();
     }

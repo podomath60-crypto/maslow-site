@@ -1408,11 +1408,27 @@
     .additional-contact-card{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(150px,1.2fr) auto auto;gap:7px;align-items:center;padding:7px 9px;border:1px solid #e6d3df;border-radius:10px;background:#fff}
     .additional-contact-source{color:#0f64b5;font-size:10px;font-weight:900;white-space:nowrap}
     .additional-contact-source.agent{color:#b42361}
+    .additional-contact-search{border:1px solid #d9c3d1;border-radius:9px;background:#fff7fb;color:#a63a68;font-size:11px;font-weight:900;padding:7px 9px;white-space:nowrap;cursor:pointer}
     .additional-contact-grid{display:contents}
     .additional-contact-field{width:100%;min-height:42px;padding:10px 12px;border:1px solid #ded3da;border-radius:11px;background:#fff;color:#23262b;font:inherit;box-sizing:border-box}
     .additional-contact-add,.additional-contact-remove{border:1.5px solid #d9c3d1;border-radius:12px;background:#fff7fb;color:#a63a68;font-weight:900;padding:10px 14px;cursor:pointer}
     .additional-contact-remove{width:28px;height:28px;border:0;border-radius:0;padding:0;background:transparent;color:#8b526b;font-size:18px}
     @media(max-width:680px){.additional-contact-card{grid-template-columns:minmax(70px,.8fr) minmax(110px,1.2fr) auto auto}.additional-contact-field{min-height:36px;padding:7px 8px;font-size:12px}.additional-contact-source{font-size:9px}}
+    .contact-directory-modal{position:fixed;inset:0;z-index:10020;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.46)}
+    .contact-directory-modal.show{display:flex}
+    .contact-directory-panel{width:min(520px,100%);max-height:min(720px,86vh);display:flex;flex-direction:column;overflow:hidden;border-radius:20px;background:#fff;box-shadow:0 24px 70px rgba(15,23,42,.24)}
+    .contact-directory-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 10px}
+    .contact-directory-title{font-size:19px;font-weight:950;color:#111318}
+    .contact-directory-close{width:32px;height:32px;border:0;background:transparent;color:#667085;font-size:24px;cursor:pointer}
+    .contact-directory-search-wrap{padding:0 18px 12px}
+    .contact-directory-search-input{width:100%;min-height:46px;border:1.5px solid #d9c3d1;border-radius:12px;padding:0 14px;background:#fff;color:#111318;font-size:15px;outline:none}
+    .contact-directory-search-input:focus{border-color:#a63a68;box-shadow:0 0 0 3px rgba(166,58,104,.1)}
+    .contact-directory-results{display:grid;gap:6px;overflow:auto;padding:0 18px 18px}
+    .contact-directory-result{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:12px 13px;border:1px solid #eadde5;border-radius:12px;background:#fff;text-align:left;cursor:pointer}
+    .contact-directory-result:hover{border-color:#c780a0;background:#fff8fb}
+    .contact-directory-name{font-size:14px;font-weight:900;color:#24272d;word-break:break-word}
+    .contact-directory-phone{font-size:13px;font-weight:850;color:#a63a68;white-space:nowrap}
+    .contact-directory-empty{padding:26px 8px;text-align:center;color:#8a929d;font-size:13px;line-height:1.6}
 
     .draft-clean-wrap{
       display:flex;
@@ -2860,6 +2876,10 @@
       var additionalRequesterContactAddBtn = document.getElementById('additionalRequesterContactAddBtn');
       var additionalRequesterContacts = [];
       var additionalRequesterContactExclusions = [];
+      var requesterContactLookupKey = '';
+      var contactDirectoryTarget = null;
+      var contactDirectorySearchTimer = null;
+      var contactDirectoryItems = [];
       var summaryHelperBtn = document.getElementById('summaryHelperBtn');
       var summaryHelperModal = document.getElementById('summaryHelperModal');
       var summaryHelperCloseBtn = document.getElementById('summaryHelperCloseBtn');
@@ -3745,6 +3765,7 @@
         el.__phoneNormalizerBound = true;
         var timer = null;
         el.addEventListener('input', function(){
+          requesterContactLookupKey = '';
           clearTimeout(timer);
           timer = setTimeout(function(){
             normalizeRequesterPhoneField_(document.activeElement === el);
@@ -3787,14 +3808,17 @@
       }
 
       function rememberContactExclusion_(contact){
+        var source=String(contact && contact.source || '').trim().toUpperCase();
+        if(source !== 'CONTACT_SYNC' && source !== 'DEVICE_CONTACT') return;
         var lookupKey=String(contact && contact.contactLookupKey || '').trim();
-        var exclusions=lookupKey ? ['lookup:' + lookupKey] : [];
+        var exclusions=[];
         String(contact && contact.phone || '').split(/[\n,;|/]+/).forEach(function(phone){
           var digits=String(phone || '').replace(/\D/g, '');
           if(digits.indexOf('82') === 0) digits='0' + digits.slice(2);
           if(digits.length === 10 && digits.indexOf('10') === 0) digits='0' + digits;
           if(digits) exclusions.push('phone:' + digits);
         });
+        if(!exclusions.length && lookupKey) exclusions.push('lookup:' + lookupKey);
         exclusions.forEach(function(exclusion){
           if(additionalRequesterContactExclusions.indexOf(exclusion) < 0){
             additionalRequesterContactExclusions.push(exclusion);
@@ -3822,17 +3846,43 @@
         };
       }
 
+      function expandAdditionalContacts_(contacts){
+        var expanded=[];
+        (Array.isArray(contacts) ? contacts : []).forEach(function(contact){
+          var source=contact || {};
+          var phones=Array.isArray(source.phones) ? source.phones : String(source.phone || '').split(/[\n,;|/]+/).filter(Boolean);
+          if(!phones.length){
+            expanded.push(normalizeAdditionalContact_(source));
+            return;
+          }
+          phones.forEach(function(phone,index){
+            var phoneValue=String((phone && (phone.phone || phone.number || phone.value)) || phone || '').trim();
+            var splitSource=Object.assign({}, source, {
+              personId:String(source.personId || source.id || '') + (phones.length > 1 ? '-' + index : ''),
+              phones:[phoneValue],
+              phone:phoneValue
+            });
+            expanded.push(normalizeAdditionalContact_(splitSource));
+          });
+        });
+        return expanded;
+      }
+
       function renderAdditionalRequesterContacts_(){
         if(!additionalRequesterContactList) return;
+        additionalRequesterContacts=expandAdditionalContacts_(additionalRequesterContacts);
         additionalRequesterContactList.innerHTML=additionalRequesterContacts.map(function(contact,index){
           var source=String(contact.source || 'MANUAL').toUpperCase();
           var sourceClass=source === 'CONTACT_SYNC' || source === 'DEVICE_CONTACT' ? 'synced' : (source === 'AGENT' ? 'agent' : '');
           var sourceLabel=sourceClass === 'synced' ? 'AUTO Matching' : (sourceClass === 'agent' ? '에이전트 입력' : '');
+          var actionHtml=sourceLabel
+            ? '<span class="additional-contact-source '+sourceClass+'">'+sourceLabel+'</span>'
+            : '<button type="button" class="additional-contact-search" data-search-contact="'+index+'">연락처 검색</button>';
           return '<div class="additional-contact-card" data-contact-index="'+index+'">'+
             '<div class="additional-contact-grid">'+
               '<input class="additional-contact-field" data-contact-field="displayName" placeholder="이름" value="'+escapeHtml_(contact.displayName)+'">'+
               '<input class="additional-contact-field" data-contact-field="phone" placeholder="연락처" value="'+escapeHtml_(contact.phone)+'">'+
-            '</div>'+(sourceLabel ? '<span class="additional-contact-source '+sourceClass+'">'+sourceLabel+'</span>' : '<span></span>')+
+            '</div>'+actionHtml+
             '<button type="button" class="additional-contact-remove" data-remove-contact="'+index+'" aria-label="연락처 삭제">×</button></div>';
         }).join('');
       }
@@ -3840,9 +3890,10 @@
       function collectEntityContacts_(){
         var requester=collectRequester_();
         var primary={
+          contactLookupKey:requesterContactLookupKey,
           displayName:requester.name,
           role:requester.requestType,
-          phones:requester.phone ? requester.phone.split(/\s*\/\s*/).filter(Boolean) : [],
+          phones:requester.phone ? [requester.phone] : [],
           isPrimary:true,
           note:requester.note,
           source:'MANUAL'
@@ -3854,7 +3905,7 @@
             displayName:contact.displayName,
             organizationName:contact.organizationName,
             role:contact.role,
-            phones:contact.phone ? contact.phone.split(/\s*\/\s*/).filter(Boolean) : [],
+            phones:contact.phone ? [contact.phone] : [],
             isPrimary:false,
             note:contact.note,
             source:contact.source || 'MANUAL'
@@ -3862,6 +3913,90 @@
         })).filter(function(contact){
           return contact.displayName || contact.organizationName || contact.role || contact.note || contact.phones.length;
         });
+      }
+
+      function ensureContactDirectoryModal_(){
+        var modal=document.getElementById('contactDirectoryModal');
+        if(modal) return modal;
+        modal=document.createElement('div');
+        modal.id='contactDirectoryModal';
+        modal.className='contact-directory-modal';
+        modal.innerHTML='<div class="contact-directory-panel" role="dialog" aria-modal="true" aria-labelledby="contactDirectoryTitle">'+
+          '<div class="contact-directory-head"><div class="contact-directory-title" id="contactDirectoryTitle">연락처 검색</div><button type="button" class="contact-directory-close" data-contact-directory-close aria-label="닫기">×</button></div>'+
+          '<div class="contact-directory-search-wrap"><input class="contact-directory-search-input" id="contactDirectorySearchInput" placeholder="이름 또는 전화번호 검색" autocomplete="off"></div>'+
+          '<div class="contact-directory-results" id="contactDirectoryResults"><div class="contact-directory-empty">검색어를 입력하세요.</div></div></div>';
+        document.body.appendChild(modal);
+        modal.addEventListener('click',function(event){
+          if(event.target===modal || event.target.closest('[data-contact-directory-close]')) closeContactDirectoryModal_();
+          var result=event.target.closest('[data-contact-directory-result]');
+          if(result) applyContactDirectoryResult_(contactDirectoryItems[Number(result.dataset.contactDirectoryResult)]);
+        });
+        modal.querySelector('#contactDirectorySearchInput').addEventListener('input',function(event){
+          clearTimeout(contactDirectorySearchTimer);
+          var query=String(event.target.value || '').trim();
+          contactDirectorySearchTimer=setTimeout(function(){ searchContactDirectory_(query); },250);
+        });
+        return modal;
+      }
+
+      function openContactDirectoryModal_(target){
+        contactDirectoryTarget=target;
+        contactDirectoryItems=[];
+        var modal=ensureContactDirectoryModal_();
+        var input=modal.querySelector('#contactDirectorySearchInput');
+        var results=modal.querySelector('#contactDirectoryResults');
+        input.value='';
+        results.innerHTML='<div class="contact-directory-empty">검색어를 입력하세요.</div>';
+        modal.classList.add('show');
+        setTimeout(function(){ input.focus(); },0);
+      }
+
+      function closeContactDirectoryModal_(){
+        var modal=document.getElementById('contactDirectoryModal');
+        if(modal) modal.classList.remove('show');
+        contactDirectoryTarget=null;
+        contactDirectoryItems=[];
+      }
+
+      function searchContactDirectory_(query){
+        var results=document.getElementById('contactDirectoryResults');
+        var input=document.getElementById('contactDirectorySearchInput');
+        if(!results) return;
+        if(!query){ contactDirectoryItems=[]; results.innerHTML='<div class="contact-directory-empty">검색어를 입력하세요.</div>'; return; }
+        results.innerHTML='<div class="contact-directory-empty">검색 중...</div>';
+        fetchJsonFromGas_({action:'searchSyncedContacts',query:query,limit:30})
+          .then(function(data){
+            if(String(input && input.value || '').trim() !== query) return;
+            contactDirectoryItems=Array.isArray(data && data.items) ? data.items : [];
+            results.innerHTML=contactDirectoryItems.length ? contactDirectoryItems.map(function(item,index){
+              return '<button type="button" class="contact-directory-result" data-contact-directory-result="'+index+'"><span class="contact-directory-name">'+escapeHtml_(item.displayName || '이름 없음')+'</span><span class="contact-directory-phone">'+escapeHtml_(item.phone || '')+'</span></button>';
+            }).join('') : '<div class="contact-directory-empty">검색 결과가 없습니다.</div>';
+          })
+          .catch(function(){
+            if(String(input && input.value || '').trim() === query){
+              results.innerHTML='<div class="contact-directory-empty">연락처를 불러오지 못했습니다.</div>';
+            }
+          });
+      }
+
+      function applyContactDirectoryResult_(item){
+        if(!contactDirectoryTarget) return;
+        if(contactDirectoryTarget.type==='requester'){
+          setRequesterFieldValue_('의뢰인명',item.displayName || '');
+          setRequesterFieldValue_('연락처',item.phone || '');
+          requesterContactLookupKey=String(item.contactLookupKey || '').trim();
+          updateTopFields();
+        }else if(contactDirectoryTarget.type==='additional'){
+          var index=Number(contactDirectoryTarget.index);
+          if(!additionalRequesterContacts[index]) return;
+          additionalRequesterContacts[index].displayName=String(item.displayName || '').trim();
+          additionalRequesterContacts[index].phone=normalizePhoneTextForPayload_(item.phone || '');
+          additionalRequesterContacts[index].contactLookupKey=String(item.contactLookupKey || '').trim();
+          additionalRequesterContacts[index].source='MANUAL';
+          renderAdditionalRequesterContacts_();
+        }
+        queueSave();
+        closeContactDirectoryModal_();
       }
 
       function summaryTextForPayload_(el){
@@ -5270,7 +5405,20 @@
         var loadedContacts=parseContactsJson_(item.contactsJson);
         var primaryIndex=loadedContacts.findIndex(function(contact){ return contact && (contact.isPrimary === true || contact.isPrimary === 'true'); });
         if(primaryIndex < 0 && loadedContacts.length) primaryIndex=0;
-        additionalRequesterContacts=loadedContacts.filter(function(_contact,index){ return index !== primaryIndex; }).map(normalizeAdditionalContact_);
+        var loadedPrimary=primaryIndex >= 0 ? (loadedContacts[primaryIndex] || {}) : {};
+        var loadedPrimaryPhones=Array.isArray(loadedPrimary.phones) ? loadedPrimary.phones : [];
+        var loadedPrimaryExtraContacts=loadedPrimaryPhones.slice(1).map(function(phone,index){
+          return Object.assign({},loadedPrimary,{
+            personId:String(loadedPrimary.personId || 'primary') + '-extra-' + index,
+            isPrimary:false,
+            phones:[phone],
+            phone:String((phone && (phone.phone || phone.number || phone.value)) || phone || '').trim()
+          });
+        });
+        requesterContactLookupKey=String(loadedPrimary.contactLookupKey || '').trim();
+        additionalRequesterContacts=expandAdditionalContacts_(loadedPrimaryExtraContacts.concat(
+          loadedContacts.filter(function(_contact,index){ return index !== primaryIndex; })
+        ));
         additionalRequesterContactExclusions=normalizeContactExclusions_(item.contactMatchExclusionsJson);
         renderAdditionalRequesterContacts_();
 
@@ -8556,6 +8704,7 @@
         landParcels = [];
         additionalRequesterContacts = [];
         additionalRequesterContactExclusions = [];
+        requesterContactLookupKey = '';
         renderAdditionalRequesterContacts_();
         renderLandParcels_();
         resetEditorEnteredSession_();
@@ -8660,7 +8809,8 @@
           },
           landParcels: Array.isArray(landParcels) ? landParcels : [],
           additionalRequesterContacts: additionalRequesterContacts,
-          contactMatchExclusions: additionalRequesterContactExclusions
+          contactMatchExclusions: additionalRequesterContactExclusions,
+          requesterContactLookupKey: requesterContactLookupKey
         };
       }
 
@@ -8769,8 +8919,9 @@
             restoreEditables(data.editables || {});
             rentPriceState = data.rentPriceState || { deposit: '', monthly: '' };
             landParcels = normalizeLoadedLandParcels_(data.landParcels || []);
-            additionalRequesterContacts = Array.isArray(data.additionalRequesterContacts) ? data.additionalRequesterContacts.map(normalizeAdditionalContact_) : [];
+            additionalRequesterContacts = expandAdditionalContacts_(data.additionalRequesterContacts);
             additionalRequesterContactExclusions = normalizeContactExclusions_(data.contactMatchExclusions);
+            requesterContactLookupKey = String(data.requesterContactLookupKey || '').trim();
             renderAdditionalRequesterContacts_();
             renderLandParcels_();
             toggleFactorySectionByListingNumber_();
@@ -8801,7 +8952,7 @@
 
       if(requesterContactSearchBtn){
         requesterContactSearchBtn.addEventListener('click', function(){
-          pickRequesterContact_();
+          openContactDirectoryModal_({type:'requester'});
         });
       }
 
@@ -8823,9 +8974,15 @@
           if(field.dataset.contactField === 'phone') value=normalizePhoneTextForPayload_(value);
           additionalRequesterContacts[index][field.dataset.contactField]=value;
           additionalRequesterContacts[index].source='MANUAL';
+          if(field.dataset.contactField === 'phone') additionalRequesterContacts[index].contactLookupKey='';
           queueSave();
         });
         additionalRequesterContactList.addEventListener('click', function(event){
+          var searchButton=event.target.closest('[data-search-contact]');
+          if(searchButton){
+            openContactDirectoryModal_({type:'additional',index:Number(searchButton.dataset.searchContact)});
+            return;
+          }
           var button=event.target.closest('[data-remove-contact]');
           if(!button) return;
           var removedContact=additionalRequesterContacts[Number(button.dataset.removeContact)];
@@ -8886,6 +9043,8 @@
           selectedAddressSearchData = null;
           landParcels = [];
           additionalRequesterContacts = [];
+          additionalRequesterContactExclusions = [];
+          requesterContactLookupKey = '';
           renderAdditionalRequesterContacts_();
           renderLandParcels_();
           clearRentPriceState_();

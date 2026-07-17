@@ -190,6 +190,9 @@
     .project-col{padding:10px 14px 12px;display:grid;align-content:start;gap:2px;min-height:168px;min-width:0;border-right:1px solid #edf2f7;background:transparent}
     .project-col:last-child{border-right:none}
     .project-col-title{font-size:15px;font-weight:1000;color:#111318;letter-spacing:-.04em;margin:0 0 7px;padding-bottom:5px;border-bottom:2px solid #111318}
+    .project-col-title-with-action{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .contact-directory-search-btn{min-height:24px;border:1px solid #e2b8ca;border-radius:8px;background:#fff7fb;color:#a63a68;padding:0 9px;font-size:10px;font-weight:1000;white-space:nowrap;cursor:pointer}
+    .contact-directory-search-btn:hover{border-color:#ba5e86;background:#fff0f6}
     .project-contact-phone-row{display:grid;grid-template-columns:minmax(0,1fr) 19px;gap:4px;align-items:center}
     .project-contact-add{width:19px;height:19px;border:0;background:transparent;color:#64748b;padding:0;display:flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer}
     .project-contact-add:hover{color:#111318}
@@ -201,9 +204,25 @@
     .additional-contact-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto;gap:5px;align-items:center;min-height:33px;padding:4px 5px;border:1px solid #dce8f2;background:#f2f8fc}
     .additional-contact-source{color:#0f64b5;font-size:9px;font-weight:1000;white-space:nowrap}
     .additional-contact-source.agent{color:#b42361}
+    .additional-contact-search{min-height:24px;border:1px solid #e2b8ca;border-radius:8px;background:#fff7fb;color:#a63a68;padding:0 8px;font-size:9px;font-weight:1000;white-space:nowrap;cursor:pointer}
     .additional-contact-field{width:100%;min-width:0;min-height:25px;border:0;border-bottom:1px solid #e4eaf0;background:transparent;padding:2px 4px;font-size:11px;font-weight:850;color:#27303a;outline:none}
     .additional-contact-field:focus{border-color:#0f7cff;box-shadow:0 0 0 2px rgba(15,124,255,.1)}
     .additional-contact-remove{width:23px;height:23px;border:0;background:transparent;color:#a45555;font-size:16px;line-height:1;padding:0;cursor:pointer}
+    .contact-directory-modal{position:fixed;inset:0;z-index:10020;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.46)}
+    .contact-directory-modal.show{display:flex}
+    .contact-directory-panel{width:min(520px,100%);max-height:min(720px,86vh);display:flex;flex-direction:column;overflow:hidden;border-radius:20px;background:#fff;box-shadow:0 24px 70px rgba(15,23,42,.24)}
+    .contact-directory-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 10px}
+    .contact-directory-title{font-size:19px;font-weight:1000;color:#111318}
+    .contact-directory-close{width:32px;height:32px;border:0;background:transparent;color:#667085;font-size:24px;cursor:pointer}
+    .contact-directory-search-wrap{padding:0 18px 12px}
+    .contact-directory-search-input{width:100%;min-height:46px;border:1.5px solid #d9c3d1;border-radius:12px;padding:0 14px;background:#fff;color:#111318;font-size:15px;outline:none}
+    .contact-directory-search-input:focus{border-color:#a63a68;box-shadow:0 0 0 3px rgba(166,58,104,.1)}
+    .contact-directory-results{display:grid;gap:6px;overflow:auto;padding:0 18px 18px}
+    .contact-directory-result{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:12px 13px;border:1px solid #eadde5;border-radius:12px;background:#fff;text-align:left;cursor:pointer}
+    .contact-directory-result:hover{border-color:#c780a0;background:#fff8fb}
+    .contact-directory-name{font-size:14px;font-weight:1000;color:#24272d;word-break:break-word}
+    .contact-directory-phone{font-size:13px;font-weight:900;color:#a63a68;white-space:nowrap}
+    .contact-directory-empty{padding:26px 8px;text-align:center;color:#8a929d;font-size:13px;line-height:1.6}
     .homepage-field-wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
     .homepage-open-btn{min-height:24px;border:1px solid #dbe5ee;border-radius:999px;background:#fff;color:#475569;font-size:11px;font-weight:1000;padding:0 9px;white-space:nowrap;cursor:pointer}
     .homepage-open-btn:hover{border-color:#0f7cff;color:#0f64d8;background:#eef5ff}
@@ -603,7 +622,7 @@
             </div>
 
             <div class="project-col">
-              <div class="project-col-title">의뢰인</div>
+              <div class="project-col-title project-col-title-with-action"><span>의뢰인</span><button type="button" class="contact-directory-search-btn" id="projectPrimaryContactSearchBtn">연락처 검색</button></div>
               <div class="project-line">
                 <div class="inline-label">고객명</div>
                 <div class="inline-value" contenteditable="true" data-inline-field="clientName" data-placeholder="고객명 입력"></div>
@@ -822,7 +841,7 @@
     };
     const initialState = {
       project:{
-        projectId:'', title:'', status:'', inquiryDate:'', inquiryRoutes:[], inquiryRouteEtc:'', inquiryType:'', inquiryMemo:'', clientName:'', phone:'', companyName:'', clientCategory:'', requesterRelation:'', industry:'', homepageUrl:'',
+        projectId:'', title:'', status:'', inquiryDate:'', inquiryRoutes:[], inquiryRouteEtc:'', inquiryType:'', inquiryMemo:'', clientName:'', phone:'', primaryContactLookupKey:'', companyName:'', clientCategory:'', requesterRelation:'', industry:'', homepageUrl:'',
         dealType:'', budget:'', dealTypeMode:'any', saleEnabled:false, rentEnabled:false, saleBudgetMin:'', saleBudgetMax:'', salePriceMemo:'', rentDepositMin:'', rentDepositMax:'', rentMonthlyMin:'', rentMonthlyMax:'', rentPriceMemo:'',
         regions:'', usePurpose:'', land:'', building:'', areaSummary:'', coreNeeds:'', lastContact:'', nextAction:'', contactLogs:[], additionalContacts:[], contactMatchExclusions:[], businessCardTemps:[], businessCardsJson:''
       },
@@ -861,6 +880,9 @@
     const MATCHING_MAP_GEOCODE_CACHE_KEY = 'MATCHING_MAP_GEOCODE_CACHE_V1';
     const PUBLIC_PROPERTY_GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
     let dirty = false;
+    let contactDirectoryTarget = null;
+    let contactDirectorySearchTimer = null;
+    let contactDirectoryItems = [];
 
     function clone(v){ return structuredClone(v); }
     function markChange(label){ undoStack.push({label, before:clone(state), time:new Date().toISOString()}); if(undoStack.length>100) undoStack.shift(); redoStack=[]; dirty=true; persistUndo(); updateSaveState(); }
@@ -969,26 +991,48 @@
         displayName:String(source.displayName || source.name || '').trim(),
         organizationName:String(source.organizationName || source.companyName || '').trim(),
         roleLabel:String(source.roleLabel || source.role || '').trim(),
-        phone:projectContactPhones(source).join(', '),
+        phone:projectContactPhones(source)[0] || '',
         note:String(source.note || '').trim(),
         contactLookupKey:String(source.contactLookupKey || '').trim(),
         source:String(source.source || 'USER').trim()
       };
+    }
+    function expandProjectAdditionalContacts(contacts){
+      const expanded=[];
+      (Array.isArray(contacts) ? contacts : []).forEach(contact=>{
+        const source=contact || {};
+        const phones=projectContactPhones(source);
+        if(!phones.length){
+          expanded.push(normalizeProjectAdditionalContact(source));
+          return;
+        }
+        phones.forEach((phone,index)=>{
+          expanded.push(normalizeProjectAdditionalContact(Object.assign({},source,{
+            personId:`${String(source.personId || source.id || '')}${phones.length>1 ? `-${index}` : ''}`,
+            phones:[phone],
+            phone
+          })));
+        });
+      });
+      return expanded;
     }
     function normalizeProjectContactExclusions(value){
       const items=Array.isArray(value) ? value : safeParseArray(value);
       return Array.from(new Set(items.map(item=>String(item || '').trim()).filter(Boolean)));
     }
     function rememberProjectContactExclusion(contact){
+      const source=String(contact && contact.source || '').trim().toUpperCase();
+      if(source!=='CONTACT_SYNC' && source!=='DEVICE_CONTACT') return;
       const lookupKey=String(contact && contact.contactLookupKey || '').trim();
       if(!Array.isArray(state.project.contactMatchExclusions)) state.project.contactMatchExclusions=[];
-      const exclusions=lookupKey ? [`lookup:${lookupKey}`] : [];
+      const exclusions=[];
       projectContactPhones(contact).forEach(phone=>{
         let digits=String(phone || '').replace(/\D/g,'');
         if(digits.startsWith('82')) digits=`0${digits.slice(2)}`;
         if(digits.length===10 && digits.startsWith('10')) digits=`0${digits}`;
         if(digits) exclusions.push(`phone:${digits}`);
       });
+      if(!exclusions.length && lookupKey) exclusions.push(`lookup:${lookupKey}`);
       exclusions.forEach(exclusion=>{
         if(!state.project.contactMatchExclusions.includes(exclusion)) state.project.contactMatchExclusions.push(exclusion);
       });
@@ -999,16 +1043,20 @@
     function renderProjectAdditionalContacts(){
       const list=document.getElementById('projectAdditionalContactList');
       if(!list) return;
-      const contacts=Array.isArray(state.project.additionalContacts) ? state.project.additionalContacts : [];
+      const contacts=expandProjectAdditionalContacts(state.project.additionalContacts);
+      state.project.additionalContacts=contacts;
       list.innerHTML=contacts.map((contact,index)=>{
         const item=normalizeProjectAdditionalContact(contact);
         const source=String(item.source || 'USER').toUpperCase();
         const sourceClass=source==='CONTACT_SYNC' || source==='DEVICE_CONTACT' ? 'synced' : (source==='AGENT' ? 'agent' : '');
         const sourceLabel=sourceClass==='synced' ? 'AUTO Matching' : (sourceClass==='agent' ? '에이전트 입력' : '');
+        const actionHtml=sourceLabel
+          ? `<span class="additional-contact-source ${sourceClass}">${sourceLabel}</span>`
+          : `<button type="button" class="additional-contact-search" data-project-contact-search="${index}">연락처 검색</button>`;
         return `<div class="additional-contact-card" data-project-contact-index="${index}">
           <input class="additional-contact-field" data-project-contact-field="displayName" value="${projectContactAttr(item.displayName)}" placeholder="이름 · 간단한 설명">
           <input class="additional-contact-field" data-project-contact-field="phone" value="${projectContactAttr(item.phone)}" placeholder="전화번호">
-          ${sourceLabel ? `<span class="additional-contact-source ${sourceClass}">${sourceLabel}</span>` : '<span></span>'}
+          ${actionHtml}
           <button type="button" class="additional-contact-remove" data-project-contact-remove="${index}" aria-label="연락처 삭제">×</button>
         </div>`;
       }).join('');
@@ -1016,10 +1064,11 @@
     function collectProjectContacts(){
       const p=state.project || {};
       const contacts=[];
-      const primaryPhones=[p.phone,p.subPhone].map(value=>String(value || '').trim()).filter(Boolean);
+      const primaryPhones=[p.phone].map(value=>String(value || '').trim()).filter(Boolean);
       if(p.clientName || p.companyName || p.requesterRelation || primaryPhones.length){
         contacts.push({
           personId:'primary',
+          contactLookupKey:String(p.primaryContactLookupKey || '').trim(),
           displayName:String(p.clientName || '').trim(),
           organizationName:String(p.companyName || '').trim(),
           role:String(p.requesterRelation || '').trim(),
@@ -1037,7 +1086,7 @@
           displayName:item.displayName,
           organizationName:item.organizationName,
           role:item.roleLabel,
-          phones:item.phone.split(/[,\n]/).map(value=>value.trim()).filter(Boolean),
+          phones:item.phone ? [item.phone] : [],
           note:item.note,
           isPrimary:false,
           source:item.source || 'USER',
@@ -1552,6 +1601,92 @@
         body:JSON.stringify(Object.assign({action}, payload || {}))
       });
     }
+    function ensureContactDirectoryModal(){
+      let modal=document.getElementById('contactDirectoryModal');
+      if(modal) return modal;
+      modal=document.createElement('div');
+      modal.id='contactDirectoryModal';
+      modal.className='contact-directory-modal';
+      modal.innerHTML=`<div class="contact-directory-panel" role="dialog" aria-modal="true" aria-labelledby="contactDirectoryTitle">
+        <div class="contact-directory-head"><div class="contact-directory-title" id="contactDirectoryTitle">연락처 검색</div><button type="button" class="contact-directory-close" data-contact-directory-close aria-label="닫기">×</button></div>
+        <div class="contact-directory-search-wrap"><input class="contact-directory-search-input" id="contactDirectorySearchInput" placeholder="이름 또는 전화번호 검색" autocomplete="off"></div>
+        <div class="contact-directory-results" id="contactDirectoryResults"><div class="contact-directory-empty">검색어를 입력하세요.</div></div>
+      </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click',event=>{
+        if(event.target===modal || event.target.closest('[data-contact-directory-close]')) closeContactDirectoryModal();
+        const result=event.target.closest('[data-contact-directory-result]');
+        if(result) applyContactDirectoryResult(contactDirectoryItems[Number(result.dataset.contactDirectoryResult)]);
+      });
+      modal.querySelector('#contactDirectorySearchInput')?.addEventListener('input',event=>{
+        clearTimeout(contactDirectorySearchTimer);
+        const query=String(event.target.value || '').trim();
+        contactDirectorySearchTimer=setTimeout(()=>searchContactDirectory(query),250);
+      });
+      return modal;
+    }
+    function openContactDirectoryModal(target){
+      contactDirectoryTarget=target;
+      contactDirectoryItems=[];
+      const modal=ensureContactDirectoryModal();
+      const input=modal.querySelector('#contactDirectorySearchInput');
+      const results=modal.querySelector('#contactDirectoryResults');
+      input.value='';
+      results.innerHTML='<div class="contact-directory-empty">검색어를 입력하세요.</div>';
+      modal.classList.add('show');
+      setTimeout(()=>input.focus(),0);
+    }
+    function closeContactDirectoryModal(){
+      document.getElementById('contactDirectoryModal')?.classList.remove('show');
+      contactDirectoryTarget=null;
+      contactDirectoryItems=[];
+    }
+    function searchContactDirectory(query){
+      const modal=document.getElementById('contactDirectoryModal');
+      const input=modal?.querySelector('#contactDirectorySearchInput');
+      const results=modal?.querySelector('#contactDirectoryResults');
+      if(!results) return;
+      if(!query){
+        contactDirectoryItems=[];
+        results.innerHTML='<div class="contact-directory-empty">검색어를 입력하세요.</div>';
+        return;
+      }
+      results.innerHTML='<div class="contact-directory-empty">검색 중...</div>';
+      gasPost('searchSyncedContacts',{query,limit:30}).then(data=>{
+        if(String(input?.value || '').trim()!==query) return;
+        contactDirectoryItems=Array.isArray(data?.items) ? data.items : [];
+        results.innerHTML=contactDirectoryItems.length ? contactDirectoryItems.map((item,index)=>
+          `<button type="button" class="contact-directory-result" data-contact-directory-result="${index}"><span class="contact-directory-name">${projectContactAttr(item.displayName || '이름 없음')}</span><span class="contact-directory-phone">${projectContactAttr(item.phone || '')}</span></button>`
+        ).join('') : '<div class="contact-directory-empty">검색 결과가 없습니다.</div>';
+      }).catch(()=>{
+        if(String(input?.value || '').trim()===query) results.innerHTML='<div class="contact-directory-empty">연락처를 불러오지 못했습니다.</div>';
+      });
+    }
+    function applyContactDirectoryResult(item){
+      if(!item || !contactDirectoryTarget) return;
+      if(contactDirectoryTarget.type==='additional'){
+        const targetIndex=Number(contactDirectoryTarget.index);
+        if(!Number.isInteger(targetIndex) || !state.project.additionalContacts[targetIndex]) return;
+      }
+      markChange('연락처 선택');
+      if(contactDirectoryTarget.type==='primary'){
+        state.project.clientName=String(item.displayName || '').trim();
+        state.project.phone=String(item.phone || '').trim();
+        state.project.primaryContactLookupKey=String(item.contactLookupKey || '').trim();
+      }else if(contactDirectoryTarget.type==='additional'){
+        const index=Number(contactDirectoryTarget.index);
+        const current=state.project.additionalContacts[index];
+        state.project.additionalContacts[index]=normalizeProjectAdditionalContact({
+          personId:current.personId,
+          contactLookupKey:item.contactLookupKey,
+          displayName:item.displayName,
+          phone:item.phone,
+          source:'USER'
+        });
+      }
+      renderProject();
+      closeContactDirectoryModal();
+    }
     function currentWriterLabel(){
       const code=getUnlockedWriterCode ? getUnlockedWriterCode() : unlockedWriterCode;
       const meta=MATCHING_WRITER_META[code] || null;
@@ -1934,17 +2069,30 @@
       const savedContacts=safeParseArray(firstNonEmptyValue(record, ['contactsJson','contacts','관련연락처JSON']));
       if(savedContacts.length){
         const primaryIndex=Math.max(0, savedContacts.findIndex(contact=>contact && contact.isPrimary));
-        const primary=normalizeProjectAdditionalContact(savedContacts[primaryIndex]);
+        const primarySource=savedContacts[primaryIndex] || {};
+        const primary=normalizeProjectAdditionalContact(primarySource);
+        const primaryPhones=projectContactPhones(primarySource);
         restored.clientName=restored.clientName || primary.displayName;
         restored.companyName=restored.companyName || primary.organizationName;
         restored.requesterRelation=restored.requesterRelation || primary.roleLabel;
-        restored.phone=restored.phone || projectContactPhones(savedContacts[primaryIndex])[0] || '';
-        restored.subPhone=restored.subPhone || projectContactPhones(savedContacts[primaryIndex])[1] || '';
-        restored.additionalContacts=savedContacts
-          .filter((contact,index)=>index!==primaryIndex)
-          .map(normalizeProjectAdditionalContact);
+        restored.phone=restored.phone || primaryPhones[0] || '';
+        restored.primaryContactLookupKey=restored.primaryContactLookupKey || primary.contactLookupKey;
+        const primaryExtraPhones=primaryPhones.slice(1);
+        if(restored.subPhone && primaryExtraPhones.indexOf(restored.subPhone)<0) primaryExtraPhones.push(restored.subPhone);
+        const primaryExtraContacts=primaryExtraPhones.map((phone,index)=>Object.assign({},primarySource,{
+          personId:`${String(primarySource.personId || 'primary')}-extra-${index}`,
+          isPrimary:false,
+          phones:[phone],
+          phone
+        }));
+        restored.additionalContacts=expandProjectAdditionalContacts(primaryExtraContacts.concat(
+          savedContacts.filter((contact,index)=>index!==primaryIndex)
+        ));
+        restored.subPhone='';
       }else if(!Array.isArray(restored.additionalContacts)){
         restored.additionalContacts=[];
+      }else{
+        restored.additionalContacts=expandProjectAdditionalContacts(restored.additionalContacts);
       }
       restored.industry=restored.industry || firstNonEmptyValue(record, ['industryText','industry','업종']);
       restored.homepageUrl=restored.homepageUrl || firstNonEmptyValue(record, ['homepageUrl','homepage','website','websiteUrl','url','홈페이지']);
@@ -4367,6 +4515,9 @@
       renderProjectAdditionalContacts();
       document.querySelector('[data-project-contact-index]:last-child [data-project-contact-field="displayName"]')?.focus();
     });
+    document.getElementById('projectPrimaryContactSearchBtn')?.addEventListener('click',()=>{
+      openContactDirectoryModal({type:'primary'});
+    });
     document.getElementById('projectAdditionalContactList')?.addEventListener('input',e=>{
       const field=e.target.closest('[data-project-contact-field]');
       const card=e.target.closest('[data-project-contact-index]');
@@ -4375,8 +4526,14 @@
       if(!Number.isInteger(index) || !state.project.additionalContacts[index]) return;
       state.project.additionalContacts[index][field.dataset.projectContactField]=field.value;
       state.project.additionalContacts[index].source='USER';
+      if(field.dataset.projectContactField==='phone') state.project.additionalContacts[index].contactLookupKey='';
     });
     document.getElementById('projectAdditionalContactList')?.addEventListener('click',e=>{
+      const searchButton=e.target.closest('[data-project-contact-search]');
+      if(searchButton){
+        openContactDirectoryModal({type:'additional',index:Number(searchButton.dataset.projectContactSearch)});
+        return;
+      }
       const button=e.target.closest('[data-project-contact-remove]');
       if(!button) return;
       const index=Number(button.dataset.projectContactRemove);
@@ -4407,7 +4564,10 @@
       if(field===inlineBefore.field && value!==inlineBefore.value){
         markChange('프로젝트 정보 수정');
         if(field==='inquiryRoutesText') state.project.inquiryRoutes=value.split(',').map(x=>x.trim()).filter(Boolean);
-        else state.project[field]=value;
+        else{
+          state.project[field]=value;
+          if(field==='phone') state.project.primaryContactLookupKey='';
+        }
         if(['saleBudgetMin','saleBudgetMax','salePriceMemo','rentDepositMin','rentDepositMax','rentMonthlyMin','rentMonthlyMax','rentPriceMemo'].includes(field)) syncProjectDealFields();
         renderProject();
       }

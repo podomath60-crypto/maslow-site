@@ -2422,6 +2422,10 @@
         <button id="hanbangUploadBtn" type="button" class="hanbang-upload-btn" onclick="uploadCurrentListingToHanbang()" disabled>한방 업로드</button>
         <div id="hanbangBridgeStatus" class="hanbang-bridge-status" role="status" aria-live="polite">이 PC의 한방 연결을 확인합니다.</div>
       </div>
+      <div id="ownSiteUploadBox" class="hanbang-upload-box" style="display:none;">
+        <button id="ownSiteUploadBtn" type="button" class="hanbang-upload-btn" onclick="uploadCurrentListingToOwnSite()" disabled>매슬로사이트 업로드</button>
+        <div id="ownSiteBridgeStatus" class="hanbang-bridge-status" role="status" aria-live="polite">이 PC의 매슬로사이트 연결을 확인합니다.</div>
+      </div>
       <div class="channel-status-row">
         <label class="channel-radio"><input type="radio" name="channelDoneState" value="done"> <span>Done</span></label>
         <label class="channel-radio"><input type="radio" name="channelDoneState" value="notYet"> <span>Not yet</span></label>
@@ -2646,6 +2650,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       rfineUrl: 'https://new.rfine.kr/Pos/index.php',
       hanbangBridgeUrl: 'http://127.0.0.1:18765',
       hanbangBridgeMinimumVersion: '0.4.0',
+      ownSiteBridgeUrl: 'http://127.0.0.1:18766',
+      ownSiteBridgeMinimumVersion: '0.6.2',
       authStorageKey: 'MK_ADMIN_DASHBOARD_UNLOCKED_V1'
     };
 
@@ -2726,6 +2732,9 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     let hanbangActiveJobId = '';
     let hanbangJobPollTimer = null;
     let hanbangForceReupload = false;
+    let ownSiteActiveJobId = '';
+    let ownSiteJobPollTimer = null;
+    let ownSiteForceReupload = false;
     let dashboardStatusModalListingNumber = '';
     let dashboardStatusModalHistoryArmed = false;
 
@@ -4554,6 +4563,198 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         });
     }
 
+    function stopOwnSiteJobPolling(){
+      if(ownSiteJobPollTimer){
+        window.clearTimeout(ownSiteJobPollTimer);
+        ownSiteJobPollTimer = null;
+      }
+    }
+
+    function setOwnSiteBridgeUi(state, message, options){
+      const button = document.getElementById('ownSiteUploadBtn');
+      const status = document.getElementById('ownSiteBridgeStatus');
+      const opts = options || {};
+      if(status){
+        status.className = 'hanbang-bridge-status';
+        if(state === 'ready') status.classList.add('ready');
+        else if(state === 'checking' || state === 'working') status.classList.add('working');
+        else if(state === 'error' || state === 'blocked') status.classList.add('error');
+        status.textContent = message || '';
+      }
+      if(button){
+        button.disabled = state !== 'ready';
+        button.textContent = opts.buttonText || (state === 'working' ? '매슬로사이트 업로드 중…' : '매슬로사이트 업로드');
+      }
+    }
+
+    function fetchOwnSiteBridge(path, options, timeoutMs){
+      const controller = typeof AbortController === 'function' ? new AbortController() : null;
+      const timer = window.setTimeout(function(){ if(controller) controller.abort(); }, timeoutMs || 5000);
+      const requestOptions = Object.assign({ method:'GET', cache:'no-store', credentials:'omit' }, options || {});
+      if(controller) requestOptions.signal = controller.signal;
+      return fetch(CONFIG.ownSiteBridgeUrl + path, requestOptions)
+        .then(function(res){
+          return res.json().catch(function(){ return {}; }).then(function(data){
+            if(!res.ok){
+              const err = new Error(text(data && data.message) || ('매슬로사이트 브리지 오류: ' + res.status));
+              err.status = res.status;
+              err.data = data;
+              throw err;
+            }
+            return data;
+          });
+        })
+        .finally(function(){ window.clearTimeout(timer); });
+    }
+
+    function describeOwnSiteStage(job){
+      const stage = text(job && job.stage);
+      if(stage === 'queued') return '업로드 순서를 기다리고 있습니다.';
+      if(stage === 'mapping') return '매물 자료를 등록 화면 형식으로 변환하고 있습니다.';
+      if(stage === 'opening_form') return '신규 매물등록 화면을 준비하고 있습니다.';
+      if(stage === 'resolving_address') return '주소의 시/도·구/군·동/읍/면을 선택하고 있습니다.';
+      if(stage === 'downloading_photos') return '매물입력기의 원본 사진을 준비하고 있습니다.';
+      if(stage === 'uploading_photos') return '사진을 등록 화면에 올리고 있습니다.';
+      if(stage === 'creating_listing') return '매슬로우코리아.net에 신규 매물을 저장하고 있습니다.';
+      return text(job && job.message) || '매슬로사이트 업로드를 처리하고 있습니다.';
+    }
+
+    function isOwnSiteBridgeVersionSupported(version){
+      const actual = text(version).split('.').map(function(value){ return Number(value); });
+      const required = text(CONFIG.ownSiteBridgeMinimumVersion).split('.').map(function(value){ return Number(value); });
+      if(actual.length < 3 || required.length < 3 || actual.some(isNaN) || required.some(isNaN)) return false;
+      for(let index = 0; index < 3; index += 1){
+        if(actual[index] > required[index]) return true;
+        if(actual[index] < required[index]) return false;
+      }
+      return true;
+    }
+
+    function pollOwnSiteJob(jobId, listingNumber){
+      stopOwnSiteJobPolling();
+      fetchOwnSiteBridge('/v1/jobs/' + encodeURIComponent(jobId), null, 5000)
+        .then(function(result){
+          const job = result && result.job ? result.job : result;
+          if(!job || !job.id) throw new Error('매슬로사이트 작업 상태를 읽지 못했습니다.');
+          ownSiteActiveJobId = job.id;
+          if(job.state === 'completed'){
+            const siteItemId = text(job.siteItemId);
+            const siteUrl = text(job.siteUrl);
+            if(!siteItemId || !siteUrl){
+              ownSiteActiveJobId = '';
+              setOwnSiteBridgeUi('error', '등록된 사이트 매물번호 또는 주소를 확인하지 못했습니다.');
+              return;
+            }
+            setOwnSiteBridgeUi('working', text(job.message) || ('사이트 매물 ' + siteItemId + ' 등록 완료'), { buttonText:'등록 완료' });
+            ownSiteActiveJobId = '';
+            const link1 = document.getElementById('channelLink1');
+            const doneRadio = document.querySelector('input[name="channelDoneState"][value="done"]');
+            if(link1) link1.value = siteUrl;
+            if(doneRadio) doneRadio.checked = true;
+            updatePropertyChannel(listingNumber, 'ownSite', true, [siteUrl, '', '']);
+            return;
+          }
+          if(job.state === 'failed'){
+            ownSiteActiveJobId = '';
+            setOwnSiteBridgeUi('error', text(job.message) || '매슬로사이트 등록에 실패했습니다.');
+            return;
+          }
+          if(job.state === 'blocked'){
+            ownSiteActiveJobId = '';
+            setOwnSiteBridgeUi('blocked', text(job.message) || '자동 변환할 수 없는 매물입니다.');
+            return;
+          }
+          setOwnSiteBridgeUi('working', describeOwnSiteStage(job));
+          ownSiteJobPollTimer = window.setTimeout(function(){ pollOwnSiteJob(job.id, listingNumber); }, 1000);
+        })
+        .catch(function(err){
+          ownSiteActiveJobId = '';
+          setOwnSiteBridgeUi('error', err && err.name === 'AbortError'
+            ? '매슬로사이트 브리지 응답이 없습니다.'
+            : ((err && err.message) || '작업 상태 확인에 실패했습니다.'));
+        });
+    }
+
+    function checkOwnSiteBridge(listingNumber){
+      stopOwnSiteJobPolling();
+      ownSiteActiveJobId = '';
+      ownSiteForceReupload = false;
+      setOwnSiteBridgeUi('checking', '이 PC의 매슬로사이트 연결을 확인합니다.');
+      fetchOwnSiteBridge('/v1/health?listing_number=' + encodeURIComponent(listingNumber || ''), null, 2500)
+        .then(function(data){
+          if(!isOwnSiteBridgeVersionSupported(data && data.version)){
+            setOwnSiteBridgeUi('blocked', '구버전 브리지입니다. 매슬로사이트자동업로드_시작.cmd를 다시 실행해 주세요.');
+            return;
+          }
+          if(data.activeJob && data.activeJob.id){
+            ownSiteActiveJobId = data.activeJob.id;
+            setOwnSiteBridgeUi('working', describeOwnSiteStage(data.activeJob));
+            pollOwnSiteJob(data.activeJob.id, listingNumber);
+            return;
+          }
+          if(data.completedJob && data.completedJob.id && data.completedJob.siteItemId){
+            ownSiteForceReupload = true;
+            const siteUrl = text(data.completedJob.siteUrl);
+            setOwnSiteBridgeUi('ready', '기존 사이트 등록 완료 · 매물번호 ' + data.completedJob.siteItemId, { buttonText:'다시 업로드' });
+            const link1 = document.getElementById('channelLink1');
+            const doneRadio = document.querySelector('input[name="channelDoneState"][value="done"]');
+            if(link1 && siteUrl) link1.value = siteUrl;
+            if(doneRadio) doneRadio.checked = true;
+            const item = getItemByListingNumber(listingNumber);
+            const state = item ? getChannelStateByItem(item, 'ownSite') : { done:false };
+            if(!state.done && siteUrl) updatePropertyChannel(listingNumber, 'ownSite', true, [siteUrl, '', '']);
+            return;
+          }
+          if(data.engineReady === false){
+            setOwnSiteBridgeUi('blocked', text(data.engineMessage) || 'Google Chrome을 찾지 못했습니다.');
+            return;
+          }
+          setOwnSiteBridgeUi('ready', data.profileInitialized
+            ? '연결 완료 · 로그인 상태 확인 후 전체 정보와 사진을 등록합니다.'
+            : '연결 완료 · 매슬로우코리아.net에 로그인한 상태에서 업로드하세요.');
+        })
+        .catch(function(err){
+          setOwnSiteBridgeUi('error', err && err.name === 'AbortError'
+            ? '매슬로사이트 로컬 브리지가 응답하지 않습니다.'
+            : '매슬로사이트자동업로드_시작.cmd를 먼저 실행해 주세요.');
+        });
+    }
+
+    function uploadCurrentListingToOwnSite(){
+      const listingNumber = normalizeListingKey(channelModalListingNumber);
+      if(!listingNumber || channelModalChannelKey !== 'ownSite') return;
+      const forceReupload = ownSiteForceReupload === true;
+      if(forceReupload && !window.confirm('같은 매물을 매슬로우코리아.net에 새 매물로 다시 등록할까요?')) return;
+      stopOwnSiteJobPolling();
+      ownSiteForceReupload = false;
+      setOwnSiteBridgeUi('working', '매물입력기에서 전체 정보와 사진 목록을 가져옵니다.');
+      fetchFullAdminProperty(listingNumber)
+        .then(function(fullProperty){
+          return fetchOwnSiteBridge('/v1/jobs', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json;charset=UTF-8' },
+            body:JSON.stringify({
+              listingNumber:listingNumber,
+              listing:fullProperty,
+              requestedBy:text(unlockedUserName),
+              sourceOrigin:location.origin,
+              force:forceReupload
+            })
+          }, 15000);
+        })
+        .then(function(data){
+          const job = data && data.job ? data.job : data;
+          if(!job || !job.id) throw new Error('매슬로사이트 작업번호를 받지 못했습니다.');
+          ownSiteActiveJobId = job.id;
+          setOwnSiteBridgeUi('working', describeOwnSiteStage(job));
+          pollOwnSiteJob(job.id, listingNumber);
+        })
+        .catch(function(err){
+          ownSiteActiveJobId = '';
+          setOwnSiteBridgeUi('error', (err && err.message) || '매슬로사이트 업로드를 시작하지 못했습니다.');
+        });
+    }
+
     function openChannelModal(listingNumber, channelKey){
       const decodedListingNumber = normalizeListingKey(listingNumber);
       const modal = document.getElementById('channelModal');
@@ -4565,6 +4766,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
       const naverBlogCreateBox = document.getElementById('naverBlogCreateBox');
       const hanbangUploadBox = document.getElementById('hanbangUploadBox');
+      const ownSiteUploadBox = document.getElementById('ownSiteUploadBox');
       const channelLinksBox = document.getElementById('channelLinksBox');
       const radios = document.querySelectorAll('input[name="channelDoneState"]');
       const item = getItemByListingNumber(decodedListingNumber);
@@ -4584,13 +4786,15 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       if(youtubeVideoCreateBox) youtubeVideoCreateBox.style.display = channelKey === 'youtube' ? 'grid' : 'none';
       if(naverBlogCreateBox) naverBlogCreateBox.style.display = channelKey === 'naverBlog' ? 'grid' : 'none';
       if(hanbangUploadBox) hanbangUploadBox.style.display = channelKey === 'hanbang' ? 'grid' : 'none';
-      // 한방은 외부 링크가 없으므로 링크 입력란 3개를 표시하지 않는다.
+      if(ownSiteUploadBox) ownSiteUploadBox.style.display = channelKey === 'ownSite' ? 'grid' : 'none';
+      // 한방은 외부 링크가 없고, 매슬로사이트는 성공한 실제 공유 링크를 링크1에 표시한다.
       if(channelLinksBox) channelLinksBox.style.display = channelKey === 'hanbang' ? 'none' : 'grid';
       radios.forEach(function(radio){
         radio.checked = (state.done && radio.value === 'done') || (!state.done && radio.value === 'notYet');
       });
       if(modal) modal.classList.add('show');
       if(channelKey === 'hanbang') checkHanbangBridge(decodedListingNumber);
+      if(channelKey === 'ownSite') checkOwnSiteBridge(decodedListingNumber);
       if(!channelModalHistoryArmed){
         history.pushState({ channelModal: true }, '');
         channelModalHistoryArmed = true;
@@ -4602,15 +4806,20 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       const youtubeVideoCreateBox = document.getElementById('youtubeVideoCreateBox');
       const naverBlogCreateBox = document.getElementById('naverBlogCreateBox');
       const hanbangUploadBox = document.getElementById('hanbangUploadBox');
+      const ownSiteUploadBox = document.getElementById('ownSiteUploadBox');
       const channelLinksBox = document.getElementById('channelLinksBox');
       if(modal) modal.classList.remove('show');
       if(youtubeVideoCreateBox) youtubeVideoCreateBox.style.display = 'none';
       if(naverBlogCreateBox) naverBlogCreateBox.style.display = 'none';
       if(hanbangUploadBox) hanbangUploadBox.style.display = 'none';
+      if(ownSiteUploadBox) ownSiteUploadBox.style.display = 'none';
       if(channelLinksBox) channelLinksBox.style.display = 'grid';
       stopHanbangJobPolling();
+      stopOwnSiteJobPolling();
       hanbangActiveJobId = '';
       hanbangForceReupload = false;
+      ownSiteActiveJobId = '';
+      ownSiteForceReupload = false;
       channelModalListingNumber = '';
       channelModalChannelKey = '';
       if(channelModalHistoryArmed){
@@ -5756,7 +5965,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
         +       '</div>'
         +       ''
         +     '</div>'
-        +     '<div class="channel-row">' + channelHtml + '<button class="site-chip' + ownSiteClass + '" type="button" title="자사사이트" onclick="event.stopPropagation(); openChannelModal(\'' + encodeURIComponent(item.listingNumber) + '\', \'ownSite\')"><img class="site-favicon" src="' + escapeHtml(SELF_SITE_ICON) + '" alt="자사사이트"></button></div>'
+        +     '<div class="channel-row">' + channelHtml + '<button class="site-chip' + ownSiteClass + '" type="button" title="매슬로사이트" onclick="event.stopPropagation(); openChannelModal(\'' + encodeURIComponent(item.listingNumber) + '\', \'ownSite\')"><img class="site-favicon" src="' + escapeHtml(SELF_SITE_ICON) + '" alt="매슬로사이트"></button></div>'
         +   '</div>'
         + '</article>';
     }

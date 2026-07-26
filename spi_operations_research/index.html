@@ -5,17 +5,17 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
 <title>SPI 운영체계 리서치 | 상업용 부동산 정보 플랫폼 운영 구조 분석</title>
-<meta content="SPI(Seoul Property Insight)의 공개자료를 바탕으로 서비스 구조, 필요한 자격·등록, 조직 규모, 시스템 구축, 보안, 연간 운영예산과 산정 근거를 정리한 리서치 보고서입니다." name="description"/>
+<meta content="SPI(Seoul Property Insight)의 공개자료를 바탕으로 설립·성장 히스토리, 서비스 구조, 필요한 자격·등록, 조직 규모, 시스템 구축, 보안, 연간 운영예산과 산정 근거를 정리한 리서치 보고서입니다." name="description"/>
 <meta content="index,follow,max-image-preview:large" name="robots"/>
 <meta content="#0d2f5f" name="theme-color"/>
 <link href="https://www.maslowkorea.site/spi_operations_research" rel="canonical"/>
 <meta content="https://www.maslowkorea.site/spi_operations_research" property="og:url"/>
 <meta content="Maslow Korea" property="og:site_name"/>
-<link href="https://www.maslowkorea.site/spi_operations_research/spi-operating-system-og-v3.png" rel="image_src"/><meta content="article" property="og:type"/>
+<meta content="article" property="og:type"/>
 <meta content="ko_KR" property="og:locale"/>
 <meta content="SPI 운영체계 리서치" property="og:title"/>
 <meta content="상업용 부동산 정보 플랫폼의 서비스·조직·기술·보안·예산 구조 분석" property="og:description"/>
-<meta content="https://www.maslowkorea.site/spi_operations_research/spi-operating-system-og-v3.png" property="og:image"/><meta content="https://www.maslowkorea.site/spi_operations_research/spi-operating-system-og-v3.png" property="og:image:url"/>
+<meta content="https://www.maslowkorea.site/spi_operations_research/spi-operating-system-og-v3.png" property="og:image"/>
 <meta content="https://www.maslowkorea.site/spi_operations_research/spi-operating-system-og-v3.png" property="og:image:secure_url"/>
 <meta content="1200" property="og:image:width"/>
 <meta content="630" property="og:image:height"/>
@@ -167,6 +167,21 @@
     .range-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--blue-2),var(--navy-2));min-width:10px}
     .range-value{text-align:right;font-weight:850;color:var(--navy);font-size:15px}
 
+    .history-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+    .history-fact{border:1px solid var(--line);border-radius:14px;padding:17px;background:linear-gradient(180deg,#fff,#f7faff)}
+    .history-fact .fact-label{font-size:13px;color:#334155;font-weight:800}
+    .history-fact .fact-value{margin-top:6px;color:var(--navy);font-size:22px;font-weight:900;line-height:1.25;letter-spacing:-.03em}
+    .history-fact .fact-note{margin-top:7px;color:#2f4057;font-size:13px;font-weight:650;line-height:1.5}
+    .history-timeline{display:grid;gap:12px}
+    .history-item{display:grid;grid-template-columns:112px minmax(0,1fr);gap:16px;border:1px solid var(--line);border-radius:16px;padding:18px;background:#fff}
+    .history-year{color:#fff;background:var(--navy);border-radius:12px;padding:10px 12px;text-align:center;font-weight:900;line-height:1.25;height:max-content;font-variant-numeric:tabular-nums}
+    .history-year small{display:block;font-size:11px;font-weight:750;opacity:.9;margin-top:3px}
+    .history-body h3{margin:0 0 6px;color:var(--navy);font-size:18px}
+    .history-body p{margin:0;color:#26384f;font-size:14px;font-weight:600;line-height:1.65}
+    .history-links{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+    .history-links a{display:inline-block;border:1px solid #b9cbe0;background:#f4f8fd;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:800;text-decoration:none;color:#244b73}
+    .history-links a:hover{background:#e8f1fb;color:var(--navy)}
+
     .org-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
     .org-card{border:1px solid var(--line);border-radius:14px;padding:16px;background:linear-gradient(180deg,#fff,#f7faff)}
     .org-card h3{margin:0;color:var(--navy);font-size:16px}
@@ -203,6 +218,7 @@
 
     @media (max-width:960px){
       .summary-grid{grid-template-columns:repeat(2,1fr)}
+      .history-facts{grid-template-columns:repeat(3,1fr)}
       .service-grid{grid-template-columns:repeat(2,1fr)}
       .flow{grid-template-columns:repeat(2,1fr)}
       .flow-step:not(:last-child)::after{display:none}
@@ -221,6 +237,11 @@
       .section-head{display:block}
       .status{display:inline-block;margin-top:10px}
       .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}
+      .history-facts{grid-template-columns:1fr}
+      .history-item{grid-template-columns:1fr;gap:10px;padding:16px}
+      .history-year{width:max-content;min-width:96px;text-align:left}
+      .history-body h3{font-size:17px}
+      .history-body p{font-size:14px}
       .service-grid{grid-template-columns:1fr}
       .org-grid,.security-grid,.flow{grid-template-columns:repeat(2,minmax(0,1fr))}
       .metric{min-height:168px;padding:16px 13px;display:flex;flex-direction:column}
@@ -285,7 +306,7 @@
 <header class="topbar">
 <div class="topbar-inner">
 <div class="brand">SPI 운영체계 리서치</div>
-<nav aria-label="보고서 목차" class="nav"><a href="#summary">1. 요약</a><a href="#budget">2. 재무·예산</a><a href="#services">3. 서비스</a><a href="#requirements">4. 자격·등록</a><a href="#operations">5. 운영 프로세스</a><a href="#organization">6. 조직</a><a href="#technology">7. 기술·구축</a><a href="#security">8. 보안</a><a href="#methodology">9. 산정</a><a href="#sources">10. 근거자료</a></nav>
+<nav aria-label="보고서 목차" class="nav"><a href="#summary">1. 요약</a><a href="#budget">2. 재무·예산</a><a href="#history">3. 히스토리</a><a href="#services">4. 서비스</a><a href="#requirements">5. 자격·등록</a><a href="#operations">6. 운영 프로세스</a><a href="#organization">7. 조직</a><a href="#technology">8. 기술·구축</a><a href="#security">9. 보안</a><a href="#methodology">10. 산정</a><a href="#sources">11. 근거자료</a></nav>
 </div>
 </header>
 <header class="hero">
@@ -416,10 +437,106 @@
 <li><a href="https://seoulpi.io/membership" rel="noopener" target="_blank">SPI 멤버십 — 법인 상품 가격과 라이선스 규모</a></li>
 </ul>
 </details>
+</section><section class="section-card" id="history">
+<div class="section-head">
+<div>
+<h2><span class="section-number">3</span><span class="section-title-text">설립 및 성장 히스토리</span></h2>
+<p>법인 설립 이후 전문 콘텐츠 플랫폼, 데이터 애널리틱스, AI 리서치 서비스로 확장된 과정을 공개자료 기준으로 정리했습니다.</p>
+</div>
+<span class="status mixed">공식자료 + 외부자료</span>
+</div>
+<div class="history-facts">
+<article class="history-fact">
+<div class="fact-label">법인 설립</div>
+<div class="fact-value">2018년 10월 26일</div>
+<div class="fact-note">외부 기업정보와 금융회사 협회 회원정보에서 동일 날짜가 확인됩니다.</div>
+</article>
+<article class="history-fact">
+<div class="fact-label">설립·운영 중심 인물</div>
+<div class="fact-value">김정은 대표</div>
+<div class="fact-note">SPI 공식 프로필은 김정은 대표가 2018년부터 SPI를 운영했다고 밝힙니다.</div>
+</article>
+<article class="history-fact">
+<div class="fact-label">정식 서비스 출범</div>
+<div class="fact-value">2021년 4월</div>
+<div class="fact-note">김정은 대표·손효상 이사·고병기 에디터의 3인 체제로 정식 론칭한 것으로 내부 기록에 나타납니다.</div>
+</article>
+</div>
+<div class="notice">
+<strong>창업자 범위:</strong> 공개자료상 김정은 대표가 2018년부터 SPI를 운영한 사실과 현재 대표이사라는 점은 확인됩니다. 다만 법인 설립 당시 공동창업자·설립주주 구성은 공개 웹자료만으로 확정할 수 없으며, 이를 확인하려면 설립 당시 법인등기와 주주 관련 자료가 필요합니다.
+  </div>
+<div class="history-timeline" style="margin-top:20px">
+<article class="history-item">
+<div class="history-year">2018<small>법인 설립</small></div>
+<div class="history-body">
+<h3>서울프라퍼티인사이트 법인 설립</h3>
+<p>2018년 10월 26일 법인이 설립됐습니다. 김정은 대표의 SPI 공식 프로필에는 2018년부터 상업용 부동산 정보와 데이터를 제공하는 SPI를 운영했다고 기재돼 있습니다.</p>
+<div class="history-links">
+<a href="https://www.incruit.com/company/1686089739/" rel="noopener" target="_blank">설립일·대표 확인</a>
+<a href="https://seoulpi.io/article/writer/20" rel="noopener" target="_blank">김정은 대표 공식 프로필</a>
+</div>
+</div>
+</article>
+<article class="history-item">
+<div class="history-year">2021.04<small>서비스 론칭</small></div>
+<div class="history-body">
+<h3>전문 콘텐츠·커뮤니티 서비스 정식 출범</h3>
+<p>2021년 4월 김정은 대표, 손효상 이사, 고병기 콘텐츠 에디터의 3인 팀으로 정식 서비스를 시작했습니다. 당시 회사소개서는 전문 아티클, 뉴스레터, 교육·이벤트, 개인·법인 멤버십을 결합한 상업용 부동산 콘텐츠 커뮤니티 모델을 제시했습니다.</p>
+<div class="history-links">
+<a href="https://brunch.co.kr/@skip101/641" rel="noopener" target="_blank">초기 3인 팀·론칭 기록</a>
+<a href="https://seoulpi.co.kr/wp-content/uploads/%EC%84%9C%EC%9A%B8%ED%94%84%EB%9D%BC%ED%8D%BC%ED%8B%B0%EC%9D%B8%EC%82%AC%EC%9D%B4%ED%8A%B8_%ED%9A%8C%EC%82%AC-%EB%B0%8F-%EC%84%9C%EB%B9%84%EC%8A%A4-%EC%86%8C%EA%B0%9C.pdf" rel="noopener" target="_blank">2021 회사·서비스 소개서</a>
+</div>
+</div>
+</article>
+<article class="history-item">
+<div class="history-year">2022<small>SPI 2.0</small></div>
+<div class="history-body">
+<h3>콘텐츠 회사에서 데이터 애널리틱스 플랫폼으로 확장</h3>
+<p>SPI 2.0 베타를 공개하고 리츠·상업용 부동산 데이터 분석 기능을 강화했습니다. 내부 기록에는 인원이 3명에서 16명으로 늘었으며, 핀테크·개발·데이터 분석 인력 합류와 부동산금융·도시·공간 출판사 차밍시티 인수가 함께 기재돼 있습니다.</p>
+<div class="history-links">
+<a href="https://brunch.co.kr/@skip101/641" rel="noopener" target="_blank">SPI 2.0·16명 조직 기록</a>
+</div>
+</div>
+</article>
+<article class="history-item">
+<div class="history-year">2023<small>플랫폼·투자</small></div>
+<div class="history-body">
+<h3>seoulpi.io 개편 및 누적 약 23억원 투자</h3>
+<p>2023년 4월 약관 개정과 함께 서비스 주소를 seoulpi.co.kr에서 seoulpi.io로 변경했습니다. 같은 해 11억원 규모 프리A 투자를 유치했고, 보도 기준 누적 투자금은 약 23억원입니다. 투자금은 플랫폼 확장, 리츠 특화 지수, 사모펀드 평가, PF 신용평가 관련 개발에 투입할 계획으로 발표됐습니다.</p>
+<div class="history-links">
+<a href="https://seoulpi.co.kr/wp-content/uploads/2023/04/SPI_%EC%9D%B4%EC%9A%A9%EC%95%BD%EA%B4%80_%EB%B3%80%EA%B2%BD-%EB%B9%84%EA%B5%90%ED%91%9C.pdf" rel="noopener" target="_blank">도메인 변경 약관</a>
+<a href="https://platum.kr/archives/218833" rel="noopener" target="_blank">누적 투자 약 23억원</a>
+<a href="https://economist.co.kr/article/view/ecn202312060019" rel="noopener" target="_blank">프리A 활용계획</a>
+</div>
+</div>
+</article>
+<article class="history-item">
+<div class="history-year">2024<small>AI·해외 리츠</small></div>
+<div class="history-body">
+<h3>AI 기반 리츠 리서치 공동개발</h3>
+<p>두물머리와 AI 기반 리츠 리서치 리포트 공동개발 협약을 체결했습니다. 공개 보도에는 SPI의 상업용 부동산 데이터·콘텐츠와 두물머리의 AI 분석 기술을 결합해 싱가포르 리츠 개별 종목 리포트를 개발하는 계획이 소개됐습니다.</p>
+<div class="history-links">
+<a href="https://www.mt.co.kr/industry/2024/01/16/2024011514401286273" rel="noopener" target="_blank">AI 리츠 리포트 공동개발</a>
+<a href="https://news.nate.com/view/20240116n31902" rel="noopener" target="_blank">싱가포르 리츠 시스템 관련 보도</a>
+</div>
+</div>
+</article>
+<article class="history-item">
+<div class="history-year">2025<small>AI 리서치</small></div>
+<div class="history-body">
+<h3>RAG 기반 AI 리서치 서비스 ‘소피’ 베타 출시</h3>
+<p>2025년 6월 30일 상업용 부동산 리서치 자동화 서비스 소피(SOPHI) 베타를 공개했습니다. 자체 구축한 사모펀드·리츠·전문 콘텐츠 데이터를 검색·요약하는 RAG 기반 AI 서비스로 소개됐으며, 사업축이 콘텐츠와 데이터 제공에서 AI 리서치 도구로 확대됐습니다.</p>
+<div class="history-links">
+<a href="https://www.etnews.com/20250708000061" rel="noopener" target="_blank">소피 베타 출시</a>
+<a href="https://re.mk.co.kr/news/news_detail.php?cate=100604&amp;no=11356551" rel="noopener" target="_blank">서비스 구조 확인</a>
+</div>
+</div>
+</article>
+</div>
 </section><section class="section-card" id="services">
 <div class="section-head">
 <div>
-<h2><span class="section-number">3</span><span class="section-title-text">서비스 포트폴리오</span></h2>
+<h2><span class="section-number">4</span><span class="section-title-text">서비스 포트폴리오</span></h2>
 <p>SPI 공식 사이트에서 확인되는 핵심 서비스는 미디어, 자산·펀드 데이터, 리츠 정보, 이벤트, 개인·법인 멤버십으로 구성됩니다.</p>
 </div>
 <span class="status verified">공식 확인</span>
@@ -490,7 +607,7 @@
 </section><section class="section-card" id="requirements">
 <div class="section-head">
 <div>
-<h2><span class="section-number">4</span><span class="section-title-text">필요한 자격·등록 및 규제 경계</span></h2>
+<h2><span class="section-number">5</span><span class="section-title-text">필요한 자격·등록 및 규제 경계</span></h2>
 <p>SPI형 플랫폼에 적용되는 단일 통합면허는 없습니다. 기사·데이터·구독·중개·투자정보·AI 기능의 실제 운영방식에 따라 등록, 신고 및 준수의무가 각각 발생합니다.</p>
 </div>
 <span class="status mixed">현행 법령 기준</span>
@@ -582,7 +699,7 @@
 </section><section class="section-card" id="operations">
 <div class="section-head">
 <div>
-<h2><span class="section-number">5</span><span class="section-title-text">운영 프로세스와 업무 범위</span></h2>
+<h2><span class="section-number">6</span><span class="section-title-text">운영 프로세스와 업무 범위</span></h2>
 <p>공개된 서비스 범위를 실제 운영 업무로 환산한 구조입니다. 각 단계에는 생산, 검수, 시스템 운영 및 고객 대응이 연결됩니다.</p>
 </div>
 <span class="status estimated">업무모델</span>
@@ -612,7 +729,7 @@
 </section><section class="section-card" id="organization">
 <div class="section-head">
 <div>
-<h2><span class="section-number">6</span><span class="section-title-text">조직 규모 모델</span></h2>
+<h2><span class="section-number">7</span><span class="section-title-text">조직 규모 모델</span></h2>
 <p>SPI의 실제 조직도를 단정한 자료가 아니라, 확인된 서비스 범위를 지속 운영하는 데 필요한 핵심 업무량을 인력으로 환산한 모델입니다.</p>
 </div>
 <span class="status estimated">추정 모델</span>
@@ -642,7 +759,7 @@
 </section><section class="section-card" id="technology">
 <div class="section-head">
 <div>
-<h2><span class="section-number">7</span><span class="section-title-text">사이트 구축 및 기술 운영 범위</span></h2>
+<h2><span class="section-number">8</span><span class="section-title-text">사이트 구축 및 기술 운영 범위</span></h2>
 <p>공개 채용자료에서는 React, TypeScript, Next.js, Google Cloud Platform, 프로덕트와 백오피스 운영이 확인됩니다. 이용약관과 FAQ에서는 앱, 기기등록, 푸시, AI 챗봇, 법인권한, 결제·환불 등의 운영기능이 확인됩니다.</p>
 </div>
 <span class="status mixed">공식 확인 + 동급 구축모델</span>
@@ -689,7 +806,7 @@
 </section><section class="section-card" id="security">
 <div class="section-head">
 <div>
-<h2><span class="section-number">8</span><span class="section-title-text">보안 및 컴플라이언스 체계</span></h2>
+<h2><span class="section-number">9</span><span class="section-title-text">보안 및 컴플라이언스 체계</span></h2>
 <p>아래 항목은 SPI가 모두 적용하고 있다고 단정하는 내용이 아니라, 회원·결제·기업계정·유료 콘텐츠·개인정보를 처리하는 동급 서비스에 필요한 보안 운영 범위입니다.</p>
 </div>
 <span class="status estimated">필수 운영모델</span>
@@ -725,7 +842,7 @@
 </section><section class="section-card" id="methodology">
 <div class="section-head">
 <div>
-<h2><span class="section-number">9</span><span class="section-title-text">산정 방법과 한계</span></h2>
+<h2><span class="section-number">10</span><span class="section-title-text">산정 방법과 한계</span></h2>
 <p>외부에서 확인 가능한 사실과 내부정보가 필요한 항목을 구분했습니다.</p>
 </div>
 <span class="status mixed">방법론</span>
@@ -741,7 +858,7 @@
 </section><section class="section-card" id="sources">
 <div class="section-head">
 <div>
-<h2><span class="section-number">10</span><span class="section-title-text">전체 근거자료 링크</span></h2>
+<h2><span class="section-number">11</span><span class="section-title-text">전체 근거자료 링크</span></h2>
 <p>각 링크는 새 창에서 열리며 실제 공개 페이지를 직접 확인할 수 있습니다.</p>
 </div>
 <span class="status verified">직접 확인</span>
@@ -776,7 +893,7 @@
 <li><a href="https://www.fsc.go.kr/no010101/82887" rel="noopener" target="_blank">금융위원회 유사투자자문업 규율 안내</a></li>
 <li><a href="https://www.law.go.kr/LSW//lsSideInfoP.do?docCls=jo&amp;joBrNo=00&amp;joNo=0031&amp;lsiSeq=282791&amp;urlMode=lsScJoRltInfoR" rel="noopener" target="_blank">인공지능기본법 제31조</a></li>
 <li><a href="https://www.law.go.kr/lsInfoP.do?ancYnChk=0&amp;lsId=000798" rel="noopener" target="_blank">저작권법</a></li>
-</ol>
+<li><a href="https://seoulpi.io/article/writer/20" rel="noopener" target="_blank">김정은 대표 SPI 공식 프로필</a></li><li><a href="https://brunch.co.kr/@skip101/641" rel="noopener" target="_blank">SPI 2.0 베타 및 초기 조직 기록</a></li><li><a href="https://seoulpi.co.kr/wp-content/uploads/%EC%84%9C%EC%9A%B8%ED%94%84%EB%9D%BC%ED%8D%BC%ED%8B%B0%EC%9D%B8%EC%82%AC%EC%9D%B4%ED%8A%B8_%ED%9A%8C%EC%82%AC-%EB%B0%8F-%EC%84%9C%EB%B9%84%EC%8A%A4-%EC%86%8C%EA%B0%9C.pdf" rel="noopener" target="_blank">2021 SPI 회사·서비스 소개서</a></li><li><a href="https://seoulpi.co.kr/wp-content/uploads/2023/04/SPI_%EC%9D%B4%EC%9A%A9%EC%95%BD%EA%B4%80_%EB%B3%80%EA%B2%BD-%EB%B9%84%EA%B5%90%ED%91%9C.pdf" rel="noopener" target="_blank">2023 서비스 도메인 변경 약관</a></li><li><a href="https://platum.kr/archives/218833" rel="noopener" target="_blank">2023 누적 투자 약 23억원 보도</a></li><li><a href="https://www.mt.co.kr/industry/2024/01/16/2024011514401286273" rel="noopener" target="_blank">2024 AI 리츠 리포트 공동개발</a></li><li><a href="https://www.etnews.com/20250708000061" rel="noopener" target="_blank">2025 소피(SOPHI) 베타 출시</a></li></ol>
 </section></main>
 </body>
 </html>

@@ -248,6 +248,8 @@
 
   <script>
     const STORAGE_KEY='maslow_owner_letters_v1';
+    const OWNER_LETTER_TRANSFER_PREFIX='maslow_owner_letter_transfer_v1:';
+    const OWNER_LETTER_TRANSFER_MAX_AGE_MS=15*60*1000;
     const officeInfo={name:'매슬로우공인중개사사무소',brand:'MASLOW KOREA',specialty:'산업용 상업용 부동산 전문 중개',owner:'박성연',regNo:'52130-2025-00005',address:'전북 군산시 대학로 342 26빌딩',phone:'010-5407-0444',email:'hiboy@kakao.com'};
     const templates={
       general:{label:'부동산 활용 안내',title:'부동산 활용 및 거래 가능성 검토 안내',boxTitle:'대상 부동산 개요',boxRows:[['소 재 지',''],['__AREA__',''],['용도 지역',''],['이용 상황',''],['참고 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 현장 확인과 실수요자 상담을 진행하고 있습니다.','최근 해당 지역에서 공장·창고·토지 활용 및 거래 가능성을 검토하는 문의가 있어 등기부상 소유자님께 정중히 안내드립니다.','본 안내는 매도나 임대를 강요하는 내용이 아니며, 소유자님의 의사를 우선 확인하고 필요한 경우 상담을 도와드리기 위한 것입니다.','검토 의향이 있으시다면 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)']},
@@ -258,6 +260,7 @@
     };
     let currentType='general';
     let currentId=null;
+    let propertyContext=null;
     const draftByType={};
     const paper=document.getElementById('letterPaper');
     const savedList=document.getElementById('savedList');
@@ -299,6 +302,143 @@
       if(!Number.isFinite(n)) return '';
       const rounded=Math.round(n*100)/100;
       return rounded.toLocaleString('ko-KR',{maximumFractionDigits:2});
+    }
+    function contextText(value){
+      return String(value == null ? '' : value).trim();
+    }
+    function normalizePropertyContext(raw){
+      if(!raw || typeof raw !== 'object') return null;
+      const normalized={
+        listingNumber:contextText(raw.listingNumber),
+        title:contextText(raw.title),
+        address:contextText(raw.address),
+        dealType:contextText(raw.dealType),
+        price:contextText(raw.price),
+        propertyType:contextText(raw.propertyType),
+        zoning:contextText(raw.zoning),
+        landAreaM2:contextText(raw.landAreaM2),
+        landAreaPy:contextText(raw.landAreaPy),
+        totalFloorAreaM2:contextText(raw.totalFloorAreaM2),
+        totalFloorAreaPy:contextText(raw.totalFloorAreaPy),
+        exclusiveAreaM2:contextText(raw.exclusiveAreaM2),
+        exclusiveAreaPy:contextText(raw.exclusiveAreaPy),
+        buildingComposition:contextText(raw.buildingComposition)
+      };
+      return Object.values(normalized).some(Boolean) ? normalized : null;
+    }
+    function readPropertyContextFromTransfer(){
+      let token='';
+      try{
+        const url=new URL(window.location.href);
+        token=contextText(url.searchParams.get('transfer'));
+        if(token){
+          url.searchParams.delete('transfer');
+          const clean=url.pathname+(url.searchParams.toString()?'?'+url.searchParams.toString():'')+url.hash;
+          history.replaceState(history.state,'',clean);
+        }
+      }catch(e){}
+      if(!token) return null;
+      const storageKey=OWNER_LETTER_TRANSFER_PREFIX+token;
+      try{
+        const raw=JSON.parse(localStorage.getItem(storageKey)||'null');
+        localStorage.removeItem(storageKey);
+        const createdAt=Number(raw&&raw.createdAt)||0;
+        if(!createdAt || Date.now()-createdAt>OWNER_LETTER_TRANSFER_MAX_AGE_MS) return null;
+        return normalizePropertyContext(raw);
+      }catch(e){
+        try{localStorage.removeItem(storageKey)}catch(ignore){}
+        return null;
+      }
+    }
+    function setElementText(el,value){
+      if(!el) return;
+      const next=contextText(value);
+      el.textContent=next;
+      if(el.classList.contains('editable-placeholder')) el.classList.toggle('is-empty',!next);
+    }
+    function normalizedLabel(value){
+      return contextText(value).replace(/\s+/g,'');
+    }
+    function findBoxValueByLabel(label){
+      const wanted=normalizedLabel(label);
+      const rows=paper.querySelectorAll('.box-row:not(.area-row)');
+      for(const row of rows){
+        const labelEl=row.querySelector('.box-label');
+        if(normalizedLabel(labelEl&&labelEl.textContent)===wanted) return row.querySelector('.box-value');
+      }
+      return null;
+    }
+    function resolveAreaPair(m2Value,pyValue){
+      let m2=parseAreaNumber(m2Value);
+      let py=parseAreaNumber(pyValue);
+      if(m2===null&&py!==null) m2=py*3.305785;
+      if(py===null&&m2!==null) py=m2/3.305785;
+      return {m2:m2===null?'':formatAreaNumber(m2),py:py===null?'':formatAreaNumber(py)};
+    }
+    function setAreaPair(area,m2Value,pyValue){
+      const values=resolveAreaPair(m2Value,pyValue);
+      setElementText(paper.querySelector(`.area-input[data-area="${area}"][data-unit="m2"]`),values.m2);
+      setElementText(paper.querySelector(`.area-input[data-area="${area}"][data-unit="pyeong"]`),values.py);
+    }
+    function firstAreaPair(pairs){
+      for(const pair of pairs){
+        if(contextText(pair[0])||contextText(pair[1])) return pair;
+      }
+      return ['',''];
+    }
+    function buildPropertySummary(context){
+      const address=contextText(context&&context.address);
+      const propertyType=contextText(context&&context.propertyType);
+      const title=contextText(context&&context.title);
+      if(address&&propertyType) return `${address} 소재 ${propertyType}`;
+      if(address&&title) return `${address} 소재 ${title}`;
+      return address||title||propertyType;
+    }
+    function buildIntentTypeText(context){
+      const propertyType=contextText(context&&context.propertyType);
+      if(!propertyType) return '토지 및 해당 지번 토지의 지상에 있는 모든 건축물 및 구조물 일체';
+      if(propertyType==='토지'||propertyType.includes('토지')) return '토지 및 해당 지번 토지의 지상에 있는 모든 건축물 및 구조물 일체';
+      return `${propertyType} 및 해당 지번 토지의 지상에 있는 모든 건축물 및 구조물 일체`;
+    }
+    function buildIntentPrice(context,type){
+      const value=contextText(context&&context.price);
+      if(type==='leaseIntent') return value.replace(/월세/g,'월 차임');
+      return value;
+    }
+    function applyPropertyContext(type){
+      if(!propertyContext) return;
+      setElementText(paper.querySelector('.js-property'),buildPropertySummary(propertyContext));
+      if(type==='general'||type==='listing'){
+        setElementText(findBoxValueByLabel('소재지'),propertyContext.address);
+        setAreaPair('land',propertyContext.landAreaM2,propertyContext.landAreaPy);
+        const buildingArea=firstAreaPair([
+          [propertyContext.totalFloorAreaM2,propertyContext.totalFloorAreaPy],
+          [propertyContext.exclusiveAreaM2,propertyContext.exclusiveAreaPy]
+        ]);
+        setAreaPair('building',buildingArea[0],buildingArea[1]);
+        setElementText(findBoxValueByLabel('용도지역'),propertyContext.zoning);
+        setElementText(findBoxValueByLabel('이용상황'),propertyContext.propertyType);
+        setElementText(findBoxValueByLabel('참고사항'),propertyContext.buildingComposition);
+      }
+      if(type==='purchaseIntent'||type==='leaseIntent'){
+        setElementText(paper.querySelector('.js-intent-property-name'),propertyContext.title||propertyContext.propertyType||propertyContext.address);
+        setElementText(paper.querySelector('.js-intent-type'),buildIntentTypeText(propertyContext));
+        setElementText(paper.querySelector('.js-intent-price'),buildIntentPrice(propertyContext,type));
+        setElementText(paper.querySelector('.js-intent-address'),propertyContext.address);
+        const intentArea=type==='leaseIntent'
+          ? firstAreaPair([
+              [propertyContext.exclusiveAreaM2,propertyContext.exclusiveAreaPy],
+              [propertyContext.totalFloorAreaM2,propertyContext.totalFloorAreaPy],
+              [propertyContext.landAreaM2,propertyContext.landAreaPy]
+            ])
+          : firstAreaPair([
+              [propertyContext.landAreaM2,propertyContext.landAreaPy],
+              [propertyContext.totalFloorAreaM2,propertyContext.totalFloorAreaPy],
+              [propertyContext.exclusiveAreaM2,propertyContext.exclusiveAreaPy]
+            ]);
+        setAreaPair('intent',intentArea[0],intentArea[1]);
+      }
+      updateEmptyState();
     }
     function syncAreaInput(el){
       if(!el.classList.contains('area-input') || el.dataset.syncing==='1') return;
@@ -349,14 +489,14 @@
           </table>
           <div class="intent-intro">
             <div class="intent-intro-line"><span>1.</span><span>귀 사의 무궁한 발전을 기원합니다.</span></div>
-            <div class="intent-intro-line"><span>2.</span><span>당사는 귀 사 소유의 ${inlineEditable(propertyName,'property-name')}를 ${esc(t.action)}하기 위하여 검토중에 있습니다.</span></div>
+            <div class="intent-intro-line"><span>2.</span><span>당사는 귀 사 소유의 ${inlineEditable(propertyName,'property-name js-intent-property-name')}를 ${esc(t.action)}하기 위하여 검토중에 있습니다.</span></div>
             <div class="intent-intro-line"><span>3.</span><span>원만한 ${esc(t.contract)}을 위하여 원활한 협조와 정보제공을 요청드립니다.</span></div>
           </div>
           <div class="intent-below">- 아 래 -</div>
           <div class="intent-details">
-            <div class="intent-detail-row"><span>가.</span>${intentLabel('종류','intent-detail-key')}<span class="intent-detail-colon">:</span>${inlineEditable('토지 및 해당 지번 토지의 지상에 있는 모든 건축물 및 구조물 일체','type-value')}</div>
-            <div class="intent-detail-row"><span>나.</span>${intentLabel(t.priceLabel.replace(/\s/g,''),'intent-detail-key')}<span class="intent-detail-colon">:</span>${inlineEditable(t.price,'price-value')}</div>
-            <div class="intent-detail-row"><span>다.</span>${intentLabel('주소','intent-detail-key')}<span class="intent-detail-colon">:</span>${inlineEditable('인천광역시 중구 항동7가 91-1(축항대로 240)','address-value js-property')}</div>
+            <div class="intent-detail-row"><span>가.</span>${intentLabel('종류','intent-detail-key')}<span class="intent-detail-colon">:</span>${inlineEditable('토지 및 해당 지번 토지의 지상에 있는 모든 건축물 및 구조물 일체','type-value js-intent-type')}</div>
+            <div class="intent-detail-row"><span>나.</span>${intentLabel(t.priceLabel.replace(/\s/g,''),'intent-detail-key')}<span class="intent-detail-colon">:</span>${inlineEditable(t.price,'price-value js-intent-price')}</div>
+            <div class="intent-detail-row"><span>다.</span>${intentLabel('주소','intent-detail-key')}<span class="intent-detail-colon">:</span>${inlineEditable('인천광역시 중구 항동7가 91-1(축항대로 240)','address-value js-property js-intent-address')}</div>
             <div class="intent-detail-row"><span>라.</span>${intentLabel('면적','intent-detail-key')}<span class="intent-detail-colon">:</span><span class="intent-area-pair">${areaInput('intent','m2','10,744.8')}<span>㎡(</span>${areaInput('intent','pyeong','3250')}<span>평).</span></span></div>
           </div>
           <div class="intent-notice">상기 정보 및 계약의 조건 등은 추후 당사자 협의에 따라 달라질 수 있습니다.</div>
@@ -364,9 +504,11 @@
         </div>`;
     }
     function buildTemplate(type, reset=false){
-      if(!reset && currentType && paper.innerHTML) draftByType[currentType]=paper.innerHTML;
-      currentType=type; currentId=null;
-      if(!reset && draftByType[type]){
+      if(!reset&&currentType&&paper.innerHTML) draftByType[currentType]=paper.innerHTML;
+      currentType=type;
+      currentId=null;
+      const useDraft=!reset&&!!draftByType[type];
+      if(useDraft){
         paper.innerHTML=draftByType[type];
       }else{
         const t=templates[type]||templates.general;
@@ -395,10 +537,11 @@
           <div class="sign" contenteditable="true" spellcheck="false">감사합니다.<br><br>${officeInfo.name}</div>
           <div class="footer-block"><div class="footer-qr"><img src="./homepage-qr.jpg" alt="홈페이지 QR"><div>홈페이지</div></div><div class="footer-info" contenteditable="true" spellcheck="false">${officeInfo.name} · 대표 공인중개사 ${officeInfo.owner} · 등록번호 ${officeInfo.regNo}<br>${officeInfo.address} · TEL. ${officeInfo.phone} · E-Mail ${officeInfo.email}</div></div>`;
         }
-        draftByType[type]=paper.innerHTML;
       }
       document.querySelectorAll('.type-card').forEach(b=>b.classList.toggle('active',b.dataset.type===type));
       attachEditableState();
+      if(propertyContext&&!useDraft) applyPropertyContext(type);
+      draftByType[type]=paper.innerHTML;
     }
     function getSaved(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){return []}}
     function setSaved(items){localStorage.setItem(STORAGE_KEY,JSON.stringify(items));}
@@ -427,7 +570,9 @@
     document.getElementById('saveBtn').onclick=saveCurrent;
     document.getElementById('pdfBtn').onclick=()=>{updateEmptyState(); window.print();}; document.getElementById('pdfTopBtn').onclick=()=>{updateEmptyState(); window.print();};
     savedList.addEventListener('click',e=>{const btn=e.target.closest('button'); if(!btn)return; const id=btn.dataset.id; if(btn.dataset.act==='load')loadSaved(id); if(btn.dataset.act==='delete')deleteSaved(id);});
+    propertyContext=readPropertyContextFromTransfer();
     buildTemplate('general'); renderSaved();
+    if(propertyContext) setTimeout(()=>toast('매물정보를 불러왔습니다.'),80);
   </script>
 </body>
 </html>

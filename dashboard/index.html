@@ -635,7 +635,7 @@
 
     .channel-row{
       display:grid;
-      grid-template-columns:repeat(9, 56px);
+      grid-template-columns:repeat(6, 56px);
       justify-content:flex-start;
       gap:8px;
     }
@@ -669,6 +669,25 @@
       object-fit:cover;
       border-radius:4px;
       flex:none
+    }
+    .owner-letter-chip{
+      background:#6f7f3f;
+      border-color:#6f7f3f;
+      color:#fff;
+      font-family:Arial,Helvetica,sans-serif;
+      font-weight:1000;
+      line-height:1;
+      letter-spacing:-.08em;
+    }
+    .owner-letter-chip:hover{background:#5c6b33;border-color:#5c6b33}
+    .owner-letter-mark{
+      display:block;
+      transform:translateX(-.04em);
+      font-size:28px;
+      line-height:1;
+      font-weight:1000;
+      color:#fff;
+      pointer-events:none;
     }
     .site-chip{
       position:relative;
@@ -1175,7 +1194,7 @@
         border-radius:9px;
       }
       .channel-row{
-        grid-template-columns:repeat(5, 32px);
+        grid-template-columns:repeat(6, 32px);
         gap:6px;
       }
       .channel-icon,
@@ -1193,6 +1212,7 @@
         width:88%;
         height:88%;
       }
+      .owner-letter-mark{font-size:18px}
     }
 
     @media (min-width:1200px){
@@ -1370,7 +1390,7 @@
         line-height:1.05;
       }
       .channel-row{
-        grid-template-columns:repeat(9, minmax(0, 1fr));
+        grid-template-columns:repeat(6, minmax(0, 1fr));
         gap:4px;
       }
       .channel-icon{
@@ -1419,6 +1439,7 @@
         transform:none;
         flex-basis:auto;
       }
+      .owner-letter-mark{font-size:clamp(19px, 1.8vw, 27px)}
       .loading-buddy{
         width:64px;
         height:64px;
@@ -2674,6 +2695,8 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     ];
 
     const SELF_SITE_ICON = 'https://cdn.imweb.me/thumbnail/20260411/9b31c965062e2.png';
+    const OWNER_LETTER_TRANSFER_PREFIX = 'maslow_owner_letter_transfer_v1:';
+    const OWNER_LETTER_TRANSFER_MAX_AGE_MS = 15 * 60 * 1000;
 
     const CHANNEL_FIELD_MAP = {
       youtube: 'channelYoutube',
@@ -5919,14 +5942,83 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       return false;
     }
 
+    function cleanupOwnerLetterTransfers(){
+      try{
+        const now = Date.now();
+        const removeKeys = [];
+        for(let i=0;i<localStorage.length;i+=1){
+          const key = localStorage.key(i) || '';
+          if(!key.startsWith(OWNER_LETTER_TRANSFER_PREFIX)) continue;
+          try{
+            const saved = JSON.parse(localStorage.getItem(key) || 'null');
+            const createdAt = Number(saved && saved.createdAt) || 0;
+            if(!createdAt || now - createdAt > OWNER_LETTER_TRANSFER_MAX_AGE_MS) removeKeys.push(key);
+          }catch(e){
+            removeKeys.push(key);
+          }
+        }
+        removeKeys.forEach(function(key){ localStorage.removeItem(key); });
+      }catch(e){}
+    }
+
+    function createOwnerLetterTransferToken(){
+      if(window.crypto && typeof window.crypto.randomUUID === 'function'){
+        return 'ol_' + window.crypto.randomUUID();
+      }
+      return 'ol_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,12);
+    }
+
+    function buildOwnerLetterTransferPayload(item){
+      return {
+        version: 1,
+        createdAt: Date.now(),
+        source: 'dashboard',
+        listingNumber: text(item && item.listingNumber),
+        title: text(item && item.title),
+        address: text(item && item.address),
+        dealType: text(item && item.dealType),
+        price: text(item && item.price),
+        propertyType: text(item && item.propertyType),
+        zoning: text(item && item.zoning),
+        landAreaM2: text(item && item.landAreaM2),
+        landAreaPy: text(item && item.landAreaPy),
+        totalFloorAreaM2: text(item && item.totalFloorAreaM2),
+        totalFloorAreaPy: text(item && item.totalFloorAreaPy),
+        exclusiveAreaM2: text(item && item.exclusiveAreaM2),
+        exclusiveAreaPy: text(item && item.exclusiveAreaPy),
+        buildingComposition: text(item && item.buildingComposition)
+      };
+    }
+
+    function openOwnerLetterForListing(listingNumber){
+      const decodedListingNumber = normalizeListingKey(listingNumber);
+      const item = getItemByListingNumber(decodedListingNumber);
+      if(!item){
+        alert('해당 매물정보를 찾지 못했습니다.');
+        return;
+      }
+      try{
+        cleanupOwnerLetterTransfers();
+        const token = createOwnerLetterTransferToken();
+        localStorage.setItem(OWNER_LETTER_TRANSFER_PREFIX + token, JSON.stringify(buildOwnerLetterTransferPayload(item)));
+        const targetUrl = new URL('/owner-letter/', window.location.origin);
+        targetUrl.searchParams.set('transfer', token);
+        window.open(targetUrl.pathname + targetUrl.search, '_blank', 'noopener');
+      }catch(e){
+        alert('소유주레터로 매물정보를 전달하지 못했습니다. 브라우저 저장공간을 확인해 주세요.');
+      }
+    }
+
     function buildCard(item){
       const thumb = item.heroUrl ? "background-image:url('" + escapeHtml(item.heroUrl) + "')" : '';
-      const channelHtml = CHANNELS.map(function(channel){
+      const channelButtons = CHANNELS.map(function(channel){
         const state = getChannelStateByItem(item, channel.key);
         const stateClass = state.done ? '' : ' is-not-yet';
         return '<button class="channel-icon' + stateClass + '" type="button" title="' + escapeHtml(channel.name) + '" onclick="event.stopPropagation(); openChannelModal(\'' + encodeURIComponent(item.listingNumber) + '\', \''
           + channel.key + '\')"><img class="channel-favicon" src="' + escapeHtml(channel.icon) + '" alt="' + escapeHtml(channel.name) + '"></button>';
-      }).join('');
+      });
+      channelButtons.splice(5, 0, '<button class="channel-icon owner-letter-chip" type="button" title="소유주레터 만들기" aria-label="소유주레터 만들기" onclick="event.stopPropagation(); openOwnerLetterForListing(\'' + encodeURIComponent(item.listingNumber) + '\')"><span class="owner-letter-mark" aria-hidden="true">L</span></button>');
+      const channelHtml = channelButtons.join('');
       const ownSiteState = getChannelStateByItem(item, 'ownSite');
       const ownSiteClass = ownSiteState.done ? '' : ' is-not-yet';
       const memoStarHtml = shouldShowMemoNewStar(item) ? '<span class="memo-new-star" aria-hidden="true">★</span>' : '';
@@ -6420,6 +6512,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     };
     window.safeEditItemPointerDown = safeEditItemPointerDown;
     window.safeEditItemClick = safeEditItemClick;
+    window.openOwnerLetterForListing = openOwnerLetterForListing;
 
     window.markVisible = function(listingNumber){
       setPropertyStatus(listingNumber, 'visible');

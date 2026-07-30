@@ -671,19 +671,26 @@
       flex:none
     }
     .owner-letter-chip{
-      background:#6f7f3f;
-      border-color:#6f7f3f;
+      background:#fafcff;
+      border-color:#e4eaf1;
       color:#fff;
       font-family:Arial,Helvetica,sans-serif;
       font-weight:1000;
       line-height:1;
-      letter-spacing:-.08em;
+      letter-spacing:-.06em;
     }
-    .owner-letter-chip:hover{background:#5c6b33;border-color:#5c6b33}
+    .owner-letter-chip:hover{background:#fafcff;border-color:#d4dde8}
+    .owner-letter-chip:hover .owner-letter-mark{background:#5c6b33}
     .owner-letter-mark{
-      display:block;
-      transform:translateX(-.04em);
-      font-size:28px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:58%;
+      height:58%;
+      border-radius:5px;
+      background:#6f7f3f;
+      transform:translateX(-.02em);
+      font-size:18px;
       line-height:1;
       font-weight:1000;
       color:#fff;
@@ -1212,7 +1219,12 @@
         width:88%;
         height:88%;
       }
-      .owner-letter-mark{font-size:18px}
+      .owner-letter-mark{
+        width:56%;
+        height:56%;
+        border-radius:4px;
+        font-size:11px;
+      }
     }
 
     @media (min-width:1200px){
@@ -1439,7 +1451,12 @@
         transform:none;
         flex-basis:auto;
       }
-      .owner-letter-mark{font-size:clamp(19px, 1.8vw, 27px)}
+      .owner-letter-mark{
+        width:58%;
+        height:58%;
+        border-radius:4px;
+        font-size:clamp(10px, 2.8vw, 16px);
+      }
       .loading-buddy{
         width:64px;
         height:64px;

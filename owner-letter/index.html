@@ -137,6 +137,7 @@
     .intent-editable{display:inline-block;min-width:26px;min-height:1.25em;outline:none!important;border:none!important;box-shadow:none!important;border-radius:2px;vertical-align:baseline;white-space:pre-wrap}
     .intent-editable:hover,.intent-editable:focus{background:#fff4bf!important}
     .intent-editable.block{display:block;width:100%;min-height:1.4em}
+    .intent-editable.intent-header-value{display:block;width:100%;min-height:1.25em}
     .intent-editable.property-name{min-width:0;padding:0 1px;text-align:left}
     .intent-editable.price-value{min-width:120px}
     .intent-editable.address-value{min-width:300px}
@@ -479,8 +480,8 @@
           <div class="doc-title intent-title">${esc(t.title)}</div>
           <div class="intent-header-lines">
             <div class="intent-header-row">${intentLabel('발신일')}<div class="intent-header-colon">:</div>${inlineEditable(todayKorean(),'js-intent-date')}</div>
-            <div class="intent-header-row">${intentLabel('발신인')}<div class="intent-header-colon">:</div>${inlineEditable('주식회사 인천로지스틱스','js-intent-sender')}</div>
-            <div class="intent-header-row">${intentLabel('수신인')}<div class="intent-header-colon">:</div>${inlineEditable('대호창고 주식회사','js-recipient')}</div>
+            <div class="intent-header-row">${intentLabel('발신인')}<div class="intent-header-colon">:</div>${inlineEditable('','intent-header-value js-intent-sender')}</div>
+            <div class="intent-header-row">${intentLabel('수신인')}<div class="intent-header-colon">:</div>${inlineEditable('','intent-header-value js-recipient')}</div>
             <div class="intent-header-row">${intentLabel('중개대리인')}<div class="intent-header-colon">:</div><span>매슬로우공인중개사사무소</span></div>
           </div>
           <table class="intent-legal-table" aria-label="법인 정보">

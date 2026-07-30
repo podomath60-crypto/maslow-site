@@ -116,6 +116,52 @@
     .footer-qr{width:74px;flex:0 0 74px;text-align:center;color:#4c4f48;font-size:10.5px;font-weight:900;line-height:1.05}
     .footer-qr img{display:block;width:74px;height:74px;object-fit:contain;margin:0 auto 1px}
     .footer-info{margin-top:0;font-size:11.8px;line-height:1.35;color:#4c4f48;text-align:right;font-weight:800;flex:1}
+    .type-section-label{margin:4px 4px -2px;padding:10px 8px 2px;border-top:1px solid rgba(222,215,200,.9);font-size:11px;font-weight:1000;color:#81796d;letter-spacing:.08em}
+
+    /* 매수·임차의향서: 제공된 원본 양식의 구조와 여백을 그대로 재현 */
+    .intent-document{position:relative;min-height:255mm;padding:4mm 0 0;font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;color:#000;font-size:13px;line-height:1.45;letter-spacing:-.02em}
+    .intent-crop{position:absolute;top:2mm;width:16px;height:16px;pointer-events:none}
+    .intent-crop::before,.intent-crop::after{content:"";position:absolute;background:#c9c9c9}
+    .intent-crop::before{top:0;width:16px;height:1px}
+    .intent-crop::after{top:0;width:1px;height:16px}
+    .intent-crop.left{left:-12mm}
+    .intent-crop.right{right:-12mm;transform:scaleX(-1)}
+    .intent-ornament{width:230px;height:30px;margin:0 auto 2px;display:flex;align-items:flex-end;justify-content:center;position:relative}
+    .intent-ornament::after{content:"";position:absolute;left:0;right:0;bottom:2px;border-bottom:2px solid #777}
+    .intent-ornament svg{position:relative;z-index:1;width:92px;height:30px;background:var(--paper);padding:0 7px}
+    .intent-title{margin:7px 0 28px;padding:0;border:0!important;text-align:center;font-size:22px;font-weight:1000;letter-spacing:.05em;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:5px}
+    .intent-header-lines{display:grid;gap:3px;margin-bottom:27px}
+    .intent-header-row{display:grid;grid-template-columns:73px 11px minmax(0,1fr);align-items:baseline;min-height:18px}
+    .intent-header-label{font-weight:500;letter-spacing:.32em;white-space:nowrap}
+    .intent-header-colon{text-align:center}
+    .intent-editable{display:inline-block;min-width:26px;min-height:1.25em;outline:none!important;border:none!important;box-shadow:none!important;border-radius:2px;vertical-align:baseline;white-space:pre-wrap}
+    .intent-editable:hover,.intent-editable:focus{background:#fff4bf!important}
+    .intent-editable.block{display:block;width:100%;min-height:1.4em}
+    .intent-editable.property-name{min-width:0;padding:0 1px;text-align:left}
+    .intent-editable.price-value{min-width:120px}
+    .intent-editable.address-value{min-width:300px}
+    .intent-editable.type-value{min-width:440px}
+    .intent-editable.sign-value{min-width:40px;text-align:center}
+    .intent-legal-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:17px;font-size:12.5px}
+    .intent-legal-table th,.intent-legal-table td{border:1px solid #111;height:38px;padding:5px 8px;text-align:center;vertical-align:middle}
+    .intent-legal-table th{font-weight:500;letter-spacing:.08em;background:#fff}
+    .intent-legal-table .legal-label{width:72px}
+    .intent-legal-table .legal-reg-label{width:108px}
+    .intent-legal-table .legal-reg-value{width:145px}
+    .intent-legal-table .legal-address-label{width:72px}
+    .intent-intro{margin-top:14px;font-size:13px;line-height:1.65}
+    .intent-intro-line{display:grid;grid-template-columns:22px minmax(0,1fr);align-items:baseline}
+    .intent-below{text-align:center;margin:31px 0 34px;font-size:13px;letter-spacing:.85em;padding-left:.85em}
+    .intent-details{display:grid;gap:25px;font-size:13px;line-height:1.55}
+    .intent-detail-row{display:grid;grid-template-columns:19px 64px 11px minmax(0,1fr);align-items:baseline}
+    .intent-detail-key{font-weight:500;letter-spacing:.36em;white-space:nowrap}
+    .intent-detail-colon{text-align:center}
+    .intent-area-pair{display:inline-flex;align-items:baseline;gap:1px;white-space:nowrap}
+    .intent-area-pair .area-input{min-width:24px;max-width:110px;text-align:left;font-weight:400;padding:0}
+    .intent-area-pair .area-input[data-unit="pyeong"]{min-width:20px;max-width:85px}
+    .intent-notice{margin-top:39px;font-size:12.5px}
+    .intent-sign{margin-top:54px;text-align:center;font-size:13px;white-space:nowrap}
+    .intent-sign .intent-editable:hover,.intent-sign .intent-editable:focus{background:#fff4bf!important}
     .saved-list{padding:12px;display:grid;gap:10px;max-height:calc(100vh - 180px);overflow:auto}
     .saved-empty{padding:16px;border:1px dashed #cfc6b7;border-radius:16px;text-align:center;font-size:12px;font-weight:900;color:#81796d;line-height:1.5;background:#fffdf8}
     .saved-card{border:1px solid var(--line);border-radius:16px;background:#fffdf8;padding:13px;box-shadow:0 10px 22px rgba(38,32,22,.05)}
@@ -137,6 +183,8 @@
       .letter-paper{position:absolute!important;left:0!important;top:0!important;width:210mm!important;min-height:297mm!important;max-width:none!important;transform:none!important;zoom:1!important;margin:0!important;box-shadow:none!important;border:none!important;background:#fff!important;padding:15mm 17mm 13mm!important}
       [contenteditable="true"]{box-shadow:none!important;background:transparent!important;outline:none!important;border:none!important;text-decoration:none!important}
       .editable-placeholder.is-empty:not(:focus)::before{border-bottom:1px dotted #aaa!important}
+      .intent-editable:hover,.intent-editable:focus{background:transparent!important}
+      .intent-crop::before,.intent-crop::after{background:#c9c9c9!important}
     }
   </style>
 </head>
@@ -168,6 +216,9 @@
           <button class="type-card active" type="button" data-type="general"><div class="type-name">부동산 활용 안내</div><div class="type-text">첫 우편용. 매도·임대·시세 상담 가능성을 부드럽게 안내합니다.</div></button>
           <button class="type-card" type="button" data-type="buyer"><div class="type-name">매입 문의 안내</div><div class="type-text">실수요자 매입 검토 문의가 있음을 정중히 알립니다.</div></button>
           <button class="type-card" type="button" data-type="listing"><div class="type-name">매물 소개 제안</div><div class="type-text">공장·창고·토지 매물 확보와 상담 안내에 적합합니다.</div></button>
+          <div class="type-section-label">거래 의향서</div>
+          <button class="type-card" type="button" data-type="purchaseIntent"><div class="type-name">매수의향서</div><div class="type-text">제공된 원본 양식 그대로 매수 의사를 간단히 전달합니다.</div></button>
+          <button class="type-card" type="button" data-type="leaseIntent"><div class="type-name">임차의향서</div><div class="type-text">동일한 양식으로 보증금과 월 차임 중심의 임차 의사를 전달합니다.</div></button>
         </div>
         <div class="left-actions">
           <button class="action-btn" type="button" id="newBtn">새 문서</button>
@@ -184,7 +235,7 @@
 
       <aside class="panel right-panel">
         <div class="panel-head">
-          <div class="panel-title">저장한 우편</div>
+          <div class="panel-title">저장한 문서</div>
           <div class="panel-desc">저장한 문서를 불러와 다시 편집할 수 있습니다.</div>
         </div>
         <div id="savedList" class="saved-list"></div>
@@ -199,11 +250,13 @@
     const templates={
       general:{label:'부동산 활용 안내',title:'부동산 활용 및 거래 가능성 검토 안내',boxTitle:'대상 부동산 개요',boxRows:[['소 재 지',''],['__AREA__',''],['용도 지역',''],['이용 상황',''],['참고 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 현장 확인과 실수요자 상담을 진행하고 있습니다.','최근 해당 지역에서 공장·창고·토지 활용 및 거래 가능성을 검토하는 문의가 있어 등기부상 소유자님께 정중히 안내드립니다.','본 안내는 매도나 임대를 강요하는 내용이 아니며, 소유자님의 의사를 우선 확인하고 필요한 경우 상담을 도와드리기 위한 것입니다.','검토 의향이 있으시다면 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)']},
       buyer:{label:'매입 문의 안내',title:'실수요자 매입 검토 관련 연락 요청',boxTitle:'매입 검토 내용',boxRows:[['희망 용도',''],['희망 면적',''],['희망 조건',''],['요청 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 전문적으로 검토하고 중개하는 공인중개사무소입니다.','최근 해당 지역 내 공장·창고·토지 매입을 검토하는 실수요자의 문의가 있어 등기부상 소유자님께 정중히 연락드립니다.','본 우편은 소유자님의 매도 의사를 확인하기 위한 안내이며, 매매가 확정되었거나 특정 조건을 강요하는 내용은 아닙니다.','검토 의향이 있으시다면 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)']},
-      listing:{label:'매물 소개 제안',title:'공장·창고·토지 매물 상담 안내',boxTitle:'대상 부동산 개요',boxRows:[['소 재 지',''],['__AREA__',''],['용도 지역',''],['이용 상황',''],['참고 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 매수자와 임차인의 실제 조건을 확인한 뒤 매물을 소개하고 있습니다.','소유자님께서 해당 부동산의 매도, 임대, 시세 확인, 향후 거래 가능성 검토를 원하실 경우 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)','상담 과정에서는 소유자님의 의사와 조건을 우선으로 확인하며, 원치 않으시는 경우 거래 진행이나 추가 연락은 하지 않습니다.']}
+      listing:{label:'매물 소개 제안',title:'공장·창고·토지 매물 상담 안내',boxTitle:'대상 부동산 개요',boxRows:[['소 재 지',''],['__AREA__',''],['용도 지역',''],['이용 상황',''],['참고 사항','']],body:['안녕하세요. 매슬로우공인중개사사무소입니다.','저희 사무소는 공장, 창고, 토지 등 산업용 부동산을 중심으로 매수자와 임차인의 실제 조건을 확인한 뒤 매물을 소개하고 있습니다.','소유자님께서 해당 부동산의 매도, 임대, 시세 확인, 향후 거래 가능성 검토를 원하실 경우 편하게 연락 주시면 됩니다. (공인중개사 박성연 010-5407-0444)','상담 과정에서는 소유자님의 의사와 조건을 우선으로 확인하며, 원치 않으시는 경우 거래 진행이나 추가 연락은 하지 않습니다.']},
+      purchaseIntent:{layout:'intent',label:'매수의향서',title:'부동산 매수의향서',action:'매매',contract:'매매계약',priceLabel:'매 매 가',price:'210억원'},
+      leaseIntent:{layout:'intent',label:'임차의향서',title:'부동산 임차의향서',action:'임차',contract:'임대차계약',priceLabel:'임 대 가',price:'보증금 2억원 / 월 차임 2,250만원'}
     };
     let currentType='general';
     let currentId=null;
-    const draftByType={general:null,buyer:null,listing:null};
+    const draftByType={};
     const paper=document.getElementById('letterPaper');
     const savedList=document.getElementById('savedList');
     function esc(s){return String(s||'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -213,8 +266,16 @@
       const empty=!val.trim();
       return `<div class="${cls}${placeholder?' editable-placeholder':''}${empty&&placeholder?' is-empty':''}" contenteditable="true" spellcheck="false" data-placeholder="${esc(placeholder)}">${esc(val)}</div>`;
     }
-    function areaInput(area,unit){
-      return `<span class="area-input editable-placeholder is-empty" contenteditable="true" spellcheck="false" data-placeholder=" " data-area="${area}" data-unit="${unit}"></span>`;
+    function inlineEditable(value,cls=''){
+      return `<span class="intent-editable ${cls}" contenteditable="true" spellcheck="false">${esc(value)}</span>`;
+    }
+    function todayKorean(){
+      const d=new Date();
+      return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+    }
+    function areaInput(area,unit,value=''){
+      const safe=esc(value);
+      return `<span class="area-input${safe?'':' editable-placeholder is-empty'}" contenteditable="true" spellcheck="false" data-placeholder=" " data-area="${area}" data-unit="${unit}">${safe}</span>`;
     }
     function areaRowHtml(){
       return `<div class="box-row area-row"><div class="box-label" contenteditable="true" spellcheck="false">토지 면적</div><div class="area-pair">${areaInput('land','m2')}<span class="area-unit">㎡</span><span class="area-unit">(</span>${areaInput('land','pyeong')}<span class="area-unit">평)</span></div><div class="box-label" contenteditable="true" spellcheck="false">건물 면적</div><div class="area-pair">${areaInput('building','m2')}<span class="area-unit">㎡</span><span class="area-unit">(</span>${areaInput('building','pyeong')}<span class="area-unit">평)</span></div></div>`;
@@ -260,6 +321,43 @@
       });
       updateEmptyState();
     }
+    function intentOrnamentHtml(){
+      return `<div class="intent-ornament" aria-hidden="true"><svg viewBox="0 0 92 30" role="img"><g fill="none" stroke="#222" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M46 27 C44 20 43 14 46 7 C49 14 48 20 46 27"/><path d="M46 22 C37 20 31 16 27 10 C34 10 40 13 46 18"/><path d="M46 22 C55 20 61 16 65 10 C58 10 52 13 46 18"/><path d="M35 18 C28 17 23 13 20 8 C26 8 31 11 35 15"/><path d="M57 18 C64 17 69 13 72 8 C66 8 61 11 57 15"/><path d="M28 13 C22 12 17 9 14 5 C19 5 24 7 28 10"/><path d="M64 13 C70 12 75 9 78 5 C73 5 68 7 64 10"/><path d="M40 10 C36 8 34 5 34 2 C38 3 41 5 43 8"/><path d="M52 10 C56 8 58 5 58 2 C54 3 51 5 49 8"/><path d="M39 25 C31 25 25 23 20 19"/><path d="M53 25 C61 25 67 23 72 19"/></g><circle cx="46" cy="5" r="2.2" fill="#222"/></svg></div>`;
+    }
+    function buildIntentHtml(t){
+      const propertyName='대호창고';
+      const signCompany='㈜인천로지스틱스';
+      return `
+        <div class="intent-document">
+          <span class="intent-crop left" aria-hidden="true"></span><span class="intent-crop right" aria-hidden="true"></span>
+          ${intentOrnamentHtml()}
+          <div class="doc-title intent-title">${esc(t.title)}</div>
+          <div class="intent-header-lines">
+            <div class="intent-header-row"><div class="intent-header-label">발 신 일</div><div class="intent-header-colon">:</div>${inlineEditable(todayKorean(),'js-intent-date')}</div>
+            <div class="intent-header-row"><div class="intent-header-label">발 신 인</div><div class="intent-header-colon">:</div>${inlineEditable('주식회사 인천로지스틱스','js-intent-sender')}</div>
+            <div class="intent-header-row"><div class="intent-header-label">수 신 인</div><div class="intent-header-colon">:</div>${inlineEditable('대호창고 주식회사','js-recipient')}</div>
+            <div class="intent-header-row"><div class="intent-header-label">중개대리인</div><div class="intent-header-colon">:</div><span>매슬로우공인중개사사무소</span></div>
+          </div>
+          <table class="intent-legal-table" aria-label="법인 정보">
+            <tr><th class="legal-label">법인명</th><td>${inlineEditable('','block')}</td><th class="legal-reg-label">법인등록번호</th><td class="legal-reg-value">${inlineEditable('-','block')}</td></tr>
+            <tr><th class="legal-address-label">주&nbsp;&nbsp;&nbsp;소</th><td colspan="3">${inlineEditable('','block')}</td></tr>
+          </table>
+          <div class="intent-intro">
+            <div class="intent-intro-line"><span>1.</span><span>귀 사의 무궁한 발전을 기원합니다.</span></div>
+            <div class="intent-intro-line"><span>2.</span><span>당사는 귀 사 소유의 ${inlineEditable(propertyName,'property-name')}를 ${esc(t.action)}하기 위하여 검토중에 있습니다.</span></div>
+            <div class="intent-intro-line"><span>3.</span><span>원만한 ${esc(t.contract)}을 위하여 원활한 협조와 정보제공을 요청드립니다.</span></div>
+          </div>
+          <div class="intent-below">- 아 래 -</div>
+          <div class="intent-details">
+            <div class="intent-detail-row"><span>가.</span><span class="intent-detail-key">종 류</span><span class="intent-detail-colon">:</span>${inlineEditable('토지 및 해당 지번 토지의 지상에 있는 모든 건축물 및 구조물 일체','type-value')}</div>
+            <div class="intent-detail-row"><span>나.</span><span class="intent-detail-key">${esc(t.priceLabel)}</span><span class="intent-detail-colon">:</span>${inlineEditable(t.price,'price-value')}</div>
+            <div class="intent-detail-row"><span>다.</span><span class="intent-detail-key">주 소</span><span class="intent-detail-colon">:</span>${inlineEditable('인천광역시 중구 항동7가 91-1(축항대로 240)','address-value js-property')}</div>
+            <div class="intent-detail-row"><span>라.</span><span class="intent-detail-key">면 적</span><span class="intent-detail-colon">:</span><span class="intent-area-pair">${areaInput('intent','m2','10,744.8')}<span>㎡(</span>${areaInput('intent','pyeong','3250')}<span>평).</span></span></div>
+          </div>
+          <div class="intent-notice">상기 정보 및 계약의 조건 등은 추후 당사자 협의에 따라 달라질 수 있습니다.</div>
+          <div class="intent-sign">${inlineEditable(signCompany,'sign-value')} 대표이사 ${inlineEditable('조 상 철','sign-value')}</div>
+        </div>`;
+    }
     function buildTemplate(type, reset=false){
       if(!reset && currentType && paper.innerHTML) draftByType[currentType]=paper.innerHTML;
       currentType=type; currentId=null;
@@ -267,7 +365,10 @@
         paper.innerHTML=draftByType[type];
       }else{
         const t=templates[type]||templates.general;
-        paper.innerHTML=`
+        if(t.layout==='intent'){
+          paper.innerHTML=buildIntentHtml(t);
+        }else{
+          paper.innerHTML=`
           <div class="doc-top">
             <div class="doc-left">
               <div class="doc-brand" contenteditable="true" spellcheck="false">${officeInfo.brand}</div>
@@ -288,6 +389,7 @@
           <div class="notice" contenteditable="true" spellcheck="false">본 안내를 원하지 않으시는 경우 연락 주시면 추가 우편 발송을 중단하겠습니다. 본 우편은 소유자님의 의사를 확인하기 위한 안내이며, 특정 거래 조건을 강요하는 내용이 아닙니다.</div>
           <div class="sign" contenteditable="true" spellcheck="false">감사합니다.<br><br>${officeInfo.name}</div>
           <div class="footer-block"><div class="footer-qr"><img src="./homepage-qr.jpg" alt="홈페이지 QR"><div>홈페이지</div></div><div class="footer-info" contenteditable="true" spellcheck="false">${officeInfo.name} · 대표 공인중개사 ${officeInfo.owner} · 등록번호 ${officeInfo.regNo}<br>${officeInfo.address} · TEL. ${officeInfo.phone} · E-Mail ${officeInfo.email}</div></div>`;
+        }
         draftByType[type]=paper.innerHTML;
       }
       document.querySelectorAll('.type-card').forEach(b=>b.classList.toggle('active',b.dataset.type===type));
@@ -310,11 +412,11 @@
     }
     function renderSaved(){
       const items=getSaved();
-      if(!items.length){savedList.innerHTML='<div class="saved-empty">저장된 우편이 없습니다.<br>중앙 문서를 편집한 뒤 저장하세요.</div>';return;}
+      if(!items.length){savedList.innerHTML='<div class="saved-empty">저장된 문서가 없습니다.<br>중앙 문서를 편집한 뒤 저장하세요.</div>';return;}
       savedList.innerHTML=items.map(item=>{const d=new Date(item.updatedAt);const date=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;return `<div class="saved-card ${item.id===currentId?'active':''}" data-id="${esc(item.id)}"><div class="saved-title">${esc(item.title)}</div><div class="saved-meta">${date} · ${esc(item.recipient)}<br>${esc(item.property)}</div><div class="saved-buttons"><button type="button" data-act="load" data-id="${esc(item.id)}">불러오기</button><button type="button" class="danger" data-act="delete" data-id="${esc(item.id)}">삭제</button></div></div>`}).join('');
     }
     function loadSaved(id){const item=getSaved().find(x=>x.id===id); if(!item)return; if(currentType && paper.innerHTML) draftByType[currentType]=paper.innerHTML; currentId=item.id; currentType=item.type||'general'; paper.innerHTML=item.html; draftByType[currentType]=item.html; document.querySelectorAll('.type-card').forEach(b=>b.classList.toggle('active',b.dataset.type===currentType)); attachEditableState(); renderSaved(); toast('불러왔습니다.');}
-    function deleteSaved(id){if(!confirm('저장한 우편을 삭제할까요?'))return; setSaved(getSaved().filter(x=>x.id!==id)); if(currentId===id)currentId=null; renderSaved(); toast('삭제했습니다.');}
+    function deleteSaved(id){if(!confirm('저장한 문서를 삭제할까요?'))return; setSaved(getSaved().filter(x=>x.id!==id)); if(currentId===id)currentId=null; renderSaved(); toast('삭제했습니다.');}
     document.querySelectorAll('.type-card').forEach(btn=>btn.addEventListener('click',()=>buildTemplate(btn.dataset.type)));
     document.getElementById('newBtn').onclick=()=>buildTemplate(currentType,true); document.getElementById('newTopBtn').onclick=()=>buildTemplate(currentType,true);
     document.getElementById('saveBtn').onclick=saveCurrent;

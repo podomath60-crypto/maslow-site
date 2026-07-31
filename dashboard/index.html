@@ -3813,11 +3813,38 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       });
     }
 
+    function getCanonicalPropertyKind(itemOrListingNumber){
+      const item = (itemOrListingNumber && typeof itemOrListingNumber === 'object') ? itemOrListingNumber : null;
+      const listingNumber = text(item ? item.listingNumber : itemOrListingNumber).trim().toUpperCase();
+
+      // 매물번호 규칙을 최우선 단일 기준으로 사용합니다.
+      if(/^MK(?:-|$)/.test(listingNumber)) return 'industrial';
+      if(/^SK(?:-|$)/.test(listingNumber)) return 'commercial';
+      if(/^DK(?:-|$)/.test(listingNumber)) return 'land';
+
+      // 매물번호가 없거나 규격 밖인 예외 데이터만 내용으로 보조 판정합니다.
+      if(item){
+        const propertyType = text(item.propertyType);
+        const title = text(item.title);
+        const zoning = text(item.zoning);
+        const buildingComposition = text(item.buildingComposition);
+        const haystack = [propertyType, title, zoning, buildingComposition].join(' ');
+
+        if(/토지|대지|임야|잡종지|창고용지/.test(haystack) || /(^|\s)(전|답)(\s|$)/.test(haystack)){
+          if(!/공장|제조/.test(haystack)) return 'land';
+        }
+        if(/상가|상업|근린|근생|사무실|오피스|판매시설|업무시설/.test(haystack)) return 'commercial';
+        if(haystack.trim()) return 'industrial';
+      }
+
+      return '';
+    }
+
     function detectTeamByListingNumber(listingNumber){
-      const code = text(listingNumber).toUpperCase();
-      if(code.indexOf('MK') === 0) return 'factory';
-      if(code.indexOf('SK') === 0) return 'shopping';
-      if(code.indexOf('DK') === 0) return 'land';
+      const kind = getCanonicalPropertyKind(listingNumber);
+      if(kind === 'industrial') return 'factory';
+      if(kind === 'commercial') return 'shopping';
+      if(kind === 'land') return 'land';
       return '';
     }
 
@@ -5092,19 +5119,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     }
 
     function getDashboardPropertyKind(item){
-      const listingNumber = text(item && item.listingNumber).toUpperCase();
-      const propertyType = text(item && item.propertyType);
-      const title = text(item && item.title);
-      const zoning = text(item && item.zoning);
-      const buildingComposition = text(item && item.buildingComposition);
-      const haystack = [propertyType, title, zoning, buildingComposition].join(' ');
-
-      if(/^DK-/.test(listingNumber)) return 'land';
-      if(/토지|대지|임야|잡종지|창고용지/.test(haystack) || /(^|\s)(전|답)(\s|$)/.test(haystack)){
-        if(!/공장|제조/.test(haystack)) return 'land';
-      }
-      if(/상가|상업|근린|근생|사무실|오피스|판매시설|업무시설/.test(haystack)) return 'commercial';
-      return 'industrial';
+      return getCanonicalPropertyKind(item) || 'industrial';
     }
 
     function openDashboardStatusModal(listingNumber){

@@ -1078,7 +1078,11 @@
       }
       .dashboard-memo-textarea{min-height:120px}
       .panel-grid{
-        grid-template-columns:repeat(4, minmax(0, 1fr));
+        width:1228.5px;
+        max-width:none;
+        margin-left:calc((100% - 980px) / 2);
+        margin-right:0;
+        grid-template-columns:repeat(5, minmax(0, 1fr));
       }
       .panel-card.desktop-only{
         display:flex;
@@ -1090,10 +1094,11 @@
       .panel-card.panel-calendar{order:2}
       .panel-card.panel-kras{order:3}
       .panel-card.panel-rfine{order:4}
-      .panel-card.panel-lookup{order:5}
-      .panel-card.panel-tracker{order:6}
-      .panel-card.panel-ddangya{order:7}
-      .panel-card.panel-price{order:8}
+      .panel-card.panel-factoryon{order:5}
+      .panel-card.panel-lookup{order:6}
+      .panel-card.panel-tracker{order:7}
+      .panel-card.panel-ddangya{order:8}
+      .panel-card.panel-price{order:9}
       .panel-grid .panel-title{
         font-size:28px;
       }
@@ -2328,6 +2333,23 @@
           <div class="panel-desc">부동산포스로 이동합니다.</div>
         </button>
 
+        <button class="panel-card desktop-only panel-factoryon compact-link" id="goFactoryOnBtn" type="button">
+          <div>
+            <div class="panel-eyebrow">Factory On</div>
+            <div class="panel-title-row">
+              <svg class="panel-icon-svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <path d="M7 39V20h10v7l9-5v5l9-5v17H7Z" fill="#EEF5FF" stroke="#2F8CFF" stroke-width="2.4" stroke-linejoin="round"/>
+                <path d="M12 20v-7h7v10" fill="#FFF6E6" stroke="#F5A623" stroke-width="2.4" stroke-linejoin="round"/>
+                <path d="M14 34h5M24 34h5M34 34h4" stroke="#146CE8" stroke-width="2.6" stroke-linecap="round"/>
+                <path d="M35 8c-4.1 0-7 2.8-7 6.5 0 4.9 7 11.5 7 11.5s7-6.6 7-11.5C42 10.8 39.1 8 35 8Z" fill="#72D96A" stroke="#167A32" stroke-width="2.2"/>
+                <circle cx="35" cy="14.5" r="2.2" fill="#FFFFFF" stroke="#167A32" stroke-width="1.6"/>
+              </svg>
+              <div class="panel-title">팩토리온</div>
+            </div>
+          </div>
+          <div class="panel-desc">팩토리온으로 이동합니다.</div>
+        </button>
+
         <button class="panel-card panel-lookup compact-link" id="goListingLookupBtn" type="button">
           <div>
             <div class="panel-eyebrow">Lookup</div>
@@ -2665,6 +2687,7 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
       priceLookupUrl: 'https://vos.land/',
       krasUrl: 'https://www.kras.go.kr/mainView.do',
       rfineUrl: 'https://new.rfine.kr/Pos/index.php',
+      factoryOnUrl: 'https://www.factoryon.go.kr/geon/map/map.do',
       hanbangBridgeUrl: 'http://127.0.0.1:18765',
       hanbangBridgeMinimumVersion: '0.4.0',
       ownSiteBridgeUrl: 'http://127.0.0.1:18766',
@@ -3766,6 +3789,13 @@ AI/SNS 상태는 완전히 초기화됩니다.</div>
     if(goRfineBtn){
       goRfineBtn.addEventListener('click', function(){
         window.open(CONFIG.rfineUrl, '_blank', 'noopener');
+      });
+    }
+
+    const goFactoryOnBtn = document.getElementById('goFactoryOnBtn');
+    if(goFactoryOnBtn){
+      goFactoryOnBtn.addEventListener('click', function(){
+        window.open(CONFIG.factoryOnUrl, '_blank', 'noopener');
       });
     }
 

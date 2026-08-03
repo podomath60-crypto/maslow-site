@@ -154,6 +154,7 @@
       :root{--top:112px}.topbar{height:112px;align-items:flex-start;flex-wrap:wrap;padding:10px}.page-title{min-width:120px}.search{order:3;flex:1 0 100%;min-width:0}.chipbar{order:4;flex:1 0 100%;max-width:100%}.toolbar-actions{margin-left:auto}.main{display:block}.map-wrap{position:absolute;inset:var(--top) 0 0 0}.right-panels{position:fixed;left:0;right:0;bottom:0;width:auto;max-width:none;height:46vh;display:none;flex-direction:column;border-top:1px solid var(--line);border-radius:24px 24px 0 0;box-shadow:0 -18px 44px rgba(15,23,42,.16);overflow:hidden}.right-panels.is-open{display:flex}
     .right-panels.is-fixed-collapsed{padding-right:30px}.panel{width:100%;flex:1 1 0;min-height:0;border-left:0;border-top:1px solid var(--line);box-shadow:none;border-radius:0}.panel.detail-panel{width:100%;flex-basis:0}.panel.is-collapsed{display:flex!important;width:0!important;max-width:0!important;flex:0 0 0!important;overflow:hidden!important}.panel-handle{display:none!important}.panel-head{padding:13px 14px}.panel-body{padding:12px 14px 22px}.stat-card{width:calc(100vw - 28px);max-width:360px}.map-note{left:14px;right:14px;bottom:72px;max-width:none}.map-count-btn{bottom:84px}.patch-panel{left:14px;right:14px;bottom:132px;width:auto;max-width:none;max-height:28vh}.spec-grid{grid-template-columns:1fr 1fr}.actions{grid-template-columns:repeat(2,1fr)}}
   </style>
+  <script src="/assets/region/region-compat.js"></script>
 </head>
 <body>
   <div class="app">
@@ -4422,6 +4423,141 @@
       bname: ledgerFirstNonEmpty(area4.name, area3.name, reverse.bname, '')
     };
   }
+
+  let parcelRegionCompatPromise = null;
+  function parcelLookupUnique(values){
+    const out = [];
+    (Array.isArray(values) ? values : []).forEach(function(value){
+      const clean = String(value || '').replace(/\D/g, '');
+      if(clean && out.indexOf(clean) === -1) out.push(clean);
+    });
+    return out;
+  }
+  function getParcelRegionCompat(){
+    if(parcelRegionCompatPromise) return parcelRegionCompatPromise;
+    parcelRegionCompatPromise = Promise.resolve().then(function(){
+      if(!window.MaslowRegionCompat || typeof window.MaslowRegionCompat.load !== 'function') return null;
+      return window.MaslowRegionCompat.load({
+        currentUrl:'/assets/region/bjdong-codes-current-20260701.json',
+        compatUrl:'/assets/region/bjdong-compat-20260701.json'
+      }).catch(function(){ return null; });
+    });
+    return parcelRegionCompatPromise;
+  }
+  function parcelLegacyFirstBcodeCandidates(resolver, input){
+    const code = String(input || '').replace(/\D/g, '').slice(0, 10);
+    let candidates = [];
+    const resolution = resolver && typeof resolver.resolveByCode === 'function' ? resolver.resolveByCode(code) : null;
+    if(resolution && resolution.resolved && Array.isArray(resolution.legacyCodes) && resolution.legacyCodes.length){
+      candidates = parcelLookupUnique(resolution.legacyCodes.concat(resolution.currentCode || []));
+    }else if(resolver && typeof resolver.getBcodeCandidates === 'function'){
+      candidates = parcelLookupUnique(resolver.getBcodeCandidates(code));
+    }
+    if(!candidates.length && code.length === 10) candidates.push(code);
+    return candidates;
+  }
+  function parcelLegacyFirstPnuCandidates(resolver, input){
+    const pnu = String(input || '').replace(/\D/g, '');
+    let candidates = [];
+    const resolution = resolver && typeof resolver.analyzePnu === 'function' ? resolver.analyzePnu(pnu) : null;
+    if(resolution && resolution.resolved && Array.isArray(resolution.legacyPnus) && resolution.legacyPnus.length){
+      candidates = parcelLookupUnique(resolution.legacyPnus.concat(resolution.currentPnu || []));
+    }else if(resolver && typeof resolver.getPnuCandidates === 'function'){
+      candidates = parcelLookupUnique(resolver.getPnuCandidates(pnu));
+    }
+    if(!candidates.length && pnu.length === 19) candidates.push(pnu);
+    return candidates;
+  }
+  function parcelHasBuildingData(data){
+    const apis = data && data.apis || {};
+    if(Array.isArray(data && data.hitApis) && data.hitApis.length) return true;
+    return Object.keys(apis).some(function(key){
+      const api = apis[key] || {};
+      if(Array.isArray(api.items) && api.items.length) return true;
+      const total = Number(api.totalCount);
+      return Number.isFinite(total) && total > 0;
+    });
+  }
+  function parcelLandObject(data){
+    return data && data.land && typeof data.land === 'object' ? data.land : (data || {});
+  }
+  function parcelHasMeaningfulLandData(data){
+    const land = parcelLandObject(data);
+    const c = land && land.characteristic || {};
+    const u = land && land.usePlan || {};
+    if([
+      c.landCategory, c.areaM2, c.areaPy, c.zoning, c.zoning2,
+      c.landUseSituation, c.terrainHeight, c.terrainShape, c.roadSide,
+      c.officialLandPrice, c.officialLandPriceText,
+      u.ledgerType, u.conflictStatus, u.zoningDistricts
+    ].some(function(v){ return String(v == null ? '' : v).trim() !== ''; })) return true;
+    const raw = land && land.raw || {};
+    return ['characteristic','individualLandPrice','usePlan'].some(function(key){
+      const root = raw[key] || {};
+      const nested = root.landCharacteristicss || root.indvdLandPrices || root.landUses || root.response || {};
+      const total = Number(nested.totalCount);
+      const field = nested.field;
+      return (Number.isFinite(total) && total > 0) || (Array.isArray(field) && field.length > 0) || (!!field && typeof field === 'object');
+    });
+  }
+  async function parcelLookupBuildingWithFallback(params){
+    const resolver = await getParcelRegionCompat();
+    const candidates = parcelLegacyFirstBcodeCandidates(resolver, params && params.bcode);
+    let firstResponse = null;
+    let lastError = null;
+    const attempts = [];
+    for(let i=0;i<candidates.length;i++){
+      const bcode = candidates[i];
+      try{
+        const response = await publicLookup(Object.assign({}, params, {bcode:bcode}));
+        if(!firstResponse) firstResponse = response;
+        const meaningful = parcelHasBuildingData(response);
+        attempts.push({bcode:bcode, ok:!!(response && response.ok), building:meaningful});
+        if(meaningful){
+          if(response && typeof response === 'object') response.compatibilityResolution = Object.assign({}, response.compatibilityResolution || {}, {inputBcode:String(params && params.bcode || '').replace(/\D/g,''), candidates:candidates.slice(), buildingBcode:bcode, attempts:attempts.slice()});
+          return response;
+        }
+      }catch(err){
+        lastError = err;
+        attempts.push({bcode:bcode, ok:false, building:false, message:cleanLedgerLookupError(err)});
+      }
+    }
+    if(firstResponse){
+      if(firstResponse && typeof firstResponse === 'object') firstResponse.compatibilityResolution = Object.assign({}, firstResponse.compatibilityResolution || {}, {inputBcode:String(params && params.bcode || '').replace(/\D/g,''), candidates:candidates.slice(), buildingBcode:'', attempts:attempts});
+      return firstResponse;
+    }
+    throw lastError || new Error('건축물대장 후보 조회 실패');
+  }
+  async function parcelLookupLandWithFallback(params){
+    const resolver = await getParcelRegionCompat();
+    const candidates = parcelLegacyFirstPnuCandidates(resolver, params && params.pnu);
+    let firstResponse = null;
+    let lastError = null;
+    const attempts = [];
+    for(let i=0;i<candidates.length;i++){
+      const pnu = candidates[i];
+      try{
+        const response = await publicLookup(Object.assign({}, params, {pnu:pnu}));
+        if(!firstResponse) firstResponse = response;
+        const meaningful = parcelHasMeaningfulLandData(response);
+        attempts.push({pnu:pnu, ok:!!(response && response.ok), land:meaningful});
+        if(meaningful){
+          const land = parcelLandObject(response);
+          if(land && typeof land === 'object') land.compatibilityResolution = {inputPnu:String(params && params.pnu || '').replace(/\D/g,''), candidates:candidates.slice(), resolvedPnu:pnu, attempts:attempts.slice()};
+          return response;
+        }
+      }catch(err){
+        lastError = err;
+        attempts.push({pnu:pnu, ok:false, land:false, message:cleanLedgerLookupError(err)});
+      }
+    }
+    if(firstResponse){
+      const land = parcelLandObject(firstResponse);
+      if(land && typeof land === 'object') land.compatibilityResolution = {inputPnu:String(params && params.pnu || '').replace(/\D/g,''), candidates:candidates.slice(), resolvedPnu:'', attempts:attempts};
+      return firstResponse;
+    }
+    throw lastError || new Error('토지정보 후보 조회 실패');
+  }
   function buildLookoutLandLookupParams(meta){
     meta = meta || {};
     const queryAddress = ledgerFirstNonEmpty(meta.queryAddress, meta.jibunAddress, meta.roadAddress, '');
@@ -4710,8 +4846,14 @@
     const road = lookupMeta.roadAddress;
     const landParams = buildLookoutLandLookupParams(lookupMeta);
     const buildingParams = buildLookoutBuildingLookupParams(lookupMeta, ctxReverse);
-    const landPromise = lookupMeta.pnu ? publicLookup(landParams).then(function(d){ ctx.landData=d && d.land ? d.land : d; }).catch(function(e){ ctx.landError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.landError='PNU 없음'; });
-    const buildingPromise = (addr || road) ? publicLookup(buildingParams).then(function(d){ ctx.buildingData=d; if(d && d.land && !ctx.landData) ctx.landData=d.land; }).catch(function(e){ ctx.buildingError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.buildingError='주소 없음'; });
+    const landPromise = lookupMeta.pnu ? parcelLookupLandWithFallback(landParams).then(function(d){
+      ctx.landData = d && d.land ? d.land : d;
+      if(!parcelHasMeaningfulLandData(d)) ctx.landError = '토지정보 실제 데이터 없음';
+    }).catch(function(e){ ctx.landError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.landError='PNU 없음'; });
+    const buildingPromise = (addr || road) ? parcelLookupBuildingWithFallback(buildingParams).then(function(d){
+      ctx.buildingData = d;
+      if(!parcelHasBuildingData(d)) ctx.buildingError = '건축물대장 실제 데이터 없음';
+    }).catch(function(e){ ctx.buildingError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.buildingError='주소 없음'; });
     await Promise.all([landPromise, buildingPromise]);
     if(seq !== state.ledgerRequestSeq) return;
     renderLedgerPanel(ctx);

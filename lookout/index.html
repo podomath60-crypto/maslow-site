@@ -21,6 +21,7 @@
 
   <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="/assets/region/region-compat.js"></script>
   <style>
     :root{
       --text:#101828;
@@ -1271,6 +1272,13 @@
     var addressLocked = false;
     var resultCacheByMode = {};
 
+    // 법정동 호환 검증 전용. shadow 모드는 후보를 계산·표시만 하며 실제 GAS/VWorld 요청값은 바꾸지 않는다.
+    var REGION_COMPAT_MODE = 'shadow';
+    var regionCompatResolver = null;
+    var regionCompatLoadStatus = 'idle';
+    var regionCompatLoadError = '';
+    var regionCompatLoadPromise = null;
+
     var els = {
       modeBuildingLandBtn: document.getElementById('modeBuildingLandBtn'),
       modeLandOnlyBtn: document.getElementById('modeLandOnlyBtn'),
@@ -1505,6 +1513,12 @@
         finalMessage: '',
         vworldSteps: [],
         lookupSteps: [],
+        regionCompatibility: {
+          mode: REGION_COMPAT_MODE,
+          status: REGION_COMPAT_MODE === 'shadow' ? 'running' : 'skip',
+          message: REGION_COMPAT_MODE === 'shadow' ? '호환 데이터 로딩 대기' : '호환 검증 꺼짐',
+          requestApplied: false
+        },
         responseSummary: {},
         landDiagnosis: {},
         buildingDiagnosis: {}
@@ -1556,6 +1570,120 @@
       step.durationMs = Math.round(perfNow() - step.startedMs);
       step.result = result || {};
       renderDiagnosticPanel(false);
+    }
+
+    function startRegionCompatLoad(){
+      if(REGION_COMPAT_MODE !== 'shadow') return Promise.resolve(null);
+      if(regionCompatResolver) return Promise.resolve(regionCompatResolver);
+      if(regionCompatLoadPromise) return regionCompatLoadPromise;
+
+      if(!window.MaslowRegionCompat || typeof window.MaslowRegionCompat.load !== 'function'){
+        regionCompatLoadStatus = 'fail';
+        regionCompatLoadError = 'region-compat.js 로드 실패';
+        regionCompatLoadPromise = Promise.reject(new Error(regionCompatLoadError));
+        regionCompatLoadPromise.catch(function(){});
+        return regionCompatLoadPromise;
+      }
+
+      regionCompatLoadStatus = 'loading';
+      regionCompatLoadPromise = window.MaslowRegionCompat.load({
+        currentUrl: '/assets/region/bjdong-codes-current-20260701.json',
+        compatUrl: '/assets/region/bjdong-compat-20260701.json'
+      }).then(function(resolver){
+        regionCompatResolver = resolver;
+        regionCompatLoadStatus = 'ready';
+        regionCompatLoadError = '';
+        return resolver;
+      }).catch(function(error){
+        regionCompatLoadStatus = 'fail';
+        regionCompatLoadError = error && error.message ? error.message : String(error);
+        throw error;
+      });
+      return regionCompatLoadPromise;
+    }
+
+    function uniqueShadowTexts(values){
+      var out = [];
+      var seen = Object.create(null);
+      (values || []).forEach(function(value){
+        var text = String(value || '').trim();
+        if(!text || seen[text]) return;
+        seen[text] = true;
+        out.push(text);
+      });
+      return out;
+    }
+
+    function buildRegionCompatShadowResult(resolver, input){
+      input = input || {};
+      var bcode = String(input.bcode || '').replace(/\D/g, '');
+      var pnu = String(input.pnu || '').replace(/\D/g, '');
+      var addresses = uniqueShadowTexts(input.addresses || []);
+      var addressResults = addresses.map(function(address){
+        var resolution = resolver.resolveByAddress(address);
+        return {
+          input: address,
+          resolved: !!(resolution && resolution.resolved),
+          reason: resolution && !resolution.resolved ? (resolution.reason || '') : '',
+          candidates: resolver.getAddressCandidates(address)
+        };
+      });
+
+      return {
+        mode: REGION_COMPAT_MODE,
+        status: 'success',
+        message: '계산 완료 · 실제 조회 요청에는 미적용',
+        requestApplied: false,
+        schemaVersion: resolver.schemaVersion || '',
+        effectiveDate: resolver.effectiveDate || '',
+        originalBcode: bcode,
+        bcodeCandidates: bcode ? resolver.getBcodeCandidates(bcode) : [],
+        originalPnu: pnu,
+        pnuCandidates: pnu ? resolver.getPnuCandidates(pnu) : [],
+        addresses: addressResults
+      };
+    }
+
+    function captureRegionCompatShadow(input){
+      if(!currentDiagnostic) return;
+      var targetDiagnostic = currentDiagnostic;
+
+      if(REGION_COMPAT_MODE !== 'shadow'){
+        targetDiagnostic.regionCompatibility = {
+          mode: REGION_COMPAT_MODE,
+          status: 'skip',
+          message: '호환 검증 꺼짐',
+          requestApplied: false
+        };
+        renderDiagnosticPanel(false);
+        return;
+      }
+
+      targetDiagnostic.regionCompatibility = {
+        mode: REGION_COMPAT_MODE,
+        status: regionCompatLoadStatus === 'fail' ? 'fail' : 'running',
+        message: regionCompatLoadStatus === 'fail' ? regionCompatLoadError : '호환 데이터 로딩 중',
+        requestApplied: false
+      };
+      renderDiagnosticPanel(false);
+
+      startRegionCompatLoad().then(function(resolver){
+        if(currentDiagnostic !== targetDiagnostic) return;
+        targetDiagnostic.regionCompatibility = buildRegionCompatShadowResult(resolver, input);
+        window.__MASLOW_REGION_COMPAT_SHADOW__ = targetDiagnostic.regionCompatibility;
+        try{ console.info('[MASLOW REGION SHADOW]', targetDiagnostic.regionCompatibility); }catch(e){}
+        renderDiagnosticPanel(false);
+      }).catch(function(error){
+        if(currentDiagnostic !== targetDiagnostic) return;
+        targetDiagnostic.regionCompatibility = {
+          mode: REGION_COMPAT_MODE,
+          status: 'fail',
+          message: error && error.message ? error.message : String(error),
+          requestApplied: false
+        };
+        window.__MASLOW_REGION_COMPAT_SHADOW__ = targetDiagnostic.regionCompatibility;
+        renderDiagnosticPanel(false);
+      });
     }
 
     function statusLabel(status){
@@ -1699,8 +1827,14 @@
         + buildDiagCode('입력값', d.input || {})
         + buildDiagCode('조회 payload', d.payload || {})
         + '</div></div>';
-      html += '<div class="diag-card"><div class="diag-card-head"><span>건축물대장 API 진단</span><span class="diag-badge ' + statusClass(buildingDiag.status) + '">' + escapeHtml(statusLabel(buildingDiag.status)) + '</span></div><div class="diag-card-body">'
-        + buildDiagRow('메시지', buildingDiag.message || '-')
+      var regionDiag = d.regionCompatibility || {};
+      html += '<div class="diag-card"><div class="diag-card-head"><span>법정동 호환 그림자 검증</span><span class="diag-badge ' + statusClass(regionDiag.status) + '">' + escapeHtml(statusLabel(regionDiag.status)) + '</span></div><div class="diag-card-body">'
+        + buildDiagRow('모드', regionDiag.mode || REGION_COMPAT_MODE)
+        + buildDiagRow('실제 요청 반영', regionDiag.requestApplied ? '예' : '아니오 · 기존 요청값 유지')
+        + buildDiagRow('상태 메시지', regionDiag.message || '-')
+        + buildDiagCode('구·신 후보 계산 결과', regionDiag || {})
+        + '</div></div>';
+      html += '<div class="diag-card"><div class="diag-card-head"><span>건축물대장 API 진단</span><span class="diag-badge ' + statusClass(buildingDiag.status) + '">' + escapeHtml(statusLabel(buildingDiag.status)) + '</span></div><div class="diag-card-body">'         + buildDiagRow('메시지', buildingDiag.message || '-')
         + buildDiagRow('조회된 endpoint', buildingDiag.hitApis || '-')
         + buildDiagRow('endpoint 오류', buildingDiag.endpointErrors || '-')
         + buildDiagRow('codeInfo', buildingDiag.codeInfo || '-')
@@ -3194,6 +3328,11 @@
           renderDiagnosticPanel(false);
         }
 
+        captureRegionCompatShadow({
+          pnu: found.pnu,
+          addresses: [found.parcelAddress, found.address, found.query, found.roadAddress]
+        });
+
         var res = await lookupPublicProperty({
           action: 'fetchLandInfoBySearchResult',
           pnu: found.pnu,
@@ -3258,6 +3397,11 @@
           currentDiagnostic.payload = diagCleanParams(params);
           renderDiagnosticPanel(false);
         }
+
+        captureRegionCompatShadow({
+          bcode: picked.bcode || '',
+          addresses: [picked.lookupAddress, picked.jibunAddress, picked.autoJibunAddress, picked.roadAddress, picked.autoRoadAddress]
+        });
 
         var res = await lookupPublicProperty(params);
         finishDiagnostic('success', res && res.message ? res.message : '조회 성공', res);
@@ -3357,6 +3501,7 @@
     }
 
     setLookupMode(LOOKUP_MODE_BUILDING_LAND);
+    startRegionCompatLoad().catch(function(){});
 
 
     renderAddressDisplay();

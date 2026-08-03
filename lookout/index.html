@@ -2282,20 +2282,44 @@
 
       function bcodeCandidates(input){
         var code = regionLookupDigits(input);
-        var resolved = resolver && typeof resolver.getBcodeCandidates === 'function'
-          ? resolver.getBcodeCandidates(code)
-          : [];
-        var candidates = regionLookupUnique(resolved);
+        var candidates = [];
+        var resolution = resolver && typeof resolver.resolveByCode === 'function'
+          ? resolver.resolveByCode(code)
+          : null;
+
+        if(resolution && resolution.resolved && Array.isArray(resolution.legacyCodes) && resolution.legacyCodes.length){
+          candidates = regionLookupUnique(
+            resolution.legacyCodes.concat(resolution.currentCode || [])
+          );
+        }else{
+          var resolved = resolver && typeof resolver.getBcodeCandidates === 'function'
+            ? resolver.getBcodeCandidates(code)
+            : [];
+          candidates = regionLookupUnique(resolved);
+        }
+
         if(!candidates.length && code.length === 10) candidates.push(code);
         return candidates;
       }
 
       function pnuCandidates(input){
         var pnu = regionLookupDigits(input);
-        var resolved = resolver && typeof resolver.getPnuCandidates === 'function'
-          ? resolver.getPnuCandidates(pnu)
-          : [];
-        var candidates = regionLookupUnique(resolved);
+        var candidates = [];
+        var resolution = resolver && typeof resolver.analyzePnu === 'function'
+          ? resolver.analyzePnu(pnu)
+          : null;
+
+        if(resolution && resolution.resolved && Array.isArray(resolution.legacyPnus) && resolution.legacyPnus.length){
+          candidates = regionLookupUnique(
+            resolution.legacyPnus.concat(resolution.currentPnu || [])
+          );
+        }else{
+          var resolved = resolver && typeof resolver.getPnuCandidates === 'function'
+            ? resolver.getPnuCandidates(pnu)
+            : [];
+          candidates = regionLookupUnique(resolved);
+        }
+
         if(!candidates.length && pnu.length === 19) candidates.push(pnu);
         return candidates;
       }

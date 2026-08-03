@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>공부조회 원시 요청 테스트</title>
+  <link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+  <style>
+    :root{
+      color-scheme: light;
+      --bg:#f3f5f8;
+      --panel:#fff;
+      --line:#dce2ea;
+      --text:#18202b;
+      --muted:#667085;
+      --strong:#111827;
+      --accent:#1f6feb;
+      --accent-dark:#1557b0;
+      --ok:#087443;
+      --warn:#9a6700;
+      --fail:#b42318;
+      --code:#0e1726;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,"Noto Sans KR",sans-serif}
+    button,input,select,textarea{font:inherit}
+    .wrap{max-width:1180px;margin:0 auto;padding:28px 18px 48px}
+    .hero{margin-bottom:18px}
+    .hero h1{margin:0 0 8px;font-size:28px;line-height:1.25;color:var(--strong)}
+    .hero p{margin:0;color:var(--muted);line-height:1.6}
+    .guard{margin-top:14px;padding:12px 14px;border:1px solid #f2c94c;background:#fff8d8;border-radius:10px;color:#694f00;font-weight:700}
+    .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 5px 18px rgba(16,24,40,.05)}
+    .panel-head{padding:17px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .panel-head h2{margin:0;font-size:18px}
+    .panel-body{padding:18px}
+    .field{margin-bottom:14px}
+    .field:last-child{margin-bottom:0}
+    label{display:block;margin-bottom:7px;font-size:13px;font-weight:800;color:#344054}
+    input,select,textarea{width:100%;border:1px solid #cbd3df;border-radius:9px;background:#fff;color:var(--text);padding:11px 12px;outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,111,235,.12)}
+    textarea{min-height:92px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .hint{margin-top:6px;font-size:12px;line-height:1.45;color:var(--muted)}
+    .actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+    .btn{border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{background:var(--accent-dark)}
+    .btn-secondary{background:#edf2f7;color:#27364a}
+    .btn-danger{background:#fee4e2;color:#912018}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .presets{display:flex;flex-wrap:wrap;gap:8px}
+    .preset{border:1px solid #cfd7e3;background:#fff;border-radius:999px;padding:8px 11px;font-size:12px;font-weight:800;cursor:pointer}
+    .preset:hover{border-color:var(--accent);color:var(--accent)}
+    .status{display:none;margin-top:16px;padding:12px 14px;border-radius:9px;font-weight:800;line-height:1.45}
+    .status.show{display:block}
+    .status.running{background:#eaf2ff;color:#174ea6}
+    .status.ok{background:#e7f7ef;color:var(--ok)}
+    .status.fail{background:#feeceb;color:var(--fail)}
+    .summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+    .metric{border:1px solid var(--line);border-radius:10px;padding:12px}
+    .metric span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+    .metric strong{font-size:16px;word-break:break-all}
+    .section-title{font-size:13px;font-weight:900;color:#344054;margin:16px 0 8px}
+    pre{margin:0;overflow:auto;max-height:420px;border-radius:10px;background:var(--code);color:#e6edf3;padding:14px;font:12px/1.55 Consolas,Monaco,monospace;white-space:pre-wrap;word-break:break-word}
+    .assertions{display:grid;gap:8px}
+    .assertion{padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-weight:700}
+    .assertion.ok{border-color:#a6e3c4;background:#effbf5;color:var(--ok)}
+    .assertion.warn{border-color:#f3d48a;background:#fff8e7;color:var(--warn)}
+    .assertion.fail{border-color:#f6b8b3;background:#fff0ef;color:var(--fail)}
+    .full{grid-column:1/-1}
+    .note{font-size:12px;color:var(--muted);line-height:1.55}
+    @media (max-width:860px){
+      .grid{grid-template-columns:1fr}
+      .row{grid-template-columns:1fr}
+      .summary{grid-template-columns:1fr 1fr}
+    }
+    @media (max-width:520px){
+      .wrap{padding:20px 12px 36px}
+      .hero h1{font-size:23px}
+      .summary{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <h1>공부조회 원시 요청 테스트</h1>
+      <p>입력한 주소·법정동코드·PNU를 변경하지 않고 현재 <code>/api/public-property-lookup</code> 라우터에 한 번만 보냅니다.</p>
+      <div class="guard">법정동 호환 모듈, 신·구 주소 변환, 후보 배열, 재조회, 폴백을 전혀 사용하지 않습니다.</div>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>원시 입력값</h2>
+          <button type="button" class="btn btn-secondary" id="resetBtn">초기화</button>
+        </div>
+        <div class="panel-body">
+          <div class="field">
+            <label for="mode">조회 방식</label>
+            <select id="mode">
+              <option value="integrated">토지·건축물 통합조회</option>
+              <option value="land">토지 PNU 직접조회</option>
+            </select>
+          </div>
+
+          <div id="integratedFields">
+            <div class="field">
+              <label for="jibunAddress">지번주소</label>
+              <input id="jibunAddress" autocomplete="off" placeholder="예: 전라남도 순천시 해룡면 신대리 2037">
+              <div class="hint">입력한 문장을 그대로 전송합니다. 주소 자동 교정이나 현행주소 전환을 하지 않습니다.</div>
+            </div>
+            <div class="field">
+              <label for="roadAddress">도로명주소 (선택)</label>
+              <input id="roadAddress" autocomplete="off" placeholder="예: 전라남도 순천시 해룡면 신대로 10">
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="bcode">법정동코드 10자리</label>
+                <input id="bcode" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="예: 4615031022">
+              </div>
+              <div class="field">
+                <label for="addressType">주소 종류</label>
+                <select id="addressType">
+                  <option value="JIBUN">JIBUN</option>
+                  <option value="ROAD">ROAD</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="landFields" hidden>
+            <div class="field">
+              <label for="landAddress">표시·진단용 주소</label>
+              <input id="landAddress" autocomplete="off" placeholder="예: 전라남도 순천시 해룡면 신대리 2037">
+            </div>
+            <div class="field">
+              <label for="pnu">PNU 19자리</label>
+              <input id="pnu" inputmode="numeric" maxlength="19" autocomplete="off" placeholder="예: 4615031022120370000">
+              <div class="hint">PNU를 변환하거나 다른 세대의 PNU를 추가하지 않고 입력값 하나만 전송합니다.</div>
+            </div>
+          </div>
+
+          <div class="section-title">빠른 테스트값</div>
+          <div class="presets" id="presets"></div>
+
+          <div class="actions">
+            <button type="button" class="btn btn-primary" id="sendBtn">라우터로 1회 조회</button>
+            <button type="button" class="btn btn-secondary" id="copyRequestBtn">요청 JSON 복사</button>
+            <button type="button" class="btn btn-secondary" id="copyResponseBtn">응답 JSON 복사</button>
+          </div>
+          <div class="status" id="status"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>조회 결과</h2></div>
+        <div class="panel-body">
+          <div class="summary">
+            <div class="metric"><span>HTTP 상태</span><strong id="httpStatus">-</strong></div>
+            <div class="metric"><span>소요시간</span><strong id="duration">-</strong></div>
+            <div class="metric"><span>건축물 적중 API</span><strong id="hitApis">-</strong></div>
+            <div class="metric"><span>응답 PNU</span><strong id="responsePnu">-</strong></div>
+          </div>
+
+          <div class="section-title">단일 요청 검증</div>
+          <div class="assertions" id="assertions">
+            <div class="assertion warn">아직 조회하지 않았습니다.</div>
+          </div>
+
+          <div class="section-title">전송한 요청</div>
+          <pre id="requestJson">{}</pre>
+
+          <div class="section-title">라우터 원본 응답</div>
+          <pre id="responseJson">{}</pre>
+        </div>
+      </section>
+
+      <section class="panel full">
+        <div class="panel-head"><h2>테스트 원칙</h2></div>
+        <div class="panel-body note">
+          이 페이지는 <code>region-compat.js</code>를 로드하지 않습니다. <code>bcodeCandidates</code>와 <code>pnuCandidates</code>를 만들지 않으며, 첫 응답을 보고 다른 코드로 재요청하지도 않습니다. 구주소 테스트에는 구주소와 구코드를 함께, 신주소 테스트에는 신주소와 신코드를 함께 입력해야 합니다.
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (function(){
+      'use strict';
+
+      var ROUTER_PATH = '/api/public-property-lookup';
+      var requestCount = 0;
+      var lastRequest = null;
+      var lastResponse = null;
+
+      var presets = [
+        {
+          label: '순천 신주소', mode: 'integrated',
+          jibunAddress: '전남광주통합특별시 순천시 해룡면 신대리 2037',
+          roadAddress: '전남광주통합특별시 순천시 해룡면 신대로 10',
+          bcode: '1215031022'
+        },
+        {
+          label: '순천 구주소', mode: 'integrated',
+          jibunAddress: '전라남도 순천시 해룡면 신대리 2037',
+          roadAddress: '전라남도 순천시 해룡면 신대로 10',
+          bcode: '4615031022'
+        },
+        {
+          label: '광주 신주소', mode: 'integrated',
+          jibunAddress: '전남광주통합특별시 동구 대인동 7-1',
+          roadAddress: '전남광주통합특별시 동구 독립로 268',
+          bcode: '1221010100'
+        },
+        {
+          label: '광주 구주소', mode: 'integrated',
+          jibunAddress: '광주광역시 동구 대인동 7-1',
+          roadAddress: '광주광역시 동구 독립로 268',
+          bcode: '2911010100'
+        },
+        {
+          label: '인천 신주소', mode: 'integrated',
+          jibunAddress: '인천광역시 제물포구 중앙동1가 3-1',
+          roadAddress: '',
+          bcode: '2812510800'
+        },
+        {
+          label: '인천 구주소', mode: 'integrated',
+          jibunAddress: '인천광역시 중구 중앙동1가 3-1',
+          roadAddress: '',
+          bcode: '2811010100'
+        },
+        {
+          label: '순천 신PNU', mode: 'land',
+          landAddress: '전남광주통합특별시 순천시 해룡면 신대리 2037',
+          pnu: '1215031022120370000'
+        },
+        {
+          label: '순천 구PNU', mode: 'land',
+          landAddress: '전라남도 순천시 해룡면 신대리 2037',
+          pnu: '4615031022120370000'
+        }
+      ];
+
+      var els = {
+        mode: document.getElementById('mode'),
+        integratedFields: document.getElementById('integratedFields'),
+        landFields: document.getElementById('landFields'),
+        jibunAddress: document.getElementById('jibunAddress'),
+        roadAddress: document.getElementById('roadAddress'),
+        bcode: document.getElementById('bcode'),
+        addressType: document.getElementById('addressType'),
+        landAddress: document.getElementById('landAddress'),
+        pnu: document.getElementById('pnu'),
+        presets: document.getElementById('presets'),
+        sendBtn: document.getElementById('sendBtn'),
+        resetBtn: document.getElementById('resetBtn'),
+        copyRequestBtn: document.getElementById('copyRequestBtn'),
+        copyResponseBtn: document.getElementById('copyResponseBtn'),
+        status: document.getElementById('status'),
+        requestJson: document.getElementById('requestJson'),
+        responseJson: document.getElementById('responseJson'),
+        httpStatus: document.getElementById('httpStatus'),
+        duration: document.getElementById('duration'),
+        hitApis: document.getElementById('hitApis'),
+        responsePnu: document.getElementById('responsePnu'),
+        assertions: document.getElementById('assertions')
+      };
+
+      function digits(value){ return String(value || '').replace(/\D/g, ''); }
+      function text(value){ return String(value == null ? '' : value).trim(); }
+      function pretty(value){ return JSON.stringify(value, null, 2); }
+
+      function setStatus(message, type){
+        els.status.textContent = message || '';
+        els.status.className = 'status' + (message ? ' show ' + (type || '') : '');
+      }
+
+      function setMode(mode){
+        mode = mode === 'land' ? 'land' : 'integrated';
+        els.mode.value = mode;
+        els.integratedFields.hidden = mode !== 'integrated';
+        els.landFields.hidden = mode !== 'land';
+      }
+
+      function buildPayload(){
+        var mode = els.mode.value;
+        if(mode === 'land'){
+          var pnu = digits(els.pnu.value);
+          var address = text(els.landAddress.value);
+          if(pnu.length !== 19) throw new Error('토지 직접조회에는 PNU 19자리가 필요합니다.');
+          return {
+            action: 'fetchLandInfoBySearchResult',
+            pnu: pnu,
+            queryAddress: address,
+            lookupAddress: address,
+            address: address
+          };
+        }
+
+        var jibunAddress = text(els.jibunAddress.value);
+        var roadAddress = text(els.roadAddress.value);
+        var bcode = digits(els.bcode.value);
+        var addressType = els.addressType.value === 'ROAD' ? 'ROAD' : 'JIBUN';
+        var queryAddress = addressType === 'ROAD' ? (roadAddress || jibunAddress) : (jibunAddress || roadAddress);
+
+        if(!queryAddress) throw new Error('주소를 입력하세요.');
+        if(bcode.length !== 10) throw new Error('법정동코드 10자리를 입력하세요.');
+
+        var payload = {
+          action: 'fetchPublicPropertyBySearchResult',
+          jibunAddress: jibunAddress,
+          roadAddress: roadAddress,
+          lookupAddress: queryAddress,
+          bcode: bcode,
+          queryAddress: queryAddress,
+          queryAddressType: addressType
+        };
+        return payload;
+      }
+
+      function updateRequestPreview(){
+        try{
+          lastRequest = buildPayload();
+          els.requestJson.textContent = pretty(lastRequest);
+        }catch(_){
+          lastRequest = null;
+          els.requestJson.textContent = '{}';
+        }
+      }
+
+      function getHitApiCount(response){
+        if(!response || typeof response !== 'object') return 0;
+        if(Array.isArray(response.hitApis)) return response.hitApis.length;
+        if(typeof response.hitApiCount === 'number') return response.hitApiCount;
+        return 0;
+      }
+
+      function getResponsePnu(response){
+        if(!response || typeof response !== 'object') return '';
+        return text(response.pnu || (response.land && response.land.pnu) || '');
+      }
+
+      function responseCode(response){
+        var info = response && response.codeInfo;
+        if(!info) return '';
+        var sigungu = digits(info.sigunguCd);
+        var bjdong = digits(info.bjdongCd);
+        return sigungu.length === 5 && bjdong.length === 5 ? sigungu + bjdong : '';
+      }
+
+      function renderAssertions(payload, response, totalRequests){
+        var rows = [];
+        var forbidden = ['bcodeCandidates', 'pnuCandidates'];
+        var forbiddenFound = forbidden.filter(function(k){ return Object.prototype.hasOwnProperty.call(payload || {}, k); });
+
+        rows.push({
+          type: totalRequests === 1 ? 'ok' : 'fail',
+          text: '라우터 요청 횟수: ' + totalRequests + '회' + (totalRequests === 1 ? ' · 단일 요청 확인' : ' · 예상과 다름')
+        });
+        rows.push({
+          type: forbiddenFound.length ? 'fail' : 'ok',
+          text: forbiddenFound.length ? ('후보 필드 포함: ' + forbiddenFound.join(', ')) : '후보 배열 없음 · 자동 호환/폴백 미사용'
+        });
+
+        if(payload && payload.bcode){
+          var reqCode = digits(payload.bcode);
+          var resCode = responseCode(response);
+          rows.push({
+            type: !resCode ? 'warn' : (reqCode === resCode ? 'ok' : 'fail'),
+            text: !resCode
+              ? '응답 codeInfo가 없어 요청 코드 사용 여부를 비교할 수 없음'
+              : ('요청 bcode ' + reqCode + ' / 응답 codeInfo ' + resCode + (reqCode === resCode ? ' · 일치' : ' · 불일치'))
+          });
+        }
+
+        if(payload && payload.pnu){
+          var reqPnu = digits(payload.pnu);
+          var resPnu = digits(getResponsePnu(response));
+          rows.push({
+            type: !resPnu ? 'warn' : (reqPnu === resPnu ? 'ok' : 'fail'),
+            text: !resPnu
+              ? '응답 PNU가 없어 요청 PNU 사용 여부를 비교할 수 없음'
+              : ('요청 PNU ' + reqPnu + ' / 응답 PNU ' + resPnu + (reqPnu === resPnu ? ' · 일치' : ' · 불일치'))
+          });
+        }
+
+        rows.push({
+          type: response && response.ok ? 'ok' : 'warn',
+          text: response && response.ok ? ('라우터 응답 ok=true · ' + text(response.message || '메시지 없음')) : ('라우터 응답 ok가 아님 · ' + text(response && response.message || '메시지 없음'))
+        });
+
+        els.assertions.innerHTML = rows.map(function(row){
+          return '<div class="assertion ' + row.type + '">' + escapeHtml(row.text) + '</div>';
+        }).join('');
+      }
+
+      function escapeHtml(value){
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      async function sendRawLookup(){
+        var payload;
+        try{
+          payload = buildPayload();
+        }catch(e){
+          setStatus(e.message || String(e), 'fail');
+          return;
+        }
+
+        lastRequest = payload;
+        lastResponse = null;
+        requestCount = 0;
+        els.requestJson.textContent = pretty(payload);
+        els.responseJson.textContent = '{}';
+        els.httpStatus.textContent = '-';
+        els.duration.textContent = '-';
+        els.hitApis.textContent = '-';
+        els.responsePnu.textContent = '-';
+        els.assertions.innerHTML = '<div class="assertion warn">조회 중입니다.</div>';
+        els.sendBtn.disabled = true;
+        setStatus('입력값을 그대로 라우터에 전송하고 있습니다.', 'running');
+
+        var q = new URLSearchParams();
+        Object.keys(payload).forEach(function(key){
+          q.set(key, payload[key] == null ? '' : String(payload[key]));
+        });
+        q.set('_ts', String(Date.now()));
+
+        var started = performance.now();
+        try{
+          requestCount += 1;
+          var res = await fetch(ROUTER_PATH + '?' + q.toString(), {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+          });
+          var data = await res.json().catch(function(){ return null; });
+          var elapsed = Math.round(performance.now() - started);
+          lastResponse = data;
+
+          els.httpStatus.textContent = String(res.status);
+          els.duration.textContent = elapsed + 'ms';
+          els.hitApis.textContent = String(getHitApiCount(data));
+          els.responsePnu.textContent = getResponsePnu(data) || '-';
+          els.responseJson.textContent = pretty(data || { ok:false, message:'JSON 응답 없음' });
+          renderAssertions(payload, data, requestCount);
+
+          if(res.ok && data && data.ok){
+            setStatus('조회 완료 · 원시 요청 1회', 'ok');
+          }else{
+            setStatus('조회 응답 실패 · ' + text(data && data.message || ('HTTP ' + res.status)), 'fail');
+          }
+        }catch(e){
+          var elapsedFail = Math.round(performance.now() - started);
+          var failPayload = { ok:false, message:e && e.message ? e.message : String(e) };
+          lastResponse = failPayload;
+          els.duration.textContent = elapsedFail + 'ms';
+          els.responseJson.textContent = pretty(failPayload);
+          renderAssertions(payload, failPayload, requestCount);
+          setStatus('조회 요청 자체가 실패했습니다. · ' + failPayload.message, 'fail');
+        }finally{
+          els.sendBtn.disabled = false;
+        }
+      }
+
+      function applyPreset(preset){
+        setMode(preset.mode);
+        if(preset.mode === 'land'){
+          els.landAddress.value = preset.landAddress || '';
+          els.pnu.value = preset.pnu || '';
+        }else{
+          els.jibunAddress.value = preset.jibunAddress || '';
+          els.roadAddress.value = preset.roadAddress || '';
+          els.bcode.value = preset.bcode || '';
+          els.addressType.value = 'JIBUN';
+        }
+        updateRequestPreview();
+        setStatus('테스트값을 채웠습니다. 자동 조회는 하지 않습니다.', 'running');
+      }
+
+      function resetAll(){
+        setMode('integrated');
+        els.jibunAddress.value = '';
+        els.roadAddress.value = '';
+        els.bcode.value = '';
+        els.addressType.value = 'JIBUN';
+        els.landAddress.value = '';
+        els.pnu.value = '';
+        lastRequest = null;
+        lastResponse = null;
+        requestCount = 0;
+        els.requestJson.textContent = '{}';
+        els.responseJson.textContent = '{}';
+        els.httpStatus.textContent = '-';
+        els.duration.textContent = '-';
+        els.hitApis.textContent = '-';
+        els.responsePnu.textContent = '-';
+        els.assertions.innerHTML = '<div class="assertion warn">아직 조회하지 않았습니다.</div>';
+        setStatus('', '');
+      }
+
+      async function copyObject(value, label){
+        if(!value){
+          setStatus(label + '이 없습니다.', 'fail');
+          return;
+        }
+        try{
+          await navigator.clipboard.writeText(pretty(value));
+          setStatus(label + '을 복사했습니다.', 'ok');
+        }catch(_){
+          setStatus('클립보드 복사에 실패했습니다.', 'fail');
+        }
+      }
+
+      presets.forEach(function(preset){
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'preset';
+        button.textContent = preset.label;
+        button.addEventListener('click', function(){ applyPreset(preset); });
+        els.presets.appendChild(button);
+      });
+
+      els.mode.addEventListener('change', function(){ setMode(els.mode.value); updateRequestPreview(); });
+      [els.jibunAddress, els.roadAddress, els.bcode, els.addressType, els.landAddress, els.pnu].forEach(function(el){
+        el.addEventListener('input', updateRequestPreview);
+        el.addEventListener('change', updateRequestPreview);
+      });
+      els.sendBtn.addEventListener('click', sendRawLookup);
+      els.resetBtn.addEventListener('click', resetAll);
+      els.copyRequestBtn.addEventListener('click', function(){ copyObject(lastRequest || (function(){ try{return buildPayload();}catch(_){return null;} })(), '요청 JSON'); });
+      els.copyResponseBtn.addEventListener('click', function(){ copyObject(lastResponse, '응답 JSON'); });
+
+      setMode('integrated');
+      updateRequestPreview();
+    })();
+  </script>
+</body>
+</html>

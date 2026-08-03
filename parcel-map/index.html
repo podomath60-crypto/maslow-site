@@ -4046,7 +4046,6 @@
         address:info.ledgerAddress || query,
         jibunAddress:info.jibunAddress,
         roadAddress:info.roadAddress,
-        reverse:{address:info.resolvedAddress, jibunAddress:info.geocodeJibunAddress, roadAddress:info.geocodeRoadAddress},
         suppressMatchedItemDetail:true
       });
       if(ctx){
@@ -4364,7 +4363,17 @@
     const inputParts = normalizeLedgerAddressParts(ledgerFirstNonEmpty(input.jibunAddress, input.address, ''));
     const reverseJibun = ledgerFirstNonEmpty(reverse.jibunAddress, reverse.address, '');
     const parcelJibun = parcel.address || '';
-    const rawJibun = ledgerFirstNonEmpty(
+    const directAddressLookup = !!String(input.rawInputAddress || '').trim();
+    const rawJibun = directAddressLookup ? ledgerFirstNonEmpty(
+      extractLedgerJibunAddress(reverseJibun),
+      extractLedgerJibunAddress(parcelJibun),
+      inputParts.jibunAddress,
+      extractLedgerJibunAddress(input.jibunAddress),
+      extractLedgerJibunAddress(input.address),
+      cleanLedgerJibunAddress(reverseJibun),
+      cleanLedgerJibunAddress(parcelJibun),
+      cleanLedgerJibunAddress(input.jibunAddress)
+    ) : ledgerFirstNonEmpty(
       inputParts.jibunAddress,
       extractLedgerJibunAddress(input.jibunAddress),
       extractLedgerJibunAddress(input.address),
@@ -4375,7 +4384,15 @@
       cleanLedgerJibunAddress(reverseJibun)
     );
     const jibunAddress = ensureMountainJibunByPnu(rawJibun, pnu);
-    const roadAddress = ledgerFirstNonEmpty(
+    const roadAddress = directAddressLookup ? ledgerFirstNonEmpty(
+      extractLedgerRoadAddress(reverse.roadAddress),
+      extractLedgerRoadAddress(reverse.address),
+      inputParts.roadAddress,
+      extractLedgerRoadAddress(input.roadAddress),
+      extractLedgerRoadAddress(input.autoRoadAddress),
+      cleanLedgerRoadAddress(reverse.roadAddress),
+      cleanLedgerRoadAddress(input.roadAddress)
+    ) : ledgerFirstNonEmpty(
       inputParts.roadAddress,
       extractLedgerRoadAddress(input.roadAddress),
       extractLedgerRoadAddress(input.autoRoadAddress),

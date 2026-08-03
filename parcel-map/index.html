@@ -295,6 +295,7 @@
     </div>
   </div>
 
+<script src="/assets/region/region-compat.js"></script>
 <script>
 (function(){
   'use strict';
@@ -4439,7 +4440,7 @@
     const regionMeta = extractReverseRegionMeta(reverse || {});
     const bcode = ledgerFirstNonEmpty(meta.bcode, regionMeta.bcode, '');
     const queryAddress = ledgerFirstNonEmpty(meta.queryAddress, meta.jibunAddress, meta.roadAddress, '');
-    // 룩아웃 통합조회 picked 객체 구조에 맞춰 보낸다.
+    // 룩아웃 통합조회 picked 객체 구조에 맞춰 기존 계약값을 그대로 보낸다.
     return {
       action:'fetchPublicPropertyBySearchResult',
       address: queryAddress,
@@ -4460,6 +4461,163 @@
       queryAddress: queryAddress,
       queryAddressType: meta.jibunAddress ? 'JIBUN' : (meta.roadAddress ? 'ROAD' : '')
     };
+  }
+
+  let parcelRegionCompatResolverPromise = null;
+  function getParcelRegionCompatResolver(){
+    if(parcelRegionCompatResolverPromise) return parcelRegionCompatResolverPromise;
+    if(!(window.MaslowRegionCompat && typeof window.MaslowRegionCompat.load === 'function')){
+      parcelRegionCompatResolverPromise = Promise.resolve(null);
+      return parcelRegionCompatResolverPromise;
+    }
+    parcelRegionCompatResolverPromise = window.MaslowRegionCompat.load({
+      currentUrl:'/assets/region/bjdong-codes-current-20260701.json',
+      compatUrl:'/assets/region/bjdong-compat-20260701.json'
+    }).catch(function(error){
+      console.warn('파셀맵 법정동 호환 데이터 로드 실패 · 기존 단일 공부조회 유지', error);
+      return null;
+    });
+    return parcelRegionCompatResolverPromise;
+  }
+  function uniqueLedgerCodes(values, length){
+    const out = [];
+    const seen = Object.create(null);
+    (values || []).forEach(function(value){
+      const code = pnuDigits(value);
+      if(code.length !== length || seen[code]) return;
+      seen[code] = true;
+      out.push(code);
+    });
+    return out;
+  }
+  function hasBuildingLedgerData(response){
+    if(!response || typeof response !== 'object' || response.ok === false) return false;
+    if(Array.isArray(response.hitApis) && response.hitApis.length) return true;
+    const apis = response.apis && typeof response.apis === 'object' ? response.apis : {};
+    return Object.keys(apis).some(function(key){
+      const block = apis[key] || {};
+      if(Array.isArray(block.items) && block.items.length) return true;
+      if(Number(block.itemCount || block.totalCount || 0) > 0) return true;
+      return !!(block.firstItem && typeof block.firstItem === 'object' && Object.keys(block.firstItem).length);
+    });
+  }
+  function landLedgerObject(response){
+    if(!response || typeof response !== 'object') return null;
+    if(response.land && typeof response.land === 'object') return response.land;
+    if(response.characteristic || response.usePlan || response.pnu) return response;
+    return null;
+  }
+  function hasMeaningfulLandLedgerData(response){
+    const land = landLedgerObject(response);
+    if(!land || land.ok === false) return false;
+    const characteristic = land.characteristic || {};
+    const usePlan = land.usePlan || {};
+    return [
+      characteristic.landCategory,
+      characteristic.areaM2,
+      characteristic.areaPy,
+      characteristic.zoning,
+      characteristic.zoning2,
+      characteristic.landUseSituation,
+      characteristic.terrainHeight,
+      characteristic.terrainShape,
+      characteristic.roadSide,
+      characteristic.officialLandPrice,
+      characteristic.officialLandPriceText,
+      usePlan.ledgerType,
+      usePlan.conflictStatus,
+      usePlan.zoningDistricts
+    ].some(function(value){ return trimLookupText(value) !== ''; });
+  }
+  async function lookupBuildingLedgerWithRegionFallback(meta, reverse){
+    meta = meta || {};
+    const baseParams = buildLookoutBuildingLookupParams(meta, reverse || {});
+    const inputBcode = pnuDigits(baseParams.bcode || '').slice(0, 10);
+    const resolver = await getParcelRegionCompatResolver();
+    let resolution = null;
+    if(resolver && inputBcode.length === 10 && typeof resolver.resolveByCode === 'function'){
+      resolution = resolver.resolveByCode(inputBcode);
+    }
+    let candidates = [inputBcode];
+    if(resolution && resolution.resolved && Array.isArray(resolution.legacyCodes) && resolution.legacyCodes.length){
+      // 건축물대장: 현행 bcode 먼저, 결과가 없을 때 구 bcode로 폴백한다.
+      candidates = uniqueLedgerCodes([resolution.currentCode].concat(resolution.legacyCodes), 10);
+    }else{
+      candidates = uniqueLedgerCodes(candidates, 10);
+    }
+    if(!candidates.length) throw new Error('건축물대장 bcode 없음');
+    let lastResponse = null;
+    let lastError = null;
+    const attempts = [];
+    for(let i=0;i<candidates.length;i++){
+      const bcode = candidates[i];
+      const params = Object.assign({}, baseParams, {bcode:bcode});
+      try{
+        const response = await publicLookup(params);
+        lastResponse = response;
+        const meaningful = hasBuildingLedgerData(response);
+        attempts.push({bcode:bcode, meaningful:meaningful, ok:!!(response && response.ok)});
+        if(meaningful){
+          const out = Object.assign({}, response);
+          out.compatibilityResolution = {kind:'building-bcode', inputBcode:inputBcode, candidates:candidates.slice(), selectedBcode:bcode, attempts:attempts};
+          return out;
+        }
+      }catch(error){
+        lastError = error;
+        attempts.push({bcode:bcode, meaningful:false, ok:false, error:cleanLedgerLookupError(error)});
+      }
+    }
+    if(lastResponse){
+      const out = Object.assign({}, lastResponse);
+      out.compatibilityResolution = {kind:'building-bcode', inputBcode:inputBcode, candidates:candidates.slice(), selectedBcode:'', attempts:attempts};
+      return out;
+    }
+    throw lastError || new Error('건축물대장 후보 조회 실패');
+  }
+  async function lookupLandLedgerWithRegionFallback(meta){
+    meta = meta || {};
+    const baseParams = buildLookoutLandLookupParams(meta);
+    const inputPnu = pnuDigits(baseParams.pnu || '');
+    const resolver = await getParcelRegionCompatResolver();
+    let resolution = null;
+    if(resolver && inputPnu.length === 19 && typeof resolver.analyzePnu === 'function'){
+      resolution = resolver.analyzePnu(inputPnu);
+    }
+    let candidates = [inputPnu];
+    if(resolution && resolution.resolved && Array.isArray(resolution.legacyPnus) && resolution.legacyPnus.length){
+      // 토지대장: 구 PNU 먼저, 결과가 없을 때 현행 PNU로 폴백한다.
+      candidates = uniqueLedgerCodes(resolution.legacyPnus.concat(resolution.currentPnu || []), 19);
+    }else{
+      candidates = uniqueLedgerCodes(candidates, 19);
+    }
+    if(!candidates.length) throw new Error('토지대장 PNU 없음');
+    let lastResponse = null;
+    let lastError = null;
+    const attempts = [];
+    for(let i=0;i<candidates.length;i++){
+      const pnu = candidates[i];
+      const params = Object.assign({}, baseParams, {pnu:pnu});
+      try{
+        const response = await publicLookup(params);
+        lastResponse = response;
+        const meaningful = hasMeaningfulLandLedgerData(response);
+        attempts.push({pnu:pnu, meaningful:meaningful, ok:!!(response && response.ok)});
+        if(meaningful){
+          const out = Object.assign({}, response);
+          out.compatibilityResolution = {kind:'land-pnu', inputPnu:inputPnu, candidates:candidates.slice(), selectedPnu:pnu, attempts:attempts};
+          return out;
+        }
+      }catch(error){
+        lastError = error;
+        attempts.push({pnu:pnu, meaningful:false, ok:false, error:cleanLedgerLookupError(error)});
+      }
+    }
+    if(lastResponse){
+      const out = Object.assign({}, lastResponse);
+      out.compatibilityResolution = {kind:'land-pnu', inputPnu:inputPnu, candidates:candidates.slice(), selectedPnu:'', attempts:attempts};
+      return out;
+    }
+    throw lastError || new Error('토지대장 후보 조회 실패');
   }
   async function publicLookupLandWithYearFallback(params){
     params = params || {};
@@ -4708,10 +4866,8 @@
     }
     const addr = lookupMeta.jibunAddress;
     const road = lookupMeta.roadAddress;
-    const landParams = buildLookoutLandLookupParams(lookupMeta);
-    const buildingParams = buildLookoutBuildingLookupParams(lookupMeta, ctxReverse);
-    const landPromise = lookupMeta.pnu ? publicLookup(landParams).then(function(d){ ctx.landData=d && d.land ? d.land : d; }).catch(function(e){ ctx.landError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.landError='PNU 없음'; });
-    const buildingPromise = (addr || road) ? publicLookup(buildingParams).then(function(d){ ctx.buildingData=d; if(d && d.land && !ctx.landData) ctx.landData=d.land; }).catch(function(e){ ctx.buildingError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.buildingError='주소 없음'; });
+    const landPromise = lookupMeta.pnu ? lookupLandLedgerWithRegionFallback(lookupMeta).then(function(d){ ctx.landData=d && d.land ? d.land : d; ctx.landCompatibility=d && d.compatibilityResolution || null; }).catch(function(e){ ctx.landError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.landError='PNU 없음'; });
+    const buildingPromise = (addr || road) ? lookupBuildingLedgerWithRegionFallback(lookupMeta, ctxReverse).then(function(d){ ctx.buildingData=d; ctx.buildingCompatibility=d && d.compatibilityResolution || null; if(d && d.land && !ctx.landData) ctx.landData=d.land; }).catch(function(e){ ctx.buildingError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.buildingError='주소 없음'; });
     await Promise.all([landPromise, buildingPromise]);
     if(seq !== state.ledgerRequestSeq) return;
     renderLedgerPanel(ctx);

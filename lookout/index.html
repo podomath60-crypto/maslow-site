@@ -1272,8 +1272,8 @@
     var addressLocked = false;
     var resultCacheByMode = {};
 
-    // 법정동 호환 검증 전용. shadow 모드는 후보를 계산·표시만 하며 실제 GAS/VWorld 요청값은 바꾸지 않는다.
-    var REGION_COMPAT_MODE = 'shadow';
+    // 법정동 호환 실조회 검증 전용. verify 모드는 구·신 후보를 모두 실제 조회하고 서비스별 성공 결과를 결합한다.
+    var REGION_COMPAT_MODE = 'verify';
     var regionCompatResolver = null;
     var regionCompatLoadStatus = 'idle';
     var regionCompatLoadError = '';
@@ -1476,7 +1476,7 @@
     }
 
 
-    var DIAG_VERSION = 'lookout-diag-20260702-01';
+    var DIAG_VERSION = 'lookout-diag-20260803-02';
     var currentDiagnostic = null;
     var diagnosticsExpanded = false;
 
@@ -1515,8 +1515,8 @@
         lookupSteps: [],
         regionCompatibility: {
           mode: REGION_COMPAT_MODE,
-          status: REGION_COMPAT_MODE === 'shadow' ? 'running' : 'skip',
-          message: REGION_COMPAT_MODE === 'shadow' ? '호환 데이터 로딩 대기' : '호환 검증 꺼짐',
+          status: REGION_COMPAT_MODE !== 'off' ? 'running' : 'skip',
+          message: REGION_COMPAT_MODE !== 'off' ? '호환 데이터 로딩 대기' : '호환 검증 꺼짐',
           requestApplied: false
         },
         responseSummary: {},
@@ -1573,7 +1573,7 @@
     }
 
     function startRegionCompatLoad(){
-      if(REGION_COMPAT_MODE !== 'shadow') return Promise.resolve(null);
+      if(REGION_COMPAT_MODE === 'off') return Promise.resolve(null);
       if(regionCompatResolver) return Promise.resolve(regionCompatResolver);
       if(regionCompatLoadPromise) return regionCompatLoadPromise;
 
@@ -1614,7 +1614,7 @@
       return out;
     }
 
-    function buildRegionCompatShadowResult(resolver, input){
+    function buildRegionCompatVerificationResult(resolver, input){
       input = input || {};
       var bcode = String(input.bcode || '').replace(/\D/g, '');
       var pnu = String(input.pnu || '').replace(/\D/g, '');
@@ -1625,6 +1625,7 @@
           input: address,
           resolved: !!(resolution && resolution.resolved),
           reason: resolution && !resolution.resolved ? (resolution.reason || '') : '',
+          matchedBy: resolution && resolution.resolved ? (resolution.matchedBy || '') : '',
           candidates: resolver.getAddressCandidates(address)
         };
       });
@@ -1632,7 +1633,7 @@
       return {
         mode: REGION_COMPAT_MODE,
         status: 'success',
-        message: '계산 완료 · 실제 조회 요청에는 미적용',
+        message: '후보 계산 완료 · 실제 조회 검증 대기',
         requestApplied: false,
         schemaVersion: resolver.schemaVersion || '',
         effectiveDate: resolver.effectiveDate || '',
@@ -1640,15 +1641,18 @@
         bcodeCandidates: bcode ? resolver.getBcodeCandidates(bcode) : [],
         originalPnu: pnu,
         pnuCandidates: pnu ? resolver.getPnuCandidates(pnu) : [],
+        resolvedBcode: '',
+        resolvedPnu: '',
+        attempts: [],
         addresses: addressResults
       };
     }
 
-    function captureRegionCompatShadow(input){
-      if(!currentDiagnostic) return;
+    async function prepareRegionCompatibility(input){
+      if(!currentDiagnostic) return null;
       var targetDiagnostic = currentDiagnostic;
 
-      if(REGION_COMPAT_MODE !== 'shadow'){
+      if(REGION_COMPAT_MODE === 'off'){
         targetDiagnostic.regionCompatibility = {
           mode: REGION_COMPAT_MODE,
           status: 'skip',
@@ -1656,34 +1660,50 @@
           requestApplied: false
         };
         renderDiagnosticPanel(false);
-        return;
+        return targetDiagnostic.regionCompatibility;
       }
 
       targetDiagnostic.regionCompatibility = {
         mode: REGION_COMPAT_MODE,
         status: regionCompatLoadStatus === 'fail' ? 'fail' : 'running',
         message: regionCompatLoadStatus === 'fail' ? regionCompatLoadError : '호환 데이터 로딩 중',
-        requestApplied: false
+        requestApplied: false,
+        attempts: []
       };
       renderDiagnosticPanel(false);
 
-      startRegionCompatLoad().then(function(resolver){
-        if(currentDiagnostic !== targetDiagnostic) return;
-        targetDiagnostic.regionCompatibility = buildRegionCompatShadowResult(resolver, input);
-        window.__MASLOW_REGION_COMPAT_SHADOW__ = targetDiagnostic.regionCompatibility;
-        try{ console.info('[MASLOW REGION SHADOW]', targetDiagnostic.regionCompatibility); }catch(e){}
+      try{
+        var resolver = await startRegionCompatLoad();
+        if(currentDiagnostic !== targetDiagnostic) return null;
+        targetDiagnostic.regionCompatibility = buildRegionCompatVerificationResult(resolver, input);
+        window.__MASLOW_REGION_COMPAT_VERIFY__ = targetDiagnostic.regionCompatibility;
         renderDiagnosticPanel(false);
-      }).catch(function(error){
-        if(currentDiagnostic !== targetDiagnostic) return;
+        return targetDiagnostic.regionCompatibility;
+      }catch(error){
+        if(currentDiagnostic !== targetDiagnostic) return null;
         targetDiagnostic.regionCompatibility = {
           mode: REGION_COMPAT_MODE,
           status: 'fail',
           message: error && error.message ? error.message : String(error),
-          requestApplied: false
+          requestApplied: false,
+          attempts: []
         };
-        window.__MASLOW_REGION_COMPAT_SHADOW__ = targetDiagnostic.regionCompatibility;
+        window.__MASLOW_REGION_COMPAT_VERIFY__ = targetDiagnostic.regionCompatibility;
         renderDiagnosticPanel(false);
+        return targetDiagnostic.regionCompatibility;
+      }
+    }
+
+    function updateRegionCompatibilityAfterLookup(patch){
+      if(!currentDiagnostic) return;
+      var current = currentDiagnostic.regionCompatibility || {};
+      currentDiagnostic.regionCompatibility = Object.assign({}, current, patch || {}, {
+        mode: REGION_COMPAT_MODE,
+        requestApplied: true
       });
+      window.__MASLOW_REGION_COMPAT_VERIFY__ = currentDiagnostic.regionCompatibility;
+      try{ console.info('[MASLOW REGION VERIFY]', currentDiagnostic.regionCompatibility); }catch(e){}
+      renderDiagnosticPanel(false);
     }
 
     function statusLabel(status){
@@ -1796,6 +1816,186 @@
       };
     }
 
+    function hasBuildingHits(data){
+      return !!(data && Array.isArray(data.hitApis) && data.hitApis.length);
+    }
+
+    function hasSuccessfulLand(data){
+      var land = getLandObjectFromResponse(data);
+      return !!(land && land.ok === true);
+    }
+
+    function responsePnu(data){
+      var land = getLandObjectFromResponse(data);
+      return firstNonEmpty(data && data.pnu, land && land.pnu).replace(/\D/g, '');
+    }
+
+    function candidateAttemptRecord(kind, value, index, total, response, error){
+      var summary = response ? summarizeLookupResponse(response) : {};
+      return {
+        kind: kind,
+        candidateIndex: index,
+        candidateCount: total,
+        value: value,
+        status: error ? 'fail' : 'success',
+        message: error ? (error.message || String(error)) : (response && response.message || ''),
+        buildingHitApiCount: Number(summary.hitApiCount || 0),
+        landOk: summary.landOk === true,
+        pnu: summary.pnu || '',
+        codeInfo: response && response.codeInfo ? response.codeInfo : {}
+      };
+    }
+
+    function buildIntegratedCompatibilityMessage(buildingAttempt, landAttempt){
+      if(buildingAttempt && landAttempt){
+        if(buildingAttempt.value !== String(landAttempt.pnu || '').slice(0, 10)){
+          return '조회 성공 · 건축물대장과 토지정보가 서로 다른 코드 세대를 사용했습니다.';
+        }
+        return '조회 성공 · 동일 코드 세대에서 건축물·토지정보를 확인했습니다.';
+      }
+      if(buildingAttempt) return '건축물대장 조회 성공 · 토지정보는 확인하지 못했습니다.';
+      if(landAttempt) return '토지정보 조회 성공 · 건축물대장 결과가 없습니다.';
+      return '구·신 후보 모두 조회 결과가 없습니다.';
+    }
+
+    async function lookupIntegratedWithCandidates(params, compat){
+      var inputCode = String(params && params.bcode || '').replace(/\D/g, '');
+      var candidates = uniqueShadowTexts((compat && compat.bcodeCandidates) || []);
+      if(!candidates.length && inputCode) candidates = [inputCode];
+
+      if(currentDiagnostic){
+        currentDiagnostic.payload = diagCleanParams(params);
+        currentDiagnostic.payload.bcodeCandidates = candidates.slice();
+        renderDiagnosticPanel(false);
+      }
+
+      var attempts = [];
+      var successfulResponses = [];
+      var lastError = null;
+
+      for(var i = 0; i < candidates.length; i++){
+        var candidate = candidates[i];
+        var candidateParams = Object.assign({}, params, { bcode: candidate });
+        try{
+          var response = await lookupPublicProperty(candidateParams, {
+            labelPrefix: '법정동 후보 ' + (i + 1) + '/' + candidates.length + ' · ' + candidate,
+            updatePayload: false,
+            setFinalSource: false
+          });
+          var record = candidateAttemptRecord('bcode', candidate, i + 1, candidates.length, response, null);
+          attempts.push(record);
+          successfulResponses.push({ value: candidate, response: response, record: record });
+        }catch(error){
+          lastError = error;
+          attempts.push(candidateAttemptRecord('bcode', candidate, i + 1, candidates.length, null, error));
+        }
+      }
+
+      if(!successfulResponses.length){
+        updateRegionCompatibilityAfterLookup({
+          status: 'fail',
+          message: '모든 법정동코드 후보 조회 실패',
+          attempts: attempts,
+          resolvedBcode: '',
+          resolvedPnu: ''
+        });
+        throw lastError || new Error('모든 법정동코드 후보 조회 실패');
+      }
+
+      var buildingAttempt = successfulResponses.find(function(item){ return hasBuildingHits(item.response); }) || null;
+      var landAttempt = successfulResponses.find(function(item){ return hasSuccessfulLand(item.response); }) || null;
+      var baseAttempt = buildingAttempt || landAttempt || successfulResponses[0];
+      var merged = Object.assign({}, baseAttempt.response);
+
+      if(buildingAttempt){
+        merged.apis = buildingAttempt.response.apis || {};
+        merged.hitApis = buildingAttempt.response.hitApis || [];
+        merged.codeInfo = buildingAttempt.response.codeInfo || {};
+      }
+      if(landAttempt){
+        merged.land = getLandObjectFromResponse(landAttempt.response);
+        merged.pnu = responsePnu(landAttempt.response);
+      }
+
+      var resolvedBcode = buildingAttempt ? buildingAttempt.value : '';
+      var resolvedPnu = landAttempt ? responsePnu(landAttempt.response) : responsePnu(merged);
+      merged.message = buildIntegratedCompatibilityMessage(buildingAttempt, landAttempt);
+      merged.compatibilityResolution = {
+        mode: REGION_COMPAT_MODE,
+        inputBcode: inputCode,
+        bcodeCandidates: candidates.slice(),
+        resolvedBuildingBcode: resolvedBcode,
+        resolvedLandPnu: resolvedPnu,
+        attempts: attempts
+      };
+
+      if(currentDiagnostic) currentDiagnostic.finalSource = '법정동 구·신 후보 실조회';
+      updateRegionCompatibilityAfterLookup({
+        status: (buildingAttempt || landAttempt) ? 'success' : 'fail',
+        message: merged.message,
+        bcodeCandidates: candidates.slice(),
+        resolvedBcode: resolvedBcode,
+        resolvedPnu: resolvedPnu,
+        attempts: attempts
+      });
+      return merged;
+    }
+
+    async function lookupLandWithPnuCandidates(params, compat){
+      var inputPnu = String(params && params.pnu || '').replace(/\D/g, '');
+      var candidates = uniqueShadowTexts((compat && compat.pnuCandidates) || []);
+      if(!candidates.length && inputPnu) candidates = [inputPnu];
+
+      if(currentDiagnostic){
+        currentDiagnostic.payload = diagCleanParams(params);
+        currentDiagnostic.payload.pnuCandidates = candidates.slice();
+        renderDiagnosticPanel(false);
+      }
+
+      var attempts = [];
+      var successfulResponses = [];
+      var lastError = null;
+
+      for(var i = 0; i < candidates.length; i++){
+        var candidate = candidates[i];
+        var candidateParams = Object.assign({}, params, { pnu: candidate });
+        try{
+          var response = await lookupPublicProperty(candidateParams, {
+            labelPrefix: 'PNU 후보 ' + (i + 1) + '/' + candidates.length + ' · ' + candidate,
+            updatePayload: false,
+            setFinalSource: false
+          });
+          var record = candidateAttemptRecord('pnu', candidate, i + 1, candidates.length, response, null);
+          attempts.push(record);
+          successfulResponses.push({ value: candidate, response: response, record: record });
+        }catch(error){
+          lastError = error;
+          attempts.push(candidateAttemptRecord('pnu', candidate, i + 1, candidates.length, null, error));
+        }
+      }
+
+      var chosen = successfulResponses.find(function(item){ return item.response && item.response.ok === true; }) || successfulResponses[0] || null;
+      if(!chosen){
+        updateRegionCompatibilityAfterLookup({
+          status: 'fail',
+          message: '모든 PNU 후보 조회 실패',
+          attempts: attempts,
+          resolvedPnu: ''
+        });
+        throw lastError || new Error('모든 PNU 후보 조회 실패');
+      }
+
+      if(currentDiagnostic) currentDiagnostic.finalSource = 'PNU 구·신 후보 실조회';
+      updateRegionCompatibilityAfterLookup({
+        status: chosen.response && chosen.response.ok ? 'success' : 'fail',
+        message: chosen.response && chosen.response.ok ? 'PNU 후보 실조회 완료' : 'PNU 후보 조회 결과 없음',
+        pnuCandidates: candidates.slice(),
+        resolvedPnu: chosen.value,
+        attempts: attempts
+      });
+      return { response: chosen.response, pnu: chosen.value };
+    }
+
     function renderDiagnosticPanel(forceExpanded){
       if(!els.diagnosticsSection || !els.diagnosticsBody) return;
       var d = currentDiagnostic;
@@ -1828,7 +2028,7 @@
         + buildDiagCode('조회 payload', d.payload || {})
         + '</div></div>';
       var regionDiag = d.regionCompatibility || {};
-      html += '<div class="diag-card"><div class="diag-card-head"><span>법정동 호환 그림자 검증</span><span class="diag-badge ' + statusClass(regionDiag.status) + '">' + escapeHtml(statusLabel(regionDiag.status)) + '</span></div><div class="diag-card-body">'
+      html += '<div class="diag-card"><div class="diag-card-head"><span>법정동 호환 실조회 검증</span><span class="diag-badge ' + statusClass(regionDiag.status) + '">' + escapeHtml(statusLabel(regionDiag.status)) + '</span></div><div class="diag-card-body">'
         + buildDiagRow('모드', regionDiag.mode || REGION_COMPAT_MODE)
         + buildDiagRow('실제 요청 반영', regionDiag.requestApplied ? '예' : '아니오 · 기존 요청값 유지')
         + buildDiagRow('상태 메시지', regionDiag.message || '-')
@@ -2262,22 +2462,28 @@
       return data;
     }
 
-    async function lookupPublicProperty(params){
+    async function lookupPublicProperty(params, options){
       params = params || {};
-      if(currentDiagnostic){
+      options = options || {};
+      var labelPrefix = String(options.labelPrefix || '').trim();
+      var prefix = labelPrefix ? (labelPrefix + ' · ') : '';
+
+      if(currentDiagnostic && options.updatePayload !== false){
         currentDiagnostic.payload = diagCleanParams(params);
         renderDiagnosticPanel(false);
       }
 
       var firstError = null;
-      var directStep = addDiagStep('lookup', '1차 GAS 직접 JSONP', {
+      var directStep = addDiagStep('lookup', prefix + '1차 GAS 직접 JSONP', {
         action: params.action || 'fetchPublicPropertyBySearchResult',
+        candidateBcode: params.bcode || '',
+        candidatePnu: params.pnu || '',
         timeoutMs: 15000
       });
       try{
         var direct = await jsonpCall(Object.assign({}, params));
         if(direct && direct.ok){
-          if(currentDiagnostic) currentDiagnostic.finalSource = 'GAS 직접조회';
+          if(currentDiagnostic && options.setFinalSource !== false) currentDiagnostic.finalSource = 'GAS 직접조회';
           finishDiagStep(directStep, 'success', direct.message || '직접조회 성공', summarizeLookupResponse(direct));
           return direct;
         }
@@ -2293,14 +2499,16 @@
         finishDiagStep(directStep, 'fail', e && e.message ? e.message : String(e), {});
       }
 
-      var proxyStep = addDiagStep('lookup', '2차 매슬로우 프록시', {
+      var proxyStep = addDiagStep('lookup', prefix + '2차 매슬로우 프록시', {
         action: params.action || 'fetchPublicPropertyBySearchResult',
+        candidateBcode: params.bcode || '',
+        candidatePnu: params.pnu || '',
         method: 'GET',
         path: '/api/public-property-lookup'
       });
       try{
         var proxy = await proxyLookupCall(Object.assign({}, params));
-        if(currentDiagnostic) currentDiagnostic.finalSource = '매슬로우 프록시';
+        if(currentDiagnostic && options.setFinalSource !== false) currentDiagnostic.finalSource = '매슬로우 프록시';
         finishDiagStep(proxyStep, 'success', proxy.message || '프록시 조회 성공', summarizeLookupResponse(proxy));
         return proxy;
       }catch(secondError){
@@ -3328,18 +3536,19 @@
           renderDiagnosticPanel(false);
         }
 
-        captureRegionCompatShadow({
+        var compat = await prepareRegionCompatibility({
           pnu: found.pnu,
           addresses: [found.parcelAddress, found.address, found.query, found.roadAddress]
         });
 
-        var res = await lookupPublicProperty({
+        var landLookup = await lookupLandWithPnuCandidates({
           action: 'fetchLandInfoBySearchResult',
           pnu: found.pnu,
           queryAddress: found.query,
           lookupAddress: found.address || found.query,
           address: found.address || found.query
-        });
+        }, compat);
+        var res = landLookup.response;
 
         if(!(res && res.ok)){
           throw new Error((res && res.message) || '토지정보 조회 실패');
@@ -3350,7 +3559,7 @@
           ok: true,
           message: res.message || '토지정보 조회 성공',
           address: found.address || found.query,
-          pnu: found.pnu,
+          pnu: landLookup.pnu,
           land: res
         }, LOOKUP_MODE_LAND_ONLY);
       }catch(e){
@@ -3393,22 +3602,18 @@
           queryAddress: params.queryAddress,
           queryAddressType: params.queryAddressType
         });
-        if(currentDiagnostic){
-          currentDiagnostic.payload = diagCleanParams(params);
-          renderDiagnosticPanel(false);
-        }
 
-        captureRegionCompatShadow({
+        var compat = await prepareRegionCompatibility({
           bcode: picked.bcode || '',
           addresses: [picked.lookupAddress, picked.jibunAddress, picked.autoJibunAddress, picked.roadAddress, picked.autoRoadAddress]
         });
 
-        var res = await lookupPublicProperty(params);
+        var res = await lookupIntegratedWithCandidates(params, compat);
         finishDiagnostic('success', res && res.message ? res.message : '조회 성공', res);
         renderResult(res, LOOKUP_MODE_BUILDING_LAND);
       }catch(e){
-        finishDiagnostic('fail', '조회 실패 · 1차 직접 조회와 2차 프록시 조회가 모두 실패했습니다.', null);
-        setStatus('조회 실패 · 1차 직접 조회와 2차 프록시 조회가 모두 실패했습니다.', 'err');
+        finishDiagnostic('fail', '조회 실패 · 법정동 구·신 후보 조회를 완료하지 못했습니다.', null);
+        setStatus('조회 실패 · 법정동 구·신 후보 조회를 완료하지 못했습니다.', 'err');
         showLookupFailPanel(e);
       }finally{
         setLoading(false);

@@ -13,12 +13,48 @@
     return value === null || value === undefined ? "" : String(value).trim();
   }
 
-  function normalizeText(value) {
+  var REGION_PREFIX_ALIASES = [
+    ["전남광주시", "전남광주통합특별시"],
+    ["서울", "서울특별시"],
+    ["부산", "부산광역시"],
+    ["대구", "대구광역시"],
+    ["인천", "인천광역시"],
+    ["광주", "광주광역시"],
+    ["대전", "대전광역시"],
+    ["울산", "울산광역시"],
+    ["세종", "세종특별자치시"],
+    ["경기", "경기도"],
+    ["강원", "강원특별자치도"],
+    ["충북", "충청북도"],
+    ["충남", "충청남도"],
+    ["전북", "전북특별자치도"],
+    ["전남", "전라남도"],
+    ["경북", "경상북도"],
+    ["경남", "경상남도"],
+    ["제주", "제주특별자치도"]
+  ];
+
+  function normalizeBaseText(value) {
     var text = toText(value);
     try {
       text = text.normalize("NFKC");
     } catch (_) {}
     return text.replace(/^대한민국\s+/, "").replace(/\s+/g, " ").trim();
+  }
+
+  function expandRegionPrefix(text) {
+    for (var i = 0; i < REGION_PREFIX_ALIASES.length; i += 1) {
+      var alias = REGION_PREFIX_ALIASES[i][0];
+      var canonical = REGION_PREFIX_ALIASES[i][1];
+      if (text === alias || text.indexOf(alias + " ") === 0) {
+        return canonical + text.slice(alias.length);
+      }
+    }
+    return text;
+  }
+
+  function normalizeText(value) {
+    return expandRegionPrefix(normalizeBaseText(value));
   }
 
   function digits(value) {
@@ -196,6 +232,7 @@
     }
 
     function resolveByAddress(input) {
+      var originalAddress = normalizeBaseText(input);
       var address = normalizeText(input);
       if (!address) return unresolved("EMPTY_ADDRESS", input);
       for (var i = 0; i < nameEntries.length; i += 1) {
@@ -203,10 +240,11 @@
         if (!startsWithLegalName(address, entry.name)) continue;
         var byCode = resolveByCode(entry.code);
         if (!byCode.resolved) continue;
-        byCode.inputAddress = address;
+        byCode.inputAddress = originalAddress;
+        byCode.normalizedAddress = address;
         byCode.matchedName = entry.name;
         byCode.matchedBy = entry.kind + "-name";
-        byCode.addressCandidates = getAddressCandidatesFromResolution(address, byCode);
+        byCode.addressCandidates = getAddressCandidatesFromResolution(originalAddress, byCode);
         return byCode;
       }
       return unresolved("NO_EXACT_LEGAL_DONG_PREFIX", input);
@@ -275,32 +313,37 @@
     }
 
     function getAddressCandidates(input) {
-      var address = normalizeText(input);
-      var resolution = resolveByAddress(address);
+      var originalAddress = normalizeBaseText(input);
+      var resolution = resolveByAddress(originalAddress);
       return resolution.resolved
-        ? getAddressCandidatesFromResolution(address, resolution)
-        : address ? [address] : [];
+        ? getAddressCandidatesFromResolution(originalAddress, resolution)
+        : originalAddress ? [originalAddress] : [];
     }
 
-    function getAddressCandidatesFromResolution(address, resolution) {
-      var candidates = [address];
+    function getAddressCandidatesFromResolution(originalAddress, resolution) {
+      var normalizedAddress = resolution.normalizedAddress || normalizeText(originalAddress);
+      var candidates = [normalizeBaseText(originalAddress)];
+      if (normalizedAddress && normalizedAddress !== candidates[0]) {
+        candidates.push(normalizedAddress);
+      }
       var matched = resolution.matchedName || resolution.inputName || "";
       if (resolution.currentName && matched && matched !== resolution.currentName) {
-        candidates.push(replacePrefix(address, matched, resolution.currentName));
+        candidates.push(replacePrefix(normalizedAddress, matched, resolution.currentName));
       }
       (resolution.legacyNames || []).forEach(function (legacyName) {
         if (matched && legacyName !== matched) {
-          candidates.push(replacePrefix(address, matched, legacyName));
+          candidates.push(replacePrefix(normalizedAddress, matched, legacyName));
         }
       });
       return unique(candidates);
     }
 
     function getCurrentAddress(input) {
-      var address = normalizeText(input);
-      var resolution = resolveByAddress(address);
-      if (!resolution.resolved || !resolution.currentName || !resolution.matchedName) return address;
-      return replacePrefix(address, resolution.matchedName, resolution.currentName);
+      var originalAddress = normalizeBaseText(input);
+      var resolution = resolveByAddress(originalAddress);
+      if (!resolution.resolved || !resolution.currentName || !resolution.matchedName) return normalizeText(originalAddress);
+      var normalizedAddress = resolution.normalizedAddress || normalizeText(originalAddress);
+      return replacePrefix(normalizedAddress, resolution.matchedName, resolution.currentName);
     }
 
     function normalizeRegionForMatching(input) {

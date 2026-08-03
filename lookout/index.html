@@ -1614,6 +1614,147 @@
       return out;
     }
 
+    function normalizeCurrentAddressWithResolver(resolver, value){
+      var text = String(value || '').trim();
+      if(!text || !resolver) return text;
+
+      var current = text;
+      try{
+        if(typeof resolver.getCurrentAddress === 'function'){
+          current = resolver.getCurrentAddress(current) || current;
+        }
+      }catch(e){}
+      try{
+        if(typeof resolver.normalizeRegionForMatching === 'function'){
+          current = resolver.normalizeRegionForMatching(current) || current;
+        }
+      }catch(e){}
+      return String(current || text).trim();
+    }
+
+    function resolveCurrentBcodeWithResolver(resolver, bcode, addresses){
+      var code = String(bcode || '').replace(/\D/g, '');
+      if(!resolver) return code;
+
+      try{
+        if(code && typeof resolver.resolveByCode === 'function'){
+          var byCode = resolver.resolveByCode(code);
+          if(byCode && byCode.resolved && byCode.currentCode){
+            return String(byCode.currentCode).replace(/\D/g, '');
+          }
+        }
+      }catch(e){}
+
+      var list = uniqueShadowTexts(addresses || []);
+      for(var i = 0; i < list.length; i++){
+        try{
+          if(typeof resolver.resolveByAddress !== 'function') break;
+          var byAddress = resolver.resolveByAddress(list[i]);
+          if(byAddress && byAddress.resolved && byAddress.currentCode){
+            return String(byAddress.currentCode).replace(/\D/g, '');
+          }
+        }catch(e){}
+      }
+      return code;
+    }
+
+    function resolveCurrentPnuWithResolver(resolver, pnu){
+      var value = String(pnu || '').replace(/\D/g, '');
+      if(!resolver || value.length !== 19) return value;
+      try{
+        if(typeof resolver.analyzePnu === 'function'){
+          var analyzed = resolver.analyzePnu(value);
+          if(analyzed && analyzed.resolved && analyzed.currentPnu){
+            return String(analyzed.currentPnu).replace(/\D/g, '');
+          }
+        }
+      }catch(e){}
+      return value;
+    }
+
+    function normalizePickedToCurrentWithResolver(input, resolver){
+      var out = Object.assign({}, input || {});
+      if(!resolver) return out;
+
+      var currentJibun = normalizeCurrentAddressWithResolver(
+        resolver,
+        firstNonEmpty(out.jibunAddress, out.autoJibunAddress)
+      );
+      var currentRoad = normalizeCurrentAddressWithResolver(
+        resolver,
+        firstNonEmpty(out.roadAddress, out.autoRoadAddress)
+      );
+      var currentLookup = normalizeCurrentAddressWithResolver(
+        resolver,
+        firstNonEmpty(out.lookupAddress, currentJibun, currentRoad)
+      );
+
+      if(currentJibun){
+        out.jibunAddress = currentJibun;
+        if(out.autoJibunAddress) out.autoJibunAddress = normalizeCurrentAddressWithResolver(resolver, out.autoJibunAddress);
+      }
+      if(currentRoad){
+        out.roadAddress = currentRoad;
+        if(out.autoRoadAddress) out.autoRoadAddress = normalizeCurrentAddressWithResolver(resolver, out.autoRoadAddress);
+      }
+
+      out.lookupAddress = currentJibun || currentLookup || currentRoad;
+      out.bcode = resolveCurrentBcodeWithResolver(resolver, out.bcode, [
+        currentJibun,
+        currentRoad,
+        currentLookup,
+        out.jibunAddress,
+        out.roadAddress
+      ]);
+      return out;
+    }
+
+    async function normalizePickedToCurrent(input){
+      try{
+        var resolver = await startRegionCompatLoad();
+        return normalizePickedToCurrentWithResolver(input, resolver);
+      }catch(e){
+        return Object.assign({}, input || {});
+      }
+    }
+
+    function normalizeIntegratedLookupParamsToCurrent(params, resolver){
+      var out = normalizePickedToCurrentWithResolver(params, resolver);
+      var currentJibun = firstNonEmpty(out.jibunAddress, out.autoJibunAddress);
+      var currentRoad = firstNonEmpty(out.roadAddress, out.autoRoadAddress);
+      var currentLookup = firstNonEmpty(currentJibun, out.lookupAddress, currentRoad);
+      out.lookupAddress = currentLookup;
+      out.queryAddress = currentLookup;
+      out.queryAddressType = currentJibun ? 'JIBUN' : 'ROAD';
+      return out;
+    }
+
+    function normalizeLandSearchResultToCurrent(found, resolver, currentQuery){
+      var out = Object.assign({}, found || {});
+      if(!resolver) return out;
+
+      out.pnu = resolveCurrentPnuWithResolver(resolver, out.pnu);
+      out.parcelAddress = normalizeCurrentAddressWithResolver(resolver, out.parcelAddress);
+      out.roadAddress = normalizeCurrentAddressWithResolver(resolver, out.roadAddress);
+      out.address = firstNonEmpty(
+        out.parcelAddress,
+        out.roadAddress,
+        normalizeCurrentAddressWithResolver(resolver, out.address),
+        currentQuery
+      );
+      out.query = normalizeCurrentAddressWithResolver(resolver, currentQuery || out.query);
+      return out;
+    }
+
+    function normalizeLandLookupParamsToCurrent(params, resolver){
+      var out = Object.assign({}, params || {});
+      out.pnu = resolveCurrentPnuWithResolver(resolver, out.pnu);
+      out.queryAddress = normalizeCurrentAddressWithResolver(resolver, out.queryAddress);
+      out.lookupAddress = normalizeCurrentAddressWithResolver(resolver, out.lookupAddress);
+      out.address = normalizeCurrentAddressWithResolver(resolver, out.address);
+      return out;
+    }
+
     function buildRegionCompatVerificationResult(resolver, input){
       input = input || {};
       var bcode = String(input.bcode || '').replace(/\D/g, '');
@@ -1859,12 +2000,19 @@
     }
 
     async function lookupIntegratedWithCandidates(params, compat){
-      var inputCode = String(params && params.bcode || '').replace(/\D/g, '');
-      var candidates = uniqueShadowTexts((compat && compat.bcodeCandidates) || []);
-      if(!candidates.length && inputCode) candidates = [inputCode];
+      var effectiveParams = normalizeIntegratedLookupParamsToCurrent(params, regionCompatResolver);
+      var inputCode = String(effectiveParams && effectiveParams.bcode || '').replace(/\D/g, '');
+      var currentCode = resolveCurrentBcodeWithResolver(regionCompatResolver, inputCode, [
+        effectiveParams && effectiveParams.jibunAddress,
+        effectiveParams && effectiveParams.autoJibunAddress,
+        effectiveParams && effectiveParams.roadAddress,
+        effectiveParams && effectiveParams.autoRoadAddress,
+        effectiveParams && effectiveParams.lookupAddress
+      ]);
+      var candidates = currentCode ? [currentCode] : (inputCode ? [inputCode] : []);
 
       if(currentDiagnostic){
-        currentDiagnostic.payload = diagCleanParams(params);
+        currentDiagnostic.payload = diagCleanParams(effectiveParams);
         currentDiagnostic.payload.bcodeCandidates = candidates.slice();
         renderDiagnosticPanel(false);
       }
@@ -1875,7 +2023,7 @@
 
       for(var i = 0; i < candidates.length; i++){
         var candidate = candidates[i];
-        var candidateParams = Object.assign({}, params, { bcode: candidate });
+        var candidateParams = Object.assign({}, effectiveParams, { bcode: candidate });
         try{
           var response = await lookupPublicProperty(candidateParams, {
             labelPrefix: '법정동 후보 ' + (i + 1) + '/' + candidates.length + ' · ' + candidate,
@@ -1942,12 +2090,13 @@
     }
 
     async function lookupLandWithPnuCandidates(params, compat){
-      var inputPnu = String(params && params.pnu || '').replace(/\D/g, '');
-      var candidates = uniqueShadowTexts((compat && compat.pnuCandidates) || []);
-      if(!candidates.length && inputPnu) candidates = [inputPnu];
+      var effectiveParams = normalizeLandLookupParamsToCurrent(params, regionCompatResolver);
+      var inputPnu = String(effectiveParams && effectiveParams.pnu || '').replace(/\D/g, '');
+      var currentPnu = resolveCurrentPnuWithResolver(regionCompatResolver, inputPnu);
+      var candidates = currentPnu ? [currentPnu] : (inputPnu ? [inputPnu] : []);
 
       if(currentDiagnostic){
-        currentDiagnostic.payload = diagCleanParams(params);
+        currentDiagnostic.payload = diagCleanParams(effectiveParams);
         currentDiagnostic.payload.pnuCandidates = candidates.slice();
         renderDiagnosticPanel(false);
       }
@@ -1958,7 +2107,7 @@
 
       for(var i = 0; i < candidates.length; i++){
         var candidate = candidates[i];
-        var candidateParams = Object.assign({}, params, { pnu: candidate });
+        var candidateParams = Object.assign({}, effectiveParams, { pnu: candidate });
         try{
           var response = await lookupPublicProperty(candidateParams, {
             labelPrefix: 'PNU 후보 ' + (i + 1) + '/' + candidates.length + ' · ' + candidate,
@@ -2549,8 +2698,8 @@
         new daum.Postcode({
           q: String(initialQuery || '').trim(),
           autoClose: true,
-          oncomplete:function(data){
-            picked = {
+          oncomplete:async function(data){
+            var selected = {
               jibunAddress: data.jibunAddress || data.autoJibunAddress || '',
               roadAddress: data.roadAddress || data.autoRoadAddress || '',
               lookupAddress: (data.jibunAddress || data.autoJibunAddress || data.roadAddress || data.autoRoadAddress || ''),
@@ -2565,6 +2714,7 @@
               autoRoadAddress: data.autoRoadAddress || '',
               addressType: data.addressType || ''
             };
+            picked = await normalizePickedToCurrent(selected);
             addressLocked = true;
             renderAddressDisplay();
             els.pickedLine.textContent = joinValues([
@@ -3517,7 +3667,11 @@
         hideLookupFailPanel();
         setStatus('', '');
 
-        var found = await searchVworldParcelPnu(query);
+        var resolver = null;
+        try{ resolver = await startRegionCompatLoad(); }catch(e){}
+        var currentQuery = normalizeCurrentAddressWithResolver(resolver, query);
+        var found = await searchVworldParcelPnu(currentQuery);
+        found = normalizeLandSearchResultToCurrent(found, resolver, currentQuery);
         if(!found.pnu || found.pnu.length !== 19){
           throw new Error('필지 식별정보를 확인하지 못했습니다.');
         }

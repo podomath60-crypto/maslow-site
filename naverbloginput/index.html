@@ -10,6 +10,7 @@
   <meta name="naverbot" content="noindex, nofollow, noarchive, nosnippet" />
 <title>블로그 발행기</title>
   <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+  <script src="/assets/region/region-compat.js"></script>
   <style>
     :root{
       --bg:#ffffff;
@@ -2372,7 +2373,7 @@ async function buildLookupGeneratedAssets(lookupResult){
       Object.keys(selectedAddressSearchData).forEach(function(k){
         payload[k] = selectedAddressSearchData[k];
       });
-      fetchPostJson(payload)
+      lookupBuildingWithRegionFallback_(payload)
         .then(function(data){
           if(!(data && data.ok)){
             throw new Error(((data && (data.error || data.message)) || '조회 실패') + ' · 다시 버튼을 눌러주세요');
@@ -2439,6 +2440,86 @@ async function buildLookupGeneratedAssets(lookupResult){
       });
     }
 
+    var regionCompatResolverPromise_ = null;
+
+    function getRegionCompatResolver_(){
+      if(regionCompatResolverPromise_) return regionCompatResolverPromise_;
+      if(!(window.MaslowRegionCompat && typeof window.MaslowRegionCompat.load === 'function')){
+        regionCompatResolverPromise_ = Promise.resolve(null);
+        return regionCompatResolverPromise_;
+      }
+      regionCompatResolverPromise_ = window.MaslowRegionCompat.load().catch(function(error){
+        console.warn('법정동 호환 데이터 로드 실패 · 기존 단일 조회 유지', error);
+        return null;
+      });
+      return regionCompatResolverPromise_;
+    }
+
+    function uniqueBcodes_(values){
+      var out = [];
+      var seen = Object.create(null);
+      (values || []).forEach(function(value){
+        var code = String(value == null ? '' : value).replace(/\D/g, '');
+        if(code.length !== 10 || seen[code]) return;
+        seen[code] = true;
+        out.push(code);
+      });
+      return out;
+    }
+
+    function hasBuildingLookupData_(response){
+      if(!(response && response.ok)) return false;
+      var apis = response.apis || {};
+      var keys = Object.keys(apis);
+      for(var i=0;i<keys.length;i++){
+        var block = apis[keys[i]] || {};
+        if(Array.isArray(block.items) && block.items.length) return true;
+        if(Number(block.totalCount || 0) > 0) return true;
+        if(block.firstItem && Object.keys(block.firstItem).length) return true;
+      }
+      return Array.isArray(response.hitApis) && response.hitApis.length > 0;
+    }
+
+    async function buildingBcodeCandidates_(inputBcode){
+      var input = String(inputBcode == null ? '' : inputBcode).replace(/\D/g, '');
+      if(input.length !== 10) return input ? [input] : [];
+
+      var resolver = await getRegionCompatResolver_();
+      if(!resolver) return [input];
+
+      var resolution = typeof resolver.resolveByCode === 'function'
+        ? resolver.resolveByCode(input)
+        : null;
+
+      if(resolution && resolution.resolved && Array.isArray(resolution.legacyCodes) && resolution.legacyCodes.length){
+        return uniqueBcodes_(resolution.legacyCodes.concat(resolution.currentCode || [], input));
+      }
+
+      return [input];
+    }
+
+    async function lookupBuildingWithRegionFallback_(params){
+      params = Object.assign({}, params || {});
+      var candidates = await buildingBcodeCandidates_(params.bcode);
+      if(!candidates.length) return jsonpLookupCall(params);
+
+      var lastResponse = null;
+      var lastError = null;
+
+      for(var i=0;i<candidates.length;i++){
+        try{
+          var response = await jsonpLookupCall(Object.assign({}, params, { bcode:candidates[i] }));
+          lastResponse = response;
+          if(hasBuildingLookupData_(response)) return response;
+        }catch(error){
+          lastError = error;
+        }
+      }
+
+      if(lastResponse) return lastResponse;
+      throw lastError || new Error('건축물 조회 실패');
+    }
+
     function guessQueryAddressType_(address){
       var s = String(address || '').trim();
       if(!s) return 'ROAD';
@@ -2501,7 +2582,7 @@ async function buildLookupGeneratedAssets(lookupResult){
       params.queryAddress = picked.lookupAddress || picked.jibunAddress || picked.autoJibunAddress || picked.roadAddress || '';
       params.queryAddressType = queryAddressType;
 
-      var data = await jsonpLookupCall(params);
+      var data = await lookupBuildingWithRegionFallback_(params);
       if(!(data && data.ok)){
         throw new Error((data && (data.error || data.message)) || '조회 실패');
       }
@@ -2609,7 +2690,7 @@ async function buildLookupGeneratedAssets(lookupResult){
       params.queryAddress = picked.lookupAddress || picked.jibunAddress || picked.autoJibunAddress || picked.roadAddress || '';
       params.queryAddressType = (picked.jibunAddress || picked.autoJibunAddress) ? 'JIBUN' : 'ROAD';
 
-      var res = await jsonpLookupCall(params);
+      var res = await lookupBuildingWithRegionFallback_(params);
       if(!(res && res.ok)){
         throw new Error('조회 실패 · 다시 버튼을 눌러주세요');
       }
@@ -2657,7 +2738,7 @@ async function buildLookupGeneratedAssets(lookupResult){
       params.queryAddress = picked.lookupAddress || picked.jibunAddress || picked.autoJibunAddress || picked.roadAddress || '';
       params.queryAddressType = (picked.jibunAddress || picked.autoJibunAddress) ? 'JIBUN' : 'ROAD';
 
-      var res = await jsonpLookupCall(params);
+      var res = await lookupBuildingWithRegionFallback_(params);
       if(!(res && res.ok)){
         throw new Error(((res && (res.error || res.message)) || '조회 실패') + ' · 다시 버튼을 눌러주세요');
       }

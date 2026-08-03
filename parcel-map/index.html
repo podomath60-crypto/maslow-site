@@ -4426,7 +4426,7 @@
   function buildLookoutLandLookupParams(meta){
     meta = meta || {};
     const queryAddress = ledgerFirstNonEmpty(meta.queryAddress, meta.jibunAddress, meta.roadAddress, '');
-    // 토지대장 GAS 계약값만 보낸다.
+    // 룩아웃 토지대장 단독조회와 같은 스키마만 보낸다.
     return {
       action:'fetchLandInfoBySearchResult',
       pnu: meta.pnu || '',
@@ -4435,124 +4435,123 @@
       address: queryAddress
     };
   }
-  function buildLookoutBuildingLookupParams(meta){
+  function buildLookoutBuildingLookupParams(meta, reverse){
     meta = meta || {};
-    const jibunAddress = trimLookupText(meta.jibunAddress || '');
-    const roadAddress = trimLookupText(meta.roadAddress || '');
-    const queryAddressType = jibunAddress ? 'JIBUN' : (roadAddress ? 'ROAD' : '');
-    const queryAddress = queryAddressType === 'ROAD' ? roadAddress : jibunAddress;
-    // 건축물대장 GAS 계약값만 보낸다. 후보 배열이나 PNU 등 임의 필드는 섞지 않는다.
+    const regionMeta = extractReverseRegionMeta(reverse || {});
+    const bcode = ledgerFirstNonEmpty(meta.bcode, regionMeta.bcode, '');
+    const queryAddress = ledgerFirstNonEmpty(meta.queryAddress, meta.jibunAddress, meta.roadAddress, '');
+    // 룩아웃 통합조회 picked 객체 구조에 맞춰 보낸다.
     return {
       action:'fetchPublicPropertyBySearchResult',
-      jibunAddress: jibunAddress,
-      roadAddress: roadAddress,
+      address: queryAddress,
+      jibunAddress: meta.jibunAddress || '',
+      roadAddress: meta.roadAddress || '',
+      autoJibunAddress: meta.jibunAddress || '',
+      autoRoadAddress: meta.roadAddress || '',
       lookupAddress: queryAddress,
-      bcode: pnuDigits(meta.bcode || '').slice(0, 10),
+      bcode: bcode,
+      sido: regionMeta.sido || '',
+      sigungu: regionMeta.sigungu || '',
+      bname: regionMeta.bname || '',
+      buildingName: '',
+      zonecode: '',
+      apartment: '',
+      addressType: meta.jibunAddress ? 'JIBUN' : (meta.roadAddress ? 'ROAD' : ''),
+      pnu: meta.pnu || '',
       queryAddress: queryAddress,
-      queryAddressType: queryAddressType
+      queryAddressType: meta.jibunAddress ? 'JIBUN' : (meta.roadAddress ? 'ROAD' : '')
     };
   }
 
-  let parcelRegionCompatResolverPromise = null;
-  function getParcelRegionCompatResolver(){
-    if(parcelRegionCompatResolverPromise) return parcelRegionCompatResolverPromise;
+
+  // 법정동 신·구 호환은 실제 변경 매핑이 확인된 경우에만 작동한다.
+  // 매핑이 없는 일반 주소는 아래 함수를 거치더라도 기존 payload와 기존 단일 호출을 그대로 사용한다.
+  let parcelLedgerRegionResolverPromise = null;
+  function getParcelLedgerRegionResolver(){
+    if(parcelLedgerRegionResolverPromise) return parcelLedgerRegionResolverPromise;
     if(!(window.MaslowRegionCompat && typeof window.MaslowRegionCompat.load === 'function')){
-      parcelRegionCompatResolverPromise = Promise.resolve(null);
-      return parcelRegionCompatResolverPromise;
+      parcelLedgerRegionResolverPromise = Promise.resolve(null);
+      return parcelLedgerRegionResolverPromise;
     }
-    parcelRegionCompatResolverPromise = window.MaslowRegionCompat.load({
+    parcelLedgerRegionResolverPromise = window.MaslowRegionCompat.load({
       currentUrl:'/assets/region/bjdong-codes-current-20260701.json',
       compatUrl:'/assets/region/bjdong-compat-20260701.json'
     }).catch(function(error){
-      console.warn('파셀맵 법정동 호환 데이터 로드 실패 · 기존 단일 공부조회 유지', error);
+      console.warn('파셀맵 법정동 호환 데이터 로드 실패 · 기존 공부조회 유지', error);
       return null;
     });
-    return parcelRegionCompatResolverPromise;
-  }
-  function uniqueLedgerCodes(values, length){
-    const out = [];
-    const seen = Object.create(null);
-    (values || []).forEach(function(value){
-      const code = pnuDigits(value);
-      if(code.length !== length || seen[code]) return;
-      seen[code] = true;
-      out.push(code);
-    });
-    return out;
+    return parcelLedgerRegionResolverPromise;
   }
 
-  // 2026 호환표보다 먼저 시행된 광역단체 명칭·코드 전환.
-  // 현재 공부·지도 체계는 신코드를 사용하지만 일부 공부 API는 구코드를 요구한다.
-  const PARCEL_LEDGER_STATIC_REGION_TRANSITIONS = [
+  const PARCEL_LEDGER_PROVINCE_TRANSITIONS = [
     {legacyCodePrefix:'42', currentCodePrefix:'51', legacySido:'강원도', currentSido:'강원특별자치도'},
     {legacyCodePrefix:'45', currentCodePrefix:'52', legacySido:'전라북도', currentSido:'전북특별자치도'}
   ];
-  function startsWithLedgerRegion(address, regionName){
+  function ledgerCompatStartsWith(address, prefix){
     const text = trimLookupText(address);
-    const name = trimLookupText(regionName);
-    return !!(text && name && (text === name || text.indexOf(name + ' ') === 0));
+    const head = trimLookupText(prefix);
+    return !!(text && head && (text === head || text.indexOf(head + ' ') === 0));
   }
-  function replaceLedgerRegionPrefix(address, fromName, toName){
+  function ledgerCompatReplacePrefix(address, fromPrefix, toPrefix){
     const text = trimLookupText(address);
-    const from = trimLookupText(fromName);
-    const to = trimLookupText(toName);
-    if(!text || !from || !to || !startsWithLedgerRegion(text, from)) return text;
+    const from = trimLookupText(fromPrefix);
+    const to = trimLookupText(toPrefix);
+    if(!ledgerCompatStartsWith(text, from) || !to) return text;
     return trimLookupText(to + text.slice(from.length));
   }
-  function legalNameFromJibunAddress(address){
-    const text = cleanLedgerJibunAddress(address);
+  function ledgerCompatLegalName(address){
+    const text = cleanLedgerJibunAddress(address || '');
     if(!text) return '';
     return trimLookupText(text.replace(/\s+(?:산\s*)?\d{1,5}(?:-\d{1,5})?$/, ''));
   }
-  function ledgerLotText(meta, pnu){
-    const cleanPnu = pnuDigits(pnu || (meta && meta.pnu) || '');
+  function ledgerCompatLotText(address, pnu){
+    const cleanPnu = pnuDigits(pnu || '');
     if(cleanPnu.length === 19){
-      const bunji = pnuBunJiText(cleanPnu);
-      if(bunji) return (cleanPnu.slice(10, 11) === '2' ? '산 ' : '') + bunji;
+      const lot = pnuBunJiText(cleanPnu);
+      if(lot) return (cleanPnu.slice(10, 11) === '2' ? '산 ' : '') + lot;
     }
-    const source = cleanLedgerJibunAddress(meta && meta.jibunAddress || '');
-    const matched = source.match(/(?:^|\s)((?:산\s*)?\d{1,5}(?:-\d{1,5})?)$/);
-    return matched ? trimLookupText(matched[1]) : '';
+    const text = cleanLedgerJibunAddress(address || '');
+    const match = text.match(/(?:^|\s)((?:산\s*)?\d{1,5}(?:-\d{1,5})?)$/);
+    return match ? trimLookupText(match[1]) : '';
   }
-  function commonLegalNameSuffixLength(a, b){
-    const aa = trimLookupText(a).split(' ').filter(Boolean);
-    const bb = trimLookupText(b).split(' ').filter(Boolean);
-    let count = 0;
-    while(count < aa.length && count < bb.length && aa[aa.length - 1 - count] === bb[bb.length - 1 - count]) count += 1;
-    return count;
+  function ledgerCompatParentName(legalName){
+    const parts = trimLookupText(legalName).split(' ').filter(Boolean);
+    return parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
   }
-  function changedRegionPrefixPair(currentName, legacyName){
-    const currentTokens = trimLookupText(currentName).split(' ').filter(Boolean);
-    const legacyTokens = trimLookupText(legacyName).split(' ').filter(Boolean);
-    const common = commonLegalNameSuffixLength(currentName, legacyName);
-    if(!common) return {currentPrefix:'', legacyPrefix:''};
+  function ledgerCompatRegionFields(legalName){
+    const parts = trimLookupText(legalName).split(' ').filter(Boolean);
     return {
-      currentPrefix: currentTokens.slice(0, currentTokens.length - common).join(' '),
-      legacyPrefix: legacyTokens.slice(0, legacyTokens.length - common).join(' ')
+      sido: parts[0] || '',
+      sigungu: parts.length > 2 ? parts.slice(1, -1).join(' ') : '',
+      bname: parts.length > 1 ? parts[parts.length - 1] : ''
     };
   }
-  function normalizeLedgerResolution(resolution){
-    resolution = resolution || {};
-    const currentCode = pnuDigits(resolution.currentCode || '').slice(0, 10);
-    const currentName = trimLookupText(resolution.currentName || resolution.inputName || '');
-    const legacyCodes = Array.isArray(resolution.legacyCodes) ? resolution.legacyCodes : [];
-    const legacyNames = Array.isArray(resolution.legacyNames) ? resolution.legacyNames : [];
+  function ledgerCompatNormalizeResolution(raw){
+    raw = raw || {};
+    const currentCode = pnuDigits(raw.currentCode || '').slice(0, 10);
+    const currentName = trimLookupText(raw.currentName || '');
+    const legacyCodes = Array.isArray(raw.legacyCodes) ? raw.legacyCodes : [];
+    const legacyNames = Array.isArray(raw.legacyNames) ? raw.legacyNames : [];
     const legacy = [];
     for(let i=0;i<legacyCodes.length;i++){
-      const code = pnuDigits(legacyCodes[i]).slice(0, 10);
+      const code = pnuDigits(legacyCodes[i] || '').slice(0, 10);
       if(code.length !== 10 || code === currentCode) continue;
       legacy.push({code:code, name:trimLookupText(legacyNames[i] || '')});
     }
-    return {currentCode:currentCode, currentName:currentName, legacy:legacy};
+    if(currentCode.length !== 10 || !legacy.length) return null;
+    return {current:{code:currentCode, name:currentName}, legacy:legacy};
   }
-  function staticLedgerResolution(inputCode, inputAddress, resolver){
-    const code = pnuDigits(inputCode).slice(0, 10);
-    if(code.length !== 10) return null;
-    for(let i=0;i<PARCEL_LEDGER_STATIC_REGION_TRANSITIONS.length;i++){
-      const transition = PARCEL_LEDGER_STATIC_REGION_TRANSITIONS[i];
-      const isLegacy = code.slice(0, 2) === transition.legacyCodePrefix;
-      const isCurrent = code.slice(0, 2) === transition.currentCodePrefix;
-      if(!isLegacy && !isCurrent) continue;
+  function ledgerCompatStaticProvinceResolution(inputCode, inputAddress, resolver){
+    const code = pnuDigits(inputCode || '').slice(0, 10);
+    const legalName = ledgerCompatLegalName(inputAddress);
+    for(let i=0;i<PARCEL_LEDGER_PROVINCE_TRANSITIONS.length;i++){
+      const transition = PARCEL_LEDGER_PROVINCE_TRANSITIONS[i];
+      const codeIsLegacy = code.slice(0, 2) === transition.legacyCodePrefix;
+      const codeIsCurrent = code.slice(0, 2) === transition.currentCodePrefix;
+      const addressIsLegacy = ledgerCompatStartsWith(legalName, transition.legacySido);
+      const addressIsCurrent = ledgerCompatStartsWith(legalName, transition.currentSido);
+      if(!codeIsLegacy && !codeIsCurrent && !addressIsLegacy && !addressIsCurrent) continue;
+      if(code.length !== 10) continue;
       const currentCode = transition.currentCodePrefix + code.slice(2);
       const legacyCode = transition.legacyCodePrefix + code.slice(2);
       let currentName = '';
@@ -4560,87 +4559,80 @@
         const current = resolver.resolveByCode(currentCode);
         if(current && current.resolved) currentName = trimLookupText(current.currentName || current.inputName || '');
       }
-      const inputLegalName = legalNameFromJibunAddress(inputAddress);
-      if(!currentName && inputLegalName){
-        currentName = replaceLedgerRegionPrefix(inputLegalName, transition.legacySido, transition.currentSido);
+      if(!currentName && legalName){
+        currentName = addressIsLegacy
+          ? ledgerCompatReplacePrefix(legalName, transition.legacySido, transition.currentSido)
+          : legalName;
       }
-      let legacyName = currentName ? replaceLedgerRegionPrefix(currentName, transition.currentSido, transition.legacySido) : '';
-      if(!legacyName && inputLegalName){
-        legacyName = replaceLedgerRegionPrefix(inputLegalName, transition.currentSido, transition.legacySido);
-      }
-      return {
-        resolved:true,
-        currentCode:currentCode,
-        currentName:currentName,
-        legacyCodes:[legacyCode],
-        legacyNames:[legacyName],
-        mappingType:'static-province-transition'
-      };
+      const legacyName = currentName
+        ? ledgerCompatReplacePrefix(currentName, transition.currentSido, transition.legacySido)
+        : (addressIsCurrent ? ledgerCompatReplacePrefix(legalName, transition.currentSido, transition.legacySido) : legalName);
+      return {current:{code:currentCode, name:currentName}, legacy:[{code:legacyCode, name:legacyName}]};
     }
     return null;
   }
-  function hasLegacyLedgerResolution(resolution){
-    return !!(resolution && resolution.resolved && Array.isArray(resolution.legacyCodes) && resolution.legacyCodes.length);
+  function resolveParcelLedgerChangedRegion(resolver, meta){
+    meta = meta || {};
+    const inputCode = pnuDigits(meta.bcode || meta.pnu || '').slice(0, 10);
+    const inputAddress = ledgerFirstNonEmpty(meta.jibunAddress, meta.queryAddress, '');
+    const staticResolution = ledgerCompatStaticProvinceResolution(inputCode, inputAddress, resolver);
+    if(staticResolution) return staticResolution;
+    if(!resolver) return null;
+    let resolution = null;
+    if(inputAddress && typeof resolver.resolveByAddress === 'function'){
+      const byAddress = resolver.resolveByAddress(inputAddress);
+      if(byAddress && byAddress.resolved && Array.isArray(byAddress.legacyCodes) && byAddress.legacyCodes.length) resolution = byAddress;
+    }
+    if(!resolution && inputCode.length === 10 && typeof resolver.resolveByCode === 'function'){
+      const byCode = resolver.resolveByCode(inputCode);
+      if(byCode && byCode.resolved && Array.isArray(byCode.legacyCodes) && byCode.legacyCodes.length) resolution = byCode;
+    }
+    return ledgerCompatNormalizeResolution(resolution);
   }
-  function resolveParcelLedgerRegion(resolver, inputCode, inputAddress){
-    const code = pnuDigits(inputCode).slice(0, 10);
-    let byCode = null;
-    let byAddress = null;
-    if(resolver && code.length === 10 && typeof resolver.resolveByCode === 'function') byCode = resolver.resolveByCode(code);
-    if(resolver && trimLookupText(inputAddress) && typeof resolver.resolveByAddress === 'function') byAddress = resolver.resolveByAddress(inputAddress);
-    let picked = hasLegacyLedgerResolution(byAddress) ? byAddress : byCode;
-    const staticResolution = staticLedgerResolution(code, inputAddress, resolver);
-    if(staticResolution) picked = staticResolution;
-    if(picked && picked.resolved) return normalizeLedgerResolution(picked);
-    return {currentCode:code, currentName:legalNameFromJibunAddress(inputAddress), legacy:[]};
-  }
-  function allResolutionLegalNames(regionResolution){
-    const names = [];
-    if(regionResolution && regionResolution.currentName) names.push(regionResolution.currentName);
-    (regionResolution && regionResolution.legacy || []).forEach(function(item){ if(item.name) names.push(item.name); });
-    return names.sort(function(a,b){ return b.length - a.length; });
-  }
-  function buildCandidateJibunAddress(meta, pnu, targetLegalName, regionResolution){
-    const lot = ledgerLotText(meta, pnu);
-    if(targetLegalName && lot) return trimLookupText(targetLegalName + ' ' + lot);
-    let address = cleanLedgerJibunAddress(meta && meta.jibunAddress || '');
-    if(!address || !targetLegalName) return address;
-    const names = allResolutionLegalNames(regionResolution);
+  function ledgerCompatJibunAddress(meta, targetName, resolution, targetPnu){
+    const source = cleanLedgerJibunAddress(meta && meta.jibunAddress || '');
+    if(!source || !targetName) return source;
+    const names = [resolution.current.name].concat(resolution.legacy.map(function(item){ return item.name; })).filter(Boolean).sort(function(a,b){ return b.length - a.length; });
     for(let i=0;i<names.length;i++){
-      if(startsWithLedgerRegion(address, names[i])) return replaceLedgerRegionPrefix(address, names[i], targetLegalName);
+      if(ledgerCompatStartsWith(source, names[i])) return ledgerCompatReplacePrefix(source, names[i], targetName);
     }
-    const inputLegalName = legalNameFromJibunAddress(address);
-    return inputLegalName ? replaceLedgerRegionPrefix(address, inputLegalName, targetLegalName) : address;
+    const lot = ledgerCompatLotText(source, targetPnu || (meta && meta.pnu));
+    return lot ? trimLookupText(targetName + ' ' + lot) : source;
   }
-  function buildCandidateRoadAddress(meta, targetLegalName, regionResolution){
-    let address = cleanLedgerRoadAddress(meta && meta.roadAddress || '');
-    if(!address || !targetLegalName || !regionResolution) return address;
-    const targetIsCurrent = targetLegalName === regionResolution.currentName;
-    const targetLegacy = (regionResolution.legacy || []).find(function(item){ return item.name === targetLegalName; });
-    for(let i=0;i<(regionResolution.legacy || []).length;i++){
-      const legacy = regionResolution.legacy[i];
-      if(!legacy.name || !regionResolution.currentName) continue;
-      const pair = changedRegionPrefixPair(regionResolution.currentName, legacy.name);
-      if(!pair.currentPrefix || !pair.legacyPrefix) continue;
-      const targetPrefix = targetIsCurrent ? pair.currentPrefix : (targetLegacy ? changedRegionPrefixPair(regionResolution.currentName, targetLegacy.name).legacyPrefix : pair.legacyPrefix);
-      if(startsWithLedgerRegion(address, pair.currentPrefix)) return replaceLedgerRegionPrefix(address, pair.currentPrefix, targetPrefix);
-      if(startsWithLedgerRegion(address, pair.legacyPrefix)) return replaceLedgerRegionPrefix(address, pair.legacyPrefix, targetPrefix);
+  function ledgerCompatRoadAddress(meta, targetName, resolution){
+    const source = cleanLedgerRoadAddress(meta && meta.roadAddress || '');
+    if(!source || !targetName) return source;
+    const targetParent = ledgerCompatParentName(targetName);
+    if(!targetParent) return source;
+    const parents = [resolution.current.name].concat(resolution.legacy.map(function(item){ return item.name; })).map(ledgerCompatParentName).filter(Boolean).sort(function(a,b){ return b.length - a.length; });
+    for(let i=0;i<parents.length;i++){
+      if(ledgerCompatStartsWith(source, parents[i])) return ledgerCompatReplacePrefix(source, parents[i], targetParent);
     }
-    return address;
+    return source;
   }
-  function buildLedgerCandidateMeta(meta, pnu, bcode, legalName, regionResolution){
-    const jibunAddress = buildCandidateJibunAddress(meta, pnu, legalName, regionResolution);
-    const roadAddress = buildCandidateRoadAddress(meta, legalName, regionResolution);
-    const queryAddress = jibunAddress || roadAddress;
-    return {
-      pnu:pnu || '',
-      bcode:bcode || '',
-      jibunAddress:jibunAddress,
-      roadAddress:roadAddress,
-      queryAddress:queryAddress
-    };
+  function buildParcelLedgerCandidateMeta(meta, candidate, resolution){
+    const inputPnu = pnuDigits(meta && meta.pnu || '');
+    const targetPnu = inputPnu.length === 19 ? candidate.code + inputPnu.slice(10) : (meta && meta.pnu || '');
+    const jibunAddress = ledgerCompatJibunAddress(meta, candidate.name, resolution, targetPnu);
+    const roadAddress = ledgerCompatRoadAddress(meta, candidate.name, resolution);
+    return Object.assign({}, meta || {}, {
+      pnu: targetPnu,
+      bcode: candidate.code,
+      jibunAddress: jibunAddress,
+      roadAddress: roadAddress,
+      queryAddress: jibunAddress || roadAddress || (meta && meta.queryAddress) || ''
+    });
   }
-  function hasBuildingLedgerData(response){
+  function buildParcelBuildingCandidateParams(meta, reverse, candidate, resolution){
+    const candidateMeta = buildParcelLedgerCandidateMeta(meta, candidate, resolution);
+    const params = buildLookoutBuildingLookupParams(candidateMeta, reverse);
+    const region = ledgerCompatRegionFields(candidate.name);
+    if(region.sido) params.sido = region.sido;
+    if(region.sigungu) params.sigungu = region.sigungu;
+    if(region.bname) params.bname = region.bname;
+    return params;
+  }
+  function hasParcelBuildingLedgerData(response){
     if(!response || typeof response !== 'object' || response.ok === false) return false;
     if(Array.isArray(response.hitApis) && response.hitApis.length) return true;
     const apis = response.apis && typeof response.apis === 'object' ? response.apis : {};
@@ -4651,15 +4643,9 @@
       return !!(block.firstItem && typeof block.firstItem === 'object' && Object.keys(block.firstItem).length);
     });
   }
-  function landLedgerObject(response){
-    if(!response || typeof response !== 'object') return null;
-    if(response.land && typeof response.land === 'object') return response.land;
-    if(response.characteristic || response.usePlan || response.pnu) return response;
-    return null;
-  }
-  function hasMeaningfulLandLedgerData(response){
-    const land = landLedgerObject(response);
-    if(!land || land.ok === false) return false;
+  function hasParcelLandLedgerData(response){
+    const land = response && response.land && typeof response.land === 'object' ? response.land : response;
+    if(!land || typeof land !== 'object' || land.ok === false) return false;
     const characteristic = land.characteristic || {};
     const usePlan = land.usePlan || {};
     return [
@@ -4679,108 +4665,51 @@
       usePlan.zoningDistricts
     ].some(function(value){ return trimLookupText(value) !== ''; });
   }
-  async function lookupBuildingLedgerWithRegionFallback(meta, reverse){
-    meta = meta || {};
-    const inputBcode = pnuDigits(meta.bcode || '').slice(0, 10);
-    const resolver = await getParcelRegionCompatResolver();
-    const regionResolution = resolveParcelLedgerRegion(resolver, inputBcode, meta.jibunAddress || meta.queryAddress || '');
-    const currentCode = regionResolution.currentCode || inputBcode;
-    const currentPnu = pnuDigits(meta.pnu || '').length === 19 ? currentCode + pnuDigits(meta.pnu).slice(10) : '';
-    const candidates = [];
-    if(currentCode.length === 10){
-      candidates.push({
-        bcode:currentCode,
-        pnu:currentPnu,
-        legalName:regionResolution.currentName || legalNameFromJibunAddress(meta.jibunAddress)
-      });
-    }
-    (regionResolution.legacy || []).forEach(function(item){
-      if(item.code.length !== 10) return;
-      candidates.push({
-        bcode:item.code,
-        pnu:pnuDigits(meta.pnu || '').length === 19 ? item.code + pnuDigits(meta.pnu).slice(10) : '',
-        legalName:item.name
-      });
-    });
-    if(!candidates.length) throw new Error('건축물대장 bcode 없음');
-    let lastResponse = null;
+  async function lookupParcelBuildingLedger(meta, reverse){
+    // 원래 동작을 먼저 그대로 만든다. 호환 대상이 아니면 이 payload로 단 한 번만 조회한다.
+    const originalParams = buildLookoutBuildingLookupParams(meta, reverse);
+    const resolver = await getParcelLedgerRegionResolver();
+    const resolution = resolveParcelLedgerChangedRegion(resolver, meta);
+    if(!resolution) return publicLookup(originalParams);
+
+    // 건축물대장: 현행 bcode·현행 주소를 먼저, 데이터가 없을 때만 구 bcode·구 주소로 폴백한다.
+    const candidates = [resolution.current].concat(resolution.legacy);
+    let firstResponse = null;
     let lastError = null;
-    const attempts = [];
     for(let i=0;i<candidates.length;i++){
-      const candidate = candidates[i];
-      const candidateMeta = buildLedgerCandidateMeta(meta, candidate.pnu, candidate.bcode, candidate.legalName, regionResolution);
-      const params = buildLookoutBuildingLookupParams(candidateMeta);
       try{
-        const response = await publicLookup(params);
-        lastResponse = response;
-        const meaningful = hasBuildingLedgerData(response);
-        attempts.push({bcode:candidate.bcode, jibunAddress:params.jibunAddress, meaningful:meaningful, ok:!!(response && response.ok)});
-        if(meaningful){
-          const out = Object.assign({}, response);
-          out.compatibilityResolution = {kind:'building-bcode', inputBcode:inputBcode, candidates:candidates.map(function(v){ return v.bcode; }), selectedBcode:candidate.bcode, attempts:attempts};
-          return out;
-        }
+        const response = await publicLookup(buildParcelBuildingCandidateParams(meta, reverse, candidates[i], resolution));
+        if(firstResponse === null) firstResponse = response;
+        if(hasParcelBuildingLedgerData(response)) return response;
       }catch(error){
         lastError = error;
-        attempts.push({bcode:candidate.bcode, jibunAddress:params.jibunAddress, meaningful:false, ok:false, error:cleanLedgerLookupError(error)});
       }
     }
-    if(lastResponse){
-      const out = Object.assign({}, lastResponse);
-      out.compatibilityResolution = {kind:'building-bcode', inputBcode:inputBcode, candidates:candidates.map(function(v){ return v.bcode; }), selectedBcode:'', attempts:attempts};
-      return out;
-    }
-    throw lastError || new Error('건축물대장 후보 조회 실패');
+    if(firstResponse !== null) return firstResponse;
+    throw lastError || new Error('건축물대장 호환조회 실패');
   }
-  async function lookupLandLedgerWithRegionFallback(meta){
-    meta = meta || {};
-    const inputPnu = pnuDigits(meta.pnu || '');
-    const inputBcode = inputPnu.length === 19 ? inputPnu.slice(0, 10) : pnuDigits(meta.bcode || '').slice(0, 10);
-    const resolver = await getParcelRegionCompatResolver();
-    const regionResolution = resolveParcelLedgerRegion(resolver, inputBcode, meta.jibunAddress || meta.queryAddress || '');
-    const suffix = inputPnu.length === 19 ? inputPnu.slice(10) : '';
-    const candidates = [];
-    // 토지대장: 구 PNU·구주소를 먼저 보내고, 결과가 없을 때 현행 PNU·현행주소로 폴백한다.
-    (regionResolution.legacy || []).forEach(function(item){
-      if(item.code.length !== 10 || !suffix) return;
-      candidates.push({pnu:item.code + suffix, bcode:item.code, legalName:item.name});
-    });
-    const currentCode = regionResolution.currentCode || inputBcode;
-    if(currentCode.length === 10 && suffix){
-      candidates.push({pnu:currentCode + suffix, bcode:currentCode, legalName:regionResolution.currentName || legalNameFromJibunAddress(meta.jibunAddress)});
-    }
-    if(!candidates.length && inputPnu.length === 19){
-      candidates.push({pnu:inputPnu, bcode:inputPnu.slice(0, 10), legalName:legalNameFromJibunAddress(meta.jibunAddress)});
-    }
-    if(!candidates.length) throw new Error('토지대장 PNU 없음');
-    let lastResponse = null;
+  async function lookupParcelLandLedger(meta){
+    const originalParams = buildLookoutLandLookupParams(meta);
+    const resolver = await getParcelLedgerRegionResolver();
+    const resolution = resolveParcelLedgerChangedRegion(resolver, meta);
+    if(!resolution) return publicLookup(originalParams);
+
+    // 토지대장: 구 PNU·구 주소를 먼저, 데이터가 없을 때만 현행 PNU·현행 주소로 폴백한다.
+    const candidates = resolution.legacy.concat([resolution.current]);
+    let firstResponse = null;
     let lastError = null;
-    const attempts = [];
     for(let i=0;i<candidates.length;i++){
-      const candidate = candidates[i];
-      const candidateMeta = buildLedgerCandidateMeta(meta, candidate.pnu, candidate.bcode, candidate.legalName, regionResolution);
-      const params = buildLookoutLandLookupParams(candidateMeta);
       try{
-        const response = await publicLookup(params);
-        lastResponse = response;
-        const meaningful = hasMeaningfulLandLedgerData(response);
-        attempts.push({pnu:candidate.pnu, address:params.address, meaningful:meaningful, ok:!!(response && response.ok)});
-        if(meaningful){
-          const out = Object.assign({}, response);
-          out.compatibilityResolution = {kind:'land-pnu', inputPnu:inputPnu, candidates:candidates.map(function(v){ return v.pnu; }), selectedPnu:candidate.pnu, attempts:attempts};
-          return out;
-        }
+        const candidateMeta = buildParcelLedgerCandidateMeta(meta, candidates[i], resolution);
+        const response = await publicLookup(buildLookoutLandLookupParams(candidateMeta));
+        if(firstResponse === null) firstResponse = response;
+        if(hasParcelLandLedgerData(response)) return response;
       }catch(error){
         lastError = error;
-        attempts.push({pnu:candidate.pnu, address:params.address, meaningful:false, ok:false, error:cleanLedgerLookupError(error)});
       }
     }
-    if(lastResponse){
-      const out = Object.assign({}, lastResponse);
-      out.compatibilityResolution = {kind:'land-pnu', inputPnu:inputPnu, candidates:candidates.map(function(v){ return v.pnu; }), selectedPnu:'', attempts:attempts};
-      return out;
-    }
-    throw lastError || new Error('토지대장 후보 조회 실패');
+    if(firstResponse !== null) return firstResponse;
+    throw lastError || new Error('토지대장 호환조회 실패');
   }
   async function publicLookupLandWithYearFallback(params){
     params = params || {};
@@ -5029,8 +4958,8 @@
     }
     const addr = lookupMeta.jibunAddress;
     const road = lookupMeta.roadAddress;
-    const landPromise = lookupMeta.pnu ? lookupLandLedgerWithRegionFallback(lookupMeta).then(function(d){ ctx.landData=d && d.land ? d.land : d; ctx.landCompatibility=d && d.compatibilityResolution || null; }).catch(function(e){ ctx.landError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.landError='PNU 없음'; });
-    const buildingPromise = (addr || road) ? lookupBuildingLedgerWithRegionFallback(lookupMeta, ctxReverse).then(function(d){ ctx.buildingData=d; ctx.buildingCompatibility=d && d.compatibilityResolution || null; if(d && d.land && !ctx.landData) ctx.landData=d.land; }).catch(function(e){ ctx.buildingError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.buildingError='주소 없음'; });
+    const landPromise = lookupMeta.pnu ? lookupParcelLandLedger(lookupMeta).then(function(d){ ctx.landData=d && d.land ? d.land : d; }).catch(function(e){ ctx.landError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.landError='PNU 없음'; });
+    const buildingPromise = (addr || road) ? lookupParcelBuildingLedger(lookupMeta, ctxReverse).then(function(d){ ctx.buildingData=d; if(d && d.land && !ctx.landData) ctx.landData=d.land; }).catch(function(e){ ctx.buildingError=cleanLedgerLookupError(e); }) : Promise.resolve().then(function(){ ctx.buildingError='주소 없음'; });
     await Promise.all([landPromise, buildingPromise]);
     if(seq !== state.ledgerRequestSeq) return;
     renderLedgerPanel(ctx);

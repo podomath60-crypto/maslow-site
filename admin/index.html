@@ -2573,6 +2573,7 @@
 
   </style>
   <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+  <script src="/assets/region/region-compat.js"></script>
   <link rel="icon" href="/favicon.ico?v=20260616">
   <link rel="shortcut icon" href="/favicon.ico?v=20260616">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png?v=20260616">
@@ -5301,15 +5302,22 @@
           return;
         }
         setLandParcelLookupLoading_(card, true);
-        searchVworldParcelPnu_(address)
+        var landLookupCoordinator = null;
+        getRegionLookupCoordinator_()
+          .then(function(coordinator){
+            landLookupCoordinator = coordinator;
+            var currentAddress = coordinator.normalizeLandQuery(address) || address;
+            return searchVworldParcelPnu_(currentAddress);
+          })
           .then(function(found){
-            return lookupPublicPropertyWithFallback_({
+            return landLookupCoordinator.lookupLand({
               action: 'fetchLandInfoBySearchResult',
               pnu: found.pnu,
               queryAddress: found.query,
               lookupAddress: found.address || found.query,
               address: found.address || found.query
-            }, { label: '토지대장' }).then(function(res){
+            }).then(function(landLookup){
+              var res = landLookup.response;
               if(!(res && res.ok)) throw new Error((res && (res.message || res.error)) || '토지정보 조회 실패');
               landParcels[idx] = mapLandLookupResultToParcel_(landParcels[idx], found, res);
               ensureSingleRepresentative_(landParcels);
@@ -7624,6 +7632,339 @@
         });
       }
 
+      var regionLookupCoordinatorPromise_ = null;
+
+      function regionLookupText_(value){
+        return value === null || value === undefined ? '' : String(value).trim();
+      }
+
+      function regionLookupDigits_(value){
+        return regionLookupText_(value).replace(/\D/g, '');
+      }
+
+      function regionLookupUnique_(values){
+        var seen = Object.create(null);
+        var result = [];
+        (values || []).forEach(function(value){
+          var normalized = regionLookupText_(value);
+          if(!normalized || seen[normalized]) return;
+          seen[normalized] = true;
+          result.push(normalized);
+        });
+        return result;
+      }
+
+      function regionLookupFirstNonEmpty_(){
+        for(var i = 0; i < arguments.length; i += 1){
+          var value = regionLookupText_(arguments[i]);
+          if(value) return value;
+        }
+        return '';
+      }
+
+      function regionLookupLandObject_(response){
+        if(!response || typeof response !== 'object') return null;
+        if(response.land && typeof response.land === 'object') return response.land;
+        if(response.characteristic || response.usePlan || response.pnu) return response;
+        return null;
+      }
+
+      function regionLookupHasBuildingData_(response){
+        if(!response || typeof response !== 'object') return false;
+        if(Array.isArray(response.hitApis) && response.hitApis.length > 0) return true;
+        var apis = response.apis && typeof response.apis === 'object' ? response.apis : {};
+        return Object.keys(apis).some(function(key){
+          var api = apis[key] || {};
+          return Number(api.itemCount || api.totalCount || 0) > 0;
+        });
+      }
+
+      function regionLookupHasMeaningfulLandData_(response){
+        var land = regionLookupLandObject_(response);
+        if(!land || land.ok === false) return false;
+
+        var characteristic = land.characteristic || {};
+        var usePlan = land.usePlan || {};
+        var meaningfulValues = [
+          characteristic.landCategory,
+          characteristic.areaM2,
+          characteristic.areaPy,
+          characteristic.zoning,
+          characteristic.zoning2,
+          characteristic.landUseSituation,
+          characteristic.terrainHeight,
+          characteristic.terrainShape,
+          characteristic.roadSide,
+          characteristic.officialLandPrice,
+          characteristic.officialLandPriceText,
+          usePlan.ledgerType,
+          usePlan.conflictStatus,
+          usePlan.zoningDistricts
+        ];
+
+        return meaningfulValues.some(function(value){
+          return regionLookupText_(value) !== '';
+        });
+      }
+
+      function regionLookupMessage_(buildingFound, landFound, fallbackMessage){
+        if(buildingFound && landFound) return '조회 성공';
+        if(buildingFound) return '건축물대장 조회 성공 · 토지정보는 확인하지 못했습니다.';
+        if(landFound) return '토지정보 조회 성공 · 건축물대장 결과가 없습니다.';
+        return regionLookupText_(fallbackMessage) || '조회 결과가 없습니다.';
+      }
+
+      function createRegionLookupCoordinator_(resolver){
+        resolver = resolver || null;
+
+        function lookup(params, context){
+          context = context || {};
+          return lookupPublicPropertyWithFallback_(params, {
+            label: context.label || '공부정보'
+          });
+        }
+
+        function bcodeCandidates(input){
+          var code = regionLookupDigits_(input);
+          var candidates = [];
+          var resolution = resolver && typeof resolver.resolveByCode === 'function'
+            ? resolver.resolveByCode(code)
+            : null;
+
+          if(resolution && resolution.resolved && Array.isArray(resolution.legacyCodes) && resolution.legacyCodes.length){
+            candidates = regionLookupUnique_(
+              resolution.legacyCodes.concat(resolution.currentCode || [])
+            );
+          }else{
+            var resolved = resolver && typeof resolver.getBcodeCandidates === 'function'
+              ? resolver.getBcodeCandidates(code)
+              : [];
+            candidates = regionLookupUnique_(resolved);
+          }
+
+          if(!candidates.length && code.length === 10) candidates.push(code);
+          return candidates;
+        }
+
+        function pnuCandidates(input){
+          var pnu = regionLookupDigits_(input);
+          var candidates = [];
+          var resolution = resolver && typeof resolver.analyzePnu === 'function'
+            ? resolver.analyzePnu(pnu)
+            : null;
+
+          if(resolution && resolution.resolved && Array.isArray(resolution.legacyPnus) && resolution.legacyPnus.length){
+            candidates = regionLookupUnique_(
+              resolution.legacyPnus.concat(resolution.currentPnu || [])
+            );
+          }else{
+            var resolved = resolver && typeof resolver.getPnuCandidates === 'function'
+              ? resolver.getPnuCandidates(pnu)
+              : [];
+            candidates = regionLookupUnique_(resolved);
+          }
+
+          if(!candidates.length && pnu.length === 19) candidates.push(pnu);
+          return candidates;
+        }
+
+        function normalizeLandQuery(query){
+          var original = regionLookupText_(query);
+          if(!original) return '';
+          if(!resolver || typeof resolver.getCurrentAddress !== 'function') return original;
+          return regionLookupText_(resolver.getCurrentAddress(original)) || original;
+        }
+
+        async function lookupIntegrated(params){
+          params = Object.assign({}, params || {});
+          var candidates = bcodeCandidates(params.bcode);
+
+          if(!candidates.length){
+            return {
+              response: await lookup(params, { label: '종합조회' }),
+              candidates: [],
+              attempts: []
+            };
+          }
+
+          var attempts = [];
+          var successes = [];
+          var buildingSource = null;
+          var landSource = null;
+          var lastError = null;
+
+          for(var i = 0; i < candidates.length; i += 1){
+            var candidate = candidates[i];
+            try{
+              var response = await lookup(
+                Object.assign({}, params, { bcode: candidate }),
+                {
+                  kind: 'bcode',
+                  value: candidate,
+                  index: i + 1,
+                  total: candidates.length,
+                  label: '법정동 후보 ' + (i + 1) + '/' + candidates.length + ' · ' + candidate
+                }
+              );
+              var success = { value: candidate, response: response };
+              successes.push(success);
+              attempts.push({
+                value: candidate,
+                ok: !!(response && response.ok),
+                building: regionLookupHasBuildingData_(response),
+                land: regionLookupHasMeaningfulLandData_(response),
+                message: regionLookupText_(response && response.message)
+              });
+              if(!buildingSource && regionLookupHasBuildingData_(response)) buildingSource = success;
+              if(!landSource && regionLookupHasMeaningfulLandData_(response)) landSource = success;
+              if(buildingSource && landSource) break;
+            }catch(error){
+              lastError = error;
+              attempts.push({
+                value: candidate,
+                ok: false,
+                building: false,
+                land: false,
+                message: regionLookupText_(error && error.message) || String(error)
+              });
+            }
+          }
+
+          if(!successes.length){
+            throw lastError || new Error('법정동 후보 조회 실패');
+          }
+
+          var base = successes[0].response || {};
+          var merged = Object.assign({}, base);
+          if(buildingSource){
+            merged.apis = buildingSource.response.apis || {};
+            merged.hitApis = buildingSource.response.hitApis || [];
+            merged.codeInfo = buildingSource.response.codeInfo || {};
+          }
+          if(landSource){
+            merged.land = regionLookupLandObject_(landSource.response);
+            merged.pnu = regionLookupFirstNonEmpty_(
+              landSource.response && landSource.response.pnu,
+              merged.land && merged.land.pnu
+            );
+          }
+
+          var currentAddress = regionLookupFirstNonEmpty_(
+            params.lookupAddress,
+            params.jibunAddress,
+            params.queryAddress,
+            params.roadAddress,
+            base.address
+          );
+          if(currentAddress) merged.address = currentAddress;
+          merged.message = regionLookupMessage_(!!buildingSource, !!landSource, base.message);
+          merged.compatibilityResolution = {
+            inputBcode: regionLookupDigits_(params.bcode),
+            candidates: candidates.slice(),
+            buildingBcode: buildingSource ? buildingSource.value : '',
+            landPnu: landSource
+              ? regionLookupFirstNonEmpty_(
+                  landSource.response && landSource.response.pnu,
+                  regionLookupLandObject_(landSource.response) && regionLookupLandObject_(landSource.response).pnu
+                )
+              : '',
+            attempts: attempts
+          };
+
+          return {
+            response: merged,
+            candidates: candidates,
+            attempts: attempts
+          };
+        }
+
+        async function lookupLand(params){
+          params = Object.assign({}, params || {});
+          var candidates = pnuCandidates(params.pnu);
+          var attempts = [];
+          var successes = [];
+          var chosen = null;
+          var lastError = null;
+
+          for(var i = 0; i < candidates.length; i += 1){
+            var candidate = candidates[i];
+            try{
+              var response = await lookup(
+                Object.assign({}, params, { pnu: candidate }),
+                {
+                  kind: 'pnu',
+                  value: candidate,
+                  index: i + 1,
+                  total: candidates.length,
+                  label: 'PNU 후보 ' + (i + 1) + '/' + candidates.length + ' · ' + candidate
+                }
+              );
+              var success = { value: candidate, response: response };
+              successes.push(success);
+              var meaningful = regionLookupHasMeaningfulLandData_(response);
+              attempts.push({
+                value: candidate,
+                ok: !!(response && response.ok),
+                land: meaningful,
+                message: regionLookupText_(response && response.message)
+              });
+              if(meaningful){
+                chosen = success;
+                break;
+              }
+            }catch(error){
+              lastError = error;
+              attempts.push({
+                value: candidate,
+                ok: false,
+                land: false,
+                message: regionLookupText_(error && error.message) || String(error)
+              });
+            }
+          }
+
+          if(!chosen) chosen = successes[0] || null;
+          if(!chosen) throw lastError || new Error('PNU 후보 조회 실패');
+
+          return {
+            response: chosen.response,
+            pnu: chosen.value,
+            candidates: candidates,
+            attempts: attempts,
+            meaningful: regionLookupHasMeaningfulLandData_(chosen.response)
+          };
+        }
+
+        return {
+          normalizeLandQuery: normalizeLandQuery,
+          getBcodeCandidates: bcodeCandidates,
+          getPnuCandidates: pnuCandidates,
+          lookupIntegrated: lookupIntegrated,
+          lookupLand: lookupLand
+        };
+      }
+
+      function getRegionLookupCoordinator_(){
+        if(regionLookupCoordinatorPromise_) return regionLookupCoordinatorPromise_;
+
+        regionLookupCoordinatorPromise_ = Promise.resolve().then(function(){
+          if(!window.MaslowRegionCompat || typeof window.MaslowRegionCompat.load !== 'function'){
+            return createRegionLookupCoordinator_(null);
+          }
+
+          return window.MaslowRegionCompat.load({
+            currentUrl: '/assets/region/bjdong-codes-current-20260701.json',
+            compatUrl: '/assets/region/bjdong-compat-20260701.json'
+          }).then(function(resolver){
+            return createRegionLookupCoordinator_(resolver);
+          }).catch(function(){
+            return createRegionLookupCoordinator_(null);
+          });
+        });
+
+        return regionLookupCoordinatorPromise_;
+      }
+
       function openAddressSearch_(){
         try{
           new daum.Postcode({
@@ -7735,7 +8076,10 @@
         var params = buildIntegratedLookupParamsFromAddress_(address);
         if(!params || !params.lookupAddress) return Promise.resolve(false);
 
-        return lookupPublicPropertyWithFallback_(params).then(function(res){
+        return getRegionLookupCoordinator_().then(function(coordinator){
+          return coordinator.lookupIntegrated(params);
+        }).then(function(integratedLookup){
+          var res = integratedLookup.response;
           if(!(res && res.ok)){
             throw new Error((res && (res.error || res.message)) || '조회 실패');
           }
@@ -8172,8 +8516,12 @@
 
         setAddressLookupLoading_(true);
 
-        lookupPublicPropertyWithFallback_(lookupParams)
-          .then(function(res){
+        getRegionLookupCoordinator_()
+          .then(function(coordinator){
+            return coordinator.lookupIntegrated(lookupParams);
+          })
+          .then(function(integratedLookup){
+            var res = integratedLookup.response;
             if(!(res && res.ok)){
               throw new Error((res && (res.error || res.message)) || '조회 실패');
             }

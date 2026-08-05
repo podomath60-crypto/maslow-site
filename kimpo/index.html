@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>김포 주소 네이버지도 바로가기</title>
+  <style>
+    :root {
+      --bg: #f4f7f6;
+      --surface: #ffffff;
+      --text: #17211d;
+      --muted: #6b7671;
+      --line: #dfe7e3;
+      --naver: #03c75a;
+      --naver-dark: #02a94c;
+      --shadow: 0 12px 35px rgba(20, 43, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(3, 199, 90, 0.10), transparent 28rem),
+        var(--bg);
+    }
+
+    .page {
+      width: min(980px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 54px 0 70px;
+    }
+
+    .header {
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 7px 11px;
+      border: 1px solid rgba(3, 199, 90, 0.24);
+      border-radius: 999px;
+      color: #08783b;
+      background: rgba(255, 255, 255, 0.75);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 5vw, 44px);
+      line-height: 1.16;
+      letter-spacing: -0.04em;
+    }
+
+    .description {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.65;
+    }
+
+    .panel {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdfc;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .address-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .address-item {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .address-item:last-child {
+      border-bottom: 0;
+    }
+
+    .address-item:hover {
+      background: #f9fcfa;
+    }
+
+    .number {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      color: #08783b;
+      background: #eaf9f0;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .address {
+      min-width: 0;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.45;
+      word-break: keep-all;
+    }
+
+    .map-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 42px;
+      padding: 0 16px;
+      border-radius: 11px;
+      color: #ffffff;
+      background: var(--naver);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 900;
+      white-space: nowrap;
+      transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .map-button:hover {
+      background: var(--naver-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(3, 199, 90, 0.22);
+    }
+
+    .map-button:focus-visible {
+      outline: 3px solid rgba(3, 199, 90, 0.28);
+      outline-offset: 3px;
+    }
+
+    .arrow {
+      font-size: 15px;
+    }
+
+    .footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 680px) {
+      .page {
+        width: min(100% - 20px, 980px);
+        padding: 28px 0 45px;
+      }
+
+      .description {
+        font-size: 14px;
+      }
+
+      .panel-top {
+        padding: 15px 16px;
+      }
+
+      .address-item {
+        grid-template-columns: 36px minmax(0, 1fr);
+        gap: 10px 12px;
+        padding: 15px 14px;
+      }
+
+      .number {
+        grid-row: 1 / span 2;
+        align-self: start;
+        width: 32px;
+        height: 32px;
+      }
+
+      .address {
+        font-size: 15px;
+      }
+
+      .map-button {
+        grid-column: 2;
+        width: 100%;
+        min-height: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div class="eyebrow">김포 현장 주소 목록</div>
+      <h1>네이버지도 바로가기</h1>
+      <p class="description">
+        주소는 전달받은 순서대로 정리했습니다. 버튼을 누르면 해당 주소가 네이버지도 새 창에서 열립니다.
+      </p>
+    </header>
+
+    <section class="panel" aria-labelledby="address-list-title">
+      <div class="panel-top">
+        <div id="address-list-title" class="panel-title">주소 목록</div>
+        <div class="count">총 16곳</div>
+      </div>
+      <ol class="address-list">
+        
+        <li class="address-item">
+          <div class="number" aria-label="1번">1</div>
+          <div class="address">경기도 김포시 대곶면 대능리 240</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EB%8C%80%EA%B3%B6%EB%A9%B4%20%EB%8C%80%EB%8A%A5%EB%A6%AC%20240"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 대곶면 대능리 240 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="2번">2</div>
+          <div class="address">경기도 김포시 대곶면 대명리 62-5</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EB%8C%80%EA%B3%B6%EB%A9%B4%20%EB%8C%80%EB%AA%85%EB%A6%AC%2062-5"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 대곶면 대명리 62-5 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="3번">3</div>
+          <div class="address">경기도 김포시 대곶면 대벽리 353</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EB%8C%80%EA%B3%B6%EB%A9%B4%20%EB%8C%80%EB%B2%BD%EB%A6%AC%20353"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 대곶면 대벽리 353 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="4번">4</div>
+          <div class="address">경기도 김포시 대곶면 상마리 301-3</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EB%8C%80%EA%B3%B6%EB%A9%B4%20%EC%83%81%EB%A7%88%EB%A6%AC%20301-3"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 대곶면 상마리 301-3 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="5번">5</div>
+          <div class="address">경기도 김포시 대곶면 송마리 142-12</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EB%8C%80%EA%B3%B6%EB%A9%B4%20%EC%86%A1%EB%A7%88%EB%A6%AC%20142-12"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 대곶면 송마리 142-12 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="6번">6</div>
+          <div class="address">경기도 김포시 대곶면 송마리 794-1</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EB%8C%80%EA%B3%B6%EB%A9%B4%20%EC%86%A1%EB%A7%88%EB%A6%AC%20794-1"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 대곶면 송마리 794-1 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="7번">7</div>
+          <div class="address">경기도 김포시 대곶면 쇄암리 175</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EB%8C%80%EA%B3%B6%EB%A9%B4%20%EC%87%84%EC%95%94%EB%A6%AC%20175"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 대곶면 쇄암리 175 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="8번">8</div>
+          <div class="address">경기도 김포시 대곶면 쇄암리 288-2</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EB%8C%80%EA%B3%B6%EB%A9%B4%20%EC%87%84%EC%95%94%EB%A6%AC%20288-2"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 대곶면 쇄암리 288-2 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="9번">9</div>
+          <div class="address">경기도 김포시 대곶면 약암리 146-2</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EB%8C%80%EA%B3%B6%EB%A9%B4%20%EC%95%BD%EC%95%94%EB%A6%AC%20146-2"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 대곶면 약암리 146-2 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="10번">10</div>
+          <div class="address">경기도 김포시 대곶면 율생리 261-1</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EB%8C%80%EA%B3%B6%EB%A9%B4%20%EC%9C%A8%EC%83%9D%EB%A6%AC%20261-1"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 대곶면 율생리 261-1 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="11번">11</div>
+          <div class="address">경기도 김포시 대곶면 초원지리 511-2</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EB%8C%80%EA%B3%B6%EB%A9%B4%20%EC%B4%88%EC%9B%90%EC%A7%80%EB%A6%AC%20511-2"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 대곶면 초원지리 511-2 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="12번">12</div>
+          <div class="address">경기도 김포시 양촌읍 학운리 1550-1</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EC%96%91%EC%B4%8C%EC%9D%8D%20%ED%95%99%EC%9A%B4%EB%A6%AC%201550-1"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 양촌읍 학운리 1550-1 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="13번">13</div>
+          <div class="address">경기도 김포시 양촌읍 학운리 3337</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EC%96%91%EC%B4%8C%EC%9D%8D%20%ED%95%99%EC%9A%B4%EB%A6%AC%203337"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 양촌읍 학운리 3337 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="14번">14</div>
+          <div class="address">경기도 김포시 양촌읍 학운리 3546</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EC%96%91%EC%B4%8C%EC%9D%8D%20%ED%95%99%EC%9A%B4%EB%A6%AC%203546"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 양촌읍 학운리 3546 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="15번">15</div>
+          <div class="address">경기도 김포시 양촌읍 학운리 448-381</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EC%96%91%EC%B4%8C%EC%9D%8D%20%ED%95%99%EC%9A%B4%EB%A6%AC%20448-381"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 양촌읍 학운리 448-381 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="address-item">
+          <div class="number" aria-label="16번">16</div>
+          <div class="address">경기도 김포시 양촌읍 학운리 899</div>
+          <a class="map-button"
+             href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B9%80%ED%8F%AC%EC%8B%9C%20%EC%96%91%EC%B4%8C%EC%9D%8D%20%ED%95%99%EC%9A%B4%EB%A6%AC%20899"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="경기도 김포시 양촌읍 학운리 899 네이버지도에서 열기">
+            <span>네이버지도 열기</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="footer">버튼 클릭 시 네이버지도 주소 검색 화면으로 이동합니다.</div>
+  </main>
+</body>
+</html>

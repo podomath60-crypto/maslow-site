@@ -568,6 +568,7 @@
 
   <script src="/search/bjdong-codes.js" onerror="document.write('<script src=&quot;./bjdong-codes.js&quot;><\/script>')"></script>
   <script src="/search/naver-region-codes.js" onerror="document.write('<script src=&quot;./naver-region-codes.js&quot;><\/script>')"></script>
+  <script src="/assets/region/region-compat.js" onerror="document.write('<script src=&quot;../assets/region/region-compat.js&quot;><\/script>')"></script>
   <script>
     var picked = null;
     var currentJobId = '';
@@ -580,6 +581,36 @@
     var favoriteViewMode = false;
     var selectedHistoryId = '';
     var selectedHistoryIds = {};
+    var regionCompatResolver = null;
+    var regionCompatLoadError = '';
+
+    function refreshResultsAfterRegionCompatLoad(){
+      if(!lastItems || !lastItems.length) return;
+      try{
+        if(favoriteViewMode) renderFavoriteViewResults();
+        else renderFilteredResults();
+      }catch(e){}
+    }
+
+    function initRegionCompat(){
+      if(!window.MaslowRegionCompat || typeof window.MaslowRegionCompat.load !== 'function'){
+        regionCompatLoadError = 'region-compat.js unavailable';
+        return Promise.resolve(null);
+      }
+      return window.MaslowRegionCompat.load().then(function(resolver){
+        regionCompatResolver = resolver || null;
+        regionCompatLoadError = '';
+        refreshResultsAfterRegionCompatLoad();
+        return regionCompatResolver;
+      }).catch(function(err){
+        regionCompatResolver = null;
+        regionCompatLoadError = String((err && err.message) || err || 'region compat load failed');
+        console.warn('[search] region compat load failed:', regionCompatLoadError);
+        return null;
+      });
+    }
+
+    var regionCompatReady = initRegionCompat();
 
     var els = {
       dongPickBtn: document.getElementById('dongPickBtn'),
@@ -2110,36 +2141,60 @@
       return String((item && (item.pnu || (Array.isArray(item.pnus) ? item.pnus[0] : ''))) || '').trim();
     }
     var bjdongNameCache = null;
-    var BJDONG_CODE_ALIAS = {
-      '4159134025': '4159036025', // 화성시 만세구 팔탄면 구장리 -> 기존 화성시 팔탄면 구장리
-      '4159125027': '4159025627'  // 화성시 만세구 우정읍 주곡리 -> 기존 화성시 우정읍 주곡리
-    };
     function bjdongNameByCode(code){
       code = String(code || '').trim();
       if(!/^\d{10}$/.test(code)) return '';
+      if(regionCompatResolver && typeof regionCompatResolver.resolveByCode === 'function'){
+        try{
+          var resolved = regionCompatResolver.resolveByCode(code);
+          if(resolved && resolved.resolved && resolved.currentName) return String(resolved.currentName).trim();
+        }catch(e){}
+      }
       if(!bjdongNameCache){
         bjdongNameCache = {};
         getBjdongItems().forEach(function(dong){
           if(dong && dong.code && dong.name) bjdongNameCache[String(dong.code)] = String(dong.name).trim();
         });
       }
-      return bjdongNameCache[code] || bjdongNameCache[BJDONG_CODE_ALIAS[code]] || '';
+      return bjdongNameCache[code] || '';
+    }
+    function currentAddressCandidate(value){
+      var text = addressCandidate(value);
+      if(!text) return '';
+      if(regionCompatResolver && typeof regionCompatResolver.getCurrentAddress === 'function'){
+        try{
+          var current = addressCandidate(regionCompatResolver.getCurrentAddress(text));
+          if(current) return current;
+        }catch(e){}
+      }
+      return text;
     }
     function addressFromBjdongAndPnu(item){
       var pnu = pnuValue(item);
       if(!/^\d{19}$/.test(pnu)) return '';
-      var dongName = bjdongNameByCode(pnu.slice(0, 10));
+      var addressPnu = pnu;
+      if(regionCompatResolver && typeof regionCompatResolver.analyzePnu === 'function'){
+        try{
+          var analyzed = regionCompatResolver.analyzePnu(pnu);
+          if(analyzed && analyzed.resolved && /^\d{19}$/.test(String(analyzed.currentPnu || ''))){
+            addressPnu = String(analyzed.currentPnu);
+          }
+        }catch(e){}
+      }
+      var dongName = bjdongNameByCode(addressPnu.slice(0, 10));
       if(!dongName) return '';
-      var tail = pnuJibunTail(pnu);
+      var tail = pnuJibunTail(addressPnu);
       return tail ? (dongName + ' ' + tail) : '';
     }
     function getAddressText(item){
-      return addressCandidate(item && item.jibunAddress)
-        || addressCandidate(item && Array.isArray(item.jibunAddresses) ? item.jibunAddresses[0] : '')
-        || addressCandidate(item && item.roadAddress)
-        || addressCandidate(item && item.estimatedAddress)
-        || addressFromBjdongAndPnu(item)
-        || addressCandidate(item && item.address)
+      // PNU가 있으면 신·구 호환 에셋으로 현재 법정동명을 먼저 확정한다.
+      // 서버가 구 주소명/주소미확정을 보내더라도 화면 주소와 네이버지도 링크는 현재 주소체계를 사용한다.
+      return addressFromBjdongAndPnu(item)
+        || currentAddressCandidate(item && item.jibunAddress)
+        || currentAddressCandidate(item && Array.isArray(item.jibunAddresses) ? item.jibunAddresses[0] : '')
+        || currentAddressCandidate(item && item.roadAddress)
+        || currentAddressCandidate(item && item.estimatedAddress)
+        || currentAddressCandidate(item && item.address)
         || '';
     }
     function rawTypeText(item){

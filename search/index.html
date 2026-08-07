@@ -316,12 +316,21 @@
     .dong-item:hover,.dong-item:focus{background:#f3f4f6;outline:none}
     .dong-name{font-weight:950;font-size:16px;line-height:1.35;word-break:keep-all}
     .dong-sub{font-size:12px;color:#6b7280;font-weight:800}
+    .region-modal-box{width:min(780px,100%)}
+    .region-step-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .region-step-field{display:grid;gap:7px}
+    .region-step-field span{font-size:12px;font-weight:950;color:#374151}
+    .region-select{width:100%;height:50px;border:1px solid #d1d5db;background:#fff;border-radius:13px;padding:0 12px;outline:none;color:#111827;font-weight:900}
+    .region-select:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(37,99,235,.11)}
+    .region-select:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed}
+    .region-preview{min-height:48px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:13px;padding:12px 14px;display:flex;align-items:center;color:#1d4ed8;font-size:15px;font-weight:950;word-break:keep-all}
+    .modal-foot-actions{display:flex;gap:8px;align-items:center}
     .modal-foot{padding:12px 16px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;gap:10px;align-items:center;color:#6b7280;font-size:13px}
     .close-btn{border:1px solid #d1d5db;background:#fff;border-radius:10px;height:38px;padding:0 12px;font-weight:900}
     .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:60;background:#111827;color:#fff;border-radius:999px;padding:12px 16px;font-weight:900;box-shadow:0 14px 34px rgba(0,0,0,.25);transition:.2s ease;pointer-events:none}
     .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
     @media(max-width:1200px){.desktop-layout{grid-template-columns:1fr}.desktop-layout > .wrap{width:100%;max-width:900px}.side-panel{display:none}.wrap{max-width:900px}}
-    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:36px}.dong-trade-row{grid-template-columns:1fr}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:64px 1fr}.single-article-row{grid-template-columns:1fr}.favorite-toggle{width:64px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:10px}.filter-select{padding:0 6px;font-size:12px}.filter-field label{font-size:11px}}
+    @media(max-width:860px){.main{padding:24px 14px 44px}h1{font-size:36px}.region-step-grid{grid-template-columns:1fr}.modal-foot{align-items:flex-start;flex-direction:column}.modal-foot-actions{width:100%;justify-content:flex-end}.dong-trade-row{grid-template-columns:1fr}.choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.input-row{grid-template-columns:64px 1fr}.single-article-row{grid-template-columns:1fr}.favorite-toggle{width:64px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow:auto}table{min-width:820px}.dong-btn{align-items:flex-start;flex-direction:column;justify-content:center}.dong-btn span{white-space:normal}.trade-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.result-filter{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:10px}.filter-select{padding:0 6px;font-size:12px}.filter-field label{font-size:11px}}
   </style>
   <link rel="icon" href="/favicon.ico?v=20260616">
   <link rel="shortcut icon" href="/favicon.ico?v=20260616">
@@ -385,8 +394,8 @@
               <p class="section-title">지역 선택</p>
               <div class="dong-trade-row">
                 <button id="dongPickBtn" class="dong-btn" type="button">
-                  <strong id="pickedDongText" class="dong-placeholder">법정동 검색</strong>
-                  <span id="pickedDongCode">동 이름을 입력해 선택</span>
+                  <strong id="pickedDongText" class="dong-placeholder">네이버 지역 선택</strong>
+                  <span id="pickedDongCode">시·도 → 시·군·구 → 읍·면·동</span>
                 </button>
                 <div id="tradeChoices" class="trade-pick-box" aria-label="거래유형 선택">
                   <div class="trade-pick-title">거래유형</div>
@@ -504,20 +513,37 @@
   </div>
 
   <div id="dongModal" class="modal" aria-hidden="true">
-    <div class="modal-box" role="dialog" aria-modal="true" aria-label="법정동 검색">
+    <div class="modal-box region-modal-box" role="dialog" aria-modal="true" aria-label="네이버 지역 선택">
       <div class="modal-head">
-        <div class="modal-title">법정동 검색</div>
-        <input id="dongSearchInput" class="dong-search" type="search" placeholder="예: 오식도동, 군산 오식도, 5213014700" autocomplete="off" />
-        <div class="quick-row">
-          <button class="quick" type="button" data-q="오식도동">오식도동</button>
-          <button class="quick" type="button" data-q="산북동">산북동</button>
-          <button class="quick" type="button" data-q="소룡동">소룡동</button>
+        <div class="modal-title">네이버 지역 선택</div>
+        <div class="region-step-grid">
+          <label class="region-step-field">
+            <span>1. 시·도</span>
+            <select id="naverSidoSelect" class="region-select">
+              <option value="">시·도 선택</option>
+            </select>
+          </label>
+          <label class="region-step-field">
+            <span>2. 시·군·구</span>
+            <select id="naverSigunguSelect" class="region-select" disabled>
+              <option value="">시·군·구 선택</option>
+            </select>
+          </label>
+          <label class="region-step-field">
+            <span>3. 읍·면·동</span>
+            <select id="naverEupSelect" class="region-select" disabled>
+              <option value="">읍·면·동 선택</option>
+            </select>
+          </label>
         </div>
+        <div id="naverRegionPreview" class="region-preview">시·도부터 선택하세요.</div>
       </div>
-      <div id="dongList" class="dong-list"></div>
       <div class="modal-foot">
-        <div id="dongCountText">검색어를 입력하세요.</div>
-        <button id="dongCloseBtn" class="close-btn" type="button">닫기</button>
+        <div id="dongCountText">네이버 부동산 지역체계 기준으로 선택합니다.</div>
+        <div class="modal-foot-actions">
+          <button id="dongCloseBtn" class="close-btn" type="button">닫기</button>
+          <button id="naverRegionConfirmBtn" class="primary-btn" type="button" disabled>선택 완료</button>
+        </div>
       </div>
     </div>
   </div>
@@ -541,6 +567,7 @@
   <div id="toast" class="toast"></div>
 
   <script src="/search/bjdong-codes.js" onerror="document.write('<script src=&quot;./bjdong-codes.js&quot;><\/script>')"></script>
+  <script src="/search/naver-region-codes.js" onerror="document.write('<script src=&quot;./naver-region-codes.js&quot;><\/script>')"></script>
   <script>
     var picked = null;
     var currentJobId = '';
@@ -591,8 +618,11 @@
       resultBody: document.getElementById('resultBody'),
       empty: document.getElementById('empty'),
       dongModal: document.getElementById('dongModal'),
-      dongSearchInput: document.getElementById('dongSearchInput'),
-      dongList: document.getElementById('dongList'),
+      naverSidoSelect: document.getElementById('naverSidoSelect'),
+      naverSigunguSelect: document.getElementById('naverSigunguSelect'),
+      naverEupSelect: document.getElementById('naverEupSelect'),
+      naverRegionPreview: document.getElementById('naverRegionPreview'),
+      naverRegionConfirmBtn: document.getElementById('naverRegionConfirmBtn'),
       dongCountText: document.getElementById('dongCountText'),
       dongCloseBtn: document.getElementById('dongCloseBtn'),
       naverGuideModal: document.getElementById('naverGuideModal'),
@@ -1337,13 +1367,9 @@
       return meta && meta.data ? meta.data : null;
     }
 
-    function insertSpaceAfterSi(name){
-      return String(name == null ? '' : name).replace(/([가-힣]+시)(?=[가-힣])/g, '$1 ').trim();
-    }
-
     function buildTrackerPayload(){
       return {
-        legalDongName: insertSpaceAfterSi(picked.name),
+        legalDongName: String((picked && picked.name) || '').trim(),
         legalDongCode: picked.code || '',
         mode: 'manual-record',
         durationSec: TRACKER_DURATION_SEC,
@@ -1651,88 +1677,140 @@
     function setStatus(text,type){ els.status.textContent = text || ''; els.status.className = 'status' + (type ? ' ' + type : ''); }
     function toast(text){ els.toast.textContent = text || ''; els.toast.classList.add('show'); setTimeout(function(){ els.toast.classList.remove('show'); }, 1600); }
 
+    function getNaverRegionItems(){ return Array.isArray(window.NAVER_REGION_CODES) ? window.NAVER_REGION_CODES : []; }
+    function uniqueRegionValues(items, key){
+      var seen = {};
+      var out = [];
+      (items || []).forEach(function(item){
+        var value = String((item && item[key]) || '').trim();
+        if(!value || seen[value]) return;
+        seen[value] = true;
+        out.push(value);
+      });
+      return out;
+    }
+    function setRegionSelectOptions(select, values, placeholder){
+      if(!select) return;
+      var current = select.value || '';
+      select.innerHTML = '<option value="">' + escapeHtml(placeholder) + '</option>' + (values || []).map(function(value){
+        return '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>';
+      }).join('');
+      if(current && (values || []).indexOf(current) !== -1) select.value = current;
+    }
+    function findNaverRegionFromPicked(value){
+      var items = getNaverRegionItems();
+      value = value || {};
+      var code = String(value.code || value.eupmyeondongCode || '').trim();
+      if(code){
+        var byCode = items.find(function(item){ return String(item.eupmyeondongCode || '') === code; });
+        if(byCode) return byCode;
+      }
+      var name = normalizeText(value.name || '');
+      if(name){
+        return items.find(function(item){
+          return normalizeText([item.sido,item.sigungu,item.eupmyeondong].filter(Boolean).join(' ')) === name;
+        }) || null;
+      }
+      return null;
+    }
+    function renderNaverSidoOptions(){
+      var items = getNaverRegionItems();
+      setRegionSelectOptions(els.naverSidoSelect, uniqueRegionValues(items, 'sido'), '시·도 선택');
+      els.naverSidoSelect.disabled = !items.length;
+    }
+    function renderNaverSigunguOptions(){
+      var sido = String(els.naverSidoSelect.value || '').trim();
+      var items = getNaverRegionItems().filter(function(item){ return item.sido === sido; });
+      setRegionSelectOptions(els.naverSigunguSelect, uniqueRegionValues(items, 'sigungu'), '시·군·구 선택');
+      els.naverSigunguSelect.disabled = !sido || !items.length;
+      setRegionSelectOptions(els.naverEupSelect, [], '읍·면·동 선택');
+      els.naverEupSelect.disabled = true;
+      updateNaverRegionPreview();
+    }
+    function renderNaverEupOptions(){
+      var sido = String(els.naverSidoSelect.value || '').trim();
+      var sigungu = String(els.naverSigunguSelect.value || '').trim();
+      var items = getNaverRegionItems().filter(function(item){ return item.sido === sido && item.sigungu === sigungu; });
+      setRegionSelectOptions(els.naverEupSelect, uniqueRegionValues(items, 'eupmyeondong'), '읍·면·동 선택');
+      els.naverEupSelect.disabled = !sido || !sigungu || !items.length;
+      updateNaverRegionPreview();
+    }
+    function selectedNaverRegionItem(){
+      var sido = String(els.naverSidoSelect.value || '').trim();
+      var sigungu = String(els.naverSigunguSelect.value || '').trim();
+      var eup = String(els.naverEupSelect.value || '').trim();
+      if(!sido || !sigungu || !eup) return null;
+      return getNaverRegionItems().find(function(item){
+        return item.sido === sido && item.sigungu === sigungu && item.eupmyeondong === eup;
+      }) || null;
+    }
+    function updateNaverRegionPreview(){
+      var sido = String(els.naverSidoSelect.value || '').trim();
+      var sigungu = String(els.naverSigunguSelect.value || '').trim();
+      var eup = String(els.naverEupSelect.value || '').trim();
+      var parts = [sido,sigungu,eup].filter(Boolean);
+      if(els.naverRegionPreview){
+        els.naverRegionPreview.textContent = parts.length ? parts.join(' → ') : '시·도부터 선택하세요.';
+      }
+      var item = selectedNaverRegionItem();
+      if(els.naverRegionConfirmBtn) els.naverRegionConfirmBtn.disabled = !item;
+      if(els.dongCountText){
+        if(!getNaverRegionItems().length) els.dongCountText.textContent = '네이버 지역 데이터를 불러오지 못했습니다.';
+        else if(item) els.dongCountText.textContent = '서버 전송 문자열: ' + [item.sido,item.sigungu,item.eupmyeondong].join(' ');
+        else els.dongCountText.textContent = '네이버 부동산 지역체계 기준으로 3단계를 선택하세요.';
+      }
+    }
     function openDongModal(){
       els.dongModal.classList.add('show');
       els.dongModal.setAttribute('aria-hidden','false');
-      els.dongSearchInput.value = '';
-      renderDongList();
-      setTimeout(function(){ els.dongSearchInput.focus(); }, 30);
+      renderNaverSidoOptions();
+      setRegionSelectOptions(els.naverSigunguSelect, [], '시·군·구 선택');
+      setRegionSelectOptions(els.naverEupSelect, [], '읍·면·동 선택');
+      els.naverSigunguSelect.disabled = true;
+      els.naverEupSelect.disabled = true;
+
+      var current = findNaverRegionFromPicked(picked);
+      if(current){
+        els.naverSidoSelect.value = current.sido;
+        renderNaverSigunguOptions();
+        els.naverSigunguSelect.value = current.sigungu;
+        renderNaverEupOptions();
+        els.naverEupSelect.value = current.eupmyeondong;
+      }
+      updateNaverRegionPreview();
+      setTimeout(function(){ if(els.naverSidoSelect) els.naverSidoSelect.focus(); }, 30);
     }
     function closeDongModal(){ els.dongModal.classList.remove('show'); els.dongModal.setAttribute('aria-hidden','true'); }
+    function confirmNaverRegion(){
+      var item = selectedNaverRegionItem();
+      if(!item) return;
+      var searchText = [item.sido,item.sigungu,item.eupmyeondong].join(' ');
+      picked = {
+        name: searchText,
+        code: item.eupmyeondongCode || '',
+        sido: item.sido || '',
+        sigungu: item.sigungu || '',
+        bname: item.eupmyeondong || '',
+        sidoCode: item.sidoCode || '',
+        sigunguCode: item.sigunguCode || '',
+        eupmyeondongCode: item.eupmyeondongCode || ''
+      };
+      renderPickedDong();
+      closeDongModal();
+      setStatus('', '');
+      els.empty.textContent = '조회 버튼을 누르면 매물 목록을 정리합니다.';
+      toast('네이버 지역을 선택했습니다.');
+    }
     function renderPickedDong(){
       if(picked){
         els.pickedDongText.textContent = picked.name;
         els.pickedDongText.classList.remove('dong-placeholder');
-        els.pickedDongCode.textContent = '선택 완료';
+        els.pickedDongCode.textContent = picked.code ? ('네이버 읍·면·동 코드 ' + picked.code) : '네이버 지역 선택 완료';
       }else{
-        els.pickedDongText.textContent = '법정동 검색';
+        els.pickedDongText.textContent = '네이버 지역 선택';
         els.pickedDongText.classList.add('dong-placeholder');
-        els.pickedDongCode.textContent = '동 이름을 입력해 선택';
+        els.pickedDongCode.textContent = '시·도 → 시·군·구 → 읍·면·동';
       }
-    }
-    function scoreDong(item, q, qCompact){
-      var name = normalizeText(item.name);
-      var bname = normalizeText(item.bname);
-      var sigungu = normalizeText(item.sigungu);
-      var code = String(item.code || '');
-      var compact = compactText([item.sido,item.sigungu,item.bname,item.name].join(' '));
-      if(code === q) return 100;
-      if(name === q) return 95;
-      if(bname === q) return 90;
-      if(compact === qCompact) return 88;
-      if(name.indexOf(q) === 0) return 80;
-      if(bname.indexOf(q) === 0) return 76;
-      if(compact.indexOf(qCompact) !== -1) return 70;
-      if(name.indexOf(q) !== -1) return 62;
-      if(sigungu.indexOf(q) !== -1) return 50;
-      if(code.indexOf(q) !== -1) return 45;
-      return 0;
-    }
-    function renderDongList(){
-      var items = getBjdongItems();
-      var q = normalizeText(els.dongSearchInput.value);
-      var qCompact = compactText(q);
-
-      if(!items.length){
-        els.dongCountText.textContent = '데이터를 불러오지 못했습니다.';
-        els.dongList.innerHTML = '<div class="empty">새로고침 후 다시 시도하세요.</div>';
-        return;
-      }
-      if(!q){
-        els.dongCountText.textContent = '동 이름, 시군구, 코드를 검색할 수 있습니다.';
-        els.dongList.innerHTML = '<div class="empty">예: 오식도동, 군산 오식도, 5213014700</div>';
-        return;
-      }
-
-      var matched = items.map(function(item){ return { item:item, score:scoreDong(item,q,qCompact) }; })
-        .filter(function(x){ return x.score > 0; })
-        .sort(function(a,b){ return b.score - a.score || String(a.item.name).localeCompare(String(b.item.name),'ko'); })
-        .slice(0, 60)
-        .map(function(x){ return x.item; });
-
-      els.dongCountText.textContent = matched.length ? matched.length + '건 표시' : '검색 결과가 없습니다.';
-      if(!matched.length){
-        els.dongList.innerHTML = '<div class="empty">검색 결과가 없습니다.</div>';
-        return;
-      }
-
-      els.dongList.innerHTML = matched.map(function(item, idx){
-        return '<button class="dong-item" type="button" data-idx="' + idx + '">' +
-          '<div class="dong-name">' + escapeHtml(item.name) + '</div>' +
-          '<div class="dong-sub">' + escapeHtml([item.sido,item.sigungu,item.bname].filter(Boolean).join(' · ')) + '</div>' +
-          '</button>';
-      }).join('');
-
-      Array.prototype.forEach.call(els.dongList.querySelectorAll('.dong-item'), function(btn){
-        btn.addEventListener('click', function(){
-          picked = matched[Number(btn.getAttribute('data-idx'))];
-          renderPickedDong();
-          closeDongModal();
-          setStatus('', '');
-          els.empty.textContent = '조회 버튼을 누르면 매물 목록을 정리합니다.';
-          toast('지역을 선택했습니다.');
-        });
-      });
     }
 
     function setChoice(container, attr, value){
@@ -2748,11 +2826,10 @@
     els.dongPickBtn.addEventListener('click', openDongModal);
     els.dongCloseBtn.addEventListener('click', closeDongModal);
     els.dongModal.addEventListener('click', function(e){ if(e.target === els.dongModal) closeDongModal(); });
-    els.dongSearchInput.addEventListener('input', renderDongList);
-    els.dongSearchInput.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeDongModal(); });
-    Array.prototype.forEach.call(document.querySelectorAll('.quick'), function(btn){
-      btn.addEventListener('click', function(){ els.dongSearchInput.value = btn.getAttribute('data-q') || ''; renderDongList(); els.dongSearchInput.focus(); });
-    });
+    if(els.naverSidoSelect) els.naverSidoSelect.addEventListener('change', renderNaverSigunguOptions);
+    if(els.naverSigunguSelect) els.naverSigunguSelect.addEventListener('change', renderNaverEupOptions);
+    if(els.naverEupSelect) els.naverEupSelect.addEventListener('change', updateNaverRegionPreview);
+    if(els.naverRegionConfirmBtn) els.naverRegionConfirmBtn.addEventListener('click', confirmNaverRegion);
     els.typeChoices.addEventListener('click', function(e){
       var btn = e.target.closest('[data-type]'); if(!btn) return;
       selectedType = btn.getAttribute('data-type'); setChoice(els.typeChoices, 'data-type', selectedType);

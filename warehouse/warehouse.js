@@ -297,21 +297,35 @@
     DATA=full;
     isIndexing=false;
     refresh(false);
+    hideLoading();
+  }
+  function renderImmediateFilters(){
+    // 검색/필터 UI만 즉시 연다. 검색결과는 전체 데이터 정리가 끝날 때까지 오버레이로 가린다.
+    renderRegions();
+    renderTypes();
+    renderLaws();
+    renderAreas();
+    renderAreaStatus();
+    renderSorts();
+    const total=Number(META.count||RAW_DATA.length||0);
+    els.count.textContent=total.toLocaleString('ko-KR')+'건';
+    els.caption.textContent='데이터 정리 중';
+    els.body.innerHTML='';
+    els.empty.hidden=true;
+    els.pagination.innerHTML='';
   }
   function initialize(){
-    try{
-      const initialCount=Math.min(100,RAW_DATA.length);
-      DATA=RAW_DATA.slice(0,initialCount).map(normalizeRow);
-      refresh(false);
-      hideLoading();
-      setTimeout(()=>{buildFullDataInBackground().catch(err=>console.warn('[warehouse] background indexing failed:',err));},0);
-    }catch(err){
-      console.warn('[warehouse] initial 100 load fallback:',err);
-      DATA=RAW_DATA.slice(0,Math.min(100,RAW_DATA.length)).map(normalizeRow);
-      refresh(false);
-      hideLoading();
-      setTimeout(()=>{buildFullDataInBackground().catch(e=>console.warn('[warehouse] background indexing failed:',e));},0);
-    }
+    renderImmediateFilters();
+    setTimeout(()=>{
+      buildFullDataInBackground().catch(err=>{
+        console.warn('[warehouse] full indexing failed:',err);
+        // 오류가 나도 화면을 영구적으로 막지 않는다.
+        isIndexing=false;
+        DATA=RAW_DATA.map(normalizeRow);
+        refresh(false);
+        hideLoading();
+      });
+    },0);
   }
   initialize();
 })();

@@ -164,11 +164,11 @@
     els.count.textContent=total.toLocaleString()+'건';els.caption.textContent=`검색결과 ${total.toLocaleString()}건 · 전체 ${DATA.length.toLocaleString()}건 · ${state.page}/${pages}페이지`;els.empty.hidden=total!==0;
     els.body.innerHTML=visible.map((r,i)=>`<tr data-id="${r.id}">
       <td class="col-no">${start+i+1}</td>
-      <td><div class="company">${esc(r.name||'상호명 없음')}</div><div class="bizno">${esc(r.bizNo||'사업자번호 미기재')}</div></td>
+      <td class="company-cell"><div class="company">${esc(r.name||'상호명 없음')}</div><div class="bizno">${esc(r.bizNo||'사업자번호 미기재')}</div></td>
       <td><div class="address">${esc(r.currentAddress||r.address||'-')}</div></td>
       <td>${classCell(r)}</td>
       <td class="num">${areaCell(r)}</td>
-      <td><div class="item ${r.item?'':'missing'}">${esc(r.item||'미기재')}</div></td>
+      <td class="item-cell"><div class="item ${r.item?'':'missing'}">${esc(r.item||'미기재')}</div></td>
       <td class="col-action"><button class="view-btn" data-detail="${r.id}" type="button">상세보기</button></td>
     </tr>`).join('');
     renderPagination(pages);

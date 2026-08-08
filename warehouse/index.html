@@ -9,15 +9,6 @@
   <link rel="stylesheet" href="/warehouse/warehouse.css">
 </head>
 <body>
-  <div id="loadingOverlay" class="loading-overlay" role="status" aria-live="polite">
-    <div class="loading-card">
-      <div class="loading-mark"><span></span><span></span><span></span></div>
-      <div class="loading-spinner" aria-hidden="true"></div>
-      <div class="loading-title">전국 물류창고 데이터 준비 중</div>
-      <div class="loading-sub">검색에 필요한 자료를 정리하고 있습니다.</div>
-    </div>
-  </div>
-
   <main class="page-shell">
     <header class="hero">
       <div class="hero-orb hero-orb-a"></div>
@@ -102,6 +93,13 @@
     </section>
 
     <section class="panel results-panel">
+      <div id="loadingOverlay" class="loading-overlay" role="status" aria-live="polite">
+        <div class="loading-card">
+          <div class="loading-spinner" aria-hidden="true"></div>
+          <div class="loading-title">물류창고 자료 불러오는 중</div>
+          <div class="loading-sub">초기 100건을 준비하고 있습니다.</div>
+        </div>
+      </div>
       <div class="results-head">
         <div class="results-title">
           <span class="results-kicker">SEARCH RESULTS</span>

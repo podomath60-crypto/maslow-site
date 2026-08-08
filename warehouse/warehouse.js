@@ -42,7 +42,9 @@
     });
   }
 
-  let DATA=RAW_DATA.map(normalizeRow);
+  const META = window.WAREHOUSE_META || {};
+  let DATA=[];
+  let isIndexing=true;
   const state={regions:new Set(),types:new Set(),laws:new Set(),areaMin:0,areaStatus:'all',keyword:'',sorts:[],page:1,pageSize:100};
   const el=id=>document.getElementById(id);
   const els={
@@ -86,18 +88,29 @@
   }
 
   function renderRegions(){
-    const rows=baseFilter({ignoreRegion:true});
-    const counts=rows.reduce((a,r)=>(a[r.sido]=(a[r.sido]||0)+1,a),{});
-    const keys=Object.keys(DATA.reduce((a,r)=>(a[r.sido]=1,a),{})).sort((a,b)=>{const ai=REGION_ORDER.indexOf(a),bi=REGION_ORDER.indexOf(b);return(ai<0?999:ai)-(bi<0?999:bi)||a.localeCompare(b,'ko');});
+    let counts,keys;
+    if(isIndexing && META && META.regionCounts){
+      counts={};
+      Object.entries(META.regionCounts).forEach(([raw,count])=>{
+        const k=regionFromAddress('',raw);
+        counts[k]=(counts[k]||0)+Number(count||0);
+      });
+      keys=Object.keys(counts);
+    }else{
+      const rows=baseFilter({ignoreRegion:true});
+      counts=rows.reduce((a,r)=>(a[r.sido]=(a[r.sido]||0)+1,a),{});
+      keys=Object.keys(DATA.reduce((a,r)=>(a[r.sido]=1,a),{}));
+    }
+    keys.sort((a,b)=>{const ai=REGION_ORDER.indexOf(a),bi=REGION_ORDER.indexOf(b);return(ai<0?999:ai)-(bi<0?999:bi)||a.localeCompare(b,'ko');});
     els.regions.innerHTML=keys.map(k=>`<button class="chip region-chip ${state.regions.has(k)?'active':''}" data-region="${esc(k)}"><span>${esc(REGION_LABELS[k]||k)}</span><span class="chip-count">${Number(counts[k]||0).toLocaleString()}건</span></button>`).join('');
   }
   function renderTypes(){
-    const rows=baseFilter({ignoreType:true});
+    const rows=isIndexing?RAW_DATA:baseFilter({ignoreType:true});
     els.types.innerHTML=TYPE_DEFS.map(d=>{const count=rows.reduce((n,r)=>n+(d.test(r)?1:0),0);return `<button class="chip ${state.types.has(d.key)?'active':''}" data-type="${d.key}">${d.label}<span class="chip-mini-count">${count.toLocaleString()}</span></button>`;}).join('');
   }
   function renderLaws(){
-    const rows=baseFilter({ignoreLaw:true});
-    const counts=rows.reduce((a,r)=>(a[r.law]=(a[r.law]||0)+1,a),{});
+    const rows=isIndexing?RAW_DATA:baseFilter({ignoreLaw:true});
+    const counts=rows.reduce((a,r)=>(a[String(r.law||'').trim()]=(a[String(r.law||'').trim()]||0)+1,a),{});
     els.laws.innerHTML=LAW_ORDER.map(l=>`<button class="chip law-chip ${state.laws.has(l)?'active':''}" data-law="${esc(l)}">${esc(LAW_LABELS[l]||l)}<span class="chip-mini-count">${Number(counts[l]||0).toLocaleString()}</span></button>`).join('');
   }
   function renderAreas(){els.areas.innerHTML=AREA_DEFS.map(d=>`<button class="chip ${state.areaMin===d.v?'active':''}" data-area="${d.v}">${d.label}</button>`).join('');}
@@ -161,7 +174,15 @@
   function renderRows(rows){
     const total=rows.length,pages=Math.max(1,Math.ceil(total/state.pageSize));if(state.page>pages)state.page=pages;
     const start=(state.page-1)*state.pageSize,visible=rows.slice(start,start+state.pageSize);
-    els.count.textContent=total.toLocaleString()+'건';els.caption.textContent=`검색결과 ${total.toLocaleString()}건 · 전체 ${DATA.length.toLocaleString()}건 · ${state.page}/${pages}페이지`;els.empty.hidden=total!==0;
+    if(isIndexing){
+      const knownTotal=Number(META.count||RAW_DATA.length||total);
+      els.count.textContent=knownTotal.toLocaleString()+'건';
+      els.caption.textContent=`초기 ${total.toLocaleString()}건 표시 · 전체 ${knownTotal.toLocaleString()}건 준비 중`;
+    }else{
+      els.count.textContent=total.toLocaleString()+'건';
+      els.caption.textContent=`검색결과 ${total.toLocaleString()}건 · 전체 ${DATA.length.toLocaleString()}건 · ${state.page}/${pages}페이지`;
+    }
+    els.empty.hidden=total!==0;
     els.body.innerHTML=visible.map((r,i)=>`<tr data-id="${r.id}">
       <td class="col-no">${start+i+1}</td>
       <td class="company-cell"><div class="company">${esc(r.name||'상호명 없음')}</div><div class="bizno">${esc(r.bizNo||'사업자번호 미기재')}</div></td>
@@ -249,18 +270,48 @@
   function hideLoading(){
     if(!els.loading)return;
     requestAnimationFrame(()=>requestAnimationFrame(()=>els.loading.classList.add('is-done')));
-    setTimeout(()=>{if(els.loading)els.loading.setAttribute('aria-hidden','true');},320);
+    setTimeout(()=>{if(els.loading)els.loading.setAttribute('aria-hidden','true');},240);
   }
-  async function initialize(){
+  function yieldToBrowser(){
+    return new Promise(resolve=>{
+      if('requestIdleCallback' in window){
+        requestIdleCallback(()=>resolve(),{timeout:60});
+      }else{
+        setTimeout(resolve,0);
+      }
+    });
+  }
+  async function buildFullDataInBackground(){
     try{
       if(AddressTools&&AddressTools.ready) await AddressTools.ready;
-      DATA=RAW_DATA.map(normalizeRow);
-      refresh(false);
     }catch(err){
-      console.warn('[warehouse] initial load fallback:',err);
-      DATA=RAW_DATA.map(normalizeRow);
+      console.warn('[warehouse] address module background ready fallback:',err);
+    }
+    const full=new Array(RAW_DATA.length);
+    const chunkSize=250;
+    for(let start=0;start<RAW_DATA.length;start+=chunkSize){
+      const end=Math.min(RAW_DATA.length,start+chunkSize);
+      for(let i=start;i<end;i++) full[i]=normalizeRow(RAW_DATA[i]);
+      await yieldToBrowser();
+    }
+    DATA=full;
+    isIndexing=false;
+    refresh(false);
+  }
+  function initialize(){
+    try{
+      const initialCount=Math.min(100,RAW_DATA.length);
+      DATA=RAW_DATA.slice(0,initialCount).map(normalizeRow);
       refresh(false);
-    }finally{hideLoading();}
+      hideLoading();
+      setTimeout(()=>{buildFullDataInBackground().catch(err=>console.warn('[warehouse] background indexing failed:',err));},0);
+    }catch(err){
+      console.warn('[warehouse] initial 100 load fallback:',err);
+      DATA=RAW_DATA.slice(0,Math.min(100,RAW_DATA.length)).map(normalizeRow);
+      refresh(false);
+      hideLoading();
+      setTimeout(()=>{buildFullDataInBackground().catch(e=>console.warn('[warehouse] background indexing failed:',e));},0);
+    }
   }
   initialize();
 })();

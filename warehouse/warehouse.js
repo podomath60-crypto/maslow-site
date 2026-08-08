@@ -47,7 +47,7 @@
   const el=id=>document.getElementById(id);
   const els={
     keyword:el('keywordInput'),reset:el('resetAllBtn'),clearRegion:el('clearRegionBtn'),clearType:el('clearTypeBtn'),clearLaw:el('clearLawBtn'),clearArea:el('clearAreaBtn'),clearSort:el('clearSortBtn'),
-    regions:el('regionChips'),types:el('typeChips'),laws:el('lawChips'),areas:el('areaChips'),areaStatus:el('areaStatusChips'),sorts:el('sortChips'),activeSorts:el('activeSorts'),activeFilters:el('activeFilters'),
+    regions:el('regionChips'),types:el('typeChips'),laws:el('lawChips'),areas:el('areaChips'),areaStatus:el('areaStatusChips'),sorts:el('sortChips'),
     count:el('resultCount'),caption:el('resultCaption'),body:el('resultBody'),empty:el('emptyState'),pagination:el('pagination'),pageSize:el('pageSizeSelect'),
     drawer:el('detailDrawer'),backdrop:el('detailBackdrop'),close:el('closeDetailBtn'),detailName:el('detailName'),detailBizNo:el('detailBizNo'),detailContent:el('detailContent'),loading:el('loadingOverlay')
   };
@@ -103,21 +103,18 @@
   function renderAreas(){els.areas.innerHTML=AREA_DEFS.map(d=>`<button class="chip ${state.areaMin===d.v?'active':''}" data-area="${d.v}">${d.label}</button>`).join('');}
   function renderAreaStatus(){els.areaStatus.innerHTML=AREA_STATUS_DEFS.map(d=>`<button class="chip ${state.areaStatus===d.key?'active':''}" data-area-status="${d.key}">${d.label}</button>`).join('');}
   function renderSorts(){
-    els.sorts.innerHTML=SORT_DEFS.map(d=>{const i=state.sorts.findIndex(s=>s.key===d.key),s=i>=0?state.sorts[i]:null;return `<button class="chip sort-chip ${s?'active':''}" data-sort="${d.key}" title="${s?'클릭하면 방향 전환':'정렬 기준 추가'}">${s?`<span class="sort-index">${i+1}</span>`:''}<span>${d.label}</span>${s?`<span class="sort-dir">${s.dir==='asc'?'↑':'↓'}</span>`:''}</button>`;}).join('');
-    if(state.sorts.length){
-      els.activeSorts.hidden=false;
-      els.activeSorts.innerHTML='<strong>정렬 우선순위</strong> · '+state.sorts.map((s,i)=>`<span class="sort-order-token"><strong>${i+1}</strong> ${esc(sortDef(s.key).label)} ${s.dir==='asc'?'↑':'↓'}<button class="sort-control" type="button" data-sort-dir="${s.key}" title="방향 전환">↕</button><button class="sort-control" type="button" data-sort-move="${s.key}" data-move="up" ${i===0?'disabled':''} title="우선순위 올리기">←</button><button class="sort-control" type="button" data-sort-move="${s.key}" data-move="down" ${i===state.sorts.length-1?'disabled':''} title="우선순위 내리기">→</button><button class="sort-control sort-remove" type="button" data-sort-remove="${s.key}" title="정렬 제거">×</button></span>`).join('');
-    }else{els.activeSorts.hidden=true;els.activeSorts.textContent='';}
-  }
-  function renderActiveFilters(){
-    const parts=[];
-    if(state.regions.size)parts.push('지역 '+Array.from(state.regions).map(r=>REGION_LABELS[r]||r).join(' · '));
-    if(state.types.size)parts.push('창고형태 '+Array.from(state.types).map(k=>TYPE_DEFS.find(d=>d.key===k).label).join(' · '));
-    if(state.laws.size)parts.push('관련법률 '+Array.from(state.laws).join(' · '));
-    if(state.areaMin)parts.push('등록면적 '+fmt(state.areaMin)+'㎡ 이상');
-    if(state.areaStatus!=='all')parts.push(state.areaStatus==='has'?'면적 있음':'면적 미제공');
-    if(state.keyword)parts.push('검색 “'+state.keyword+'”');
-    if(parts.length){els.activeFilters.hidden=false;els.activeFilters.innerHTML='<strong>필터</strong> · '+parts.map(esc).join(' / ');}else{els.activeFilters.hidden=true;els.activeFilters.textContent='';}
+    els.sorts.innerHTML=SORT_DEFS.map(d=>{
+      const i=state.sorts.findIndex(s=>s.key===d.key),s=i>=0?state.sorts[i]:null;
+      if(!s) return `<button class="chip sort-chip" type="button" data-sort="${d.key}" title="정렬 기준 추가"><span>${d.label}</span></button>`;
+      return `<div class="chip sort-chip active" data-sort-key="${d.key}" title="${i+1}순위 정렬">
+        <button class="sort-main" type="button" data-sort-dir="${d.key}" title="오름/내림차순 전환"><span class="sort-index">${i+1}</span><span>${d.label}</span><span class="sort-dir">${s.dir==='asc'?'↑':'↓'}</span></button>
+        <span class="sort-inline-controls">
+          <button type="button" data-sort-move="${d.key}" data-move="up" ${i===0?'disabled':''} title="우선순위 앞으로">←</button>
+          <button type="button" data-sort-move="${d.key}" data-move="down" ${i===state.sorts.length-1?'disabled':''} title="우선순위 뒤로">→</button>
+          <button type="button" class="sort-x" data-sort-remove="${d.key}" title="정렬 제거">×</button>
+        </span>
+      </div>`;
+    }).join('');
   }
 
   function compareText(a,b){return String(a||'').localeCompare(String(b||''),'ko-KR',{numeric:true,sensitivity:'base'});}
@@ -182,7 +179,7 @@
     const cur=state.page;let start=Math.max(1,cur-3),end=Math.min(pages,start+6);start=Math.max(1,end-6);let h=`<button class="page-btn" data-page="${cur-1}" ${cur===1?'disabled':''}>‹</button>`;
     if(start>1)h+=`<button class="page-btn" data-page="1">1</button>${start>2?'<span>…</span>':''}`;for(let p=start;p<=end;p++)h+=`<button class="page-btn ${p===cur?'active':''}" data-page="${p}">${p}</button>`;if(end<pages)h+=`${end<pages-1?'<span>…</span>':''}<button class="page-btn" data-page="${pages}">${pages}</button>`;h+=`<button class="page-btn" data-page="${cur+1}" ${cur===pages?'disabled':''}>›</button>`;els.pagination.innerHTML=h;
   }
-  function refresh(resetPage=true){if(resetPage)state.page=1;renderRegions();renderTypes();renderLaws();renderAreas();renderAreaStatus();renderSorts();renderActiveFilters();renderRows(sortRows(baseFilter()));}
+  function refresh(resetPage=true){if(resetPage)state.page=1;renderRegions();renderTypes();renderLaws();renderAreas();renderAreaStatus();renderSorts();renderRows(sortRows(baseFilter()));}
   function toggleSort(key){const idx=state.sorts.findIndex(s=>s.key===key),def=sortDef(key);if(idx<0)state.sorts.push({key,dir:def.defaultDir});else state.sorts[idx].dir=state.sorts[idx].dir==='asc'?'desc':'asc';refresh();}
   function removeSort(key){const idx=state.sorts.findIndex(s=>s.key===key);if(idx>=0){state.sorts.splice(idx,1);refresh();}}
   function moveSort(key,delta){const idx=state.sorts.findIndex(s=>s.key===key),next=idx+delta;if(idx<0||next<0||next>=state.sorts.length)return;const item=state.sorts.splice(idx,1)[0];state.sorts.splice(next,0,item);refresh();}
@@ -238,11 +235,11 @@
   els.laws.addEventListener('click',e=>{const b=e.target.closest('[data-law]');if(!b)return;const k=b.dataset.law;state.laws.has(k)?state.laws.delete(k):state.laws.add(k);refresh();});
   els.areas.addEventListener('click',e=>{const b=e.target.closest('[data-area]');if(!b)return;state.areaMin=Number(b.dataset.area)||0;refresh();});
   els.areaStatus.addEventListener('click',e=>{const b=e.target.closest('[data-area-status]');if(!b)return;state.areaStatus=b.dataset.areaStatus||'all';refresh();});
-  els.sorts.addEventListener('click',e=>{const b=e.target.closest('[data-sort]');if(b)toggleSort(b.dataset.sort);});
-  els.activeSorts.addEventListener('click',e=>{
+  els.sorts.addEventListener('click',e=>{
     const dir=e.target.closest('[data-sort-dir]');if(dir){toggleSort(dir.dataset.sortDir);return;}
     const rm=e.target.closest('[data-sort-remove]');if(rm){removeSort(rm.dataset.sortRemove);return;}
-    const mv=e.target.closest('[data-sort-move]');if(mv){moveSort(mv.dataset.sortMove,mv.dataset.move==='up'?-1:1);}
+    const mv=e.target.closest('[data-sort-move]');if(mv){moveSort(mv.dataset.sortMove,mv.dataset.move==='up'?-1:1);return;}
+    const add=e.target.closest('[data-sort]');if(add)toggleSort(add.dataset.sort);
   });
   els.keyword.addEventListener('input',()=>{state.keyword=els.keyword.value.trim();refresh();});
   els.clearRegion.addEventListener('click',()=>{state.regions.clear();refresh();});els.clearType.addEventListener('click',()=>{state.types.clear();refresh();});els.clearLaw.addEventListener('click',()=>{state.laws.clear();refresh();});els.clearArea.addEventListener('click',()=>{state.areaMin=0;state.areaStatus='all';refresh();});els.clearSort.addEventListener('click',()=>{state.sorts=[];refresh();});

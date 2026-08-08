@@ -105,14 +105,12 @@
   function renderSorts(){
     els.sorts.innerHTML=SORT_DEFS.map(d=>{
       const i=state.sorts.findIndex(s=>s.key===d.key),s=i>=0?state.sorts[i]:null;
-      if(!s) return `<button class="chip sort-chip" type="button" data-sort="${d.key}" title="정렬 기준 추가"><span>${d.label}</span></button>`;
-      return `<div class="chip sort-chip active" data-sort-key="${d.key}" title="${i+1}순위 정렬">
-        <button class="sort-main" type="button" data-sort-dir="${d.key}" title="오름/내림차순 전환"><span class="sort-index">${i+1}</span><span>${d.label}</span><span class="sort-dir">${s.dir==='asc'?'↑':'↓'}</span></button>
-        <span class="sort-inline-controls">
-          <button type="button" data-sort-move="${d.key}" data-move="up" ${i===0?'disabled':''} title="우선순위 앞으로">←</button>
-          <button type="button" data-sort-move="${d.key}" data-move="down" ${i===state.sorts.length-1?'disabled':''} title="우선순위 뒤로">→</button>
-          <button type="button" class="sort-x" data-sort-remove="${d.key}" title="정렬 제거">×</button>
-        </span>
+      if(!s) return `<button class="chip sort-chip" type="button" data-sort="${d.key}" title="클릭하면 ${state.sorts.length+1}순위 정렬로 추가"><span>${d.label}</span></button>`;
+      return `<div class="chip sort-chip active" data-sort-key="${d.key}">
+        <button class="sort-main" type="button" data-sort-dir="${d.key}" title="다시 클릭하면 정렬 방향 전환">
+          <span class="sort-index">${i+1}</span><span>${d.label}</span><span class="sort-dir">${s.dir==='asc'?'↑':'↓'}</span>
+        </button>
+        <button type="button" class="sort-x" data-sort-remove="${d.key}" title="이 정렬만 제거">×</button>
       </div>`;
     }).join('');
   }
@@ -182,7 +180,6 @@
   function refresh(resetPage=true){if(resetPage)state.page=1;renderRegions();renderTypes();renderLaws();renderAreas();renderAreaStatus();renderSorts();renderRows(sortRows(baseFilter()));}
   function toggleSort(key){const idx=state.sorts.findIndex(s=>s.key===key),def=sortDef(key);if(idx<0)state.sorts.push({key,dir:def.defaultDir});else state.sorts[idx].dir=state.sorts[idx].dir==='asc'?'desc':'asc';refresh();}
   function removeSort(key){const idx=state.sorts.findIndex(s=>s.key===key);if(idx>=0){state.sorts.splice(idx,1);refresh();}}
-  function moveSort(key,delta){const idx=state.sorts.findIndex(s=>s.key===key),next=idx+delta;if(idx<0||next<0||next>=state.sorts.length)return;const item=state.sorts.splice(idx,1)[0];state.sorts.splice(next,0,item);refresh();}
   function rowById(id){return DATA.find(x=>x.id===Number(id));}
 
   function areaBreakdown(r){
@@ -238,7 +235,6 @@
   els.sorts.addEventListener('click',e=>{
     const dir=e.target.closest('[data-sort-dir]');if(dir){toggleSort(dir.dataset.sortDir);return;}
     const rm=e.target.closest('[data-sort-remove]');if(rm){removeSort(rm.dataset.sortRemove);return;}
-    const mv=e.target.closest('[data-sort-move]');if(mv){moveSort(mv.dataset.sortMove,mv.dataset.move==='up'?-1:1);return;}
     const add=e.target.closest('[data-sort]');if(add)toggleSort(add.dataset.sort);
   });
   els.keyword.addEventListener('input',()=>{state.keyword=els.keyword.value.trim();refresh();});

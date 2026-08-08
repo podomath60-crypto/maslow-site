@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
-  <meta name="theme-color" content="#f7f9fc">
+  <meta name="theme-color" content="#f5f7fb">
   <title>전국 물류창고 검색 | MASLOW</title>
   <link rel="stylesheet" href="/warehouse/warehouse.css">
 </head>
 <body>
   <main class="page-shell">
-    <section class="top-panel panel">
+    <section class="panel filter-panel">
       <div class="topbar">
         <div class="title-wrap">
           <div class="brand">MASLOW LOGISTICS DATABASE</div>
@@ -18,74 +18,81 @@
             <h1>전국 물류창고 검색</h1>
             <span id="resultCount" class="result-count">0건</span>
           </div>
-          <p>지역·유형·면적을 빠르게 조합하고, 정렬은 누른 순서대로 중복 적용합니다.</p>
+          <p>지역·창고형태·관련법률·등록면적을 조합하고 정렬은 누른 순서대로 적용합니다.</p>
         </div>
         <div class="search-tools">
           <label class="search-box">
             <span class="search-icon">⌕</span>
-            <input id="keywordInput" type="search" autocomplete="off" placeholder="상호명 · 사업자번호 · 주소 · 취급품목">
+            <input id="keywordInput" type="search" autocomplete="off" placeholder="상호명 · 주소 · 사업자번호 · 취급품목">
           </label>
-          <button id="resetAllBtn" class="reset-btn" type="button">초기화</button>
+          <button id="resetAllBtn" class="reset-btn" type="button">전체 초기화</button>
         </div>
       </div>
 
-      <div id="activeFilters" class="active-filters summary-bar" hidden></div>
-      <div id="activeSorts" class="active-sorts summary-bar" hidden></div>
+      <div id="activeFilters" class="summary-bar" hidden></div>
+      <div id="activeSorts" class="summary-bar" hidden></div>
 
-      <div class="toolbar-grid">
-        <section class="filter-card region-card">
-          <div class="section-head compact">
+      <div class="filter-layout">
+        <section class="filter-box region-box">
+          <div class="section-head">
             <h2>광역시도</h2>
             <button id="clearRegionBtn" class="text-btn" type="button">해제</button>
           </div>
-          <div id="regionChips" class="chip-grid region-chips"></div>
+          <div id="regionChips" class="region-chips"></div>
         </section>
 
-        <section class="filter-card mix-card">
-          <div class="section-block">
-            <div class="section-head compact">
-              <h2>창고 유형</h2>
+        <section class="filter-box type-law-box">
+          <div class="filter-subgroup">
+            <div class="section-head">
+              <div class="head-with-note"><h2>창고 형태</h2><span>물류시설법 등록형태</span></div>
               <button id="clearTypeBtn" class="text-btn" type="button">해제</button>
             </div>
             <div id="typeChips" class="chip-row"></div>
           </div>
+          <div class="filter-subgroup separated">
+            <div class="section-head">
+              <h2>관련 법률</h2>
+              <button id="clearLawBtn" class="text-btn" type="button">해제</button>
+            </div>
+            <div id="lawChips" class="chip-row law-chips"></div>
+          </div>
+        </section>
 
-          <div class="section-block">
-            <div class="section-head compact">
-              <h2>총면적</h2>
+        <section class="filter-box area-sort-box">
+          <div class="filter-subgroup">
+            <div class="section-head">
+              <h2>등록면적</h2>
               <button id="clearAreaBtn" class="text-btn" type="button">해제</button>
             </div>
             <div id="areaChips" class="chip-row"></div>
           </div>
-        </section>
-
-        <section class="filter-card sort-card">
-          <div class="section-head compact sort-head">
-            <div class="sort-head-left">
-              <h2>다중 정렬</h2>
-              <span class="sort-guide">누른 순서가 우선</span>
+          <div class="filter-subgroup separated">
+            <div class="section-head">
+              <h2>면적정보</h2>
             </div>
-            <button id="clearSortBtn" class="text-btn" type="button">해제</button>
+            <div id="areaStatusChips" class="chip-row"></div>
           </div>
-          <div id="sortChips" class="chip-row sort-chips"></div>
+          <div class="filter-subgroup separated">
+            <div class="section-head">
+              <div class="head-with-note"><h2>다중 정렬</h2><span>누른 순서가 우선</span></div>
+              <button id="clearSortBtn" class="text-btn" type="button">해제</button>
+            </div>
+            <div id="sortChips" class="chip-row sort-chips"></div>
+          </div>
         </section>
       </div>
     </section>
 
-    <section class="results-panel panel">
-      <div class="results-head compact-head">
-        <div class="results-left">
-          <strong id="resultCaption" class="result-caption"></strong>
-        </div>
-        <div class="view-tools">
-          <label class="page-size-label">표시
-            <select id="pageSizeSelect">
-              <option value="50">50개</option>
-              <option value="100" selected>100개</option>
-              <option value="200">200개</option>
-            </select>
-          </label>
-        </div>
+    <section class="panel results-panel">
+      <div class="results-head">
+        <strong id="resultCaption" class="result-caption"></strong>
+        <label class="page-size-label">표시
+          <select id="pageSizeSelect">
+            <option value="50">50개</option>
+            <option value="100" selected>100개</option>
+            <option value="200">200개</option>
+          </select>
+        </label>
       </div>
 
       <div class="table-scroll">
@@ -93,13 +100,12 @@
           <thead>
             <tr>
               <th class="col-no">#</th>
-              <th>상호명</th>
-              <th>소재지</th>
-              <th class="num">총면적</th>
-              <th class="num">일반</th>
-              <th class="num">냉동·냉장</th>
-              <th>취급품목</th>
-              <th class="col-action">보기</th>
+              <th class="col-company">상호명</th>
+              <th class="col-address">소재지</th>
+              <th class="col-class">구분</th>
+              <th class="col-area num">등록면적</th>
+              <th class="col-item">취급품목</th>
+              <th class="col-action">상세</th>
             </tr>
           </thead>
           <tbody id="resultBody"></tbody>
@@ -113,9 +119,10 @@
   <div id="detailBackdrop" class="detail-backdrop" hidden></div>
   <aside id="detailDrawer" class="detail-drawer" aria-hidden="true">
     <div class="drawer-head">
-      <div>
+      <div class="drawer-title-wrap">
         <div class="drawer-eyebrow">WAREHOUSE DETAIL</div>
         <h2 id="detailName"></h2>
+        <div id="detailBizNo" class="drawer-bizno"></div>
       </div>
       <button id="closeDetailBtn" class="close-btn" type="button" aria-label="닫기">×</button>
     </div>

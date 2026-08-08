@@ -269,8 +269,12 @@
 
   function hideLoading(){
     if(!els.loading)return;
+    const panel=els.loading.closest('.results-panel');
     requestAnimationFrame(()=>requestAnimationFrame(()=>els.loading.classList.add('is-done')));
-    setTimeout(()=>{if(els.loading)els.loading.setAttribute('aria-hidden','true');},240);
+    setTimeout(()=>{
+      if(els.loading)els.loading.setAttribute('aria-hidden','true');
+      if(panel)panel.classList.remove('is-loading');
+    },240);
   }
   function yieldToBrowser(){
     return new Promise(resolve=>{

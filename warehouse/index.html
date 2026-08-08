@@ -9,6 +9,14 @@
   <link rel="stylesheet" href="/warehouse/warehouse.css">
 </head>
 <body>
+  <div id="loadingOverlay" class="loading-overlay" role="status" aria-live="polite">
+    <div class="loading-card">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <div class="loading-title">물류창고 자료 불러오는 중</div>
+      <div class="loading-sub">전국 물류창고 데이터를 정리하고 있습니다.</div>
+    </div>
+  </div>
+
   <main class="page-shell">
     <section class="panel filter-panel">
       <div class="topbar">
@@ -16,9 +24,11 @@
           <div class="brand">MASLOW LOGISTICS DATABASE</div>
           <div class="title-line">
             <h1>전국 물류창고 검색</h1>
-            <span id="resultCount" class="result-count">0건</span>
           </div>
-          <p>지역·창고형태·관련법률·등록면적을 조합하고 정렬은 누른 순서대로 적용합니다.</p>
+          <div class="headline-meta">
+            <span id="resultCount" class="result-count">0건</span>
+            <p>지역·창고형태·관련법률·등록면적을 조합하고 정렬은 누른 순서대로 적용합니다.</p>
+          </div>
         </div>
         <div class="search-tools">
           <label class="search-box">

@@ -49,7 +49,7 @@
     keyword:el('keywordInput'),reset:el('resetAllBtn'),clearRegion:el('clearRegionBtn'),clearType:el('clearTypeBtn'),clearLaw:el('clearLawBtn'),clearArea:el('clearAreaBtn'),clearSort:el('clearSortBtn'),
     regions:el('regionChips'),types:el('typeChips'),laws:el('lawChips'),areas:el('areaChips'),areaStatus:el('areaStatusChips'),sorts:el('sortChips'),activeSorts:el('activeSorts'),activeFilters:el('activeFilters'),
     count:el('resultCount'),caption:el('resultCaption'),body:el('resultBody'),empty:el('emptyState'),pagination:el('pagination'),pageSize:el('pageSizeSelect'),
-    drawer:el('detailDrawer'),backdrop:el('detailBackdrop'),close:el('closeDetailBtn'),detailName:el('detailName'),detailBizNo:el('detailBizNo'),detailContent:el('detailContent')
+    drawer:el('detailDrawer'),backdrop:el('detailBackdrop'),close:el('closeDetailBtn'),detailName:el('detailName'),detailBizNo:el('detailBizNo'),detailContent:el('detailContent'),loading:el('loadingOverlay')
   };
 
   const REGION_LABELS={'서울특별시':'서울','부산광역시':'부산','대구광역시':'대구','인천광역시':'인천','광주광역시':'광주','대전광역시':'대전','울산광역시':'울산','세종특별자치시':'세종','경기도':'경기','강원특별자치도':'강원','충청북도':'충북','충청남도':'충남','전북특별자치도':'전북','전라남도':'전남','경상북도':'경북','경상남도':'경남','제주특별자치도':'제주','전남광주통합특별시':'전남광주'};
@@ -103,8 +103,11 @@
   function renderAreas(){els.areas.innerHTML=AREA_DEFS.map(d=>`<button class="chip ${state.areaMin===d.v?'active':''}" data-area="${d.v}">${d.label}</button>`).join('');}
   function renderAreaStatus(){els.areaStatus.innerHTML=AREA_STATUS_DEFS.map(d=>`<button class="chip ${state.areaStatus===d.key?'active':''}" data-area-status="${d.key}">${d.label}</button>`).join('');}
   function renderSorts(){
-    els.sorts.innerHTML=SORT_DEFS.map(d=>{const i=state.sorts.findIndex(s=>s.key===d.key),s=i>=0?state.sorts[i]:null;return `<button class="chip sort-chip ${s?'active':''}" data-sort="${d.key}">${s?`<span class="sort-index">${i+1}</span>`:''}<span>${d.label}</span>${s?`<span class="sort-dir">${s.dir==='asc'?'↑':'↓'}</span>`:''}</button>`;}).join('');
-    if(state.sorts.length){els.activeSorts.hidden=false;els.activeSorts.innerHTML='<strong>정렬</strong> · '+state.sorts.map((s,i)=>`${i+1}. ${sortDef(s.key).label} ${s.dir==='asc'?'↑':'↓'}`).join(' → ');}else{els.activeSorts.hidden=true;els.activeSorts.textContent='';}
+    els.sorts.innerHTML=SORT_DEFS.map(d=>{const i=state.sorts.findIndex(s=>s.key===d.key),s=i>=0?state.sorts[i]:null;return `<button class="chip sort-chip ${s?'active':''}" data-sort="${d.key}" title="${s?'클릭하면 방향 전환':'정렬 기준 추가'}">${s?`<span class="sort-index">${i+1}</span>`:''}<span>${d.label}</span>${s?`<span class="sort-dir">${s.dir==='asc'?'↑':'↓'}</span>`:''}</button>`;}).join('');
+    if(state.sorts.length){
+      els.activeSorts.hidden=false;
+      els.activeSorts.innerHTML='<strong>정렬 우선순위</strong> · '+state.sorts.map((s,i)=>`<span class="sort-order-token"><strong>${i+1}</strong> ${esc(sortDef(s.key).label)} ${s.dir==='asc'?'↑':'↓'}<button class="sort-control" type="button" data-sort-dir="${s.key}" title="방향 전환">↕</button><button class="sort-control" type="button" data-sort-move="${s.key}" data-move="up" ${i===0?'disabled':''} title="우선순위 올리기">←</button><button class="sort-control" type="button" data-sort-move="${s.key}" data-move="down" ${i===state.sorts.length-1?'disabled':''} title="우선순위 내리기">→</button><button class="sort-control sort-remove" type="button" data-sort-remove="${s.key}" title="정렬 제거">×</button></span>`).join('');
+    }else{els.activeSorts.hidden=true;els.activeSorts.textContent='';}
   }
   function renderActiveFilters(){
     const parts=[];
@@ -118,17 +121,41 @@
   }
 
   function compareText(a,b){return String(a||'').localeCompare(String(b||''),'ko-KR',{numeric:true,sensitivity:'base'});}
+  function criterionCompare(a,b,s){
+    const d=sortDef(s.key);let c=0;
+    if(d&&d.area){
+      if(a.hasArea!==b.hasArea) return a.hasArea?-1:1;
+      c=a.registeredArea-b.registeredArea;
+    }else c=compareText(a[s.key],b[s.key]);
+    return s.dir==='asc'?c:-c;
+  }
+  function buildRankMap(rows,s){
+    const ordered=rows.slice().sort((a,b)=>criterionCompare(a,b,s)||a.id-b.id);
+    const rank=new Map();
+    const denom=Math.max(1,ordered.length-1);
+    ordered.forEach((r,i)=>rank.set(r.id,i/denom));
+    return rank;
+  }
   function sortRows(rows){
     if(!state.sorts.length)return rows.slice().sort((a,b)=>a.id-b.id);
+    /*
+      Weighted rank sort: ① is strongest, but ②·③ also always participate.
+      This intentionally differs from strict SQL ORDER BY, where later keys only
+      affect exact ties. The UI promise is that changing any active sort changes
+      the overall ranking while preserving click-order priority.
+    */
+    const weights=[1,.34,.13,.055,.024,.01];
+    const ranks=state.sorts.map(s=>buildRankMap(rows,s));
+    const score=new Map();
+    rows.forEach(r=>{
+      let v=0;
+      for(let i=0;i<ranks.length;i++) v+=(weights[i]||Math.pow(.42,i))*ranks[i].get(r.id);
+      score.set(r.id,v);
+    });
     return rows.slice().sort((a,b)=>{
-      for(const s of state.sorts){
-        const d=sortDef(s.key);let c=0;
-        if(d&&d.area){
-          if(a.hasArea!==b.hasArea)return a.hasArea?-1:1;
-          c=a.registeredArea-b.registeredArea;
-        }else c=compareText(a[s.key],b[s.key]);
-        if(c)return s.dir==='asc'?c:-c;
-      }
+      const diff=(score.get(a.id)||0)-(score.get(b.id)||0);
+      if(Math.abs(diff)>1e-12)return diff;
+      for(const s of state.sorts){const c=criterionCompare(a,b,s);if(c)return c;}
       return a.id-b.id;
     });
   }
@@ -157,6 +184,8 @@
   }
   function refresh(resetPage=true){if(resetPage)state.page=1;renderRegions();renderTypes();renderLaws();renderAreas();renderAreaStatus();renderSorts();renderActiveFilters();renderRows(sortRows(baseFilter()));}
   function toggleSort(key){const idx=state.sorts.findIndex(s=>s.key===key),def=sortDef(key);if(idx<0)state.sorts.push({key,dir:def.defaultDir});else state.sorts[idx].dir=state.sorts[idx].dir==='asc'?'desc':'asc';refresh();}
+  function removeSort(key){const idx=state.sorts.findIndex(s=>s.key===key);if(idx>=0){state.sorts.splice(idx,1);refresh();}}
+  function moveSort(key,delta){const idx=state.sorts.findIndex(s=>s.key===key),next=idx+delta;if(idx<0||next<0||next>=state.sorts.length)return;const item=state.sorts.splice(idx,1)[0];state.sorts.splice(next,0,item);refresh();}
   function rowById(id){return DATA.find(x=>x.id===Number(id));}
 
   function areaBreakdown(r){
@@ -210,6 +239,11 @@
   els.areas.addEventListener('click',e=>{const b=e.target.closest('[data-area]');if(!b)return;state.areaMin=Number(b.dataset.area)||0;refresh();});
   els.areaStatus.addEventListener('click',e=>{const b=e.target.closest('[data-area-status]');if(!b)return;state.areaStatus=b.dataset.areaStatus||'all';refresh();});
   els.sorts.addEventListener('click',e=>{const b=e.target.closest('[data-sort]');if(b)toggleSort(b.dataset.sort);});
+  els.activeSorts.addEventListener('click',e=>{
+    const dir=e.target.closest('[data-sort-dir]');if(dir){toggleSort(dir.dataset.sortDir);return;}
+    const rm=e.target.closest('[data-sort-remove]');if(rm){removeSort(rm.dataset.sortRemove);return;}
+    const mv=e.target.closest('[data-sort-move]');if(mv){moveSort(mv.dataset.sortMove,mv.dataset.move==='up'?-1:1);}
+  });
   els.keyword.addEventListener('input',()=>{state.keyword=els.keyword.value.trim();refresh();});
   els.clearRegion.addEventListener('click',()=>{state.regions.clear();refresh();});els.clearType.addEventListener('click',()=>{state.types.clear();refresh();});els.clearLaw.addEventListener('click',()=>{state.laws.clear();refresh();});els.clearArea.addEventListener('click',()=>{state.areaMin=0;state.areaStatus='all';refresh();});els.clearSort.addEventListener('click',()=>{state.sorts=[];refresh();});
   els.reset.addEventListener('click',()=>{state.regions.clear();state.types.clear();state.laws.clear();state.areaMin=0;state.areaStatus='all';state.keyword='';state.sorts=[];state.page=1;els.keyword.value='';refresh();});
@@ -219,6 +253,21 @@
   els.close.addEventListener('click',closeDetail);els.backdrop.addEventListener('click',closeDetail);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail();});
   els.detailContent.addEventListener('click',async e=>{const b=e.target.closest('[data-map]');if(!b)return;const r=rowById(els.detailContent.dataset.id);if(!r)return;if(b.dataset.map==='copy-pnu'){await copyText((el('detailPnu')&&el('detailPnu').textContent)||'');return;}openMapForRow(r,b.dataset.map);});
 
-  refresh(false);
-  if(AddressTools&&AddressTools.ready)AddressTools.ready.then(()=>{DATA=RAW_DATA.map(normalizeRow);refresh(false);});
+  function hideLoading(){
+    if(!els.loading)return;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>els.loading.classList.add('is-done')));
+    setTimeout(()=>{if(els.loading)els.loading.setAttribute('aria-hidden','true');},320);
+  }
+  async function initialize(){
+    try{
+      if(AddressTools&&AddressTools.ready) await AddressTools.ready;
+      DATA=RAW_DATA.map(normalizeRow);
+      refresh(false);
+    }catch(err){
+      console.warn('[warehouse] initial load fallback:',err);
+      DATA=RAW_DATA.map(normalizeRow);
+      refresh(false);
+    }finally{hideLoading();}
+  }
+  initialize();
 })();

@@ -4,86 +4,90 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
-  <meta name="theme-color" content="#eef5ff">
+  <meta name="theme-color" content="#f7f9fc">
   <title>전국 물류창고 검색 | MASLOW</title>
   <link rel="stylesheet" href="/warehouse/warehouse.css">
 </head>
 <body>
   <main class="page-shell">
-    <header class="hero">
-      <div class="brand">MASLOW LOGISTICS DATABASE</div>
-      <h1>전국 물류창고 검색</h1>
-      <p>광역시도와 조건을 조합하고, 정렬 기준을 누른 순서대로 중복 적용합니다.</p>
-    </header>
-
-    <section class="panel control-panel">
-      <div class="search-row">
-        <label class="search-box">
-          <span class="search-icon">⌕</span>
-          <input id="keywordInput" type="search" autocomplete="off" placeholder="상호명 · 사업자번호 · 주소 · 취급품목 검색">
-        </label>
-        <button id="resetAllBtn" class="reset-btn" type="button">전체 초기화</button>
+    <section class="top-panel panel">
+      <div class="topbar">
+        <div class="title-wrap">
+          <div class="brand">MASLOW LOGISTICS DATABASE</div>
+          <div class="title-line">
+            <h1>전국 물류창고 검색</h1>
+            <span id="resultCount" class="result-count">0건</span>
+          </div>
+          <p>지역·유형·면적을 빠르게 조합하고, 정렬은 누른 순서대로 중복 적용합니다.</p>
+        </div>
+        <div class="search-tools">
+          <label class="search-box">
+            <span class="search-icon">⌕</span>
+            <input id="keywordInput" type="search" autocomplete="off" placeholder="상호명 · 사업자번호 · 주소 · 취급품목">
+          </label>
+          <button id="resetAllBtn" class="reset-btn" type="button">초기화</button>
+        </div>
       </div>
 
-      <section class="filter-section region-section">
-        <div class="section-head">
-          <div>
+      <div id="activeFilters" class="active-filters summary-bar" hidden></div>
+      <div id="activeSorts" class="active-sorts summary-bar" hidden></div>
+
+      <div class="toolbar-grid">
+        <section class="filter-card region-card">
+          <div class="section-head compact">
             <h2>광역시도</h2>
-            <p>여러 지역을 동시에 선택할 수 있습니다.</p>
+            <button id="clearRegionBtn" class="text-btn" type="button">해제</button>
           </div>
-          <button id="clearRegionBtn" class="text-btn" type="button">지역 해제</button>
-        </div>
-        <div id="regionChips" class="chip-grid region-chips"></div>
-      </section>
+          <div id="regionChips" class="chip-grid region-chips"></div>
+        </section>
 
-      <section class="filter-section">
-        <div class="section-head compact">
-          <div><h2>창고 유형</h2></div>
-          <button id="clearTypeBtn" class="text-btn" type="button">해제</button>
-        </div>
-        <div id="typeChips" class="chip-row"></div>
-      </section>
-
-      <section class="filter-section">
-        <div class="section-head compact">
-          <div><h2>총 면적</h2></div>
-          <button id="clearAreaBtn" class="text-btn" type="button">해제</button>
-        </div>
-        <div id="areaChips" class="chip-row"></div>
-      </section>
-
-      <section class="filter-section sort-section">
-        <div class="section-head">
-          <div>
-            <h2>다중 정렬</h2>
-            <p>누른 순서가 ① → ② → ③ 우선순위가 됩니다. 선택된 칩을 다시 누르면 오름/내림차순이 바뀝니다.</p>
+        <section class="filter-card mix-card">
+          <div class="section-block">
+            <div class="section-head compact">
+              <h2>창고 유형</h2>
+              <button id="clearTypeBtn" class="text-btn" type="button">해제</button>
+            </div>
+            <div id="typeChips" class="chip-row"></div>
           </div>
-          <button id="clearSortBtn" class="text-btn" type="button">정렬 해제</button>
-        </div>
-        <div id="sortChips" class="chip-row sort-chips"></div>
-        <div id="activeSorts" class="active-sorts" hidden></div>
-      </section>
 
-      <div id="activeFilters" class="active-filters" hidden></div>
-    </section>
+          <div class="section-block">
+            <div class="section-head compact">
+              <h2>총면적</h2>
+              <button id="clearAreaBtn" class="text-btn" type="button">해제</button>
+            </div>
+            <div id="areaChips" class="chip-row"></div>
+          </div>
+        </section>
 
-    <section class="results-head">
-      <div>
-        <span id="resultCount" class="result-count">0건</span>
-        <span id="resultCaption" class="result-caption"></span>
-      </div>
-      <div class="view-tools">
-        <label class="page-size-label">표시
-          <select id="pageSizeSelect">
-            <option value="50">50개</option>
-            <option value="100" selected>100개</option>
-            <option value="200">200개</option>
-          </select>
-        </label>
+        <section class="filter-card sort-card">
+          <div class="section-head compact sort-head">
+            <div class="sort-head-left">
+              <h2>다중 정렬</h2>
+              <span class="sort-guide">누른 순서가 우선</span>
+            </div>
+            <button id="clearSortBtn" class="text-btn" type="button">해제</button>
+          </div>
+          <div id="sortChips" class="chip-row sort-chips"></div>
+        </section>
       </div>
     </section>
 
-    <section class="table-panel">
+    <section class="results-panel panel">
+      <div class="results-head compact-head">
+        <div class="results-left">
+          <strong id="resultCaption" class="result-caption"></strong>
+        </div>
+        <div class="view-tools">
+          <label class="page-size-label">표시
+            <select id="pageSizeSelect">
+              <option value="50">50개</option>
+              <option value="100" selected>100개</option>
+              <option value="200">200개</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
       <div class="table-scroll">
         <table>
           <thead>
@@ -118,8 +122,11 @@
     <div id="detailContent" class="drawer-content"></div>
   </aside>
 
+  <script src="/search/bjdong-codes.js"></script>
+  <script src="/assets/region/region-compat.js"></script>
   <script src="/assets/warehouse/warehouse-meta.js"></script>
   <script src="/assets/warehouse/warehouse-data.js"></script>
+  <script src="/assets/warehouse/warehouse-address.js"></script>
   <script src="/warehouse/warehouse.js"></script>
 </body>
 </html>

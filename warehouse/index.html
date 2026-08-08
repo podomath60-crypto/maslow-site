@@ -4,88 +4,99 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
-  <meta name="theme-color" content="#f5f7fb">
+  <meta name="theme-color" content="#eef4ff">
   <title>전국 물류창고 검색 | MASLOW</title>
   <link rel="stylesheet" href="/warehouse/warehouse.css">
 </head>
 <body>
   <div id="loadingOverlay" class="loading-overlay" role="status" aria-live="polite">
     <div class="loading-card">
+      <div class="loading-mark"><span></span><span></span><span></span></div>
       <div class="loading-spinner" aria-hidden="true"></div>
-      <div class="loading-title">물류창고 자료 불러오는 중</div>
-      <div class="loading-sub">전국 물류창고 데이터를 정리하고 있습니다.</div>
+      <div class="loading-title">전국 물류창고 데이터 준비 중</div>
+      <div class="loading-sub">검색에 필요한 자료를 정리하고 있습니다.</div>
     </div>
   </div>
 
   <main class="page-shell">
+    <header class="hero">
+      <div class="hero-orb hero-orb-a"></div>
+      <div class="hero-orb hero-orb-b"></div>
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="hero-content">
+        <div class="brand"><span class="brand-dot"></span>MASLOW LOGISTICS DATABASE</div>
+        <h1>전국 물류창고 검색</h1>
+        <div class="hero-meta">
+          <span id="resultCount" class="result-count">0건</span>
+          <span class="hero-divider"></span>
+          <p>지역·창고형태·관련법률·등록면적을 조합하고<br class="mobile-br"> 정렬은 누른 순서대로 적용합니다.</p>
+        </div>
+      </div>
+    </header>
+
     <section class="panel filter-panel">
-      <div class="topbar">
-        <div class="title-wrap">
-          <div class="brand">MASLOW LOGISTICS DATABASE</div>
-          <div class="title-line">
-            <h1>전국 물류창고 검색</h1>
-          </div>
-          <div class="headline-meta">
-            <span id="resultCount" class="result-count">0건</span>
-            <p>지역·창고형태·관련법률·등록면적을 조합하고 정렬은 누른 순서대로 적용합니다.</p>
-          </div>
+      <div class="command-row">
+        <div class="command-label">
+          <span class="command-kicker">QUICK SEARCH</span>
+          <strong>창고 검색</strong>
         </div>
         <div class="search-tools">
           <label class="search-box">
             <span class="search-icon">⌕</span>
-            <input id="keywordInput" type="search" autocomplete="off" placeholder="상호명 · 주소 · 사업자번호 · 취급품목">
+            <input id="keywordInput" type="search" autocomplete="off" placeholder="상호명 · 주소 · 사업자번호 · 취급품목 검색">
           </label>
-          <button id="resetAllBtn" class="reset-btn" type="button">전체 초기화</button>
+          <button id="resetAllBtn" class="reset-btn" type="button"><span>↻</span> 전체 초기화</button>
         </div>
       </div>
 
       <div id="activeFilters" class="summary-bar" hidden></div>
-      <div id="activeSorts" class="summary-bar" hidden></div>
+      <div id="activeSorts" class="summary-bar sort-summary" hidden></div>
 
       <div class="filter-layout">
         <section class="filter-box region-box">
+          <div class="filter-accent"></div>
           <div class="section-head">
-            <h2>광역시도</h2>
-            <button id="clearRegionBtn" class="text-btn" type="button">해제</button>
+            <div class="section-title-wrap"><span class="section-no">01</span><h2>광역시도</h2></div>
+            <button id="clearRegionBtn" class="text-btn" type="button">선택 해제</button>
           </div>
           <div id="regionChips" class="region-chips"></div>
         </section>
 
         <section class="filter-box type-law-box">
+          <div class="filter-accent accent-indigo"></div>
           <div class="filter-subgroup">
             <div class="section-head">
-              <div class="head-with-note"><h2>창고 형태</h2><span>물류시설법 등록형태</span></div>
-              <button id="clearTypeBtn" class="text-btn" type="button">해제</button>
+              <div class="section-title-wrap"><span class="section-no">02</span><div class="head-with-note"><h2>창고 형태</h2><span>물류시설법 등록형태</span></div></div>
+              <button id="clearTypeBtn" class="text-btn" type="button">선택 해제</button>
             </div>
             <div id="typeChips" class="chip-row"></div>
           </div>
           <div class="filter-subgroup separated">
             <div class="section-head">
-              <h2>관련 법률</h2>
-              <button id="clearLawBtn" class="text-btn" type="button">해제</button>
+              <div class="section-title-wrap"><span class="section-no ghost">·</span><h2>관련 법률</h2></div>
+              <button id="clearLawBtn" class="text-btn" type="button">선택 해제</button>
             </div>
             <div id="lawChips" class="chip-row law-chips"></div>
           </div>
         </section>
 
         <section class="filter-box area-sort-box">
+          <div class="filter-accent accent-violet"></div>
           <div class="filter-subgroup">
             <div class="section-head">
-              <h2>등록면적</h2>
-              <button id="clearAreaBtn" class="text-btn" type="button">해제</button>
+              <div class="section-title-wrap"><span class="section-no">03</span><h2>등록면적</h2></div>
+              <button id="clearAreaBtn" class="text-btn" type="button">선택 해제</button>
             </div>
             <div id="areaChips" class="chip-row"></div>
           </div>
-          <div class="filter-subgroup separated">
-            <div class="section-head">
-              <h2>면적정보</h2>
-            </div>
+          <div class="area-status-row">
+            <span class="mini-label">면적정보</span>
             <div id="areaStatusChips" class="chip-row"></div>
           </div>
-          <div class="filter-subgroup separated">
+          <div class="filter-subgroup separated sort-group">
             <div class="section-head">
-              <div class="head-with-note"><h2>다중 정렬</h2><span>누른 순서가 우선</span></div>
-              <button id="clearSortBtn" class="text-btn" type="button">해제</button>
+              <div class="section-title-wrap"><span class="section-no ghost">·</span><div class="head-with-note"><h2>다중 정렬</h2><span>누른 순서가 우선</span></div></div>
+              <button id="clearSortBtn" class="text-btn" type="button">정렬 해제</button>
             </div>
             <div id="sortChips" class="chip-row sort-chips"></div>
           </div>
@@ -95,8 +106,12 @@
 
     <section class="panel results-panel">
       <div class="results-head">
-        <strong id="resultCaption" class="result-caption"></strong>
-        <label class="page-size-label">표시
+        <div class="results-title">
+          <span class="results-kicker">SEARCH RESULTS</span>
+          <strong>검색결과</strong>
+          <span id="resultCaption" class="result-caption"></span>
+        </div>
+        <label class="page-size-label">페이지당
           <select id="pageSizeSelect">
             <option value="50">50개</option>
             <option value="100" selected>100개</option>

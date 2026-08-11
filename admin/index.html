@@ -3430,6 +3430,7 @@
 
       var ILSA_BRIDGE_URL_ = 'http://127.0.0.1:8787';
       var ilsaPollTimer_ = null;
+      var ilsaAppliedJobId_ = '';
 
       function isIlsaAllowedUser_(){
         var creator = getCreatorInfoFromCache_();
@@ -3492,6 +3493,109 @@
         return title + '\n' + (job.message || '') + progress;
       }
 
+      function blobToDataUrl_(blob){
+        return new Promise(function(resolve, reject){
+          var reader = new FileReader();
+          reader.onload = function(){ resolve(String(reader.result || '')); };
+          reader.onerror = function(){ reject(reader.error || new Error('PNG 파일을 읽지 못했습니다.')); };
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      function formatIlsaOwnerRows_(title, rows){
+        var list = Array.isArray(rows) ? rows : [];
+        var lines = ['[' + title + ']'];
+        if(!list.length){ lines.push('없음'); return lines; }
+        list.forEach(function(owner, index){
+          lines.push((index + 1) + '. 성명: ' + String(owner.name || ''));
+          lines.push('   주소: ' + String(owner.address || ''));
+          lines.push('   지분: ' + String(owner.share || ''));
+          if(owner.buildingName) lines.push('   건물: ' + String(owner.buildingName));
+        });
+        return lines;
+      }
+
+      function applyIlsaMemo_(job, owners){
+        var memoEl = document.querySelector('.memo-body');
+        if(!memoEl) return;
+        var current = normalizedEditableText(memoEl);
+        var withoutOld = current.replace(/\n?\[일사편리 소유자 조사\][\s\S]*?\[\/일사편리 소유자 조사\]\n?/g, '\n').trim();
+        var lines = [
+          '[일사편리 소유자 조사]',
+          '조회주소: ' + String(job.address || ''),
+          '조회시각: ' + String(owners.extractedAt || job.completedAt || '')
+        ];
+        lines = lines.concat(formatIlsaOwnerRows_('토지 소유자', owners.landOwners));
+        lines = lines.concat(formatIlsaOwnerRows_('건물 소유자', owners.buildingOwners));
+        lines.push('[/일사편리 소유자 조사]');
+        memoEl.textContent = (withoutOld ? withoutOld + '\n\n' : '') + lines.join('\n');
+      }
+
+      function fetchIlsaPageDataUrl_(page){
+        var pageUrl = String(page.url || '');
+        if(pageUrl.indexOf('http') !== 0) pageUrl = ILSA_BRIDGE_URL_ + pageUrl;
+        return fetch(pageUrl, { cache:'no-store' })
+          .then(function(response){
+            if(!response.ok) throw new Error('PNG ' + page.pageNo + '페이지 가져오기 실패');
+            return response.blob();
+          })
+          .then(function(blob){
+            if(blob.type && blob.type !== 'image/png') throw new Error('PNG 형식이 아닌 결과입니다.');
+            return blobToDataUrl_(blob);
+          });
+      }
+
+      function applyIlsaResult_(jobId){
+        if(ilsaAppliedJobId_ === jobId){
+          return Promise.resolve({ alreadyApplied:true });
+        }
+        setIlsaProgress_('조회가 완료되었습니다.\n소유자 정보와 원본 PNG를 가져오고 있습니다.');
+        return fetchIlsaJson_('/v1/jobs/' + encodeURIComponent(jobId) + '/result')
+          .then(function(body){
+            var pages = Array.isArray(body.pages) ? body.pages.slice() : [];
+            if(!pages.length) throw new Error('가져올 증명서 PNG가 없습니다.');
+            pages.sort(function(a,b){ return Number(a.pageNo) - Number(b.pageNo); });
+            return Promise.all(pages.map(function(page){
+              return fetchIlsaPageDataUrl_(page).then(function(dataUrl){
+                return { page:page, dataUrl:dataUrl };
+              });
+            })).then(function(downloaded){
+              ensureTempSessionKey_();
+              ledgerList = ledgerList.filter(function(item){
+                return !(item && (item.source === 'ilsa' || /^일사편리_/i.test(String(item.name || ''))));
+              });
+              var uploads = downloaded.map(function(entry){
+                var item = {
+                  tempKey:makeTempFileKey_('ledger'),
+                  tempSessionKey:tempSessionKey,
+                  kind:'ledger',
+                  source:'ilsa',
+                  ilsaJobId:jobId,
+                  name:entry.page.fileName || ('일사편리_' + jobId.slice(0,8) + '_' + entry.page.pageNo + '.png'),
+                  url:entry.dataUrl,
+                  dataUrl:entry.dataUrl,
+                  uploadDataUrl:entry.dataUrl,
+                  uploadedAt:new Date().toISOString()
+                };
+                ledgerList.push(item);
+                return uploadTempFileToServer_('ledger', item);
+              });
+              applyIlsaMemo_(body.job || {}, body.owners || {});
+              renderLedgerStatus();
+              queueSave();
+              setIlsaProgress_('원본 PNG ' + downloaded.length + '개를 서버 임시저장하고 있습니다.');
+              return Promise.all(uploads).then(function(){
+                ilsaAppliedJobId_ = jobId;
+                renderLedgerStatus();
+                queueSave();
+                setIlsaProgress_('일사편리 결과 반영 완료\n원본 PNG ' + downloaded.length + '개와 소유자 정보가 입력됐습니다.\n내용 확인 후 기존 서버저장을 눌러주세요.', 'complete');
+                showToast('일사편리 결과 반영됨');
+                return { pageCount:downloaded.length };
+              });
+            });
+          });
+      }
+
       function pollIlsaJob_(jobId){
         window.clearTimeout(ilsaPollTimer_);
         fetchIlsaJson_('/v1/jobs/' + encodeURIComponent(jobId))
@@ -3499,9 +3603,10 @@
             var job = body && body.job;
             if(!job) throw new Error('작업 상태를 읽지 못했습니다.');
             if(job.status === 'complete'){
-              setIlsaProgress_('조회가 완료되었습니다.\n프론트 결과 반영은 2단계에서 연결합니다.', 'complete');
-              if(ilsaStartBtn) ilsaStartBtn.disabled = false;
-              return;
+              return applyIlsaResult_(jobId).catch(function(error){
+                setIlsaProgress_('결과 반영 실패\n' + String(error.message || error), 'error');
+                if(ilsaStartBtn) ilsaStartBtn.disabled = false;
+              });
             }
             if(job.status === 'failed'){
               setIlsaProgress_('조회 실패\n' + ((job.failure && job.failure.message) || job.message || '원인을 확인해주세요.'), 'error');
@@ -3534,6 +3639,23 @@
             if(health.activeJob){
               setIlsaProgress_('현재 다른 조사가 진행 중입니다.\n' + ilsaStageText_(health.activeJob));
               if(health.activeJob.jobId) pollIlsaJob_(health.activeJob.jobId);
+              return false;
+            }
+            var latestCompleted = health.latestCompletedJob;
+            var currentListingNumber = String(listingNumber || plainText(listingNumberField) || '').trim();
+            var alreadyHasIlsaFiles = ledgerList.some(function(item){
+              return item && (item.source === 'ilsa' || /^일사편리_/i.test(String(item.name || '')));
+            });
+            if(latestCompleted && latestCompleted.jobId
+                && String(latestCompleted.listingNumber || '') === currentListingNumber
+                && !alreadyHasIlsaFiles){
+              setIlsaProgress_('이 매물의 최근 완료 결과를 가져오고 있습니다.');
+              applyIlsaResult_(latestCompleted.jobId)
+                .then(function(){ if(ilsaStartBtn) ilsaStartBtn.disabled = false; })
+                .catch(function(error){
+                  setIlsaProgress_('최근 결과 반영 실패\n' + String(error.message || error), 'error');
+                  if(ilsaStartBtn) ilsaStartBtn.disabled = false;
+                });
               return false;
             }
             setIlsaProgress_(ready
@@ -3592,6 +3714,22 @@
         }).catch(function(error){
           setIlsaProgress_('작업 요청 실패\n' + String(error.message || error), 'error');
           ilsaStartBtn.disabled = false;
+        });
+      }
+
+      function releaseIlsaJobAfterServerSave_(){
+        var jobId = ilsaAppliedJobId_;
+        if(!jobId){
+          var ilsaItem = ledgerList.find(function(item){ return item && item.ilsaJobId; });
+          jobId = ilsaItem && ilsaItem.ilsaJobId || '';
+        }
+        if(!jobId) return Promise.resolve();
+        return fetchIlsaJson_('/v1/jobs/' + encodeURIComponent(jobId) + '/release', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body:'{}'
+        }).then(function(){
+          console.info('[일사편리] 서버저장 요청 완료, 로컬 결과 24시간 보관 후 삭제 예약', jobId);
         });
       }
 
@@ -4600,6 +4738,10 @@
           })
           .then(function(){
             showToast('서버전송 요청됨');
+            return releaseIlsaJobAfterServerSave_().catch(function(err){
+              console.error('[일사편리] 로컬 보관 해제 예약 실패', err);
+              showToast('서버전송됨\n로컬 정리 예약 확인 필요');
+            });
           })
           .catch(function(err){
             console.error(err);

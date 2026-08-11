@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>일사편리 소유주 조회</title>
+  <style>
+    :root {
+      --ink: #151812;
+      --muted: #6e7469;
+      --line: #e3e7df;
+      --canvas: #f4f6f1;
+      --card: #ffffff;
+      --lime: #b8ef3d;
+      --lime-deep: #8fc51d;
+      --lime-soft: #effbd2;
+      --navy: #1e2c2a;
+      --blue: #3379f6;
+      --red: #d64c4c;
+      --amber: #b87700;
+      --shadow: 0 16px 50px rgba(33, 45, 25, .09);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--canvas); }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 90% -10%, rgba(184, 239, 61, .24), transparent 28rem),
+        var(--canvas);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+      letter-spacing: -.025em;
+    }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    [hidden] { display: none !important; }
+
+    .shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 30px 0 64px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 26px; }
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .brand-mark {
+      width: 48px; height: 48px; flex: 0 0 48px; border-radius: 15px;
+      display: grid; place-items: center; background: var(--navy); color: var(--lime);
+      font-size: 20px; font-weight: 950; box-shadow: 0 10px 24px rgba(30,44,42,.18);
+    }
+    .brand h1 { margin: 0; font-size: clamp(21px, 3vw, 28px); line-height: 1.1; }
+    .brand p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+    .connection-pill {
+      display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--line);
+      border-radius: 999px; background: rgba(255,255,255,.82); color: var(--muted); font-size: 13px; font-weight: 750;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #aeb4ab; box-shadow: 0 0 0 4px rgba(174,180,171,.16); }
+    .connection-pill.ready .dot { background: #50b94a; box-shadow: 0 0 0 4px rgba(80,185,74,.15); }
+    .connection-pill.error .dot { background: var(--red); box-shadow: 0 0 0 4px rgba(214,76,76,.14); }
+
+    .hero {
+      position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(310px, .75fr);
+      gap: 34px; padding: 34px; border-radius: 28px; background: var(--navy); color: #fff;
+      box-shadow: 0 22px 64px rgba(30,44,42,.18); margin-bottom: 20px;
+    }
+    .hero::after { content: ""; position: absolute; width: 260px; height: 260px; right: -90px; top: -110px; border: 55px solid rgba(184,239,61,.13); border-radius: 50%; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 7px; color: var(--lime); font-size: 12px; font-weight: 900; letter-spacing: .08em; }
+    .hero h2 { margin: 14px 0 11px; max-width: 650px; font-size: clamp(27px, 4vw, 42px); line-height: 1.17; letter-spacing: -.045em; }
+    .hero-copy { margin: 0; max-width: 670px; color: #cbd4d0; font-size: 15px; line-height: 1.7; }
+    .hero-note { margin-top: 23px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .hero-note span { padding: 8px 11px; border-radius: 10px; background: rgba(255,255,255,.08); color: #e7ecea; font-size: 12px; font-weight: 700; }
+
+    .health-panel { position: relative; z-index: 1; align-self: stretch; padding: 18px; border: 1px solid rgba(255,255,255,.11); border-radius: 20px; background: rgba(255,255,255,.07); backdrop-filter: blur(8px); }
+    .health-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .health-head strong { font-size: 14px; }
+    .text-button { padding: 4px; border: 0; background: transparent; color: var(--lime); font-size: 12px; font-weight: 850; }
+    .health-list { display: grid; gap: 8px; }
+    .health-row { display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 9px; padding: 10px 11px; border-radius: 12px; background: rgba(0,0,0,.12); }
+    .health-row .signal { width: 7px; height: 7px; border-radius: 50%; background: #818c88; }
+    .health-row.ok .signal { background: var(--lime); }
+    .health-row.bad .signal { background: #ff7d72; }
+    .health-row span { font-size: 12px; color: #dbe2df; }
+    .health-row b { font-size: 11px; color: #fff; }
+
+    .tabs { display: inline-flex; gap: 5px; padding: 5px; border: 1px solid var(--line); border-radius: 15px; background: #fff; box-shadow: 0 7px 24px rgba(33,45,25,.05); margin-bottom: 18px; }
+    .tab { min-width: 116px; padding: 10px 16px; border: 0; border-radius: 11px; background: transparent; color: var(--muted); font-size: 14px; font-weight: 850; }
+    .tab.active { background: var(--navy); color: #fff; }
+
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+    .card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow); }
+    .main-card { padding: 26px; }
+    .side-card { padding: 21px; position: sticky; top: 18px; }
+    .section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 14px; margin-bottom: 22px; }
+    .section-head h3 { margin: 0; font-size: 21px; }
+    .section-head p { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .count-chip { flex: 0 0 auto; padding: 7px 10px; border-radius: 999px; color: #52604c; background: var(--lime-soft); font-size: 12px; font-weight: 850; }
+
+    .field-label { display: block; margin-bottom: 9px; color: #343a31; font-size: 13px; font-weight: 900; }
+    .address-input {
+      width: 100%; min-height: 58px; padding: 16px; border: 1px solid #d9dfd5; outline: none; border-radius: 14px;
+      background: #fbfcfa; color: var(--ink); resize: vertical; line-height: 1.55; transition: .18s ease;
+    }
+    .address-input:focus { border-color: var(--lime-deep); box-shadow: 0 0 0 4px rgba(184,239,61,.19); background: #fff; }
+    textarea.batch { min-height: 260px; }
+    .field-help { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; color: var(--muted); font-size: 11px; }
+
+    .mode-title { margin: 24px 0 11px; font-size: 13px; font-weight: 900; }
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .mode-option { position: relative; display: block; }
+    .mode-option input { position: absolute; opacity: 0; pointer-events: none; }
+    .mode-box { min-height: 114px; padding: 16px; border: 1px solid #dce1d8; border-radius: 15px; background: #fff; transition: .18s ease; }
+    .mode-option input:checked + .mode-box { border-color: var(--lime-deep); background: var(--lime-soft); box-shadow: inset 0 0 0 1px var(--lime-deep); }
+    .mode-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    .mode-top strong { font-size: 14px; }
+    .radio-ui { width: 18px; height: 18px; border: 2px solid #c1c8bc; border-radius: 50%; background: #fff; }
+    .mode-option input:checked + .mode-box .radio-ui { border: 5px solid var(--navy); }
+    .mode-box p { margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .mode-tag { display: inline-block; margin-top: 9px; color: #527315; font-size: 10px; font-weight: 900; }
+
+    .action-row { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
+    .btn { min-height: 46px; padding: 0 18px; border: 1px solid var(--line); border-radius: 13px; background: #fff; color: var(--ink); font-size: 13px; font-weight: 900; }
+    .btn.primary { min-width: 140px; border-color: var(--navy); background: var(--navy); color: #fff; }
+    .btn.primary:hover:not(:disabled) { background: #2a3d3a; }
+    .btn.lime { border-color: var(--lime); background: var(--lime); color: #1b2614; }
+    .btn.danger { color: var(--red); }
+    .btn.small { min-height: 34px; padding: 0 11px; border-radius: 9px; font-size: 11px; }
+
+    .guide h4 { margin: 0 0 16px; font-size: 15px; }
+    .steps { display: grid; gap: 13px; }
+    .step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+    .step-num { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; background: var(--lime-soft); color: #46620d; font-size: 11px; font-weight: 950; }
+    .step strong { display: block; margin-top: 1px; font-size: 12px; }
+    .step p { margin: 4px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .notice { margin-top: 18px; padding: 13px; border-radius: 12px; background: #f6f7f4; color: #62685e; font-size: 11px; line-height: 1.55; }
+
+    .run-panel { margin-top: 18px; padding: 18px; border: 1px solid #dce5d4; border-radius: 16px; background: #f9fbf6; }
+    .run-head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+    .run-address { margin: 0; font-size: 14px; font-weight: 900; word-break: keep-all; }
+    .run-message { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+    .status-badge { flex: 0 0 auto; padding: 6px 9px; border-radius: 999px; background: #e8ece5; color: #5c6458; font-size: 10px; font-weight: 900; }
+    .status-badge.running { background: #e5efff; color: #2360c6; }
+    .status-badge.complete { background: #e7f8e3; color: #278023; }
+    .status-badge.failed { background: #ffeaea; color: #b72e2e; }
+    .progress-track { height: 8px; margin-top: 15px; border-radius: 999px; overflow: hidden; background: #e5e9e1; }
+    .progress-bar { width: 8%; height: 100%; border-radius: inherit; background: var(--lime-deep); transition: width .35s ease; }
+
+    .queue-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 12px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+    table { width: 100%; border-collapse: collapse; min-width: 650px; }
+    th, td { padding: 12px 13px; border-bottom: 1px solid #edf0ea; text-align: left; font-size: 12px; vertical-align: middle; }
+    th { background: #f7f8f5; color: #686f64; font-size: 11px; font-weight: 900; }
+    tr:last-child td { border-bottom: 0; }
+    .row-address { max-width: 340px; font-weight: 750; }
+    .empty { padding: 44px 20px; text-align: center; color: var(--muted); font-size: 13px; }
+
+    .result-card { margin-top: 18px; padding: 20px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
+    .result-top { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+    .result-top h4 { margin: 0; font-size: 15px; }
+    .result-top p { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
+    .owner-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+    .owner-section { padding: 14px; border-radius: 13px; background: #f7f9f5; }
+    .owner-section h5 { margin: 0 0 10px; font-size: 12px; }
+    .owner-list { display: grid; gap: 8px; }
+    .owner { padding: 10px; border-radius: 10px; background: #fff; font-size: 11px; line-height: 1.5; }
+    .owner strong { display: block; margin-bottom: 3px; font-size: 12px; }
+    .page-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
+    .page-link { display: block; overflow: hidden; border: 1px solid var(--line); border-radius: 11px; background: #f4f5f2; color: var(--ink); text-decoration: none; }
+    .page-link img { display: block; width: 100%; aspect-ratio: 3/4; object-fit: cover; background: #ecefe9; }
+    .page-link span { display: block; padding: 8px; text-align: center; font-size: 10px; font-weight: 800; }
+
+    .toast { position: fixed; left: 50%; bottom: 28px; z-index: 50; transform: translate(-50%, 20px); max-width: min(520px, calc(100% - 32px)); padding: 12px 16px; border-radius: 12px; background: #17201e; color: #fff; box-shadow: 0 14px 40px rgba(0,0,0,.22); font-size: 12px; opacity: 0; pointer-events: none; transition: .2s ease; }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    .toast.error { background: #9e3030; }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .layout { grid-template-columns: 1fr; }
+      .side-card { position: static; }
+    }
+    @media (max-width: 640px) {
+      .shell { width: min(100% - 24px, 1180px); padding-top: 18px; }
+      .topbar { align-items: flex-start; }
+      .brand-mark { width: 42px; height: 42px; flex-basis: 42px; }
+      .brand p { display: none; }
+      .connection-pill { padding: 9px 10px; font-size: 11px; }
+      .hero { padding: 24px 20px; border-radius: 22px; gap: 24px; }
+      .hero-note { display: none; }
+      .tabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+      .tab { min-width: 0; padding-inline: 8px; }
+      .main-card { padding: 20px 16px; }
+      .mode-grid, .owner-columns { grid-template-columns: 1fr; }
+      .page-grid { grid-template-columns: repeat(2, 1fr); }
+      .action-row { display: grid; grid-template-columns: 1fr; }
+      .btn.primary { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">일</div>
+        <div><h1>일사편리 소유주 조회</h1><p>로그인된 일사편리 세션으로 소유주 정보를 조사합니다.</p></div>
+      </div>
+      <div class="connection-pill" id="connectionPill"><span class="dot"></span><span id="connectionText">연결 확인 중</span></div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <div class="eyebrow">MASLOW AX · OWNER RESEARCH</div>
+        <h2>주소를 넣으면 소유주 조사를 순서대로 처리합니다.</h2>
+        <p class="hero-copy">단건 또는 여러 주소를 한 번에 등록하고, 소유주 정보만 받거나 증명서 전체 화면까지 함께 보관할 수 있습니다.</p>
+        <div class="hero-note"><span>대표 데스크탑 전용</span><span>10초 후 1초 간격 진행 확인</span><span>대량조회 순차 처리</span></div>
+      </div>
+      <div class="health-panel">
+        <div class="health-head"><strong>작업 준비 상태</strong><button class="text-button" id="refreshHealth" type="button">다시 확인</button></div>
+        <div class="health-list">
+          <div class="health-row" id="healthBridge"><i class="signal"></i><span>로컬 브리지</span><b>확인 중</b></div>
+          <div class="health-row" id="healthExtension"><i class="signal"></i><span>크롬 확장프로그램</span><b>확인 중</b></div>
+          <div class="health-row" id="healthKras"><i class="signal"></i><span>일사편리 발급화면</span><b>확인 중</b></div>
+          <div class="health-row" id="healthJob"><i class="signal"></i><span>현재 작업</span><b>확인 중</b></div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="조회 메뉴">
+      <button class="tab active" type="button" data-view="single">단건조회</button>
+      <button class="tab" type="button" data-view="batch">대량조회</button>
+      <button class="tab" type="button" data-view="history">조회내역</button>
+    </nav>
+
+    <div class="layout">
+      <section class="card main-card">
+        <div id="singleView">
+          <div class="section-head"><div><h3>단건 소유주 조사</h3><p>한 개 주소를 입력하고 조회 방식을 선택하세요.</p></div></div>
+          <label class="field-label" for="singleAddress">조회할 주소</label>
+          <textarea class="address-input" id="singleAddress" rows="2" placeholder="예: 전북특별자치도 군산시 소룡동 856"></textarea>
+          <div class="field-help"><span>도로명 또는 지번을 현재 일사편리에서 조회 가능한 형태로 입력</span><span id="singleLength">0자</span></div>
+          <div class="mode-title">조회 결과 선택</div>
+          <div class="mode-grid" data-mode-group="single">
+            <label class="mode-option"><input type="radio" name="singleMode" value="owners_only" checked><span class="mode-box"><span class="mode-top"><strong>소유주 정보만</strong><i class="radio-ui"></i></span><p>토지·건물 소유주 정보를 텍스트로 정리합니다.</p><span class="mode-tag">빠른 조회</span></span></label>
+            <label class="mode-option"><input type="radio" name="singleMode" value="owners_and_pages"><span class="mode-box"><span class="mode-top"><strong>소유주 + 전체 캡처</strong><i class="radio-ui"></i></span><p>소유주 정보와 증명서 전 페이지 PNG를 함께 보관합니다.</p><span class="mode-tag">자료 보관용</span></span></label>
+          </div>
+          <div class="action-row"><button class="btn primary" id="singleStart" type="button">조회 시작</button></div>
+          <div class="run-panel" id="singleRun" hidden>
+            <div class="run-head"><div><p class="run-address" id="singleRunAddress"></p><p class="run-message" id="singleRunMessage"></p></div><span class="status-badge" id="singleRunBadge">대기</span></div>
+            <div class="progress-track"><div class="progress-bar" id="singleProgress"></div></div>
+          </div>
+          <div id="singleResult"></div>
+        </div>
+
+        <div id="batchView" hidden>
+          <div class="section-head"><div><h3>대량 소유주 조사</h3><p>한 줄에 주소 하나씩 입력하면 중복을 제거해 순서대로 조회합니다.</p></div><span class="count-chip" id="batchCount">0건</span></div>
+          <label class="field-label" for="batchAddresses">조회할 주소 목록</label>
+          <textarea class="address-input batch" id="batchAddresses" placeholder="전북특별자치도 군산시 소룡동 856&#10;전북특별자치도 군산시 산북동 123-4"></textarea>
+          <div class="field-help"><span>빈 줄과 같은 주소는 자동 제외</span><button class="text-button" id="clearBatch" type="button">전체 지우기</button></div>
+          <div class="mode-title">조회 결과 선택</div>
+          <div class="mode-grid" data-mode-group="batch">
+            <label class="mode-option"><input type="radio" name="batchMode" value="owners_only" checked><span class="mode-box"><span class="mode-top"><strong>소유주 정보만</strong><i class="radio-ui"></i></span><p>여러 주소의 소유주 정보를 빠르게 정리합니다.</p><span class="mode-tag">대량조회 권장</span></span></label>
+            <label class="mode-option"><input type="radio" name="batchMode" value="owners_and_pages"><span class="mode-box"><span class="mode-top"><strong>소유주 + 전체 캡처</strong><i class="radio-ui"></i></span><p>주소별 증명서 전 페이지까지 함께 보관합니다.</p><span class="mode-tag">저장 공간 사용</span></span></label>
+          </div>
+          <div class="action-row"><button class="btn primary" id="batchStart" type="button">대량조회 시작</button></div>
+          <div id="queueArea" hidden>
+            <div class="queue-tools"><button class="btn small" id="pauseBatch" type="button">일시정지</button><button class="btn small" id="retryFailed" type="button">실패건 재시도</button><button class="btn small lime" id="downloadCurrent" type="button">CSV 내려받기</button></div>
+            <div class="table-wrap"><table><thead><tr><th>No.</th><th>주소</th><th>상태</th><th>소유주</th><th>확인</th></tr></thead><tbody id="queueBody"></tbody></table></div>
+          </div>
+        </div>
+
+        <div id="historyView" hidden>
+          <div class="section-head"><div><h3>이 기기의 조회내역</h3><p>완료 결과는 현재 브라우저에만 저장됩니다.</p></div><span class="count-chip" id="historyCount">0건</span></div>
+          <div class="queue-tools"><button class="btn small lime" id="downloadHistory" type="button">전체 CSV</button><button class="btn small danger" id="clearHistory" type="button">내역 지우기</button></div>
+          <div class="table-wrap" id="historyTableWrap"><table><thead><tr><th>조회일시</th><th>주소</th><th>방식</th><th>결과</th><th>확인</th></tr></thead><tbody id="historyBody"></tbody></table></div>
+          <div class="empty" id="historyEmpty">아직 저장된 조회내역이 없습니다.</div>
+          <div id="historyResult"></div>
+        </div>
+      </section>
+
+      <aside class="card side-card guide">
+        <h4>조회 전 확인</h4>
+        <div class="steps">
+          <div class="step"><span class="step-num">1</span><div><strong>일사편리 로그인 유지</strong><p>공동인증서로 로그인한 KRAS 탭을 닫지 않습니다.</p></div></div>
+          <div class="step"><span class="step-num">2</span><div><strong>발급화면 열기</strong><p>확장프로그램이 동작하는 발급화면을 미리 열어둡니다.</p></div></div>
+          <div class="step"><span class="step-num">3</span><div><strong>상태가 모두 준비인지 확인</strong><p>다른 작업이 진행 중이면 완료된 뒤 시작합니다.</p></div></div>
+          <div class="step"><span class="step-num">4</span><div><strong>조사 중 탭 유지</strong><p>작업이 끝날 때까지 KRAS 작업 탭을 직접 닫지 않습니다.</p></div></div>
+        </div>
+        <div class="notice">이 페이지는 현재 컴퓨터의 로컬 브리지에 직접 연결합니다. 다른 컴퓨터에서는 조회할 수 없습니다.</div>
+      </aside>
+    </div>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      'use strict';
+      const API = 'http://127.0.0.1:8787';
+      const HISTORY_KEY = 'maslow.autoIlsa.history.v1';
+      const TERMINAL = new Set(['complete', 'failed', 'released']);
+      const STAGE_PROGRESS = { waiting_for_kras: 8, queued: 10, starting: 16, address_input: 24, issuing: 38, viewer_open: 52, owners_saved: 65, capturing: 76, verifying: 90, complete: 100, failed: 100 };
+      const state = { health: null, running: false, paused: false, queue: [], currentResult: null, history: loadHistory() };
+      const $ = (s, root = document) => root.querySelector(s);
+      const $$ = (s, root = document) => Array.from(root.querySelectorAll(s));
+
+      function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+      }
+      function showToast(message, type = '') {
+        const el = $('#toast'); el.textContent = message; el.className = `toast show ${type}`;
+        clearTimeout(showToast.timer); showToast.timer = setTimeout(() => el.className = 'toast', 3000);
+      }
+      function modeLabel(mode) { return mode === 'owners_only' ? '소유주 정보만' : '소유주 + 전체 캡처'; }
+      function statusLabel(status) { return ({pending:'대기', queued:'브리지 대기', created:'생성', running:'진행 중', complete:'완료', failed:'실패', paused:'일시정지'}[status] || status || '대기'); }
+      function formatDate(value) { const d = value ? new Date(value) : new Date(); return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString('ko-KR'); }
+      function readError(payload, fallback) { return payload?.error?.message || payload?.message || fallback; }
+      function uniqueAddresses(raw) { const seen = new Set(); return String(raw).split(/\r?\n/).map(v => v.trim()).filter(v => v && !seen.has(v) && seen.add(v)); }
+
+      async function api(path, options = {}) {
+        const response = await fetch(API + path, { cache: 'no-store', ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.ok === false) throw new Error(readError(payload, `요청 실패 (${response.status})`));
+        return payload;
+      }
+
+      function setHealthRow(id, ok, value) {
+        const row = $(id); row.classList.toggle('ok', ok === true); row.classList.toggle('bad', ok === false); $('b', row).textContent = value;
+      }
+      async function checkHealth(silent = false) {
+        try {
+          const health = await api('/v1/health'); state.health = health;
+          const bridge = health.ok === true;
+          const ext = health.extension?.connected === true;
+          const kras = health.kras?.pageReady === true;
+          const idle = !health.activeJobId;
+          setHealthRow('#healthBridge', bridge, bridge ? '정상' : '오류');
+          setHealthRow('#healthExtension', ext, ext ? `연결됨${health.extension?.version ? ' · ' + health.extension.version : ''}` : '연결 필요');
+          setHealthRow('#healthKras', kras, kras ? '준비됨' : (health.kras?.tabOpen ? '화면 확인 필요' : '탭 열기 필요'));
+          setHealthRow('#healthJob', idle, idle ? '대기 중' : statusLabel(health.activeStatus));
+          const ready = bridge && ext && kras && idle;
+          $('#connectionPill').className = `connection-pill ${ready ? 'ready' : ''}`;
+          $('#connectionText').textContent = ready ? '조회 준비 완료' : (bridge ? '준비 상태 확인' : '로컬 연결 안 됨');
+          if (!silent && ready) showToast('조회를 시작할 준비가 되었습니다.');
+          return ready;
+        } catch (error) {
+          state.health = null;
+          ['#healthBridge','#healthExtension','#healthKras','#healthJob'].forEach(id => setHealthRow(id, false, id === '#healthBridge' ? '연결 안 됨' : '확인 불가'));
+          $('#connectionPill').className = 'connection-pill error'; $('#connectionText').textContent = '로컬 브리지 연결 안 됨';
+          if (!silent) showToast('이 컴퓨터의 일사편리 브리지를 확인해 주세요.', 'error');
+          return false;
+        }
+      }
+
+      async function ensureReady() {
+        const ready = await checkHealth(true);
+        if (ready) return true;
+        const h = state.health;
+        if (!h) throw new Error('로컬 브리지(8787)가 실행되지 않았습니다.');
+        if (!h.extension?.connected) throw new Error('크롬 확장프로그램이 일사편리 발급화면에 연결되지 않았습니다.');
+        if (!h.kras?.pageReady) throw new Error('일사편리 발급화면을 열고 로그인을 확인해 주세요.');
+        if (h.activeJobId) throw new Error('다른 일사편리 작업이 진행 중입니다. 완료 후 다시 시작해 주세요.');
+        throw new Error('조회 준비 상태를 확인해 주세요.');
+      }
+
+      function makeRequestId() { return `auto-ilsa-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+      async function createJob(address, mode, kind) {
+        const payload = {
+          address,
+          source: 'maslow-admin',
+          captureMode: mode,
+          sentAt: new Date().toISOString(),
+          metadata: { clientRequestId: makeRequestId(), captureMode: mode, requestType: kind, requestedFrom: 'auto-ilsa' }
+        };
+        const created = await api('/v1/jobs', { method: 'POST', body: JSON.stringify(payload) });
+        return created.job;
+      }
+
+      async function waitForJob(job, onUpdate) {
+        onUpdate(job);
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        while (true) {
+          const payload = await api(`/v1/jobs/${job.jobId}`); job = payload.job; onUpdate(job);
+          if (TERMINAL.has(job.status)) return job;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      async function fetchResult(jobId) {
+        const data = await api(`/v1/jobs/${jobId}/result`);
+        return { ...data, fetchedAt: new Date().toISOString() };
+      }
+
+      function ownerName(owner) { return owner?.ownerName || owner?.name || owner?.성명 || owner?.소유자 || '소유주'; }
+      function ownerDetails(owner) {
+        if (!owner || typeof owner !== 'object') return '';
+        const skip = new Set(['ownerName','name','성명','소유자','source','sourceSetIndex','sourceRowIndex']);
+        return Object.entries(owner).filter(([k,v]) => !skip.has(k) && v !== '' && v != null).slice(0, 6).map(([k,v]) => `${k}: ${v}`).join(' · ');
+      }
+      function resultSummary(data) {
+        const owners = data?.owners || {};
+        const land = Array.isArray(owners.landOwners) ? owners.landOwners : [];
+        const building = Array.isArray(owners.buildingOwners) ? owners.buildingOwners : [];
+        return { land, building, total: land.length + building.length };
+      }
+      function renderOwnerSection(title, owners) {
+        return `<section class="owner-section"><h5>${escapeHtml(title)} · ${owners.length}명</h5><div class="owner-list">${owners.length ? owners.map(o => `<div class="owner"><strong>${escapeHtml(ownerName(o))}</strong>${escapeHtml(ownerDetails(o))}</div>`).join('') : '<div class="owner">확인된 소유주 정보가 없습니다.</div>'}</div></section>`;
+      }
+      function renderResult(target, entry) {
+        const data = entry.data || entry;
+        const summary = resultSummary(data);
+        const pages = Array.isArray(data.pages) ? data.pages : [];
+        const job = data.job || {};
+        const mode = entry.mode || 'owners_and_pages';
+        const pagesHtml = mode === 'owners_and_pages' && pages.length ? `<div class="page-grid">${pages.map(p => `<a class="page-link" href="${API + p.url}" target="_blank" rel="noopener"><img src="${API + p.url}" alt="증명서 ${p.pageNo}페이지" loading="lazy"><span>${p.pageNo}페이지 · 크게 보기</span></a>`).join('')}</div>` : '';
+        $(target).innerHTML = `<article class="result-card"><div class="result-top"><div><h4>${escapeHtml(job.address || entry.address || '')}</h4><p>${formatDate(job.completedAt || entry.completedAt)} · ${escapeHtml(modeLabel(mode))}</p></div><span class="status-badge complete">완료</span></div><div class="owner-columns">${renderOwnerSection('토지 소유주', summary.land)}${renderOwnerSection('건물 소유주', summary.building)}</div>${pagesHtml}</article>`;
+      }
+
+      function loadHistory() { try { const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); return Array.isArray(parsed) ? parsed : []; } catch (_) { return []; } }
+      function saveHistory(entry) {
+        state.history.unshift(entry); state.history = state.history.slice(0, 300);
+        try { localStorage.setItem(HISTORY_KEY, JSON.stringify(state.history)); } catch (_) { showToast('조회 결과가 커서 브라우저 내역에 저장하지 못했습니다.', 'error'); }
+        renderHistory();
+      }
+
+      function historyEntry(address, mode, data) {
+        const s = resultSummary(data);
+        return { id: data.job?.jobId || makeRequestId(), address, mode, completedAt: data.job?.completedAt || new Date().toISOString(), landOwners: s.land, buildingOwners: s.building, pages: data.pages || [], data };
+      }
+
+      async function runSingle() {
+        if (state.running) return showToast('현재 진행 중인 조회가 있습니다.', 'error');
+        const address = $('#singleAddress').value.trim();
+        if (!address) return showToast('조회할 주소를 입력해 주세요.', 'error');
+        const mode = $('input[name="singleMode"]:checked').value;
+        state.running = true; $('#singleStart').disabled = true; $('#singleRun').hidden = false; $('#singleResult').innerHTML = '';
+        $('#singleRunAddress').textContent = address;
+        try {
+          await ensureReady();
+          let job = await createJob(address, mode, 'single');
+          job = await waitForJob(job, updateSingleRun);
+          if (job.status === 'failed') throw new Error(job.failure?.message || job.message || '조사 작업이 실패했습니다.');
+          const data = await fetchResult(job.jobId);
+          const entry = historyEntry(address, mode, data); saveHistory(entry); renderResult('#singleResult', entry);
+          showToast('소유주 조사가 완료되었습니다.');
+        } catch (error) {
+          updateSingleRun({ status:'failed', stage:'failed', message:error.message }); showToast(error.message, 'error');
+        } finally { state.running = false; $('#singleStart').disabled = false; checkHealth(true); }
+      }
+
+      function updateSingleRun(job) {
+        $('#singleRunMessage').textContent = job.message || statusLabel(job.status);
+        const badge = $('#singleRunBadge'); badge.textContent = statusLabel(job.status); badge.className = `status-badge ${job.status === 'complete' ? 'complete' : job.status === 'failed' ? 'failed' : 'running'}`;
+        const value = STAGE_PROGRESS[job.stage] ?? (job.status === 'complete' ? 100 : job.status === 'failed' ? 100 : 30); $('#singleProgress').style.width = `${value}%`;
+      }
+
+      function buildQueue() {
+        const addresses = uniqueAddresses($('#batchAddresses').value);
+        const mode = $('input[name="batchMode"]:checked').value;
+        state.queue = addresses.map((address, index) => ({ index: index + 1, address, mode, status:'pending', message:'대기', data:null }));
+        renderQueue(); return state.queue;
+      }
+      function renderQueue() {
+        $('#queueArea').hidden = state.queue.length === 0;
+        $('#queueBody').innerHTML = state.queue.map((item, i) => {
+          const s = item.data ? resultSummary(item.data) : {total:0};
+          const action = item.data ? `<button class="btn small" type="button" data-queue-result="${i}">결과</button>` : '-';
+          return `<tr><td>${item.index}</td><td class="row-address">${escapeHtml(item.address)}</td><td><span class="status-badge ${item.status === 'complete' ? 'complete' : item.status === 'failed' ? 'failed' : item.status === 'running' ? 'running' : ''}">${escapeHtml(statusLabel(item.status))}</span></td><td>${item.data ? s.total + '명' : '-'}</td><td>${action}</td></tr>`;
+        }).join('');
+        $$('[data-queue-result]').forEach(btn => btn.addEventListener('click', () => { const item = state.queue[Number(btn.dataset.queueResult)]; if (item?.data) renderResult('#historyResult', { address:item.address, mode:item.mode, data:item.data }); }));
+      }
+
+      async function runBatch() {
+        if (state.running) return showToast('현재 진행 중인 조회가 있습니다.', 'error');
+        if (!state.queue.length || state.queue.every(q => q.status === 'complete')) buildQueue();
+        if (!state.queue.length) return showToast('한 줄에 주소 하나씩 입력해 주세요.', 'error');
+        state.running = true; state.paused = false; $('#batchStart').disabled = true; $('#pauseBatch').disabled = false; $('#pauseBatch').textContent = '일시정지';
+        for (const item of state.queue) {
+          if (state.paused) break;
+          if (!['pending','failed'].includes(item.status)) continue;
+          try {
+            await ensureReady(); item.status = 'running'; item.message = '작업 생성 중'; renderQueue();
+            let job = await createJob(item.address, item.mode, 'batch');
+            job = await waitForJob(job, update => { item.status = update.status === 'complete' ? 'complete' : update.status === 'failed' ? 'failed' : 'running'; item.message = update.message; renderQueue(); });
+            if (job.status === 'failed') throw new Error(job.failure?.message || job.message || '조사 작업 실패');
+            item.data = await fetchResult(job.jobId); item.status = 'complete';
+            saveHistory(historyEntry(item.address, item.mode, item.data)); renderQueue();
+          } catch (error) { item.status = 'failed'; item.message = error.message; renderQueue(); showToast(`${item.index}번 주소: ${error.message}`, 'error'); }
+        }
+        state.running = false; $('#batchStart').disabled = false; checkHealth(true);
+        showToast(state.paused ? '대량조회를 일시정지했습니다.' : '대량조회 처리가 끝났습니다.');
+      }
+
+      function pauseBatch() {
+        if (!state.running) return showToast('진행 중인 대량조회가 없습니다.');
+        state.paused = true; $('#pauseBatch').textContent = '정지 요청됨'; $('#pauseBatch').disabled = true;
+        showToast('현재 주소를 마친 뒤 일시정지합니다.');
+      }
+      function retryFailed() {
+        const failed = state.queue.filter(q => q.status === 'failed');
+        if (!failed.length) return showToast('재시도할 실패건이 없습니다.');
+        failed.forEach(q => { q.status = 'pending'; q.message = '재시도 대기'; }); renderQueue(); runBatch();
+      }
+
+      function renderHistory() {
+        $('#historyCount').textContent = `${state.history.length}건`;
+        $('#historyEmpty').hidden = state.history.length > 0; $('#historyTableWrap').hidden = state.history.length === 0;
+        $('#historyBody').innerHTML = state.history.map((entry, i) => `<tr><td>${escapeHtml(formatDate(entry.completedAt))}</td><td class="row-address">${escapeHtml(entry.address)}</td><td>${escapeHtml(modeLabel(entry.mode))}</td><td>${(entry.landOwners?.length || 0) + (entry.buildingOwners?.length || 0)}명</td><td><button class="btn small" type="button" data-history-result="${i}">결과</button></td></tr>`).join('');
+        $$('[data-history-result]').forEach(btn => btn.addEventListener('click', () => { const entry = state.history[Number(btn.dataset.historyResult)]; if (entry) renderResult('#historyResult', entry); }));
+      }
+
+      function csvRows(entries) {
+        const rows = [['조회일시','주소','조회방식','구분','소유주','상세정보']];
+        entries.forEach(entry => {
+          const groups = [['토지', entry.landOwners || resultSummary(entry.data).land], ['건물', entry.buildingOwners || resultSummary(entry.data).building]];
+          groups.forEach(([type, owners]) => (owners.length ? owners : [{}]).forEach(owner => rows.push([formatDate(entry.completedAt || entry.data?.job?.completedAt), entry.address, modeLabel(entry.mode), type, ownerName(owner), ownerDetails(owner)])));
+        });
+        return rows;
+      }
+      function downloadCsv(entries, name) {
+        if (!entries.length) return showToast('내려받을 완료 결과가 없습니다.', 'error');
+        const csv = '\ufeff' + csvRows(entries).map(row => row.map(value => `"${String(value ?? '').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+        const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+        const a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      function switchView(view) {
+        $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+        $('#singleView').hidden = view !== 'single'; $('#batchView').hidden = view !== 'batch'; $('#historyView').hidden = view !== 'history';
+        if (view === 'history') renderHistory();
+      }
+
+      $$('.tab').forEach(tab => tab.addEventListener('click', () => switchView(tab.dataset.view)));
+      $('#refreshHealth').addEventListener('click', () => checkHealth(false));
+      $('#singleAddress').addEventListener('input', e => $('#singleLength').textContent = `${e.target.value.length}자`);
+      $('#batchAddresses').addEventListener('input', e => $('#batchCount').textContent = `${uniqueAddresses(e.target.value).length}건`);
+      $('#clearBatch').addEventListener('click', () => { $('#batchAddresses').value = ''; $('#batchCount').textContent = '0건'; state.queue = []; renderQueue(); });
+      $('#singleStart').addEventListener('click', runSingle);
+      $('#batchStart').addEventListener('click', runBatch);
+      $('#pauseBatch').addEventListener('click', pauseBatch);
+      $('#retryFailed').addEventListener('click', retryFailed);
+      $('#downloadCurrent').addEventListener('click', () => downloadCsv(state.queue.filter(q => q.data).map(q => historyEntry(q.address, q.mode, q.data)), `일사편리_대량조회_${new Date().toISOString().slice(0,10)}.csv`));
+      $('#downloadHistory').addEventListener('click', () => downloadCsv(state.history, `일사편리_조회내역_${new Date().toISOString().slice(0,10)}.csv`));
+      $('#clearHistory').addEventListener('click', () => { if (!confirm('이 브라우저에 저장된 조회내역을 모두 지울까요?')) return; state.history = []; localStorage.removeItem(HISTORY_KEY); renderHistory(); $('#historyResult').innerHTML = ''; });
+
+      renderHistory(); checkHealth(true); setInterval(() => { if (!state.running) checkHealth(true); }, 10000);
+    })();
+  </script>
+</body>
+</html>

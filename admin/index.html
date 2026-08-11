@@ -2570,6 +2570,29 @@
       .lookup-fail-title{font-size:18px}
     }
 
+    .ilsa-launch-btn{display:none;background:#fff1d6;color:#8b4b00;border:1px solid #ffd18a}
+    .ilsa-launch-btn.is-visible{display:inline-flex}
+    .ilsa-overlay{position:fixed;inset:0;z-index:2147482000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(20,25,34,.46);backdrop-filter:blur(3px)}
+    .ilsa-overlay.is-open{display:flex}
+    .ilsa-panel{width:min(460px,100%);border-radius:22px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.24);overflow:hidden}
+    .ilsa-head{display:flex;align-items:center;justify-content:space-between;padding:20px 22px 14px}
+    .ilsa-title{font-size:21px;font-weight:900;letter-spacing:-.04em;color:#171a20}
+    .ilsa-close{width:36px;height:36px;border-radius:50%;background:#f2f4f7;color:#4b5563;font-size:22px}
+    .ilsa-body{padding:0 22px 22px}
+    .ilsa-label{display:block;margin:8px 0 7px;font-size:13px;font-weight:800;color:#4b5563}
+    .ilsa-address{width:100%;min-height:74px;padding:13px 14px;border:1px solid #d9dee7;border-radius:13px;background:#fff;font:inherit;font-size:15px;line-height:1.5;resize:vertical;box-sizing:border-box}
+    .ilsa-checks{display:grid;gap:8px;margin:16px 0}
+    .ilsa-check{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:12px;background:#f5f6f8;color:#697386;font-size:13px;font-weight:800}
+    .ilsa-check::before{content:'●';color:#aab2bf;font-size:11px}
+    .ilsa-check.is-ok{background:#edf9f2;color:#196c42}.ilsa-check.is-ok::before{color:#21a366}
+    .ilsa-check.is-bad{background:#fff1f0;color:#b42318}.ilsa-check.is-bad::before{color:#e5484d}
+    .ilsa-progress{min-height:56px;padding:12px 13px;border-radius:13px;background:#f5f7fa;color:#46505f;font-size:13px;font-weight:750;line-height:1.55;white-space:pre-wrap}
+    .ilsa-progress.is-error{background:#fff1f0;color:#b42318}
+    .ilsa-progress.is-complete{background:#edf9f2;color:#196c42}
+    .ilsa-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}
+    .ilsa-action{height:42px;padding:0 18px;border-radius:13px;background:#eef1f5;color:#384152;font-weight:850}
+    .ilsa-action.primary{background:#2176ff;color:#fff}.ilsa-action.primary:disabled{background:#cfd6df;color:#fff;cursor:not-allowed}
+
 
   </style>
   <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
@@ -2707,6 +2730,7 @@
           <div class="property-office-head">
             <button type="button" class="property-office-head-title ledger-upload-trigger" id="ledgerUploadBtn"><span class="ledger-camera">📷</span><span>자료입력</span></button>
             <div class="property-office-head-actions">
+              <button type="button" class="ledger-text-btn ilsa-launch-btn" id="ilsaLaunchBtn">일사편리</button>
               <button type="button" class="ledger-text-btn ai" id="ledgerFillBtn">AI호출</button>
             </div>
           </div>
@@ -2764,6 +2788,30 @@
 
       </div>
       <button type="button" class="floating-server-save" id="draftSaveBtn">서버저장</button>
+    </div>
+  </div>
+
+
+  <div id="ilsaOverlay" class="ilsa-overlay" aria-hidden="true">
+    <div class="ilsa-panel" role="dialog" aria-modal="true" aria-labelledby="ilsaTitle">
+      <div class="ilsa-head">
+        <div id="ilsaTitle" class="ilsa-title">일사편리 소유주 조사</div>
+        <button type="button" id="ilsaCloseBtn" class="ilsa-close" aria-label="닫기">×</button>
+      </div>
+      <div class="ilsa-body">
+        <label class="ilsa-label" for="ilsaAddressInput">조회할 지번주소</label>
+        <textarea id="ilsaAddressInput" class="ilsa-address" placeholder="지번주소를 확인해서 입력하세요"></textarea>
+        <div class="ilsa-checks">
+          <div id="ilsaBridgeCheck" class="ilsa-check">로컬 브리지 확인 중</div>
+          <div id="ilsaExtensionCheck" class="ilsa-check">확장프로그램 확인 중</div>
+          <div id="ilsaKrasCheck" class="ilsa-check">일사편리 발급화면 확인 중</div>
+        </div>
+        <div id="ilsaProgress" class="ilsa-progress">연결상태를 확인하고 있습니다.</div>
+        <div class="ilsa-actions">
+          <button type="button" id="ilsaRefreshBtn" class="ilsa-action">다시 확인</button>
+          <button type="button" id="ilsaStartBtn" class="ilsa-action primary" disabled>조회 시작</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2850,6 +2898,16 @@
       var ledgerInput = document.getElementById('ledgerInput');
       var ledgerUploadBtn = document.getElementById('ledgerUploadBtn');
       var ledgerFillBtn = document.getElementById('ledgerFillBtn');
+      var ilsaLaunchBtn = document.getElementById('ilsaLaunchBtn');
+      var ilsaOverlay = document.getElementById('ilsaOverlay');
+      var ilsaCloseBtn = document.getElementById('ilsaCloseBtn');
+      var ilsaRefreshBtn = document.getElementById('ilsaRefreshBtn');
+      var ilsaStartBtn = document.getElementById('ilsaStartBtn');
+      var ilsaAddressInput = document.getElementById('ilsaAddressInput');
+      var ilsaBridgeCheck = document.getElementById('ilsaBridgeCheck');
+      var ilsaExtensionCheck = document.getElementById('ilsaExtensionCheck');
+      var ilsaKrasCheck = document.getElementById('ilsaKrasCheck');
+      var ilsaProgress = document.getElementById('ilsaProgress');
       var ledgerUploadedCount = document.getElementById('ledgerUploadedCount');
       var ledgerFileList = document.getElementById('ledgerFileList');
       var addressField = document.getElementById('addressField');
@@ -3368,6 +3426,173 @@
       function getCreatorInitialSuffix_(){
         var info = getCreatorInfoFromCache_();
         return info && info.initial ? '-' + info.initial : '';
+      }
+
+      var ILSA_BRIDGE_URL_ = 'http://127.0.0.1:8787';
+      var ilsaPollTimer_ = null;
+
+      function isIlsaAllowedUser_(){
+        var creator = getCreatorInfoFromCache_();
+        var desktop = /Windows/i.test(navigator.userAgent || '') && window.innerWidth >= 900;
+        return !!(desktop && creator && String(creator.code || '') === '6857');
+      }
+
+      function updateIlsaVisibility_(){
+        if(!ilsaLaunchBtn) return;
+        ilsaLaunchBtn.classList.toggle('is-visible', isIlsaAllowedUser_());
+      }
+
+      function setIlsaCheck_(element, ok, text){
+        if(!element) return;
+        element.classList.remove('is-ok', 'is-bad');
+        element.classList.add(ok ? 'is-ok' : 'is-bad');
+        element.textContent = text;
+      }
+
+      function setIlsaProgress_(text, state){
+        if(!ilsaProgress) return;
+        ilsaProgress.classList.remove('is-error', 'is-complete');
+        if(state === 'error') ilsaProgress.classList.add('is-error');
+        if(state === 'complete') ilsaProgress.classList.add('is-complete');
+        ilsaProgress.textContent = text || '';
+      }
+
+      function fetchIlsaJson_(path, options){
+        var controller = new AbortController();
+        var timer = window.setTimeout(function(){ controller.abort(); }, 3500);
+        var requestOptions = Object.assign({ cache:'no-store' }, options || {}, { signal:controller.signal });
+        return fetch(ILSA_BRIDGE_URL_ + path, requestOptions)
+          .then(function(response){
+            return response.json().catch(function(){ return null; }).then(function(body){
+              if(!response.ok){
+                var error = new Error((body && body.error && body.error.message) || ('로컬 브리지 HTTP ' + response.status));
+                error.code = body && body.error && body.error.code;
+                error.details = body && body.error && body.error.details;
+                throw error;
+              }
+              return body;
+            });
+          })
+          .finally(function(){ window.clearTimeout(timer); });
+      }
+
+      function ilsaStageText_(job){
+        var stageNames = {
+          waiting_for_kras:'일사편리 발급화면 연결 대기', starting:'자동화 시작',
+          filling_address:'주소 입력', selecting_building:'증명서 대상 선택',
+          reading_captcha:'보안문자 판독', opening_viewer:'증명서 열람',
+          waiting_for_archive:'증명서 보관 대기', extracting_owners:'소유자 정보 추출',
+          capturing_pages:'증명서 화면 저장', verifying_archive:'저장 결과 검증',
+          complete:'조사 완료'
+        };
+        var title = stageNames[job.stage] || job.stage || job.status || '진행 중';
+        var progress = job.progress && job.progress.total
+          ? '\n진행: ' + Number(job.progress.current || 0) + '/' + Number(job.progress.total)
+          : '';
+        return title + '\n' + (job.message || '') + progress;
+      }
+
+      function pollIlsaJob_(jobId){
+        window.clearTimeout(ilsaPollTimer_);
+        fetchIlsaJson_('/v1/jobs/' + encodeURIComponent(jobId))
+          .then(function(body){
+            var job = body && body.job;
+            if(!job) throw new Error('작업 상태를 읽지 못했습니다.');
+            if(job.status === 'complete'){
+              setIlsaProgress_('조회가 완료되었습니다.\n프론트 결과 반영은 2단계에서 연결합니다.', 'complete');
+              if(ilsaStartBtn) ilsaStartBtn.disabled = false;
+              return;
+            }
+            if(job.status === 'failed'){
+              setIlsaProgress_('조회 실패\n' + ((job.failure && job.failure.message) || job.message || '원인을 확인해주세요.'), 'error');
+              if(ilsaStartBtn) ilsaStartBtn.disabled = false;
+              return;
+            }
+            setIlsaProgress_(ilsaStageText_(job));
+            ilsaPollTimer_ = window.setTimeout(function(){ pollIlsaJob_(jobId); }, 1000);
+          })
+          .catch(function(error){
+            setIlsaProgress_('진행상태 확인 실패\n' + String(error.message || error), 'error');
+            ilsaPollTimer_ = window.setTimeout(function(){ pollIlsaJob_(jobId); }, 1000);
+          });
+      }
+
+      function checkIlsaReady_(){
+        if(ilsaStartBtn) ilsaStartBtn.disabled = true;
+        setIlsaCheck_(ilsaBridgeCheck, false, '로컬 브리지 확인 중');
+        setIlsaCheck_(ilsaExtensionCheck, false, '확장프로그램 확인 중');
+        setIlsaCheck_(ilsaKrasCheck, false, '일사편리 발급화면 확인 중');
+        setIlsaProgress_('연결상태를 확인하고 있습니다.');
+        return fetchIlsaJson_('/v1/health')
+          .then(function(health){
+            setIlsaCheck_(ilsaBridgeCheck, true, '로컬 브리지 연결됨');
+            setIlsaCheck_(ilsaExtensionCheck, !!(health.extension && health.extension.connected),
+              health.extension && health.extension.connected ? '확장프로그램 연결됨' : '확장프로그램이 연결되지 않았습니다');
+            setIlsaCheck_(ilsaKrasCheck, !!(health.kras && health.kras.pageReady),
+              health.kras && health.kras.pageReady ? '로그인된 일사편리 발급화면 준비됨' : '일사편리 발급화면을 열어주세요');
+            var ready = !!(health.extension && health.extension.connected && health.kras && health.kras.pageReady);
+            if(health.activeJob){
+              setIlsaProgress_('현재 다른 조사가 진행 중입니다.\n' + ilsaStageText_(health.activeJob));
+              if(health.activeJob.jobId) pollIlsaJob_(health.activeJob.jobId);
+              return false;
+            }
+            setIlsaProgress_(ready
+              ? '연결 준비가 완료되었습니다. 지번주소를 확인한 뒤 조회를 시작하세요.'
+              : '안내된 연결상태를 준비한 뒤 다시 확인을 눌러주세요.', ready ? '' : 'error');
+            if(ilsaStartBtn) ilsaStartBtn.disabled = !ready;
+            return ready;
+          })
+          .catch(function(error){
+            setIlsaCheck_(ilsaBridgeCheck, false, '로컬 브리지가 실행되지 않았습니다');
+            setIlsaCheck_(ilsaExtensionCheck, false, '확장프로그램 상태 확인 불가');
+            setIlsaCheck_(ilsaKrasCheck, false, '일사편리 발급화면 상태 확인 불가');
+            setIlsaProgress_('로컬 브리지를 먼저 실행해주세요.\n' + String(error.message || error), 'error');
+            return false;
+          });
+      }
+
+      function openIlsaModal_(){
+        if(!isIlsaAllowedUser_()) return;
+        ilsaOverlay.classList.add('is-open');
+        ilsaOverlay.setAttribute('aria-hidden', 'false');
+        ilsaAddressInput.value = plainText(addressField);
+        checkIlsaReady_();
+      }
+
+      function closeIlsaModal_(){
+        ilsaOverlay.classList.remove('is-open');
+        ilsaOverlay.setAttribute('aria-hidden', 'true');
+      }
+
+      function startIlsaJob_(){
+        var address = String(ilsaAddressInput && ilsaAddressInput.value || '').trim();
+        if(!address){
+          setIlsaProgress_('조회할 지번주소를 입력해주세요.', 'error');
+          if(ilsaAddressInput) ilsaAddressInput.focus();
+          return;
+        }
+        var currentListingNumber = String(listingNumber || plainText(listingNumberField) || '').trim();
+        var requestId = 'admin-' + Date.now() + '-' + Math.random().toString(36).slice(2,10);
+        ilsaStartBtn.disabled = true;
+        setIlsaProgress_('일사편리 조사 작업을 요청하고 있습니다.');
+        fetchIlsaJson_('/v1/jobs', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body:JSON.stringify({
+            address:address,
+            source:'maslow-admin',
+            sentAt:new Date().toISOString(),
+            metadata:{ listingNumber:currentListingNumber, clientRequestId:requestId }
+          })
+        }).then(function(body){
+          var jobId = body && body.job && body.job.jobId;
+          if(!jobId) throw new Error('브리지 응답에 작업번호가 없습니다.');
+          setIlsaProgress_('작업 요청 완료\n일사편리 자동화를 시작하는 동안 10초 기다립니다.');
+          window.setTimeout(function(){ pollIlsaJob_(jobId); }, 10000);
+        }).catch(function(error){
+          setIlsaProgress_('작업 요청 실패\n' + String(error.message || error), 'error');
+          ilsaStartBtn.disabled = false;
+        });
       }
 
       var GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
@@ -7153,6 +7378,13 @@
         });
       }
       ledgerUploadBtn.addEventListener('click', function(){ ledgerInput.click(); });
+      if(ilsaLaunchBtn) ilsaLaunchBtn.addEventListener('click', openIlsaModal_);
+      if(ilsaCloseBtn) ilsaCloseBtn.addEventListener('click', closeIlsaModal_);
+      if(ilsaRefreshBtn) ilsaRefreshBtn.addEventListener('click', checkIlsaReady_);
+      if(ilsaStartBtn) ilsaStartBtn.addEventListener('click', startIlsaJob_);
+      if(ilsaOverlay) ilsaOverlay.addEventListener('click', function(event){
+        if(event.target === ilsaOverlay) closeIlsaModal_();
+      });
 
       deleteCurrentPhotoBtn.addEventListener('click', function(){
         setMosaicMode_(false);
@@ -9661,6 +9893,9 @@
           serverSave_();
         });
       }
+
+      updateIlsaVisibility_();
+      window.addEventListener('resize', updateIlsaVisibility_);
 
       if (queryListingNumber) {
         history.pushState({ adminGuard: true }, '', location.href);

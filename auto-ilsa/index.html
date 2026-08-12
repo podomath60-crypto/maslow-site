@@ -530,7 +530,21 @@
       function hasNoBuildingLedger(entry) {
         const owners = entry?.data?.owners || entry?.owners || {};
         const sourceRoot = owners?.extractor?.sourceRoot || entry?.data?.result?.sourceRoot || entry?.result?.sourceRoot || '';
-        return sourceRoot === 'REAL_LAND' || entry?.data?.result?.buildingLedgerAvailable === false || entry?.result?.buildingLedgerAvailable === false;
+        const explicit = entry?.data?.result?.buildingLedgerAvailable ?? entry?.result?.buildingLedgerAvailable;
+        if (explicit === true) return false;
+        if (explicit === false) return true;
+        return sourceRoot === 'REAL_LAND';
+      }
+      function ownerAvailability(entry) {
+        return entry?.data?.owners?.ownerAvailability || entry?.owners?.ownerAvailability || {};
+      }
+      function hasNoLandOwnerInfo(entry) {
+        return ownerAvailability(entry).land === 'not_found_in_ledger'
+          || entry?.data?.result?.missingLandOwners === true || entry?.result?.missingLandOwners === true;
+      }
+      function hasNoBuildingOwnerInfo(entry) {
+        return !hasNoBuildingLedger(entry) && (ownerAvailability(entry).building === 'not_found_in_ledger'
+          || entry?.data?.result?.missingBuildingOwners === true || entry?.result?.missingBuildingOwners === true);
       }
       function renderBuildingSummary(entry) {
         if (hasNoBuildingLedger(entry)) return `<section class="building-summary"><h5>건물</h5><div class="building-warning">건축물대장 없음</div></section>`;
@@ -635,6 +649,8 @@
         const address = data.job?.address || entry.address || '';
         const lines = [`조회 주소: ${address}`];
         const noBuildingLedger = hasNoBuildingLedger(entry);
+        const noLandOwnerInfo = hasNoLandOwnerInfo(entry);
+        const noBuildingOwnerInfo = hasNoBuildingOwnerInfo(entry);
         if (buildingSummary) {
           lines.push('', '건축물대장 요약', `대지면적: ${areaText(buildingSummary.landAreaM2)}`, `건축면적: ${areaText(buildingSummary.buildingAreaM2)}`, `연면적: ${areaText(buildingSummary.totalFloorAreaM2)}`);
         } else if (noBuildingLedger) {
@@ -642,7 +658,12 @@
         }
         [['토지 소유주', summary.land], ['건물 소유주', summary.building]].forEach(([title, owners]) => {
           lines.push('', owners.length ? `${title} (${owners.length}명)` : title);
-          if (!owners.length) lines.push(title === '건물 소유주' && noBuildingLedger ? '- 건축물대장 없음' : '- 확인된 정보 없음');
+          if (!owners.length) {
+            if (title === '토지 소유주' && noLandOwnerInfo) lines.push('- 토지대장에 소유자 정보 없음');
+            else if (title === '건물 소유주' && noBuildingLedger) lines.push('- 건축물대장 없음');
+            else if (title === '건물 소유주' && noBuildingOwnerInfo) lines.push('- 건축물대장에 소유자 정보 없음');
+            else lines.push('- 확인된 정보 없음');
+          }
           owners.forEach((owner, index) => {
             const addressText = ownerAddress(owner);
             const share = String(owner.share || owner.지분 || '').trim();
@@ -715,9 +736,13 @@
         const resultAddress = job.address || entry.address || '';
         const jobId = job.jobId || entry.id || '';
         const noBuildingLedger = hasNoBuildingLedger(entry);
+        const noLandOwnerInfo = hasNoLandOwnerInfo(entry);
+        const noBuildingOwnerInfo = hasNoBuildingOwnerInfo(entry);
         const pagesHtml = pages.length ? `<div class="capture-head"><div><strong>캡처 미리보기</strong><span> · ${pages.length}페이지</span></div><span>썸네일을 누르면 크게 볼 수 있습니다.</span></div><div class="page-grid">${pages.map((p, index) => `<button class="page-link" type="button" data-page-index="${index}"><img src="${API + p.url}" alt="증명서 ${p.pageNo}페이지" loading="lazy"><span>${p.pageNo}페이지 · 크게 보기</span></button>`).join('')}</div>` : '';
         const targetElement = $(target);
-        targetElement.innerHTML = `<article class="result-card"><div class="result-top"><div><h4>${escapeHtml(resultAddress)}</h4><p>${formatDate(job.completedAt || entry.completedAt)} · ${escapeHtml(modeLabel(mode))}</p></div><div><button class="btn small" type="button" data-copy-result>텍스트 복사</button> <button class="btn small" type="button" data-open-archive>원본보기</button> <span class="status-badge complete">완료</span></div></div>${renderBuildingSummary(entry)}<div class="owner-columns">${renderOwnerSection('토지 소유주', summary.land)}${renderOwnerSection('건물 소유주', summary.building, noBuildingLedger ? '건축물대장 없음' : '확인된 소유주 정보가 없습니다.')}</div>${pagesHtml}</article>`;
+        const landEmptyText = noLandOwnerInfo ? '토지대장에 소유자 정보 없음' : '확인된 소유주 정보가 없습니다.';
+        const buildingEmptyText = noBuildingLedger ? '건축물대장 없음' : (noBuildingOwnerInfo ? '건축물대장에 소유자 정보 없음' : '확인된 소유주 정보가 없습니다.');
+        targetElement.innerHTML = `<article class="result-card"><div class="result-top"><div><h4>${escapeHtml(resultAddress)}</h4><p>${formatDate(job.completedAt || entry.completedAt)} · ${escapeHtml(modeLabel(mode))}</p></div><div><button class="btn small" type="button" data-copy-result>텍스트 복사</button> <button class="btn small" type="button" data-open-archive>원본보기</button> <span class="status-badge complete">완료</span></div></div>${renderBuildingSummary(entry)}<div class="owner-columns">${renderOwnerSection('토지 소유주', summary.land, landEmptyText)}${renderOwnerSection('건물 소유주', summary.building, buildingEmptyText)}</div>${pagesHtml}</article>`;
         $('[data-copy-result]', targetElement).addEventListener('click', async () => {
           try {
             await copyText(resultCopyText(entry));

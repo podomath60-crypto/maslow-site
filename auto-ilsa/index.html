@@ -108,14 +108,14 @@
     .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
     .mode-option { position: relative; display: block; }
     .mode-option input { position: absolute; opacity: 0; pointer-events: none; }
-    .mode-box { min-height: 114px; padding: 16px; border: 1px solid #dce1d8; border-radius: 15px; background: #fff; transition: .18s ease; }
+    .mode-box { display: block; min-height: 114px; padding: 16px; border: 1px solid #dce1d8; border-radius: 15px; background: #fff; transition: .18s ease; }
     .mode-option input:checked + .mode-box { border-color: var(--lime-deep); background: var(--lime-soft); box-shadow: inset 0 0 0 1px var(--lime-deep); }
     .mode-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
     .mode-top strong { font-size: 14px; }
     .radio-ui { width: 18px; height: 18px; border: 2px solid #c1c8bc; border-radius: 50%; background: #fff; }
     .mode-option input:checked + .mode-box .radio-ui { border: 5px solid var(--navy); }
     .mode-box p { margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
-    .mode-tag { display: inline-block; margin-top: 9px; color: #527315; font-size: 10px; font-weight: 900; }
+    .mode-tag { display: inline-flex; align-items: center; min-height: 24px; margin-top: 9px; padding: 0 8px; border-radius: 7px; background: rgba(184,239,61,.42); color: #46620d; font-size: 10px; font-weight: 900; white-space: nowrap; }
 
     .action-row { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
     .btn { min-height: 46px; padding: 0 18px; border: 1px solid var(--line); border-radius: 13px; background: #fff; color: var(--ink); font-size: 13px; font-weight: 900; }
@@ -263,6 +263,7 @@
           <div id="queueArea" hidden>
             <div class="queue-tools"><button class="btn small" id="pauseBatch" type="button">일시정지</button><button class="btn small" id="retryFailed" type="button">실패건 재시도</button><button class="btn small lime" id="downloadCurrent" type="button">CSV 내려받기</button></div>
             <div class="table-wrap"><table><thead><tr><th>No.</th><th>주소</th><th>상태</th><th>소유주</th><th>확인</th></tr></thead><tbody id="queueBody"></tbody></table></div>
+            <div id="batchResult"></div>
           </div>
         </div>
 
@@ -393,6 +394,10 @@
         const skip = new Set(['ownerName','name','성명','소유자','source','sourceSetIndex','sourceRowIndex']);
         return Object.entries(owner).filter(([k,v]) => !skip.has(k) && v !== '' && v != null).slice(0, 6).map(([k,v]) => `${k}: ${v}`).join(' · ');
       }
+      function ownerAddress(owner) {
+        if (!owner || typeof owner !== 'object') return '';
+        return String(owner.address || owner.주소 || owner.ownerAddress || owner.소유자주소 || '').trim();
+      }
       function resultSummary(data) {
         const owners = data?.owners || {};
         const land = Array.isArray(owners.landOwners) ? owners.landOwners : [];
@@ -402,6 +407,36 @@
       function renderOwnerSection(title, owners) {
         return `<section class="owner-section"><h5>${escapeHtml(title)} · ${owners.length}명</h5><div class="owner-list">${owners.length ? owners.map(o => `<div class="owner"><strong>${escapeHtml(ownerName(o))}</strong>${escapeHtml(ownerDetails(o))}</div>`).join('') : '<div class="owner">확인된 소유주 정보가 없습니다.</div>'}</div></section>`;
       }
+      function resultCopyText(entry) {
+        const data = entry.data || entry;
+        const summary = resultSummary(data);
+        const address = data.job?.address || entry.address || '';
+        const lines = [`조회 주소: ${address}`];
+        [['토지 소유주', summary.land], ['건물 소유주', summary.building]].forEach(([title, owners]) => {
+          lines.push('', `${title} (${owners.length}명)`);
+          if (!owners.length) lines.push('- 확인된 정보 없음');
+          owners.forEach((owner, index) => {
+            const addressText = ownerAddress(owner);
+            const share = String(owner.share || owner.지분 || '').trim();
+            lines.push(`${index + 1}. ${ownerName(owner)}${addressText ? ` / ${addressText}` : ''}${share ? ` / 지분 ${share}` : ''}`);
+          });
+        });
+        return lines.join('\n');
+      }
+      async function copyText(text) {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+      }
       function renderResult(target, entry) {
         const data = entry.data || entry;
         const summary = resultSummary(data);
@@ -409,7 +444,16 @@
         const job = data.job || {};
         const mode = entry.mode || 'owners_and_pages';
         const pagesHtml = mode === 'owners_and_pages' && pages.length ? `<div class="page-grid">${pages.map(p => `<a class="page-link" href="${API + p.url}" target="_blank" rel="noopener"><img src="${API + p.url}" alt="증명서 ${p.pageNo}페이지" loading="lazy"><span>${p.pageNo}페이지 · 크게 보기</span></a>`).join('')}</div>` : '';
-        $(target).innerHTML = `<article class="result-card"><div class="result-top"><div><h4>${escapeHtml(job.address || entry.address || '')}</h4><p>${formatDate(job.completedAt || entry.completedAt)} · ${escapeHtml(modeLabel(mode))}</p></div><span class="status-badge complete">완료</span></div><div class="owner-columns">${renderOwnerSection('토지 소유주', summary.land)}${renderOwnerSection('건물 소유주', summary.building)}</div>${pagesHtml}</article>`;
+        const targetElement = $(target);
+        targetElement.innerHTML = `<article class="result-card"><div class="result-top"><div><h4>${escapeHtml(job.address || entry.address || '')}</h4><p>${formatDate(job.completedAt || entry.completedAt)} · ${escapeHtml(modeLabel(mode))}</p></div><div><button class="btn small" type="button" data-copy-result>텍스트 복사</button> <span class="status-badge complete">완료</span></div></div><div class="owner-columns">${renderOwnerSection('토지 소유주', summary.land)}${renderOwnerSection('건물 소유주', summary.building)}</div>${pagesHtml}</article>`;
+        $('[data-copy-result]', targetElement).addEventListener('click', async () => {
+          try {
+            await copyText(resultCopyText(entry));
+            showToast('소유주 정보를 복사했습니다.');
+          } catch (_) {
+            showToast('텍스트를 복사하지 못했습니다.', 'error');
+          }
+        });
       }
 
       function loadHistory() { try { const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); return Array.isArray(parsed) ? parsed : []; } catch (_) { return []; } }
@@ -463,7 +507,12 @@
           const action = item.data ? `<button class="btn small" type="button" data-queue-result="${i}">결과</button>` : '-';
           return `<tr><td>${item.index}</td><td class="row-address">${escapeHtml(item.address)}</td><td><span class="status-badge ${item.status === 'complete' ? 'complete' : item.status === 'failed' ? 'failed' : item.status === 'running' ? 'running' : ''}">${escapeHtml(statusLabel(item.status))}</span></td><td>${item.data ? s.total + '명' : '-'}</td><td>${action}</td></tr>`;
         }).join('');
-        $$('[data-queue-result]').forEach(btn => btn.addEventListener('click', () => { const item = state.queue[Number(btn.dataset.queueResult)]; if (item?.data) renderResult('#historyResult', { address:item.address, mode:item.mode, data:item.data }); }));
+        $$('[data-queue-result]').forEach(btn => btn.addEventListener('click', () => {
+          const item = state.queue[Number(btn.dataset.queueResult)];
+          if (!item?.data) return;
+          renderResult('#batchResult', { address:item.address, mode:item.mode, data:item.data });
+          $('#batchResult').scrollIntoView({ behavior:'smooth', block:'start' });
+        }));
       }
 
       async function runBatch() {
@@ -506,10 +555,10 @@
       }
 
       function csvRows(entries) {
-        const rows = [['조회일시','주소','조회방식','구분','소유주','상세정보']];
+        const rows = [['조회일시','조회 대상','구분','소유주','주소']];
         entries.forEach(entry => {
           const groups = [['토지', entry.landOwners || resultSummary(entry.data).land], ['건물', entry.buildingOwners || resultSummary(entry.data).building]];
-          groups.forEach(([type, owners]) => (owners.length ? owners : [{}]).forEach(owner => rows.push([formatDate(entry.completedAt || entry.data?.job?.completedAt), entry.address, modeLabel(entry.mode), type, ownerName(owner), ownerDetails(owner)])));
+          groups.forEach(([type, owners]) => (owners.length ? owners : [{}]).forEach(owner => rows.push([formatDate(entry.completedAt || entry.data?.job?.completedAt), entry.address, type, ownerName(owner), ownerAddress(owner)])));
         });
         return rows;
       }

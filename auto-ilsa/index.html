@@ -339,6 +339,7 @@
       const HISTORY_KEY = 'maslow.autoIlsa.history.v1';
       const TERMINAL = new Set(['complete', 'failed', 'released']);
       const BATCH_RECOVERY_TIMEOUT_MS = 75000;
+      const NEXT_BATCH_READY_TIMEOUT_MS = 15000;
       const STAGE_PROGRESS = { waiting_for_kras: 8, queued: 10, starting: 16, address_input: 24, issuing: 38, viewer_open: 52, owners_saved: 65, capturing: 76, verifying: 90, complete: 100, failed: 100 };
       const state = { health: null, running: false, paused: false, queue: [], currentResult: null, history: loadHistory(), viewer: { pages: [], index: 0, address: '' } };
       let regionResolverPromise = null;
@@ -782,6 +783,18 @@
         return false;
       }
 
+      async function waitForNextBatchReady() {
+        const startedAt = Date.now();
+        while (!state.paused && Date.now() - startedAt < NEXT_BATCH_READY_TIMEOUT_MS) {
+          if (await checkHealth(true)) return true;
+          const health = state.health;
+          const automationState = health?.extension?.automationState || '';
+          if (!health || !health.extension?.connected || automationState === 'login_required') return false;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        return false;
+      }
+
       function buildQueue() {
         const addresses = uniqueAddresses($('#batchAddresses').value);
         const mode = $('input[name="batchMode"]:checked').value;
@@ -826,6 +839,16 @@
             item.data.buildingError = building.error;
             item.status = 'complete';
             saveHistory(historyEntry(item.address, item.mode, item.data)); renderQueue();
+            if (!state.paused && state.queue.some(next => next.status === 'pending')) {
+              const readyForNext = await waitForNextBatchReady();
+              if (!readyForNext) {
+                if (!state.paused) {
+                  state.paused = true;
+                  showToast('다음 작업 준비를 확인하지 못해 대량조회를 일시정지했습니다.', 'error');
+                }
+                break;
+              }
+            }
           } catch (error) {
             if (!jobCreated) {
               item.status = 'pending';

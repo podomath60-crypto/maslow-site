@@ -158,6 +158,13 @@
     .result-top { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
     .result-top h4 { margin: 0; font-size: 15px; }
     .result-top p { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
+    .building-summary { margin-top: 16px; padding: 14px; border: 1px solid #dfe8d7; border-radius: 13px; background: #f8fbf4; }
+    .building-summary h5 { margin: 0 0 10px; font-size: 12px; }
+    .area-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+    .area-item { padding: 11px; border-radius: 10px; background: #fff; }
+    .area-item span { display: block; color: var(--muted); font-size: 10px; font-weight: 800; }
+    .area-item strong { display: block; margin-top: 5px; font-size: 13px; }
+    .building-warning { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: #fff3f1; color: #a13e34; font-size: 11px; line-height: 1.5; }
     .owner-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
     .owner-section { padding: 14px; border-radius: 13px; background: #f7f9f5; }
     .owner-section h5 { margin: 0 0 10px; font-size: 12px; }
@@ -195,6 +202,7 @@
       .layout { grid-template-columns: 1fr; }
       .side-card { position: static; }
     }
+    @media (max-width: 560px) { .area-grid { grid-template-columns: 1fr; } }
     @media (max-width: 640px) {
       .shell { width: min(100% - 24px, 1180px); padding-top: 18px; }
       .topbar { align-items: flex-start; }
@@ -326,6 +334,7 @@
     (() => {
       'use strict';
       const API = 'http://127.0.0.1:8787';
+      const PUBLIC_PROPERTY_GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
       const HISTORY_KEY = 'maslow.autoIlsa.history.v1';
       const TERMINAL = new Set(['complete', 'failed', 'released']);
       const STAGE_PROGRESS = { waiting_for_kras: 8, queued: 10, starting: 16, address_input: 24, issuing: 38, viewer_open: 52, owners_saved: 65, capturing: 76, verifying: 90, complete: 100, failed: 100 };
@@ -351,6 +360,132 @@
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || payload.ok === false) throw new Error(readError(payload, `요청 실패 (${response.status})`));
         return payload;
+      }
+
+      function inferAddressType(address) {
+        const text = String(address || '').trim();
+        if (/(로|길)\s*\d/.test(text) && !/(읍|면|동|리)\s*(산\s*)?\d/.test(text)) return 'ROAD';
+        return 'JIBUN';
+      }
+      function buildBuildingLookupParams(address) {
+        const text = String(address || '').trim();
+        const type = inferAddressType(text);
+        return {
+          action: 'fetchPublicPropertyBySearchResult',
+          address: text,
+          lookupAddress: text,
+          queryAddress: text,
+          queryAddressType: type,
+          addressType: type,
+          jibunAddress: type === 'JIBUN' ? text : '',
+          roadAddress: type === 'ROAD' ? text : ''
+        };
+      }
+      function publicPropertyJsonp(params) {
+        return new Promise((resolve, reject) => {
+          const callback = `autoIlsaLedger_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+          const script = document.createElement('script');
+          let finished = false;
+          let timer;
+          const cleanup = () => {
+            try { delete window[callback]; } catch (_) {}
+            clearTimeout(timer);
+            script.remove();
+          };
+          window[callback] = payload => {
+            if (finished) return;
+            finished = true; cleanup(); resolve(payload);
+          };
+          script.onerror = () => {
+            if (finished) return;
+            finished = true; cleanup(); reject(new Error('건축물대장 직접 조회 실패'));
+          };
+          const query = new URLSearchParams(params);
+          query.set('callback', callback); query.set('_ts', String(Date.now()));
+          script.src = `${PUBLIC_PROPERTY_GAS_URL}?${query.toString()}`;
+          document.body.appendChild(script);
+          timer = setTimeout(() => {
+            if (finished) return;
+            finished = true; cleanup(); reject(new Error('건축물대장 직접 조회 시간 초과'));
+          }, 15000);
+        });
+      }
+      async function publicPropertyProxy(params) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 60000);
+        try {
+          const response = await fetch('/api/public-property-lookup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(params),
+            cache: 'no-store',
+            signal: controller.signal
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.ok === false) throw new Error(readError(payload, `건축물대장 우회 조회 실패 (${response.status})`));
+          return payload;
+        } finally { clearTimeout(timer); }
+      }
+      function positiveNumber(value) {
+        const number = Number(value);
+        return Number.isFinite(number) && number > 0 ? number : null;
+      }
+      function firstPositive(items, key) {
+        for (const item of (Array.isArray(items) ? items : [])) {
+          const value = positiveNumber(item?.[key]);
+          if (value !== null) return value;
+        }
+        return null;
+      }
+      function sumPositive(items, key) {
+        const total = (Array.isArray(items) ? items : []).reduce((sum, item) => sum + (positiveNumber(item?.[key]) || 0), 0);
+        return total > 0 ? total : null;
+      }
+      function extractBuildingSummary(payload) {
+        const data = payload?.data || payload?.result || payload?.payload || payload?.body || payload || {};
+        const apis = data.apis || {};
+        const recapItems = Array.isArray(apis.recap?.items) ? apis.recap.items : [];
+        const titleItems = Array.isArray(apis.title?.items) ? apis.title.items : [];
+        const recapFirst = apis.recap?.firstItem || recapItems[0] || {};
+        const landAreaM2 = positiveNumber(recapFirst.platArea) || firstPositive(recapItems, 'platArea') || firstPositive(titleItems, 'platArea');
+        const buildingAreaM2 = positiveNumber(recapFirst.archArea) || firstPositive(recapItems, 'archArea') || sumPositive(titleItems, 'archArea');
+        const totalFloorAreaM2 = positiveNumber(recapFirst.totArea) || firstPositive(recapItems, 'totArea') || sumPositive(titleItems, 'totArea');
+        if (landAreaM2 === null && buildingAreaM2 === null && totalFloorAreaM2 === null) throw new Error(data.message || payload?.message || '건축물대장 면적 정보가 없습니다.');
+        return { landAreaM2, buildingAreaM2, totalFloorAreaM2, lookedUpAt: new Date().toISOString() };
+      }
+      async function lookupBuildingSummary(address) {
+        const params = buildBuildingLookupParams(address);
+        let directError;
+        try {
+          const direct = await publicPropertyJsonp(params);
+          if (direct?.ok === false) throw new Error(direct.message || '건축물대장 직접 조회 응답 오류');
+          return extractBuildingSummary(direct);
+        } catch (error) { directError = error; }
+        try {
+          return extractBuildingSummary(await publicPropertyProxy(params));
+        } catch (proxyError) {
+          throw new Error(proxyError?.message || directError?.message || '건축물대장 조회 실패');
+        }
+      }
+      function buildingLookup(address) {
+        return lookupBuildingSummary(address)
+          .then(summary => ({ summary, error: '' }))
+          .catch(error => ({ summary: null, error: error?.message || '건축물대장 조회 실패' }));
+      }
+      function areaText(value) {
+        const number = positiveNumber(value);
+        if (number === null) return '-';
+        const m2 = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 2 }).format(number);
+        const py = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 1 }).format(number / 3.305785);
+        return `${m2}㎡ / ${py}평`;
+      }
+      function entryBuildingSummary(entry) { return entry?.buildingSummary || entry?.data?.buildingSummary || null; }
+      function entryBuildingError(entry) { return entry?.buildingError || entry?.data?.buildingError || ''; }
+      function renderBuildingSummary(entry) {
+        const summary = entryBuildingSummary(entry);
+        if (summary) return `<section class="building-summary"><h5>건축물대장 요약</h5><div class="area-grid"><div class="area-item"><span>대지면적</span><strong>${escapeHtml(areaText(summary.landAreaM2))}</strong></div><div class="area-item"><span>건축면적</span><strong>${escapeHtml(areaText(summary.buildingAreaM2))}</strong></div><div class="area-item"><span>연면적</span><strong>${escapeHtml(areaText(summary.totalFloorAreaM2))}</strong></div></div></section>`;
+        const error = entryBuildingError(entry);
+        return error ? `<div class="building-warning">건축물대장 면적을 불러오지 못했습니다. ${escapeHtml(error)}</div>` : '';
       }
 
       function setHealthRow(id, ok, value) {
@@ -442,8 +577,12 @@
       function resultCopyText(entry) {
         const data = entry.data || entry;
         const summary = resultSummary(data);
+        const buildingSummary = entryBuildingSummary(entry);
         const address = data.job?.address || entry.address || '';
         const lines = [`조회 주소: ${address}`];
+        if (buildingSummary) {
+          lines.push('', '건축물대장 요약', `대지면적: ${areaText(buildingSummary.landAreaM2)}`, `건축면적: ${areaText(buildingSummary.buildingAreaM2)}`, `연면적: ${areaText(buildingSummary.totalFloorAreaM2)}`);
+        }
         [['토지 소유주', summary.land], ['건물 소유주', summary.building]].forEach(([title, owners]) => {
           lines.push('', `${title} (${owners.length}명)`);
           if (!owners.length) lines.push('- 확인된 정보 없음');
@@ -520,7 +659,7 @@
         const jobId = job.jobId || entry.id || '';
         const pagesHtml = pages.length ? `<div class="capture-head"><div><strong>캡처 미리보기</strong><span> · ${pages.length}페이지</span></div><span>썸네일을 누르면 크게 볼 수 있습니다.</span></div><div class="page-grid">${pages.map((p, index) => `<button class="page-link" type="button" data-page-index="${index}"><img src="${API + p.url}" alt="증명서 ${p.pageNo}페이지" loading="lazy"><span>${p.pageNo}페이지 · 크게 보기</span></button>`).join('')}</div>` : '';
         const targetElement = $(target);
-        targetElement.innerHTML = `<article class="result-card"><div class="result-top"><div><h4>${escapeHtml(resultAddress)}</h4><p>${formatDate(job.completedAt || entry.completedAt)} · ${escapeHtml(modeLabel(mode))}</p></div><div><button class="btn small" type="button" data-copy-result>텍스트 복사</button> <button class="btn small" type="button" data-open-archive>원본보기</button> <span class="status-badge complete">완료</span></div></div><div class="owner-columns">${renderOwnerSection('토지 소유주', summary.land)}${renderOwnerSection('건물 소유주', summary.building)}</div>${pagesHtml}</article>`;
+        targetElement.innerHTML = `<article class="result-card"><div class="result-top"><div><h4>${escapeHtml(resultAddress)}</h4><p>${formatDate(job.completedAt || entry.completedAt)} · ${escapeHtml(modeLabel(mode))}</p></div><div><button class="btn small" type="button" data-copy-result>텍스트 복사</button> <button class="btn small" type="button" data-open-archive>원본보기</button> <span class="status-badge complete">완료</span></div></div>${renderBuildingSummary(entry)}<div class="owner-columns">${renderOwnerSection('토지 소유주', summary.land)}${renderOwnerSection('건물 소유주', summary.building)}</div>${pagesHtml}</article>`;
         $('[data-copy-result]', targetElement).addEventListener('click', async () => {
           try {
             await copyText(resultCopyText(entry));
@@ -542,7 +681,7 @@
 
       function historyEntry(address, mode, data) {
         const s = resultSummary(data);
-        return { id: data.job?.jobId || makeRequestId(), address, mode, completedAt: data.job?.completedAt || new Date().toISOString(), landOwners: s.land, buildingOwners: s.building, pages: data.pages || [], data };
+        return { id: data.job?.jobId || makeRequestId(), address, mode, completedAt: data.job?.completedAt || new Date().toISOString(), landOwners: s.land, buildingOwners: s.building, buildingSummary: data.buildingSummary || null, buildingError: data.buildingError || '', pages: data.pages || [], data };
       }
 
       async function runSingle() {
@@ -554,10 +693,14 @@
         $('#singleRunAddress').textContent = address;
         try {
           await ensureReady();
+          const buildingPromise = buildingLookup(address);
           let job = await createJob(address, mode, 'single');
           job = await waitForJob(job, updateSingleRun);
           if (job.status === 'failed') throw new Error(job.failure?.message || job.message || '조사 작업이 실패했습니다.');
           const data = await fetchResult(job.jobId);
+          const building = await buildingPromise;
+          data.buildingSummary = building.summary;
+          data.buildingError = building.error;
           const entry = historyEntry(address, mode, data); saveHistory(entry); renderResult('#singleResult', entry);
           showToast('소유주 조사가 완료되었습니다.');
         } catch (error) {
@@ -603,10 +746,15 @@
           if (!['pending','failed'].includes(item.status)) continue;
           try {
             await ensureReady(); item.status = 'running'; item.message = '작업 생성 중'; renderQueue();
+            const buildingPromise = buildingLookup(item.address);
             let job = await createJob(item.address, item.mode, 'batch');
             job = await waitForJob(job, update => { item.status = update.status === 'complete' ? 'complete' : update.status === 'failed' ? 'failed' : 'running'; item.message = update.message; renderQueue(); });
             if (job.status === 'failed') throw new Error(job.failure?.message || job.message || '조사 작업 실패');
-            item.data = await fetchResult(job.jobId); item.status = 'complete';
+            item.data = await fetchResult(job.jobId);
+            const building = await buildingPromise;
+            item.data.buildingSummary = building.summary;
+            item.data.buildingError = building.error;
+            item.status = 'complete';
             saveHistory(historyEntry(item.address, item.mode, item.data)); renderQueue();
           } catch (error) { item.status = 'failed'; item.message = error.message; renderQueue(); showToast(`${item.index}번 주소: ${error.message}`, 'error'); }
         }
@@ -633,10 +781,12 @@
       }
 
       function csvRows(entries) {
-        const rows = [['조회일시','조회 대상','구분','소유주','주소']];
+        const rows = [['조회일시','조회 대상','구분','소유주','주소','대지면적','건축면적','연면적']];
         entries.forEach(entry => {
+          const building = entryBuildingSummary(entry) || {};
+          const areas = [areaText(building.landAreaM2), areaText(building.buildingAreaM2), areaText(building.totalFloorAreaM2)];
           const groups = [['토지', entry.landOwners || resultSummary(entry.data).land], ['건물', entry.buildingOwners || resultSummary(entry.data).building]];
-          groups.forEach(([type, owners]) => (owners.length ? owners : [{}]).forEach(owner => rows.push([formatDate(entry.completedAt || entry.data?.job?.completedAt), entry.address, type, ownerName(owner), ownerAddress(owner)])));
+          groups.forEach(([type, owners]) => (owners.length ? owners : [{}]).forEach(owner => rows.push([formatDate(entry.completedAt || entry.data?.job?.completedAt), entry.address, type, ownerName(owner), ownerAddress(owner), ...areas])));
         });
         return rows;
       }

@@ -163,10 +163,27 @@
     .owner-list { display: grid; gap: 8px; }
     .owner { padding: 10px; border-radius: 10px; background: #fff; font-size: 11px; line-height: 1.5; }
     .owner strong { display: block; margin-bottom: 3px; font-size: 12px; }
-    .page-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
-    .page-link { display: block; overflow: hidden; border: 1px solid var(--line); border-radius: 11px; background: #f4f5f2; color: var(--ink); text-decoration: none; }
+    .capture-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+    .capture-head strong { font-size: 13px; }
+    .capture-head span { color: var(--muted); font-size: 11px; }
+    .page-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 11px; }
+    .page-link { display: block; width: 100%; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 11px; background: #f4f5f2; color: var(--ink); text-decoration: none; }
     .page-link img { display: block; width: 100%; aspect-ratio: 3/4; object-fit: cover; background: #ecefe9; }
     .page-link span { display: block; padding: 8px; text-align: center; font-size: 10px; font-weight: 800; }
+
+    body.viewer-open { overflow: hidden; }
+    .image-viewer { position: fixed; inset: 0; z-index: 100; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: rgba(10,14,13,.96); color: #fff; }
+    .viewer-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 66px; padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,.12); }
+    .viewer-title { min-width: 0; }
+    .viewer-title strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+    .viewer-title span { display: block; margin-top: 4px; color: #aeb9b5; font-size: 11px; }
+    .viewer-close { width: 42px; height: 42px; flex: 0 0 42px; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; background: rgba(255,255,255,.08); color: #fff; font-size: 25px; line-height: 1; }
+    .viewer-stage { min-height: 0; display: grid; grid-template-columns: 58px minmax(0, 1fr) 58px; align-items: center; gap: 10px; padding: 18px; }
+    .viewer-image-wrap { width: 100%; height: 100%; min-height: 0; display: grid; place-items: center; overflow: auto; }
+    .viewer-image { display: block; max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 16px 60px rgba(0,0,0,.42); }
+    .viewer-nav { width: 48px; height: 58px; justify-self: center; border: 1px solid rgba(255,255,255,.16); border-radius: 14px; background: rgba(255,255,255,.08); color: #fff; font-size: 32px; line-height: 1; }
+    .viewer-nav:disabled { opacity: .22; }
+    .viewer-foot { min-height: 54px; display: flex; align-items: center; justify-content: center; padding: 10px 18px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(255,255,255,.12); color: #ccd4d1; font-size: 12px; }
 
     .toast { position: fixed; left: 50%; bottom: 28px; z-index: 50; transform: translate(-50%, 20px); max-width: min(520px, calc(100% - 32px)); padding: 12px 16px; border-radius: 12px; background: #17201e; color: #fff; box-shadow: 0 14px 40px rgba(0,0,0,.22); font-size: 12px; opacity: 0; pointer-events: none; transition: .2s ease; }
     .toast.show { transform: translate(-50%, 0); opacity: 1; }
@@ -190,6 +207,8 @@
       .main-card { padding: 20px 16px; }
       .mode-grid, .owner-columns { grid-template-columns: 1fr; }
       .page-grid { grid-template-columns: repeat(2, 1fr); }
+      .viewer-stage { grid-template-columns: 42px minmax(0, 1fr) 42px; gap: 4px; padding: 10px 6px; }
+      .viewer-nav { width: 38px; height: 50px; font-size: 26px; }
       .action-row { display: grid; grid-template-columns: 1fr; }
       .btn.primary { width: 100%; }
     }
@@ -288,6 +307,18 @@
       </aside>
     </div>
   </main>
+  <div class="image-viewer" id="imageViewer" role="dialog" aria-modal="true" aria-label="일사편리 캡처 확대보기" hidden>
+    <header class="viewer-head">
+      <div class="viewer-title"><strong id="viewerAddress"></strong><span id="viewerPageLabel"></span></div>
+      <button class="viewer-close" id="viewerClose" type="button" aria-label="확대보기 닫기">×</button>
+    </header>
+    <div class="viewer-stage">
+      <button class="viewer-nav" id="viewerPrev" type="button" aria-label="이전 페이지">‹</button>
+      <div class="viewer-image-wrap"><img class="viewer-image" id="viewerImage" alt="일사편리 캡처 원본"></div>
+      <button class="viewer-nav" id="viewerNext" type="button" aria-label="다음 페이지">›</button>
+    </div>
+    <footer class="viewer-foot">Esc 키 또는 닫기 버튼으로 돌아갈 수 있습니다.</footer>
+  </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
@@ -297,7 +328,7 @@
       const HISTORY_KEY = 'maslow.autoIlsa.history.v1';
       const TERMINAL = new Set(['complete', 'failed', 'released']);
       const STAGE_PROGRESS = { waiting_for_kras: 8, queued: 10, starting: 16, address_input: 24, issuing: 38, viewer_open: 52, owners_saved: 65, capturing: 76, verifying: 90, complete: 100, failed: 100 };
-      const state = { health: null, running: false, paused: false, queue: [], currentResult: null, history: loadHistory() };
+      const state = { health: null, running: false, paused: false, queue: [], currentResult: null, history: loadHistory(), viewer: { pages: [], index: 0, address: '' } };
       const $ = (s, root = document) => root.querySelector(s);
       const $$ = (s, root = document) => Array.from(root.querySelectorAll(s));
 
@@ -437,15 +468,55 @@
         document.execCommand('copy');
         area.remove();
       }
+      function updateViewer() {
+        const viewer = state.viewer;
+        const page = viewer.pages[viewer.index];
+        if (!page) return;
+        $('#viewerAddress').textContent = viewer.address;
+        $('#viewerPageLabel').textContent = `${viewer.index + 1} / ${viewer.pages.length}페이지`;
+        $('#viewerImage').src = API + page.url;
+        $('#viewerImage').alt = `${viewer.address} 일사편리 캡처 ${page.pageNo}페이지`;
+        $('#viewerPrev').disabled = viewer.index <= 0;
+        $('#viewerNext').disabled = viewer.index >= viewer.pages.length - 1;
+      }
+      function openViewer(pages, index, address) {
+        state.viewer = { pages, index, address };
+        updateViewer();
+        $('#imageViewer').hidden = false;
+        document.body.classList.add('viewer-open');
+        $('#viewerClose').focus();
+      }
+      function closeViewer() {
+        $('#imageViewer').hidden = true;
+        $('#viewerImage').removeAttribute('src');
+        document.body.classList.remove('viewer-open');
+      }
+      function moveViewer(step) {
+        const next = state.viewer.index + step;
+        if (next < 0 || next >= state.viewer.pages.length) return;
+        state.viewer.index = next;
+        updateViewer();
+      }
+      async function openArchive(jobId) {
+        if (!jobId) return showToast('이 조회 건의 작업번호를 찾을 수 없습니다.', 'error');
+        try {
+          await api(`/v1/jobs/${jobId}/open-archive`, { method: 'POST', body: '{}' });
+          showToast('해당 작업의 아카이브 폴더를 열었습니다.');
+        } catch (_) {
+          showToast('원본보기는 2단계 로컬 브리지 업데이트 후 사용할 수 있습니다.', 'error');
+        }
+      }
       function renderResult(target, entry) {
         const data = entry.data || entry;
         const summary = resultSummary(data);
         const pages = Array.isArray(data.pages) ? data.pages : [];
         const job = data.job || {};
         const mode = entry.mode || 'owners_and_pages';
-        const pagesHtml = mode === 'owners_and_pages' && pages.length ? `<div class="page-grid">${pages.map(p => `<a class="page-link" href="${API + p.url}" target="_blank" rel="noopener"><img src="${API + p.url}" alt="증명서 ${p.pageNo}페이지" loading="lazy"><span>${p.pageNo}페이지 · 크게 보기</span></a>`).join('')}</div>` : '';
+        const resultAddress = job.address || entry.address || '';
+        const jobId = job.jobId || entry.id || '';
+        const pagesHtml = pages.length ? `<div class="capture-head"><div><strong>캡처 미리보기</strong><span> · ${pages.length}페이지</span></div><span>썸네일을 누르면 크게 볼 수 있습니다.</span></div><div class="page-grid">${pages.map((p, index) => `<button class="page-link" type="button" data-page-index="${index}"><img src="${API + p.url}" alt="증명서 ${p.pageNo}페이지" loading="lazy"><span>${p.pageNo}페이지 · 크게 보기</span></button>`).join('')}</div>` : '';
         const targetElement = $(target);
-        targetElement.innerHTML = `<article class="result-card"><div class="result-top"><div><h4>${escapeHtml(job.address || entry.address || '')}</h4><p>${formatDate(job.completedAt || entry.completedAt)} · ${escapeHtml(modeLabel(mode))}</p></div><div><button class="btn small" type="button" data-copy-result>텍스트 복사</button> <span class="status-badge complete">완료</span></div></div><div class="owner-columns">${renderOwnerSection('토지 소유주', summary.land)}${renderOwnerSection('건물 소유주', summary.building)}</div>${pagesHtml}</article>`;
+        targetElement.innerHTML = `<article class="result-card"><div class="result-top"><div><h4>${escapeHtml(resultAddress)}</h4><p>${formatDate(job.completedAt || entry.completedAt)} · ${escapeHtml(modeLabel(mode))}</p></div><div><button class="btn small" type="button" data-copy-result>텍스트 복사</button> <button class="btn small" type="button" data-open-archive>원본보기</button> <span class="status-badge complete">완료</span></div></div><div class="owner-columns">${renderOwnerSection('토지 소유주', summary.land)}${renderOwnerSection('건물 소유주', summary.building)}</div>${pagesHtml}</article>`;
         $('[data-copy-result]', targetElement).addEventListener('click', async () => {
           try {
             await copyText(resultCopyText(entry));
@@ -454,6 +525,8 @@
             showToast('텍스트를 복사하지 못했습니다.', 'error');
           }
         });
+        $('[data-open-archive]', targetElement).addEventListener('click', () => openArchive(jobId));
+        $$('[data-page-index]', targetElement).forEach(button => button.addEventListener('click', () => openViewer(pages, Number(button.dataset.pageIndex), resultAddress)));
       }
 
       function loadHistory() { try { const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); return Array.isArray(parsed) ? parsed : []; } catch (_) { return []; } }
@@ -587,6 +660,16 @@
       $('#downloadCurrent').addEventListener('click', () => downloadCsv(state.queue.filter(q => q.data).map(q => historyEntry(q.address, q.mode, q.data)), `일사편리_대량조회_${new Date().toISOString().slice(0,10)}.csv`));
       $('#downloadHistory').addEventListener('click', () => downloadCsv(state.history, `일사편리_조회내역_${new Date().toISOString().slice(0,10)}.csv`));
       $('#clearHistory').addEventListener('click', () => { if (!confirm('이 브라우저에 저장된 조회내역을 모두 지울까요?')) return; state.history = []; localStorage.removeItem(HISTORY_KEY); renderHistory(); $('#historyResult').innerHTML = ''; });
+      $('#viewerClose').addEventListener('click', closeViewer);
+      $('#viewerPrev').addEventListener('click', () => moveViewer(-1));
+      $('#viewerNext').addEventListener('click', () => moveViewer(1));
+      $('#imageViewer').addEventListener('click', event => { if (event.target === $('#imageViewer')) closeViewer(); });
+      document.addEventListener('keydown', event => {
+        if ($('#imageViewer').hidden) return;
+        if (event.key === 'Escape') closeViewer();
+        if (event.key === 'ArrowLeft') moveViewer(-1);
+        if (event.key === 'ArrowRight') moveViewer(1);
+      });
 
       renderHistory(); checkHealth(true); setInterval(() => { if (!state.running) checkHealth(true); }, 10000);
     })();

@@ -338,6 +338,7 @@
       const PUBLIC_PROPERTY_GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
       const HISTORY_KEY = 'maslow.autoIlsa.history.v1';
       const TERMINAL = new Set(['complete', 'failed', 'released']);
+      const BATCH_RECOVERY_TIMEOUT_MS = 75000;
       const STAGE_PROGRESS = { waiting_for_kras: 8, queued: 10, starting: 16, address_input: 24, issuing: 38, viewer_open: 52, owners_saved: 65, capturing: 76, verifying: 90, complete: 100, failed: 100 };
       const state = { health: null, running: false, paused: false, queue: [], currentResult: null, history: loadHistory(), viewer: { pages: [], index: 0, address: '' } };
       let regionResolverPromise = null;
@@ -546,9 +547,10 @@
           setHealthRow('#healthExtension', ext, ext ? `연결됨${health.extension?.version ? ' · ' + health.extension.version : ''}` : '연결 필요');
           setHealthRow('#healthKras', kras, kras ? '준비됨' : (health.kras?.tabOpen ? '화면 확인 필요' : '탭 열기 필요'));
           setHealthRow('#healthJob', idle, idle ? '대기 중' : statusLabel(health.activeStatus));
-          const ready = bridge && ext && kras && idle;
+          const ready = typeof health.ready === 'boolean' ? health.ready : (bridge && ext && kras && idle);
           $('#connectionPill').className = `connection-pill ${ready ? 'ready' : ''}`;
-          $('#connectionText').textContent = ready ? '조회 준비 완료' : (bridge ? '준비 상태 확인' : '로컬 연결 안 됨');
+          const automationState = health.extension?.automationState || '';
+          $('#connectionText').textContent = ready ? '조회 준비 완료' : automationState === 'recovering' ? '실패 작업 복구 중' : automationState === 'busy' ? '자동화 작업 중' : automationState === 'login_required' ? '일사편리 로그인 필요' : (bridge ? '준비 상태 확인' : '로컬 연결 안 됨');
           if (!silent && ready) showToast('조회를 시작할 준비가 되었습니다.');
           return ready;
         } catch (error) {
@@ -758,6 +760,28 @@
         const value = STAGE_PROGRESS[job.stage] ?? (job.status === 'complete' ? 100 : job.status === 'failed' ? 100 : 30); $('#singleProgress').style.width = `${value}%`;
       }
 
+      async function waitForBatchRecovery(item) {
+        const startedAt = Date.now();
+        const originalMessage = item.message || '조사 작업 실패';
+        while (!state.paused && Date.now() - startedAt < BATCH_RECOVERY_TIMEOUT_MS) {
+          const ready = await checkHealth(true);
+          if (ready) {
+            item.message = originalMessage;
+            renderQueue();
+            return true;
+          }
+          const automationState = state.health?.extension?.automationState || '';
+          if (automationState === 'login_required') break;
+          const seconds = Math.max(1, Math.ceil((BATCH_RECOVERY_TIMEOUT_MS - (Date.now() - startedAt)) / 1000));
+          item.message = `${originalMessage} · 다음 작업을 위한 화면 복구 중 (${seconds}초)`;
+          renderQueue();
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        item.message = `${originalMessage} · 자동 복구가 완료되지 않아 대량조회를 일시정지했습니다.`;
+        renderQueue();
+        return false;
+      }
+
       function buildQueue() {
         const addresses = uniqueAddresses($('#batchAddresses').value);
         const mode = $('input[name="batchMode"]:checked').value;
@@ -787,11 +811,13 @@
         state.running = true; state.paused = false; $('#batchStart').disabled = true; $('#pauseBatch').disabled = false; $('#pauseBatch').textContent = '일시정지';
         for (const item of state.queue) {
           if (state.paused) break;
-          if (!['pending','failed'].includes(item.status)) continue;
+          if (item.status !== 'pending') continue;
+          let jobCreated = false;
           try {
             await ensureReady(); item.status = 'running'; item.message = '작업 생성 중'; renderQueue();
             const buildingPromise = buildingLookup(item.address);
             let job = await createJob(item.address, item.mode, 'batch');
+            jobCreated = true;
             job = await waitForJob(job, update => { item.status = update.status === 'complete' ? 'complete' : update.status === 'failed' ? 'failed' : 'running'; item.message = update.message; renderQueue(); });
             if (job.status === 'failed') throw new Error(job.failure?.message || job.message || '조사 작업 실패');
             item.data = await fetchResult(job.jobId);
@@ -800,9 +826,25 @@
             item.data.buildingError = building.error;
             item.status = 'complete';
             saveHistory(historyEntry(item.address, item.mode, item.data)); renderQueue();
-          } catch (error) { item.status = 'failed'; item.message = error.message; renderQueue(); showToast(`${item.index}번 주소: ${error.message}`, 'error'); }
+          } catch (error) {
+            if (!jobCreated) {
+              item.status = 'pending';
+              item.message = `작업 시작 전 연결 확인 필요 · ${error.message}`;
+              state.paused = true;
+              renderQueue();
+              showToast('대량조회를 일시정지했습니다. 연결 상태를 확인한 뒤 다시 시작해 주세요.', 'error');
+              break;
+            }
+            item.status = 'failed'; item.message = error.message; renderQueue();
+            showToast(`${item.index}번 주소 실패 · 화면 복구 후 다음 주소를 계속합니다.`, 'error');
+            const recovered = await waitForBatchRecovery(item);
+            if (!recovered) {
+              state.paused = true;
+              break;
+            }
+          }
         }
-        state.running = false; $('#batchStart').disabled = false; checkHealth(true);
+        state.running = false; $('#batchStart').disabled = false; $('#pauseBatch').disabled = true; checkHealth(true);
         showToast(state.paused ? '대량조회를 일시정지했습니다.' : '대량조회 처리가 끝났습니다.');
       }
 

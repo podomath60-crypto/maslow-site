@@ -222,6 +222,7 @@
       .btn.primary { width: 100%; }
     }
   </style>
+  <script src="/assets/region/region-compat.js"></script>
 </head>
 <body>
   <main class="shell">
@@ -339,6 +340,7 @@
       const TERMINAL = new Set(['complete', 'failed', 'released']);
       const STAGE_PROGRESS = { waiting_for_kras: 8, queued: 10, starting: 16, address_input: 24, issuing: 38, viewer_open: 52, owners_saved: 65, capturing: 76, verifying: 90, complete: 100, failed: 100 };
       const state = { health: null, running: false, paused: false, queue: [], currentResult: null, history: loadHistory(), viewer: { pages: [], index: 0, address: '' } };
+      let regionResolverPromise = null;
       const $ = (s, root = document) => root.querySelector(s);
       const $$ = (s, root = document) => Array.from(root.querySelectorAll(s));
 
@@ -362,24 +364,53 @@
         return payload;
       }
 
-      function inferAddressType(address) {
+      function buildBuildingLookupParams(address, bcode) {
         const text = String(address || '').trim();
-        if (/(로|길)\s*\d/.test(text) && !/(읍|면|동|리)\s*(산\s*)?\d/.test(text)) return 'ROAD';
-        return 'JIBUN';
-      }
-      function buildBuildingLookupParams(address) {
-        const text = String(address || '').trim();
-        const type = inferAddressType(text);
         return {
           action: 'fetchPublicPropertyBySearchResult',
           address: text,
           lookupAddress: text,
           queryAddress: text,
-          queryAddressType: type,
-          addressType: type,
-          jibunAddress: type === 'JIBUN' ? text : '',
-          roadAddress: type === 'ROAD' ? text : ''
+          queryAddressType: 'JIBUN',
+          addressType: 'J',
+          jibunAddress: text,
+          roadAddress: '',
+          bcode: bcode
         };
+      }
+      async function getRegionResolver() {
+        if (regionResolverPromise) return regionResolverPromise;
+        regionResolverPromise = Promise.resolve().then(() => {
+          if (!window.MaslowRegionCompat?.load) throw new Error('법정동 코드 해석기를 불러오지 못했습니다.');
+          return window.MaslowRegionCompat.load({
+            currentUrl: '/assets/region/bjdong-codes-current-20260701.json',
+            compatUrl: '/assets/region/bjdong-compat-20260701.json'
+          });
+        }).catch(error => {
+          regionResolverPromise = null;
+          throw error;
+        });
+        return regionResolverPromise;
+      }
+      async function resolveBuildingLookupTargets(address) {
+        const text = String(address || '').replace(/\s+/g, ' ').trim();
+        if (!text) throw new Error('건축물대장 조회 주소가 없습니다.');
+        const resolver = await getRegionResolver();
+        const resolution = resolver.resolveByAddress(text);
+        if (!resolution?.resolved) {
+          throw new Error('입력한 지번주소에서 법정동 코드를 확인하지 못했습니다. 시·군·구와 읍·면·동·리, 지번을 확인해 주세요.');
+        }
+        const normalizedAddress = String(resolution.normalizedAddress || text).trim();
+        const matchedName = String(resolution.matchedName || '').trim();
+        const jibunPart = matchedName && normalizedAddress.startsWith(matchedName)
+          ? normalizedAddress.slice(matchedName.length).trim()
+          : '';
+        if (!/^(산\s*)?\d+(?:-\d+)?$/.test(jibunPart)) {
+          throw new Error('법정동 뒤의 지번을 정확히 확인하지 못했습니다. 도로명주소가 아닌 지번주소를 입력해 주세요.');
+        }
+        const candidates = Array.from(new Set((resolution.bcodeCandidates || []).map(value => String(value || '').replace(/\D/g, '')).filter(value => value.length === 10)));
+        if (!candidates.length) throw new Error('입력한 지번주소의 법정동 코드가 없습니다.');
+        return { address: text, candidates, resolution };
       }
       function publicPropertyJsonp(params) {
         return new Promise((resolve, reject) => {
@@ -453,19 +484,32 @@
         if (landAreaM2 === null && buildingAreaM2 === null && totalFloorAreaM2 === null) throw new Error(data.message || payload?.message || '건축물대장 면적 정보가 없습니다.');
         return { landAreaM2, buildingAreaM2, totalFloorAreaM2, lookedUpAt: new Date().toISOString() };
       }
-      async function lookupBuildingSummary(address) {
-        const params = buildBuildingLookupParams(address);
+      async function lookupBuildingCandidate(params) {
         let directError;
         try {
           const direct = await publicPropertyJsonp(params);
           if (direct?.ok === false) throw new Error(direct.message || '건축물대장 직접 조회 응답 오류');
-          return extractBuildingSummary(direct);
+          return direct;
         } catch (error) { directError = error; }
         try {
-          return extractBuildingSummary(await publicPropertyProxy(params));
+          return await publicPropertyProxy(params);
         } catch (proxyError) {
           throw new Error(proxyError?.message || directError?.message || '건축물대장 조회 실패');
         }
+      }
+      async function lookupBuildingSummary(address) {
+        const target = await resolveBuildingLookupTargets(address);
+        const attempts = [];
+        for (const bcode of target.candidates) {
+          try {
+            const payload = await lookupBuildingCandidate(buildBuildingLookupParams(target.address, bcode));
+            const summary = extractBuildingSummary(payload);
+            return { ...summary, bcode, bcodeCandidates: target.candidates.slice() };
+          } catch (error) {
+            attempts.push(`${bcode}: ${error?.message || '조회 실패'}`);
+          }
+        }
+        throw new Error(attempts.length ? `법정동 코드 후보 조회 실패 (${attempts.join(' / ')})` : '건축물대장 조회 결과가 없습니다.');
       }
       function buildingLookup(address) {
         return lookupBuildingSummary(address)

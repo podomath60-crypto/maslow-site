@@ -151,6 +151,7 @@
     th { background: #f7f8f5; color: #686f64; font-size: 11px; font-weight: 900; }
     tr:last-child td { border-bottom: 0; }
     .row-address { max-width: 340px; font-weight: 750; }
+    .row-error { margin-top: 5px; color: var(--red); font-size: 10px; font-weight: 650; line-height: 1.4; }
     .empty { padding: 44px 20px; text-align: center; color: var(--muted); font-size: 13px; }
 
     .result-card { margin-top: 18px; padding: 20px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
@@ -502,8 +503,11 @@
         try {
           await api(`/v1/jobs/${jobId}/open-archive`, { method: 'POST', body: '{}' });
           showToast('해당 작업의 아카이브 폴더를 열었습니다.');
-        } catch (_) {
-          showToast('원본보기는 2단계 로컬 브리지 업데이트 후 사용할 수 있습니다.', 'error');
+        } catch (error) {
+          const message = /요청 경로|찾을 수 없습니다/.test(error.message)
+            ? '원본보기는 2단계 로컬 브리지 업데이트 후 사용할 수 있습니다.'
+            : error.message;
+          showToast(message, 'error');
         }
       }
       function renderResult(target, entry) {
@@ -578,7 +582,8 @@
         $('#queueBody').innerHTML = state.queue.map((item, i) => {
           const s = item.data ? resultSummary(item.data) : {total:0};
           const action = item.data ? `<button class="btn small" type="button" data-queue-result="${i}">결과</button>` : '-';
-          return `<tr><td>${item.index}</td><td class="row-address">${escapeHtml(item.address)}</td><td><span class="status-badge ${item.status === 'complete' ? 'complete' : item.status === 'failed' ? 'failed' : item.status === 'running' ? 'running' : ''}">${escapeHtml(statusLabel(item.status))}</span></td><td>${item.data ? s.total + '명' : '-'}</td><td>${action}</td></tr>`;
+          const failureMessage = item.status === 'failed' && item.message ? `<div class="row-error">${escapeHtml(item.message)}</div>` : '';
+          return `<tr><td>${item.index}</td><td class="row-address">${escapeHtml(item.address)}${failureMessage}</td><td><span class="status-badge ${item.status === 'complete' ? 'complete' : item.status === 'failed' ? 'failed' : item.status === 'running' ? 'running' : ''}">${escapeHtml(statusLabel(item.status))}</span></td><td>${item.data ? s.total + '명' : '-'}</td><td>${action}</td></tr>`;
         }).join('');
         $$('[data-queue-result]').forEach(btn => btn.addEventListener('click', () => {
           const item = state.queue[Number(btn.dataset.queueResult)];

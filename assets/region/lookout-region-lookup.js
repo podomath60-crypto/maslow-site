@@ -123,6 +123,19 @@
     async function lookupIntegrated(params) {
       params = Object.assign({}, params || {});
       var candidates = bcodeCandidates(params.bcode);
+
+      // Admin parity: when a usable bcode cannot be created, continue with an
+      // address-only lookup instead of failing before GAS is called.
+      if (!candidates.length) {
+        var directParams = Object.assign({}, params);
+        delete directParams.bcode;
+        return {
+          response: await lookup(directParams, { label: "주소 직접조회" }),
+          candidates: [],
+          attempts: []
+        };
+      }
+
       var attempts = [];
       var successes = [];
       var buildingSource = null;
@@ -166,8 +179,39 @@
         }
       }
 
+      // Retry once without bcode when compatibility candidates did not fill
+      // both sides of the integrated response. This avoids legacy/current
+      // administrative-region combinations blocking an otherwise valid address.
+      if (!buildingSource || !landSource) {
+        var fallbackParams = Object.assign({}, params);
+        delete fallbackParams.bcode;
+        try {
+          var fallbackResponse = await lookup(fallbackParams, { label: "주소 직접 fallback" });
+          var fallbackSuccess = { value: "ADDRESS_FALLBACK", response: fallbackResponse };
+          successes.push(fallbackSuccess);
+          attempts.push({
+            value: "ADDRESS_FALLBACK",
+            ok: !!(fallbackResponse && fallbackResponse.ok),
+            building: hasBuildingData(fallbackResponse),
+            land: hasMeaningfulLandData(fallbackResponse),
+            message: text(fallbackResponse && fallbackResponse.message)
+          });
+          if (!buildingSource && hasBuildingData(fallbackResponse)) buildingSource = fallbackSuccess;
+          if (!landSource && hasMeaningfulLandData(fallbackResponse)) landSource = fallbackSuccess;
+        } catch (error) {
+          lastError = error;
+          attempts.push({
+            value: "ADDRESS_FALLBACK",
+            ok: false,
+            building: false,
+            land: false,
+            message: text(error && error.message) || String(error)
+          });
+        }
+      }
+
       if (!successes.length) {
-        throw lastError || new Error("법정동 후보 조회 실패");
+        throw lastError || new Error("법정동 후보 및 주소 직접조회 실패");
       }
 
       var base = successes[0].response || {};

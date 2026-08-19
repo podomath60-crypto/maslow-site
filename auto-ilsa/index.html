@@ -977,5 +977,31 @@
       renderHistory(); checkHealth(true); setInterval(() => { if (!state.running) checkHealth(true); }, 10000);
     })();
   </script>
+  <button
+    type="button"
+    id="localStorageCleanupButton"
+    aria-label="오토일사 페이지의 로컬 데이터 삭제"
+    style="position:fixed;left:8px;bottom:6px;z-index:9999;padding:2px 4px;border:0;background:transparent;color:#8b8b8b;font-size:10px;line-height:1.2;cursor:pointer;text-decoration:underline;text-underline-offset:2px;opacity:.72;"
+  >로컬스토리지 청소</button>
+  <script>
+    (() => {
+      const button = document.getElementById('localStorageCleanupButton');
+      if (!button) return;
+      button.addEventListener('click', () => {
+        const storageKeys = ['maslow.autoIlsa.history.v1'];
+        const storedKeys = storageKeys.filter(key => localStorage.getItem(key) !== null);
+        if (!window.confirm(`오토일사 페이지에서 저장한 데이터 ${storedKeys.length}개 항목을 지울까요?\n삭제한 데이터는 복구할 수 없습니다.`)) return;
+        try {
+          storageKeys.forEach(key => localStorage.removeItem(key));
+          button.textContent = '청소 완료';
+          button.disabled = true;
+          window.alert('오토일사 페이지의 로컬 데이터를 삭제했습니다.');
+          window.location.reload();
+        } catch (error) {
+          window.alert(`로컬스토리지 청소 실패: ${error && error.message ? error.message : error}`);
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

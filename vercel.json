@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/listing-share.js": {
+      "includeFiles": "listings/index.html",
+      "maxDuration": 10
+    }
+  },
+  "routes": [
+    {
+      "src": "/listings/?$",
+      "has": [
+        {
+          "type": "query",
+          "key": "listingNumber",
+          "value": "(?<listingNumber>[A-Za-z0-9_-]{1,100})"
+        }
+      ],
+      "dest": "/api/listing-share?listingNumber=$listingNumber"
+    }
+  ]
+}
+
+

@@ -338,8 +338,6 @@
       const PUBLIC_PROPERTY_GAS_URL = 'https://script.google.com/macros/s/AKfycbznhBvYFIv_GKeNoGIPFTi_mIXXH04BOvYrb4ZN9dk_Cc4Xjir3TP_vL3bbPrLLxgg2/exec';
       const HISTORY_KEY = 'maslow.autoIlsa.history.v1';
       const TERMINAL = new Set(['complete', 'failed', 'released']);
-      const BATCH_RECOVERY_TIMEOUT_MS = 75000;
-      const NEXT_BATCH_READY_TIMEOUT_MS = 15000;
       const STAGE_PROGRESS = { waiting_for_kras: 8, queued: 10, starting: 16, address_input: 24, issuing: 38, viewer_open: 52, owners_saved: 65, capturing: 76, verifying: 90, complete: 100, failed: 100 };
       const state = { health: null, running: false, paused: false, queue: [], currentResult: null, history: loadHistory(), viewer: { pages: [], index: 0, address: '' } };
       let regionResolverPromise = null;
@@ -798,9 +796,8 @@
       }
 
       async function waitForBatchRecovery(item) {
-        const startedAt = Date.now();
         const originalMessage = item.message || '조사 작업 실패';
-        while (!state.paused && Date.now() - startedAt < BATCH_RECOVERY_TIMEOUT_MS) {
+        while (!state.paused) {
           const ready = await checkHealth(true);
           if (ready) {
             item.message = originalMessage;
@@ -808,24 +805,18 @@
             return true;
           }
           const automationState = state.health?.extension?.automationState || '';
-          if (automationState === 'login_required') break;
-          const seconds = Math.max(1, Math.ceil((BATCH_RECOVERY_TIMEOUT_MS - (Date.now() - startedAt)) / 1000));
-          item.message = `${originalMessage} · 다음 작업을 위한 화면 복구 중 (${seconds}초)`;
+          item.message = automationState === 'login_required'
+            ? `${originalMessage} · 일사편리 로그인 대기 중`
+            : `${originalMessage} · 다음 작업을 위한 화면 자동 복구 중`;
           renderQueue();
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
-        item.message = `${originalMessage} · 자동 복구가 완료되지 않아 대량조회를 일시정지했습니다.`;
-        renderQueue();
         return false;
       }
 
       async function waitForNextBatchReady() {
-        const startedAt = Date.now();
-        while (!state.paused && Date.now() - startedAt < NEXT_BATCH_READY_TIMEOUT_MS) {
+        while (!state.paused) {
           if (await checkHealth(true)) return true;
-          const health = state.health;
-          const automationState = health?.extension?.automationState || '';
-          if (!health || !health.extension?.connected || automationState === 'login_required') return false;
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
         return false;
@@ -858,7 +849,8 @@
         if (!state.queue.length || state.queue.every(q => q.status === 'complete')) buildQueue();
         if (!state.queue.length) return showToast('한 줄에 주소 하나씩 입력해 주세요.', 'error');
         state.running = true; state.paused = false; $('#batchStart').disabled = true; $('#pauseBatch').disabled = false; $('#pauseBatch').textContent = '일시정지';
-        for (const item of state.queue) {
+        for (let itemIndex = 0; itemIndex < state.queue.length; itemIndex += 1) {
+          const item = state.queue[itemIndex];
           if (state.paused) break;
           if (item.status !== 'pending') continue;
           let jobCreated = false;
@@ -877,30 +869,22 @@
             saveHistory(historyEntry(item.address, item.mode, item.data)); renderQueue();
             if (!state.paused && state.queue.some(next => next.status === 'pending')) {
               const readyForNext = await waitForNextBatchReady();
-              if (!readyForNext) {
-                if (!state.paused) {
-                  state.paused = true;
-                  showToast('다음 작업 준비를 확인하지 못해 대량조회를 일시정지했습니다.', 'error');
-                }
-                break;
-              }
+              if (!readyForNext) break;
             }
           } catch (error) {
             if (!jobCreated) {
               item.status = 'pending';
-              item.message = `작업 시작 전 연결 확인 필요 · ${error.message}`;
-              state.paused = true;
+              item.message = `작업 시작 전 연결 복구 중 · ${error.message}`;
               renderQueue();
-              showToast('대량조회를 일시정지했습니다. 연결 상태를 확인한 뒤 다시 시작해 주세요.', 'error');
-              break;
+              const readyForRetry = await waitForNextBatchReady();
+              if (!readyForRetry) break;
+              itemIndex -= 1;
+              continue;
             }
             item.status = 'failed'; item.message = error.message; renderQueue();
             showToast(`${item.index}번 주소 실패 · 화면 복구 후 다음 주소를 계속합니다.`, 'error');
             const recovered = await waitForBatchRecovery(item);
-            if (!recovered) {
-              state.paused = true;
-              break;
-            }
+            if (!recovered) break;
           }
         }
         state.running = false; $('#batchStart').disabled = false; $('#pauseBatch').disabled = true; checkHealth(true);
@@ -975,32 +959,6 @@
       });
 
       renderHistory(); checkHealth(true); setInterval(() => { if (!state.running) checkHealth(true); }, 10000);
-    })();
-  </script>
-  <button
-    type="button"
-    id="localStorageCleanupButton"
-    aria-label="오토일사 페이지의 로컬 데이터 삭제"
-    style="position:fixed;left:8px;bottom:6px;z-index:9999;padding:2px 4px;border:0;background:transparent;color:#8b8b8b;font-size:10px;line-height:1.2;cursor:pointer;text-decoration:underline;text-underline-offset:2px;opacity:.72;"
-  >로컬스토리지 청소</button>
-  <script>
-    (() => {
-      const button = document.getElementById('localStorageCleanupButton');
-      if (!button) return;
-      button.addEventListener('click', () => {
-        const storageKeys = ['maslow.autoIlsa.history.v1'];
-        const storedKeys = storageKeys.filter(key => localStorage.getItem(key) !== null);
-        if (!window.confirm(`오토일사 페이지에서 저장한 데이터 ${storedKeys.length}개 항목을 지울까요?\n삭제한 데이터는 복구할 수 없습니다.`)) return;
-        try {
-          storageKeys.forEach(key => localStorage.removeItem(key));
-          button.textContent = '청소 완료';
-          button.disabled = true;
-          window.alert('오토일사 페이지의 로컬 데이터를 삭제했습니다.');
-          window.location.reload();
-        } catch (error) {
-          window.alert(`로컬스토리지 청소 실패: ${error && error.message ? error.message : error}`);
-        }
-      });
     })();
   </script>
 </body>
